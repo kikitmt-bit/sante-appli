@@ -1,0 +1,19 @@
+[client]
+toolbarMode = "minimal"
+
+# Thème sombre (comme l'appli padel) : mêmes couleurs en clair et en sombre
+[theme]
+font = "Outfit:https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+baseRadius = "medium"
+
+[theme.light]
+primaryColor = "#6B8CFF"
+backgroundColor = "#0D1322"
+secondaryBackgroundColor = "#1C2740"
+textColor = "#EEF2FA"
+
+[theme.dark]
+primaryColor = "#6B8CFF"
+backgroundColor = "#0D1322"
+secondaryBackgroundColor = "#1C2740"
+textColor = "#EEF2FA"
