@@ -9,6 +9,6 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
 
 - `app.py` : Jour / Semaine / Mois + date ; tuiles (`stats_jour`), graphiques, « 📦 Toutes les données » (chaque type en
   tableau brut). Fichiers lus en parallèle, gardés 2 min (aujourd'hui, hier, résumé, profil) ou 1 h (`lire`), bouton 🔄.
-  Fraîcheur = dernière synchro du bracelet (`data/profil.json`). Thème sombre bleu comme l'appli padel.
+  Fraîcheur = heure de la dernière mesure reçue aujourd'hui (lastSyncTime de Google pas mis à jour). Thème sombre bleu comme l'appli padel.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).

@@ -150,11 +150,18 @@ def stats_jour(j, r):
     """j = fichier du jour (types), r = résumé du jour. -> {nom: valeur} (None si absent)."""
     t, r = (j or {}).get("types", {}), r or {}
     s = {}
-    s["Pas"] = somme(t.get("steps"), "count")
-    mm = somme(t.get("distance"), "millimeters")
+    # Totaux du jour calculés par Google (sans doublons) ; à défaut, somme des minutes
+    s["Pas"] = num(premier(r.get("steps:jour"), "countSum"))
+    if s["Pas"] is None:
+        s["Pas"] = somme(t.get("steps"), "countSum", "count")
+    mm = num(premier(r.get("distance:jour"), "millimetersSum"))
+    if mm is None:
+        mm = somme(t.get("distance"), "millimetersSum", "millimeters")
     s["Distance (km)"] = mm / 1e6 if mm is not None else None
     s["Calories totales"] = num(premier(r.get("total-calories:jour"), "kcalSum"))
-    s["Calories actives"] = somme(t.get("active-energy-burned"), "kcal")
+    s["Calories actives"] = num(premier(r.get("active-energy-burned:jour"), "kcalSum"))
+    if s["Calories actives"] is None:
+        s["Calories actives"] = somme(t.get("active-energy-burned"), "kcalSum", "kcal")
     am = premier(r.get("active-minutes:jour"), "activeMinutesRollupByActivityLevel")
     if am:
         par = {x.get("activityLevel"): num(x.get("activeMinutesSum")) or 0 for x in am}
@@ -294,16 +301,14 @@ annees = sorted({d.year for d in jours})
 with st.spinner("Lecture des données…"):
     fichiers = lire(chemins + [f"data/resume/{y}.json" for y in annees] + ["data/profil.json"], recents)
 
-# Fraîcheur : dernière synchro du bracelet avec Google
-profil = fichiers.get("data/profil.json") or {}
-syncs = [d.get("lastSyncTime") for d in (profil.get("pairedDevices") or {}).get("pairedDevices", [])
-         if d.get("deviceType") == "TRACKER" and "HEART_RATE" in (d.get("features") or [])]
+# Fraîcheur : heure de la dernière mesure reçue aujourd'hui (l'heure de synchro donnée par Google n'est pas mise à jour)
+du_jour = (fichiers.get(f"data/jour/{aujourd.year}/{aujourd}.json") or {}).get("types", {})
+heures = [l[0] for typ in ("steps", "heart-rate", "active-energy-burned") if isinstance(du_jour.get(typ), dict)
+          for l in du_jour[typ].get("lignes", []) if l and l[0]]
 cf, cb = st.columns([4, 1])
 with cf:
-    if syncs:
-        t = pd.Timestamp(max(syncs)).tz_convert(TZ)
-        st.markdown(f'<div class="fresh">⌚ Bracelet synchronisé le {t:%d/%m à %H:%M} · données relues toutes les 2 min'
-                    '</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="fresh">⌚ Dernière mesure reçue aujourd\'hui : {max(heures)[:5] if heures else "aucune"}'
+                ' · relu toutes les 2 min</div>', unsafe_allow_html=True)
 with cb:
     if st.button("🔄", help="Relire les données maintenant"):
         _cache().clear()
@@ -322,10 +327,13 @@ if periode == "Jour":
     j, r = par_jour[ref]
     t = (j or {}).get("types", {})
     pas = table(t.get("steps"))
-    if not pas.empty and "count" in pas:
+    col = next((c for c in ("countSum", "count") if c in pas), None)
+    if col:
+        if col == "count" and (pas["secondes"] == 60).any():  # ancienne liste brute : la série minute par minute seulement
+            pas = pas[pas["secondes"] == 60]
         pas["Heure"] = pas["heure"].str[:2] + "h"
         st.markdown("**Pas par heure**")
-        st.bar_chart(pas.groupby("Heure")["count"].sum(), color="#6B8CFF", height=200, y_label="", x_label="")
+        st.bar_chart(pas.groupby("Heure")[col].sum(), color="#6B8CFF", height=200, y_label="", x_label="")
     hr = table(t.get("heart-rate"))
     moy = [c for c in hr.columns if "avg" in c.lower() or "mean" in c.lower()]
     if moy:
