@@ -87,6 +87,24 @@ def _cache():
     return {}  # chemin -> (heure de lecture, contenu)
 
 
+def actualiser():
+    """Bouton 🔄 : demande au script Google de récolter tout de suite l'essentiel d'aujourd'hui (s'il est déployé en
+    Application Web : secrets SCRIPT_URL et SCRIPT_CLE), puis relit les fichiers (les images restent en mémoire)."""
+    s = st.secrets
+    if s.get("SCRIPT_URL"):
+        with st.spinner("Je demande tes dernières données à Google…"):
+            try:
+                rep = requests.get(s["SCRIPT_URL"], params={"cle": s.get("SCRIPT_CLE", "")}, timeout=90).json()
+            except Exception as e:
+                rep = {"ok": False, "erreur": str(e)[:120]}
+        st.session_state["message_maj"] = ("✅ Données à jour" if rep.get("ok")
+                                           else f"⚠️ Actualisation impossible : {rep.get('erreur', '?')}")
+    c = _cache()
+    for chemin in [k for k in c if not k.startswith("sprites:")]:
+        del c[chemin]
+    st.rerun()
+
+
 def lire(paths, recents=()):
     """Contenu de plusieurs fichiers (lus en parallèle). Relus après 2 min pour les plus récents, 1 h pour les autres."""
     c, now = _cache(), time.time()
@@ -283,6 +301,8 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
 
+if "message_maj" in st.session_state:
+    st.toast(st.session_state.pop("message_maj"))
 onglet_sante, onglet_pokemon, onglet_config = st.tabs(["❤️ Santé", "🎮 Pokémon", "⚙️ Configuration"])
 
 with onglet_sante:
@@ -296,9 +316,8 @@ with onglet_sante:
     c2.date_input("Date", key="ref", max_value=aujourd, format="DD/MM/YYYY", label_visibility="collapsed")
     c3.button("▶", on_click=decaler, args=(1,), width="stretch", disabled=fin_affichee >= aujourd,
               help="Période suivante")
-    if c4.button("🔄", width="stretch", help="Relire les données maintenant"):
-        _cache().clear()
-        st.rerun()
+    if c4.button("🔄", width="stretch", help="Aller chercher tes dernières données maintenant"):
+        actualiser()
 
     recents = {f"data/jour/{x.year}/{x}.json" for x in (aujourd, aujourd - dt.timedelta(days=1))}
     recents |= {f"data/resume/{aujourd.year}.json", "data/profil.json",
@@ -418,6 +437,8 @@ with onglet_sante:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
 with onglet_pokemon:
+    if st.button("🔄 Actualiser mes pas et mes missions", width="stretch", key="maj_pokemon"):
+        actualiser()
     ecran_pokemon.afficher(lire_vite, aujourd)
 
 with onglet_config:

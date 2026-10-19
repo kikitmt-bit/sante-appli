@@ -15,7 +15,9 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   Comparaison : 7 jours d'avant (vue Jour) ou période précédente de même longueur. Minutes en zone = officielles de la
   Pixel Watch (portée depuis le 19/10), sinon zone modérée ×1 + intense/pic ×2 (Inspire HR). Pixel Watch en plus :
   étages, dénivelé, SpO2 de la nuit (moyenne, plus basse, courbe).
-  Objectifs dans `OBJECTIFS` (5 000 pas, 15 min en zone, 7 h de sommeil). Fichiers gardés 2 min (récents) ou 1 h, 🔄.
+  Objectifs dans `OBJECTIFS` (5 000 pas, 15 min en zone, 7 h de sommeil). Fichiers gardés 2 min (récents) ou 1 h.
+  🔄 (Santé et Pokémon) = `actualiser()` : appelle le script Google (secrets `SCRIPT_URL`, `SCRIPT_CLE`, Application Web
+  `doGet` de sante.gs) pour une récolte immédiate, puis relit tout sauf les images.
 - `chiffres.py` : tous les calculs, sans Streamlit (`stats_jour`, `charger`, `dossier_coach`…), partagés par l'appli et
   `coach.py`. `coach.md` = consigne du coach (personnalité, profil, règles, plan) : c'est là qu'on l'affine.
 - Coach (sans clé API) : tâche programmée Claude « Coach santé du matin » (5 h 57, heure de Paris), qui arrive dans la
