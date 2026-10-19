@@ -13,4 +13,5 @@ https://share.streamlit.io → *Create app* → dépôt `kikitmt-bit/sante-appli
 GITHUB_TOKEN = "…"
 GITHUB_REPO = "kikitmt-bit/sante"
 APP_PASSWORD = "…"
+ANTHROPIC_API_KEY = "…"   # pour le coach (console.anthropic.com)
 ```
