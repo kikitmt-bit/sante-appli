@@ -23,5 +23,13 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   ({periode, debut, fin, ecrit, texte}) ; le lundi aussi `Semaine` (fichier au nom du lundi), le 1er `Mois`
   (`data/coach/mois/AAAA-MM.json`). L'appli affiche en haut l'analyse d'hier (ou de la semaine / du mois précédent)
   et le bouton 📋 (`bouton_copier`, petit composant HTML) pour une analyse poussée dans Claude.
+- **Pokémon** (`pokedex.py` noms/types des 151, `versions.json` liste des images, `pokemon.py` règles et `REGLAGES`,
+  `ecran_pokemon.py` l'onglet) : captures gagnées chaque jour (cadeau, paliers de pas, minutes en zone typées selon
+  l'exercice, légendaire tous les 30 jours de série), tirées avec une graine = identifiant de la capture (rejouable).
+  Chaque matin, la tâche du coach lance aussi `python3 pokemon.py figer DATA` → `data/pokemon/captures.json` (jours
+  passés figés, jamais modifiés). Images dans la branche **`sprites`** du dépôt privé (`paquets/vignettes.json`,
+  `paquets/NNN.json` en base64), lues avec le préfixe `sprites:` dans `lire` et gardées sans limite. Animation et
+  Pokédex = composants HTML (`components.html`) qui s'agrandissent eux-mêmes (`window.frameElement`) ; les Poké Balls
+  ouvertes sont retenues dans le localStorage du téléphone.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).

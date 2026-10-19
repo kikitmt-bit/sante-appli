@@ -14,6 +14,8 @@ import streamlit as st
 import streamlit.components.v1 as components
 from streamlit_js_eval import streamlit_js_eval
 
+import ecran_pokemon
+import pokemon
 from chiffres import (JOURS, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger, chemin_analyse,
                       dossier_coach, hm, joli, nombre, par_jour, table)
 
@@ -68,9 +70,11 @@ h3{margin-top:1.4rem !important}
 
 # ---------- Lecture des fichiers (GitHub, branche data) ----------
 def _github(path):
+    """« chemin » dans la branche data, ou « branche:chemin » (ex. sprites:paquets/025.json)."""
     s = st.secrets
+    branche, _, path = path.rpartition(":") if ":" in path.split("/")[0] else (s.get("GITHUB_BRANCH", "data"), "", path)
     r = requests.get(f"https://api.github.com/repos/{s['GITHUB_REPO']}/contents/{path}",
-                     params={"ref": s.get("GITHUB_BRANCH", "data")}, timeout=30,
+                     params={"ref": branche}, timeout=30,
                      headers={"Authorization": f"Bearer {s['GITHUB_TOKEN']}", "Accept": "application/vnd.github.raw+json"})
     if r.status_code == 404:
         return None
@@ -86,7 +90,8 @@ def _cache():
 def lire(paths, recents=()):
     """Contenu de plusieurs fichiers (lus en parallèle). Relus après 2 min pour les plus récents, 1 h pour les autres."""
     c, now = _cache(), time.time()
-    a_lire = [p for p in paths if p not in c or now - c[p][0] > (120 if p in recents else 3600)]
+    a_lire = [p for p in paths if p not in c or c[p][1] is None and now - c[p][0] > 120 or
+              not p.startswith("sprites:") and now - c[p][0] > (120 if p in recents else 3600)]  # images : gardées
     if a_lire:
         with ThreadPoolExecutor(8) as ex:
             for p, v in zip(a_lire, ex.map(_github, a_lire)):
@@ -280,10 +285,6 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
 
 onglet_sante, onglet_pokemon, onglet_config = st.tabs(["❤️ Santé", "🎮 Pokémon", "⚙️ Configuration"])
 
-with onglet_pokemon:
-    st.markdown("### 🎮 Bientôt")
-    st.write("Ici viendront ton Pokédex, tes captures du jour et ton Pokémon partenaire.")
-
 with onglet_sante:
     aujourd = dt.datetime.now(TZ).date()
     st.session_state.setdefault("ref", aujourd)
@@ -301,7 +302,7 @@ with onglet_sante:
 
     recents = {f"data/jour/{x.year}/{x}.json" for x in (aujourd, aujourd - dt.timedelta(days=1))}
     recents |= {f"data/resume/{aujourd.year}.json", "data/profil.json",
-                chemin_analyse("Jour", aujourd - dt.timedelta(days=1))}
+                chemin_analyse("Jour", aujourd - dt.timedelta(days=1)), pokemon.FIGEES}
     lire_vite = lambda chemins: lire(chemins, recents)  # noqa: E731
     with st.spinner("Lecture des données…"):
         donnees = charger(lire_vite, periode, st.session_state["ref"], aujourd)
@@ -407,6 +408,9 @@ with onglet_sante:
                 graphique(courbe, "poids", "Poids (kg)", type_="ligne", hauteur=150)
             with g2:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
+
+with onglet_pokemon:
+    ecran_pokemon.afficher(lire_vite, aujourd)
 
 with onglet_config:
     # ----- Toutes les données brutes (pour vérifier ce que Google donne) -----
