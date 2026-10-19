@@ -14,8 +14,13 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   Comparaison : 7 jours d'avant (vue Jour) ou période précédente de même longueur. Minutes en zone = zone modérée ×1 +
   intense/pic ×2 (l'Inspire HR ne donne pas les minutes en zone officielles ; ni étages ni SpO2 non plus).
   Objectifs dans `OBJECTIFS` (5 000 pas, 15 min en zone, 7 h de sommeil). Fichiers gardés 2 min (récents) ou 1 h, 🔄.
-- Coach : Claude (`claude-opus-5-5`, effort medium, repli serveur `fallbacks="default"`), seulement au clic, réponse
-  gardée en mémoire tant que les données ne changent pas (~2 000 jetons envoyés). Secrets `ANTHROPIC_API_KEY`
-  (sans lui, simple message) et `COACH_CONTEXTE` (facultatif, remplace le profil par défaut `COACH_CONTEXTE`).
+- `chiffres.py` : tous les calculs, sans Streamlit (`stats_jour`, `charger`, `dossier_coach`…), partagés par l'appli et
+  `coach.py`. `coach.md` = consigne du coach (personnalité, profil, règles, plan) : c'est là qu'on l'affine.
+- Coach (sans clé API) : une tâche programmée Claude (chaque jour ~6 h, nouvelle session) clone `sante-appli` et la
+  branche `data` de `sante`, lance `python3 coach.py dossier DATA Jour HIER` (consigne + données + 3 analyses
+  précédentes), écrit l'analyse, puis `coach.py enregistrer …` → `data/coach/jour/AAAA/AAAA-MM-JJ.json`
+  ({periode, debut, fin, ecrit, texte}) ; le lundi aussi `Semaine` (fichier au nom du lundi), le 1er `Mois`
+  (`data/coach/mois/AAAA-MM.json`). L'appli affiche en haut l'analyse d'hier (ou de la semaine / du mois précédent)
+  et un bouton « 📋 Copier pour le coach » (`st.code` du dossier) pour une analyse poussée dans Claude.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
