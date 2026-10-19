@@ -11,6 +11,7 @@ import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 from streamlit_js_eval import streamlit_js_eval
 
 from chiffres import (JOURS, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger, chemin_analyse,
@@ -45,7 +46,8 @@ NOMS = {
 }
 
 st.markdown("""<style>
-.block-container{padding-top:2.2rem;max-width:760px}
+.block-container{padding-top:.6rem;max-width:760px}
+header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"]{display:none !important}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 12px}
 .tile{background:#1C2740;border-radius:12px;padding:10px 12px}
 .tile .l{font-size:.78rem;color:#9AA7C2}
@@ -187,20 +189,38 @@ def coach(d, lire_vite, aujourd):
                  else f"Bilan du mois de {cle[1]:%m/%Y}")
     else:
         cle, titre = None, None
-    if cle:
-        chemin = chemin_analyse(*cle)
-        a = lire_vite([chemin])[chemin]
-        with st.expander(f"🧠 {titre}", expanded=True):
-            if a:
-                st.markdown(a["texte"])
-            else:
-                st.caption("Pas encore d'analyse pour cette période : le coach écrit celle de la veille chaque matin "
-                           "vers 6 h, le bilan de la semaine le lundi et celui du mois le 1er.")
-    with st.expander("📋 Copier pour le coach (analyse poussée dans Claude)"):
-        st.caption("Touche l'icône de copie en haut à droite du cadre, puis colle le texte dans Claude : il contient "
-                   "la consigne du coach et toutes les données de la période affichée.")
-        precedentes = analyses_precedentes(lire_vite, fin) if periode == "Jour" else ()
-        st.code(dossier_coach(d, precedentes), language=None, wrap_lines=True, height=220)
+    precedentes = analyses_precedentes(lire_vite, fin) if periode == "Jour" else ()
+    texte = dossier_coach(d, precedentes)
+    if not cle:
+        bouton_copier(texte, "📋 Copier pour le coach")
+        return
+    chemin = chemin_analyse(*cle)
+    a = lire_vite([chemin])[chemin]
+    c1, c2 = st.columns([5, 1])
+    with c1, st.expander(f"🧠 {titre}"):
+        if a:
+            st.markdown(a["texte"])
+        else:
+            st.caption("Pas encore d'analyse pour cette période : le coach écrit celle de la veille chaque matin "
+                       "vers 6 h, le bilan de la semaine le lundi et celui du mois le 1er.")
+    with c2:
+        bouton_copier(texte, "📋")
+
+
+def bouton_copier(texte, libelle):
+    """Bouton qui copie le dossier du coach (consigne + données) sans l'afficher, pour le coller dans Claude."""
+    contenu_js = json.dumps(texte, ensure_ascii=False).replace("</", "<\\/")
+    components.html(f"""<style>body{{margin:0;background:transparent}}
+button{{width:100%;height:42px;border-radius:.5rem;border:1px solid rgba(238,242,250,.2);background:#0D1322;
+color:#EEF2FA;font:500 15px Outfit,sans-serif;cursor:pointer}}button:active{{border-color:#6B8CFF}}</style>
+<button id="b" title="Copier toutes les données de la période pour les coller dans Claude">{libelle}</button>
+<script>const t = {contenu_js}, b = document.getElementById("b"), l = b.textContent;
+b.onclick = async () => {{
+  try {{ await navigator.clipboard.writeText(t); }}
+  catch (e) {{ const a = document.createElement("textarea"); a.value = t; document.body.appendChild(a); a.select();
+             document.execCommand("copy"); a.remove(); }}
+  b.textContent = "✓"; setTimeout(() => b.textContent = l, 1500);
+}};</script>""", height=44)
 
 
 # ---------- Mot de passe (l'appli est publique sur Streamlit : rien n'est affiché sans lui) ----------
@@ -258,8 +278,7 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
 
-st.markdown("## ❤️ Ma santé")
-onglet_sante, onglet_pokemon = st.tabs(["❤️ Santé", "🎮 Pokémon"])
+onglet_sante, onglet_pokemon, onglet_config = st.tabs(["❤️ Santé", "🎮 Pokémon", "⚙️ Configuration"])
 
 with onglet_pokemon:
     st.markdown("### 🎮 Bientôt")
@@ -389,10 +408,11 @@ with onglet_sante:
             with g2:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
+with onglet_config:
     # ----- Toutes les données brutes (pour vérifier ce que Google donne) -----
-    st.divider()
     if st.toggle("📦 Afficher toutes les données brutes", key="brut"):
-        st.caption("Tout ce que Google a donné pour la période, tel quel (une rubrique par type).")
+        st.caption(f"Tout ce que Google a donné pour la période choisie dans l'onglet Santé ({debut:%d/%m/%Y}"
+                   f"{f' → {fin:%d/%m/%Y}' if fin != debut else ''}), tel quel (une rubrique par type).")
         jours_brut = jours[-31:]
         bruts = lire([f"data/jour/{d.year}/{d}.json" for d in jours_brut], recents)
         detail, totaux = {}, {}
@@ -418,6 +438,7 @@ with onglet_sante:
                 with st.expander(f"{nom} · {len(lignes)} ligne(s)"):
                     st.dataframe(lignes, width="stretch", hide_index=True)
 
+    st.divider()
     if st.button("🔒 Ne plus mémoriser ce téléphone"):
         streamlit_js_eval(js_expressions="localStorage.removeItem('sante_ok'); "
                           "document.cookie='sante_ok=; max-age=0; path=/; SameSite=Lax; Secure'; 1", key="oubli_ok")

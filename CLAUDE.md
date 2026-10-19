@@ -7,9 +7,10 @@ GitHub avec les secrets `GITHUB_TOKEN`, `GITHUB_REPO` (= kikitmt-bit/sante). L'a
 appli privée gratuite de Kiki est prise par le padel) : `verrou()` bloque tout sans `APP_PASSWORD`, mémorisé sur le
 téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directement sur `main`.
 
-- `app.py` : une seule page qui défile, onglets « ❤️ Santé » / « 🎮 Pokémon » (à venir). Filtre en haut : Jour / 7 jours
-  / Semaine / Mois / Année + date et ◀ ▶. Sections Activité, Séances, Sommeil, Cœur, Poids, puis « 🧠 Le coach » et les
-  données brutes (interrupteur, pour Claude). Les chiffres viennent des **résumés annuels** (`data/resume/AAAA.json`,
+- `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; onglets « ❤️ Santé »,
+  « 🎮 Pokémon » (à venir), « ⚙️ Configuration » (données brutes, oublier ce téléphone). Filtre en haut : Jour / 7 jours
+  / Semaine / Mois / Année + date et ◀ ▶. En haut, l'analyse du coach (repliée) et un bouton 📋 qui copie
+  le dossier du coach sans l'afficher ; puis Activité, Séances, Sommeil, Cœur, Poids. Les chiffres viennent des **résumés annuels** (`data/resume/AAAA.json`,
   `stats_jour`), donc l'année entière se charge vite ; les fichiers du jour servent aux courbes de la vue Jour.
   Comparaison : 7 jours d'avant (vue Jour) ou période précédente de même longueur. Minutes en zone = zone modérée ×1 +
   intense/pic ×2 (l'Inspire HR ne donne pas les minutes en zone officielles ; ni étages ni SpO2 non plus).
@@ -21,6 +22,6 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   précédentes), écrit l'analyse, puis `coach.py enregistrer …` → `data/coach/jour/AAAA/AAAA-MM-JJ.json`
   ({periode, debut, fin, ecrit, texte}) ; le lundi aussi `Semaine` (fichier au nom du lundi), le 1er `Mois`
   (`data/coach/mois/AAAA-MM.json`). L'appli affiche en haut l'analyse d'hier (ou de la semaine / du mois précédent)
-  et un bouton « 📋 Copier pour le coach » (`st.code` du dossier) pour une analyse poussée dans Claude.
+  et le bouton 📋 (`bouton_copier`, petit composant HTML) pour une analyse poussée dans Claude.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
