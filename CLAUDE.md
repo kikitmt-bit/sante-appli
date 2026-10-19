@@ -31,8 +31,10 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   zéro le 19/10 (`REGLAGES["debut"]`).
   Chaque matin, la tâche du coach lance aussi `python3 pokemon.py figer DATA` → `data/pokemon/captures.json` (jours
   passés figés, jamais modifiés). Images dans la branche **`sprites`** du dépôt privé (`paquets/vignettes.json`,
-  `paquets/NNN.json` en base64), lues avec le préfixe `sprites:` dans `lire` et gardées sans limite. Animation et
-  Pokédex = composants HTML (`components.html`) qui s'agrandissent eux-mêmes (`window.frameElement`) ; les Poké Balls
+  `paquets/NNN.json` en base64), lues avec le préfixe `sprites:` dans `lire` et gardées sans limite. Animation de
+  capture = calque plein écran ajouté dans la page parente (`window.parent.document`, fermeture = fondu au noir) ;
+  Pokédex = composant HTML qui s'agrandit lui-même (`window.frameElement`). Les images Rouge/Bleu et Argent des
+  paquets ont été détourées (fond blanc → transparent) ; les Poké Balls
   ouvertes sont retenues dans le localStorage du téléphone.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
