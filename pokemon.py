@@ -126,11 +126,12 @@ def jouer(stats, resumes, aujourd, figees=()):
         pesees = gras.loc[:jour - dt.timedelta(days=1)].dropna().tail(7)
         bonus = next((m for seuil, m in REGLAGES["masse_grasse"] if len(pesees) and pesees.mean() < seuil), 1)
         famille = famille_du_jour([chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []])
-        deja = par_jour.get(str(jour), [])
-        for k, due in enumerate(captures_dues(s, famille, legendaire)):
+        deja, dues = par_jour.get(str(jour), []), captures_dues(s, famille, legendaire)
+        for k in range(max(len(deja), len(dues))):  # une capture figée reste, même si les chiffres ont baissé depuis
             if k < len(deja):
                 c = deja[k]
             else:
+                due = dues[k]
                 p = min(REGLAGES["shiny"] * due["mult"] * bonus, REGLAGES["shiny_max"])
                 c = tirer(f"{jour}#{k}", possedees, sans_nouvelle, due.get("famille"), p, due.get("legendaire", False))
                 if c is None:
