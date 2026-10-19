@@ -31,21 +31,11 @@ def afficher(lire, aujourd):
     # ----- Les chiffres -----
     n_shiny = sum(c["shiny"] for c in captures)
     serie, objectif_serie = etat["serie"], pokemon.REGLAGES["serie_legendaire"]
-    reste = objectif_serie - serie % objectif_serie
-    prochain = []
-    if etat["prochain_pas"]:
-        prochain.append(f"encore <b>{chiffres.nombre(etat['prochain_pas'] - etat['pas'])} pas</b>")
-    if etat["prochain_zone"]:
-        prochain.append(f"<b>{etat['prochain_zone'] - etat['zone']:.0f} min en zone</b>")
     st.markdown(f"""<div class="tiles">
 <div class="tile"><div class="l">Pokédex</div><div class="v">{len(especes)} / 151</div>
 <div class="bar"><div style="width:{len(especes) / 151 * 100:.0f}%"></div></div></div>
 <div class="tile"><div class="l">Versions</div><div class="v">{len(captures)} / {pokemon.TOTAL_VERSIONS}</div>
-<div class="s">dont {n_shiny} shiny ✨</div></div>
-<div class="tile"><div class="l">Série 🔥</div><div class="v">{serie} j</div>
-<div class="s">légendaire dans {reste} j</div></div></div>
-<div class="fresh">🎯 Prochaine capture : {" ou ".join(prochain) if prochain else "tu as tout gagné aujourd'hui, bravo !"}
-</div>""", unsafe_allow_html=True)
+<div class="s">dont {n_shiny} shiny ✨</div></div></div>""", unsafe_allow_html=True)
 
     # ----- Captures récentes (Poké Balls à ouvrir) -----
     depuis = str(aujourd - dt.timedelta(days=7))
@@ -57,10 +47,47 @@ def afficher(lire, aujourd):
         "quand": "aujourd'hui" if c["jour"] == str(aujourd) else
                  f"{chiffres.JOURS[dt.date.fromisoformat(c['jour']).weekday()]} {c['jour'][8:]}/{c['jour'][5:7]}",
     } for c in captures if c["jour"] >= depuis]
-    a_venir = [f"{chiffres.nombre(etat['prochain_pas'])} pas"] if etat["prochain_pas"] else []
-    a_venir += [f"{etat['prochain_zone']} min zone"] if etat["prochain_zone"] else []
+    st.markdown("### 🎁 Tes Poké Balls")
+    a_venir = []
     components.html(CAPTURES.replace("__CAPTURES__", _js(recentes)).replace("__AVENIR__", _js(a_venir))
                     .replace("__COULEURS__", _js(COULEURS_TYPES)), height=150)
+
+    # ----- Les missions du jour -----
+    st.markdown("### 🎯 Missions du jour")
+    st.caption("Chaque mission réussie = une Poké Ball. Une mission avec des types te donne 8 fois sur 10 un "
+               "Pokémon de ces types.")
+    m, gagnees = etat["mesures"], {c["id"].split("#")[1] for c in captures if c["jour"] == str(aujourd)}
+    lignes = []
+    for mi in pokemon.MISSIONS + [{"cle": "serie", "icone": "👑", "titre": f"Série de {objectif_serie} jours",
+                                   "mesure": "serie", "seuil": objectif_serie, "types": None, "shiny": 1}]:
+        v = serie % objectif_serie if mi["cle"] == "serie" else m.get(mi["mesure"], 0) if mi["mesure"] else 0
+        fait = mi["cle"] in gagnees
+        if mi["cle"] == "serie":
+            detail = f"{serie} j d'affilée à 5 000 pas ou 15 min en zone · un légendaire au bout"
+        elif not mi["mesure"]:
+            detail = "offert chaque jour"
+        else:
+            u = mi.get("unite")
+            f = (lambda x: chiffres.hm(x)) if mi["mesure"] == "sommeil" else \
+                (lambda x: f"{x:.0f} min") if u == "min" else (lambda x: chiffres.nombre(x))
+            detail = f"{f(v)} / {f(mi['seuil'])}" + ("" if fait else f" · encore {f(max(mi['seuil'] - v, 0))}")
+        types = ("".join(f'<span class="ty" style="background:{COULEURS_TYPES[t]}">{t}</span>' for t in mi["types"])
+                 if mi["types"] else '<span class="ty tous">Tous types</span>')
+        if mi["shiny"] > 1:
+            types += f'<span class="ty sh">✨ shiny ×{chiffres.nombre(mi["shiny"], 1) if mi["shiny"] % 1 else int(mi["shiny"])}</span>'
+        pct = 100 if fait or not mi["mesure"] else min(v / mi["seuil"] * 100, 100)
+        lignes.append(f"""<div class="mi {'ok' if fait else ''}"><div class="ic">{mi['icone']}</div><div class="co">
+<div class="t">{mi['titre']}<span class="et">{'✅ gagnée' if fait else ''}</span></div><div>{types}</div>
+<div class="bar"><div class="{'ok' if fait else ''}" style="width:{pct:.0f}%"></div></div><div class="s">{detail}</div>
+</div></div>""")
+    st.markdown("""<style>
+.mi{display:flex;gap:10px;background:#1C2740;border-radius:12px;padding:6px 12px;margin:5px 0;align-items:center}
+.mi.ok{box-shadow:inset 0 0 0 1px #4CD3A0}.mi .ic{font-size:1.25rem;width:26px;text-align:center}.mi .co{flex:1}
+.mi .t{font-weight:700;font-size:.95rem}.mi .et{float:right;font-size:.75rem;color:#4CD3A0;font-weight:600}
+.mi .s{font-size:.75rem;color:#9AA7C2;margin-top:2px}
+.ty{display:inline-block;padding:0 7px;border-radius:8px;font-size:.68rem;font-weight:600;color:#fff;margin:2px 3px 0 0;
+  text-shadow:0 1px 1px rgba(0,0,0,.35)}.ty.tous{background:#2A3756}.ty.sh{background:#7A6420}
+</style>""" + "".join(lignes), unsafe_allow_html=True)
 
     # ----- Le Pokédex -----
     possedees = {}

@@ -321,7 +321,7 @@ with onglet_sante:
 
     # ----- Activité -----
     st.markdown("### 🏃 Activité")
-    tuiles(["pas", "zone", "km", "actives", "min_sport", "seances", "kcal", "kcal_act", "etages", "assis"],
+    tuiles(["pas", "zone", "km", "etages", "denivele", "actives", "min_sport", "seances", "kcal", "kcal_act", "assis"],
            df, avant, un_jour, legende_avant)
     if un_jour:
         pas = table(j_ref.get("steps"))
@@ -367,7 +367,7 @@ with onglet_sante:
 
     # ----- Cœur -----
     st.markdown("### ❤️ Cœur et respiration")
-    tuiles(["fc_repos", "vfc", "fc_max", "resp", "spo2"], df, avant, un_jour, legende_avant)
+    tuiles(["fc_repos", "vfc", "fc_max", "resp", "spo2", "spo2_min"], df, avant, un_jour, legende_avant)
     if un_jour:
         hr = table(j_ref.get("heart-rate"))
         hr = hr.sort_values("heure") if "heure" in hr else hr
@@ -375,8 +375,16 @@ with onglet_sante:
         if moy:
             d = pd.DataFrame({"fc": pd.to_numeric(hr[moy[0]], errors="coerce").values}, index=hr["heure"].str[:5])
             graphique(d.iloc[::5], "fc", "Cardio de la journée (bpm)", type_="ligne")
+        spo = table(j_ref.get("oxygen-saturation"))  # Pixel Watch : mesures pendant le sommeil
+        if "percentage" in spo:
+            spo = spo.sort_values("heure")
+            d = pd.DataFrame({"spo2": pd.to_numeric(spo["percentage"], errors="coerce").values},
+                             index=spo["heure"].str[:5])
+            graphique(d, "spo2", "Oxygène dans le sang pendant le sommeil (%)", type_="ligne", couleur="#4CD3A0",
+                      hauteur=140)
     else:
-        d = regroupe(df, ["fc_repos", "vfc"], mensuel)
+        d = regroupe(df, ["fc_repos", "vfc", "spo2"], mensuel)
+        graphique(d, "spo2", "Oxygène dans le sang la nuit (%)", type_="ligne", couleur="#4CD3A0", hauteur=140)
         graphique(d, "fc_repos", "FC au repos (bpm)", type_="ligne", hauteur=140)
         graphique(d, "vfc", "Variabilité cardiaque (ms) — plus haut = mieux récupéré", type_="ligne",
                   couleur="#B39DFF", hauteur=140)

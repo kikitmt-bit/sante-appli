@@ -140,6 +140,8 @@ def stats_jour(r, j=None):
             m = {x["heartRateZone"]: duree(x.get("duration")) / 60 for x in zones}
             s["zone"] = m.get("MODERATE", 0) + 2 * (m.get("VIGOROUS", 0) + m.get("PEAK", 0))
     s["etages"] = num(premier(r.get("floors:jour"), "countSum"))
+    alt = num(premier(r.get("altitude:jour"), "gainMillimetersSum"))
+    s["denivele"] = alt / 1000 if alt is not None else None
     sed = premier(r.get("sedentary-period:jour"), "durationSum")
     s["assis"] = duree(sed) / 60 if sed else None
     ph, s["coucher"], s["lever"] = sommeil(r.get("sleep"))
@@ -152,6 +154,7 @@ def stats_jour(r, j=None):
     s["vfc"] = num(premier(r.get("daily-heart-rate-variability"), "averageHeartRateVariabilityMilliseconds"))
     s["resp"] = num(premier(r.get("daily-respiratory-rate"), "breathsPerMinute"))
     s["spo2"] = num(premier(r.get("daily-oxygen-saturation"), "averagePercentage"))
+    s["spo2_min"] = num(premier(r.get("daily-oxygen-saturation"), "lowerBoundPercentage"))
     g = num(premier(r.get("weight:jour"), "weightGramsAvg")) or num(premier(r.get("weight"), "weightGrams"))
     s["poids"] = g / 1000 if g else None
     s["gras"] = num(premier(r.get("body-fat:jour"), "bodyFatPercentageAvg")) or num(premier(r.get("body-fat"), "percentage"))
@@ -167,13 +170,14 @@ METRIQUES = {
     "actives": ("Minutes actives", "total", "min"), "min_sport": ("Temps d'exercice", "total", "min"),
     "seances": ("Séances", "total", "n"), "kcal": ("Calories totales", "total", "n"),
     "kcal_act": ("Calories actives", "total", "n"), "etages": ("Étages", "total", "n"),
+    "denivele": ("Dénivelé positif", "total", "m"),
     "assis": ("Temps assis", "moyenne", "min"), "sommeil": ("Sommeil", "moyenne", "min"),
     "profond": ("Profond", "moyenne", "min"), "paradoxal": ("Paradoxal", "moyenne", "min"),
     "leger": ("Léger", "moyenne", "min"), "eveil": ("Éveillé", "moyenne", "min"),
     "coucher": ("Coucher", "moyenne", "h"), "lever": ("Lever", "moyenne", "h"),
     "fc_repos": ("FC au repos", "moyenne", "bpm"), "fc_max": ("FC max", "max", "bpm"),
     "vfc": ("Variabilité (VFC)", "moyenne", "ms"), "resp": ("Respiration", "moyenne", "/min"),
-    "spo2": ("SpO2", "moyenne", "%"), "poids": ("Poids", "dernier", "kg"), "gras": ("Masse grasse", "dernier", "%"),
+    "spo2": ("SpO2 (nuit)", "moyenne", "%"), "spo2_min": ("SpO2 la plus basse", "moyenne", "%"), "poids": ("Poids", "dernier", "kg"), "gras": ("Masse grasse", "dernier", "%"),
 }
 
 
@@ -189,6 +193,8 @@ def joli(cle, v):
         return f"{nombre(v, 1)} km"
     if f in ("kg", "%", "ms", "/min"):
         return f"{nombre(v, 1)} {f}".replace(" /min", "/min")
+    if f == "m":
+        return f"{nombre(v)} m"
     if f == "bpm":
         return f"{nombre(v)} bpm"
     return nombre(v)
@@ -286,7 +292,7 @@ def tableau(df):
         if c in d:
             d[c] = d[c].map(heure)
     unites = {"min": "min", "h": "heure", "km": "km", "n": "", "bpm": "bpm", "ms": "ms", "/min": "/min", "%": "%",
-              "kg": "kg"}
+              "kg": "kg", "m": "m"}
     d.columns = [f"{METRIQUES[c][0]} ({unites[METRIQUES[c][2]]})".replace(" ()", "") for c in d.columns]
     return d.to_csv(sep=";")
 
