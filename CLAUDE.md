@@ -16,8 +16,8 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   Objectifs dans `OBJECTIFS` (5 000 pas, 15 min en zone, 7 h de sommeil). Fichiers gardés 2 min (récents) ou 1 h, 🔄.
 - `chiffres.py` : tous les calculs, sans Streamlit (`stats_jour`, `charger`, `dossier_coach`…), partagés par l'appli et
   `coach.py`. `coach.md` = consigne du coach (personnalité, profil, règles, plan) : c'est là qu'on l'affine.
-- Coach (sans clé API) : une tâche programmée Claude (chaque jour ~6 h, nouvelle session) clone `sante-appli` et la
-  branche `data` de `sante`, lance `python3 coach.py dossier DATA Jour HIER` (consigne + données + 3 analyses
+- Coach (sans clé API) : tâche programmée Claude « Coach santé du matin » (5 h 57, heure de Paris), qui arrive dans la
+  session Claude Code de Kiki (une session neuve n'a pas accès au dépôt privé) : copie à jour de la branche `data`, `python3 coach.py dossier DATA Jour HIER` (consigne + données + 3 analyses
   précédentes), écrit l'analyse, puis `coach.py enregistrer …` → `data/coach/jour/AAAA/AAAA-MM-JJ.json`
   ({periode, debut, fin, ecrit, texte}) ; le lundi aussi `Semaine` (fichier au nom du lundi), le 1er `Mois`
   (`data/coach/mois/AAAA-MM.json`). L'appli affiche en haut l'analyse d'hier (ou de la semaine / du mois précédent)
