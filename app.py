@@ -16,8 +16,8 @@ from streamlit_js_eval import streamlit_js_eval
 
 import ecran_pokemon
 import pokemon
-from chiffres import (JOURS, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger, chemin_analyse,
-                      dossier_coach, hm, joli, nombre, par_jour, table)
+from chiffres import (JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
+                      chemin_analyse, dossier_coach, hm, joli, nombre, par_jour, table)
 
 st.set_page_config(page_title="Ma santé", page_icon="❤️", layout="centered")
 
@@ -213,7 +213,7 @@ def coach(d, lire_vite, aujourd):
     else:
         cle, titre = None, None
     precedentes = analyses_precedentes(lire_vite, fin) if periode == "Jour" else ()
-    texte = dossier_coach(d, precedentes)
+    texte = dossier_coach(d, precedentes, (lire_vite([MEMOIRE])[MEMOIRE] or {}).get("texte"))
     if not cle:
         bouton_copier(texte, "📋 Copier pour le coach")
         return

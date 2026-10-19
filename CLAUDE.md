@@ -25,7 +25,11 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   précédentes), écrit l'analyse, puis `coach.py enregistrer …` → `data/coach/jour/AAAA/AAAA-MM-JJ.json`
   ({periode, debut, fin, ecrit, texte}) ; le lundi aussi `Semaine` (fichier au nom du lundi), le 1er `Mois`
   (`data/coach/mois/AAAA-MM.json`). L'appli affiche en haut l'analyse d'hier (ou de la semaine / du mois précédent)
-  et le bouton 📋 (`bouton_copier`, petit composant HTML) pour une analyse poussée dans Claude.
+  et le bouton 📋 (`bouton_copier`, petit composant HTML) pour une analyse poussée dans Claude. Le dossier contient aussi
+  `details_jour` (répartition des pas, périodes assises, cardio et SpO2 heure par heure), `tendances` (90 jours :
+  durée de nuit → activité, heure de coucher → récupération, jour de la semaine, lendemain d'une grosse journée,
+  30 j / 90 j) et le **carnet** du coach (`data/coach/memoire.json`, réécrit chaque matin : `coach.py carnet DATA f.md`).
+  Phase de calibrage : on affine `coach.md` au fil des retours de Kiki.
 - **Pokémon** (`pokedex.py` noms/types des 151, `versions.json` liste des images, `pokemon.py` règles et `REGLAGES`,
   `ecran_pokemon.py` l'onglet) : `MISSIONS` du jour (cadeau, nuit de 7 h, paliers de pas, marche dehors 20 min,
   10 étages, minutes en zone, vélo, rameur), chacune = une capture avec ses types favoris (80 %), plus un légendaire

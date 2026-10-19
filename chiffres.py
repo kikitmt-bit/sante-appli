@@ -297,23 +297,81 @@ def tableau(df):
     return d.to_csv(sep=";")
 
 
-def par_heure(j_ref):
-    """Pas et cardio moyen heure par heure (vue Jour)."""
+def details_jour(j_ref):
+    """Ce qu'on ne voit pas dans les totaux : répartition des pas, périodes assises, cardio et oxygène heure par heure."""
     lignes = []
     pas, hr = table(j_ref.get("steps")), table(j_ref.get("heart-rate"))
     if "countSum" in pas:
         p = pd.to_numeric(pas["countSum"], errors="coerce").groupby(pas["heure"].str[:2]).sum()
-        lignes.append("Pas par heure : " + ", ".join(f"{h}h {v:.0f}" for h, v in p.items() if v))
+        p = p[p > 0]
+        if len(p):
+            lignes.append("Pas par heure : " + ", ".join(f"{h}h {v:.0f}" for h, v in p.items()))
+            lignes.append(f"Heures actives (≥ 250 pas) : {(p >= 250).sum()} ; heure la plus active : {p.idxmax()}h "
+                          f"({p.max() / p.sum() * 100:.0f} % des pas du jour) ; premiers pas vers {p.index[0]}h, "
+                          f"derniers vers {p.index[-1]}h")
+    sed = table(j_ref.get("sedentary-period"))
+    if "secondes" in sed and len(sed):
+        m = pd.to_numeric(sed["secondes"], errors="coerce") / 60
+        k = m.idxmax()
+        lignes.append(f"Périodes assises : {len(m)} ; la plus longue {hm(m[k])} (à partir de {sed['heure'][k][:5]}) ; "
+                      f"{(m >= 60).sum()} de plus d'une heure, {(m >= 120).sum()} de plus de deux heures")
     moy = [c for c in hr.columns if "avg" in c.lower()]
     if moy:
         f = pd.to_numeric(hr[moy[0]], errors="coerce").groupby(hr["heure"].str[:2]).mean()
         lignes.append("Cardio moyen par heure : " + ", ".join(f"{h}h {v:.0f}" for h, v in f.items()))
+    spo = table(j_ref.get("oxygen-saturation"))
+    if "percentage" in spo:
+        v = pd.to_numeric(spo["percentage"], errors="coerce").dropna()
+        lignes.append(f"Oxygène la nuit (Pixel Watch) : moyenne {v.mean():.1f} %, minimum {v.min():.1f} %, "
+                      f"{(v < 90).sum()} mesures sous 90 %")
     return "\n".join(lignes)
 
 
-def dossier_coach(d, analyses=()):
+def tendances(stats, fin, jours=90):
+    """Liens calculés sur les 90 derniers jours, pour que le coach teste ses hypothèses sur des chiffres réels
+    (sommeil → activité du jour, heure de coucher → récupération, jour de la semaine)."""
+    d = stats.loc[fin - dt.timedelta(days=jours - 1):fin].apply(pd.to_numeric, errors="coerce")
+    if d.empty or "pas" not in d:
+        return ""
+
+    def groupes(cle, coupures, noms, mesures):
+        if cle not in d or d[cle].notna().sum() < 10:
+            return ""
+        g = pd.cut(d[cle], coupures, labels=noms)
+        t = d.groupby(g, observed=False)[[m for m in mesures if m in d]].mean().round(1)
+        t.insert(0, "jours", d.groupby(g, observed=False)[cle].count())
+        return t.to_csv(sep=";")
+
+    parties = [f"(sur les {jours} jours jusqu'au {fin:%d/%m} ; moyennes par jour ; attention aux petits effectifs)"]
+    parties.append("Durée de la nuit (min) → activité du jour :\n" + groupes(
+        "sommeil", [0, 360, 420, 480, 2000], ["moins de 6 h", "6 à 7 h", "7 à 8 h", "plus de 8 h"],
+        ["pas", "zone", "actives", "assis", "fc_repos", "vfc"]))
+    parties.append("Heure de coucher → nuit et récupération :\n" + groupes(
+        "coucher", [0, 24 * 60 + 30, 25 * 60 + 30, 26 * 60 + 30, 3000],
+        ["avant 0 h 30", "0 h 30 à 1 h 30", "1 h 30 à 2 h 30", "après 2 h 30"],
+        ["sommeil", "profond", "paradoxal", "fc_repos", "vfc", "pas"]))
+    d["jour_semaine"] = [JOURS[x.weekday()] for x in d.index]
+    sem = d.groupby("jour_semaine")[[c for c in ("pas", "zone", "sommeil", "coucher") if c in d]].mean()
+    sem = sem.reindex([j for j in JOURS if j in sem.index]).round(0)
+    if "coucher" in sem:
+        sem["coucher"] = sem["coucher"].map(heure)
+    parties.append("Par jour de la semaine :\n" + sem.to_csv(sep=";"))
+    lendemain = d[["pas"]].assign(veille=d["pas"].shift(1)).dropna()
+    if len(lendemain) > 20:
+        gros = lendemain[lendemain["veille"] >= 8000]["pas"].mean()
+        parties.append(f"Pas le lendemain d'une journée à 8 000 pas ou plus : {gros:.0f} en moyenne "
+                       f"(contre {lendemain['pas'].mean():.0f} en général)")
+    r = d[[c for c in ("pas", "zone", "sommeil", "fc_repos", "vfc", "assis") if c in d]]
+    r30 = r.tail(30).mean()
+    parties.append("Moyennes 30 derniers jours / 90 jours : " + ", ".join(
+        f"{METRIQUES[c][0]} {joli(c, r30[c])} / {joli(c, r[c].mean())}" for c in r if pd.notna(r30[c])))
+    return "\n\n".join(p for p in parties if p)
+
+
+def dossier_coach(d, analyses=(), memoire=None):
     """Consigne du coach (coach.md) + toutes les données de la période : à coller dans Claude, ou lu par l'analyse
-    du matin. `analyses` = [(titre, texte)] des analyses précédentes, pour que le coach suive ses propres conseils."""
+    du matin. `analyses` = [(titre, texte)] des analyses précédentes, pour que le coach suive ses propres conseils ;
+    `memoire` = son carnet (ce qu'il a appris sur l'élève au fil des jours)."""
     df, avant, periode = d["df"], d["avant"], d["periode"]
     maintenant = dt.datetime.now(TZ)
     longueur = "Environ 250 mots." if periode == "Jour" else "Environ 450 mots."
@@ -337,10 +395,13 @@ def dossier_coach(d, analyses=()):
     if periode == "Jour":
         parties.append(f"## Les 14 jours d'avant (pour le contexte)\n"
                        f"{tableau(d['stats'].loc[d['debut'] - dt.timedelta(days=14):d['debut'] - dt.timedelta(days=1)])}")
-        parties.append(f"## Heure par heure\n{par_heure(d['j_ref']) or 'pas de détail'}")
+        parties.append(f"## Le détail de la journée\n{details_jour(d['j_ref']) or 'pas de détail'}")
     parties += [f"## Séances d'exercice de la période\n{seances or 'aucune'}",
                 f"## Moyennes par jour {d['legende_avant']}\n{moyennes or 'pas de données'}",
                 f"## Pesées des 3 derniers mois\n{poids or 'aucune'}"]
+    parties.append(f"## Tendances (calculées, pour tester tes hypothèses)\n{tendances(d['stats'], d['fin'])}")
+    if memoire:
+        parties.append(f"## Ton carnet (ce que tu as appris sur ton élève jusqu'ici)\n{memoire}")
     if analyses:
         parties.append("## Tes analyses précédentes (pour suivre tes propres conseils)\n" +
                        "\n\n".join(f"### {t}\n{x}" for t, x in analyses))
@@ -356,6 +417,9 @@ def chemin_analyse(periode, debut):
     if periode == "Mois":
         return f"data/coach/mois/{debut:%Y-%m}.json"
     return None
+
+
+MEMOIRE = "data/coach/memoire.json"  # {"maj", "texte"} : le carnet du coach, réécrit par lui chaque matin
 
 
 def analyses_precedentes(lire, fin, n=3):
