@@ -3,4 +3,3 @@ requests
 pandas
 altair
 streamlit-js-eval
-anthropic>=1.15
