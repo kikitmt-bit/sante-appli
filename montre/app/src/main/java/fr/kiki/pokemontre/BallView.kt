@@ -52,6 +52,7 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
     private var t0 = SystemClock.uptimeMillis()
     private var dernier = t0
     private var secousse = -1
+    private var rejouer = false  // on revoit la dernière capture : rien n'est envoyé
     private var flash = 0f
     private val particules = ArrayList<Particule>()
     private val vib = ctx.getSystemService(Vibrator::class.java)
@@ -77,8 +78,9 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
         invalidate()
     }
 
-    private fun suivante() {
-        val b = file.removeFirstOrNull()
+    private fun suivante(revoir: Donnees.Ball? = null) {
+        rejouer = revoir != null
+        val b = revoir ?: file.removeFirstOrNull()
         ball = b
         image = b?.bitmap()?.let { rogne(it) }
         particules.clear()
@@ -93,9 +95,12 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
     override fun onTouchEvent(e: MotionEvent): Boolean {
         if (e.action != MotionEvent.ACTION_UP) return true
         when (phase) {
-            Phase.ACCUEIL -> fini()
+            Phase.ACCUEIL -> {
+                val d = etat?.derniere
+                if (d != null && e.y < height * 0.45f) suivante(d) else fini()
+            }
             Phase.ATTENTE -> { aller(Phase.SECOUSSES); secousse = -1 }
-            Phase.CARTE -> if (file.isEmpty()) fini() else suivante()
+            Phase.CARTE -> if (rejouer) { ball = null; aller(Phase.ACCUEIL) } else if (file.isEmpty()) fini() else suivante()
             else -> {}
         }
         return true
@@ -193,7 +198,7 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
                 haut(c, S, cx)
                 if (q >= 1f) {
                     flash = 1f
-                    ball?.let { Donnees.ouvrir(context, it.id) }
+                    if (!rejouer) ball?.let { Donnees.ouvrir(context, it.id) }
                     jet(cx, cy - S * 0.08f, 40, couleursFx(), S * 0.9f, S * 0.025f, 1.2f, S * 0.05f)
                     aller(Phase.REVELATION)
                 }
@@ -211,7 +216,8 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
     /** En haut : le nom de la Poké Ball et « 1 / 3 ». */
     private fun haut(c: Canvas, S: Float, cx: Float) {
         ecrire(c, nomBall(), cx, S * 0.15f, S * 0.05f, true, 220)
-        if (total > 1) ecrire(c, "${total - file.size} / $total", cx, S * 0.205f, S * 0.04f, false, 150)
+        if (rejouer) ecrire(c, "ta dernière capture", cx, S * 0.205f, S * 0.04f, false, 150)
+        else if (total > 1) ecrire(c, "${total - file.size} / $total", cx, S * 0.205f, S * 0.04f, false, 150)
     }
 
     private fun revelation(c: Canvas, S: Float, cx: Float, cy: Float, el: Float) {
@@ -264,7 +270,7 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
         if (b.shiny && b.nouvelle && !b.legendaire) ecrire(c, "Nouveau Pokémon !", cx, S * 0.225f, S * 0.04f, true, 230)
         ecrire(c, b.nom, cx, S * 0.76f, S * 0.095f, true, 255, S * 0.8f)
         ecrire(c, "N° ${"%03d".format(b.num)} · ${b.types.joinToString(" / ")}", cx, S * 0.825f, S * 0.045f, false, 200, S * 0.7f)
-        val suite = if (file.isEmpty()) "Touche pour fermer" else "Touche : la suivante (${file.size})"
+        val suite = if (rejouer) "Touche pour revenir" else if (file.isEmpty()) "Touche pour fermer" else "Touche : la suivante (${file.size})"
         ecrire(c, suite, cx, S * 0.89f, S * 0.04f, false, (((sin(el / 380f) + 1) / 2 * 0.4f + 0.45f) * 255).toInt())
     }
 
@@ -285,7 +291,8 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
         ecrire(c, "Prochaine Poké Ball : encore", cx, cy + S * 0.22f, S * 0.042f, false, 190)
         val pas = fr.format(Math.ceil(reste.toDouble()).toInt() * 100)
         ecrire(c, "$pas pas ou ${Math.ceil(reste / 2.0).toInt()} min en zone", cx, cy + S * 0.28f, S * 0.045f, true, 230, S * 0.78f)
-        ecrire(c, "Aucune Poké Ball à ouvrir", cx, cy - S * 0.13f, S * 0.045f, false, 160)
+        ecrire(c, if (e.derniere != null) "Touche la ball : revoir ta dernière capture" else "Aucune Poké Ball à ouvrir",
+               cx, cy - S * 0.13f, S * 0.04f, false, 160, S * 0.72f)
     }
 
     /** Fond : bleu nuit, rayons qui tournent (couleur de la rareté) une fois le Pokémon sorti. */

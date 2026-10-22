@@ -32,8 +32,17 @@ object Donnees {
 
     data class Etat(
         val points: Float, val taille: Int, val origine: String, val balls: List<Ball>,
-        val maj: String, val pas: Int, val zone: Int, val recu: Long,
+        val maj: String, val pas: Int, val zone: Int, val recu: Long, val derniere: Ball?,
     )
+
+    private fun ball(b: JSONObject): Ball {
+        val ts = b.optJSONArray("types") ?: JSONArray()
+        return Ball(
+            b.getString("id"), b.optString("ball", "poke"), b.optString("raison", ""), b.optInt("num"),
+            b.optString("nom", "?"), (0 until ts.length()).map { ts.getString(it) },
+            b.optBoolean("shiny"), b.optBoolean("nouvelle"), b.optBoolean("legendaire"), b.optString("image", ""),
+        )
+    }
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -51,17 +60,11 @@ object Donnees {
                 points = barre.optDouble("points", 0.0).toFloat(),
                 taille = barre.optInt("taille", 100),
                 origine = barre.optString("origine", ""),
-                balls = (0 until balls.length()).map { balls.getJSONObject(it) }.map { b ->
-                    val ts = b.optJSONArray("types") ?: JSONArray()
-                    Ball(
-                        b.getString("id"), b.optString("ball", "poke"), b.optString("raison", ""), b.optInt("num"),
-                        b.optString("nom", "?"), (0 until ts.length()).map { ts.getString(it) },
-                        b.optBoolean("shiny"), b.optBoolean("nouvelle"), b.optBoolean("legendaire"), b.optString("image", ""),
-                    )
-                }.filter { it.id !in ouvertes },
+                balls = (0 until balls.length()).map { ball(balls.getJSONObject(it)) }.filter { it.id !in ouvertes },
                 maj = j.optString("maj", ""),
                 pas = auj.optInt("pas"), zone = auj.optInt("zone"),
                 recu = p.getLong("recu", 0),
+                derniere = j.optJSONObject("derniere")?.let { ball(it) },
             )
         } catch (e: Exception) { null }
     }

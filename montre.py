@@ -34,18 +34,21 @@ def contenu(lire, maintenant):
     ouvertes = (lire([pokemon.OUVERTES])[pokemon.OUVERTES] or {}).get("ouvertes", {})
     limite = str(aujourd - dt.timedelta(days=JOURS_OUVERTES))
     a_ouvrir = [c for c in captures if c["id"] not in ouvertes and c["jour"] >= limite]
-    paquets = lire([PAQUET.format(n) for n in sorted({c["num"] for c in a_ouvrir})])
+    derniere = captures[-1:]  # la dernière capture, pour la revoir sur la montre (rien n'est enregistré)
+    paquets = lire([PAQUET.format(n) for n in sorted({c["num"] for c in a_ouvrir + derniere})])
     m, ic_nom = etat["mesures"], etat["origine"]
+    une = lambda c: {"id": c["id"], "jour": c["jour"], "ball": c["ball"], "raison": c["raison"],  # noqa: E731
+                     "num": c["num"], "nom": POKEMON[c["num"]]["nom"], "types": POKEMON[c["num"]]["types"],
+                     "shiny": c["shiny"], "nouvelle": c["nouvelle"], "legendaire": c["num"] in LEGENDAIRES,
+                     "image": (paquets[PAQUET.format(c["num"])] or {}).get(c["fichier"], "")}
     return {
         "v": 1, "maj": maintenant.isoformat(timespec="minutes"), "jour": str(aujourd),
         "barre": {"points": round(etat["barre"], 1), "taille": pokemon.REGLAGES["barre"],
                   "origine": f"{ic_nom[0]} {ic_nom[1]}"},
         "aujourdhui": {"pas": round(m["pas"]), "zone": round(m["zone"]), "etages": round(m["etages"]),
                        "sport": round(m["sport"]), "serie": etat["serie"]},
-        "balls": [{"id": c["id"], "jour": c["jour"], "ball": c["ball"], "raison": c["raison"],
-                   "num": c["num"], "nom": POKEMON[c["num"]]["nom"], "types": POKEMON[c["num"]]["types"],
-                   "shiny": c["shiny"], "nouvelle": c["nouvelle"], "legendaire": c["num"] in LEGENDAIRES,
-                   "image": (paquets[PAQUET.format(c["num"])] or {}).get(c["fichier"], "")} for c in a_ouvrir],
+        "balls": [une(c) for c in a_ouvrir],
+        "derniere": une(derniere[0]) if derniere else None,
     }
 
 
