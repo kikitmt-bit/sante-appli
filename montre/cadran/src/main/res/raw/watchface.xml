@@ -3,7 +3,7 @@
   Cadran « Pokémon Sport » (Watch Face Format 2, Wear OS 5+) : une montre classique, sobre et économe.
   - En haut la batterie (4 barres), puis la date et la météo, l'heure en grand.
   - Ligne santé : cardio et pas (montre, en direct ; toucher = espace Santé de l'appli), puis la petite Poké Ball au trait
-    avec la barre d'effort « 48/100 » (complication BarreComplication) ; quand des balls sont gagnées, la Poké Ball 3D et
+    avec la barre d'effort « 48% » (complication BarreComplication) ; quand des balls sont gagnées, la Poké Ball 3D et
     « ×2 » à la place ; toucher = ouverture des balls, sinon l'espace Pokémon.
   - À gauche de l'heure, l'étoile orange de Claude (toucher = poser une question à Claude, écran ClaudeActivity).
   - En bas, la case libre (complication BasComplication, à changer dans Personnaliser) : la nuit au réveil, l'agenda,
@@ -152,7 +152,7 @@
       </PartText>
     </Group>
 
-    <!-- La barre Pokémon : petite ball au trait + « 48/100 », ou la Poké Ball 3D + « ×2 » quand des balls sont gagnées -->
+    <!-- La barre Pokémon : petite ball au trait + « 48% », ou la Poké Ball 3D + « ×2 » quand des balls sont gagnées -->
     <ComplicationSlot x="272" y="266" width="112" height="52" slotId="1" displayName="pokemon"
         supportedTypes="RANGED_VALUE EMPTY">
       <DefaultProviderPolicy
@@ -196,7 +196,7 @@
               <PartText x="36" y="6" width="76" height="40" name="points">
                 <Text align="START">
                   <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
-                    <Template>%s%s<Parameter expression="[COMPLICATION.TEXT]"/><Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                    <Template>%s%%<Parameter expression="[COMPLICATION.TEXT]"/></Template>
                   </Font>
                 </Text>
               </PartText>

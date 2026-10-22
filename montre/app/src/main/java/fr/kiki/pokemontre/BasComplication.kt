@@ -23,15 +23,16 @@ import androidx.wear.watchface.complications.datasource.ComplicationRequest
 import androidx.wear.watchface.complications.datasource.SuspendingComplicationDataSourceService
 import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.ZoneId
 
 /**
- * Complication « case libre » du bas du cadran : un message à la fois, le plus utile du moment.
- *  1. la première heure après le réveil : la nuit (toucher = Santé, page de la nuit) ;
- *  2. un rendez-vous de l'agenda de la montre dans les prochaines 24 h (toucher = agenda) ;
- *  3. sinon le Pokémon, une heure sur deux : le défi du jour le plus proche, ou la dernière nouveauté du Pokédex
- *     (toucher = espace Pokémon).
+ * Complication « case libre » du bas du cadran : un message à la fois, seulement des infos utiles (rien de Pokémon) :
+ *  1. la dernière notification utile (message, mail, rappel…) des 30 dernières minutes, affichée directement
+ *     (toucher = l'appli qui l'a envoyée) ;
+ *  2. un rendez-vous de l'agenda qui commence dans les 3 h (toucher = agenda) ;
+ *  3. la première heure après le réveil : la nuit (toucher = Santé, page de la nuit) ;
+ *  4. un rendez-vous plus tard (aujourd'hui ou demain) ;
+ *  5. sinon les objectifs santé du jour : pas et minutes en zone (toucher = Santé).
  * À venir (noté dans CLAUDE.md) : les pronos NFL et le padel.
  */
 class BasComplication : SuspendingComplicationDataSourceService() {
@@ -42,20 +43,20 @@ class BasComplication : SuspendingComplicationDataSourceService() {
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
         if (request.complicationType != ComplicationType.LONG_TEXT) return null
+        Notifs.derniere(this)?.let { (titre, texte) ->
+            return message("💬 " + titre.ifEmpty { texte }, if (titre.isEmpty()) "" else texte, Intent(this, OuvrirNotif::class.java), 5)
+        }
+        val agenda = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_CALENDAR)
+        val rdv = rendezVous(this)
+        if (rdv != null && rdv.third - System.currentTimeMillis() < 3 * 3600_000) return message(rdv.first, rdv.second, agenda, 4)
         val e = Donnees.lire(this)
         if (e != null && Jeu.matin(e)) {
             val (titre, detail) = Jeu.ligneNuit(e)
-            return message(titre, detail, Intent(this, SanteActivity::class.java).putExtra("page", 1), 3)
+            return message(titre, detail.replace(" · shiny ×1,5", ""), Intent(this, SanteActivity::class.java).putExtra("page", 1), 3)
         }
-        rendezVous(this)?.let { (titre, detail) ->
-            return message(titre, detail, Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_CALENDAR), 4)
-        }
-        if (e == null) return message("Pokémon", "en attente des données", Intent(this, PokemonActivity::class.java), 2)
-        val nouveaute = e.dernieres.firstOrNull { it.nouvelle && it.jour >= LocalDate.now().minusDays(1).toString() }
-        val (titre, detail) = if (nouveaute != null && LocalTime.now().hour % 2 == 1)
-            "${if (nouveaute.jour == LocalDate.now().toString()) "Aujourd'hui" else "Hier"} : ${nouveaute.nom}" to "rejoint ton Pokédex"
-        else Jeu.ligneJour(e)
-        return message(titre, detail, Intent(this, PokemonActivity::class.java), 2)
+        if (rdv != null) return message(rdv.first, rdv.second, agenda, 4)
+        val (titre, detail) = objectifs(this, e)
+        return message(titre, detail, Intent(this, SanteActivity::class.java), 2)
     }
 
     private fun message(titre: String, detail: String, intent: Intent, code: Int): ComplicationData =
@@ -67,8 +68,21 @@ class BasComplication : SuspendingComplicationDataSourceService() {
     companion object {
         private fun texte(t: String) = PlainComplicationText.Builder(t).build()
 
-        /** Le prochain rendez-vous (hors journée entière) des prochaines 24 h : (titre, détail). */
-        fun rendezVous(ctx: Context): Pair<String, String>? {
+        /** Les objectifs santé du jour : pas (en direct de la montre) et minutes en zone. */
+        fun objectifs(ctx: Context, e: Donnees.Etat?): Pair<String, String> {
+            val o = e?.objectifs
+            val objPas = o?.objPas ?: 5000
+            val objZone = o?.objZone ?: 15
+            val pas = maxOf(Direct.lire(ctx)?.pas?.toInt() ?: 0, e?.sante?.pas ?: 0)
+            val zone = e?.sante?.zone ?: 0
+            if (pas >= objPas && zone >= objZone) return "Objectifs du jour atteints ✓" to "${Jeu.nombre(pas)} pas · $zone min en zone"
+            val p = if (pas >= objPas) "👟 ${Jeu.nombre(pas)} pas ✓" else "👟 ${Jeu.nombre(pas)} / ${Jeu.nombre(objPas)}"
+            val z = if (zone >= objZone) "🔥 $zone min ✓" else "🔥 $zone / $objZone min"
+            return "$p · $z" to "objectifs du jour"
+        }
+
+        /** Le prochain rendez-vous (hors journée entière) des prochaines 24 h : (titre, détail, début en ms). */
+        fun rendezVous(ctx: Context): Triple<String, String, Long>? {
             if (ctx.checkSelfPermission(Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) return null
             val maintenant = System.currentTimeMillis()
             // L'agenda synchronisé sur la montre (fournisseur de Wear OS, les prochaines 24 h)
@@ -84,7 +98,7 @@ class BasComplication : SuspendingComplicationDataSourceService() {
                         if (debut.toInstant().toEpochMilli() < maintenant - 15 * 60_000) continue
                         val heure = "%02d:%02d".format(debut.hour, debut.minute)
                         val quand = if (debut.toLocalDate() == LocalDate.now()) heure else "demain $heure"
-                        return@use "📅 $quand · ${c.getString(0) ?: ""}" to "agenda"
+                        return@use Triple("📅 $quand · ${c.getString(0) ?: ""}", "agenda", debut.toInstant().toEpochMilli())
                     }
                     null
                 }

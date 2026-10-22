@@ -323,10 +323,11 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         etoile(c, width / 2f, S * 0.3f, S * (0.085f + 0.01f * sin(tour * 3)), orange, tour)
         texteCentre(c, etape, S * 0.43f, S * 0.055f, Color.WHITE, S * 0.75f, true)
         texteCentre(c, "${s / 60}:${"%02d".format(s % 60)}", S * 0.51f, S * 0.08f, orange, S * 0.5f, true)
-        // Progression estimée : démarrage ~30 s (jusqu'à 45 %), réflexion ~25 s rapide / ~60 s réfléchi (jusqu'à 95 %)
+        // Progression estimée (mesuré le 22/10) : GitHub + démarrage ~25 s (jusqu'à 70 %), puis Claude répond en ~6 s
+        // (rapide) ou ~12 s (réfléchi) (jusqu'à 97 %) ; la barre avance toujours, sans jamais être pleine avant la réponse
         val reflechi = Claude.modele(act) == "reflechi"
-        val part = if (debutReflexion == 0L) 0.45f * (1 - exp(-ms / 25_000.0).toFloat())
-                   else 0.45f + 0.5f * (1 - exp(-(System.currentTimeMillis() - debutReflexion) / (if (reflechi) 45_000.0 else 18_000.0)).toFloat())
+        val part = if (debutReflexion == 0L) 0.7f * (1 - exp(-ms / 14_000.0).toFloat())
+                   else 0.7f + 0.27f * (1 - exp(-(System.currentTimeMillis() - debutReflexion) / (if (reflechi) 8_000.0 else 4_000.0)).toFloat())
         val l = S * 0.6f; val x = width / 2f - l / 2; val y = S * 0.66f; val h = S * 0.022f
         p.color = 0xFF2A2420.toInt(); c.drawRoundRect(RectF(x, y, x + l, y + h), h / 2, h / 2, p)
         p.color = orange; c.drawRoundRect(RectF(x, y, x + l * part, y + h), h / 2, h / 2, p)

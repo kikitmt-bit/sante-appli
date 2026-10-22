@@ -67,8 +67,10 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     GitHub Actions (`.github/workflows/montre.yml`, secret `SANTE_TOKEN`, rien de privé dans le journal), lancé par le
     script Google après chaque récolte (`calculerMontre`, `MONTRE_TOKEN`) + chaque heure. Lu par `doGet ?quoi=montre`.
   - Module `app` (appli « Pokémon ») : `BarreComplication` (RANGED_VALUE : points en direct, image de la ball 3D quand
-    il y a des balls ; toucher = ouverture, sinon espace Pokémon), `BasComplication` = case libre (LONG_TEXT : nuit l'heure
-    après le lever > agenda de la montre 24 h > Pokémon une heure sur deux : défi le plus proche / nouveauté),
+    il y a des balls ; toucher = ouverture, sinon espace Pokémon), `BasComplication` = case libre (LONG_TEXT, **jamais de Pokémon**, choix de Kiki :
+    notification utile < 30 min (`Notifs`, autorisation par le shell de Bugjaeger : `cmd notification allow_listener
+    fr.kiki.pokemontre/fr.kiki.pokemontre.Notifs`) > rendez-vous dans les 3 h > nuit l'heure après le lever >
+    rendez-vous plus tard > objectifs santé du jour (pas en direct, minutes en zone)),
     `PokemonActivity` (pages : barre, balls du jour, Pokédex) et `SanteActivity` (activité, cœur et nuit), pages à la
     couronne ou en glissant haut/bas, bouton ↻ (récolte immédiate avec `APPLI_CLE`, puis relecture après ~1 min),
     `OuvrirActivity` (ouverture animée ; ball 3D = images du modèle three.js du téléphone, `assets/ball/*.webp`).
@@ -78,15 +80,17 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   - Module `cadran` (« Pokémon Sport », Watch Face Format 2, sans code) : `res/raw/watchface.xml`, vérifié par
     `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
     batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /
-    petite ball au trait « 48/100 » (slot 1), case libre en bas (slot 2) ; veille : heure fine. Pas d'anneau (trop voyant).
+    petite ball au trait « 48% » (slot 1), case libre en bas (slot 2) ; veille : heure fine. Pas d'anneau (trop voyant).
   - **Claude sur la montre (sans clé API)** : étoile orange à gauche de l'heure (et appli « Claude » de la liste) ->
     `ClaudeActivity` (dictée de la montre, ⚡ Rapide / 🧠 Réfléchi, chrono + étapes + barre de progression, réponse courte,
     « Plus d'infos », 🔊 lecture, notification si on a quitté l'écran, 10 dernières questions). Trajet : script Google
     `doGet ?quoi=claude` dépose `questions/<id>.json` dans le dépôt privé **kikitmt-bit/montre-claude** (jeton
     `MONTRE_TOKEN`) -> un envoi (push) sur ce dépôt déclenche la **routine** « Claude de la montre »
-    (`trig_01CDDaAsBb4aRCETbEVxYYqC`, claude.ai/code/routines, Haiku ; « réfléchi » = sous-agent Opus) -> réponse dans
+    (rapide = `trig_01CDDaAsBb4aRCETbEVxYYqC` Haiku, réfléchi = `trig_01R2Q6xWVFJVPzCsAaLPVUZ8` Opus ; les deux
+    partent à chaque question, celle de l'autre mode s'arrête aussitôt ; tout le git est dans `montre-claude/outil.py`
+    `prendre <mode>` / `rendre <fichier> <modèle>` : ~31 s en rapide, ~37 s en réfléchi, dont ~25 s de GitHub + démarrage) -> réponse dans
     `reponses/<id>.json` de la branche `claude/montre-reponses` du dépôt sante -> `?quoi=claude&id=` la relit.
-    ~35 s à 1 min. Seuls les **push** déclenchent (pas la création de branche) et le filtre des déclencheurs est ignoré :
+    Seuls les **push** déclenchent (pas la création de branche) et le filtre des déclencheurs est ignoré :
     d'où un dépôt à part où rien d'autre n'est poussé. Routine d'essai `trig_01DytNizq4c4NDSt9Xhn3oMU` en pause
     (déclencheur sur tous les push de sante : ne JAMAIS la réactiver ; à supprimer sur claude.ai/code/routines).
   - **À faire plus tard (demandé par Kiki le 22/10)** : brancher la case libre du bas du cadran sur

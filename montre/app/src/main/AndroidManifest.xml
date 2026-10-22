@@ -65,6 +65,22 @@
             android:launchMode="singleTask"
             android:taskAffinity="" />
 
+        <!-- Notifications de la montre pour la case libre du cadran (autorisation par Bugjaeger, voir Notifs.kt) -->
+        <service
+            android:name=".Notifs"
+            android:exported="true"
+            android:label="Pokémon (case du cadran)"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+        <activity
+            android:name=".OuvrirNotif"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Chiffres en direct de la montre (Health Services, mode passif) -->
         <service
             android:name=".Passif"
