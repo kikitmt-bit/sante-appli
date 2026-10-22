@@ -82,6 +82,11 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
         invalidate()
     }
 
+    private var fermerApres = false
+
+    /** Revoir une capture (depuis le Pokédex) : on ferme à la fin. */
+    fun revoir(b: Donnees.Ball) { fermerApres = true; suivante(b) }
+
     private fun suivante(revoir: Donnees.Ball? = null) {
         rejouer = revoir != null
         val b = revoir ?: file.removeFirstOrNull()
@@ -105,7 +110,8 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
                 if (d != null && e.y < height * 0.45f) suivante(d) else fini()
             }
             Phase.ATTENTE -> { aller(Phase.SECOUSSES); secousse = -1 }
-            Phase.CARTE -> if (rejouer) { ball = null; aller(Phase.ACCUEIL) } else if (file.isEmpty()) fini() else suivante()
+            Phase.CARTE -> if (fermerApres) fini() else if (rejouer) { ball = null; aller(Phase.ACCUEIL) }
+                           else if (file.isEmpty()) fini() else suivante()
             else -> {}
         }
         return true

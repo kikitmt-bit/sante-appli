@@ -66,12 +66,23 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     avec les règles de `pokemon.REGLAGES` : la montre suit seule quand les règles changent, `nuit` coucher/lever) par
     GitHub Actions (`.github/workflows/montre.yml`, secret `SANTE_TOKEN`, rien de privé dans le journal), lancé par le
     script Google après chaque récolte (`calculerMontre`, `MONTRE_TOKEN`) + chaque heure. Lu par `doGet ?quoi=montre`.
-  - Module `app` (appli « Pokémon ») : complications `BarreComplication` (RANGED_VALUE, anneau ; toucher = objectifs) et
-    `BasComplication` (LONG_TEXT : ball 3D + nombre à ouvrir / la nuit l'heure après le lever / le prochain objectif),
-    `OuvrirActivity` (ouverture animée ; Poké Ball 3D = images du modèle three.js du téléphone, `assets/ball/*.webp`,
-    24 du tour + 10 de l'ouverture par type), `ObjectifsActivity`.
+  - Module `app` (appli « Pokémon ») : `BarreComplication` (RANGED_VALUE : points en direct, image de la ball 3D quand
+    il y a des balls ; toucher = ouverture, sinon espace Pokémon), `BasComplication` = case libre (LONG_TEXT : nuit l'heure
+    après le lever > agenda de la montre 24 h > Pokémon une heure sur deux : défi le plus proche / nouveauté),
+    `PokemonActivity` (pages : barre, balls du jour, Pokédex) et `SanteActivity` (activité, cœur et nuit), pages à la
+    couronne ou en glissant haut/bas, bouton ↻ (récolte immédiate avec `APPLI_CLE`, puis relecture après ~1 min),
+    `OuvrirActivity` (ouverture animée ; ball 3D = images du modèle three.js du téléphone, `assets/ball/*.webp`).
+    **Direct** (`Direct.kt`) : Health Services passif (pas, étages, distance, calories du jour, sans batterie en plus) ;
+    barre = points du site + ce que la montre a compté depuis l'arrivée des dernières données (les minutes en zone
+    restent celles du site). Permissions ACTIVITY_RECOGNITION et READ_CALENDAR demandées à la 1re ouverture.
   - Module `cadran` (« Pokémon Sport », Watch Face Format 2, sans code) : `res/raw/watchface.xml`, vérifié par
     `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
-    blanche, date + météo, cardio / pas / batterie, anneau = barre d'effort, bas = `BasComplication` ; veille : heure fine.
+    batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /
+    petite ball au trait « 48/100 » (slot 1), case libre en bas (slot 2) ; veille : heure fine. Pas d'anneau (trop voyant).
+  - **À faire plus tard (demandé par Kiki le 22/10)** : brancher la case libre du bas du cadran sur
+    1) **les pronos NFL** (appli Bada Bing, dépôt `kikitmt-bit/bada-bing-nfl`, `pronos_data.json`) : « pronos à faire
+    avant dim. 19:00 », toucher = ouvrir le site ; 2) **le padel** (dépôt privé `kikitmt-bit/padel_resa`, script Google) :
+    le jour d'une réservation « 18:30 Padel · code 4821 », toucher = ouvrir l'appli du padel sur la montre. Questions
+    à poser à Kiki : d'où vient le code (mail du club, SMS, son site) et quelle est l'appli du padel sur la montre.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).

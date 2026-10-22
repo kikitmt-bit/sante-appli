@@ -35,7 +35,10 @@ def contenu(lire, maintenant):
     limite = str(aujourd - dt.timedelta(days=JOURS_OUVERTES))
     a_ouvrir = [c for c in captures if c["id"] not in ouvertes and c["jour"] >= limite]
     derniere = captures[-1:]  # la dernière capture, pour la revoir sur la montre (rien n'est enregistré)
-    paquets = lire([PAQUET.format(n) for n in sorted({c["num"] for c in a_ouvrir + derniere})])
+    # Le Pokédex de la montre : espèces des Poké Balls ouvertes (ou de plus de 14 jours) et les 6 dernières ouvertes
+    vues = [c for c in captures if c["id"] in ouvertes or c["jour"] < limite]
+    recentes = vues[-6:][::-1]
+    paquets = lire([PAQUET.format(n) for n in sorted({c["num"] for c in a_ouvrir + derniere + recentes})])
     m, ic_nom = etat["mesures"], etat["origine"]
     # La nuit qui finit ce matin (heures de coucher et de lever, pour l'afficher la première heure après le réveil)
     resume = (lire([f"data/resume/{aujourd.year}.json"])[f"data/resume/{aujourd.year}.json"] or {}).get(str(aujourd))
@@ -60,9 +63,22 @@ def contenu(lire, maintenant):
                       "super": gagnee("super"), "hyper": gagnee("hyper"), "shiny": round(etat["shiny_bonus"], 2),
                       "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone",
                                                    "exploit_seance", "serie_legendaire", "nuit", "pas_offerts")}},
-        "nuit": {"duree": round(m["sommeil"]), "coucher": hm(s.get("coucher")), "lever": hm(s.get("lever"))}
+        "nuit": {"duree": round(m["sommeil"]), "coucher": hm(s.get("coucher")), "lever": hm(s.get("lever")),
+                 "phases": {k: nombre(s.get(k)) for k in ("profond", "leger", "paradoxal", "eveil")}}
                 if m.get("sommeil") else None,
+        "sante": {k: nombre(s.get(k), 1 if k in ("km",) else 0) for k in
+                  ("pas", "km", "kcal", "zone", "etages", "fc_repos", "vfc", "spo2", "min_sport", "seances")}
+                 | {"sport": pokemon.sport_principal(m)[1] if m.get("sports") else None},
+        "pokedex": {"especes": len({c["num"] for c in vues}), "total": len(POKEMON), "dernieres": [une(c) for c in recentes]},
     }
+
+
+def nombre(x, chiffres_apres=0):
+    """Un nombre propre pour le JSON (None si absent)."""
+    try:
+        return None if x is None or x != x else round(float(x), chiffres_apres) if chiffres_apres else round(float(x))
+    except (TypeError, ValueError):
+        return None
 
 
 def lecteur_local(dossier, sprites=None):

@@ -6,6 +6,10 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Pas, étages, distance, calories en direct (Health Services) ; agenda pour la case du bas du cadran -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".App"
@@ -16,11 +20,11 @@
 
         <meta-data android:name="com.google.android.wearable.standalone" android:value="true" />
 
-        <!-- Plein écran : ouverture des Poké Balls (aussi dans la liste des applis de la montre) -->
+        <!-- Espace Pokémon : la barre, les balls du jour, le Pokédex (toucher la petite Poké Ball du cadran ; aussi dans
+             la liste des applis de la montre) -->
         <activity
-            android:name=".OuvrirActivity"
+            android:name=".PokemonActivity"
             android:exported="true"
-            android:launchMode="singleTask"
             android:taskAffinity="">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,11 +32,32 @@
             </intent-filter>
         </activity>
 
-        <!-- Les objectifs du jour (toucher l'anneau du cadran) -->
+        <!-- Espace Santé : l'activité du jour, le cœur et la nuit (toucher le cœur ou les pas du cadran) -->
         <activity
-            android:name=".ObjectifsActivity"
+            android:name=".SanteActivity"
             android:exported="true"
             android:taskAffinity="" />
+
+        <!-- Plein écran : ouverture des Poké Balls -->
+        <activity
+            android:name=".OuvrirActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="" />
+
+        <!-- Chiffres en direct de la montre (Health Services, mode passif) -->
+        <service
+            android:name=".Passif"
+            android:exported="true"
+            android:permission="com.google.android.wearable.healthservices.permission.PASSIVE_DATA_BINDING" />
+
+        <receiver
+            android:name=".Demarrage"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
         <!-- Ligne du bas du cadran : Poké Balls à ouvrir, la nuit (au réveil) ou le prochain objectif -->
         <service

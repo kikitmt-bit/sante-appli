@@ -13,7 +13,10 @@ class OuvrirActivity : Activity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         vue = BallView(this) { finish() }
         setContentView(vue)
-        vue.majEtat(Donnees.lire(this))
+        val e = Donnees.lire(this)
+        val revoir = intent.getStringExtra("revoir")?.let { id -> e?.dernieres?.firstOrNull { it.id == id } }
+        if (revoir != null) { vue.revoir(revoir); return }  // depuis le Pokédex : rien n'est enregistré
+        vue.majEtat(e)
         Thread {
             if (Donnees.telecharger(this)) runOnUiThread { if (!isFinishing) vue.majEtat(Donnees.lire(this)) }
             BarreComplication.rafraichir(this)

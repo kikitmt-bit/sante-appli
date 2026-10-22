@@ -22,6 +22,7 @@ object Donnees {
     data class Ball(
         val id: String, val ball: String, val raison: String, val num: Int, val nom: String,
         val types: List<String>, val shiny: Boolean, val nouvelle: Boolean, val legendaire: Boolean, val image: String,
+        val jour: String = "",
     ) {
         fun bitmap(): Bitmap? = try {
             val b64 = image.substringAfter("base64,", image)
@@ -33,7 +34,14 @@ object Donnees {
     data class Etat(
         val points: Float, val taille: Int, val origine: String, val balls: List<Ball>,
         val maj: String, val pas: Int, val zone: Int, val recu: Long, val derniere: Ball?,
-        val jour: String, val objectifs: Objectifs?, val nuit: Nuit?,
+        val jour: String, val objectifs: Objectifs?, val nuit: Nuit?, val sante: Sante?,
+        val especes: Int, val totalEspeces: Int, val dernieres: List<Ball>,
+    )
+
+    /** La santé du jour d'après le site (les pas, étages, distance et calories en direct viennent de la montre). */
+    data class Sante(
+        val pas: Int?, val km: Double?, val kcal: Int?, val zone: Int?, val etages: Int?, val fcRepos: Int?,
+        val vfc: Int?, val spo2: Int?, val minSport: Int?, val seances: Int?, val sport: String?,
     )
 
     /** Où on en est aujourd'hui pour les balls spéciales (règles venues du site : elles suivent toutes seules). */
@@ -45,7 +53,10 @@ object Donnees {
     )
 
     /** La nuit qui finit ce matin. */
-    data class Nuit(val duree: Int, val coucher: String?, val lever: String?)
+    data class Nuit(val duree: Int, val coucher: String?, val lever: String?, val profond: Int?, val leger: Int?,
+                    val paradoxal: Int?, val eveil: Int?)
+
+    private fun JSONObject.entier(k: String): Int? = if (isNull(k) || !has(k)) null else optInt(k)
 
     private fun ball(b: JSONObject): Ball {
         val ts = b.optJSONArray("types") ?: JSONArray()
@@ -53,6 +64,7 @@ object Donnees {
             b.getString("id"), b.optString("ball", "poke"), b.optString("raison", ""), b.optInt("num"),
             b.optString("nom", "?"), (0 until ts.length()).map { ts.getString(it) },
             b.optBoolean("shiny"), b.optBoolean("nouvelle"), b.optBoolean("legendaire"), b.optString("image", ""),
+            b.optString("jour", ""),
         )
     }
 
@@ -89,9 +101,20 @@ object Donnees {
                     )
                 },
                 nuit = j.optJSONObject("nuit")?.let {
+                    val ph = it.optJSONObject("phases") ?: JSONObject()
                     Nuit(it.optInt("duree"), it.optString("coucher").takeIf { s -> s.isNotEmpty() && s != "null" },
-                         it.optString("lever").takeIf { s -> s.isNotEmpty() && s != "null" })
+                         it.optString("lever").takeIf { s -> s.isNotEmpty() && s != "null" },
+                         ph.entier("profond"), ph.entier("leger"), ph.entier("paradoxal"), ph.entier("eveil"))
                 },
+                sante = j.optJSONObject("sante")?.let {
+                    Sante(it.entier("pas"), if (it.isNull("km")) null else it.optDouble("km"), it.entier("kcal"),
+                          it.entier("zone"), it.entier("etages"), it.entier("fc_repos"), it.entier("vfc"), it.entier("spo2"),
+                          it.entier("min_sport"), it.entier("seances"), it.optString("sport").takeIf { s -> s.isNotEmpty() && s != "null" })
+                },
+                especes = j.optJSONObject("pokedex")?.optInt("especes") ?: 0,
+                totalEspeces = j.optJSONObject("pokedex")?.optInt("total", 151) ?: 151,
+                dernieres = j.optJSONObject("pokedex")?.optJSONArray("dernieres")?.let { a ->
+                    (0 until a.length()).map { ball(a.getJSONObject(it)) } } ?: emptyList(),
             )
         } catch (e: Exception) { null }
     }
@@ -118,7 +141,19 @@ object Donnees {
         val ici = p.getStringSet("ouvertes", emptySet())!!.filter { it !in connues || it in attente(ctx) }.toSet()
         p.edit().putString("json", j.toString()).putLong("recu", System.currentTimeMillis())
             .putStringSet("ouvertes", ici).apply()
+        Direct.nouvelleBase(ctx)
         return true
+    }
+
+    /** Bouton ↻ : demande au script Google une récolte tout de suite (clé APPLI_CLE du bouton 🔄 du site, si elle est
+     *  dans secret.properties), attend le calcul du fichier de la montre (~1 min), puis relit. */
+    fun actualiser(ctx: Context): Boolean {
+        if (BuildConfig.APPLI_CLE.isNotEmpty() && BuildConfig.SCRIPT_URL.isNotEmpty()) {
+            val c = URL("${BuildConfig.SCRIPT_URL}?cle=${URLEncoder.encode(BuildConfig.APPLI_CLE, "UTF-8")}").openConnection() as HttpURLConnection
+            try { c.connectTimeout = 15000; c.readTimeout = 90000; c.responseCode } catch (e: Exception) { } finally { c.disconnect() }
+            Thread.sleep(60_000)
+        }
+        return telecharger(ctx)
     }
 
     private fun attente(ctx: Context) = prefs(ctx).getStringSet("attente", emptySet())!!

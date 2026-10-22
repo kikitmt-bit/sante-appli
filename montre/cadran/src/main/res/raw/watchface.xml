@@ -1,50 +1,72 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
   Cadran « Pokémon Sport » (Watch Face Format 2, Wear OS 5+) : une montre classique, sobre et économe.
-  - Heure, date, météo, cardio, pas, batterie : données de la montre.
-  - Anneau tout autour = barre d'effort Pokémon (complication BarreComplication de l'appli) ; le toucher ouvre les objectifs.
-  - En bas (complication BasComplication) : Poké Balls à ouvrir (toucher = ouverture), la nuit pendant l'heure qui suit le
-    réveil, sinon le prochain objectif.
-  - Veille (écran toujours allumé) : seulement l'heure en fin, la date et la petite ball s'il y en a. Fond noir partout.
+  - En haut la batterie (4 barres), puis la date et la météo, l'heure en grand.
+  - Ligne santé : cardio et pas (montre, en direct ; toucher = espace Santé de l'appli), puis la petite Poké Ball au trait
+    avec la barre d'effort « 48/100 » (complication BarreComplication) ; quand des balls sont gagnées, la Poké Ball 3D et
+    « ×2 » à la place ; toucher = ouverture des balls, sinon l'espace Pokémon.
+  - En bas, la case libre (complication BasComplication, à changer dans Personnaliser) : la nuit au réveil, l'agenda,
+    une info Pokémon… (plus tard : pronos NFL, padel).
+  - Veille (écran toujours allumé) : l'heure en fin, la date, une petite ball grise s'il y a des balls. Fond noir partout.
 -->
 <WatchFace width="450" height="450">
   <Metadata key="CLOCK_TYPE" value="DIGITAL"/>
   <Metadata key="PREVIEW_TIME" value="15:58:00"/>
   <Scene backgroundColor="#ff000000">
 
-    <!-- Repères à 12, 3, 6 et 9 h -->
-    <PartDraw x="0" y="0" width="450" height="450" name="reperes">
+    <!-- Batterie : 4 barres qui s'allument (rouges sous 20 %), toucher = état de la batterie -->
+    <Group x="168" y="50" width="114" height="30" name="batterie">
       <Variant mode="AMBIENT" target="alpha" value="0"/>
-      <Rectangle x="223" y="26" width="4" height="12"><Fill color="#ff2e2e2e"/></Rectangle>
-      <Rectangle x="223" y="412" width="4" height="12"><Fill color="#ff2e2e2e"/></Rectangle>
-      <Rectangle x="26" y="223" width="12" height="4"><Fill color="#ff2e2e2e"/></Rectangle>
-      <Rectangle x="412" y="223" width="12" height="4"><Fill color="#ff2e2e2e"/></Rectangle>
-    </PartDraw>
-
-    <!-- L'anneau : la barre d'effort Pokémon -->
-    <ComplicationSlot x="0" y="0" width="450" height="450" slotId="1" displayName="anneau"
-        supportedTypes="RANGED_VALUE EMPTY">
-      <DefaultProviderPolicy
-          primaryProvider="fr.kiki.pokemontre/fr.kiki.pokemontre.BarreComplication"
-          primaryProviderType="RANGED_VALUE"
-          defaultSystemProvider="WATCH_BATTERY"
-          defaultSystemProviderType="RANGED_VALUE"/>
-      <BoundingArc centerX="225" centerY="225" width="450" height="450" thickness="34"
-          startAngle="0" endAngle="360"/>
-      <Complication type="RANGED_VALUE">
-        <PartDraw x="0" y="0" width="450" height="450">
-          <Variant mode="AMBIENT" target="alpha" value="0"/>
-          <Arc centerX="225" centerY="225" width="428" height="428" startAngle="0" endAngle="360">
-            <Stroke thickness="7" color="#ff161616"/>
-          </Arc>
-          <Arc centerX="225" centerY="225" width="428" height="428" startAngle="0" endAngle="0">
-            <Stroke thickness="7" color="#ffffcb05" cap="ROUND"/>
-            <Transform target="endAngle"
-                value="((clamp([COMPLICATION.RANGED_VALUE_VALUE], [COMPLICATION.RANGED_VALUE_MIN], [COMPLICATION.RANGED_VALUE_MAX]) - [COMPLICATION.RANGED_VALUE_MIN]) / ([COMPLICATION.RANGED_VALUE_MAX] - [COMPLICATION.RANGED_VALUE_MIN])) * 360"/>
-          </Arc>
-        </PartDraw>
-      </Complication>
-    </ComplicationSlot>
+      <Launch target="BATTERY_STATUS"/>
+      <PartDraw x="10" y="7" width="38" height="18" name="pile">
+        <RoundRectangle x="1" y="1" width="31" height="16" cornerRadiusX="4" cornerRadiusY="4">
+          <Stroke thickness="2.5" color="#ff9a9a9a"/>
+        </RoundRectangle>
+        <Rectangle x="33" y="6" width="3" height="6"><Fill color="#ff9a9a9a"/></Rectangle>
+      </PartDraw>
+      <Condition>
+        <Expressions>
+          <Expression name="faible"><![CDATA[[BATTERY_PERCENT] <= 20]]></Expression>
+        </Expressions>
+        <Compare expression="faible">
+          <PartDraw x="14" y="11" width="6" height="10" name="b1r"><Rectangle x="0" y="0" width="5" height="10"><Fill color="#ffff5a5f"/></Rectangle></PartDraw>
+        </Compare>
+        <Default>
+          <PartDraw x="14" y="11" width="6" height="10" name="b1"><Rectangle x="0" y="0" width="5" height="10"><Fill color="#ff4cd3a0"/></Rectangle></PartDraw>
+          <Condition>
+            <Expressions>
+              <Expression name="b2"><![CDATA[[BATTERY_PERCENT] >= 38]]></Expression>
+            </Expressions>
+            <Compare expression="b2">
+              <PartDraw x="21" y="11" width="6" height="10" name="b2"><Rectangle x="0" y="0" width="5" height="10"><Fill color="#ff4cd3a0"/></Rectangle></PartDraw>
+            </Compare>
+          </Condition>
+          <Condition>
+            <Expressions>
+              <Expression name="b3"><![CDATA[[BATTERY_PERCENT] >= 63]]></Expression>
+            </Expressions>
+            <Compare expression="b3">
+              <PartDraw x="28" y="11" width="6" height="10" name="b3"><Rectangle x="0" y="0" width="5" height="10"><Fill color="#ff4cd3a0"/></Rectangle></PartDraw>
+            </Compare>
+          </Condition>
+          <Condition>
+            <Expressions>
+              <Expression name="b4"><![CDATA[[BATTERY_PERCENT] >= 88]]></Expression>
+            </Expressions>
+            <Compare expression="b4">
+              <PartDraw x="35" y="11" width="6" height="10" name="b4"><Rectangle x="0" y="0" width="5" height="10"><Fill color="#ff4cd3a0"/></Rectangle></PartDraw>
+            </Compare>
+          </Condition>
+        </Default>
+      </Condition>
+      <PartText x="52" y="0" width="62" height="30" name="pourcent">
+        <Text align="START">
+          <Font family="SYNC_TO_DEVICE" size="21" color="#ff9a9a9a">
+            <Template>%s%%<Parameter expression="[BATTERY_PERCENT]"/></Template>
+          </Font>
+        </Text>
+      </PartText>
+    </Group>
 
     <!-- Date et météo -->
     <Condition>
@@ -52,7 +74,7 @@
         <Expression name="meteo">[WEATHER.IS_AVAILABLE]</Expression>
       </Expressions>
       <Compare expression="meteo">
-        <PartText x="40" y="100" width="370" height="36" name="date_meteo">
+        <PartText x="40" y="92" width="370" height="36" name="date_meteo">
           <Variant mode="AMBIENT" target="alpha" value="150"/>
           <Text align="CENTER" ellipsis="TRUE">
             <Font family="SYNC_TO_DEVICE" size="24" color="#ff9a9a9a">
@@ -67,7 +89,7 @@
         </PartText>
       </Compare>
       <Default>
-        <PartText x="40" y="100" width="370" height="36" name="date">
+        <PartText x="40" y="92" width="370" height="36" name="date">
           <Variant mode="AMBIENT" target="alpha" value="150"/>
           <Text align="CENTER" ellipsis="TRUE">
             <Font family="SYNC_TO_DEVICE" size="24" color="#ff9a9a9a">
@@ -83,7 +105,7 @@
     </Condition>
 
     <!-- L'heure : pleine en temps normal, fine et grise en veille -->
-    <DigitalClock x="0" y="150" width="450" height="130">
+    <DigitalClock x="0" y="140" width="450" height="130">
       <TimeText format="hh:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER" x="0" y="0" width="450" height="130" alpha="255">
         <Variant mode="AMBIENT" target="alpha" value="0"/>
         <Font family="SYNC_TO_DEVICE" size="116" weight="MEDIUM" color="#ffffffff"/>
@@ -94,91 +116,113 @@
       </TimeText>
     </DigitalClock>
 
-    <!-- Cardio, pas, batterie -->
-    <Group x="0" y="272" width="450" height="40" name="sante">
+    <!-- Cardio et pas (toucher = espace Santé de l'appli Pokémon) -->
+    <Group x="70" y="270" width="200" height="44" name="sante">
       <Variant mode="AMBIENT" target="alpha" value="0"/>
-      <PartImage x="100" y="7" width="26" height="26">
+      <Launch target="fr.kiki.pokemontre/fr.kiki.pokemontre.SanteActivity"/>
+      <PartImage x="8" y="9" width="26" height="26" name="coeur">
         <Image resource="ic_coeur"/>
       </PartImage>
-      <PartText x="131" y="0" width="64" height="40">
+      <PartText x="38" y="2" width="58" height="40" name="cardio">
         <Text align="START">
           <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
             <Template>%s<Parameter expression="[HEART_RATE] &gt; 0 ? [HEART_RATE] : &quot;--&quot;"/></Template>
           </Font>
         </Text>
       </PartText>
-      <PartImage x="190" y="7" width="26" height="26">
+      <PartImage x="96" y="9" width="26" height="26" name="pas">
         <Image resource="ic_pas"/>
       </PartImage>
-      <PartText x="221" y="0" width="80" height="40">
+      <PartText x="126" y="2" width="74" height="40" name="nb_pas">
         <Text align="START">
           <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
             <Template>%s<Parameter expression="[STEP_COUNT]"/></Template>
           </Font>
         </Text>
       </PartText>
-      <PartDraw x="296" y="12" width="26" height="16">
-        <RoundRectangle x="1" y="1" width="24" height="14" cornerRadiusX="3" cornerRadiusY="3">
-          <Stroke thickness="2" color="#ffdddddd"/>
-        </RoundRectangle>
-        <Rectangle x="4" y="4" width="18" height="8">
-          <Fill color="#ff4cd3a0"/>
-          <Transform target="width" value="max(1, [BATTERY_PERCENT] * 0.18)"/>
-        </Rectangle>
-      </PartDraw>
-      <PartText x="327" y="0" width="80" height="40">
-        <Text align="START">
-          <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
-            <Template>%s%%<Parameter expression="[BATTERY_PERCENT]"/></Template>
-          </Font>
-        </Text>
-      </PartText>
     </Group>
 
-    <!-- En bas : Poké Balls à ouvrir, la nuit au réveil, sinon le prochain objectif -->
-    <ComplicationSlot x="60" y="320" width="330" height="80" slotId="2" displayName="bas"
-        supportedTypes="LONG_TEXT EMPTY">
+    <!-- La barre Pokémon : petite ball au trait + « 48/100 », ou la Poké Ball 3D + « ×2 » quand des balls sont gagnées -->
+    <ComplicationSlot x="272" y="266" width="112" height="52" slotId="1" displayName="pokemon"
+        supportedTypes="RANGED_VALUE EMPTY">
       <DefaultProviderPolicy
-          primaryProvider="fr.kiki.pokemontre/fr.kiki.pokemontre.BasComplication"
-          primaryProviderType="LONG_TEXT"
-          defaultSystemProvider="NEXT_EVENT"
-          defaultSystemProviderType="LONG_TEXT"/>
-      <BoundingRoundBox x="0" y="0" width="330" height="80" cornerRadius="20"/>
-      <Complication type="LONG_TEXT">
+          primaryProvider="fr.kiki.pokemontre/fr.kiki.pokemontre.BarreComplication"
+          primaryProviderType="RANGED_VALUE"
+          defaultSystemProvider="WATCH_BATTERY"
+          defaultSystemProviderType="RANGED_VALUE"/>
+      <BoundingRoundBox x="0" y="0" width="112" height="52" cornerRadius="16"/>
+      <Complication type="RANGED_VALUE">
         <Condition>
           <Expressions>
-            <Expression name="ball"><![CDATA[[COMPLICATION.SMALL_IMAGE] != null]]></Expression>
+            <Expression name="balls"><![CDATA[[COMPLICATION.SMALL_IMAGE] != null]]></Expression>
           </Expressions>
-          <Compare expression="ball">
-            <PartImage x="129" y="4" width="72" height="72" alpha="255">
+          <Compare expression="balls">
+            <PartImage x="0" y="2" width="48" height="48" alpha="255" name="ball3d">
               <Variant mode="AMBIENT" target="alpha" value="0"/>
               <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
             </PartImage>
-            <PartImage x="151" y="26" width="28" height="28" alpha="0" tintColor="#ff888888">
+            <PartText x="50" y="6" width="62" height="40" alpha="255" name="nb_balls">
+              <Variant mode="AMBIENT" target="alpha" value="0"/>
+              <Text align="START">
+                <Font family="SYNC_TO_DEVICE" size="27" weight="BOLD" color="#ffffcb05">
+                  <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                </Font>
+              </Text>
+            </PartText>
+            <PartImage x="12" y="14" width="24" height="24" alpha="0" tintColor="#ff888888" name="ball_veille">
               <Variant mode="AMBIENT" target="alpha" value="255"/>
               <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
             </PartImage>
           </Compare>
           <Default>
-            <Group x="0" y="0" width="330" height="80" name="objectif">
+            <Group x="0" y="0" width="112" height="52" name="barre">
               <Variant mode="AMBIENT" target="alpha" value="0"/>
-              <PartText x="0" y="4" width="330" height="36">
-                <Text align="CENTER" ellipsis="TRUE">
-                  <Font family="SYNC_TO_DEVICE" size="24" color="#ffffb27a">
-                    <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
-                  </Font>
-                </Text>
-              </PartText>
-              <PartText x="0" y="40" width="330" height="28">
-                <Text align="CENTER" ellipsis="TRUE">
-                  <Font family="SYNC_TO_DEVICE" size="18" color="#ff6f6f6f">
-                    <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+              <PartDraw x="4" y="13" width="26" height="26" name="ball_trait">
+                <Ellipse x="2" y="2" width="22" height="22"><Stroke thickness="2.5" color="#ffdddddd"/></Ellipse>
+                <Rectangle x="2" y="12" width="22" height="2.5"><Fill color="#ffdddddd"/></Rectangle>
+                <Ellipse x="9" y="9" width="8" height="8"><Fill color="#ff000000"/></Ellipse>
+                <Ellipse x="9" y="9" width="8" height="8"><Stroke thickness="2.5" color="#ffdddddd"/></Ellipse>
+              </PartDraw>
+              <PartText x="36" y="6" width="76" height="40" name="points">
+                <Text align="START">
+                  <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
+                    <Template>%s%s<Parameter expression="[COMPLICATION.TEXT]"/><Parameter expression="[COMPLICATION.TITLE]"/></Template>
                   </Font>
                 </Text>
               </PartText>
             </Group>
           </Default>
         </Condition>
+      </Complication>
+    </ComplicationSlot>
+
+    <!-- La case libre du bas -->
+    <ComplicationSlot x="55" y="330" width="340" height="76" slotId="2" displayName="bas"
+        supportedTypes="LONG_TEXT EMPTY">
+      <DefaultProviderPolicy
+          primaryProvider="fr.kiki.pokemontre/fr.kiki.pokemontre.BasComplication"
+          primaryProviderType="LONG_TEXT"
+          defaultSystemProvider="NEXT_EVENT"
+          defaultSystemProviderType="LONG_TEXT"/>
+      <BoundingRoundBox x="0" y="0" width="340" height="76" cornerRadius="20"/>
+      <Complication type="LONG_TEXT">
+        <Group x="0" y="0" width="340" height="76" name="message">
+          <Variant mode="AMBIENT" target="alpha" value="0"/>
+          <PartText x="0" y="4" width="340" height="36" name="ligne1">
+            <Text align="CENTER" ellipsis="TRUE">
+              <Font family="SYNC_TO_DEVICE" size="23" color="#ffc9d3ea">
+                <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+              </Font>
+            </Text>
+          </PartText>
+          <PartText x="0" y="40" width="340" height="28" name="ligne2">
+            <Text align="CENTER" ellipsis="TRUE">
+              <Font family="SYNC_TO_DEVICE" size="18" color="#ff6f6f6f">
+                <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+              </Font>
+            </Text>
+          </PartText>
+        </Group>
       </Complication>
     </ComplicationSlot>
 

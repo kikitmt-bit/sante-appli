@@ -21,6 +21,7 @@ class App : Application() {
             .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
             .build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork("recolte", ExistingPeriodicWorkPolicy.KEEP, travail)
+        Direct.demarrer(this)  // pas et étages en direct (si la permission est donnée)
     }
 }
 
