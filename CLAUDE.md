@@ -7,8 +7,11 @@ GitHub avec les secrets `GITHUB_TOKEN`, `GITHUB_REPO` (= kikitmt-bit/sante). L'a
 appli privée gratuite de Kiki est prise par le padel) : `verrou()` bloque tout sans `APP_PASSWORD`, mémorisé sur le
 téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directement sur `main`.
 
-- `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; onglets « ❤️ Santé »,
-  « 🎮 Pokémon » (à venir), « ⚙️ Configuration » (données brutes, oublier ce téléphone). Filtre en haut : Jour / 7 jours
+- `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; deux onglets « ❤️ Santé » et
+  « Pokémon » (icône = Pikachu de Rubis/Saphir, `pikachu.png`, en CSS) ; sur la même ligne à droite, deux petits boutons
+  🔄 (actualiser) et ⚙️ (fenêtre Configuration : données brutes, oublier ce téléphone) dans le conteneur `outils`, posé
+  par-dessus la barre des onglets. **Mobile d'abord** : jamais de défilement horizontal (tout passe à la ligne), et rien
+  d'utile dans le coin en bas à droite (bouton « Manage app » de Streamlit, ~1 cm) : marge de 64 px en bas des calques. Filtre en haut : Jour / 7 jours
   / Semaine / Mois / Année + date et ◀ ▶. En haut, l'analyse du coach (repliée) et un bouton 📋 qui copie
   le dossier du coach sans l'afficher ; puis Activité, Séances, Sommeil, Cœur, Poids. Les chiffres viennent des **résumés annuels** (`data/resume/AAAA.json`,
   `stats_jour`), donc l'année entière se charge vite ; les fichiers du jour servent aux courbes de la vue Jour.
@@ -48,6 +51,7 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     silhouette puis couleurs ; nouveau = confettis + fanfare, shiny = or + étincelles, légendaire = violet. Sons
     synthétisés (WebAudio, bouton 🔊), vibrations. Les Poké Balls ouvertes sont dans le localStorage
     (`pkm2_ouvertes`, celles de plus de 14 jours comptent ouvertes) et le Pokédex ne montre que les ouvertes.
+  - Images sans leurs bords transparents (`rogne`, `rognerImages`) : X/Y, Soleil/Lune… ont de grandes marges.
   - Images dans la branche **`sprites`** du dépôt privé (`paquets/vignettes.json`, `paquets/NNN.json` en base64),
     lues avec le préfixe `sprites:` dans `lire` et gardées sans limite.
   - **Balls ouvertes partagées** (montre + téléphone) : `data/pokemon/ouvertes.json` (branche data, 20 derniers jours),

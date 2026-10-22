@@ -7,6 +7,9 @@ import json
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+import base64
+from pathlib import Path
+
 import altair as alt
 import pandas as pd
 import requests
@@ -48,7 +51,7 @@ NOMS = {
 }
 
 st.markdown("""<style>
-.block-container{padding-top:.6rem;max-width:760px}
+.block-container,[data-testid="stMainBlockContainer"]{padding-top:.6rem !important;max-width:760px}
 header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"]{display:none !important}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 12px}
 .tile{background:#1C2740;border-radius:12px;padding:10px 12px}
@@ -65,6 +68,24 @@ h3{margin-top:1.4rem !important}
 [data-testid="stExpander"] h4{font-size:1.05rem !important;padding:.6rem 0 .2rem !important}
 [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;gap:.5rem}
 [data-testid="stColumn"]{min-width:0 !important}
+</style>""", unsafe_allow_html=True)
+
+
+# Haut de page : deux onglets (Santé, Pokémon avec Pikachu) et, sur la même ligne à droite, deux petits boutons 🔄 ⚙️
+# (le conteneur « outils », posé par-dessus la barre des onglets). Rien de caché sous « Manage app » (en bas à droite).
+PIKACHU = base64.b64encode(Path(__file__).with_name("pikachu.png").read_bytes()).decode()
+st.markdown(f"""<style>
+[data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
+.st-key-outils{{gap:6px !important}}
+[data-testid="stLayoutWrapper"]:has(> .st-key-outils){{position:absolute;top:.6rem;right:1rem;z-index:5;width:auto !important}}
+[data-testid="stElementContainer"]:has(iframe[height="0"]),
+[data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
+.st-key-outils button{{min-height:34px;padding:2px 10px}}
+[data-testid="stTabs"] [role="tablist"]{{padding-right:100px}}
+[data-testid="stTab"] p{{font-size:1.02rem;font-weight:600}}
+[data-testid="stTab"][data-key="1"] p::before{{content:"";display:inline-block;width:21px;height:25px;
+  margin:-6px 6px -6px 0;vertical-align:-3px;background:url(data:image/png;base64,{PIKACHU}) center/contain no-repeat;
+  image-rendering:pixelated}}
 </style>""", unsafe_allow_html=True)
 
 
@@ -303,7 +324,11 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
 
 if "message_maj" in st.session_state:
     st.toast(st.session_state.pop("message_maj"))
-onglet_sante, onglet_pokemon, onglet_config = st.tabs(["❤️ Santé", "🎮 Pokémon", "⚙️ Configuration"])
+with st.container(key="outils", horizontal=True):
+    if st.button("🔄", key="maj", help="Aller chercher tes dernières données maintenant"):
+        actualiser()
+    st.button("⚙️", key="cfg", help="Configuration", on_click=lambda: st.session_state.update(config=True))
+onglet_sante, onglet_pokemon = st.tabs(["❤️ Santé", "Pokémon"])
 
 with onglet_sante:
     aujourd = dt.datetime.now(TZ).date()
@@ -311,13 +336,11 @@ with onglet_sante:
     periode = st.segmented_control("Période", PERIODES, default="Jour", key="periode",
                                    label_visibility="collapsed") or "Jour"
     fin_affichee = bornes(periode, st.session_state["ref"])[1]
-    c1, c2, c3, c4 = st.columns([1, 3, 1, 1], vertical_alignment="center")
+    c1, c2, c3 = st.columns([1, 4, 1], vertical_alignment="center")
     c1.button("◀", on_click=decaler, args=(-1,), width="stretch", help="Période précédente")
     c2.date_input("Date", key="ref", max_value=aujourd, format="DD/MM/YYYY", label_visibility="collapsed")
     c3.button("▶", on_click=decaler, args=(1,), width="stretch", disabled=fin_affichee >= aujourd,
               help="Période suivante")
-    if c4.button("🔄", width="stretch", help="Aller chercher tes dernières données maintenant"):
-        actualiser()
 
     recents = {f"data/jour/{x.year}/{x}.json" for x in (aujourd, aujourd - dt.timedelta(days=1))}
     recents |= {f"data/resume/{aujourd.year}.json", "data/profil.json",
@@ -437,11 +460,11 @@ with onglet_sante:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
 with onglet_pokemon:
-    if st.button("🔄 Actualiser mes pas et mes missions", width="stretch", key="maj_pokemon"):
-        actualiser()
     ecran_pokemon.afficher(lire_vite, aujourd)
 
-with onglet_config:
+
+@st.dialog("⚙️ Configuration", width="large")
+def configuration():
     # ----- Toutes les données brutes (pour vérifier ce que Google donne) -----
     if st.toggle("📦 Afficher toutes les données brutes", key="brut"):
         st.caption(f"Tout ce que Google a donné pour la période choisie dans l'onglet Santé ({debut:%d/%m/%Y}"
@@ -477,3 +500,7 @@ with onglet_config:
                           "document.cookie='sante_ok=; max-age=0; path=/; SameSite=Lax; Secure'; 1", key="oubli_ok")
         st.session_state.clear()
         st.success("C'est oublié : le mot de passe sera redemandé à la prochaine ouverture.")
+
+
+if st.session_state.pop("config", False):  # bouton ⚙️ en haut à droite
+    configuration()

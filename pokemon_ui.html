@@ -69,9 +69,8 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .points-serie i.on{background:#B57BFF;box-shadow:0 0 6px #B57BFF}
 
 /* ----- Dernières captures ----- */
-#dernieres{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
-#dernieres::-webkit-scrollbar{display:none}
-.mini{flex:0 0 84px;background:#1C2740;border-radius:14px;text-align:center;padding:6px 4px;cursor:pointer;position:relative}
+#dernieres{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;padding:2px 0 8px}
+.mini{min-width:0;background:#1C2740;border-radius:14px;text-align:center;padding:6px 4px;cursor:pointer;position:relative}
 .mini img{width:64px;height:64px;object-fit:contain}
 .mini .nm{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .qd{font-size:9.5px;color:#9AA7C2}
@@ -86,8 +85,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 #recherche{width:100%;background:#1C2740;border:1px solid #2A3756;border-radius:12px;color:#EEF2FA;padding:10px 12px;
   font:500 14px Outfit,sans-serif;outline:none;margin-bottom:8px}
 #recherche:focus{border-color:#6B8CFF}
-.defile{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
-.defile::-webkit-scrollbar{display:none}
+.defile{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:6px}
 .filtre{flex:0 0 auto;background:#1C2740;border:1px solid #2A3756;color:#C9D3EA;border-radius:999px;padding:5px 11px;
   font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .filtre.on{background:#6B8CFF;border-color:#6B8CFF;color:#fff}
@@ -113,7 +111,7 @@ details.regles summary{cursor:pointer;font-weight:700;color:#EEF2FA}
 details.regles li{margin:5px 0;line-height:1.4}
 </style>
 
-<div id="app">
+<div id="app" style="padding-bottom:56px">
   <div class="carte" id="barre"></div>
   <div class="carte" id="aouvrir"></div>
   <h2>🎯 Balls spéciales du jour</h2>
@@ -169,6 +167,41 @@ function collection() {  // ce que le Pokédex montre : seulement les Poké Ball
   const par = {};
   for (const c of CAPTURES) if (estOuverte(c)) (par[c.num] = par[c.num] || []).push(c);
   return par;
+}
+
+// ---------- Images sans leurs bords transparents ----------
+// Les images des jeux récents (X/Y, Soleil/Lune…) ont de grandes marges vides : sans elles, tous les Pokémon ont la même
+// taille à l'écran. -> [image recadrée, largeur, hauteur] (gardée en mémoire).
+const ROGNEES = new Map();
+function rogne(src) {
+  if (!ROGNEES.has(src)) ROGNEES.set(src, new Promise(ok => {
+    const im = new Image();
+    im.onload = () => {
+      try {
+        const W = im.naturalWidth, H = im.naturalHeight, cv = document.createElement("canvas");
+        cv.width = W; cv.height = H;
+        const ctx = cv.getContext("2d"); ctx.drawImage(im, 0, 0);
+        const d = ctx.getImageData(0, 0, W, H).data;
+        let x0 = W, y0 = H, x1 = -1, y1 = -1;
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 8) {
+          if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+        if (x1 < 0) return ok([src, W, H]);
+        const w = x1 - x0 + 1, h = y1 - y0 + 1, c2 = document.createElement("canvas");
+        c2.width = w; c2.height = h; c2.getContext("2d").drawImage(cv, x0, y0, w, h, 0, 0, w, h);
+        ok([c2.toDataURL(), w, h]);
+      } catch (e) { ok([src, im.naturalWidth || 96, im.naturalHeight || 96]); }
+    };
+    im.onerror = () => ok([src, 96, 96]);
+    im.src = src;
+  }));
+  return ROGNEES.get(src);
+}
+// Remplace les images d'un bloc par leur version recadrée (dernières captures, Pokédex, fiche)
+function rognerImages(racine) {
+  racine.querySelectorAll("img:not([data-r])").forEach(img => {
+    img.dataset.r = 1;
+    if (img.src.startsWith("data:")) rogne(img.src).then(([src]) => { img.src = src; });
+  });
 }
 
 // ---------- Dessin d'une Poké Ball (SVG) ----------
@@ -305,7 +338,7 @@ const STYLE_VOILE = `
 @keyframes pk-clign{50%{opacity:.45}}
 #pkm-voile .carte{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:480px;background:rgba(14,20,38,.92);
   backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:24px 24px 0 0;
-  padding:16px 18px max(16px,env(safe-area-inset-bottom));transform:translateY(105%);
+  padding:16px 18px calc(64px + env(safe-area-inset-bottom));transform:translateY(105%);
   transition:transform .55s cubic-bezier(.2,1.1,.3,1);text-align:center;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
 #pkm-voile .carte.vu{transform:translateY(0)}
 #pkm-voile .badges{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:24px}
@@ -554,10 +587,9 @@ function ouvrir(c, rejouer = false) {
   $(".x").onclick = fermer;
   $(".son").onclick = e => { son = !son; e.target.textContent = son ? "🔊" : "🔇"; try { localStorage.setItem("pkm_son", son ? "1" : "0"); } catch (x) {} };
 
-  // L'image du Pokémon : agrandie d'un nombre entier de fois (pixels nets), environ 220 px
-  poke.onload = () => { const w = poke.naturalWidth || 96, f = w > 220 ? 220 / w : Math.max(1, Math.floor(230 / w));
-                        poke.style.width = w * f + "px"; };
-  poke.src = c.image;
+  // L'image du Pokémon : sans ses bords vides (les images récentes en ont beaucoup), environ 230 px de haut ou de large
+  rogne(c.image).then(([src, w, h]) => { const f = Math.min(230 / w, 230 / h, 6);
+    poke.style.width = w * f + "px"; poke.src = src; });
 
   const centre = () => B.ecran();
   (async () => {
@@ -654,7 +686,7 @@ const STYLE_FICHE = `
 #pkm-fiche .ombre{position:absolute;inset:0;background:rgba(3,6,14,.6);opacity:0;transition:opacity .25s}
 #pkm-fiche.vu .ombre{opacity:1}
 #pkm-fiche .feuille{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:86vh;overflow-y:auto;
-  background:#121A2E;border-radius:24px 24px 0 0;padding:8px 16px max(18px,env(safe-area-inset-bottom));
+  background:#121A2E;border-radius:24px 24px 0 0;padding:8px 16px calc(64px + env(safe-area-inset-bottom));
   transform:translateY(100%);transition:transform .38s cubic-bezier(.2,1,.3,1);box-shadow:0 -10px 40px rgba(0,0,0,.6)}
 #pkm-fiche.vu .feuille{transform:none}
 #pkm-fiche .poignee{width:42px;height:5px;border-radius:3px;background:#2A3756;margin:4px auto 10px}
@@ -703,7 +735,7 @@ function fiche(p) {
       : `<h4>À trouver <span>${p.versions.length} versions dont ${p.versions.filter(x => x.s).length} shiny</span></h4>`}
     <h4>Où le trouver ?</h4><div class="ou">${ou}</div>
     <button class="fermer">Fermer</button></div>`;
-  P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu"));
+  P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu")); rognerImages(f);
   const fermer = () => { f.classList.remove("vu"); setTimeout(() => f.remove(), 350); };
   f.querySelector(".ombre").onclick = fermer; f.querySelector(".fermer").onclick = fermer;
   // glisser la feuille vers le bas pour la fermer
@@ -782,7 +814,7 @@ function dessinerSpeciales() {
 }
 
 function dessinerDernieres() {
-  const ok = CAPTURES.filter(estOuverte).reverse().slice(0, 15), vus = new Set();
+  const ok = CAPTURES.filter(estOuverte).reverse().slice(0, 12), vus = new Set();
   const premiere = {};  // première capture de chaque espèce (pour l'étiquette « nouveau »)
   for (const c of CAPTURES) if (estOuverte(c) && !vus.has(c.num)) { vus.add(c.num); premiere[c.id] = 1; }
   document.getElementById("bloc-dernieres").style.display = ok.length ? "" : "none";
@@ -790,6 +822,7 @@ function dessinerDernieres() {
     ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? '<span class="eti sh">✨</span>' : ""}
     <img src="${c.image}"><div class="nm">${c.nom}</div><div class="qd">${c.quand}</div></div>`).join("");
   document.querySelectorAll(".mini").forEach(e => e.onclick = () => ouvrir(CAPTURES[e.dataset.i], true));
+  rognerImages(document.getElementById("dernieres"));
 }
 
 function dessinerDex() {
@@ -833,6 +866,7 @@ function dessinerDex() {
       ${a ? `<div class="mb"><div style="width:${mes.length / t * 100}%"></div></div>` : ""}</div>`;
   }).join("");
   document.querySelectorAll("#grille .p").forEach(e => e.onclick = () => fiche(PAR_NUM[e.dataset.n]));
+  rognerImages(document.getElementById("grille"));
 }
 
 function dessinerRegles() {
