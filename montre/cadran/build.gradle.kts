@@ -12,8 +12,8 @@ android {
         applicationId = "fr.kiki.pokemontre.cadran"
         minSdk = 34
         targetSdk = 34
-        versionCode = 6
-        versionName = "6.0"
+        versionCode = 7
+        versionName = "7.0"
     }
     buildTypes {
         release { isMinifyEnabled = false; signingConfig = signingConfigs.getByName("debug") }
