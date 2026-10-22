@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icône de l'appli : une Poké Ball en couleurs -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp" android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#FF1C2740" android:pathData="M24,0A24,24 0,1 1,24 48A24,24 0,1 1,24 0Z" />
+    <path android:fillColor="#FFEE1515" android:pathData="M24,6A18,18 0,0 0,6 22.5H42A18,18 0,0 0,24 6Z" />
+    <path android:fillColor="#FFF4F4F4" android:pathData="M6,25.5A18,18 0,0 0,42 25.5Z" />
+    <path android:fillColor="#FF222222" android:pathData="M6,22.5H42V25.5H6Z" />
+    <path android:fillColor="#FF222222" android:pathData="M24,18A6,6 0,1 1,24 30A6,6 0,1 1,24 18Z" />
+    <path android:fillColor="#FFF4F4F4" android:pathData="M24,20.5A3.5,3.5 0,1 1,24 27.5A3.5,3.5 0,1 1,24 20.5Z" />
+</vector>

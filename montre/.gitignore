@@ -1,0 +1,8 @@
+# Jamais dans le dépôt public : la clé du jeu et l'adresse du script (secret.properties), ni les fichiers de compilation
+secret.properties
+local.properties
+.gradle/
+build/
+app/build/
+*.apk
+*.jks
