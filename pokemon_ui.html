@@ -1,0 +1,846 @@
+<!-- Onglet Pokémon (composant HTML affiché par ecran_pokemon.py, données dans __DONNEES__).
+L'animation d'ouverture et la fiche du Pokédex s'affichent par-dessus toute l'appli, dans la page parente
+(window.parent.document) ; la Poké Ball est en 3D (three.js), avec un repli en 2D si three.js ne charge pas. -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:transparent;color:#EEF2FA;font-family:Outfit,system-ui,sans-serif;overflow:hidden}
+img{image-rendering:pixelated}
+button{font-family:inherit}
+.carte{background:#1C2740;border-radius:18px;padding:14px;margin:0 0 12px;position:relative;overflow:hidden}
+h2{font-size:18px;font-weight:800;margin:18px 2px 8px;display:flex;align-items:center;gap:8px}
+h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
+.gris{color:#9AA7C2}.petit{font-size:12px}
+.type{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:600;color:#fff;margin:2px 3px 0 0;
+  text-shadow:0 1px 1px rgba(0,0,0,.35)}
+
+/* ----- Barre d'effort ----- */
+#barre{background:radial-gradient(120% 140% at 0% 0%,#3A1830 0%,#1C2740 55%);display:flex;gap:14px;align-items:center}
+#barre .filigrane{position:absolute;right:-40px;top:-40px;width:170px;opacity:.07;pointer-events:none}
+.anneau{position:relative;width:118px;height:118px;flex:0 0 118px}
+.anneau svg{width:100%;height:100%;transform:rotate(-90deg)}
+.anneau .centre{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.anneau .v{font-size:28px;font-weight:900;line-height:1}.anneau .s{font-size:11px;color:#9AA7C2}
+.anneau .arc{transition:stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1)}
+#barre .droite{flex:1;min-width:0}
+#barre .titre{font-weight:800;font-size:16px}
+#barre .manque{font-size:12.5px;color:#C9D3EA;margin:4px 0 6px;line-height:1.45}
+#barre .manque b{color:#fff}
+.puces{display:flex;flex-wrap:wrap;gap:4px}
+.puce{background:rgba(13,19,34,.7);border-radius:9px;padding:2px 8px;font-size:11.5px;color:#C9D3EA}
+.puce b{color:#FFCB05}
+
+/* ----- Poké Balls à ouvrir ----- */
+#aouvrir{background:radial-gradient(100% 120% at 50% 0%,#2A3F7A 0%,#1C2740 70%);text-align:center;padding:16px 12px}
+#aouvrir.vide{background:#1C2740}
+#aouvrir .titre{font-size:19px;font-weight:900;letter-spacing:.2px}
+#aouvrir .rang{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0 6px}
+.bouton-ball{background:none;border:0;padding:0;cursor:pointer;position:relative;width:64px;height:64px;
+  animation:flotte 2.6s ease-in-out infinite}
+.bouton-ball svg{width:64px;height:64px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+.bouton-ball:after{content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;
+  background:radial-gradient(circle,rgba(255,255,255,.28),transparent 65%);animation:halo 2.6s ease-in-out infinite}
+.bouton-ball .q{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:10px;color:#9AA7C2;
+  white-space:nowrap}
+@keyframes flotte{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-6px) rotate(0)}
+  80%{transform:translateY(0) rotate(-8deg)}88%{transform:translateY(0) rotate(7deg)}}
+@keyframes halo{0%,100%{opacity:.5;transform:scale(.9)}50%{opacity:1;transform:scale(1.15)}}
+.gros-bouton{margin-top:18px;width:100%;border:0;border-radius:14px;padding:13px;font-size:16px;font-weight:800;color:#fff;
+  background:linear-gradient(180deg,#FF4B4B,#D21F2E);box-shadow:0 4px 0 #8E1220,0 8px 20px rgba(210,31,46,.35);
+  cursor:pointer;animation:pouls 1.8s ease-in-out infinite}
+.gros-bouton:active{transform:translateY(3px);box-shadow:0 1px 0 #8E1220}
+@keyframes pouls{0%,100%{filter:brightness(1)}50%{filter:brightness(1.18)}}
+
+/* ----- Balls spéciales ----- */
+.grille2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.speciale{background:#1C2740;border-radius:16px;padding:11px 12px;position:relative;overflow:hidden}
+.speciale.ok{box-shadow:inset 0 0 0 2px #4CD3A0}
+.speciale .tete{display:flex;align-items:center;gap:7px;font-weight:800;font-size:14px}
+.speciale .tete svg{width:26px;height:26px;flex:0 0 26px}
+.speciale .gain{font-size:11px;color:#9AA7C2;margin:2px 0 6px;line-height:1.3}
+.speciale .ligne{font-size:11px;color:#C9D3EA;margin-top:5px;display:flex;justify-content:space-between;gap:4px}
+.jauge{height:6px;background:#0D1322;border-radius:3px;margin-top:3px;overflow:hidden}
+.jauge div{height:100%;border-radius:3px;background:#6B8CFF;transition:width 1s ease}
+.jauge div.ok{background:#4CD3A0}
+.speciale .tampon{position:absolute;top:9px;right:10px;font-size:10.5px;font-weight:800;color:#4CD3A0}
+.points-serie{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.points-serie i{width:7px;height:7px;border-radius:50%;background:#0D1322}
+.points-serie i.on{background:#B57BFF;box-shadow:0 0 6px #B57BFF}
+
+/* ----- Dernières captures ----- */
+#dernieres{display:flex;gap:10px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none}
+#dernieres::-webkit-scrollbar{display:none}
+.mini{flex:0 0 84px;background:#1C2740;border-radius:14px;text-align:center;padding:6px 4px;cursor:pointer;position:relative}
+.mini img{width:64px;height:64px;object-fit:contain}
+.mini .nm{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini .qd{font-size:9.5px;color:#9AA7C2}
+.mini .eti{position:absolute;top:4px;left:4px;font-size:9px;font-weight:800;border-radius:7px;padding:0 5px}
+.eti.nv{background:#FF5D5D}.eti.sh{background:#C9A227;left:auto;right:4px}
+
+/* ----- Pokédex ----- */
+#stats{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-bottom:10px}
+#stats .t{background:#1C2740;border-radius:14px;padding:9px 11px}
+#stats .l{font-size:11px;color:#9AA7C2}#stats .v{font-size:19px;font-weight:900}
+#stats .v small{font-size:12px;color:#9AA7C2;font-weight:600}
+#recherche{width:100%;background:#1C2740;border:1px solid #2A3756;border-radius:12px;color:#EEF2FA;padding:10px 12px;
+  font:500 14px Outfit,sans-serif;outline:none;margin-bottom:8px}
+#recherche:focus{border-color:#6B8CFF}
+.defile{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none}
+.defile::-webkit-scrollbar{display:none}
+.filtre{flex:0 0 auto;background:#1C2740;border:1px solid #2A3756;color:#C9D3EA;border-radius:999px;padding:5px 11px;
+  font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
+.filtre.on{background:#6B8CFF;border-color:#6B8CFF;color:#fff}
+.filtre.ty{border:0;color:#fff;opacity:.45;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.filtre.ty.on{opacity:1;box-shadow:0 0 0 2px #fff inset}
+#grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:6px}
+.p{border-radius:12px;height:102px;text-align:center;cursor:pointer;position:relative;padding-top:4px;background:#161F35;
+  overflow:hidden;transition:transform .15s}
+.p:active{transform:scale(.95)}
+.p img{width:56px;height:56px;object-fit:contain}
+.p.non img{filter:brightness(0);opacity:.28}
+.p .no{font-size:10px;color:#9AA7C2;font-weight:600}
+.p .nm{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
+.p.non .nm{color:#4A5878}
+.p .mb{position:absolute;left:8px;right:8px;bottom:6px;height:3px;border-radius:2px;background:rgba(0,0,0,.35);overflow:hidden}
+.p .mb div{height:100%;background:#9AA7C2}
+.p.complet{box-shadow:inset 0 0 0 2px #FFCB05}.p.complet .mb div{background:#FFCB05}
+.p .sh{position:absolute;top:3px;right:5px;font-size:11px}
+.p.leg.non{background:repeating-linear-gradient(135deg,#161F35 0 8px,#1A1834 8px 16px)}
+#rien{color:#9AA7C2;font-size:13px;padding:10px 2px;display:none}
+details.regles{background:#1C2740;border-radius:14px;padding:10px 14px;margin:14px 0 4px;font-size:13px;color:#C9D3EA}
+details.regles summary{cursor:pointer;font-weight:700;color:#EEF2FA}
+details.regles li{margin:5px 0;line-height:1.4}
+</style>
+
+<div id="app">
+  <div class="carte" id="barre"></div>
+  <div class="carte" id="aouvrir"></div>
+  <h2>🎯 Balls spéciales du jour</h2>
+  <div class="grille2" id="speciales"></div>
+  <div id="bloc-dernieres"><h2>🕘 Dernières captures</h2><div id="dernieres"></div></div>
+  <h2>📕 Pokédex <span class="n" id="dex-n"></span></h2>
+  <div id="stats"></div>
+  <input id="recherche" type="search" placeholder="Chercher un Pokémon ou un numéro…" autocomplete="off">
+  <div class="defile" id="filtres"></div>
+  <div class="defile" id="filtres-types"></div>
+  <div id="grille"></div><div id="rien">Aucun Pokémon ici.</div>
+  <details class="regles"><summary>Comment gagner des Poké Balls ?</summary><ul id="regles"></ul></details>
+</div>
+
+<script>
+const D = __DONNEES__;
+const P = window.parent.document, PW = window.parent;
+const COUL = D.couleurs, LEG = new Set(D.legendaires);
+const DEX = D.dex.map(([num, nom, types, vignette, versions]) =>
+  ({num, nom, types, vignette, versions: versions.map(([f, t, s]) => ({f, t, s: !!s}))}));
+const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
+const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball"};
+const N3 = n => String(n).padStart(3, "0");
+const fr = n => Math.round(n).toLocaleString("fr-FR");
+const typesHTML = (ts, cls = "type") => ts.map(t => `<span class="${cls}" style="background:${COUL[t]}">${t}</span>`).join("");
+
+// ---------- Poké Balls ouvertes sur ce téléphone ----------
+let ouvertes = new Set();
+try { ouvertes = new Set(JSON.parse(localStorage.getItem("pkm2_ouvertes") || "[]")); } catch (e) {}
+const LIMITE = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);  // plus vieilles : comptées ouvertes
+const estOuverte = c => ouvertes.has(c.id) || c.jour < LIMITE;
+const memoriser = id => { ouvertes.add(id);
+  try { localStorage.setItem("pkm2_ouvertes", JSON.stringify([...ouvertes].slice(-800))); } catch (e) {} };
+const CAPTURES = D.captures.map(c => ({...c, ...PAR_NUM[c.num] && {nom: PAR_NUM[c.num].nom, types: PAR_NUM[c.num].types},
+  image: D.images[`${c.num}/${c.fichier}`] || ""}));
+const aOuvrir = () => CAPTURES.filter(c => !estOuverte(c));
+function collection() {  // ce que le Pokédex montre : seulement les Poké Balls ouvertes
+  const par = {};
+  for (const c of CAPTURES) if (estOuverte(c)) (par[c.num] = par[c.num] || []).push(c);
+  return par;
+}
+
+// ---------- Dessin d'une Poké Ball (SVG) ----------
+let idSvg = 0;
+function ballSVG(type) {
+  const i = ++idSvg, haut = {poke: "#E3262E", super: "#2F6FD6", hyper: "#2A2A2E", master: "#6A3FB0"}[type];
+  const deco = {
+    poke: "",
+    super: `<path d="M13,33 Q19,19 31,11 L38,18 Q27,25 22,38Z" fill="#E3262E"/><path d="M87,33 Q81,19 69,11 L62,18 Q73,25 78,38Z" fill="#E3262E"/>`,
+    hyper: `<path d="M24,13 L33,9 L35,45 L25,45Z" fill="#FFCB05"/><path d="M76,13 L67,9 L65,45 L75,45Z" fill="#FFCB05"/>`,
+    master: `<circle cx="22" cy="31" r="8" fill="#E04BA0"/><circle cx="78" cy="31" r="8" fill="#E04BA0"/>
+      <text x="50" y="35" text-anchor="middle" font-size="19" font-weight="900" fill="#fff" font-family="Outfit,sans-serif">M</text>`,
+  }[type];
+  return `<svg viewBox="0 0 100 100"><defs>
+    <radialGradient id="o${i}" cx="35%" cy="28%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".0"/>
+      <stop offset=".65" stop-color="#000" stop-opacity=".0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>
+    <clipPath id="c${i}"><circle cx="50" cy="50" r="46"/></clipPath></defs>
+    <g clip-path="url(#c${i})"><rect width="100" height="50" fill="${haut}"/>${deco}<rect y="50" width="100" height="50" fill="#F2F2F2"/>
+    <rect y="45.5" width="100" height="9" fill="#151515"/><circle cx="50" cy="50" r="46" fill="url(#o${i})"/>
+    <ellipse cx="34" cy="24" rx="13" ry="7" fill="#fff" opacity=".45" transform="rotate(-25 34 24)"/></g>
+    <circle cx="50" cy="50" r="46" fill="none" stroke="#151515" stroke-width="4"/>
+    <circle cx="50" cy="50" r="13" fill="#F4F4F4" stroke="#151515" stroke-width="5"/><circle cx="50" cy="50" r="5.5" fill="none" stroke="#C8C8C8" stroke-width="1.5"/></svg>`;
+}
+
+// ---------- Sons (synthétisés, aucun fichier) et vibrations ----------
+let AC = null, son = true;
+try { son = localStorage.getItem("pkm_son") !== "0"; } catch (e) {}
+function audio() {
+  if (!AC) { const A = PW.AudioContext || PW.webkitAudioContext; if (A) AC = new A(); }
+  if (AC && AC.state === "suspended") AC.resume();
+  return AC;
+}
+function ton(f, t0, dur, {type = "sine", vol = .2, f2 = null, att = .005} = {}) {
+  const a = audio(); if (!a || !son) return;
+  const t = a.currentTime + t0, o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(f, t);
+  if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + att);
+  g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  o.connect(g).connect(a.destination); o.start(t); o.stop(t + dur + .05);
+}
+function bruit(t0, dur, {vol = .2, f = 2000, type = "bandpass"} = {}) {
+  const a = audio(); if (!a || !son) return;
+  const t = a.currentTime + t0, n = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, n, a.sampleRate);
+  const d = b.getChannelData(0); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const s = a.createBufferSource(), fl = a.createBiquadFilter(), g = a.createGain();
+  s.buffer = b; fl.type = type; fl.frequency.value = f; g.gain.value = vol;
+  s.connect(fl).connect(g).connect(a.destination); s.start(t);
+}
+const NOTE = n => 440 * Math.pow(2, (n - 69) / 12);
+const SONS = {
+  chute() { ton(1400, 0, .35, {type: "triangle", vol: .05, f2: 380}); },
+  rebond() { ton(150, 0, .2, {vol: .45, f2: 55}); bruit(0, .08, {vol: .25, f: 700, type: "lowpass"}); },
+  secousse() { bruit(0, .05, {vol: .35, f: 2600}); ton(330, 0, .07, {type: "square", vol: .05});
+               bruit(.13, .05, {vol: .25, f: 2200}); ton(260, .13, .07, {type: "square", vol: .04}); },
+  clic() { ton(1900, 0, .06, {type: "square", vol: .07}); ton(2850, .08, .09, {type: "square", vol: .07}); },
+  montee(d) { ton(180, 0, d, {type: "sawtooth", vol: .05, f2: 1300, att: d * .8}); ton(360, 0, d, {vol: .06, f2: 2600, att: d * .8}); },
+  ouverture() { bruit(0, .45, {vol: .35, f: 1800, type: "highpass"}); ton(500, 0, .35, {type: "triangle", vol: .18, f2: 1800}); },
+  materialise() { [0, 4, 7, 12, 16].forEach((n, i) => ton(NOTE(72 + n), i * .045, .25, {type: "triangle", vol: .06})); },
+  version() { [[76, 0], [79, .1], [84, .2]].forEach(([n, t]) => ton(NOTE(n), t, .35, {type: "triangle", vol: .16})); },
+  nouveau() {
+    [[72, 0, .14], [76, .12, .14], [79, .24, .14], [84, .36, .7]].forEach(([n, t, d]) => {
+      ton(NOTE(n), t, d, {type: "square", vol: .06}); ton(NOTE(n - 12), t, d, {type: "triangle", vol: .12}); });
+    [67, 71, 74].forEach(n => ton(NOTE(n), .36, .9, {type: "triangle", vol: .06}));
+  },
+  shiny() {
+    for (let i = 0; i < 14; i++) ton(2200 + Math.random() * 3200, i * .045, .35, {vol: .05});
+    ton(NOTE(91), .05, .9, {vol: .08}); ton(NOTE(96), .2, 1, {vol: .07});
+  },
+  legendaire() {
+    ton(NOTE(36), 0, 2.2, {type: "sawtooth", vol: .05, att: .4}); ton(NOTE(43), 0, 2.2, {type: "triangle", vol: .08, att: .4});
+    [60, 67, 72, 79, 84].forEach((n, i) => ton(NOTE(n), .25 + i * .16, 1.2, {type: "triangle", vol: .09}));
+  },
+};
+const maintenant = () => PW.performance.now();  // même horloge que les images de la page parente
+const vibre = ms => { try { PW.navigator.vibrate && PW.navigator.vibrate(ms); } catch (e) {} };
+
+// ---------- Petits outils d'animation ----------
+const ease = {
+  out: t => 1 - Math.pow(1 - t, 3), inout: t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2,
+  back: t => { const c = 1.7; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); },
+  rebond: t => { const n = 7.5625, d = 2.75;
+    if (t < 1 / d) return n * t * t; if (t < 2 / d) return n * (t -= 1.5 / d) * t + .75;
+    if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + .9375; return n * (t -= 2.625 / d) * t + .984375; },
+};
+
+// ================================================================================================
+// L'OUVERTURE D'UNE POKÉ BALL (plein écran, dans la page parente)
+// ================================================================================================
+const STYLE_VOILE = `
+#pkm-voile{position:fixed;inset:0;z-index:999999;font-family:Outfit,system-ui,sans-serif;color:#EEF2FA;overflow:hidden;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .25s}
+#pkm-voile.vu{opacity:1}#pkm-voile.fin{opacity:0;transition:opacity .3s}
+#pkm-voile .fond{position:absolute;inset:0;background:radial-gradient(circle at 50% 34%,#24345F 0%,#0B1020 60%,#05070E 100%);
+  transition:background 1s}
+#pkm-voile.r-nouveau .fond{background:radial-gradient(circle at 50% 34%,#1F6E8C 0%,#0C2240 55%,#05070E 100%)}
+#pkm-voile.r-version .fond{background:radial-gradient(circle at 50% 34%,#2E4A9A 0%,#101A3A 55%,#05070E 100%)}
+#pkm-voile.r-shiny .fond{background:radial-gradient(circle at 50% 34%,#8A6A12 0%,#2E2208 55%,#070502 100%)}
+#pkm-voile.r-leg .fond{background:radial-gradient(circle at 50% 34%,#7A2C9E 0%,#2A0F40 55%,#06020C 100%)}
+#pkm-voile .rayons{position:absolute;left:50%;top:34%;width:240vmax;height:240vmax;margin:-120vmax 0 0 -120vmax;
+  opacity:0;transition:opacity 1s;animation:pk-tourne 22s linear infinite;pointer-events:none;
+  background:repeating-conic-gradient(rgba(255,255,255,.10) 0 6deg,transparent 6deg 18deg);
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 45%);mask:radial-gradient(circle,#000 0,transparent 45%)}
+#pkm-voile.r-shiny .rayons{background:repeating-conic-gradient(rgba(255,215,90,.22) 0 6deg,transparent 6deg 18deg)}
+#pkm-voile.r-leg .rayons{background:repeating-conic-gradient(rgba(255,120,220,.18) 0 5deg,transparent 5deg 10deg,
+  rgba(120,200,255,.18) 10deg 15deg,transparent 15deg 20deg)}
+#pkm-voile.revele .rayons{opacity:1}
+@keyframes pk-tourne{to{transform:rotate(360deg)}}
+#pkm-voile .scene{position:absolute;left:0;right:0;top:0;height:68%;width:100%;display:block}
+#pkm-voile .ball2d{position:absolute;left:50%;top:34%;width:150px;height:150px;margin:-75px 0 0 -75px;transform-origin:50% 80%}
+#pkm-voile .ball2d svg{width:100%;height:100%}
+#pkm-voile .poke{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.05);opacity:0;
+  filter:brightness(0) invert(1) drop-shadow(0 0 14px #fff);image-rendering:pixelated;pointer-events:none;
+  transition:transform .6s cubic-bezier(.2,1.5,.4,1),opacity .2s,filter .9s ease}
+#pkm-voile .poke.sort{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#pkm-voile .poke.couleur{filter:drop-shadow(0 0 18px rgba(140,170,255,.55))}
+#pkm-voile.r-shiny .poke.couleur{filter:drop-shadow(0 0 22px rgba(255,215,90,.95))}
+#pkm-voile.r-leg .poke.couleur{filter:drop-shadow(0 0 26px rgba(255,140,230,.9))}
+#pkm-voile .poke.danse{animation:pk-danse 2.4s ease-in-out infinite}
+@keyframes pk-danse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-54%) scale(1.03)}}
+#pkm-voile .fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#pkm-voile .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+#pkm-voile .flash.go{animation:pk-flash .8s ease-out}
+@keyframes pk-flash{0%{opacity:0}15%{opacity:1}100%{opacity:0}}
+#pkm-voile .haut{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;
+  padding:max(12px,env(safe-area-inset-top)) 14px 0}
+#pkm-voile .rond{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.1);border:0;color:#fff;font-size:18px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+#pkm-voile .nom-ball{font-weight:800;font-size:15px;letter-spacing:.3px;opacity:.9}
+#pkm-voile .aide{position:absolute;left:0;right:0;top:calc(68% - 30px);text-align:center;font-size:15px;font-weight:700;
+  opacity:0;transition:opacity .4s;pointer-events:none}
+#pkm-voile .aide.vu{opacity:.9;animation:pk-clign 1.6s ease-in-out infinite}
+#pkm-voile .aide small{display:block;font-weight:500;font-size:12px;color:#9AA7C2;margin-top:3px}
+@keyframes pk-clign{50%{opacity:.45}}
+#pkm-voile .carte{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:480px;background:rgba(14,20,38,.92);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:24px 24px 0 0;
+  padding:16px 18px max(16px,env(safe-area-inset-bottom));transform:translateY(105%);
+  transition:transform .55s cubic-bezier(.2,1.1,.3,1);text-align:center;box-shadow:0 -10px 40px rgba(0,0,0,.5)}
+#pkm-voile .carte.vu{transform:translateY(0)}
+#pkm-voile .badges{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;min-height:24px}
+#pkm-voile .badge{font-size:12px;font-weight:900;border-radius:999px;padding:3px 11px;letter-spacing:.4px;
+  transform:scale(0);animation:pk-pop .45s cubic-bezier(.2,1.8,.4,1) forwards}
+#pkm-voile .b-nouveau{background:linear-gradient(90deg,#FF5D5D,#FFCB05,#4CD3A0,#6B8CFF,#B57BFF,#FF5D5D);background-size:300% 100%;
+  animation:pk-pop .45s cubic-bezier(.2,1.8,.4,1) forwards,pk-arcenciel 3s linear infinite;color:#fff;
+  text-shadow:0 1px 2px rgba(0,0,0,.5)}
+#pkm-voile .b-version{background:#2F6FD6}
+#pkm-voile .b-shiny{background:linear-gradient(135deg,#FFE27A,#C9A227);color:#3A2A00}
+#pkm-voile .b-leg{background:linear-gradient(135deg,#B57BFF,#E04BA0)}
+@keyframes pk-pop{to{transform:scale(1)}}
+@keyframes pk-arcenciel{to{background-position:300% 0}}
+#pkm-voile .no{font-size:13px;color:#9AA7C2;margin-top:8px}
+#pkm-voile .nm{font-size:30px;font-weight:900;line-height:1.1}
+#pkm-voile .ver{font-size:13px;color:#C9D3EA;margin-top:6px}
+#pkm-voile .rs{font-size:12px;color:#9AA7C2;margin-top:3px}
+#pkm-voile .compteur{display:flex;gap:10px;margin-top:12px;text-align:left}
+#pkm-voile .compteur>div{flex:1;background:rgba(255,255,255,.06);border-radius:12px;padding:7px 10px}
+#pkm-voile .compteur .l{font-size:10.5px;color:#9AA7C2}#pkm-voile .compteur .v{font-size:16px;font-weight:800}
+#pkm-voile .compteur .j{height:5px;background:rgba(0,0,0,.4);border-radius:3px;margin-top:4px;overflow:hidden}
+#pkm-voile .compteur .j div{height:100%;background:#4CD3A0;border-radius:3px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+#pkm-voile .boutons{display:flex;gap:8px;margin-top:14px}
+#pkm-voile .boutons button{flex:1;border:0;border-radius:14px;padding:13px;font:800 15px Outfit,sans-serif;cursor:pointer;color:#fff}
+#pkm-voile .b1{background:linear-gradient(180deg,#FF4B4B,#D21F2E);box-shadow:0 4px 0 #8E1220}
+#pkm-voile .b2{background:rgba(255,255,255,.12)}
+.pkm-type{display:inline-block;padding:2px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#fff;margin:6px 2px 0;
+  text-shadow:0 1px 1px rgba(0,0,0,.35)}
+`;
+
+function installerStyle(id, css) {
+  let s = P.getElementById(id);
+  if (!s) { s = P.createElement("style"); s.id = id; P.head.appendChild(s); }
+  if (s.textContent !== css) s.textContent = css;
+}
+// Un ancien calque resté ouvert (l'onglet a été rechargé pendant une animation) : on l'enlève
+["pkm-voile", "pkm-fiche"].forEach(id => { const e = P.getElementById(id); if (e) e.remove(); });
+
+// ----- Particules (étincelles, confettis) sur un canvas 2D -----
+function Particules(canvas) {
+  const ctx = canvas.getContext("2d"), parts = [];
+  let W = 0, H = 0, dpr = 1;
+  const taille = () => { dpr = Math.min(PW.devicePixelRatio || 1, 2); W = canvas.clientWidth; H = canvas.clientHeight;
+                         canvas.width = W * dpr; canvas.height = H * dpr; };
+  taille();
+  const etoile = (x, y, r, rot) => {
+    ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4, rr = i % 2 ? r * .28 : r; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.restore();
+  };
+  return {
+    taille,
+    jet(x, y, n, {couleurs = ["#fff"], vitesse = 6, forme = "etoile", taille: t = 6, vie = 1.2, gravite = .12, cercle = false} = {}) {
+      for (let i = 0; i < n; i++) {
+        const a = cercle ? i / n * Math.PI * 2 : Math.random() * Math.PI * 2, v = vitesse * (.4 + Math.random() * .8);
+        parts.push({x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - (forme === "confetti" ? 4 : 0), g: gravite,
+          vie: vie * (.6 + Math.random() * .6), age: 0, t: t * (.5 + Math.random()), rot: Math.random() * 6,
+          vr: (Math.random() - .5) * .3, c: couleurs[Math.floor(Math.random() * couleurs.length)], forme});
+      }
+    },
+    scintille(x, y, rayon, couleurs) {
+      const a = Math.random() * Math.PI * 2, r = rayon * Math.sqrt(Math.random());
+      parts.push({x: x + Math.cos(a) * r, y: y + Math.sin(a) * r * .9, vx: 0, vy: -.3, g: 0, vie: .9, age: 0,
+        t: 4 + Math.random() * 7, rot: 0, vr: .05, c: couleurs[Math.floor(Math.random() * couleurs.length)], forme: "brille"});
+    },
+    dessiner(dt) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i]; p.age += dt;
+        if (p.age > p.vie) { parts.splice(i, 1); continue; }
+        const k = dt * 60; p.vx *= Math.pow(.97, k); p.vy = p.vy * Math.pow(.97, k) + p.g * k; p.x += p.vx * k; p.y += p.vy * k; p.rot += p.vr * k;
+        const f = 1 - p.age / p.vie; ctx.globalAlpha = p.forme === "brille" ? Math.sin(Math.PI * p.age / p.vie) : Math.min(1, f * 1.5);
+        ctx.fillStyle = p.c;
+        if (p.forme === "confetti") { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillRect(-p.t / 2, -p.t / 4, p.t, p.t / 2); ctx.restore(); }
+        else if (p.forme === "rond") { ctx.beginPath(); ctx.arc(p.x, p.y, p.t * f, 0, 7); ctx.fill(); }
+        else etoile(p.x, p.y, p.t * (p.forme === "brille" ? 1 : f), p.rot);
+      }
+      ctx.globalAlpha = 1;
+      return parts.length;
+    },
+  };
+}
+
+// ----- La Poké Ball en 3D (three.js) -----
+const TEINTES = {poke: 0xE3262E, super: 0x2F6FD6, hyper: 0x2A2A2E, master: 0x6A3FB0};
+function texture(type, haut) {
+  // Texture dessinée point par point : (u, v) -> point de la sphère -> couleur (bandes, cercles, « M »…)
+  const L = 512, H = 256, cv = P.createElement("canvas"); cv.width = L; cv.height = H;
+  const ctx = cv.getContext("2d"), img = ctx.createImageData(L, H), d = img.data;
+  const hex = h => [h >> 16 & 255, h >> 8 & 255, h & 255];
+  const blanc = [242, 242, 242], base = hex(TEINTES[type]), rouge = hex(0xE3262E), jaune = hex(0xFFCB05), rose = hex(0xE04BA0);
+  const seg = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+    return Math.hypot(px - ax - t * dx, py - ay - t * dy); };
+  for (let r = 0; r < H; r++) for (let c = 0; c < L; c++) {
+    const phi = c / L * Math.PI * 2, th = (haut ? 0 : Math.PI / 2) + r / H * Math.PI / 2;
+    const x = -Math.cos(phi) * Math.sin(th), y = Math.cos(th), z = Math.sin(phi) * Math.sin(th);
+    let col = haut ? base : blanc;
+    if (haut && type === "super" && Math.abs(x) > .44 && Math.abs(x) < .7 && z > -.25) col = rouge;
+    if (haut && type === "hyper" && Math.abs(x) > .26 && Math.abs(x) < .46 && z > -.55 && y > .12) col = jaune;
+    if (haut && type === "master") {
+      if (Math.hypot(Math.abs(x) - .62, y - .5, z - .58) < .27) col = rose;
+      if (z > .5) { const mx = x / .3, my = (y - .45) / .3;
+        const dm = Math.min(seg(mx, my, -.8, -.7, -.8, .7), seg(mx, my, .8, -.7, .8, .7), seg(mx, my, -.8, .7, 0, -.1), seg(mx, my, .8, .7, 0, -.1));
+        if (dm < .2) col = blanc; }
+    }
+    const i = (r * L + c) * 4; d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
+  }
+  ctx.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+
+function Ball3D(canvas, type) {
+  const renderer = new THREE.WebGLRenderer({canvas, antialias: true, alpha: true});
+  renderer.setPixelRatio(Math.min(PW.devicePixelRatio || 1, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+  const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, .1, 100);
+  scene.add(new THREE.HemisphereLight(0xCFDCFF, 0x1A1A2A, 1.4));
+  const cle = new THREE.DirectionalLight(0xffffff, 2.6); cle.position.set(3, 5, 6); scene.add(cle);
+  const contre = new THREE.DirectionalLight(0x8FB0FF, 2.2); contre.position.set(-5, 2, -4); scene.add(contre);
+  const R = 1, mat = (map, opts = {}) => new THREE.MeshPhysicalMaterial({map, roughness: .32, metalness: .05, clearcoat: 1,
+    clearcoatRoughness: .12, ...opts});
+  const ball = new THREE.Group(), pivot = new THREE.Group(); scene.add(ball);
+  // Moitié du bas + intérieur lumineux
+  const bas = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat(texture(type, false)));
+  ball.add(bas);
+  const coeurMat = new THREE.MeshBasicMaterial({color: 0x222222});
+  const coeur = new THREE.Mesh(new THREE.CircleGeometry(R * .97, 48), coeurMat); coeur.rotation.x = -Math.PI / 2; coeur.position.y = -.01; ball.add(coeur);
+  // Moitié du haut : charnière à l'arrière (elle bascule vers l'arrière en s'ouvrant)
+  pivot.position.set(0, 0, -R); ball.add(pivot);
+  const haut = new THREE.Group(); haut.position.set(0, 0, R); pivot.add(haut);
+  haut.add(new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), mat(texture(type, true))));
+  haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * .985, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshStandardMaterial({color: 0x1B1B1F, side: THREE.BackSide, roughness: .8})));
+  const bandeMat = new THREE.MeshStandardMaterial({color: 0x141414, roughness: .5});
+  const bandeH = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
+  bandeH.position.y = R * .035; haut.add(bandeH);
+  const bandeB = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
+  bandeB.position.y = -R * .035; ball.add(bandeB);
+  // Le bouton, à l'avant
+  const bouton = new THREE.Group(); bouton.position.set(0, 0, R * .96); ball.add(bouton);
+  const anneau = new THREE.Mesh(new THREE.CylinderGeometry(R * .3, R * .3, R * .14, 48), bandeMat);
+  anneau.rotation.x = Math.PI / 2; bouton.add(anneau);
+  const btnMat = new THREE.MeshPhysicalMaterial({color: 0xF4F4F4, roughness: .25, clearcoat: 1, emissive: 0xffffff, emissiveIntensity: 0});
+  const btn = new THREE.Mesh(new THREE.CylinderGeometry(R * .19, R * .2, R * .1, 48), btnMat);
+  btn.rotation.x = Math.PI / 2; btn.position.z = R * .07; bouton.add(btn);
+  // Faisceau de lumière (à l'ouverture)
+  const gc = P.createElement("canvas"); gc.width = 4; gc.height = 128; const g2 = gc.getContext("2d");
+  const grd = g2.createLinearGradient(0, 0, 0, 128); grd.addColorStop(0, "rgba(255,255,255,0)"); grd.addColorStop(1, "rgba(255,255,255,1)");
+  g2.fillStyle = grd; g2.fillRect(0, 0, 4, 128);
+  const fxMat = new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(gc), transparent: true, opacity: 0, blending: THREE.AdditiveBlending,
+    depthWrite: false, side: THREE.DoubleSide});
+  const faisceau = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.9, R * .85, R * 4.2, 48, 1, true), fxMat);
+  faisceau.position.y = R * 2.1; ball.add(faisceau);
+  const lumiere = new THREE.PointLight(0xffffff, 0, 8); lumiere.position.set(0, .3, 0); ball.add(lumiere);
+  // Ombre au sol
+  const oc = P.createElement("canvas"); oc.width = oc.height = 64; const o2 = oc.getContext("2d");
+  const og = o2.createRadialGradient(32, 32, 0, 32, 32, 32); og.addColorStop(0, "rgba(0,0,0,.55)"); og.addColorStop(1, "rgba(0,0,0,0)");
+  o2.fillStyle = og; o2.fillRect(0, 0, 64, 64);
+  const ombre = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), new THREE.MeshBasicMaterial({map: new THREE.CanvasTexture(oc), transparent: true, depthWrite: false}));
+  ombre.rotation.x = -Math.PI / 2; ombre.position.y = -1.05; scene.add(ombre);
+
+  const taille = () => {
+    const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / h;
+    const cible = Math.min(w * .48, h * .42, 230);           // diamètre de la ball à l'écran, en pixels
+    const hv = 2 * R * h / cible, d = hv / (2 * Math.tan(cam.fov * Math.PI / 360));
+    cam.position.set(0, d * .12, d); cam.lookAt(0, 0, 0); cam.updateProjectionMatrix(); base = cam.position.clone();
+  };
+  let base; taille();
+  const coul = c => new THREE.Color(c);
+  return {
+    ball, taille,
+    get y() { return ball.position.y; },
+    set y(v) { ball.position.y = v; ombre.material.opacity = Math.max(0, 1 - v / 3); ombre.scale.setScalar(1 - Math.min(Math.max(v, 0), 3) * .15); },
+    get rotY() { return ball.rotation.y; }, set rotY(v) { ball.rotation.y = v; },
+    get rotZ() { return ball.rotation.z; }, set rotZ(v) { ball.rotation.z = v; },
+    get x() { return ball.position.x; }, set x(v) { ball.position.x = v; },
+    set echelle(v) { ball.scale.setScalar(v); ombre.visible = v > .3; },
+    set ouverture(v) { pivot.rotation.x = -v; },
+    set zoom(v) { cam.position.copy(base).multiplyScalar(1 / v); },
+    lueurBouton(intensite, c = 0xffffff) { btnMat.emissive = coul(c); btnMat.emissiveIntensity = intensite; },
+    interieur(c, i) { coeurMat.color = coul(c).multiplyScalar(i); },
+    faisceau(op, c = 0xffffff) { fxMat.opacity = op; fxMat.color = coul(c); lumiere.color = coul(c); lumiere.intensity = op * 30; },
+    rendre() { renderer.render(scene, cam); },
+    ecran() { const v = new THREE.Vector3(); ball.getWorldPosition(v); v.project(cam);  // centre de la ball, en pixels
+              return [(v.x + 1) / 2 * canvas.clientWidth, (1 - v.y) / 2 * canvas.clientHeight]; },
+    fin() { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); },
+  };
+}
+
+// ----- Repli en 2D (si three.js n'a pas pu se charger) -----
+function Ball2D(el, type) {
+  el.innerHTML = ballSVG(type);
+  const s = {y: 0, rotY: 0, rotZ: 0, x: 0, echelle: 1, ouverture: 0};
+  const maj = () => el.style.transform = `translate(${s.x * 60}px,${-s.y * 60}px) rotate(${s.rotZ}rad) scale(${s.echelle})`;
+  const proxy = new Proxy(s, {set(o, k, v) { o[k] = v; maj(); return true; }});
+  return Object.assign(proxy, {lueurBouton() {}, interieur() {}, faisceau() {}, rendre() {}, taille() {},
+    set zoom(v) {}, ecran() { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }, fin() {}});
+}
+
+// ----- La séquence complète -----
+function ouvrir(c, rejouer = false) {
+  installerStyle("pkm2-style", STYLE_VOILE);
+  audio();  // le toucher qui ouvre autorise le son
+  // Nouveau Pokémon = première capture ouverte de cette espèce
+  const nouveau = rejouer ? CAPTURES.find(x => x.num === c.num && estOuverte(x)).id === c.id : !collection()[c.num];
+  const r = {leg: c.legendaire, shiny: c.shiny, nouveau};
+  const cls = r.leg ? "r-leg" : r.shiny ? "r-shiny" : r.nouveau ? "r-nouveau" : "r-version";
+  const teinte = r.leg ? 0xFF8CE6 : r.shiny ? 0xFFD75A : r.nouveau ? 0x7FE8FF : 0xffffff;
+  const couleursFx = r.leg ? ["#FF8CE6", "#B57BFF", "#7FD4FF", "#fff"] : r.shiny ? ["#FFE27A", "#FFCB05", "#fff"] :
+                     r.nouveau ? ["#7FE8FF", "#fff", "#4CD3A0"] : ["#fff", "#C9D3EA"];
+
+  const v = P.createElement("div"); v.id = "pkm-voile";
+  v.innerHTML = `<div class="fond"></div><div class="rayons"></div><canvas class="scene"></canvas><div class="ball2d" hidden></div>
+    <img class="poke" alt=""><canvas class="fx"></canvas><div class="flash"></div>
+    <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${BALLS[c.ball] || "Poké Ball"}</div>
+      <button class="rond x">✕</button></div>
+    <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${c.raison}</small></div>
+    <div class="carte"></div>`;
+  P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
+  const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
+  const fx = Particules($(".fx"));
+  let B;
+  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
+  catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), c.ball); }
+
+  // Boucle d'affichage (dans la fenêtre parente : jamais ralentie)
+  let fini = false, dernier = maintenant(), anims = [], brille = false;
+  const boucle = now => {
+    if (fini) return;
+    const dt = Math.min((now - dernier) / 1000, .05); dernier = now;
+    anims = anims.filter(a => a(now) !== false);
+    if (brille) { const rc = poke.getBoundingClientRect();
+      if (Math.random() < .5) fx.scintille(rc.left + rc.width / 2, rc.top + rc.height / 2, Math.max(rc.width, 80) * .65, couleursFx); }
+    fx.dessiner(dt); B.rendre(); PW.requestAnimationFrame(boucle);
+  };
+  PW.requestAnimationFrame(boucle);
+  const redim = () => { B.taille(); fx.taille(); }; PW.addEventListener("resize", redim);
+  const tween = (ms, f, e = ease.inout) => new Promise((ok, ko) => { const t0 = maintenant();
+    anims.push(now => { if (fini) { ko("fermé"); return false; } const t = Math.min((now - t0) / ms, 1); f(e(t), t); if (t >= 1) { ok(); return false; } }); });
+  const pause = ms => new Promise((ok, ko) => setTimeout(() => fini ? ko("fermé") : ok(), ms));
+  const touche = () => new Promise((ok, ko) => { const f = ev => { if (ev.target.closest("button")) return;
+    v.removeEventListener("pointerdown", f); fini ? ko("fermé") : ok(); }; v.addEventListener("pointerdown", f); });
+  const fermer = () => { if (fini) return; fini = true; v.classList.add("fin"); PW.removeEventListener("resize", redim);
+    setTimeout(() => { B.fin(); v.remove(); }, 320); dessiner(); };
+  $(".x").onclick = fermer;
+  $(".son").onclick = e => { son = !son; e.target.textContent = son ? "🔊" : "🔇"; try { localStorage.setItem("pkm_son", son ? "1" : "0"); } catch (x) {} };
+
+  // L'image du Pokémon : agrandie d'un nombre entier de fois (pixels nets), environ 220 px
+  poke.onload = () => { const w = poke.naturalWidth || 96, f = w > 220 ? 220 / w : Math.max(1, Math.floor(230 / w));
+                        poke.style.width = w * f + "px"; };
+  poke.src = c.image;
+
+  const centre = () => B.ecran();
+  (async () => {
+    // 1. Elle tombe du ciel et rebondit
+    B.y = 5; B.rotY = -Math.PI * 3;
+    SONS.chute();
+    await tween(950, (e, t) => { B.y = 5 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
+    SONS.rebond(); vibre(20);
+    if (rejouer) return devoiler(true);
+    // 2. Elle attend qu'on la touche
+    aide.classList.add("vu");
+    let tAtt = maintenant(), attend = true;
+    anims.push(now => { if (!attend) return false; const t = (now - tAtt) / 1000;
+      B.y = .08 + Math.sin(t * 2.2) * .08; B.rotY = Math.sin(t * .9) * .5; B.lueurBouton(.25 + .25 * Math.sin(t * 4)); });
+    await touche(); attend = false; aide.classList.remove("vu");
+    await tween(250, e => { B.y = .08 * (1 - e); B.rotY *= (1 - e); B.lueurBouton(0); });
+    // 3. Les secousses : une de plus quand c'est rare, et de plus en plus longues
+    const n = r.leg || r.shiny || r.nouveau ? 4 : 3;
+    for (let i = 0; i < n; i++) {
+      await pause(380 + i * 260);
+      SONS.secousse(); vibre(35);
+      const amp = .42 + i * .04;
+      await tween(620, (e, t) => { B.rotZ = Math.sin(t * Math.PI * 2) * amp * (1 - t * .3); B.x = Math.sin(t * Math.PI * 2) * .12;
+        B.lueurBouton(Math.sin(t * Math.PI) * .9, 0xFF3030); B.zoom = 1 + (i + t) * .045; }, x => x);
+      B.rotZ = 0; B.x = 0;
+    }
+    // 4. « Clic ! »
+    await pause(300);
+    SONS.clic(); vibre([15, 40, 15]);
+    { const [x, y] = centre(); fx.jet(x, y - 40, 3, {couleurs: ["#FFE27A", "#fff"], vitesse: 5, taille: 12, vie: .9, gravite: .05}); }
+    await pause(650);
+    // 5. Elle s'éveille : lueur (blanche, dorée pour un shiny, multicolore pour un légendaire, bleue pour un nouveau)
+    SONS.montee(.9);
+    await tween(900, (e, t) => { B.lueurBouton(e * 3, teinte); B.x = (Math.random() - .5) * .06 * e; B.rotZ = (Math.random() - .5) * .08 * e;
+      B.zoom = 1 + n * .045 + e * .08; });
+    B.x = 0; B.rotZ = 0;
+    devoiler(false);
+  })().catch(() => {});
+
+  async function devoiler(vite) {
+    // 6. Elle s'ouvre : faisceau, flash, le Pokémon sort en silhouette puis prend ses couleurs
+    v.classList.add(cls);
+    if (!vite) { SONS.ouverture(); vibre(60); }
+    B.interieur(teinte, 1);
+    await tween(vite ? 200 : 360, e => { B.ouverture = e * 1.95; B.faisceau(e * .85, teinte); }, ease.back);
+    flash.classList.add("go");
+    const [x, y] = centre();
+    fx.jet(x, y, vite ? 20 : 46, {couleurs: couleursFx, vitesse: 9, taille: 9, vie: 1.3, gravite: .04, cercle: true});
+    poke.classList.add("sort"); SONS.materialise();
+    v.classList.add("revele");
+    await tween(500, e => { B.echelle = 1 - e; B.y = -e * .6; B.faisceau(.85 * (1 - e), teinte); }, ease.inout);
+    await pause(vite ? 150 : 550);
+    poke.classList.add("couleur"); vibre(r.nouveau || r.shiny ? [40, 60, 80] : 30);
+    const pr = poke.getBoundingClientRect(), px = pr.left + pr.width / 2, py = pr.top + pr.height / 2;
+    if (r.leg) { SONS.legendaire(); fx.jet(px, py, 90, {couleurs: couleursFx, vitesse: 12, taille: 10, vie: 2, gravite: .02, cercle: true}); }
+    if (r.shiny) { SONS.shiny(); fx.jet(px, py, 60, {couleurs: couleursFx, vitesse: 8, taille: 11, vie: 1.8, gravite: .01}); }
+    else if (r.nouveau) SONS.nouveau(); else SONS.version();
+    if (r.nouveau && !r.leg) fx.jet(px, py - 40, 110, {couleurs: ["#FF5D5D", "#FFCB05", "#4CD3A0", "#6B8CFF", "#B57BFF", "#fff"],
+      forme: "confetti", vitesse: 11, taille: 10, vie: 2.6, gravite: .16});
+    brille = r.shiny || r.leg;
+    setTimeout(() => poke.classList.add("danse"), 700);
+    if (!rejouer) memoriser(c.id);
+    montrerCarte();
+  }
+
+  function montrerCarte() {
+    const col = collection(), especes = Object.keys(col).length, versions = (col[c.num] || []).length;
+    const total = PAR_NUM[c.num].versions.length, reste = aOuvrir();
+    const badges = [r.nouveau ? `<span class="badge b-nouveau">NOUVEAU POKÉMON !</span>` : `<span class="badge b-version">NOUVELLE VERSION</span>`,
+                    r.shiny ? `<span class="badge b-shiny">✨ SHINY</span>` : "", r.leg ? `<span class="badge b-leg">👑 LÉGENDAIRE</span>` : ""];
+    carte.innerHTML = `<div class="badges">${badges.join("")}</div>
+      <div class="no">N° ${N3(c.num)}</div><div class="nm">${c.nom}</div><div>${typesHTML(c.types, "pkm-type")}</div>
+      <div class="ver">${c.shiny ? "✨ Shiny · " : ""}${c.version}</div>
+      <div class="rs">${BALLS[c.ball] || "Poké Ball"} · ${c.raison} · ${c.quand}</div>
+      <div class="compteur"><div><div class="l">Pokédex</div><div class="v">${especes} / 151</div><div class="j"><div style="width:${(especes - (r.nouveau && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div>
+        <div><div class="l">Versions de ${c.nom}</div><div class="v">${versions} / ${total}</div><div class="j"><div style="width:${(versions - (rejouer ? 0 : 1)) / total * 100}%"></div></div></div></div>
+      <div class="boutons">${reste.length && !rejouer ? `<button class="b1 suite">Ouvrir la suivante (${reste.length})</button>` : ""}
+        <button class="${reste.length && !rejouer ? "b2" : "b1"} ok">${r.nouveau || r.shiny ? "Génial !" : "Super !"}</button></div>`;
+    carte.querySelectorAll(".badge").forEach((b, i) => b.style.animationDelay = `${.15 + i * .18}s${b.classList.contains("b-nouveau") ? ",0s" : ""}`);
+    setTimeout(() => { carte.classList.add("vu");
+      setTimeout(() => { const j = carte.querySelectorAll(".compteur .j div");
+        if (j[0]) j[0].style.width = especes / 1.51 + "%"; if (j[1]) j[1].style.width = versions / total * 100 + "%"; }, 500); }, 350);
+    carte.querySelector(".ok").onclick = fermer;
+    const s = carte.querySelector(".suite");
+    if (s) s.onclick = () => { fermer(); setTimeout(() => ouvrir(aOuvrir()[0]), 340); };
+  }
+}
+
+// ================================================================================================
+// LA FICHE D'UN POKÉMON (feuille qui monte du bas, dans la page parente)
+// ================================================================================================
+const STYLE_FICHE = `
+#pkm-fiche{position:fixed;inset:0;z-index:999998;font-family:Outfit,system-ui,sans-serif;color:#EEF2FA}
+#pkm-fiche .ombre{position:absolute;inset:0;background:rgba(3,6,14,.6);opacity:0;transition:opacity .25s}
+#pkm-fiche.vu .ombre{opacity:1}
+#pkm-fiche .feuille{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:560px;max-height:86vh;overflow-y:auto;
+  background:#121A2E;border-radius:24px 24px 0 0;padding:8px 16px max(18px,env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .38s cubic-bezier(.2,1,.3,1);box-shadow:0 -10px 40px rgba(0,0,0,.6)}
+#pkm-fiche.vu .feuille{transform:none}
+#pkm-fiche .poignee{width:42px;height:5px;border-radius:3px;background:#2A3756;margin:4px auto 10px}
+#pkm-fiche .tete{display:flex;gap:14px;align-items:center;border-radius:18px;padding:12px}
+#pkm-fiche .tete img{width:110px;height:110px;object-fit:contain;image-rendering:pixelated}
+#pkm-fiche .tete img.non{filter:brightness(0);opacity:.35}
+#pkm-fiche .no{font-size:12px;color:#C9D3EA}#pkm-fiche h3{margin:0;font-size:26px;font-weight:900}
+#pkm-fiche .sous{font-size:12.5px;color:#C9D3EA;margin-top:4px}
+#pkm-fiche h4{font-size:14px;margin:16px 2px 8px;display:flex;justify-content:space-between}
+#pkm-fiche h4 span{color:#9AA7C2;font-weight:600;font-size:12px}
+#pkm-fiche .vers{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+#pkm-fiche .v{background:#1C2740;border-radius:12px;padding:6px 4px;text-align:center;font-size:10px;color:#9AA7C2;line-height:1.25}
+#pkm-fiche .v img{width:70px;height:70px;object-fit:contain;image-rendering:pixelated;display:block;margin:0 auto 2px}
+#pkm-fiche .v.sh{box-shadow:inset 0 0 0 2px #C9A227}#pkm-fiche .v.sh b{color:#FFE27A}
+#pkm-fiche .v .trou{width:70px;height:70px;margin:0 auto 2px;border-radius:10px;border:2px dashed #2A3756;display:flex;
+  align-items:center;justify-content:center;font-size:24px;color:#2A3756}
+#pkm-fiche .v.sh .trou{border-color:#5C4A12;color:#5C4A12}
+#pkm-fiche .ou{background:#1C2740;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.5;color:#C9D3EA}
+#pkm-fiche .ou b{color:#fff}
+#pkm-fiche .fermer{display:block;width:100%;margin-top:14px;border:0;border-radius:14px;padding:12px;background:#1C2740;color:#fff;
+  font:700 15px Outfit,sans-serif;cursor:pointer}
+.pkm-type{display:inline-block;padding:2px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#fff;margin:6px 2px 0;
+  text-shadow:0 1px 1px rgba(0,0,0,.35)}
+`;
+
+function fiche(p) {
+  installerStyle("pkm2-fiche-style", STYLE_FICHE);
+  const col = collection(), mes = col[p.num] || [], a = mes.length > 0, leg = LEG.has(p.num);
+  const parFichier = Object.fromEntries(mes.map(c => [c.fichier, c]));
+  const meilleure = mes.find(c => c.shiny) || mes[mes.length - 1];
+  const c0 = COUL[p.types[0]];
+  const ou = leg ? `👑 <b>Légendaire</b> : il n'apparaît que dans une <b>Master Ball</b>, au bout de ${D.regles.serie_legendaire} jours d'affilée avec ton objectif.`
+    : `${a ? "Ses versions qui manquent" : "Il"} sortent plus souvent avec : <b>${[...new Set(p.types.flatMap(t => D.conseils[t] || []))].join(", ") || "toutes les activités"}</b>.
+       <br>🎯 Super Ball et ⭐ Hyper Ball : plus de chances d'une espèce jamais vue.`;
+  const f = P.createElement("div"); f.id = "pkm-fiche";
+  f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
+    <div class="tete" style="background:linear-gradient(135deg,${c0}55,#1C2740 70%)">
+      <img class="${a ? "" : "non"}" src="${a ? D.images[`${meilleure.num}/${meilleure.fichier}`] || p.vignette : p.vignette}">
+      <div><div class="no">N° ${N3(p.num)}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
+        <div>${typesHTML(p.types, "pkm-type")}</div>
+        <div class="sous">${a ? `Première capture : ${mes[0].quand} · ${mes.length} version${mes.length > 1 ? "s" : ""}` : "Pas encore attrapé"}</div></div></div>
+    ${a ? `<h4>Versions <span>${mes.length} / ${p.versions.length} · ✨ ${mes.filter(c => c.shiny).length} / ${p.versions.filter(x => x.s).length}</span></h4>
+      <div class="vers">${p.versions.map(x => parFichier[x.f]
+        ? `<div class="v ${x.s ? "sh" : ""}"><img src="${D.images[`${p.num}/${x.f}`]}">${x.s ? "<b>✨ Shiny</b><br>" : ""}${x.t}</div>`
+        : `<div class="v ${x.s ? "sh" : ""}"><div class="trou">${x.s ? "✨" : "?"}</div>${x.s ? "Shiny<br>" : ""}${x.t}</div>`).join("")}</div>`
+      : `<h4>À trouver <span>${p.versions.length} versions dont ${p.versions.filter(x => x.s).length} shiny</span></h4>`}
+    <h4>Où le trouver ?</h4><div class="ou">${ou}</div>
+    <button class="fermer">Fermer</button></div>`;
+  P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu"));
+  const fermer = () => { f.classList.remove("vu"); setTimeout(() => f.remove(), 350); };
+  f.querySelector(".ombre").onclick = fermer; f.querySelector(".fermer").onclick = fermer;
+  // glisser la feuille vers le bas pour la fermer
+  const fe = f.querySelector(".feuille"); let y0 = null;
+  fe.addEventListener("touchstart", e => { y0 = fe.scrollTop <= 0 ? e.touches[0].clientY : null; }, {passive: true});
+  fe.addEventListener("touchmove", e => { if (y0 === null) return; const d = e.touches[0].clientY - y0;
+    if (d > 0) { fe.style.transition = "none"; fe.style.transform = `translateY(${d}px)`; } }, {passive: true});
+  fe.addEventListener("touchend", e => { if (y0 === null) return; const d = e.changedTouches[0].clientY - y0; y0 = null;
+    fe.style.transition = ""; if (d > 110) fermer(); else fe.style.transform = ""; });
+}
+
+// ================================================================================================
+// L'ÉCRAN
+// ================================================================================================
+const R = D.regles, J = D.jour;
+let filtre = "tous", filtreTypes = new Set(), texte = "";
+
+function dessinerBarre() {
+  const b = D.barre, pct = b.points / b.taille, circ = 2 * Math.PI * 50, reste = b.taille - b.points;
+  const [ic, nom, ts] = b.origine;
+  const pas = Math.ceil(reste) * 100, zone = Math.ceil(reste / 2), sport = Math.ceil(reste);
+  document.getElementById("barre").innerHTML = `<div class="filigrane">${ballSVG("poke")}</div>
+    <div class="anneau"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#0D1322" stroke-width="12"/>
+      <circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="url(#gb)" stroke-width="12" stroke-linecap="round"
+        stroke-dasharray="${circ}" stroke-dashoffset="${circ}"/>
+      <defs><linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFCB05"/><stop offset="1" stop-color="#FF4B4B"/></linearGradient></defs></svg>
+      <div class="centre"><div class="v">${Math.floor(b.points)}</div><div class="s">/ ${b.taille} pts</div></div></div>
+    <div class="droite"><div class="titre">Prochaine Poké Ball</div>
+      <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min en zone</b>, ou <b>${sport} min de sport</b>.</div>
+      <div class="puces">${b.sources.length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
+        : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
+      ${ts.length ? `<div class="petit gris" style="margin-top:6px">Aujourd'hui : ${ic} ${nom} → ${typesHTML(ts)}</div>` : ""}</div>`;
+  requestAnimationFrame(() => setTimeout(() => document.querySelector("#barre .arc").style.strokeDashoffset = circ * (1 - pct), 60));
+}
+
+function dessinerAOuvrir() {
+  const liste = aOuvrir(), el = document.getElementById("aouvrir");
+  el.classList.toggle("vide", !liste.length);
+  if (!liste.length) {
+    el.innerHTML = `<div class="titre" style="font-size:16px">Aucune Poké Ball à ouvrir</div>
+      <div class="petit gris" style="margin-top:4px">Remplis ta barre d'effort, ou décroche une Super / Hyper Ball !</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
+    <div class="rang">${liste.slice(0, 12).map((c, i) => `<button class="bouton-ball" data-i="${CAPTURES.indexOf(c)}"
+      style="animation-delay:${i * .25}s">${ballSVG(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
+    <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
+  el.querySelectorAll(".bouton-ball").forEach(b => b.onclick = () => ouvrir(CAPTURES[b.dataset.i]));
+  el.querySelector(".gros-bouton").onclick = () => ouvrir(aOuvrir()[0]);
+}
+
+function dessinerSpeciales() {
+  const gagnee = cle => CAPTURES.some(c => c.jour === D.aujourdhui && c.id.split("#")[1].startsWith(cle));
+  const j = (v, s) => `<div class="jauge"><div class="${v >= s ? "ok" : ""}" style="width:${Math.min(v / s * 100, 100)}%"></div></div>`;
+  const sup = gagnee("super"), hyp = gagnee("hyper"), serie = J.serie % R.serie_legendaire;
+  const nuit = J.sommeil >= R.nuit, h = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}`;
+  document.getElementById("speciales").innerHTML = `
+    <div class="speciale ${sup ? "ok" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
+      <div class="tete">${ballSVG("super")}Super Ball</div><div class="gain">Objectif double · shiny ×2, 1 chance sur 2 d'un nouveau</div>
+      <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
+      <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}</div>
+    <div class="speciale ${hyp ? "ok" : ""}">${hyp ? '<span class="tampon">✅</span>' : ""}
+      <div class="tete">${ballSVG("hyper")}Hyper Ball</div><div class="gain">Un exploit au choix · shiny ×4, nouveau garanti</div>
+      <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}
+      <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
+      <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}</div>
+    <div class="speciale">
+      <div class="tete">${ballSVG("master")}Master Ball</div><div class="gain">${R.serie_legendaire} jours d'affilée à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire</div>
+      <div class="ligne"><span>👑 ${J.serie} jour${J.serie > 1 ? "s" : ""}${J.serie_ok ? " ✅" : ""}</span><span>${R.serie_legendaire - serie} à faire</span></div>
+      <div class="points-serie">${Array.from({length: R.serie_legendaire}, (_, i) => `<i class="${i < serie ? "on" : ""}"></i>`).join("")}</div>
+      <div class="ligne"><span>${J.joker ? "🃏 Joker de la semaine dispo" : "🃏 Joker utilisé cette semaine"}</span></div></div>
+    <div class="speciale ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
+      <div class="tete"><span style="font-size:22px">😴</span>Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
+      <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
+      <div class="ligne"><span>✨ Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div></div>`;
+}
+
+function dessinerDernieres() {
+  const ok = CAPTURES.filter(estOuverte).reverse().slice(0, 15), vus = new Set();
+  const premiere = {};  // première capture de chaque espèce (pour l'étiquette « nouveau »)
+  for (const c of CAPTURES) if (estOuverte(c) && !vus.has(c.num)) { vus.add(c.num); premiere[c.id] = 1; }
+  document.getElementById("bloc-dernieres").style.display = ok.length ? "" : "none";
+  document.getElementById("dernieres").innerHTML = ok.map(c => `<div class="mini" data-i="${CAPTURES.indexOf(c)}">
+    ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? '<span class="eti sh">✨</span>' : ""}
+    <img src="${c.image}"><div class="nm">${c.nom}</div><div class="qd">${c.quand}</div></div>`).join("");
+  document.querySelectorAll(".mini").forEach(e => e.onclick = () => ouvrir(CAPTURES[e.dataset.i], true));
+}
+
+function dessinerDex() {
+  const col = collection(), especes = Object.keys(col).length;
+  const nv = Object.values(col).reduce((s, l) => s + l.length, 0), sh = Object.values(col).reduce((s, l) => s + l.filter(c => c.shiny).length, 0);
+  const totalV = DEX.reduce((s, p) => s + p.versions.length, 0);
+  document.getElementById("dex-n").textContent = `${especes} / 151`;
+  document.getElementById("stats").innerHTML = `
+    <div class="t"><div class="l">Espèces</div><div class="v">${especes} <small>/ 151</small></div>
+      <div class="jauge"><div style="width:${especes / 1.51}%;background:linear-gradient(90deg,#FF4B4B,#FFCB05)"></div></div></div>
+    <div class="t"><div class="l">Versions</div><div class="v">${nv} <small>/ ${fr(totalV)}</small></div></div>
+    <div class="t"><div class="l">Shiny</div><div class="v">✨ ${sh}</div></div>`;
+  const filtres = [["tous", "Tous"], ["oui", `Attrapés ${especes}`], ["non", `Manquants ${151 - especes}`],
+                   ["incomplet", "À compléter"], ["shiny", "✨ Shiny"], ["leg", "👑 Légendaires"]];
+  document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("");
+  document.querySelectorAll("#filtres .filtre").forEach(b => b.onclick = () => { filtre = b.dataset.k; dessinerDex(); });
+  document.getElementById("filtres-types").innerHTML = Object.keys(COUL).map(t =>
+    `<button class="filtre ty ${filtreTypes.has(t) ? "on" : ""}" data-t="${t}" style="background:${COUL[t]}">${t}</button>`).join("");
+  document.querySelectorAll("#filtres-types .filtre").forEach(b => b.onclick = () => {
+    filtreTypes.has(b.dataset.t) ? filtreTypes.delete(b.dataset.t) : filtreTypes.add(b.dataset.t); dessinerDex(); });
+
+  const q = texte.trim().toLowerCase();
+  const liste = DEX.filter(p => {
+    const mes = col[p.num] || [], a = mes.length > 0;
+    if (filtre === "oui" && !a || filtre === "non" && a) return false;
+    if (filtre === "incomplet" && !(a && mes.length < p.versions.length)) return false;
+    if (filtre === "shiny" && !mes.some(c => c.shiny)) return false;
+    if (filtre === "leg" && !LEG.has(p.num)) return false;
+    if (filtreTypes.size && !p.types.some(t => filtreTypes.has(t))) return false;
+    if (q && !(String(p.num) === q.replace(/^0+/, "") || a && p.nom.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  document.getElementById("rien").style.display = liste.length ? "none" : "block";
+  document.getElementById("grille").innerHTML = liste.map(p => {
+    const mes = col[p.num] || [], a = mes.length > 0, t = p.versions.length, c0 = COUL[p.types[0]];
+    const img = a ? (mes.find(c => c.shiny) || mes[mes.length - 1]).image || p.vignette : p.vignette;
+    return `<div class="p ${a ? "" : "non"} ${a && mes.length === t ? "complet" : ""} ${LEG.has(p.num) ? "leg" : ""}" data-n="${p.num}"
+      ${a ? `style="background:radial-gradient(circle at 50% 35%,${c0}66,#1C2740 70%)"` : ""}>
+      ${mes.some(c => c.shiny) ? '<span class="sh">✨</span>' : ""}<img src="${img}" loading="lazy">
+      <div class="no">${N3(p.num)}</div><div class="nm">${a ? p.nom : "???"}</div>
+      ${a ? `<div class="mb"><div style="width:${mes.length / t * 100}%"></div></div>` : ""}</div>`;
+  }).join("");
+  document.querySelectorAll("#grille .p").forEach(e => e.onclick = () => fiche(PAR_NUM[e.dataset.n]));
+}
+
+function dessinerRegles() {
+  document.getElementById("regles").innerHTML = `
+    <li>⚡ <b>Barre d'effort</b> (${D.barre.taille} points = une Poké Ball, elle ne se vide jamais) : 1 point par 100 pas au-delà de
+      ${fr(D.barre.pas_offerts)} (la vie de tous les jours ne compte pas), 2 points par minute en zone, 1 par étage, 1 par minute de séance de sport
+      (au moins ${R.seance_min} min).</li>
+    <li>🧭 Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes en zone → Feu, Électrik, Combat, Dragon ;
+      🪜 étages → Roche, Sol, Acier ; 🌳 marche → Plante, Insecte, Poison ; 🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
+      🏞️ elliptique → Psy, Spectre, Fée ; 👟 pas → tous les types.</li>
+    <li>🎯 <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min en zone dans la journée.</li>
+    <li>⭐ <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min en zone ou une séance de ${R.exploit_seance} min.</li>
+    <li>👑 <b>Master Ball</b> : ${R.serie_legendaire} jours d'affilée avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone (un joker par semaine) = un légendaire.</li>
+    <li>😴 Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
+    <li>Jamais de doublon : chaque capture est une version que tu n'avais pas.</li>`;
+}
+
+function dessiner() { dessinerAOuvrir(); dessinerDernieres(); dessinerDex(); }
+dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
+document.getElementById("recherche").addEventListener("input", e => { texte = e.target.value; dessinerDex(); });
+
+// La hauteur du cadre suit le contenu
+const ajuster = () => { const h = document.getElementById("app").offsetHeight + 16;
+  try { const f = window.frameElement; f.style.height = h + "px"; f.height = h; if (f.parentElement) f.parentElement.style.height = "auto"; } catch (e) {} };
+new ResizeObserver(ajuster).observe(document.getElementById("app"));
+window.addEventListener("load", ajuster); setTimeout(ajuster, 300);
+</script>

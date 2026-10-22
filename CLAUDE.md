@@ -30,17 +30,26 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   durée de nuit → activité, heure de coucher → récupération, jour de la semaine, lendemain d'une grosse journée,
   30 j / 90 j) et le **carnet** du coach (`data/coach/memoire.json`, réécrit chaque matin : `coach.py carnet DATA f.md`).
   Phase de calibrage : on affine `coach.md` au fil des retours de Kiki.
-- **Pokémon** (`pokedex.py` noms/types des 151, `versions.json` liste des images, `pokemon.py` règles et `REGLAGES`,
-  `ecran_pokemon.py` l'onglet) : `MISSIONS` du jour (cadeau, nuit de 7 h, paliers de pas, marche dehors 20 min,
-  10 étages, minutes en zone, vélo, rameur), chacune = une capture avec ses types favoris (80 %), plus un légendaire
-  tous les 30 jours de série ; tirage avec une graine = identifiant « jour#mission » (rejouable). Pokédex remis à
-  zéro le 19/10 (`REGLAGES["debut"]`).
-  Chaque matin, la tâche du coach lance aussi `python3 pokemon.py figer DATA` → `data/pokemon/captures.json` (jours
-  passés figés, jamais modifiés). Images dans la branche **`sprites`** du dépôt privé (`paquets/vignettes.json`,
-  `paquets/NNN.json` en base64), lues avec le préfixe `sprites:` dans `lire` et gardées sans limite. Animation de
-  capture = calque plein écran ajouté dans la page parente (`window.parent.document`, fermeture = fondu au noir) ;
-  Pokédex = composant HTML qui s'agrandit lui-même (`window.frameElement`). Les images Rouge/Bleu et Argent des
-  paquets ont été détourées (fond blanc → transparent) ; les Poké Balls
-  ouvertes sont retenues dans le localStorage du téléphone.
+- **Pokémon v2** (22/10, plus un prototype : **jamais de Pokémon offert**, tout se gagne en faisant du sport).
+  `pokedex.py` noms/types des 151, `versions.json` liste des images, `pokemon.py` règles (`REGLAGES`, `BALLS`,
+  `SOURCES`, `SPORTS`), `ecran_pokemon.py` prépare les données, `pokemon_ui.html` = tout l'onglet (un seul composant).
+  - Barre d'effort (100 points, ne se vide jamais) : 1 pt / 100 pas au-delà de 2 000, 2 pts / min en zone, 1 / étage,
+    1 / min de séance (≥ 10 min). Barre pleine = Poké Ball ; ses types = ce qui a le plus rempli la barre du jour hors
+    pas (`origine_barre`), sinon tous. Super Ball = 5 000 pas ET 15 min en zone ; Hyper Ball = 10 000 pas, 30 min en
+    zone ou séance de 45 min ; Master Ball = 30 jours de série (5 000 pas ou 15 min, joker hebdo) = légendaire.
+    Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball). Jamais de doublon.
+  - Identifiants « jour#poke3 / super / hyper / master30 » = graines (rejouable). Règles v2 rejouées depuis le 19/10
+    avec les vraies données. Chaque matin, la tâche du coach lance `python3 pokemon.py figer DATA` →
+    `data/pokemon/captures_v2.json` (l'ancien `captures.json` du prototype n'est plus lu).
+  - Écran : barre d'effort (anneau), Poké Balls à ouvrir, balls spéciales du jour, dernières captures, Pokédex (filtres,
+    types, recherche, fiche en feuille qui monte du bas avec versions manquantes et « Où le trouver »).
+    Ouverture = calque plein écran dans la page parente : Poké Ball **3D** (three.js 0.160 UMD depuis jsDelivr, repli SVG
+    sinon) qui tombe, attend qu'on la touche, secousses (4 si rare), clic, lueur selon la rareté, ouverture, faisceau,
+    silhouette puis couleurs ; nouveau = confettis + fanfare, shiny = or + étincelles, légendaire = violet. Sons
+    synthétisés (WebAudio, bouton 🔊), vibrations. Les Poké Balls ouvertes sont dans le localStorage
+    (`pkm2_ouvertes`, celles de plus de 14 jours comptent ouvertes) et le Pokédex ne montre que les ouvertes.
+  - Images dans la branche **`sprites`** du dépôt privé (`paquets/vignettes.json`, `paquets/NNN.json` en base64),
+    lues avec le préfixe `sprites:` dans `lire` et gardées sans limite.
+  - Idée en attente : cadran de la Pixel Watch avec la barre d'effort et l'ouverture des balls (projet Wear OS à part).
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
