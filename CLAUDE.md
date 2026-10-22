@@ -58,11 +58,20 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     écrit seulement par le script Google (`doGet ?quoi=ouvrir&ids=…&ou=…`, clé `JEU_CLE`). Le téléphone l'a dans
     `D.ouvertes` (+ son localStorage) et envoie chaque ouverture (`partager`), et au chargement celles qu'il a en plus
     (migration, envois ratés). Sans les secrets `SCRIPT_URL` + `JEU_CLE` : localStorage seul, comme avant.
-- **Cadran Pixel Watch** (en cours, plan validé le 22/10) : étape 1 faite = `montre.py` calcule
-  `data/pokemon/montre.json` (barre, balls pas encore ouvertes + Pokémon + image base64) avec les règles de
-  `pokemon.py`, par GitHub Actions (`.github/workflows/montre.yml`, dépôt public = minutes gratuites ; secret
-  `SANTE_TOKEN` qui écrit dans le dépôt privé ; **rien de privé dans le journal**), lancé par le script Google après
-  chaque récolte (`calculerMontre`, propriété `MONTRE_TOKEN`) + une fois par heure. La montre lit `doGet ?quoi=montre`
-  (sans les balls déjà ouvertes). Étapes 2 (appli Kotlin : complication + ouverture) et 3 (cadran WFF) à faire.
+- **Montre (Pixel Watch 1, Wear OS 5.1)** : projet Android `montre/` (Kotlin, compilé en ligne de commande : JDK 17,
+  SDK et Gradle dans `C:\Users\kikit\Android`, pas d'émulateur possible sur ce PC ARM ; `montre/secret.properties` =
+  SCRIPT_URL + JEU_CLE, jamais sur GitHub). Kiki installe les APK avec **Bugjaeger** depuis son téléphone (lien servi
+  par le PC sur le Wi-Fi de la maison, jamais en ligne : la clé est dans l'APK).
+  - `montre.py` calcule `data/pokemon/montre.json` (barre, balls pas encore ouvertes + image, `derniere`, `objectifs`
+    avec les règles de `pokemon.REGLAGES` : la montre suit seule quand les règles changent, `nuit` coucher/lever) par
+    GitHub Actions (`.github/workflows/montre.yml`, secret `SANTE_TOKEN`, rien de privé dans le journal), lancé par le
+    script Google après chaque récolte (`calculerMontre`, `MONTRE_TOKEN`) + chaque heure. Lu par `doGet ?quoi=montre`.
+  - Module `app` (appli « Pokémon ») : complications `BarreComplication` (RANGED_VALUE, anneau ; toucher = objectifs) et
+    `BasComplication` (LONG_TEXT : ball 3D + nombre à ouvrir / la nuit l'heure après le lever / le prochain objectif),
+    `OuvrirActivity` (ouverture animée ; Poké Ball 3D = images du modèle three.js du téléphone, `assets/ball/*.webp`,
+    24 du tour + 10 de l'ouverture par type), `ObjectifsActivity`.
+  - Module `cadran` (« Pokémon Sport », Watch Face Format 2, sans code) : `res/raw/watchface.xml`, vérifié par
+    `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
+    blanche, date + météo, cardio / pas / batterie, anneau = barre d'effort, bas = `BasComplication` ; veille : heure fine.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
