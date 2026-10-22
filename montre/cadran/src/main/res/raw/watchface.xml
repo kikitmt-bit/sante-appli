@@ -5,6 +5,7 @@
   - Ligne santé : cardio et pas (montre, en direct ; toucher = espace Santé de l'appli), puis la petite Poké Ball au trait
     avec la barre d'effort « 48/100 » (complication BarreComplication) ; quand des balls sont gagnées, la Poké Ball 3D et
     « ×2 » à la place ; toucher = ouverture des balls, sinon l'espace Pokémon.
+  - À gauche de l'heure, l'étoile orange de Claude (toucher = poser une question à Claude, écran ClaudeActivity).
   - En bas, la case libre (complication BasComplication, à changer dans Personnaliser) : la nuit au réveil, l'agenda,
     une info Pokémon… (plus tard : pronos NFL, padel).
   - Veille (écran toujours allumé) : l'heure en fin, la date, une petite ball grise s'il y a des balls. Fond noir partout.
@@ -115,6 +116,15 @@
         <Font family="SYNC_TO_DEVICE" size="116" weight="THIN" color="#ffbbbbbb"/>
       </TimeText>
     </DigitalClock>
+
+    <!-- Demander à Claude : petite étoile orange à gauche de l'heure (toucher = écran Claude de l'appli) -->
+    <Group x="14" y="180" width="56" height="56" name="claude">
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <Launch target="fr.kiki.pokemontre/fr.kiki.pokemontre.ClaudeActivity"/>
+      <PartImage x="14" y="14" width="28" height="28" name="etoile_claude">
+        <Image resource="ic_claude"/>
+      </PartImage>
+    </Group>
 
     <!-- Cardio et pas (toucher = espace Santé de l'appli Pokémon) -->
     <Group x="70" y="270" width="200" height="44" name="sante">

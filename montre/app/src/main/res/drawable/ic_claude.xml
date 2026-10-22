@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Étoile orange de l'écran Claude (notifications, liste des applis) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFD97757" android:pathData="M22.00,12.00 L15.14,13.30 L19.07,19.07 L13.30,15.14 L12.00,22.00 L10.70,15.14 L4.93,19.07 L8.86,13.30 L2.00,12.00 L8.86,10.70 L4.93,4.93 L10.70,8.86 L12.00,2.00 L13.30,8.86 L19.07,4.93 L15.14,10.70 Z" />
+</vector>

@@ -79,6 +79,16 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
     batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /
     petite ball au trait « 48/100 » (slot 1), case libre en bas (slot 2) ; veille : heure fine. Pas d'anneau (trop voyant).
+  - **Claude sur la montre (sans clé API)** : étoile orange à gauche de l'heure (et appli « Claude » de la liste) ->
+    `ClaudeActivity` (dictée de la montre, ⚡ Rapide / 🧠 Réfléchi, chrono + étapes + barre de progression, réponse courte,
+    « Plus d'infos », 🔊 lecture, notification si on a quitté l'écran, 10 dernières questions). Trajet : script Google
+    `doGet ?quoi=claude` dépose `questions/<id>.json` dans le dépôt privé **kikitmt-bit/montre-claude** (jeton
+    `MONTRE_TOKEN`) -> un envoi (push) sur ce dépôt déclenche la **routine** « Claude de la montre »
+    (`trig_01CDDaAsBb4aRCETbEVxYYqC`, claude.ai/code/routines, Haiku ; « réfléchi » = sous-agent Opus) -> réponse dans
+    `reponses/<id>.json` de la branche `claude/montre-reponses` du dépôt sante -> `?quoi=claude&id=` la relit.
+    ~35 s à 1 min. Seuls les **push** déclenchent (pas la création de branche) et le filtre des déclencheurs est ignoré :
+    d'où un dépôt à part où rien d'autre n'est poussé. Routine d'essai `trig_01DytNizq4c4NDSt9Xhn3oMU` en pause
+    (déclencheur sur tous les push de sante : ne JAMAIS la réactiver ; à supprimer sur claude.ai/code/routines).
   - **À faire plus tard (demandé par Kiki le 22/10)** : brancher la case libre du bas du cadran sur
     1) **les pronos NFL** (appli Bada Bing, dépôt `kikitmt-bit/bada-bing-nfl`, `pronos_data.json`) : « pronos à faire
     avant dim. 19:00 », toucher = ouvrir le site ; 2) **le padel** (dépôt privé `kikitmt-bit/padel_resa`, script Google) :

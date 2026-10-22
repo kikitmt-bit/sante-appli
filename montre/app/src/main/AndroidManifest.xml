@@ -10,6 +10,12 @@
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Claude : notification quand la réponse arrive ; dictée et lecture à voix haute de la montre -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <queries>
+        <intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent>
+        <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
+    </queries>
 
     <application
         android:name=".App"
@@ -37,6 +43,20 @@
             android:name=".SanteActivity"
             android:exported="true"
             android:taskAffinity="" />
+
+        <!-- Demander à Claude (bouton du cadran, et dans la liste des applis) -->
+        <activity
+            android:name=".ClaudeActivity"
+            android:exported="true"
+            android:icon="@drawable/ic_claude_lanceur"
+            android:label="Claude"
+            android:launchMode="singleTask"
+            android:taskAffinity="fr.kiki.pokemontre.claude">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <!-- Plein écran : ouverture des Poké Balls -->
         <activity

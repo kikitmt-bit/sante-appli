@@ -119,6 +119,12 @@ object Donnees {
         } catch (e: Exception) { null }
     }
 
+    /** Claude depuis la montre (script Google, ?quoi=claude) : poser une question, ou suivre sa réponse. */
+    fun claudePoser(question: String, modele: String): String? =
+        appel("quoi=claude&modele=$modele&q=" + URLEncoder.encode(question, "UTF-8"))?.optString("id")?.takeIf { it.isNotEmpty() }
+
+    fun claudeSuivre(id: String): JSONObject? = appel("quoi=claude&id=" + URLEncoder.encode(id, "UTF-8"))
+
     private fun appel(params: String): JSONObject? {
         if (BuildConfig.SCRIPT_URL.isEmpty()) return null
         val cle = URLEncoder.encode(BuildConfig.JEU_CLE, "UTF-8")
