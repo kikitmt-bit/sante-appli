@@ -71,6 +71,7 @@ VERSIONS = {int(k): [dict(zip(("fichier", "generation", "jeu", "variante"), v)) 
             for k, vs in json.loads(Path(__file__).with_name("versions.json").read_text(encoding="utf-8")).items()}
 TOTAL_VERSIONS = sum(len(v) for v in VERSIONS.values())
 FIGEES = "data/pokemon/captures_v2.json"
+OUVERTES = "data/pokemon/ouvertes.json"  # Poké Balls ouvertes, partagées par la montre et le téléphone (script Google)
 
 
 def points_par_source(pas, zone, etages, sport):

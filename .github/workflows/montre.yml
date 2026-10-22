@@ -1,0 +1,28 @@
+# Fichier de la montre (data/pokemon/montre.json dans le dépôt privé) : lancé par le script Google après chaque récolte,
+# et une fois par heure en secours. Secret nécessaire : SANTE_TOKEN (jeton qui peut écrire dans kikitmt-bit/sante).
+# Dépôt public : montre.py n'affiche aucune donnée dans le journal.
+name: Fichier de la montre
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "7 * * * *"
+concurrency:
+  group: montre
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  montre:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-montre.txt
+      - run: pip install -q -r requirements-montre.txt
+      - run: python montre.py github
+        env:
+          SANTE_TOKEN: ${{ secrets.SANTE_TOKEN }}

@@ -1,6 +1,7 @@
 """Onglet 🎮 Pokémon : barre d'effort, Poké Balls à ouvrir (animation 3D, plein écran), balls spéciales du jour,
 dernières captures et Pokédex. Tout l'écran est un seul composant HTML (pokemon_ui.html) : c'est lui qui sait quelles
-Poké Balls ont été ouvertes sur ce téléphone (localStorage), donc ce qui apparaît déjà dans le Pokédex."""
+Poké Balls ont été ouvertes (localStorage du téléphone + liste partagée avec la montre, data/pokemon/ouvertes.json, écrite
+par le script Google : secrets SCRIPT_URL et JEU_CLE), donc ce qui apparaît déjà dans le Pokédex."""
 import datetime as dt
 import json
 from pathlib import Path
@@ -39,7 +40,7 @@ def afficher(lire, aujourd):
     with st.spinner("Ouverture du Pokédex…"):
         captures, etat = pokemon.charger_jeu(lire, aujourd)
         especes = sorted({c["num"] for c in captures})
-        f = lire([VIGNETTES] + [PAQUET.format(n) for n in especes])
+        f = lire([VIGNETTES, pokemon.OUVERTES] + [PAQUET.format(n) for n in especes])
     vignettes, paquets = f[VIGNETTES] or {}, {n: f[PAQUET.format(n)] or {} for n in especes}
 
     m, R = etat["mesures"], pokemon.REGLAGES
@@ -49,6 +50,9 @@ def afficher(lire, aujourd):
                ("🪜", "Étages", m["points"]["etages"]), (sport_ic, f"Séances ({sport_nom})", m["points"]["sport"])]
     donnees = {
         "aujourdhui": str(aujourd),
+        "ouvertes": list((f[pokemon.OUVERTES] or {}).get("ouvertes", {})),
+        "jeu": {"url": st.secrets["SCRIPT_URL"], "cle": st.secrets["JEU_CLE"]}
+               if st.secrets.get("SCRIPT_URL") and st.secrets.get("JEU_CLE") else None,
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "fichier": c["fichier"], "ball": c.get("ball", "poke"),
             "shiny": c["shiny"], "raison": c["raison"], "version": _version(c), "legendaire": c["num"] in LEGENDAIRES,

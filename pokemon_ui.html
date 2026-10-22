@@ -140,13 +140,28 @@ const N3 = n => String(n).padStart(3, "0");
 const fr = n => Math.round(n).toLocaleString("fr-FR");
 const typesHTML = (ts, cls = "type") => ts.map(t => `<span class="${cls}" style="background:${COUL[t]}">${t}</span>`).join("");
 
-// ---------- Poké Balls ouvertes sur ce téléphone ----------
+// ---------- Poké Balls ouvertes (ce téléphone + la liste partagée avec la montre) ----------
 let ouvertes = new Set();
 try { ouvertes = new Set(JSON.parse(localStorage.getItem("pkm2_ouvertes") || "[]")); } catch (e) {}
 const LIMITE = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);  // plus vieilles : comptées ouvertes
 const estOuverte = c => ouvertes.has(c.id) || c.jour < LIMITE;
-const memoriser = id => { ouvertes.add(id);
-  try { localStorage.setItem("pkm2_ouvertes", JSON.stringify([...ouvertes].slice(-800))); } catch (e) {} };
+const garder = () => { try { localStorage.setItem("pkm2_ouvertes", JSON.stringify([...ouvertes].slice(-800))); } catch (e) {} };
+const serveur = new Set(D.ouvertes || []);
+let ouverture = false;  // une animation est en cours : on ne redessine pas l'écran dessous
+// Envoie au script Google les Poké Balls ouvertes ici (ids vide : demande juste la liste à jour) ; ce qui a été ouvert
+// sur la montre entre-temps arrive dans la réponse. Sans réseau : renvoyé au prochain affichage.
+function partager(ids) {
+  if (!D.jeu) return;
+  const u = `${D.jeu.url}?quoi=ouvrir&ou=telephone&cle=${encodeURIComponent(D.jeu.cle)}&ids=${encodeURIComponent(ids.join(","))}`;
+  fetch(u).then(r => r.json()).then(j => {
+    if (!j.ok) return;
+    const avant = ouvertes.size;
+    j.ouvertes.forEach(id => { serveur.add(id); ouvertes.add(id); });
+    if (ouvertes.size !== avant) { garder(); if (!ouverture) dessiner(); }
+  }).catch(() => {});
+}
+serveur.forEach(id => ouvertes.add(id)); garder();
+const memoriser = id => { ouvertes.add(id); garder(); partager([id]); };
 const CAPTURES = D.captures.map(c => ({...c, ...PAR_NUM[c.num] && {nom: PAR_NUM[c.num].nom, types: PAR_NUM[c.num].types},
   image: D.images[`${c.num}/${c.fichier}`] || ""}));
 const aOuvrir = () => CAPTURES.filter(c => !estOuverte(c));
@@ -492,6 +507,7 @@ function Ball2D(el, type) {
 
 // ----- La séquence complète -----
 function ouvrir(c, rejouer = false) {
+  ouverture = true;
   installerStyle("pkm2-style", STYLE_VOILE);
   audio();  // le toucher qui ouvre autorise le son
   // Nouveau Pokémon = première capture ouverte de cette espèce
@@ -533,7 +549,7 @@ function ouvrir(c, rejouer = false) {
   const pause = ms => new Promise((ok, ko) => setTimeout(() => fini ? ko("fermé") : ok(), ms));
   const touche = () => new Promise((ok, ko) => { const f = ev => { if (ev.target.closest("button")) return;
     v.removeEventListener("pointerdown", f); fini ? ko("fermé") : ok(); }; v.addEventListener("pointerdown", f); });
-  const fermer = () => { if (fini) return; fini = true; v.classList.add("fin"); PW.removeEventListener("resize", redim);
+  const fermer = () => { if (fini) return; fini = true; ouverture = false; v.classList.add("fin"); PW.removeEventListener("resize", redim);
     setTimeout(() => { B.fin(); v.remove(); }, 320); dessiner(); };
   $(".x").onclick = fermer;
   $(".son").onclick = e => { son = !son; e.target.textContent = son ? "🔊" : "🔇"; try { localStorage.setItem("pkm_son", son ? "1" : "0"); } catch (x) {} };
@@ -836,6 +852,10 @@ function dessinerRegles() {
 
 function dessiner() { dessinerAOuvrir(); dessinerDernieres(); dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
+{ // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie
+  const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);
+  partager([...ouvertes].filter(id => !serveur.has(id) && id.slice(0, 10) >= depuis));
+}
 document.getElementById("recherche").addEventListener("input", e => { texte = e.target.value; dessinerDex(); });
 
 // La hauteur du cadre suit le contenu

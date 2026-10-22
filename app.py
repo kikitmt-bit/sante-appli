@@ -321,7 +321,7 @@ with onglet_sante:
 
     recents = {f"data/jour/{x.year}/{x}.json" for x in (aujourd, aujourd - dt.timedelta(days=1))}
     recents |= {f"data/resume/{aujourd.year}.json", "data/profil.json",
-                chemin_analyse("Jour", aujourd - dt.timedelta(days=1)), pokemon.FIGEES}
+                chemin_analyse("Jour", aujourd - dt.timedelta(days=1)), pokemon.FIGEES, pokemon.OUVERTES}
     lire_vite = lambda chemins: lire(chemins, recents)  # noqa: E731
     with st.spinner("Lecture des données…"):
         donnees = charger(lire_vite, periode, st.session_state["ref"], aujourd)

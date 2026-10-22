@@ -50,6 +50,15 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     (`pkm2_ouvertes`, celles de plus de 14 jours comptent ouvertes) et le Pokédex ne montre que les ouvertes.
   - Images dans la branche **`sprites`** du dépôt privé (`paquets/vignettes.json`, `paquets/NNN.json` en base64),
     lues avec le préfixe `sprites:` dans `lire` et gardées sans limite.
-  - Idée en attente : cadran de la Pixel Watch avec la barre d'effort et l'ouverture des balls (projet Wear OS à part).
+  - **Balls ouvertes partagées** (montre + téléphone) : `data/pokemon/ouvertes.json` (branche data, 20 derniers jours),
+    écrit seulement par le script Google (`doGet ?quoi=ouvrir&ids=…&ou=…`, clé `JEU_CLE`). Le téléphone l'a dans
+    `D.ouvertes` (+ son localStorage) et envoie chaque ouverture (`partager`), et au chargement celles qu'il a en plus
+    (migration, envois ratés). Sans les secrets `SCRIPT_URL` + `JEU_CLE` : localStorage seul, comme avant.
+- **Cadran Pixel Watch** (en cours, plan validé le 22/10) : étape 1 faite = `montre.py` calcule
+  `data/pokemon/montre.json` (barre, balls pas encore ouvertes + Pokémon + image base64) avec les règles de
+  `pokemon.py`, par GitHub Actions (`.github/workflows/montre.yml`, dépôt public = minutes gratuites ; secret
+  `SANTE_TOKEN` qui écrit dans le dépôt privé ; **rien de privé dans le journal**), lancé par le script Google après
+  chaque récolte (`calculerMontre`, propriété `MONTRE_TOKEN`) + une fois par heure. La montre lit `doGet ?quoi=montre`
+  (sans les balls déjà ouvertes). Étapes 2 (appli Kotlin : complication + ouverture) et 3 (cadran WFF) à faire.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
