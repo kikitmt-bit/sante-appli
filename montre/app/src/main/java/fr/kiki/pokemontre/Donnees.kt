@@ -33,7 +33,19 @@ object Donnees {
     data class Etat(
         val points: Float, val taille: Int, val origine: String, val balls: List<Ball>,
         val maj: String, val pas: Int, val zone: Int, val recu: Long, val derniere: Ball?,
+        val jour: String, val objectifs: Objectifs?, val nuit: Nuit?,
     )
+
+    /** Où on en est aujourd'hui pour les balls spéciales (règles venues du site : elles suivent toutes seules). */
+    data class Objectifs(
+        val pas: Int, val zone: Int, val seance: Int, val serie: Int, val serieOk: Boolean, val joker: Boolean,
+        val superOk: Boolean, val hyperOk: Boolean, val shiny: Float,
+        val objPas: Int, val objZone: Int, val exploitPas: Int, val exploitZone: Int, val exploitSeance: Int,
+        val serieLegendaire: Int, val nuitMin: Int,
+    )
+
+    /** La nuit qui finit ce matin. */
+    data class Nuit(val duree: Int, val coucher: String?, val lever: String?)
 
     private fun ball(b: JSONObject): Ball {
         val ts = b.optJSONArray("types") ?: JSONArray()
@@ -65,6 +77,21 @@ object Donnees {
                 pas = auj.optInt("pas"), zone = auj.optInt("zone"),
                 recu = p.getLong("recu", 0),
                 derniere = j.optJSONObject("derniere")?.let { ball(it) },
+                jour = j.optString("jour", ""),
+                objectifs = j.optJSONObject("objectifs")?.let { o ->
+                    val r = o.optJSONObject("regles") ?: JSONObject()
+                    Objectifs(
+                        o.optInt("pas"), o.optInt("zone"), o.optInt("seance"), o.optInt("serie"), o.optBoolean("serie_ok"),
+                        o.optBoolean("joker"), o.optBoolean("super"), o.optBoolean("hyper"), o.optDouble("shiny", 1.0).toFloat(),
+                        r.optInt("objectif_pas", 5000), r.optInt("objectif_zone", 15), r.optInt("exploit_pas", 10000),
+                        r.optInt("exploit_zone", 30), r.optInt("exploit_seance", 45), r.optInt("serie_legendaire", 30),
+                        r.optInt("nuit", 420),
+                    )
+                },
+                nuit = j.optJSONObject("nuit")?.let {
+                    Nuit(it.optInt("duree"), it.optString("coucher").takeIf { s -> s.isNotEmpty() && s != "null" },
+                         it.optString("lever").takeIf { s -> s.isNotEmpty() && s != "null" })
+                },
             )
         } catch (e: Exception) { null }
     }

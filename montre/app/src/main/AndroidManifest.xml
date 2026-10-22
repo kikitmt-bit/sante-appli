@@ -28,6 +28,30 @@
             </intent-filter>
         </activity>
 
+        <!-- Les objectifs du jour (toucher l'anneau du cadran) -->
+        <activity
+            android:name=".ObjectifsActivity"
+            android:exported="true"
+            android:taskAffinity="" />
+
+        <!-- Ligne du bas du cadran : Poké Balls à ouvrir, la nuit (au réveil) ou le prochain objectif -->
+        <service
+            android:name=".BasComplication"
+            android:exported="true"
+            android:icon="@drawable/ic_ball"
+            android:label="@string/complication_bas"
+            android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
+            <intent-filter>
+                <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
+            </intent-filter>
+            <meta-data
+                android:name="android.support.wearable.complications.SUPPORTED_TYPES"
+                android:value="LONG_TEXT" />
+            <meta-data
+                android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
+                android:value="600" />
+        </service>
+
         <!-- La barre d'effort et le nombre de Poké Balls, pour n'importe quel cadran -->
         <service
             android:name=".BarreComplication"

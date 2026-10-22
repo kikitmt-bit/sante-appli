@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Cadran « Pokémon Sport » (Watch Face Format 2, Wear OS 5+) : une montre classique, sobre et économe.
+  - Heure, date, météo, cardio, pas, batterie : données de la montre.
+  - Anneau tout autour = barre d'effort Pokémon (complication BarreComplication de l'appli) ; le toucher ouvre les objectifs.
+  - En bas (complication BasComplication) : Poké Balls à ouvrir (toucher = ouverture), la nuit pendant l'heure qui suit le
+    réveil, sinon le prochain objectif.
+  - Veille (écran toujours allumé) : seulement l'heure en fin, la date et la petite ball s'il y en a. Fond noir partout.
+-->
+<WatchFace width="450" height="450">
+  <Metadata key="CLOCK_TYPE" value="DIGITAL"/>
+  <Metadata key="PREVIEW_TIME" value="15:58:00"/>
+  <Scene backgroundColor="#ff000000">
+
+    <!-- Repères à 12, 3, 6 et 9 h -->
+    <PartDraw x="0" y="0" width="450" height="450" name="reperes">
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <Rectangle x="223" y="26" width="4" height="12"><Fill color="#ff2e2e2e"/></Rectangle>
+      <Rectangle x="223" y="412" width="4" height="12"><Fill color="#ff2e2e2e"/></Rectangle>
+      <Rectangle x="26" y="223" width="12" height="4"><Fill color="#ff2e2e2e"/></Rectangle>
+      <Rectangle x="412" y="223" width="12" height="4"><Fill color="#ff2e2e2e"/></Rectangle>
+    </PartDraw>
+
+    <!-- L'anneau : la barre d'effort Pokémon -->
+    <ComplicationSlot x="0" y="0" width="450" height="450" slotId="1" displayName="anneau"
+        supportedTypes="RANGED_VALUE EMPTY">
+      <DefaultProviderPolicy
+          primaryProvider="fr.kiki.pokemontre/fr.kiki.pokemontre.BarreComplication"
+          primaryProviderType="RANGED_VALUE"
+          defaultSystemProvider="WATCH_BATTERY"
+          defaultSystemProviderType="RANGED_VALUE"/>
+      <BoundingArc centerX="225" centerY="225" width="450" height="450" thickness="34"
+          startAngle="0" endAngle="360"/>
+      <Complication type="RANGED_VALUE">
+        <PartDraw x="0" y="0" width="450" height="450">
+          <Variant mode="AMBIENT" target="alpha" value="0"/>
+          <Arc centerX="225" centerY="225" width="428" height="428" startAngle="0" endAngle="360">
+            <Stroke thickness="7" color="#ff161616"/>
+          </Arc>
+          <Arc centerX="225" centerY="225" width="428" height="428" startAngle="0" endAngle="0">
+            <Stroke thickness="7" color="#ffffcb05" cap="ROUND"/>
+            <Transform target="endAngle"
+                value="((clamp([COMPLICATION.RANGED_VALUE_VALUE], [COMPLICATION.RANGED_VALUE_MIN], [COMPLICATION.RANGED_VALUE_MAX]) - [COMPLICATION.RANGED_VALUE_MIN]) / ([COMPLICATION.RANGED_VALUE_MAX] - [COMPLICATION.RANGED_VALUE_MIN])) * 360"/>
+          </Arc>
+        </PartDraw>
+      </Complication>
+    </ComplicationSlot>
+
+    <!-- Date et météo -->
+    <Condition>
+      <Expressions>
+        <Expression name="meteo">[WEATHER.IS_AVAILABLE]</Expression>
+      </Expressions>
+      <Compare expression="meteo">
+        <PartText x="40" y="100" width="370" height="36" name="date_meteo">
+          <Variant mode="AMBIENT" target="alpha" value="150"/>
+          <Text align="CENTER" ellipsis="TRUE">
+            <Font family="SYNC_TO_DEVICE" size="24" color="#ff9a9a9a">
+              <Template><![CDATA[%s %s %s  ·  %s°]]>
+                <Parameter expression="[DAY_OF_WEEK_S]"/>
+                <Parameter expression="[DAY]"/>
+                <Parameter expression="[MONTH_S]"/>
+                <Parameter expression="[WEATHER.TEMPERATURE]"/>
+              </Template>
+            </Font>
+          </Text>
+        </PartText>
+      </Compare>
+      <Default>
+        <PartText x="40" y="100" width="370" height="36" name="date">
+          <Variant mode="AMBIENT" target="alpha" value="150"/>
+          <Text align="CENTER" ellipsis="TRUE">
+            <Font family="SYNC_TO_DEVICE" size="24" color="#ff9a9a9a">
+              <Template><![CDATA[%s %s %s]]>
+                <Parameter expression="[DAY_OF_WEEK_S]"/>
+                <Parameter expression="[DAY]"/>
+                <Parameter expression="[MONTH_S]"/>
+              </Template>
+            </Font>
+          </Text>
+        </PartText>
+      </Default>
+    </Condition>
+
+    <!-- L'heure : pleine en temps normal, fine et grise en veille -->
+    <DigitalClock x="0" y="150" width="450" height="130">
+      <TimeText format="hh:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER" x="0" y="0" width="450" height="130" alpha="255">
+        <Variant mode="AMBIENT" target="alpha" value="0"/>
+        <Font family="SYNC_TO_DEVICE" size="116" weight="MEDIUM" color="#ffffffff"/>
+      </TimeText>
+      <TimeText format="hh:mm" hourFormat="SYNC_TO_DEVICE" align="CENTER" x="0" y="0" width="450" height="130" alpha="0">
+        <Variant mode="AMBIENT" target="alpha" value="255"/>
+        <Font family="SYNC_TO_DEVICE" size="116" weight="THIN" color="#ffbbbbbb"/>
+      </TimeText>
+    </DigitalClock>
+
+    <!-- Cardio, pas, batterie -->
+    <Group x="0" y="272" width="450" height="40" name="sante">
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <PartImage x="100" y="7" width="26" height="26">
+        <Image resource="ic_coeur"/>
+      </PartImage>
+      <PartText x="131" y="0" width="64" height="40">
+        <Text align="START">
+          <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
+            <Template>%s<Parameter expression="[HEART_RATE] &gt; 0 ? [HEART_RATE] : &quot;--&quot;"/></Template>
+          </Font>
+        </Text>
+      </PartText>
+      <PartImage x="190" y="7" width="26" height="26">
+        <Image resource="ic_pas"/>
+      </PartImage>
+      <PartText x="221" y="0" width="80" height="40">
+        <Text align="START">
+          <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
+            <Template>%s<Parameter expression="[STEP_COUNT]"/></Template>
+          </Font>
+        </Text>
+      </PartText>
+      <PartDraw x="296" y="12" width="26" height="16">
+        <RoundRectangle x="1" y="1" width="24" height="14" cornerRadiusX="3" cornerRadiusY="3">
+          <Stroke thickness="2" color="#ffdddddd"/>
+        </RoundRectangle>
+        <Rectangle x="4" y="4" width="18" height="8">
+          <Fill color="#ff4cd3a0"/>
+          <Transform target="width" value="max(1, [BATTERY_PERCENT] * 0.18)"/>
+        </Rectangle>
+      </PartDraw>
+      <PartText x="327" y="0" width="80" height="40">
+        <Text align="START">
+          <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
+            <Template>%s%%<Parameter expression="[BATTERY_PERCENT]"/></Template>
+          </Font>
+        </Text>
+      </PartText>
+    </Group>
+
+    <!-- En bas : Poké Balls à ouvrir, la nuit au réveil, sinon le prochain objectif -->
+    <ComplicationSlot x="60" y="320" width="330" height="80" slotId="2" displayName="bas"
+        supportedTypes="LONG_TEXT EMPTY">
+      <DefaultProviderPolicy
+          primaryProvider="fr.kiki.pokemontre/fr.kiki.pokemontre.BasComplication"
+          primaryProviderType="LONG_TEXT"
+          defaultSystemProvider="NEXT_EVENT"
+          defaultSystemProviderType="LONG_TEXT"/>
+      <BoundingRoundBox x="0" y="0" width="330" height="80" cornerRadius="20"/>
+      <Complication type="LONG_TEXT">
+        <Condition>
+          <Expressions>
+            <Expression name="ball"><![CDATA[[COMPLICATION.SMALL_IMAGE] != null]]></Expression>
+          </Expressions>
+          <Compare expression="ball">
+            <PartImage x="129" y="4" width="72" height="72" alpha="255">
+              <Variant mode="AMBIENT" target="alpha" value="0"/>
+              <Image resource="[COMPLICATION.SMALL_IMAGE]"/>
+            </PartImage>
+            <PartImage x="151" y="26" width="28" height="28" alpha="0" tintColor="#ff888888">
+              <Variant mode="AMBIENT" target="alpha" value="255"/>
+              <Image resource="[COMPLICATION.MONOCHROMATIC_IMAGE]"/>
+            </PartImage>
+          </Compare>
+          <Default>
+            <Group x="0" y="0" width="330" height="80" name="objectif">
+              <Variant mode="AMBIENT" target="alpha" value="0"/>
+              <PartText x="0" y="4" width="330" height="36">
+                <Text align="CENTER" ellipsis="TRUE">
+                  <Font family="SYNC_TO_DEVICE" size="24" color="#ffffb27a">
+                    <Template>%s<Parameter expression="[COMPLICATION.TEXT]"/></Template>
+                  </Font>
+                </Text>
+              </PartText>
+              <PartText x="0" y="40" width="330" height="28">
+                <Text align="CENTER" ellipsis="TRUE">
+                  <Font family="SYNC_TO_DEVICE" size="18" color="#ff6f6f6f">
+                    <Template>%s<Parameter expression="[COMPLICATION.TITLE]"/></Template>
+                  </Font>
+                </Text>
+              </PartText>
+            </Group>
+          </Default>
+        </Condition>
+      </Complication>
+    </ComplicationSlot>
+
+  </Scene>
+</WatchFace>

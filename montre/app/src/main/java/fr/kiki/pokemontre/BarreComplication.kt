@@ -20,7 +20,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * Complication « Barre d'effort Pokémon » : jauge = points sur 100 avant la prochaine Poké Ball, texte = nombre de
- * Poké Balls à ouvrir (sinon les points). Un toucher ouvre l'écran des Poké Balls.
+ * Poké Balls à ouvrir (sinon les points). Un toucher ouvre les objectifs du jour.
  */
 class BarreComplication : SuspendingComplicationDataSourceService() {
 
@@ -40,12 +40,14 @@ class BarreComplication : SuspendingComplicationDataSourceService() {
         fun rafraichir(ctx: Context) {
             ComplicationDataSourceUpdateRequester.create(ctx, ComponentName(ctx, BarreComplication::class.java))
                 .requestUpdateAll()
+            BasComplication.rafraichir(ctx)
         }
 
         private fun texte(t: String) = PlainComplicationText.Builder(t).build()
 
         fun donnees(ctx: Context, type: ComplicationType, points: Float, taille: Int, balls: Int): ComplicationData? {
-            val tap = PendingIntent.getActivity(ctx, 0, Intent(ctx, OuvrirActivity::class.java),
+            // Un toucher : les objectifs du jour (les Poké Balls s'ouvrent depuis le bas du cadran ou cet écran)
+            val tap = PendingIntent.getActivity(ctx, 0, Intent(ctx, ObjectifsActivity::class.java),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             val icone = MonochromaticImage.Builder(Icon.createWithResource(ctx, R.drawable.ic_ball)).build()
             val dit = texte(if (balls > 0) "$balls Poké Ball${if (balls > 1) "s" else ""} à ouvrir"

@@ -2,4 +2,5 @@
 <resources>
     <string name="nom">Pokémon</string>
     <string name="complication">Barre d\'effort Pokémon</string>
+    <string name="complication_bas">Pokémon : balls, nuit et objectif</string>
 </resources>

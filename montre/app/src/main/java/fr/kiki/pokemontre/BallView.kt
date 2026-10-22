@@ -53,6 +53,10 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
     private var dernier = t0
     private var secousse = -1
     private var rejouer = false  // on revoit la dernière capture : rien n'est envoyé
+    private var cadres: Ball3D? = null  // la Poké Ball 3D du téléphone (images), sinon dessinée à la main
+    private val faceAccueil: Bitmap? by lazy { Ball3D.face(context, "poke") }
+    private var tourY = 0f  // tour sur elle-même (en tours) pendant la chute
+    private val lisse = Paint(Paint.ANTI_ALIAS_FLAG).apply { isFilterBitmap = true }
     private var flash = 0f
     private val particules = ArrayList<Particule>()
     private val vib = ctx.getSystemService(Vibrator::class.java)
@@ -83,6 +87,7 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
         val b = revoir ?: file.removeFirstOrNull()
         ball = b
         image = b?.bitmap()?.let { rogne(it) }
+        cadres = b?.let { Ball3D.charger(context, it.ball) }
         particules.clear()
         secousse = -1
         aller(if (b == null) Phase.ACCUEIL else Phase.CHUTE)
@@ -158,7 +163,9 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
             Phase.CHUTE -> {
                 val q = min(el / 900f, 1f)
                 val y = -(cy + R * 2) * (1 - rebond(q))
-                pokeBall(c, cx, cy + y - S * 0.04f, R, (1 - q) * -540f, 0f, 0f)
+                tourY = (1 - q) * 1.5f
+                pokeBall(c, cx, cy + y - S * 0.04f, R, if (cadres != null) 0f else (1 - q) * -540f, 0f, 0f)
+                tourY = 0f
                 haut(c, S, cx)
                 if (q >= 1f) { vibre(25); aller(Phase.ATTENTE) }
             }
@@ -194,7 +201,7 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
             }
             Phase.OUVERTURE -> {
                 val q = min(el / 450f, 1f)
-                pokeBall(c, cx, cy - S * 0.04f, R * 1.06f, 0f, retour(q), 1.2f, teinte())
+                pokeBall(c, cx, cy - S * 0.04f, R * 1.06f, 0f, min(retour(q), 1f), 1.2f, teinte())
                 haut(c, S, cx)
                 if (q >= 1f) {
                     flash = 1f
@@ -279,7 +286,11 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
     /** Sans Poké Ball à ouvrir : les points et ce qu'il reste à faire. */
     private fun accueil(c: Canvas, S: Float, cx: Float, cy: Float) {
         val e = etat
-        pokeBall(c, cx, cy - S * 0.24f, S * 0.07f, 0f, 0f, 0f)
+        val f = faceAccueil
+        if (f != null) {
+            val t = 448f * (S * 0.14f / Ball3D.DIAMETRE)
+            c.drawBitmap(f, null, RectF(cx - t / 2, cy - S * 0.24f - t / 2, cx + t / 2, cy - S * 0.24f + t / 2), lisse)
+        } else pokeBall(c, cx, cy - S * 0.24f, S * 0.07f, 0f, 0f, 0f)
         if (e == null) {
             ecrire(c, "Chargement…", cx, cy + S * 0.04f, S * 0.07f, true, 230)
             ecrire(c, "(il faut du réseau)", cx, cy + S * 0.12f, S * 0.045f, false, 150)
@@ -348,6 +359,7 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
                          couleurLueur: Int = Color.WHITE, opacite: Float = 1f) {
         val type = ball?.ball ?: "poke"
         val alphaG = (opacite * 255).toInt().coerceIn(0, 255)
+        cadres?.let { b3 -> ball3D(c, b3, x, y, R, rot, ouverture, lueur, couleurLueur, opacite); return }
         // Ombre au sol
         p.shader = RadialGradient(x, y + R * 1.12f, R, intArrayOf(alpha(Color.BLACK, 0.45f * opacite), 0), null, Shader.TileMode.CLAMP)
         c.save(); c.scale(1f, 0.22f, x, y + R * 1.12f); c.drawCircle(x, y + R * 1.12f, R, p); c.restore()
@@ -406,6 +418,28 @@ class BallView(ctx: Context, private val fini: () -> Unit) : View(ctx) {
         p.style = Paint.Style.STROKE; p.strokeWidth = R * 0.03f; p.color = 0xFFBBBBBB.toInt()
         c.drawCircle(0f, by, R * 0.13f, p)
         p.style = Paint.Style.FILL
+        c.restore()
+    }
+
+    /** La ball 3D (images du téléphone) : tour sur elle-même, secousses (pivot en bas), ouverture, bouton qui brille. */
+    private fun ball3D(c: Canvas, b3: Ball3D, x: Float, y: Float, R: Float, rot: Float, ouverture: Float, lueur: Float,
+                       couleurLueur: Int, opacite: Float) {
+        p.shader = RadialGradient(x, y + R * 1.12f, R, intArrayOf(alpha(Color.BLACK, 0.45f * opacite), 0), null, Shader.TileMode.CLAMP)
+        c.save(); c.scale(1f, 0.22f, x, y + R * 1.12f); c.drawCircle(x, y + R * 1.12f, R, p); c.restore()
+        p.shader = null
+        val img = if (ouverture > 0.01f) b3.ouvre[(ouverture.coerceIn(0f, 1f) * 9).toInt().coerceIn(0, 9)]
+                  else b3.tour[(((tourY % 1f) + 1f) % 1f * 24).toInt() % 24]
+        val t = 448f * (2 * R / Ball3D.DIAMETRE)
+        c.save()
+        c.rotate(rot, x, y + R)
+        lisse.alpha = (opacite * 255).toInt().coerceIn(0, 255)
+        c.drawBitmap(img, null, RectF(x - t / 2, y - t / 2, x + t / 2, y + t / 2), lisse)
+        if (lueur > 0f && ouverture < 0.3f) {
+            val by = y + R * 0.04f
+            p.shader = RadialGradient(x, by, R * 0.55f, intArrayOf(alpha(couleurLueur, min(lueur, 1f) * opacite), alpha(couleurLueur, 0f)),
+                null, Shader.TileMode.CLAMP)
+            c.drawCircle(x, by, R * 0.55f, p); p.shader = null
+        }
         c.restore()
     }
 

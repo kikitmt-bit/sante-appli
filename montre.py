@@ -37,6 +37,12 @@ def contenu(lire, maintenant):
     derniere = captures[-1:]  # la dernière capture, pour la revoir sur la montre (rien n'est enregistré)
     paquets = lire([PAQUET.format(n) for n in sorted({c["num"] for c in a_ouvrir + derniere})])
     m, ic_nom = etat["mesures"], etat["origine"]
+    # La nuit qui finit ce matin (heures de coucher et de lever, pour l'afficher la première heure après le réveil)
+    resume = (lire([f"data/resume/{aujourd.year}.json"])[f"data/resume/{aujourd.year}.json"] or {}).get(str(aujourd))
+    s = chiffres.stats_jour(resume) if resume else {}
+    hm = lambda x: f"{int(x) // 60 % 24:02d}:{int(x) % 60:02d}" if x == x and x is not None else None  # noqa: E731
+    gagnee = lambda cle: any(c["jour"] == str(aujourd) and c["id"].split("#")[1].startswith(cle) for c in captures)  # noqa: E731
+    R = pokemon.REGLAGES
     une = lambda c: {"id": c["id"], "jour": c["jour"], "ball": c["ball"], "raison": c["raison"],  # noqa: E731
                      "num": c["num"], "nom": POKEMON[c["num"]]["nom"], "types": POKEMON[c["num"]]["types"],
                      "shiny": c["shiny"], "nouvelle": c["nouvelle"], "legendaire": c["num"] in LEGENDAIRES,
@@ -49,6 +55,13 @@ def contenu(lire, maintenant):
                        "sport": round(m["sport"]), "serie": etat["serie"]},
         "balls": [une(c) for c in a_ouvrir],
         "derniere": une(derniere[0]) if derniere else None,
+        "objectifs": {"pas": round(m["pas"]), "zone": round(m["zone"]), "seance": round(m["seance_max"]),
+                      "serie": etat["serie"], "serie_ok": etat["serie_ok"], "joker": etat["joker_libre"],
+                      "super": gagnee("super"), "hyper": gagnee("hyper"), "shiny": round(etat["shiny_bonus"], 2),
+                      "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone",
+                                                   "exploit_seance", "serie_legendaire", "nuit", "pas_offerts")}},
+        "nuit": {"duree": round(m["sommeil"]), "coucher": hm(s.get("coucher")), "lever": hm(s.get("lever"))}
+                if m.get("sommeil") else None,
     }
 
 
@@ -81,9 +94,13 @@ def lecteur_github(session):
         r.raise_for_status()
         return r.json()
 
+    deja = {}
+
     def lire(chemins):
+        manque = [c for c in chemins if c not in deja]
         with ThreadPoolExecutor(8) as ex:
-            return dict(zip(chemins, ex.map(un, chemins)))
+            deja.update(zip(manque, ex.map(un, manque)))
+        return {c: deja[c] for c in chemins}
     return lire
 
 

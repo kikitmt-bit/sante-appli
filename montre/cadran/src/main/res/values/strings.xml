@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="nom_cadran">Pokémon Sport</string>
+    <string name="anneau">Anneau (barre d\'effort)</string>
+    <string name="bas">Bas (balls, nuit, objectif)</string>
+</resources>
