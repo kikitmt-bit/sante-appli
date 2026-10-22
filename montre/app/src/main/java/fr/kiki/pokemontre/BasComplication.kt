@@ -17,6 +17,7 @@ import android.provider.CalendarContract
 import androidx.wear.watchface.complications.data.ComplicationData
 import androidx.wear.watchface.complications.data.ComplicationType
 import androidx.wear.watchface.complications.data.LongTextComplicationData
+import androidx.wear.watchface.complications.data.NoDataComplicationData
 import androidx.wear.watchface.complications.data.PlainComplicationText
 import androidx.wear.watchface.complications.datasource.ComplicationDataSourceUpdateRequester
 import androidx.wear.watchface.complications.datasource.ComplicationRequest
@@ -32,7 +33,7 @@ import java.time.ZoneId
  *  2. un rendez-vous de l'agenda qui commence dans les 3 h (toucher = agenda) ;
  *  3. la première heure après le réveil : la nuit (toucher = Santé, page de la nuit) ;
  *  4. un rendez-vous plus tard (aujourd'hui ou demain) ;
- *  5. sinon les objectifs santé du jour : pas et minutes en zone (toucher = Santé).
+ *  sinon rien : la case reste vide.
  * À venir (noté dans CLAUDE.md) : les pronos NFL et le padel.
  */
 class BasComplication : SuspendingComplicationDataSourceService() {
@@ -55,8 +56,7 @@ class BasComplication : SuspendingComplicationDataSourceService() {
             return message(titre, detail.replace(" · shiny ×1,5", ""), Intent(this, SanteActivity::class.java).putExtra("page", 1), 3)
         }
         if (rdv != null) return message(rdv.first, rdv.second, agenda, 4)
-        val (titre, detail) = objectifs(this, e)
-        return message(titre, detail, Intent(this, SanteActivity::class.java), 2)
+        return NoDataComplicationData()  // rien d'utile : la case reste vide (choix de Kiki)
     }
 
     private fun message(titre: String, detail: String, intent: Intent, code: Int): ComplicationData =

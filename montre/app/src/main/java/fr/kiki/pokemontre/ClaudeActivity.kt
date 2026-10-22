@@ -15,11 +15,14 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
+import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.text.Layout
 import android.text.StaticLayout
@@ -57,20 +60,79 @@ class ClaudeActivity : Activity() {
         setContentView(vue)
         vue.requestFocus()
         tts = TextToSpeech(this) { if (it == TextToSpeech.SUCCESS) tts?.language = Locale.FRANCE }
-        if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 2)
-        Claude.enAttente(this)?.let { vue.suivre(it.first, it.second, it.third) }  // une question partie avant
+        val enAttente = Claude.enAttente(this)
+        if (enAttente != null) vue.suivre(enAttente.first, enAttente.second, enAttente.third)  // une question partie avant
+        val manque = listOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
+            .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (manque.isNotEmpty()) requestPermissions(manque.toTypedArray(), 2)
+        else if (enAttente == null) dicter()  // on ouvre l'écran : le micro écoute tout de suite
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED && Claude.enAttente(this) == null) dicter()
     }
 
     override fun onResume() { super.onResume(); visible = true }
     override fun onPause() { super.onPause(); visible = false }
-    override fun onDestroy() { tts?.shutdown(); super.onDestroy() }
+    override fun onDestroy() { reco?.destroy(); tts?.shutdown(); super.onDestroy() }
+
+    // ---------- La dictée, dans l'écran même (pas l'écran de dictée de Google, lent à s'initialiser) ----------
+    // D'abord la reconnaissance de la montre elle-même (sur l'appareil, sans réseau : la plus rapide), sinon celle de
+    // Google ; si aucune ne marche, l'ancien écran de dictée. Fin de phrase = envoi direct, sans écran de vérification.
+    private var reco: SpeechRecognizer? = null
+    private var surAppareil = true
 
     fun dicter() {
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 2); return
+        }
+        reco?.destroy()
+        val local = surAppareil && Build.VERSION.SDK_INT >= 31 && !Claude.sansLocal(this) &&
+            SpeechRecognizer.isOnDeviceRecognitionAvailable(this)
+        if (!local && !SpeechRecognizer.isRecognitionAvailable(this)) { dicteeGoogle(); return }
+        val r = if (local) SpeechRecognizer.createOnDeviceSpeechRecognizer(this) else SpeechRecognizer.createSpeechRecognizer(this)
+        reco = r
+        r.setRecognitionListener(object : RecognitionListener {
+            override fun onReadyForSpeech(params: Bundle?) { vue.pret(); vibre(this@ClaudeActivity, longArrayOf(0, 20)) }
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) { vue.volume(rmsdB) }
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+            override fun onPartialResults(partialResults: Bundle?) {
+                partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.let { vue.partiel(it) }
+            }
+            override fun onResults(results: Bundle?) {
+                val texte = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull()?.trim()
+                if (texte.isNullOrEmpty()) vue.rienEntendu() else vue.envoyerTexte(texte)
+            }
+            override fun onError(error: Int) {
+                val silence = error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+                if (local && !silence) {
+                    // La reconnaissance de la montre ne sait pas faire (langue, modèle absent…) : celle de Google, et on s'en souvient
+                    surAppareil = false; Claude.retenirSansLocal(this@ClaudeActivity); dicter()
+                } else if (silence) vue.rienEntendu()
+                else if (error == SpeechRecognizer.ERROR_NETWORK || error == SpeechRecognizer.ERROR_NETWORK_TIMEOUT) vue.erreur("Pas de réseau pour la dictée")
+                else dicteeGoogle()
+            }
+        })
+        vue.ecoute()
+        r.startListening(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr-FR")
+            .putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
+            .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1)
+            .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true))
+    }
+
+    /** Fin de phrase forcée (toucher le micro pendant qu'on parle). */
+    fun finDictee() { reco?.stopListening() }
+
+    /** Dernier recours : l'écran de dictée de Google. */
+    private fun dicteeGoogle() {
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr-FR")
-            .putExtra(RecognizerIntent.EXTRA_PROMPT, "Ta question à Claude")
         try { startActivityForResult(i, 1) } catch (e: Exception) { vue.erreur("Dictée indisponible sur cette montre") }
     }
 
@@ -78,7 +140,7 @@ class ClaudeActivity : Activity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         val texte = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-        if (requestCode == 1 && resultCode == RESULT_OK && !texte.isNullOrBlank()) vue.question(texte)
+        if (requestCode == 1 && resultCode == RESULT_OK && !texte.isNullOrBlank()) vue.envoyerTexte(texte) else vue.rienEntendu()
     }
 
     fun lire(texte: String) { tts?.speak(texte, TextToSpeech.QUEUE_FLUSH, null, "claude") }
@@ -109,6 +171,9 @@ object Claude {
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun modele(ctx: Context) = prefs(ctx).getString("modele", "rapide")!!
+    /** La reconnaissance vocale de la montre (sur l'appareil) n'a pas marché une fois : on passe par celle de Google. */
+    fun sansLocal(ctx: Context) = prefs(ctx).getBoolean("sans_local", false)
+    fun retenirSansLocal(ctx: Context) = prefs(ctx).edit().putBoolean("sans_local", true).apply()
     fun choisirModele(ctx: Context, m: String) = prefs(ctx).edit().putString("modele", m).apply()
 
     /** (id, question, envoyée à) d'une question partie il y a moins de 10 min et sans réponse. */
@@ -136,7 +201,7 @@ object Claude {
 
 @SuppressLint("ViewConstructor")
 class ClaudeView(private val act: ClaudeActivity) : View(act) {
-    private enum class Etat { ACCUEIL, QUESTION, ATTENTE, REPONSE, LONG, HISTORIQUE, ERREUR }
+    private enum class Etat { ACCUEIL, ECOUTE, ATTENTE, REPONSE, LONG, HISTORIQUE, ERREUR }
 
     private var etat = Etat.ACCUEIL
     private var texteQuestion = ""
@@ -165,7 +230,19 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     init { isFocusable = true; isFocusableInTouchMode = true }
 
     // ---------- Les étapes ----------
-    fun question(q: String) { texteQuestion = q; etat = Etat.QUESTION; invalidate() }
+    private var prete = false
+    private var partielTexte = ""
+    private var niveau = 0f
+
+    /** Le micro démarre (« Préparation… » puis « Je t'écoute »). */
+    fun ecoute() { prete = false; partielTexte = ""; etat = Etat.ECOUTE; invalidate() }
+    fun pret() { prete = true; invalidate() }
+    fun volume(db: Float) { niveau = ((db + 2) / 12f).coerceIn(0f, 1f) }
+    fun partiel(t: String) { partielTexte = t; invalidate() }
+    fun rienEntendu() { message = "Je n'ai rien entendu"; etat = Etat.ACCUEIL; invalidate() }
+
+    /** Fin de la dictée : la question part tout de suite (pas d'écran de vérification). */
+    fun envoyerTexte(q: String) { message = ""; texteQuestion = q; envoyer() }
 
     fun erreur(m: String) { message = m; etat = Etat.ERREUR; invalidate() }
 
@@ -203,7 +280,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
                     if (statut == "en_cours" && debutReflexion == 0L) { debutReflexion = System.currentTimeMillis(); ClaudeActivity.vibre(act, longArrayOf(0, 25)) }
                     etape = when (statut) { "en_cours" -> "Claude réfléchit…"; null -> "Réseau lent…"; else -> "Claude démarre…" }
                 }
-                Thread.sleep(3000)
+                Thread.sleep(2000)
             }
             act.runOnUiThread { if (id == n) { id = null; Claude.finAttente(act); erreur("Pas de réponse au bout de 6 min. Réessaie.") } }
         }.start()
@@ -239,18 +316,20 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         zones.clear()
         when (etat) {
             Etat.ACCUEIL -> accueil(c)
-            Etat.QUESTION -> pageQuestion(c)
+            Etat.ECOUTE -> pageEcoute(c)
             Etat.ATTENTE -> attente(c)
             Etat.REPONSE -> pageReponse(c)
             Etat.LONG -> pageLong(c)
             Etat.HISTORIQUE -> pageHistorique(c)
             Etat.ERREUR -> {
                 texteCentre(c, message, S * 0.42f, S * 0.05f, Color.WHITE, S * 0.7f)
-                bouton(c, "Réessayer", width / 2f, S * 0.66f, S * 0.4f, orange) { etat = if (texteQuestion.isEmpty()) Etat.ACCUEIL else Etat.QUESTION }
+                bouton(c, "Réessayer", width / 2f, S * 0.66f, S * 0.45f, orange) { act.dicter() }
             }
         }
-        if (etat == Etat.ATTENTE) postInvalidateOnAnimation()
+        if (etat == Etat.ATTENTE || etat == Etat.ECOUTE) postInvalidateOnAnimation()
     }
+
+    private fun alpha(couleur: Int, a: Float) = BallView.alpha(couleur, a)
 
     private fun etoile(c: Canvas, x: Float, y: Float, r: Float, couleur: Int, tour: Float = 0f) {
         p.color = couleur
@@ -274,13 +353,13 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     }
 
     private fun bouton(c: Canvas, s: String, x: Float, y: Float, l: Float, couleur: Int, plein: Boolean = true, action: () -> Unit) {
-        val h = S * 0.11f
+        val h = S * 0.125f
         val r = RectF(x - l / 2, y - h / 2, x + l / 2, y + h / 2)
         p.color = if (plein) couleur else 0xFF2A2420.toInt()
         c.drawRoundRect(r, h / 2, h / 2, p)
         t.textSize = S * 0.045f; t.typeface = gras; t.color = if (plein) Color.WHITE else couleur; t.textAlign = Paint.Align.CENTER
-        c.drawText(s, x, y + S * 0.016f, t); t.textAlign = Paint.Align.LEFT
-        zones += RectF(r.left - 8, r.top - 8, r.right + 8, r.bottom + 8) to action
+        c.drawText(s, x, y + S * 0.017f, t); t.textAlign = Paint.Align.LEFT
+        zones += RectF(r.left - 14, r.top - 14, r.right + 14, r.bottom + 14) to action
     }
 
     private fun choixModele(c: Canvas, y: Float) {
@@ -291,7 +370,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
 
     private fun accueil(c: Canvas) {
         etoile(c, width / 2f, S * 0.17f, S * 0.05f, orange)
-        texteCentre(c, "Demande à Claude", S * 0.24f, S * 0.05f, Color.WHITE, S * 0.7f, true)
+        texteCentre(c, message.ifEmpty { "Demande à Claude" }, S * 0.24f, S * 0.05f, Color.WHITE, S * 0.7f, true)
         // Le gros bouton micro
         val cx = width / 2f; val cy = S * 0.47f; val r = S * 0.13f
         p.color = orange; c.drawCircle(cx, cy, r, p)
@@ -301,18 +380,30 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         c.drawArc(RectF(cx - r * 0.33f, cy - r * 0.2f, cx + r * 0.33f, cy + r * 0.32f), 0f, 180f, false, p)
         c.drawLine(cx, cy + r * 0.32f, cx, cy + r * 0.48f, p)
         p.style = Paint.Style.FILL
-        zones += RectF(cx - r * 1.3f, cy - r * 1.3f, cx + r * 1.3f, cy + r * 1.3f) to { act.dicter() }
-        choixModele(c, S * 0.72f)
+        zones += RectF(cx - r * 1.3f, cy - r * 1.3f, cx + r * 1.3f, cy + r * 1.3f) to { message = ""; act.dicter() }
+        choixModele(c, S * 0.68f)
         if (Claude.historique(act).isNotEmpty())
-            bouton(c, "Dernières questions", width / 2f, S * 0.86f, S * 0.5f, orange, false) { defile = 0f; etat = Etat.HISTORIQUE; invalidate() }
+            bouton(c, "Dernières questions", width / 2f, S * 0.82f, S * 0.52f, orange, false) { defile = 0f; etat = Etat.HISTORIQUE; invalidate() }
     }
 
-    private fun pageQuestion(c: Canvas) {
-        texteCentre(c, "Ta question", S * 0.12f, S * 0.04f, gris, S * 0.6f)
-        texteCentre(c, "« $texteQuestion »", S * 0.2f, S * 0.052f, Color.WHITE, S * 0.72f, false, 5)
-        choixModele(c, S * 0.62f)
-        bouton(c, "Envoyer", width / 2f + S * 0.15f, S * 0.78f, S * 0.32f, orange) { envoyer() }
-        bouton(c, "↺ Redire", width / 2f - S * 0.18f, S * 0.78f, S * 0.27f, orange, false) { act.dicter() }
+    /** On parle : micro orange qui bat avec la voix, la phrase s'écrit en direct ; toucher le micro = fini. */
+    private fun pageEcoute(c: Canvas) {
+        texteCentre(c, if (prete) "Je t'écoute…" else "Préparation…", S * 0.13f, S * 0.05f, Color.WHITE, S * 0.7f, true)
+        val cx = width / 2f
+        val cy = S * 0.38f
+        val r = S * 0.12f * (1 + (if (prete) niveau * 0.35f else 0f))
+        p.color = alpha(orange, if (prete) 0.25f else 0.12f); c.drawCircle(cx, cy, r * 1.45f, p)
+        p.color = if (prete) orange else 0xFF5A4A40.toInt(); c.drawCircle(cx, cy, S * 0.12f, p)
+        val m = S * 0.12f
+        p.color = Color.WHITE
+        c.drawRoundRect(RectF(cx - m * 0.18f, cy - m * 0.45f, cx + m * 0.18f, cy + m * 0.15f), m * 0.18f, m * 0.18f, p)
+        p.style = Paint.Style.STROKE; p.strokeWidth = m * 0.08f
+        c.drawArc(RectF(cx - m * 0.33f, cy - m * 0.2f, cx + m * 0.33f, cy + m * 0.32f), 0f, 180f, false, p)
+        c.drawLine(cx, cy + m * 0.32f, cx, cy + m * 0.48f, p)
+        p.style = Paint.Style.FILL
+        zones += RectF(cx - S * 0.2f, cy - S * 0.2f, cx + S * 0.2f, cy + S * 0.2f) to { act.finDictee() }
+        if (partielTexte.isNotEmpty()) texteCentre(c, partielTexte, S * 0.54f, S * 0.045f, gris, S * 0.72f, false, 3)
+        choixModele(c, S * 0.78f)
     }
 
     /** L'attente : étoile qui tourne, chrono, étape, barre de progression (jamais figée, jamais tout à fait pleine). */
@@ -338,10 +429,10 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         val r = reponse ?: return
         etoile(c, width / 2f, S * 0.1f, S * 0.03f, orange)
         texteCentre(c, r.optString("q"), S * 0.14f, S * 0.034f, gris, S * 0.6f, false, 2)
-        texteCentre(c, r.optString("court"), S * 0.27f, S * 0.054f, Color.WHITE, S * 0.76f, false, 5)
-        bouton(c, "🔊", width / 2f - S * 0.22f, S * 0.72f, S * 0.16f, orange, false) { act.lire(r.optString("court")) }
-        bouton(c, "Plus d'infos", width / 2f + S * 0.08f, S * 0.72f, S * 0.36f, orange) { defile = 0f; etat = Etat.LONG; invalidate() }
-        bouton(c, "Nouvelle question", width / 2f, S * 0.86f, S * 0.5f, orange, false) { act.taire(); texteQuestion = ""; etat = Etat.ACCUEIL; invalidate() }
+        texteCentre(c, r.optString("court"), S * 0.25f, S * 0.054f, Color.WHITE, S * 0.76f, false, 4)
+        bouton(c, "🔊", width / 2f - S * 0.22f, S * 0.64f, S * 0.17f, orange, false) { act.lire(r.optString("court")) }
+        bouton(c, "Plus d'infos", width / 2f + S * 0.08f, S * 0.64f, S * 0.38f, orange) { defile = 0f; etat = Etat.LONG; invalidate() }
+        bouton(c, "Nouvelle question", width / 2f, S * 0.79f, S * 0.6f, orange, false) { act.taire(); texteQuestion = ""; act.dicter() }
     }
 
     private fun pageLong(c: Canvas) {
@@ -352,26 +443,27 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         val largeur = (S * 0.74f).toInt()
         val l = StaticLayout.Builder.obtain(texte, 0, texte.length, t, largeur).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
         hauteurLong = l.height + S * 0.3f
-        c.save(); c.clipRect(0f, S * 0.12f, width.toFloat(), S * 0.8f)
+        c.save(); c.clipRect(0f, S * 0.12f, width.toFloat(), S * 0.72f)
         c.translate(width / 2f - largeur / 2, S * 0.14f - defile); l.draw(c); c.restore()
-        bouton(c, "🔊", width / 2f - S * 0.12f, S * 0.88f, S * 0.18f, orange, false) { act.lire(r.optString("long")) }
-        bouton(c, "Retour", width / 2f + S * 0.1f, S * 0.88f, S * 0.22f, orange) { act.taire(); etat = Etat.REPONSE; invalidate() }
+        bouton(c, "🔊", width / 2f - S * 0.13f, S * 0.81f, S * 0.19f, orange, false) { act.lire(r.optString("long")) }
+        bouton(c, "Retour", width / 2f + S * 0.11f, S * 0.81f, S * 0.26f, orange) { act.taire(); etat = Etat.REPONSE; invalidate() }
     }
 
     private fun pageHistorique(c: Canvas) {
         texteCentre(c, "Dernières questions", S * 0.1f, S * 0.045f, Color.WHITE, S * 0.7f, true)
         var y = S * 0.2f - defile
         val h = Claude.historique(act)
-        c.save(); c.clipRect(0f, S * 0.17f, width.toFloat(), S * 0.82f)
+        c.save(); c.clipRect(0f, S * 0.17f, width.toFloat(), S * 0.73f)
         for (r in h) {
             val haut = y
             val hq = texteCentre(c, r.optString("q"), y, S * 0.04f, orange, S * 0.7f, false, 2)
             val hc = texteCentre(c, r.optString("court"), y + hq + S * 0.01f, S * 0.036f, gris, S * 0.7f, false, 2)
-            zones += RectF(0f, maxOf(haut, S * 0.17f), width.toFloat(), minOf(y + hq + hc, S * 0.82f)) to { reponse = r; etat = Etat.REPONSE; invalidate() }
+            if (y + hq + hc > S * 0.17f && haut < S * 0.73f)
+                zones += RectF(0f, maxOf(haut, S * 0.17f), width.toFloat(), minOf(y + hq + hc, S * 0.73f)) to { reponse = r; etat = Etat.REPONSE; invalidate() }
             y += hq + hc + S * 0.05f
         }
         c.restore()
         hauteurLong = y + defile
-        bouton(c, "Retour", width / 2f, S * 0.89f, S * 0.3f, orange) { etat = Etat.ACCUEIL; invalidate() }
+        bouton(c, "Retour", width / 2f, S * 0.82f, S * 0.34f, orange) { etat = Etat.ACCUEIL; invalidate() }
     }
 }

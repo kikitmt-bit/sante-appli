@@ -70,7 +70,7 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     il y a des balls ; toucher = ouverture, sinon espace Pokémon), `BasComplication` = case libre (LONG_TEXT, **jamais de Pokémon**, choix de Kiki :
     notification utile < 30 min (`Notifs`, autorisation par le shell de Bugjaeger : `cmd notification allow_listener
     fr.kiki.pokemontre/fr.kiki.pokemontre.Notifs`) > rendez-vous dans les 3 h > nuit l'heure après le lever >
-    rendez-vous plus tard > objectifs santé du jour (pas en direct, minutes en zone)),
+    rendez-vous plus tard ; sinon la case reste vide, choix de Kiki),
     `PokemonActivity` (pages : barre, balls du jour, Pokédex) et `SanteActivity` (activité, cœur et nuit), pages à la
     couronne ou en glissant haut/bas, bouton ↻ (récolte immédiate avec `APPLI_CLE`, puis relecture après ~1 min),
     `OuvrirActivity` (ouverture animée ; ball 3D = images du modèle three.js du téléphone, `assets/ball/*.webp`).
@@ -82,13 +82,15 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /
     petite ball au trait « 48% » (slot 1), case libre en bas (slot 2) ; veille : heure fine. Pas d'anneau (trop voyant).
   - **Claude sur la montre (sans clé API)** : étoile orange à gauche de l'heure (et appli « Claude » de la liste) ->
-    `ClaudeActivity` (dictée de la montre, ⚡ Rapide / 🧠 Réfléchi, chrono + étapes + barre de progression, réponse courte,
+    `ClaudeActivity` (le micro écoute dès l'ouverture : `SpeechRecognizer` sur l'appareil, sinon Google, sinon
+    l'écran de dictée ; fin de phrase = envoi direct, sans écran de vérification ; ⚡ Rapide / 🧠 Réfléchi, chrono + étapes + barre de progression, réponse courte,
     « Plus d'infos », 🔊 lecture, notification si on a quitté l'écran, 10 dernières questions). Trajet : script Google
     `doGet ?quoi=claude` dépose `questions/<id>.json` dans le dépôt privé **kikitmt-bit/montre-claude** (jeton
     `MONTRE_TOKEN`) -> un envoi (push) sur ce dépôt déclenche la **routine** « Claude de la montre »
     (rapide = `trig_01CDDaAsBb4aRCETbEVxYYqC` Haiku, réfléchi = `trig_01R2Q6xWVFJVPzCsAaLPVUZ8` Opus ; les deux
     partent à chaque question, celle de l'autre mode s'arrête aussitôt ; tout le git est dans `montre-claude/outil.py`
-    `prendre <mode>` / `rendre <fichier> <modèle>` : ~31 s en rapide, ~37 s en réfléchi, dont ~25 s de GitHub + démarrage) -> réponse dans
+    `prendre <mode>` / `rendre <fichier> <modèle>` : ~30 s en rapide, ~37 s en réfléchi, dont ~25 s de GitHub + démarrage,
+    c'est le plancher ; `persist_session` essayé : questions perdues, ne pas remettre) -> réponse dans
     `reponses/<id>.json` de la branche `claude/montre-reponses` du dépôt sante -> `?quoi=claude&id=` la relit.
     Seuls les **push** déclenchent (pas la création de branche) et le filtre des déclencheurs est ignoré :
     d'où un dépôt à part où rien d'autre n'est poussé. Routine d'essai `trig_01DytNizq4c4NDSt9Xhn3oMU` en pause
