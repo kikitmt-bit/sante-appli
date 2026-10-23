@@ -92,7 +92,7 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     depuis le 23/10) ou appli « Claude » de la liste -> `ClaudeActivity` (le micro écoute dès l'ouverture, aussi quand
     l'écran était resté ouvert : `onNewIntent`. Pas de reconnaissance vocale sur la montre, donc écran de dictée de
     Gboard, qui n'allume son micro tout seul que pour des applis de Google (`auto_start_voice_app_whitelist`, fixé par
-    Google) : le service d'accessibilité `AutoMicro` touche le micro (0,5 ; 0,78 de l'écran) quand l'écran Claude vient
+    Google) : le service d'accessibilité `AutoMicro` touche le micro (0,5 ; 0,78 de l'écran) 1,3 s après (plus tôt : « je n'ai pas compris »), sauf s'il écoute déjà, quand l'écran Claude vient
     d'ouvrir la dictée ; Kiki doit l'activer dans Paramètres → Accessibilité ; fin de phrase = envoi direct, sans écran de vérification ;
     **modèle choisi tout seul** (23/10, plus de bouton) : chrono + étapes + barre de progression, réponse courte,
     « Plus d'infos », 🔊 lecture, notification si on a quitté l'écran, 10 dernières questions). Trajet : script Google
