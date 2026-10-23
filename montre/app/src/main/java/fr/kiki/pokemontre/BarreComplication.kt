@@ -45,6 +45,7 @@ class BarreComplication : SuspendingComplicationDataSourceService() {
             ComplicationDataSourceUpdateRequester.create(ctx, ComponentName(ctx, BarreComplication::class.java))
                 .requestUpdateAll()
             BasComplication.rafraichir(ctx)
+            Tuiles.rafraichir(ctx)
         }
 
         private fun texte(t: String) = PlainComplicationText.Builder(t).build()

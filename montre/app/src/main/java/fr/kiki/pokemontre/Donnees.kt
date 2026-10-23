@@ -36,6 +36,7 @@ object Donnees {
         val maj: String, val pas: Int, val zone: Int, val recu: Long, val derniere: Ball?,
         val jour: String, val objectifs: Objectifs?, val nuit: Nuit?, val sante: Sante?,
         val especes: Int, val totalEspeces: Int, val dernieres: List<Ball>,
+        val coeur: JSONObject? = null,
     )
 
     /** La santé du jour d'après le site (les pas, étages, distance et calories en direct viennent de la montre). */
@@ -113,6 +114,7 @@ object Donnees {
                 },
                 especes = j.optJSONObject("pokedex")?.optInt("especes") ?: 0,
                 totalEspeces = j.optJSONObject("pokedex")?.optInt("total", 151) ?: 151,
+                coeur = j.optJSONObject("coeur"),
                 dernieres = j.optJSONObject("pokedex")?.optJSONArray("dernieres")?.let { a ->
                     (0 until a.length()).map { ball(a.getJSONObject(it)) } } ?: emptyList(),
             )

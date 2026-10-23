@@ -77,6 +77,11 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     **Direct** (`Direct.kt`) : Health Services passif (pas, étages, distance, calories du jour, sans batterie en plus) ;
     barre = points du site + ce que la montre a compté depuis l'arrivée des dernières données (les minutes en zone
     restent celles du site). Permissions ACTIVITY_RECOGNITION et READ_CALENDAR demandées à la 1re ouverture.
+  - **v8 (23/10)** : `CoeurActivity` (toucher le cœur du cadran ; cœur en direct par `MeasureClient`, courbe 24 h par
+    demi-heure, repos et VFC 7 jours, zones du jour : bloc `coeur` de montre.py, lu dans `data/jour/` d'hier et
+    d'aujourd'hui) ; les pas ouvrent toujours `SanteActivity`. Tuiles `TuilePokemon`, `TuileSante`, `TuileClaude`
+    (`Tuiles.kt`, protolayout 1.2.1 / tiles 1.4.1, rafraîchies avec les complications). `ClaudeActivity` répond à
+    ASSIST / VOICE_COMMAND pour remplacer l'Assistant (rôle donné par ADB). Commandes ADB : `montre/ADB.md`.
   - Module `cadran` (« Pokémon Sport », Watch Face Format 2, sans code) : `res/raw/watchface.xml`, vérifié par
     `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
     batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /

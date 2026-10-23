@@ -13,6 +13,8 @@
     <!-- Claude : notification quand la réponse arrive ; dictée et lecture à voix haute de la montre -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Écran Cœur : le cœur en direct -->
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
     <queries>
         <intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent>
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
@@ -45,6 +47,38 @@
             android:exported="true"
             android:taskAffinity="" />
 
+        <!-- Écran Cœur (toucher le cœur du cadran) -->
+        <activity
+            android:name=".CoeurActivity"
+            android:exported="true"
+            android:taskAffinity="" />
+
+        <!-- Les tuiles (glisser à côté du cadran) -->
+        <service
+            android:name=".TuilePokemon"
+            android:exported="true"
+            android:label="Pokémon"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter><action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" /></intent-filter>
+            <meta-data android:name="androidx.wear.tiles.PREVIEW" android:resource="@drawable/tuile_pokemon" />
+        </service>
+        <service
+            android:name=".TuileSante"
+            android:exported="true"
+            android:label="Santé du jour"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter><action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" /></intent-filter>
+            <meta-data android:name="androidx.wear.tiles.PREVIEW" android:resource="@drawable/tuile_sante" />
+        </service>
+        <service
+            android:name=".TuileClaude"
+            android:exported="true"
+            android:label="Claude"
+            android:permission="com.google.android.wearable.permission.BIND_TILE_PROVIDER">
+            <intent-filter><action android:name="androidx.wear.tiles.action.BIND_TILE_PROVIDER" /></intent-filter>
+            <meta-data android:name="androidx.wear.tiles.PREVIEW" android:resource="@drawable/tuile_claude" />
+        </service>
+
         <!-- Demander à Claude (bouton du cadran, et dans la liste des applis) -->
         <activity
             android:name=".ClaudeActivity"
@@ -56,6 +90,15 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <!-- Pour que Claude remplace l'Assistant (appui long sur le bouton), voir CLAUDE.md -->
+            <intent-filter>
+                <action android:name="android.intent.action.ASSIST" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VOICE_COMMAND" />
+                <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
 

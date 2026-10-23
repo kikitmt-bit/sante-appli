@@ -129,11 +129,11 @@
       </PartImage>
     </Group>
 
-    <!-- Cardio et pas (toucher = espace Santé de l'appli Pokémon) -->
-    <Group x="70" y="270" width="200" height="44" name="sante">
+    <!-- Cardio (toucher = écran Cœur) et pas (toucher = espace Santé) de l'appli Pokémon -->
+    <Group x="70" y="270" width="96" height="44" name="coeur">
       <Variant mode="AMBIENT" target="x" value="-1000"/>
       <Variant mode="AMBIENT" target="alpha" value="0"/>
-      <Launch target="fr.kiki.pokemontre/fr.kiki.pokemontre.SanteActivity"/>
+      <Launch target="fr.kiki.pokemontre/fr.kiki.pokemontre.CoeurActivity"/>
       <PartImage x="8" y="9" width="26" height="26" name="coeur">
         <Image resource="ic_coeur"/>
       </PartImage>
@@ -144,10 +144,15 @@
           </Font>
         </Text>
       </PartText>
-      <PartImage x="96" y="9" width="26" height="26" name="pas">
+    </Group>
+    <Group x="166" y="270" width="104" height="44" name="sante">
+      <Variant mode="AMBIENT" target="x" value="-1000"/>
+      <Variant mode="AMBIENT" target="alpha" value="0"/>
+      <Launch target="fr.kiki.pokemontre/fr.kiki.pokemontre.SanteActivity"/>
+      <PartImage x="0" y="9" width="26" height="26" name="pas">
         <Image resource="ic_pas"/>
       </PartImage>
-      <PartText x="126" y="2" width="74" height="40" name="nb_pas">
+      <PartText x="30" y="2" width="74" height="40" name="nb_pas">
         <Text align="START">
           <Font family="SYNC_TO_DEVICE" size="25" color="#ffdddddd">
             <Template>%s<Parameter expression="[STEP_COUNT]"/></Template>

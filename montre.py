@@ -70,7 +70,64 @@ def contenu(lire, maintenant):
                   ("pas", "km", "kcal", "zone", "etages", "fc_repos", "vfc", "spo2", "min_sport", "seances")}
                  | {"sport": pokemon.sport_principal(m)[1] if m.get("sports") else None},
         "pokedex": {"especes": len({c["num"] for c in vues}), "total": len(POKEMON), "dernieres": [une(c) for c in recentes]},
+        "coeur": coeur(lire, maintenant),
     }
+
+
+def coeur(lire, maintenant):
+    """L'écran Cœur de la montre : courbe des dernières 24 h (moyenne et mini / maxi par demi-heure, minute par minute
+    de la montre), dernière mesure, FC au repos et VFC des 7 derniers jours, minutes du jour dans chaque zone."""
+    import pandas as pd
+    aujourd = maintenant.date()
+    hier = aujourd - dt.timedelta(days=1)
+    chemins = {j: f"data/jour/{j.year}/{j}.json" for j in (hier, aujourd)}
+    f = lire(list(chemins.values()))
+    morceaux = []
+    for j, c in chemins.items():
+        hr = ((f.get(c) or {}).get("types") or {}).get("heart-rate")
+        df = chiffres.table(hr) if isinstance(hr, dict) else pd.DataFrame()
+        if df.empty or "beatsPerMinuteAvg" not in df:
+            continue
+        df["t"] = pd.to_datetime(str(j) + " " + df["heure"].astype(str), errors="coerce")
+        morceaux.append(df.dropna(subset=["t"]))
+    serie, derniere = [], None
+    if morceaux:
+        df = pd.concat(morceaux).sort_values("t")
+        debut = pd.Timestamp(maintenant.replace(tzinfo=None) - dt.timedelta(hours=24)).floor("30min")
+        df = df[df["t"] >= debut]
+        if not df.empty:
+            last = df.iloc[-1]
+            derniere = {"bpm": round(float(last["beatsPerMinuteAvg"])), "heure": last["t"].strftime("%H:%M")}
+            g = df.groupby(((df["t"] - debut).dt.total_seconds() // 1800).astype(int))
+            for k, d in g:
+                serie.append([int(k), round(float(d["beatsPerMinuteAvg"].mean())), int(d["beatsPerMinuteMin"].min()),
+                              int(d["beatsPerMinuteMax"].max())])
+            debut_h = debut.strftime("%H:%M")
+        else:
+            debut_h = None
+    else:
+        debut_h = None
+    # FC au repos et VFC des 7 derniers jours, zones du jour (résumés annuels)
+    annees = sorted({(aujourd - dt.timedelta(days=i)).year for i in range(7)})
+    resumes = {}
+    for y in annees:
+        resumes.update(lire([f"data/resume/{y}.json"])[f"data/resume/{y}.json"] or {})
+    semaine = []
+    for i in range(6, -1, -1):
+        j = aujourd - dt.timedelta(days=i)
+        st = chiffres.stats_jour(resumes.get(str(j))) if resumes.get(str(j)) else {}
+        semaine.append({"jour": chiffres.JOURS[j.weekday()][:1].upper(), "repos": nombre(st.get("fc_repos")),
+                        "vfc": nombre(st.get("vfc"))})
+    r = resumes.get(str(aujourd)) or {}
+    z = chiffres.premier(r.get("active-zone-minutes:jour"), "sumInFatBurnHeartZone")
+    zones = None
+    if z is not None:
+        c = chiffres.contenu(r["active-zone-minutes:jour"][0])
+        zones = {"graisses": nombre(c.get("sumInFatBurnHeartZone")), "cardio": nombre(c.get("sumInCardioHeartZone")),
+                 "pic": nombre(c.get("sumInPeakHeartZone"))}
+    st = chiffres.stats_jour(r) if r else {}
+    return {"debut": debut_h, "serie": serie, "derniere": derniere, "semaine": semaine, "zones": zones,
+            "max": nombre(st.get("fc_max")), "repos": nombre(st.get("fc_repos"))}
 
 
 def nombre(x, chiffres_apres=0):
