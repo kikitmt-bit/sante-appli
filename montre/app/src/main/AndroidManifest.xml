@@ -15,6 +15,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- Écran Cœur : le cœur en direct -->
     <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <!-- Débogage via Wi-Fi rallumé avec le Wi-Fi (droit donné une fois par adb, voir DebogageWifi.kt) -->
+    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
     <queries>
         <intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent>
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
@@ -130,6 +132,10 @@
             android:name=".Passif"
             android:exported="true"
             android:permission="com.google.android.wearable.healthservices.permission.PASSIVE_DATA_BINDING" />
+
+        <receiver
+            android:name=".WifiArrive"
+            android:exported="false" />
 
         <receiver
             android:name=".Demarrage"

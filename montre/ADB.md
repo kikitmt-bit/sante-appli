@@ -10,6 +10,14 @@ $A -s $P install -r montre/app/build/outputs/apk/debug/app-debug.apk
 ```
 (le port change à chaque réactivation ; le nom mdns peut contenir des espaces, d'où `$NF`).
 
+**Accès permanent (23/10, vérifié)** : mode débogage classique sur la porte fixe 5555 (`adb tcpip 5555`, lancé une
+fois depuis une connexion qui marche). Il **survit aux coupures du Wi-Fi** : `adb connect 192.168.0.28:5555` suffit dès
+que le Wi-Fi de la montre est allumé, sans toucher aux options pour les développeurs. Perdu au **redémarrage** de la
+montre : Kiki réactive alors le débogage via Wi-Fi à la main une fois, puis `adb connect <port mdns>` et `adb tcpip 5555`.
+Si l'adresse de la montre change (box), la retrouver avec `adb mdns services` ou dans les réglages Wi-Fi de la montre.
+L'essai de rallumage automatique par l'appli (`DebogageWifi.kt`, droit WRITE_SECURE_SETTINGS) ne marche pas : le
+réglage `adb_wifi_enabled` est recoupé par Android ; laissé en place, inoffensif.
+
 **Fait le 23/10** : animations à 0,5 ; `Notifs` autorisé ; rôle ASSISTANT donné à `fr.kiki.pokemontre` (avant :
 `com.google.android.wearable.assistant`) ; applis désactivées : Google Home (`com.google.android.apps.chromecast.app`),
 Photos, YouTube Music, Gmail (`com.google.android.gm`), démos magasin (`...musicweardemo.retailmode`,

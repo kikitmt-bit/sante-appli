@@ -107,6 +107,6 @@ class Passif : PassiveListenerService() {
 /** Après un redémarrage de la montre : se réinscrire. */
 class Demarrage : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) Direct.demarrer(ctx)
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) { Direct.demarrer(ctx); DebogageWifi.inscrire(ctx) }
     }
 }

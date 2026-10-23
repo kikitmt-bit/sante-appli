@@ -82,6 +82,8 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     d'aujourd'hui) ; les pas ouvrent toujours `SanteActivity`. Tuiles `TuilePokemon`, `TuileSante`, `TuileClaude`
     (`Tuiles.kt`, protolayout 1.2.1 / tiles 1.4.1, rafraîchies avec les complications). `ClaudeActivity` répond à
     ASSIST / VOICE_COMMAND pour remplacer l'Assistant (rôle donné par ADB). Commandes ADB : `montre/ADB.md`.
+  - **ADB depuis le PC** (23/10) : montre appairée, accès par `adb connect 192.168.0.28:5555` (mode tcpip, survit aux
+    coupures du Wi-Fi, perdu au redémarrage). Claude installe les APK et règle la montre lui-même : voir `montre/ADB.md`.
   - Module `cadran` (« Pokémon Sport », Watch Face Format 2, sans code) : `res/raw/watchface.xml`, vérifié par
     `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
     batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /

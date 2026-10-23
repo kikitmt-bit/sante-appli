@@ -22,6 +22,7 @@ class App : Application() {
             .build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork("recolte", ExistingPeriodicWorkPolicy.KEEP, travail)
         Direct.demarrer(this)  // pas et étages en direct (si la permission est donnée)
+        DebogageWifi.inscrire(this)  // débogage via Wi-Fi rallumé avec le Wi-Fi (si le droit est donné)
     }
 }
 
