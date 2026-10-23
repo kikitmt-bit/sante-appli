@@ -1,4 +1,22 @@
-# Réglages de la montre par ADB (shell de Bugjaeger)
+# Réglages de la montre par ADB
+
+**Depuis le PC (depuis le 23/10, plus besoin de Bugjaeger)** : montre appairée une fois (`adb pair`, code tapé par Kiki).
+Ensuite, sur le même Wi-Fi, débogage via Wi-Fi activé sur la montre (il se coupe quand la montre coupe son Wi-Fi) :
+
+```
+A=/c/Users/kikit/Android/sdk/platform-tools/adb.exe
+P=$($A mdns services | awk '/_adb-tls-connect/{print $NF}' | head -1); $A connect $P
+$A -s $P install -r montre/app/build/outputs/apk/debug/app-debug.apk
+```
+(le port change à chaque réactivation ; le nom mdns peut contenir des espaces, d'où `$NF`).
+
+**Fait le 23/10** : animations à 0,5 ; `Notifs` autorisé ; rôle ASSISTANT donné à `fr.kiki.pokemontre` (avant :
+`com.google.android.wearable.assistant`) ; applis désactivées : Google Home (`com.google.android.apps.chromecast.app`),
+Photos, YouTube Music, Gmail (`com.google.android.gm`), démos magasin (`...musicweardemo.retailmode`,
+`...wearable.retailattractloop`), TalkBack. Gardées : Maps, Wallet. Pas de service de reconnaissance vocale sur la
+montre (seule la dictée de Gboard, `WearRemoteInputActivity`).
+
+## Les commandes (aussi tapables dans le shell de Bugjaeger)
 
 Toutes ces commandes se tapent dans le **shell de Bugjaeger** (montre connectée en débogage), une ligne à la fois.
 Rien n'est définitif : chaque réglage a sa commande pour revenir en arrière.
