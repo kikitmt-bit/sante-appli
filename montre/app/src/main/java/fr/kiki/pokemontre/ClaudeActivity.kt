@@ -46,7 +46,9 @@ import kotlin.math.sin
  * dépôt privé montre-claude ; ça déclenche la routine Claude « Claude de la montre » (abonnement de Kiki), qui répond
  * dans la branche claude/montre-reponses du dépôt sante. La montre suit la réponse toutes les 3 s (chrono, étapes,
  * barre de progression), puis affiche la réponse courte, « Plus d'infos » (la longue) et 🔊 pour l'écouter.
- * Rapide = Haiku ; Réfléchi = Opus. Les 10 dernières questions sont gardées sur la montre.
+ * Le modèle se choisit tout seul : Haiku lit la question, répond aux simples et confie les difficiles à Opus.
+ * Ouvert par l'appui long sur le bouton (rôle Assistant) : le micro écoute tout de suite, même si l'écran était déjà
+ * ouvert en arrière-plan. Les 10 dernières questions sont gardées sur la montre.
  */
 class ClaudeActivity : Activity() {
     lateinit var vue: ClaudeView
@@ -66,6 +68,14 @@ class ClaudeActivity : Activity() {
             .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
         if (manque.isNotEmpty()) requestPermissions(manque.toTypedArray(), 2)
         else if (enAttente == null) dicter()  // on ouvre l'écran : le micro écoute tout de suite
+    }
+
+    /** L'écran était resté ouvert en arrière-plan (singleTask) : l'appui long relance l'écoute. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (Claude.enAttente(this) == null && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+            taire(); vue.nouvelle(); dicter()
+        }
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
@@ -133,6 +143,7 @@ class ClaudeActivity : Activity() {
         val i = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "fr-FR")
+        AutoMicro.prevoir(this)  // le micro s'allume tout seul (service d'accessibilité)
         try { startActivityForResult(i, 1) } catch (e: Exception) { vue.erreur("Dictée indisponible sur cette montre") }
     }
 
@@ -170,11 +181,9 @@ object Claude {
     private const val PREFS = "claude"
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
-    fun modele(ctx: Context) = prefs(ctx).getString("modele", "rapide")!!
     /** La reconnaissance vocale de la montre (sur l'appareil) n'a pas marché une fois : on passe par celle de Google. */
     fun sansLocal(ctx: Context) = prefs(ctx).getBoolean("sans_local", false)
     fun retenirSansLocal(ctx: Context) = prefs(ctx).edit().putBoolean("sans_local", true).apply()
-    fun choisirModele(ctx: Context, m: String) = prefs(ctx).edit().putString("modele", m).apply()
 
     /** (id, question, envoyée à) d'une question partie il y a moins de 10 min et sans réponse. */
     fun enAttente(ctx: Context): Triple<String, String, Long>? {
@@ -209,6 +218,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     private var envoi = 0L          // heure d'envoi (ms, horloge murale)
     private var etape = "Envoi…"
     private var debutReflexion = 0L
+    private var difficile = false   // Haiku a confié la question à Opus
     private var reponse: JSONObject? = null
     private var message = ""
     private var defile = 0f
@@ -244,14 +254,16 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     /** Fin de la dictée : la question part tout de suite (pas d'écran de vérification). */
     fun envoyerTexte(q: String) { message = ""; texteQuestion = q; envoyer() }
 
+    /** Repart de zéro pour une nouvelle question. */
+    fun nouvelle() { message = ""; texteQuestion = ""; reponse = null; defile = 0f }
+
     fun erreur(m: String) { message = m; etat = Etat.ERREUR; invalidate() }
 
     private fun envoyer() {
         val q = texteQuestion
-        val modele = Claude.modele(act)
         envoi = System.currentTimeMillis(); etape = "Envoi de la question…"; debutReflexion = 0; etat = Etat.ATTENTE; invalidate()
         Thread {
-            val n = Donnees.claudePoser(q, modele)
+            val n = Donnees.claudePoser(q, "rapide")  // Haiku trie
             act.runOnUiThread {
                 if (n == null) erreur("La question n'est pas partie (réseau ?)")
                 else { Claude.attendre(act, n, q, envoi); suivre(n, q, envoi) }
@@ -261,7 +273,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
 
     /** Suit la réponse toutes les 3 s (aussi pour une question partie avant d'ouvrir l'écran). */
     fun suivre(n: String, q: String, depuis: Long) {
-        id = n; texteQuestion = q; envoi = depuis; etat = Etat.ATTENTE
+        id = n; texteQuestion = q; envoi = depuis; etat = Etat.ATTENTE; difficile = false
         etape = "Claude démarre…"; invalidate()
         Thread {
             while (id == n && System.currentTimeMillis() - envoi < 6 * 60_000) {
@@ -278,7 +290,9 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
                 }
                 act.runOnUiThread {
                     if (statut == "en_cours" && debutReflexion == 0L) { debutReflexion = System.currentTimeMillis(); ClaudeActivity.vibre(act, longArrayOf(0, 25)) }
-                    etape = when (statut) { "en_cours" -> "Claude réfléchit…"; null -> "Réseau lent…"; else -> "Claude démarre…" }
+                    if (statut == "pour_opus" && !difficile) { difficile = true; debutReflexion = System.currentTimeMillis() }
+                    etape = when (statut) { "en_cours" -> if (difficile) "Opus réfléchit…" else "Claude réfléchit…"
+                        "pour_opus" -> "Question difficile : Opus arrive…"; null -> "Réseau lent…"; else -> "Claude démarre…" }
                 }
                 Thread.sleep(2000)
             }
@@ -362,12 +376,6 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         zones += RectF(r.left - 14, r.top - 14, r.right + 14, r.bottom + 14) to action
     }
 
-    private fun choixModele(c: Canvas, y: Float) {
-        val m = Claude.modele(act)
-        bouton(c, "⚡ Rapide", width / 2f - S * 0.17f, y, S * 0.31f, orange, m == "rapide") { Claude.choisirModele(act, "rapide"); invalidate() }
-        bouton(c, "🧠 Réfléchi", width / 2f + S * 0.17f, y, S * 0.31f, orange, m == "reflechi") { Claude.choisirModele(act, "reflechi"); invalidate() }
-    }
-
     private fun accueil(c: Canvas) {
         etoile(c, width / 2f, S * 0.17f, S * 0.05f, orange)
         texteCentre(c, message.ifEmpty { "Demande à Claude" }, S * 0.24f, S * 0.05f, Color.WHITE, S * 0.7f, true)
@@ -381,9 +389,8 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         c.drawLine(cx, cy + r * 0.32f, cx, cy + r * 0.48f, p)
         p.style = Paint.Style.FILL
         zones += RectF(cx - r * 1.3f, cy - r * 1.3f, cx + r * 1.3f, cy + r * 1.3f) to { message = ""; act.dicter() }
-        choixModele(c, S * 0.68f)
         if (Claude.historique(act).isNotEmpty())
-            bouton(c, "Dernières questions", width / 2f, S * 0.82f, S * 0.52f, orange, false) { defile = 0f; etat = Etat.HISTORIQUE; invalidate() }
+            bouton(c, "Dernières questions", width / 2f, S * 0.74f, S * 0.52f, orange, false) { defile = 0f; etat = Etat.HISTORIQUE; invalidate() }
     }
 
     /** On parle : micro orange qui bat avec la voix, la phrase s'écrit en direct ; toucher le micro = fini. */
@@ -403,7 +410,6 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         p.style = Paint.Style.FILL
         zones += RectF(cx - S * 0.2f, cy - S * 0.2f, cx + S * 0.2f, cy + S * 0.2f) to { act.finDictee() }
         if (partielTexte.isNotEmpty()) texteCentre(c, partielTexte, S * 0.54f, S * 0.045f, gris, S * 0.72f, false, 3)
-        choixModele(c, S * 0.78f)
     }
 
     /** L'attente : étoile qui tourne, chrono, étape, barre de progression (jamais figée, jamais tout à fait pleine). */
@@ -415,8 +421,9 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         texteCentre(c, etape, S * 0.43f, S * 0.055f, Color.WHITE, S * 0.75f, true)
         texteCentre(c, "${s / 60}:${"%02d".format(s % 60)}", S * 0.51f, S * 0.08f, orange, S * 0.5f, true)
         // Progression estimée (mesuré le 22/10) : GitHub + démarrage ~25 s (jusqu'à 70 %), puis Claude répond en ~6 s
-        // (rapide) ou ~12 s (réfléchi) (jusqu'à 97 %) ; la barre avance toujours, sans jamais être pleine avant la réponse
-        val reflechi = Claude.modele(act) == "reflechi"
+        // (Haiku) ou ~12 s de plus quand la question passe à Opus (jusqu'à 97 %) ; la barre avance toujours, sans jamais
+        // être pleine avant la réponse
+        val reflechi = difficile
         val part = if (debutReflexion == 0L) 0.7f * (1 - exp(-ms / 14_000.0).toFloat())
                    else 0.7f + 0.27f * (1 - exp(-(System.currentTimeMillis() - debutReflexion) / (if (reflechi) 8_000.0 else 4_000.0)).toFloat())
         val l = S * 0.6f; val x = width / 2f - l / 2; val y = S * 0.66f; val h = S * 0.022f

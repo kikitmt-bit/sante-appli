@@ -24,6 +24,9 @@ Photos, YouTube Music, Gmail (`com.google.android.gm`), démos magasin (`...musi
 `...wearable.retailattractloop`), TalkBack. Gardées : Maps, Wallet. Pas de service de reconnaissance vocale sur la
 montre (seule la dictée de Gboard, `WearRemoteInputActivity`).
 
+**Micro automatique de Claude** (23/10) : service d'accessibilité `AutoMicro` de l'appli, à activer **par Kiki** sur
+la montre (Paramètres → Accessibilité → « Micro automatique (Claude) ») : réglage de sécurité, Claude ne l'active pas lui-même.
+
 ## Les commandes (aussi tapables dans le shell de Bugjaeger)
 
 Toutes ces commandes se tapent dans le **shell de Bugjaeger** (montre connectée en débogage), une ligne à la fois.

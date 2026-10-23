@@ -2,5 +2,7 @@
 <resources>
     <string name="nom">Pokémon</string>
     <string name="complication">Barre d\'effort Pokémon</string>
+    <string name="automicro">Micro automatique (Claude)</string>
+    <string name="automicro_description">Touche le micro de la dictée quand tu demandes quelque chose à Claude (appui long sur le bouton), pour que tu puisses parler tout de suite. Rien de plus.</string>
     <string name="complication_bas">Pokémon : balls, nuit et objectif</string>
 </resources>
