@@ -23,7 +23,6 @@ import android.os.Vibrator
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import android.speech.tts.TextToSpeech
 import android.text.Layout
 import android.text.StaticLayout
 import android.text.TextPaint
@@ -31,9 +30,14 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
+import java.net.URLEncoder
 import org.json.JSONArray
 import org.json.JSONObject
-import java.util.Locale
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -45,14 +49,15 @@ import kotlin.math.sin
  * Poser une question à Claude depuis la montre, sans clé API : la question part au script Google, qui la dépose dans le
  * dépôt privé montre-claude ; ça déclenche la routine Claude « Claude de la montre » (abonnement de Kiki), qui répond
  * dans la branche claude/montre-reponses du dépôt sante. La montre suit la réponse toutes les 3 s (chrono, étapes,
- * barre de progression), puis affiche la réponse courte, « Plus d'infos » (la longue) et 🔊 pour l'écouter.
+ * barre de progression), puis affiche la réponse sur une seule page qui défile : l'image (photo de l'article de
+ * Wikipédia, ou image trouvée sur le web), l'essentiel en gras, la suite, et tout en bas « Nouvelle question » et
+ * « Réponses précédentes ».
  * Le modèle se choisit tout seul : Haiku lit la question, répond aux simples et confie les difficiles à Opus.
  * Ouvert par l'appui long sur le bouton (rôle Assistant) : le micro écoute tout de suite, même si l'écran était déjà
  * ouvert en arrière-plan. Les 10 dernières questions sont gardées sur la montre.
  */
 class ClaudeActivity : Activity() {
     lateinit var vue: ClaudeView
-    private var tts: TextToSpeech? = null
     private var visible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -61,8 +66,8 @@ class ClaudeActivity : Activity() {
         vue = ClaudeView(this)
         setContentView(vue)
         vue.requestFocus()
-        tts = TextToSpeech(this) { if (it == TextToSpeech.SUCCESS) tts?.language = Locale.FRANCE }
         val enAttente = Claude.enAttente(this)
+        if (intent.getBooleanExtra(VOIR_REPONSE, false) && vue.montrerDerniere()) return
         if (enAttente != null) vue.suivre(enAttente.first, enAttente.second, enAttente.third)  // une question partie avant
         val manque = listOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
             .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
@@ -73,8 +78,9 @@ class ClaudeActivity : Activity() {
     /** L'écran était resté ouvert en arrière-plan (singleTask) : l'appui long relance l'écoute. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (intent.getBooleanExtra(VOIR_REPONSE, false)) { vue.montrerDerniere(); return }
         if (Claude.enAttente(this) == null && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            taire(); vue.nouvelle(); dicter()
+            vue.nouvelle(); dicter()
         }
     }
 
@@ -84,7 +90,7 @@ class ClaudeActivity : Activity() {
 
     override fun onResume() { super.onResume(); visible = true }
     override fun onPause() { super.onPause(); visible = false }
-    override fun onDestroy() { reco?.destroy(); tts?.shutdown(); super.onDestroy() }
+    override fun onDestroy() { reco?.destroy(); super.onDestroy() }
 
     // ---------- La dictée, dans l'écran même (pas l'écran de dictée de Google, lent à s'initialiser) ----------
     // D'abord la reconnaissance de la montre elle-même (sur l'appareil, sans réseau : la plus rapide), sinon celle de
@@ -154,8 +160,6 @@ class ClaudeActivity : Activity() {
         if (requestCode == 1 && resultCode == RESULT_OK && !texte.isNullOrBlank()) vue.envoyerTexte(texte) else vue.rienEntendu()
     }
 
-    fun lire(texte: String) { tts?.speak(texte, TextToSpeech.QUEUE_FLUSH, null, "claude") }
-    fun taire() { tts?.stop() }
 
     /** Réponse arrivée alors qu'on regarde ailleurs : une notification (toucher = la réponse). */
     fun prevenir(court: String) {
@@ -163,13 +167,15 @@ class ClaudeActivity : Activity() {
         if (visible) return
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel("claude", "Réponses de Claude", NotificationManager.IMPORTANCE_HIGH))
-        val tap = PendingIntent.getActivity(this, 5, Intent(this, ClaudeActivity::class.java)
-            .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT), PendingIntent.FLAG_IMMUTABLE)
+        val tap = PendingIntent.getActivity(this, 5, Intent(this, ClaudeActivity::class.java).putExtra(VOIR_REPONSE, true)
+            .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         nm.notify(7, android.app.Notification.Builder(this, "claude").setSmallIcon(R.drawable.ic_claude)
             .setContentTitle("Claude a répondu").setContentText(court).setContentIntent(tap).setAutoCancel(true).build())
     }
 
     companion object {
+        const val VOIR_REPONSE = "voir_reponse"
+
         fun vibre(ctx: Context, motif: LongArray) {
             try { ctx.getSystemService(Vibrator::class.java)?.vibrate(VibrationEffect.createWaveform(motif, -1)) } catch (e: Exception) { }
         }
@@ -205,12 +211,50 @@ object Claude {
     fun garder(ctx: Context, r: JSONObject) {
         val h = (listOf(r) + historique(ctx).filter { it.optString("id") != r.optString("id") }).take(10)
         prefs(ctx).edit().putString("historique", JSONArray(h).toString()).apply()
+        // Les images des questions sorties de l'historique
+        val ids = h.map { it.optString("id") }.toSet()
+        dossierImages(ctx).listFiles()?.forEach { if (it.nameWithoutExtension !in ids) it.delete() }
+    }
+
+    private fun dossierImages(ctx: Context) = File(ctx.filesDir, "claude_img").apply { mkdirs() }
+
+    /** L'image de la réponse (gardée sur la montre), ou null s'il n'y en a pas. À appeler hors du fil principal. */
+    fun image(ctx: Context, r: JSONObject): Bitmap? {
+        val f = File(dossierImages(ctx), r.optString("id") + ".jpg")
+        if (f.exists()) return BitmapFactory.decodeFile(f.path)
+        val adresse = r.optString("image").takeIf { it.startsWith("https://") }
+            ?: r.optString("wiki").takeIf { it.isNotBlank() }?.let { photoWiki(it) } ?: return null
+        val octets = lire(adresse) ?: return null
+        // Réduite à 400 px au plus (l'écran en fait 384)
+        val o = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(octets, 0, octets.size, o)
+        var n = 1
+        while (maxOf(o.outWidth, o.outHeight) / (n * 2) >= 400) n *= 2
+        val b = BitmapFactory.decodeByteArray(octets, 0, octets.size, BitmapFactory.Options().apply { inSampleSize = n }) ?: return null
+        try { f.outputStream().use { b.compress(Bitmap.CompressFormat.JPEG, 85, it) } } catch (e: Exception) { }
+        return b
+    }
+
+    /** La photo de l'article de Wikipédia en français (résumé de l'article). */
+    private fun photoWiki(titre: String): String? = try {
+        val t = URLEncoder.encode(titre.trim().replace(' ', '_'), "UTF-8").replace("+", "%20")
+        lire("https://fr.wikipedia.org/api/rest_v1/page/summary/$t")?.let { JSONObject(String(it)) }
+            ?.optJSONObject("thumbnail")?.optString("source")?.takeIf { it.startsWith("https://") }
+    } catch (e: Exception) { null }
+
+    private fun lire(adresse: String): ByteArray? {
+        val c = URL(adresse).openConnection() as HttpURLConnection
+        return try {
+            c.connectTimeout = 8000; c.readTimeout = 10000; c.instanceFollowRedirects = true
+            c.setRequestProperty("User-Agent", "PokemonMontre/1.0 (montre de Kiki)")  // demandé par Wikipédia
+            if (c.responseCode != 200 || c.contentLength > 3_000_000) null else c.inputStream.use { it.readBytes() }
+        } catch (e: Exception) { null } finally { c.disconnect() }
     }
 }
 
 @SuppressLint("ViewConstructor")
 class ClaudeView(private val act: ClaudeActivity) : View(act) {
-    private enum class Etat { ACCUEIL, ECOUTE, ATTENTE, REPONSE, LONG, HISTORIQUE, ERREUR }
+    private enum class Etat { ACCUEIL, ECOUTE, ATTENTE, REPONSE, HISTORIQUE, ERREUR }
 
     private var etat = Etat.ACCUEIL
     private var texteQuestion = ""
@@ -255,7 +299,25 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     fun envoyerTexte(q: String) { message = ""; texteQuestion = q; envoyer() }
 
     /** Repart de zéro pour une nouvelle question. */
-    fun nouvelle() { message = ""; texteQuestion = ""; reponse = null; defile = 0f }
+    fun nouvelle() { message = ""; texteQuestion = ""; reponse = null; image = null; defile = 0f }
+
+    private var image: Bitmap? = null
+
+    /** La dernière réponse reçue (toucher la notification) ; false s'il n'y en a pas. */
+    fun montrerDerniere(): Boolean {
+        val r = Claude.historique(act).firstOrNull() ?: return false
+        id = null; montrer(r); return true
+    }
+
+    /** Montre une réponse (l'image arrive quand elle est téléchargée, la réponse s'affiche sans l'attendre). */
+    private fun montrer(r: JSONObject) {
+        reponse = r; image = null; defile = 0f; etat = Etat.REPONSE; invalidate()
+        if (r.optString("wiki").isBlank() && r.optString("image").isBlank()) return
+        Thread {
+            val b = Claude.image(act, r)
+            act.runOnUiThread { if (reponse === r && b != null) { image = b; invalidate() } }
+        }.start()
+    }
 
     fun erreur(m: String) { message = m; etat = Etat.ERREUR; invalidate() }
 
@@ -283,7 +345,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
                     act.runOnUiThread {
                         if (id != n) return@runOnUiThread
                         Claude.finAttente(act); Claude.garder(act, r)
-                        reponse = r; etat = Etat.REPONSE; id = null; invalidate()
+                        id = null; montrer(r)
                         act.prevenir(r.optString("court"))
                     }
                     return@Thread
@@ -307,7 +369,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
             MotionEvent.ACTION_DOWN -> { y0 = e.y; x0 = e.x; dernierY = e.y; bouge = false }
             MotionEvent.ACTION_MOVE -> {
                 if (abs(e.y - y0) > 12) bouge = true
-                if (etat == Etat.LONG || etat == Etat.HISTORIQUE) { defiler(dernierY - e.y); dernierY = e.y }
+                if (etat == Etat.REPONSE || etat == Etat.HISTORIQUE) { defiler(dernierY - e.y); dernierY = e.y }
             }
             MotionEvent.ACTION_UP -> if (!bouge) zones.firstOrNull { it.first.contains(e.x, e.y) }?.second?.invoke()
         }
@@ -321,7 +383,10 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         return super.onGenericMotionEvent(e)
     }
 
-    private fun defiler(d: Float) { defile = (defile + d).coerceIn(0f, maxOf(0f, hauteurLong - S * 0.55f)); invalidate() }
+    private fun defiler(d: Float) {
+        val visible = if (etat == Etat.REPONSE) S * 0.9f else S * 0.55f
+        defile = (defile + d).coerceIn(0f, maxOf(0f, hauteurLong - visible)); invalidate()
+    }
 
     // ---------- Dessin ----------
     override fun onDraw(c: Canvas) {
@@ -333,7 +398,6 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
             Etat.ECOUTE -> pageEcoute(c)
             Etat.ATTENTE -> attente(c)
             Etat.REPONSE -> pageReponse(c)
-            Etat.LONG -> pageLong(c)
             Etat.HISTORIQUE -> pageHistorique(c)
             Etat.ERREUR -> {
                 texteCentre(c, message, S * 0.42f, S * 0.05f, Color.WHITE, S * 0.7f)
@@ -432,28 +496,41 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         texteCentre(c, "« $texteQuestion »", S * 0.73f, S * 0.036f, gris, S * 0.62f, false, 2)
     }
 
+    /** La réponse, sur une seule page qui défile (doigt ou couronne) ; les boutons sont tout en bas. */
     private fun pageReponse(c: Canvas) {
         val r = reponse ?: return
-        etoile(c, width / 2f, S * 0.1f, S * 0.03f, orange)
-        texteCentre(c, r.optString("q"), S * 0.14f, S * 0.034f, gris, S * 0.6f, false, 2)
-        texteCentre(c, r.optString("court"), S * 0.25f, S * 0.054f, Color.WHITE, S * 0.76f, false, 4)
-        bouton(c, "🔊", width / 2f - S * 0.22f, S * 0.64f, S * 0.17f, orange, false) { act.lire(r.optString("court")) }
-        bouton(c, "Plus d'infos", width / 2f + S * 0.08f, S * 0.64f, S * 0.38f, orange) { defile = 0f; etat = Etat.LONG; invalidate() }
-        bouton(c, "Nouvelle question", width / 2f, S * 0.79f, S * 0.6f, orange, false) { act.taire(); texteQuestion = ""; act.dicter() }
-    }
-
-    private fun pageLong(c: Canvas) {
-        val r = reponse ?: return
+        val cx = width / 2f
+        var y = S * 0.08f - defile
+        etoile(c, cx, y + S * 0.025f, S * 0.028f, orange); y += S * 0.07f
+        y += texteCentre(c, r.optString("q"), y, S * 0.036f, gris, S * 0.62f, false, 3) + S * 0.035f
+        image?.let { b ->
+            // Photo aux coins arrondis, 60 % de la largeur au plus, 45 % de la hauteur au plus
+            val k = minOf(S * 0.6f / b.width, S * 0.45f / b.height)
+            val w = b.width * k; val h = b.height * k
+            val rect = RectF(cx - w / 2, y, cx + w / 2, y + h)
+            c.save(); c.clipPath(Path().apply { addRoundRect(rect, S * 0.035f, S * 0.035f, Path.Direction.CW) })
+            c.drawBitmap(b, null, rect, p); c.restore()
+            y += h + S * 0.04f
+        }
+        y += texteCentre(c, r.optString("court"), y, S * 0.05f, Color.WHITE, S * 0.76f, true, 8) + S * 0.035f
         val sources = (0 until (r.optJSONArray("sources")?.length() ?: 0)).joinToString(", ") { r.getJSONArray("sources").getString(it) }
-        val texte = r.optString("long") + (if (sources.isNotEmpty()) "\n\nSources : $sources" else "") + "\n\n(${r.optString("modele")})"
-        t.textSize = S * 0.047f; t.color = Color.WHITE; t.typeface = Typeface.DEFAULT
-        val largeur = (S * 0.74f).toInt()
-        val l = StaticLayout.Builder.obtain(texte, 0, texte.length, t, largeur).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
-        hauteurLong = l.height + S * 0.3f
-        c.save(); c.clipRect(0f, S * 0.12f, width.toFloat(), S * 0.72f)
-        c.translate(width / 2f - largeur / 2, S * 0.14f - defile); l.draw(c); c.restore()
-        bouton(c, "🔊", width / 2f - S * 0.13f, S * 0.81f, S * 0.19f, orange, false) { act.lire(r.optString("long")) }
-        bouton(c, "Retour", width / 2f + S * 0.11f, S * 0.81f, S * 0.26f, orange) { act.taire(); etat = Etat.REPONSE; invalidate() }
+        val suite = r.optString("long").trim()
+        if (suite.isNotEmpty()) {
+            t.textSize = S * 0.046f; t.color = 0xFFE6E0DA.toInt(); t.typeface = Typeface.DEFAULT
+            val largeur = (S * 0.76f).toInt()
+            val l = StaticLayout.Builder.obtain(suite, 0, suite.length, t, largeur).setAlignment(Layout.Alignment.ALIGN_NORMAL).build()
+            c.save(); c.translate(cx - largeur / 2f, y); l.draw(c); c.restore()
+            y += l.height + S * 0.035f
+        }
+        val pied = (if (sources.isNotEmpty()) "Sources : $sources · " else "") + r.optString("modele")
+        y += texteCentre(c, pied, y, S * 0.032f, gris, S * 0.7f, false, 3) + S * 0.08f
+        bouton(c, "Nouvelle question", cx, y, S * 0.66f, orange) { nouvelle(); act.dicter() }
+        y += S * 0.16f
+        bouton(c, "Réponses précédentes", cx, y, S * 0.66f, orange, false) { defile = 0f; etat = Etat.HISTORIQUE; invalidate() }
+        y += S * 0.22f
+        hauteurLong = y + defile
+        // Un petit repère : il reste à lire plus bas
+        if (hauteurLong - defile > S * 1.02f) { p.color = alpha(gris, 0.6f); c.drawCircle(cx, S * 0.955f, S * 0.012f, p) }
     }
 
     private fun pageHistorique(c: Canvas) {
@@ -466,7 +543,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
             val hq = texteCentre(c, r.optString("q"), y, S * 0.04f, orange, S * 0.7f, false, 2)
             val hc = texteCentre(c, r.optString("court"), y + hq + S * 0.01f, S * 0.036f, gris, S * 0.7f, false, 2)
             if (y + hq + hc > S * 0.17f && haut < S * 0.73f)
-                zones += RectF(0f, maxOf(haut, S * 0.17f), width.toFloat(), minOf(y + hq + hc, S * 0.73f)) to { reponse = r; etat = Etat.REPONSE; invalidate() }
+                zones += RectF(0f, maxOf(haut, S * 0.17f), width.toFloat(), minOf(y + hq + hc, S * 0.73f)) to { montrer(r) }
             y += hq + hc + S * 0.05f
         }
         c.restore()

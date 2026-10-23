@@ -94,8 +94,7 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     Gboard, qui n'allume son micro tout seul que pour des applis de Google (`auto_start_voice_app_whitelist`, fixé par
     Google) : le service d'accessibilité `AutoMicro` touche le micro (0,5 ; 0,78 de l'écran) 1,3 s après (plus tôt : « je n'ai pas compris »), sauf s'il écoute déjà, quand l'écran Claude vient
     d'ouvrir la dictée ; Kiki doit l'activer dans Paramètres → Accessibilité ; fin de phrase = envoi direct, sans écran de vérification ;
-    **modèle choisi tout seul** (23/10, plus de bouton) : chrono + étapes + barre de progression, réponse courte,
-    « Plus d'infos », 🔊 lecture, notification si on a quitté l'écran, 10 dernières questions). Trajet : script Google
+    **modèle choisi tout seul** (23/10, plus de bouton) : chrono + étapes + barre de progression, puis la réponse sur une seule page qui défile (23/10 : plus de page intermédiaire ni de lecture à voix haute) : question, **image** (`wiki` = titre de l'article Wikipédia en français -> photo du résumé de l'article, ou `image` = adresse trouvée sur le web ; téléchargée par la montre, gardée dans `files/claude_img/`), l'essentiel en gras (`court`), la suite (`long`, sans répéter `court`), sources, et tout en bas « Nouvelle question » / « Réponses précédentes » ; toucher la notification « Claude a répondu » = la réponse (`voir_reponse`), pas le micro ; 10 dernières questions). Trajet : script Google
     `doGet ?quoi=claude` dépose `questions/<id>.json` dans le dépôt privé **kikitmt-bit/montre-claude** (jeton
     `MONTRE_TOKEN`) -> un envoi (push) sur ce dépôt déclenche la **routine** « Claude de la montre »
     (tri + rapide = `trig_01CDDaAsBb4aRCETbEVxYYqC` Haiku, questions difficiles = `trig_01R2Q6xWVFJVPzCsAaLPVUZ8` Opus ;

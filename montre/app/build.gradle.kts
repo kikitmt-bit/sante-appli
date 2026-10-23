@@ -19,8 +19,8 @@ android {
         applicationId = "fr.kiki.pokemontre"
         minSdk = 30
         targetSdk = 34
-        versionCode = 12
-        versionName = "12.0"
+        versionCode = 13
+        versionName = "13.0"
         buildConfigField("String", "SCRIPT_URL", "\"${secret.getProperty("SCRIPT_URL", "")}\"")
         buildConfigField("String", "JEU_CLE", "\"${secret.getProperty("JEU_CLE", "")}\"")
         buildConfigField("String", "APPLI_CLE", "\"${secret.getProperty("APPLI_CLE", "")}\"")
