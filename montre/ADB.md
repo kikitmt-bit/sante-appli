@@ -24,6 +24,10 @@ Photos, YouTube Music, Gmail (`com.google.android.gm`), démos magasin (`...musi
 `...wearable.retailattractloop`), TalkBack. Gardées : Maps, Wallet. Pas de service de reconnaissance vocale sur la
 montre (seule la dictée de Gboard, `WearRemoteInputActivity`).
 
+**Si `adb install` échoue sans message** (« device offline » au milieu, vu le 23/10 : la connexion Wi-Fi coupe vers la
+fin des gros envois) : `adb push app-debug.apk /data/local/tmp/a.apk` (va jusqu'au bout même lentement), se reconnecter,
+puis `adb shell "pm install -r /data/local/tmp/a.apk && rm /data/local/tmp/a.apk"`.
+
 **Micro automatique de Claude** (23/10) : service d'accessibilité `AutoMicro` de l'appli, à activer **par Kiki** sur
 la montre (Paramètres → Accessibilité → « Micro automatique (Claude) ») : réglage de sécurité, Claude ne l'active pas lui-même.
 
