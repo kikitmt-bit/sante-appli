@@ -23,11 +23,17 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
   `doGet` de sante.gs) pour une récolte immédiate, puis relit tout sauf les images.
 - `chiffres.py` : tous les calculs, sans Streamlit (`stats_jour`, `charger`, `dossier_coach`…), partagés par l'appli et
   `coach.py`. `coach.md` = consigne du coach (personnalité, profil, règles, plan) : c'est là qu'on l'affine.
-- Coach (sans clé API) : tâche programmée Claude « Coach santé du matin » (5 h 57, heure de Paris), qui arrive dans la
-  session Claude Code de Kiki (une session neuve n'a pas accès au dépôt privé) : copie à jour de la branche `data`, `python3 coach.py dossier DATA Jour HIER` (consigne + données + 3 analyses
-  précédentes), écrit l'analyse, puis `coach.py enregistrer …` → `data/coach/jour/AAAA/AAAA-MM-JJ.json`
-  ({periode, debut, fin, ecrit, texte}) ; le lundi aussi `Semaine` (fichier au nom du lundi), le 1er `Mois`
-  (`data/coach/mois/AAAA-MM.json`). L'appli affiche en haut l'analyse d'hier (ou de la semaine / du mois précédent)
+- Coach (sans clé API) : **à la demande seulement** depuis le 25/10 (avant : tous les matins, trop de quota).
+  Tâche Claude « Coach santé (à la demande) » `trig_013PzeBgAHBJa7AqZ7i18G2R` (sans horaire : seulement une date en 2099),
+  qui arrive dans la session Claude Code de Kiki (une session neuve n'a pas accès au dépôt privé). Bouton 🧠 « Demander
+  l'analyse au coach » / « Refaire l'analyse » dans le volet du coach (`bouton_demander`) : POST sur l'adresse du
+  déclencheur API de la tâche (secrets Streamlit `COACH_URL` + `COACH_TOKEN`, jeton créé par Kiki sur
+  claude.ai/code/routines), avec un texte qui donne PÉRIODE et DATE (la consigne de la tâche ne se modifie que depuis
+  sa propre conversation : les précisions passent par ce texte). La tâche : copie à jour de la branche `data`,
+  `python3 coach.py dossier DATA PÉRIODE DATE` (consigne + données + 3 analyses précédentes), écrit l'analyse, puis
+  `coach.py enregistrer …` → `data/coach/jour/AAAA/AAAA-MM-JJ.json` ({periode, debut, fin, ecrit, texte}) ; Semaine
+  (fichier au nom du lundi), Mois (`data/coach/mois/AAAA-MM.json`). L'appli affiche en haut l'analyse d'hier (ou de la
+  semaine / du mois précédent)
   et le bouton 📋 (`bouton_copier`, petit composant HTML) pour une analyse poussée dans Claude. Le dossier contient aussi
   `details_jour` (répartition des pas, périodes assises, cardio et SpO2 heure par heure), `tendances` (90 jours :
   durée de nuit → activité, heure de coucher → récupération, jour de la semaine, lendemain d'une grosse journée,
@@ -42,8 +48,8 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     zone ou séance de 45 min ; Master Ball = 30 jours de série (5 000 pas ou 15 min, joker hebdo) = légendaire.
     Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball). Jamais de doublon.
   - Identifiants « jour#poke3 / super / hyper / master30 » = graines (rejouable). Règles v2 rejouées depuis le 19/10
-    avec les vraies données. Chaque matin, la tâche du coach lance `python3 pokemon.py figer DATA` →
-    `data/pokemon/captures_v2.json` (l'ancien `captures.json` du prototype n'est plus lu).
+    avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige les jours finis →
+    `data/pokemon/captures_v2.json` (avant le 25/10 : la tâche du coach, `pokemon.py figer DATA`) (l'ancien `captures.json` du prototype n'est plus lu).
   - Écran : barre d'effort (anneau), Poké Balls à ouvrir, balls spéciales du jour, dernières captures, Pokédex (filtres,
     types, recherche, fiche en feuille qui monte du bas avec versions manquantes et « Où le trouver »).
     Ouverture = calque plein écran dans la page parente : Poké Ball **3D** (three.js 0.160 UMD depuis jsDelivr, repli SVG

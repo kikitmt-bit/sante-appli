@@ -181,15 +181,15 @@ def sans_heure(texte):
     return {k: v for k, v in json.loads(texte).items() if k != "maj"} if texte else None
 
 
-def ecrire_github(session, texte):
-    """Écrit montre.json dans la branche data, seulement s'il a changé (à part l'heure)."""
-    url = f"https://api.github.com/repos/{DEPOT}/contents/{MONTRE}"
+def ecrire_github(session, texte, chemin=MONTRE, pareil=lambda a, b: sans_heure(a) == sans_heure(b)):
+    """Écrit un fichier (montre.json par défaut) dans la branche data, seulement s'il a changé (à part l'heure)."""
+    url = f"https://api.github.com/repos/{DEPOT}/contents/{chemin}"
     for essai in range(3):  # 409 : la branche a bougé entre-temps (récolte du script Google), on réessaie
         r = session.get(url, params={"ref": "data"}, timeout=60)
         avant = r.json() if r.status_code == 200 else None
-        if avant and sans_heure(base64.b64decode(avant["content"]).decode("utf-8")) == sans_heure(texte):
+        if avant and pareil(base64.b64decode(avant["content"]).decode("utf-8"), texte):
             return "inchangé"
-        corps = {"message": "montre", "branch": "data", "content": base64.b64encode(texte.encode()).decode()}
+        corps = {"message": chemin.rsplit("/", 1)[-1].removesuffix(".json"), "branch": "data", "content": base64.b64encode(texte.encode()).decode()}
         if avant:
             corps["sha"] = avant["sha"]
         r = session.put(url, json=corps, timeout=60)
@@ -206,8 +206,15 @@ def main(args):
         if not os.environ.get("SANTE_TOKEN"):
             return print("Secret SANTE_TOKEN pas encore créé : rien à faire.")
         session = _api(os.environ["SANTE_TOKEN"])
-        texte = json.dumps(contenu(lecteur_github(session), maintenant), ensure_ascii=False, separators=(",", ":"))
+        lire = lecteur_github(session)
+        texte = json.dumps(contenu(lire, maintenant), ensure_ascii=False, separators=(",", ":"))
         print("montre.json :", ecrire_github(session, texte))
+        # Captures des jours finis figées (avant, c'était la tâche du coach du matin ; le coach est maintenant à la demande)
+        captures, _ = pokemon.charger_jeu(lire, maintenant.date())
+        figees = json.dumps({"captures": [c for c in captures if c["jour"] < str(maintenant.date())]},
+                            ensure_ascii=False, indent=0)
+        print("captures figées :", ecrire_github(session, figees, pokemon.FIGEES,
+                                                 lambda a, b: json.loads(a) == json.loads(b)))
     elif args:
         chemin = Path(args[0]) / MONTRE
         chemin.parent.mkdir(parents=True, exist_ok=True)

@@ -220,7 +220,7 @@ def graphique_sommeil(d):
 
 # ---------- Coach ----------
 def coach(d, lire_vite, aujourd):
-    """L'analyse écrite chaque matin vers 6 h (tâche programmée Claude + coach.py), et le dossier à copier dans Claude."""
+    """L'analyse du coach (écrite à la demande : bouton 🧠, tâche Claude + coach.py), et le dossier à copier dans Claude."""
     periode, debut, fin = d["periode"], d["debut"], d["fin"]
     if periode == "Jour":  # aujourd'hui n'est pas fini : on montre l'analyse d'hier
         jour = min(fin, aujourd - dt.timedelta(days=1))
@@ -245,10 +245,44 @@ def coach(d, lire_vite, aujourd):
         if a:
             st.markdown(a["texte"])
         else:
-            st.caption("Pas encore d'analyse pour cette période : le coach écrit celle de la veille chaque matin "
-                       "vers 6 h, le bilan de la semaine le lundi et celui du mois le 1er.")
+            st.caption("Pas encore d'analyse pour cette période : touche le bouton ci-dessous pour la demander au coach.")
+        bouton_demander(*cle, refaire=bool(a))
     with c2:
         bouton_copier(texte, "📋")
+
+
+def bouton_demander(periode, date, refaire):
+    """Lance la tâche Claude « Coach santé (à la demande) » par son adresse web (secrets COACH_URL et COACH_TOKEN,
+    créés sur claude.ai/code/routines → la tâche → déclencheur API). Plus rien d'automatique : seulement sur demande."""
+    s, cle = st.secrets, f"coach:{periode}:{date}"
+    if not (s.get("COACH_URL") and s.get("COACH_TOKEN")):
+        st.caption("Bouton du coach pas encore branché (secrets COACH_URL et COACH_TOKEN à ajouter).")
+        return
+    deja = st.session_state.get(cle)
+    if deja and time.time() - deja < 600:
+        st.info("⏳ Demande envoyée : le coach écrit l'analyse. Touche 🔄 dans 2 ou 3 minutes pour la voir.")
+        return
+    if not st.button("🔁 Refaire l'analyse" if refaire else "🧠 Demander l'analyse au coach", key=f"btn_{cle}",
+                     width="stretch"):
+        return
+    texte = (f"Demande depuis l'appli (bouton), pas l'analyse du matin. PÉRIODE = {periode}, DATE = {date:%Y-%m-%d} "
+             f"(le jour analysé, le lundi de la semaine ou le 1er du mois). Fais l'étape 3 avec « {periode} {date:%Y-%m-%d} » "
+             "à la place de « Jour HIER » (si la période est en cours, analyse ce qui est déjà là et dis-le ; une "
+             "analyse déjà écrite est remplacée). L'étape 4 (carnet) seulement si PÉRIODE = Jour ; ignore l'étape 5. "
+             "Puis les étapes 6, 7 et 8 comme d'habitude.")
+    try:
+        r = requests.post(s["COACH_URL"], json={"text": texte}, timeout=30,
+                          headers={"Authorization": f"Bearer {s['COACH_TOKEN']}", "anthropic-version": "2023-06-01"})
+        ok = r.status_code == 200
+        erreur = "" if ok else (r.json().get("error", {}).get("message") if "json" in r.headers.get("content-type", "")
+                                else r.text)[:150]
+    except Exception as e:
+        ok, erreur = False, str(e)[:150]
+    if ok:
+        st.session_state[cle] = time.time()
+        st.rerun()
+    else:
+        st.error(f"⚠️ Le coach n'a pas pu être lancé : {erreur}")
 
 
 def bouton_copier(texte, libelle):
