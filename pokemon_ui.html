@@ -67,6 +67,10 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .points-serie{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
 .points-serie i{width:7px;height:7px;border-radius:50%;background:#0D1322}
 .points-serie i.on{background:#B57BFF;box-shadow:0 0 6px #B57BFF}
+.points-serie i.rate{background:#5A2A38}
+.points-serie i.auj{box-shadow:inset 0 0 0 1.5px #B57BFF}
+.speciale .reste{font-size:11px;color:#FFCB05;margin-top:7px;line-height:1.35}
+.speciale.ok .reste{color:#4CD3A0}
 
 /* ----- Dernières captures ----- */
 #dernieres{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;padding:2px 0 8px}
@@ -718,7 +722,7 @@ function fiche(p) {
   const parFichier = Object.fromEntries(mes.map(c => [c.fichier, c]));
   const meilleure = mes.find(c => c.shiny) || mes[mes.length - 1];
   const c0 = COUL[p.types[0]];
-  const ou = leg ? `👑 <b>Légendaire</b> : il n'apparaît que dans une <b>Master Ball</b>, au bout de ${D.regles.serie_legendaire} jours d'affilée avec ton objectif.`
+  const ou = leg ? `👑 <b>Légendaire</b> : il n'apparaît que dans une <b>Master Ball</b>, quand tu as tenu ton objectif ${D.regles.master_jours} jours sur ${D.regles.master_fenetre}.`
     : `${a ? "Ses versions qui manquent" : "Il"} sortent plus souvent avec : <b>${[...new Set(p.types.flatMap(t => D.conseils[t] || []))].join(", ") || "toutes les activités"}</b>.
        <br>🎯 Super Ball et ⭐ Hyper Ball : plus de chances d'une espèce jamais vue.`;
   const f = P.createElement("div"); f.id = "pkm-fiche";
@@ -756,7 +760,7 @@ let filtre = "tous", filtreTypes = new Set(), texte = "";
 function dessinerBarre() {
   const b = D.barre, pct = b.points / b.taille, circ = 2 * Math.PI * 50, reste = b.taille - b.points;
   const [ic, nom, ts] = b.origine;
-  const pas = Math.ceil(reste) * 100, zone = Math.ceil(reste / 2), sport = Math.ceil(reste);
+  const pas = Math.ceil(reste) * 100, zone = Math.ceil(reste / 2), sport = Math.ceil(reste), muscu = Math.ceil(reste / R.force);
   document.getElementById("barre").innerHTML = `<div class="filigrane">${ballSVG("poke")}</div>
     <div class="anneau"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#0D1322" stroke-width="12"/>
       <circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="url(#gb)" stroke-width="12" stroke-linecap="round"
@@ -764,7 +768,7 @@ function dessinerBarre() {
       <defs><linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFCB05"/><stop offset="1" stop-color="#FF4B4B"/></linearGradient></defs></svg>
       <div class="centre"><div class="v">${Math.floor(b.points)}</div><div class="s">/ ${b.taille} pts</div></div></div>
     <div class="droite"><div class="titre">Prochaine Poké Ball</div>
-      <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min en zone</b>, ou <b>${sport} min de sport</b>.</div>
+      <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min en zone</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
       <div class="puces">${b.sources.length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
         : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
       ${ts.length ? `<div class="petit gris" style="margin-top:6px">Aujourd'hui : ${ic} ${nom} → ${typesHTML(ts)}</div>` : ""}</div>`;
@@ -790,27 +794,40 @@ function dessinerAOuvrir() {
 function dessinerSpeciales() {
   const gagnee = cle => CAPTURES.some(c => c.jour === D.aujourdhui && c.id.split("#")[1].startsWith(cle));
   const j = (v, s) => `<div class="jauge"><div class="${v >= s ? "ok" : ""}" style="width:${Math.min(v / s * 100, 100)}%"></div></div>`;
-  const sup = gagnee("super"), hyp = gagnee("hyper"), serie = J.serie % R.serie_legendaire;
+  const sup = gagnee("super"), hyp = gagnee("hyper"), mas = gagnee("master");
   const nuit = J.sommeil >= R.nuit, h = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}`;
+  // Ce qui reste à faire pour chaque ball
+  const manque = (v, s, u) => v < s ? (u ? `${Math.ceil(s - v)} ${u}` : `${fr(Math.ceil((s - v) / 10) * 10)} pas`) : null;
+  const mPas = manque(J.pas, R.objectif_pas), mZone = manque(J.zone, R.objectif_zone, "min en zone");
+  const resteSuper = sup ? "Gagnée aujourd'hui !" : `Il te manque <b>${[mPas, mZone].filter(Boolean).join("</b> et <b>")}</b>.`;
+  const resteHyper = hyp ? "Gagnée aujourd'hui !" : `Au choix, encore <b>${manque(J.pas, R.exploit_pas)}</b>, ou <b>${manque(J.zone, R.exploit_zone, "min en zone")}</b>,
+    ou une séance de <b>${R.exploit_seance} min</b>${J.seance ? ` (ta plus longue : ${Math.round(J.seance)} min)` : ""}.`;
+  const resteMaster = mas ? "Gagnée aujourd'hui ! Un nouveau compte commence demain."
+    : `Encore <b>${R.master_jours - J.serie} jour${R.master_jours - J.serie > 1 ? "s" : ""}</b> avec l'objectif. ` +
+      (J.serie_ok ? "Aujourd'hui compte déjà ✅" : `Pour qu'aujourd'hui compte : <b>${mPas}</b> ou <b>${mZone}</b>.`);
+  const fen = J.fenetre.concat(Array(Math.max(R.master_fenetre - J.fenetre.length, 0)).fill(undefined));
   document.getElementById("speciales").innerHTML = `
     <div class="speciale ${sup ? "ok" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ballSVG("super")}Super Ball</div><div class="gain">Objectif double · shiny ×2, 1 chance sur 2 d'un nouveau</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
-      <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}</div>
+      <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}
+      <div class="reste">${resteSuper}</div></div>
     <div class="speciale ${hyp ? "ok" : ""}">${hyp ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ballSVG("hyper")}Hyper Ball</div><div class="gain">Un exploit au choix · shiny ×4, nouveau garanti</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
-      <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}</div>
-    <div class="speciale">
-      <div class="tete">${ballSVG("master")}Master Ball</div><div class="gain">${R.serie_legendaire} jours d'affilée à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire</div>
-      <div class="ligne"><span>👑 ${J.serie} jour${J.serie > 1 ? "s" : ""}${J.serie_ok ? " ✅" : ""}</span><span>${R.serie_legendaire - serie} à faire</span></div>
-      <div class="points-serie">${Array.from({length: R.serie_legendaire}, (_, i) => `<i class="${i < serie ? "on" : ""}"></i>`).join("")}</div>
-      <div class="ligne"><span>${J.joker ? "🃏 Joker de la semaine dispo" : "🃏 Joker utilisé cette semaine"}</span></div></div>
+      <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}
+      <div class="reste">${resteHyper}</div></div>
+    <div class="speciale ${mas ? "ok" : ""}">${mas ? '<span class="tampon">✅</span>' : ""}
+      <div class="tete">${ballSVG("master")}Master Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire</div>
+      <div class="ligne"><span>👑 ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
+      <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
+      <div class="reste">${resteMaster}</div></div>
     <div class="speciale ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
       <div class="tete"><span style="font-size:22px">😴</span>Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
-      <div class="ligne"><span>✨ Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div></div>`;
+      <div class="ligne"><span>✨ Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
+      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
 }
 
 function dessinerDernieres() {
@@ -873,13 +890,14 @@ function dessinerRegles() {
   document.getElementById("regles").innerHTML = `
     <li>⚡ <b>Barre d'effort</b> (${D.barre.taille} points = une Poké Ball, elle ne se vide jamais) : 1 point par 100 pas au-delà de
       ${fr(D.barre.pas_offerts)} (la vie de tous les jours ne compte pas), 2 points par minute en zone, 1 par étage, 1 par minute de séance de sport
-      (au moins ${R.seance_min} min).</li>
-    <li>🧭 Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes en zone → Feu, Électrik, Combat, Dragon ;
+      (au moins ${R.seance_min} min), ${R.force} par minute de musculation, pompes, tractions ou rameur.</li>
+    <li>🧭 Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes en zone → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
       🪜 étages → Roche, Sol, Acier ; 🌳 marche → Plante, Insecte, Poison ; 🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 👟 pas → tous les types.</li>
     <li>🎯 <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min en zone dans la journée.</li>
     <li>⭐ <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min en zone ou une séance de ${R.exploit_seance} min.</li>
-    <li>👑 <b>Master Ball</b> : ${R.serie_legendaire} jours d'affilée avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone (un joker par semaine) = un légendaire.</li>
+    <li>👑 <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire.
+      Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
     <li>😴 Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
     <li>Jamais de doublon : chaque capture est une version que tu n'avais pas.</li>`;
 }

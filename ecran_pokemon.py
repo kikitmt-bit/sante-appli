@@ -29,7 +29,7 @@ def _version(v):
 def _conseils():
     """Type -> activités qui le favorisent (pour « Où le trouver » dans le Pokédex)."""
     conseils = {}
-    for ic, nom, types in [*pokemon.SOURCES.values(), *pokemon.SPORTS.values()]:
+    for ic, nom, types in [*pokemon.SOURCES.values(), *pokemon.SPORTS.values(), pokemon.MUSCU]:
         for t in types or ():
             if f"{ic} {nom}" not in conseils.setdefault(t, []):
                 conseils[t].append(f"{ic} {nom}")
@@ -70,9 +70,9 @@ def afficher(lire, aujourd):
                   "sources": [[i, n, round(v)] for i, n, v in sources if v >= 0.5],
                   "origine": [ic, nom, types or []], "pas_offerts": R["pas_offerts"]},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
-                 "serie": etat["serie"], "serie_ok": etat["serie_ok"], "joker": etat["joker_libre"],
+                 "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance",
-                                     "serie_legendaire", "nuit", "seance_min")},
+                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force")},
     }
     components.html(UI.read_text(encoding="utf-8").replace("__DONNEES__", _js(donnees)), height=900)

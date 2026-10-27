@@ -45,10 +45,13 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `pokedex.py` noms/types des 151, `versions.json` liste des images, `pokemon.py` règles (`REGLAGES`, `BALLS`,
   `SOURCES`, `SPORTS`), `ecran_pokemon.py` prépare les données, `pokemon_ui.html` = tout l'onglet (un seul composant).
   - Barre d'effort (100 points, ne se vide jamais) : 1 pt / 100 pas au-delà de 2 000, 2 pts / min en zone, 1 / étage,
-    1 / min de séance (≥ 10 min). Barre pleine = Poké Ball ; ses types = ce qui a le plus rempli la barre du jour hors
+    1 / min de séance (≥ 10 min), 2 / min de musculation ou de rameur
+    (`est_force` : type ou nom de la séance, depuis le 28/10). Barre pleine = Poké Ball ; ses types = ce qui a le plus rempli la barre du jour hors
     pas (`origine_barre`), sinon tous. Super Ball = 5 000 pas ET 15 min en zone ; Hyper Ball = 10 000 pas, 30 min en
-    zone ou séance de 45 min ; Master Ball = 30 jours de série (5 000 pas ou 15 min, joker hebdo) = légendaire.
-    Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball). Jamais de doublon.
+    zone ou séance de 45 min ; Master Ball = 25 jours sur les 30 derniers (5 000 pas ou
+    15 min ; fenêtre glissante, rien ne remet à zéro, on recompte après chaque Master Ball ; avant le 27/10 : 30 jours
+    d'affilée avec joker) = légendaire. Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball ; plus de bonus masse grasse).
+    Chaque ball spéciale affiche ce qu'il reste à faire. Jamais de doublon. Pas de bouton « tout ouvrir » (choix de Kiki).
   - Identifiants « jour#poke3 / super / hyper / master30 » = graines (rejouable). Règles v2 rejouées depuis le 19/10
     avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige **toutes** les captures,
     aujourd'hui compris (27/10 : avant, seulement les jours finis, et une ball ouverte changeait de Pokémon dans la
