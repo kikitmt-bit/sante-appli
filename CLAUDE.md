@@ -44,23 +44,25 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
 - **Pokémon v3** (28/10, plus un prototype : **jamais de Pokémon offert**, tout se gagne en faisant du sport ; seule
   exception, voulue par Kiki le 29/10 : le premier jour, Poké Ball `chen` « 🎁 Cadeau du Professeur Chen » = un des 3
   starters au hasard, `pokemon.STARTERS`, ou un tirage normal si on les a déjà ; pas de choix à enregistrer).
-  Son ouverture passe par la **scène du laboratoire** (`lancer` → `intro`, refaite le 30/10 : la première « carte
-  floutée + bulle » était trop moche) : image pixel art `scenes/labo-chen.webp` (générée par Kiki avec ChatGPT dans la
-  conversation de la carte, même style ; prompt : labo, professeur derrière une table avec 3 Poké Balls, format 9:16,
-  bas de l'image libre), fondu depuis le noir, boîte de dialogue façon GBA (police Pixelify Sans, texte lettre par
-  lettre avec un bip, ▼), on touche une des 3 balls dessinées (halos ; position en pixels dans `PROFESSEURS`), elle
-  saute (morceau de l'image), zoom dessus + flash blanc, puis l'ouverture en 3D **sans 2e toucher** (`ouvrir(c, rejouer,
-  direct)` : elle tombe, gigote 3-4 fois, s'ouvre, aussi quand on rejoue). Texte : espace insécable avant ! ? : ; et
-  `text-wrap: pretty` (jamais une ponctuation ou un mot seul en dernière ligne, demande de Kiki). Prévu pour chaque région (`PROFESSEURS` :
-  chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur labo, leurs balls et leurs 3 starters). Bouton « 🎬 Revoir l'accueil »
-  dans « Comment ça marche ? » (rejoue sans rien changer).
+  Son ouverture passe par la **scène du laboratoire** (`lancer` → `intro`, refaite **en sprites** le 30/10 pour la
+  cohérence avec les arènes ; l'image ChatGPT du labo et le dossier `scenes/` ont été retirés) : même scène que les
+  arènes (classe `.pkm-scene` : bandes noires, fond à la couleur du labo, bandeau « LABORATOIRE POKÉMON · Bourg Palette »),
+  le professeur (Chen = image de Rouge Feu, `PROFESSEURS`, souffle doucement) derrière une table en bois avec 3 Poké
+  Balls (objet PokeAPI `items/poke-ball.png`), répliques façon GBA (le début reprend Rouge / Bleu), on touche une ball
+  (halos), elle saute, zoom dessus + flash blanc, puis l'ouverture en 3D **sans 2e toucher** (`ouvrir(c, rejouer,
+  direct)`). Texte : espace insécable avant ! ? : ; et `text-wrap: pretty` (jamais une ponctuation ou un mot seul en
+  dernière ligne, demande de Kiki). Prévu pour chaque région (`PROFESSEURS` : chen ; plus tard orme, seko… avec leur
+  image, leur couleur et leurs 3 starters). Bouton « 🎬 Revoir l'accueil » dans « Comment ça marche ? ».
   **Tout en sprites, sans ChatGPT (choix de Kiki le 30/10 : ChatGPT bloque après 2-3 images par jour)** :
   champions des 9 générations = **PokéRogue** (`pagefaultgames/pokerogue-assets`, `images/trainer/<nom>.png` + `.json`
   = planche + liste d'images d'animation, version figée par son commit dans `ROGUE`), complété par **smogon/sprites**
   (`trainers/` gen 1-7 : Sacha en 7 tenues, capitaines d'Alola, quelques professeurs) ; Sacha sur la carte = images de
   Red de **pret/pokefirered** (`graphics/object_events/pics/people/red_normal|red_bike|red_surf.png`, commit figé dans
-  `SACHA`). Manquent seulement 5 professeurs (Orme, Sorbier, Platane, Magnolia, Saule/Turum) : pour eux, une image de
-  labo ChatGPT par région (une tous les ~3 mois) ou une scène sans professeur.
+  `SACHA`). Manquent seulement 5 professeurs (Orme, Sorbier, Platane, Magnolia, Saule/Turum) : pour eux, une image
+  ChatGPT du professeur seul, ou une scène sans professeur.
+  **Le prochain champion sur la carte** (`chefCarte`, 30/10) : animé à côté de son arène, « ! » au-dessus ; le toucher
+  = bulle (son défi, ou « Montre-moi ce que tu vaux ») + son lieu sous la carte. **Tuile de l'arène** : portrait animé
+  du champion (canvas `data-sprite`, `championAnime` s'arrête quand le canvas disparaît) + son badge dans le coin.
   **Scène du badge** (`sceneBadge(n, capture, rejouer)`, 30/10) : bandes noires qui s'écartent (entrée de combat),
   fond aux couleurs du type, bandeau « ARÈNE D'ARGENTA », champion animé (`championAnime`, canvas) sur une estrade,
   répliques (`CHAMPIONS` : nom, sprite, 2 répliques ; 9 = Régis, Ligue), le badge (PokeAPI `badges/N.png`, trophée 🏆

@@ -1,7 +1,7 @@
 <!-- Onglet Pokémon (composant HTML affiché par ecran_pokemon.py, données dans __DONNEES__).
 L'animation d'ouverture et la fiche du Pokédex s'affichent par-dessus toute l'appli, dans la page parente
 (window.parent.document) ; la Poké Ball est en 3D (three.js), avec un repli en 2D si three.js ne charge pas. -->
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -97,6 +97,19 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-wrap .compa-carte{width:8%;image-rendering:pixelated;margin-top:1%;animation:pk-saute .9s ease-in-out infinite}
 @keyframes pk-saute{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-112%)}}
 .ombre-heros{width:4.5%;height:1.6%;border-radius:50%;background:rgba(0,0,0,.35);transform:translate(-50%,-50%)}
+.carte-wrap .chef{position:absolute;width:11%;aspect-ratio:1;transform:translate(-30%,-88%);cursor:pointer;z-index:2;
+  filter:drop-shadow(0 1px 0 rgba(0,0,0,.5)) drop-shadow(0 0 3px rgba(255,255,255,.6))}
+.carte-wrap .chef canvas{width:100%;height:100%;image-rendering:pixelated}
+.carte-wrap .chef:after{content:"!";position:absolute;left:50%;top:-2px;margin-left:-7px;font:900 11px Outfit,sans-serif;
+  color:#fff;background:#E8382F;border-radius:50%;width:14px;height:14px;line-height:14px;text-align:center;
+  animation:pkl-hop .9s ease-in-out infinite;box-shadow:0 0 0 1.5px #fff}
+@keyframes pkl-hop{50%{transform:translateY(-3px)}}
+.bulle-chef{position:absolute;transform:translate(-50%,calc(-100% - 34px));width:min(70%,240px);background:#F8F8F8;color:#383838;
+  border:3px solid #50607E;border-radius:10px;padding:7px 9px;font:500 12.5px/1.35 'Pixelify Sans',Outfit,sans-serif;z-index:5;
+  box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pkl-bulle .25s ease-out}
+.bulle-chef b{color:#C03028}
+@keyframes pkl-bulle{from{opacity:0}}
+.bulle-chef.dessous{transform:translate(-50%,14px)}
 .carte-kanto .vise{animation:pk-vise 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes pk-vise{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
 .carte-kanto .lieu{cursor:pointer}
@@ -116,6 +129,11 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .arene{display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,rgba(255,203,5,.14),rgba(13,19,34,.5));
   border-radius:14px;padding:8px 10px;margin-bottom:10px}
 .arene .bdg{width:38px;height:38px;flex:0 0 38px;object-fit:contain;image-rendering:auto;filter:grayscale(1) brightness(.6)}
+.arene .portrait{position:relative;width:74px;flex:0 0 74px;aspect-ratio:1;border-radius:14px;
+  background:radial-gradient(circle at 50% 60%,var(--c,#6B8CFF) 0%,rgba(13,19,34,.6) 75%)}
+.arene .portrait canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.arene .portrait .coin-badge{position:absolute;right:-6px;bottom:-6px;width:26px;height:26px;object-fit:contain;
+  filter:grayscale(1) brightness(.7) drop-shadow(0 1px 2px #000)}
 .arene .bdg.ligue{font-size:32px;line-height:38px;text-align:center;filter:none}
 .arene .q{flex:1;min-width:0;font-size:11.5px;color:#C9D3EA;line-height:1.35}
 .arene .q b{color:#fff}.arene .q .t{font-size:13px;font-weight:800;color:#fff}
@@ -810,31 +828,28 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 // ================================================================================================
 // LE CADEAU DU PROFESSEUR (premier jour d'une région) : scène d'accueil, 3 Poké Balls sur la table, puis l'ouverture
 // ================================================================================================
-// Le laboratoire : image pixel art générée par Kiki avec ChatGPT (même style que la carte, dossier scenes/), position des
-// 3 Poké Balls dessinées sur la table (pixels de l'image). Plus tard : orme (Johto), seko (Hoenn)…
-const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen.webp", largeur: 941, hauteur: 1672,
-  balls: [[362, 785], [470, 785], [575, 785]], rayon: 36, table: [290, 785], starters: [1, 4, 7]}};
-// table : un endroit de la table sans ball, à la même hauteur (pour cacher la ball dessinée quand elle saute)
-const STYLE_INTRO = `
-#pkm-intro{position:fixed;inset:0;z-index:999999;background:#C2965F;overflow:hidden;touch-action:manipulation;
-  user-select:none;-webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace}
-#pkm-intro .labo{position:absolute;left:50%;top:0;transform:translateX(-50%)}
-#pkm-intro .labo img{width:100%;height:100%;display:block;image-rendering:pixelated}
-#pkm-intro .noir{position:absolute;inset:0;background:#000;transition:opacity 1.2s;pointer-events:none}
-#pkm-intro .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .45s;pointer-events:none}
-#pkm-intro .halo{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .4s;
-  box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 18px 6px rgba(255,230,120,.85)}
-#pkm-intro.choix .halo{opacity:1;animation:pki-halo 1.2s ease-in-out infinite}
-#pkm-intro .halo.loin{opacity:0!important}
-@keyframes pki-halo{50%{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 28px 12px rgba(255,230,120,.95)}}
-#pkm-intro .zone{position:absolute;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer}
-#pkm-intro .ballc{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
-#pkm-intro .ballc{border-radius:50%;background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 8px rgba(255,240,170,.95))}
-#pkm-intro .ballc.bouge{animation:pki-saute-ball .5s ease-out 2}
-@keyframes pki-saute-ball{0%,100%{transform:translate(-50%,-50%)}40%{transform:translate(-50%,-85%)}}
-#pkm-intro .labo{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
-@keyframes pki-tremble{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-12deg)}
-  75%{transform:translate(-50%,-50%) rotate(12deg)}}
+// Le professeur de chaque région (image de Pokémon Rouge Feu pour Chen : projet public pret/pokefirered, version figée)
+const DRESSEURS_RF = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/trainers/front_pics/";
+const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", ville: "Bourg Palette", image: DRESSEURS_RF + "professor_oak_front_pic.png",
+  couleur: "#5FA9C4", starters: [1, 4, 7]}};  // plus tard : orme (Johto), seko (Hoenn)…
+const STYLE_LABO = `
+#pkm-labo .champion.fixe{animation:pkl-souffle 2.4s ease-in-out infinite;transform-origin:50% 100%}
+#pkm-labo.entre .champion.fixe{transform:none}
+@keyframes pkl-souffle{50%{transform:scaleY(1.025)}}
+#pkm-labo .table{position:absolute;left:-14%;right:-14%;top:66%;height:34%;border-radius:10px;opacity:0;transform:translateY(20px);
+  transition:opacity .5s .5s,transform .5s .5s;background:linear-gradient(180deg,#D9A867 0 30%,#B07A43 30% 100%);
+  box-shadow:0 0 0 3px #5B3A1C,0 10px 18px rgba(0,0,0,.45),inset 0 3px 0 rgba(255,255,255,.3)}
+#pkm-labo.entre .table{opacity:1;transform:none}
+#pkm-labo .table .balls{position:absolute;left:0;right:0;top:-24%;display:flex;justify-content:space-around;padding:0 12%}
+#pkm-labo .pb{width:26%;aspect-ratio:1;border:0;padding:0;background:none;position:relative;cursor:pointer;transition:opacity .4s,transform .3s}
+#pkm-labo .pb img{width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.35))}
+#pkm-labo.choix .pb:before{content:"";position:absolute;inset:-6%;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 16px 6px rgba(255,230,120,.85);
+  animation:pki-halo 1.2s ease-in-out infinite}
+@keyframes pki-halo{50%{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 26px 12px rgba(255,230,120,.95)}}
+#pkm-labo .pb.loin{opacity:.25}
+#pkm-labo .pb.prise{animation:pki-saute-ball .5s ease-out 2}
+@keyframes pki-saute-ball{0%,100%{transform:translateY(0)}40%{transform:translateY(-45%)}}
+#pkm-labo .scene{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
 `;
 // La boîte de dialogue façon Game Boy Advance (labo, arènes…) et le bouton ✕ des scènes
 const STYLE_DIAL = `
@@ -893,35 +908,36 @@ function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur et les b
   ouvrir(c);
 }
 function intro(c, p, rejouer = false) {
-  installerStyle("pkm2-intro-style", STYLE_INTRO); preparerScene();
-  const noms = p.starters.map(n => PAR_NUM[n].nom);
-  const v = P.createElement("div"); v.id = "pkm-intro";
-  v.innerHTML = `<div class="labo"><img src="${D.scenes}${p.image}" alt="">
-      ${p.balls.map(([x, y], i) => `<div class="halo" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
-        width:${p.rayon * 2 / p.largeur * 100}%;aspect-ratio:1"></div>
-        <div class="zone" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;width:${p.rayon * 3 / p.largeur * 100}%;aspect-ratio:1"></div>`).join("")}
-    </div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
+  installerStyle("pkm2-badge-style", STYLE_BADGE); installerStyle("pkm2-labo-style", STYLE_LABO); preparerScene();
+  const noms = p.starters.map(n => PAR_NUM[n].nom), balle = `${D.images}/items/poke-ball.png`;
+  const v = P.createElement("div"); v.id = "pkm-labo"; v.className = "pkm-scene"; v.style.setProperty("--c", p.couleur);
+  v.innerHTML = `<div class="fond"></div><div class="lignes"></div><div class="rayons"></div>
+    <div class="bandeau">LABORATOIRE POKÉMON<small>${p.ville} · Professeur ${p.prof}</small></div>
+    <div class="scene"><div class="estrade"></div><img class="champion fixe" src="${p.image}" alt="">
+      <div class="table"><div class="balls">${[0, 1, 2].map(i => `<button class="pb" data-i="${i}"><img src="${balle}" alt=""></button>`).join("")}</div></div></div>
+    ${[0, 1, 2, 3, 4, 5].map(i => `<div class="bande ${i % 2 ? "d" : "g"}" style="top:${i * 16.66}%"></div>`).join("")}
+    <div class="blanc"></div><button class="pkm-passer">✕</button>`;
   P.body.appendChild(v);
-  const labo = v.querySelector(".labo"), {dire: parler} = dialogue(v, ".pkm-passer, .zone");
+  const {dire: parler} = dialogue(v, ".pkm-passer, .pb");
   const dire = (html, attendSuite = true) => parler(html, p.prof, attendSuite);
-  const taille = () => { const w = Math.min(PW.innerWidth, PW.innerHeight * p.largeur / p.hauteur);  // l'image en entier, en haut
-    labo.style.width = w + "px"; labo.style.height = w * p.hauteur / p.largeur + "px"; };
-  taille(); PW.addEventListener("resize", taille);
-  requestAnimationFrame(() => setTimeout(() => v.querySelector(".noir").style.opacity = 0, 80));
+  const pause = ms => new Promise(r => setTimeout(r, ms));
   let fini = false, choisie = null;
   // La sortie : vers l'ouverture en 3D, on plonge dans la Poké Ball choisie (zoom + flash blanc), puis elle tombe,
   // gigote et s'ouvre ; ✕ : simple fondu
-  const fin = suite => { if (fini) return; fini = true; PW.removeEventListener("resize", taille); v.style.transition = "opacity .45s";
+  const fin = suite => { if (fini) return; fini = true; v.style.transition = "opacity .45s";
     if (!suite) { v.style.opacity = 0; setTimeout(() => v.remove(), 450); return; }
-    if (choisie !== null) { const [x, y] = p.balls[choisie];
-      labo.style.transformOrigin = `${x / p.largeur * 100}% ${y / p.hauteur * 100}%`; labo.style.transform = "translateX(-50%) scale(4)"; }
+    const scene = v.querySelector(".scene"), r = scene.getBoundingClientRect(), b = choisie.getBoundingClientRect();
+    scene.style.transformOrigin = `${(b.left + b.width / 2 - r.left) / r.width * 100}% ${(b.top + b.height / 2 - r.top) / r.height * 100}%`;
+    scene.style.transform = "translateX(-50%) scale(4)";
     SONS.montee(.7);
     setTimeout(() => { v.querySelector(".blanc").style.opacity = 1; }, 380);
     setTimeout(() => { ouvrir(c, rejouer, true); v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 850); };
   v.querySelector(".pkm-passer").onclick = () => fin(false);
 
   (async () => {
-    await new Promise(r => setTimeout(r, 1100));
+    SONS.chute();
+    await pause(900); v.classList.add("entre"); SONS.rebond(); vibre(20);
+    await pause(1100);
     // le début reprend celui de Pokémon Rouge / Bleu
     await dire("Bienvenue dans le monde magique des Pokémon !");
     await dire(`Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`);
@@ -929,22 +945,10 @@ function intro(c, p, rejouer = false) {
     await dire(`Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`);
     await dire("Choisis-en une. Le Pokémon qu'elle contient sera le tien !", false);
     v.classList.add("choix");
-    const i = await new Promise(ok => v.querySelectorAll(".zone").forEach(z => z.onclick = () => ok(+z.dataset.i)));
-    v.querySelectorAll(".zone").forEach(z => z.onclick = null);
-    v.querySelectorAll(".halo").forEach(h => h.classList.toggle("loin", +h.dataset.i !== i));
-    SONS.clic(); vibre([15, 40, 15]);
-    // la ball choisie saute : c'est le morceau de l'image où elle est dessinée qui bouge, et un morceau de table vide
-    // la remplace dessous
-    const [x, y] = p.balls[i], r = p.rayon, morceau = (cx, cy, rr) => `width:${rr * 2 / p.largeur * 100}%;aspect-ratio:1;
-      background-image:url('${D.scenes}${p.image}');background-size:${p.largeur / (2 * rr) * 100}% ${p.hauteur / (2 * rr) * 100}%;
-      background-position:${(cx - rr) / (p.largeur - 2 * rr) * 100}% ${(cy - rr) / (p.hauteur - 2 * rr) * 100}%;`;
-    const trou = P.createElement("div"), b = P.createElement("div");
-    trou.style.cssText = `position:absolute;transform:translate(-50%,-50%);left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
-      image-rendering:pixelated;${morceau(p.table[0], p.table[1], r + 2)}`;
-    b.className = "ballc bouge";
-    b.style.cssText = `left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;${morceau(x, y, r)}`;
-    labo.append(trou, b);
-    choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
+    choisie = await new Promise(ok => v.querySelectorAll(".pb").forEach(b => b.onclick = () => ok(b)));
+    v.querySelectorAll(".pb").forEach(b => { b.onclick = null; b.classList.toggle("loin", b !== choisie); });
+    v.classList.remove("choix"); choisie.classList.add("prise");
+    SONS.clic(); vibre([15, 40, 15]); setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
     await dire("Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !");
     fin(true);
   })().catch(() => {});
@@ -977,64 +981,64 @@ const CHAMPIONS = {
       "Quoi ?! Tout ce chemin… Tu es vraiment devenu le plus fort !"]},
 };
 const STYLE_BADGE = `
-#pkm-badge{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#0B0F1C;touch-action:manipulation;user-select:none;
+#pkm-badge,#pkm-labo{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#0B0F1C;touch-action:manipulation;user-select:none;
   -webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace;color:#fff}
-#pkm-badge .fond{position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,var(--c) 0%,color-mix(in srgb,var(--c) 45%,#0B0F1C) 45%,#0B0F1C 100%)}
-#pkm-badge .lignes{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(-28deg,transparent 0 22px,rgba(255,255,255,.5) 22px 26px);
+.pkm-scene .fond{position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,var(--c) 0%,color-mix(in srgb,var(--c) 45%,#0B0F1C) 45%,#0B0F1C 100%)}
+.pkm-scene .lignes{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(-28deg,transparent 0 22px,rgba(255,255,255,.5) 22px 26px);
   animation:pkb-defile 9s linear infinite}
 @keyframes pkb-defile{to{background-position:300px 0}}
-#pkm-badge .rayons{position:absolute;left:50%;top:34%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;opacity:0;transition:opacity .8s;
+.pkm-scene .rayons{position:absolute;left:50%;top:34%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;opacity:0;transition:opacity .8s;
   background:repeating-conic-gradient(rgba(255,240,180,.22) 0 7deg,transparent 7deg 20deg);animation:pkb-rayons 18s linear infinite;
   -webkit-mask:radial-gradient(circle,#000 0,transparent 42%);mask:radial-gradient(circle,#000 0,transparent 42%)}
-#pkm-badge.badge-la .rayons{opacity:1}
-#pkm-badge .bande{position:absolute;left:0;right:0;height:16.7%;background:#000;z-index:25}
-#pkm-badge .bande.g{animation:pkb-gauche .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
-#pkm-badge .bande.d{animation:pkb-droite .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
+.pkm-scene.badge-la .rayons{opacity:1}
+.pkm-scene .bande{position:absolute;left:0;right:0;height:16.7%;background:#000;z-index:25}
+.pkm-scene .bande.g{animation:pkb-gauche .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
+.pkm-scene .bande.d{animation:pkb-droite .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
 @keyframes pkb-rayons{to{transform:rotate(360deg)}}
 @keyframes pkb-gauche{to{transform:translateX(-102%)}}@keyframes pkb-droite{to{transform:translateX(102%)}}
-#pkm-badge .bandeau{position:absolute;left:0;top:max(16px,env(safe-area-inset-top));padding:8px 18px 8px 16px;font-weight:700;font-size:18px;
+.pkm-scene .bandeau{position:absolute;left:0;top:max(16px,env(safe-area-inset-top));padding:8px 18px 8px 16px;font-weight:700;font-size:18px;
   background:linear-gradient(90deg,rgba(0,0,0,.65),rgba(0,0,0,.25));border-radius:0 14px 14px 0;transform:translateX(-105%);
   transition:transform .5s cubic-bezier(.2,1.2,.4,1);text-shadow:2px 2px 0 rgba(0,0,0,.5);letter-spacing:.5px}
-#pkm-badge .bandeau small{display:block;font-size:12px;font-weight:500;opacity:.8;letter-spacing:0}
-#pkm-badge.entre .bandeau{transform:none}
-#pkm-badge .scene{position:absolute;left:50%;top:13%;width:min(66vw,290px);transform:translateX(-50%)}
-#pkm-badge .estrade{position:absolute;left:8%;right:8%;bottom:-6%;height:17%;border-radius:50%;
+.pkm-scene .bandeau small{display:block;font-size:12px;font-weight:500;opacity:.8;letter-spacing:0}
+.pkm-scene.entre .bandeau{transform:none}
+.pkm-scene .scene{position:absolute;left:50%;top:13%;width:min(66vw,290px);transform:translateX(-50%)}
+.pkm-scene .estrade{position:absolute;left:8%;right:8%;bottom:-6%;height:17%;border-radius:50%;
   background:radial-gradient(ellipse at 50% 35%,rgba(255,255,255,.35),rgba(255,255,255,.08) 60%,transparent 72%);
   box-shadow:0 0 0 3px rgba(255,255,255,.18) inset;opacity:0;transition:opacity .6s .3s}
-#pkm-badge .champion{display:block;width:100%;image-rendering:pixelated;transform:translateX(70vw);opacity:0;
+.pkm-scene .champion{display:block;width:100%;image-rendering:pixelated;transform:translateX(70vw);opacity:0;
   transition:transform .75s cubic-bezier(.2,1,.3,1),opacity .4s,filter .6s;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
-#pkm-badge.entre .champion{transform:none;opacity:1}#pkm-badge.entre .estrade{opacity:1}
-#pkm-badge.badge-la .champion{filter:brightness(.55) drop-shadow(0 6px 10px rgba(0,0,0,.45))}
-#pkm-badge .badge{position:absolute;left:50%;top:34%;width:min(46vw,190px);aspect-ratio:1;transform:translate(-50%,-50%) translateY(-75vh);
+.pkm-scene.entre .champion{transform:none;opacity:1}.pkm-scene.entre .estrade{opacity:1}
+.pkm-scene.badge-la .champion{filter:brightness(.55) drop-shadow(0 6px 10px rgba(0,0,0,.45))}
+.pkm-scene .badge{position:absolute;left:50%;top:34%;width:min(46vw,190px);aspect-ratio:1;transform:translate(-50%,-50%) translateY(-75vh);
   z-index:10;cursor:pointer;transition:transform .9s cubic-bezier(.3,1.5,.5,1)}
-#pkm-badge.badge-la .badge{transform:translate(-50%,-50%)}
-#pkm-badge .badge .tourne{width:100%;height:100%;animation:pkb-tourne 3.2s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
-#pkm-badge .badge img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(255,240,170,.9))}
-#pkm-badge .badge .trophee{font-size:min(36vw,150px);line-height:1;filter:drop-shadow(0 0 18px rgba(255,220,120,.9))}
+.pkm-scene.badge-la .badge{transform:translate(-50%,-50%)}
+.pkm-scene .badge .tourne{width:100%;height:100%;animation:pkb-tourne 3.2s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
+.pkm-scene .badge img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(255,240,170,.9))}
+.pkm-scene .badge .trophee{font-size:min(36vw,150px);line-height:1;filter:drop-shadow(0 0 18px rgba(255,220,120,.9))}
 @keyframes pkb-tourne{0%,100%{transform:rotateY(0)}50%{transform:rotateY(180deg)}}
-#pkm-badge .badge.vole{transition:transform .85s cubic-bezier(.5,0,.3,1)}
-#pkm-badge .badge.vole .tourne{animation:none}
-#pkm-badge .aide{position:absolute;left:0;right:0;top:calc(34% + min(23vw,95px) + 22px);text-align:center;font-size:17px;font-weight:700;
+.pkm-scene .badge.vole{transition:transform .85s cubic-bezier(.5,0,.3,1)}
+.pkm-scene .badge.vole .tourne{animation:none}
+.pkm-scene .aide{position:absolute;left:0;right:0;top:calc(34% + min(23vw,95px) + 22px);text-align:center;font-size:17px;font-weight:700;
   opacity:0;transition:opacity .4s;text-shadow:2px 2px 0 rgba(0,0,0,.6);z-index:10}
-#pkm-badge .aide.vu{opacity:1;animation:pk-clign 1.6s ease-in-out infinite}
+.pkm-scene .aide.vu{opacity:1;animation:pk-clign 1.6s ease-in-out infinite}
 @keyframes pk-clign{50%{opacity:.45}}
-#pkm-badge .etui{position:absolute;left:50%;bottom:calc(190px + env(safe-area-inset-bottom));width:min(92vw,420px);transform:translate(-50%,calc(100% + 260px));
+.pkm-scene .etui{position:absolute;left:50%;bottom:calc(190px + env(safe-area-inset-bottom));width:min(92vw,420px);transform:translate(-50%,calc(100% + 260px));
   transition:transform .5s cubic-bezier(.2,1.2,.4,1);background:linear-gradient(180deg,#B3392F,#7E1F1A);border-radius:14px;padding:10px 10px 12px;
   box-shadow:0 0 0 3px #4A0F0C,0 10px 24px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.25);z-index:9}
-#pkm-badge .etui.vu{transform:translate(-50%,0)}
-#pkm-badge .etui .titre{font-size:12px;font-weight:700;text-align:center;margin-bottom:7px;color:#FFE9C7;letter-spacing:1px}
-#pkm-badge .etui .cases{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
-#pkm-badge .etui .case{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 40%,#3A0D0A,#250705);
+.pkm-scene .etui.vu{transform:translate(-50%,0)}
+.pkm-scene .etui .titre{font-size:12px;font-weight:700;text-align:center;margin-bottom:7px;color:#FFE9C7;letter-spacing:1px}
+.pkm-scene .etui .cases{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+.pkm-scene .etui .case{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 40%,#3A0D0A,#250705);
   box-shadow:inset 0 2px 4px rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;position:relative}
-#pkm-badge .etui .case img{width:84%;height:84%;object-fit:contain;image-rendering:pixelated}
-#pkm-badge .etui .case.ici{box-shadow:inset 0 2px 4px rgba(0,0,0,.7),0 0 0 2px #FFD84A,0 0 12px #FFD84A;animation:pk-clign 1s ease-in-out infinite}
-#pkm-badge .eclat{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;background:#FFE27A;border-radius:2px;z-index:12;pointer-events:none;
+.pkm-scene .etui .case img{width:84%;height:84%;object-fit:contain;image-rendering:pixelated}
+.pkm-scene .etui .case.ici{box-shadow:inset 0 2px 4px rgba(0,0,0,.7),0 0 0 2px #FFD84A,0 0 12px #FFD84A;animation:pk-clign 1s ease-in-out infinite}
+.pkm-scene .eclat{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;background:#FFE27A;border-radius:2px;z-index:12;pointer-events:none;
   animation:pkb-eclat .8s ease-out forwards;transform:rotate(45deg)}
 @keyframes pkb-eclat{to{transform:translate(var(--dx),var(--dy)) rotate(225deg) scale(.2);opacity:0}}
-#pkm-badge .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .4s;pointer-events:none;z-index:40}
+.pkm-scene .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .4s;pointer-events:none;z-index:40}
 `;
 // Le champion animé : les images de son animation (planche + liste) dessinées sur un canvas, 14 images par seconde
-function championAnime(canvas, sprite) {
+function championAnime(canvas, sprite = canvas.dataset.sprite) {
   const im = new Image(); im.crossOrigin = "anonymous";
   let images = [], arret = false;
   fetch(ROGUE + sprite + ".json").then(r => r.json()).then(j => {
@@ -1044,7 +1048,7 @@ function championAnime(canvas, sprite) {
   im.src = ROGUE + sprite + ".png";
   const ctx = canvas.getContext("2d"); let k = 0;
   const boucle = setInterval(() => {
-    if (arret) return clearInterval(boucle);
+    if (arret || !canvas.isConnected && images.length) return clearInterval(boucle);
     if (!images.length || !im.complete) return;
     const f = images[k++ % images.length];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1061,7 +1065,7 @@ function sceneBadge(n, c, rejouer = false) {
   installerStyle("pkm2-badge-style", STYLE_BADGE); preparerScene();
   const lieu = LIEUX.filter(l => l.arene)[n - 1], a = lieu.arene, ch = CHAMPIONS[n], ligue = !a.type;
   const couleur = ligue ? "#B8860B" : COUL[a.type];
-  const v = P.createElement("div"); v.id = "pkm-badge"; v.style.setProperty("--c", couleur);
+  const v = P.createElement("div"); v.id = "pkm-badge"; v.className = "pkm-scene"; v.style.setProperty("--c", couleur);
   const ville = lieu.nom.replace(" (retour)", "").replace(" et Parc Safari", "");
   v.innerHTML = `<div class="fond"></div><div class="lignes"></div><div class="rayons"></div>
     <div class="bandeau">${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}
@@ -1432,6 +1436,13 @@ function sacha(feuille, dir, marche, large = 1) {  // un div animé (image déco
     style="width:${large * 4.6}%;aspect-ratio:${large * 16}/32;background-image:url('${SACHA}${feuille}.png');
       background-size:900% 100%;background-position:${f[0] / 8 * 100}% 0"></div>`;
 }
+// Le prochain champion, debout à côté de son arène sur la carte
+function chefCarte() {
+  const d = V.defi; if (!d) return "";
+  const l = LIEUX[d.lieu], ch = CHAMPIONS[d.numero];
+  return `<div class="chef" data-n="${d.numero}" style="left:${(l.x + 11) / 370 * 100}%;top:${(l.y + 3) / HC * 100}%">
+    <canvas data-sprite="${ch.sprite}"></canvas></div>`;
+}
 function heros() {
   if (!POSE) return "";
   const {x, y, dir, enRoute, arrete} = POSE, L = LIEUX, mode = enRoute > 0 ? L[enRoute].mode : "route";
@@ -1488,13 +1499,16 @@ function blocArene() {
   const l = LIEUX[d.lieu], a = l.arene, j = (v, c) => `<div class="jauge"><div class="${v >= c ? "ok" : ""}" style="width:${Math.min(v / c * 100, 100)}%"></div></div>`;
   const nomU = d.unite === "pas" ? "pas" : d.unite;
   const val = v => d.unite === "pas" ? fr(v) : Math.round(v * 10) / 10;
-  const image = a.image ? `<img class="bdg" src="${IMG.badge(a.image)}">` : `<div class="bdg ligue">🏟️</div>`;
-  const qui = a.type ? `Arène ${/^[AEIOUÉ]/.test(a.champion) ? "d'" : "de "}${a.champion} · type ${a.type}` : "Ligue Pokémon · Conseil 4";
-  if (!d.arrive) return `<div class="arene">${image}<div class="q"><div class="t">${a.badge}</div>${qui} à <b>${l.nom}</b>
+  // le champion (animé) qui attend, avec son badge à gagner dans le coin
+  const image = `<div class="portrait"><canvas data-sprite="${CHAMPIONS[d.numero].sprite}"></canvas>
+    ${a.image ? `<img class="coin-badge" src="${IMG.badge(a.image)}">` : ""}</div>`;
+  const qui = a.type ? `Arène ${/^[AEIOUÉ]/.test(a.champion) ? "d'" : "de "}${a.champion} · type ${a.type}` : "Ligue Pokémon · Champion Régis";
+  const style = `style="--c:${a.type ? COUL[a.type] : "#B8860B"}"`;
+  if (!d.arrive) return `<div class="arene" ${style}>${image}<div class="q"><div class="t">${a.badge}</div>${qui} à <b>${l.nom}</b>
       <div class="reste">Encore ${fr(d.reste)} pts de route (≈ ${Math.max(1, Math.round(d.reste / D.barre.taille))} barre${d.reste > 150 ? "s" : ""} d'effort)</div>
       <div class="petit gris">Le défi : ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}.</div></div></div>`;
   const manque = Math.max(a.cible - d.valeur, 0);
-  return `<div class="arene">${image}<div class="q"><div class="t">${qui}</div>
+  return `<div class="arene" ${style}>${image}<div class="q"><div class="t">${qui}</div>
       <div><b>${a.texte}</b></div>${j(d.valeur, a.cible)}<div class="petit">${val(d.valeur)} / ${val(a.cible)} ${nomU}</div>
       ${a.b ? `<div class="ou-b">ou plan B</div><div>${a.b.texte}</div>${j(d.valeur_b, a.b.cible)}<div class="petit">${d.valeur_b} / ${a.b.cible} jours</div>` : ""}
       <div class="reste">${manque ? `Encore ${val(manque)} ${nomU}${a.b ? ` (ou ${Math.max(a.b.cible - d.valeur_b, 0)} jour${a.b.cible - d.valeur_b > 1 ? "s" : ""} d'objectif)` : ""}.
@@ -1512,7 +1526,7 @@ function dessinerVoyage() {
   el.innerHTML = `<div class="entete"><span class="titre">🗺️ Voyage dans Kanto</span>
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
-    ${blocArene()}<div class="carte-wrap">${svgKanto()}${heros()}</div>${infosLieu(k)}
+    ${blocArene()}<div class="carte-wrap">${svgKanto()}${chefCarte()}${heros()}</div>${infosLieu(k)}
     <div class="boite-badges">${badges}</div>`;
   requestAnimationFrame(() => setTimeout(() => el.querySelector(".avance div").style.width = V.pos / V.total * 100 + "%", 60));
   const brancher = () => { el.querySelectorAll(".coin img").forEach(i => i.onclick = () => fiche(PAR_NUM[i.dataset.n])); rognerImages(el); };
@@ -1522,6 +1536,23 @@ function dessinerVoyage() {
   el.querySelectorAll(".lieu").forEach(g => g.onclick = () => { lieuVu = +g.dataset.k; choisir(lieuVu);
     el.querySelector(".infos-lieu").outerHTML = infosLieu(lieuVu); brancher(); vibre(10); });
   brancher();
+  // les champions animés (tuile de l'arène, carte)
+  el.querySelectorAll("canvas[data-sprite]").forEach(cv => championAnime(cv));
+  // toucher le champion sur la carte : il parle (bulle), et son arène s'affiche sous la carte
+  const chef = el.querySelector(".chef");
+  if (chef) chef.onclick = () => {
+    const n = +chef.dataset.n, d = V.defi, a = LIEUX[d.lieu].arene, ch = CHAMPIONS[n];
+    el.querySelectorAll(".bulle-chef").forEach(b => b.remove());
+    // la bulle reste dans la carte : centrée sur le champion sans déborder, en dessous de lui s'il est tout en haut
+    const x = parseFloat(chef.style.left), y = parseFloat(chef.style.top);
+    const b = document.createElement("div"); b.className = "bulle-chef" + (y < 38 ? " dessous" : "");
+    b.style.left = Math.min(Math.max(x, 36), 64) + "%"; b.style.top = y + "%";
+    b.innerHTML = `<b>${ch.nom}</b> : ${d.arrive ? `« Montre-moi ce que tu vaux ! ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}. »`
+      : `« Je t'attends ! Encore ${fr(d.reste)} pts de route. Mon défi : ${a.texte}. »`}`;
+    el.querySelector(".carte-wrap").appendChild(b); vibre(10); ton(1250, 0, .05, {type: "square", vol: .03});
+    setTimeout(() => b.remove(), 5000);
+    lieuVu = d.lieu === 18 ? 2 : d.lieu; choisir(lieuVu); el.querySelector(".infos-lieu").outerHTML = infosLieu(d.lieu); brancher();
+  };
   // toucher un badge gagné : revoir la scène de l'arène (sans rien changer)
   el.querySelectorAll(".boite-badges .oui").forEach(b => b.onclick = () => {
     const n = +b.dataset.n; sceneBadge(n, CAPTURES.find(c => c.id.endsWith(n === 9 ? "#ligue" : `#badge${n}`)), true); });
