@@ -77,7 +77,10 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     l'image** (`kanto.VIA` = points de passage par étape, en pixels ; parcouru = rouge bordé de blanc, la suite = petits
     points sombres ; position = fraction des points le long du tracé ; pour ne pas repasser par une route déjà faite,
     `kanto.MODES` : « vol » = arc en tirets avec un Roucool animé au milieu, « surf » = tirets en mer avec un Lokhlass,
-    idée de Kiki, même nombre de points : seul le dessin change), toucher un lieu = anneau blanc qui pulse + nom
+    idée de Kiki, même nombre de points : seul le dessin change ; `monture` : c'est un Pokémon de la collection qui
+    porte (Vol pour voler, Eau en mer : le compagnon s'il a le type, sinon la dernière capture du type ; personne :
+    vélo / Lokhlass sauvage), sans choix ni tirage truqué, et « 🪽 En vol : X t'emmène jusqu'à… » sous la carte avant
+    l'étape), toucher un lieu = anneau blanc qui pulse + nom
     en jaune, et ses Pokémon dans le panneau collé sous la carte (+ quand on repart), ★ sur un lieu complété. Ordre
     (choix de Kiki, 29/10) : tuile de l'arène (compacte) au-dessus de la carte, carte, Pokémon du lieu, boîte à badges ;
     pas de phrase sur le compagnon (à découvrir) ; sans Pokémon : une Poké Ball (pas d'image de Sacha dans PokeAPI).
