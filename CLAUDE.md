@@ -61,8 +61,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `SACHA`). Manquent seulement 5 professeurs (Orme, Sorbier, Platane, Magnolia, Saule/Turum) : pour eux, une image
   ChatGPT du professeur seul, ou une scène sans professeur.
   **Le prochain champion sur la carte** (`chefCarte`, 30/10) : animé à côté de son arène, « ! » au-dessus ; le toucher
-  = bulle (son défi, ou « Montre-moi ce que tu vaux ») + son lieu sous la carte. **Tuile de l'arène** : portrait animé
-  du champion (canvas `data-sprite`, `championAnime` s'arrête quand le canvas disparaît) + son badge dans le coin.
+  = bulle (son défi, ou « Montre-moi ce que tu vaux ») + son lieu sous la carte.
   **Scène du badge** (`sceneBadge(n, capture, rejouer)`, 30/10) : bandes noires qui s'écartent (entrée de combat),
   fond aux couleurs du type, bandeau « ARÈNE D'ARGENTA », champion animé (`championAnime`, canvas) sur une estrade,
   répliques (`CHAMPIONS` : nom, sprite, 2 répliques ; 9 = Régis, Ligue), le badge (PokeAPI `badges/N.png`, trophée 🏆
@@ -71,11 +70,19 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `lancer` pour `badgeN` / `ligue` pas encore ouverts ; rejouée en touchant un badge gagné dans la boîte à badges. Tant qu'il n'y a aucun badge : bouton « 🎬 Aperçu de la
   scène du badge » (Pierre, sans récompense) dans « Comment ça marche ? ».
   Boîte de dialogue commune (`STYLE_DIAL`, `dialogue(v)`, `preparerScene`) au labo et aux arènes.
-  **Sacha sur la carte** (30/10, demande de Kiki : Sacha plutôt que Red, compagnon avec lui) : `heros()` en HTML
-  par-dessus le SVG (`POSE` calculé dans `svgKanto`) : il marche dans le sens du chemin (`direction`, 4 images de pas
-  toutes les 170 ms, miroir vers la droite), immobile de dos devant une arène qu'il attend ; le compagnon le suit 13
-  unités derrière (`reculer`) ; en vol / en mer il est sur le dos de la `monture` (sinon vélo `red_bike`, bateau,
-  `red_surf`).
+  **Le dresseur sur la carte** (30/10) : `heros()` en HTML par-dessus le SVG (`POSE` calculé dans `svgKanto`) : il
+  marche dans le sens du chemin (`direction`, 4 images de pas toutes les 170 ms, miroir vers la droite), immobile de dos
+  devant une arène qu'il attend ; en vol / en mer sur le dos de la `monture` (dernière capture Vol / Eau ; sinon vélo
+  `red_bike`, bateau, `red_surf`). **Plus de compagnon** (Kiki, 30/10 : « gadget », bouton de la fiche retiré).
+  **Personnalisation** (`editerDresseur`, `DRESSEUR` = {nom, peau, casquette, veste} dans le localStorage
+  `pkm_dresseur` ; à passer côté serveur avec le multijoueur) : pseudo (12 lettres, « Sacha » par défaut), 5 peaux, 9
+  couleurs de casquette et de veste ; `feuilleColoree` recolore les images de Red (peau = 3 tons, rouge = 3 tons :
+  les 7 premières lignes dessinées de chaque image = casquette, le reste = veste) ; Chen demande le nom au premier
+  passage (« Et toi, qui es-tu ? »), toucher le dresseur sur la carte ou « 🎨 » dans « Comment ça marche ? » = la
+  fiche ; « Kiki obtient le Badge Roche ! ».
+  **Champion sur la carte** : **pose fixe** (première image), il ne bouge qu'au toucher (`championAnime(…, fixe)` →
+  `jouer()`), sous sa ville si elle est tout en haut. **Tuile de l'arène** seulement **une fois arrivé** (avant : le
+  champion sur la carte suffit), avec le badge, le défi et les jauges.
   **Montre : rien à mettre à jour pendant que le jeu évolue (choix de Kiki, 29/10)** : on la mettra à jour une seule
   fois, quand le jeu sera fini et testé (à reprendre alors : scène d'accueil du professeur, voyage et carte, compagnon,
   vols et surf, Pokédex normal + shiny, Master Ball 25/30). D'ici là, elle montre le cadeau comme une Poké Ball normale.
