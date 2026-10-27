@@ -14,11 +14,6 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .gris{color:#9AA7C2}.petit{font-size:12px}
 .type{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:600;color:#fff;margin:2px 3px 0 0;
   text-shadow:0 1px 1px rgba(0,0,0,.35)}
-/* Les icônes du jeu (objets, rubans, types : PokeAPI/sprites) à la place des émojis */
-.ico{width:20px;height:20px;object-fit:contain;image-rendering:pixelated;vertical-align:-5px;display:inline-block}
-.ico.p{width:15px;height:15px;vertical-align:-3px}.ico.g{width:28px;height:28px;vertical-align:-8px}
-.ico.lisse{image-rendering:auto}
-img.ty{width:14px;height:14px;vertical-align:-3px;margin:0 3px 0 -5px;image-rendering:auto}
 
 /* ----- Barre d'effort ----- */
 #barre{background:radial-gradient(120% 140% at 0% 0%,#3A1830 0%,#1C2740 55%);display:flex;gap:14px;align-items:center}
@@ -62,7 +57,7 @@ img.ty{width:14px;height:14px;vertical-align:-3px;margin:0 3px 0 -5px;image-rend
 .speciale{background:#1C2740;border-radius:16px;padding:11px 12px;position:relative;overflow:hidden}
 .speciale.ok{box-shadow:inset 0 0 0 2px #4CD3A0}
 .speciale .tete{display:flex;align-items:center;gap:7px;font-weight:800;font-size:14px}
-.speciale .tete .ico{width:28px;height:28px;flex:0 0 28px}
+.speciale .tete .ico{width:32px;height:32px;flex:0 0 32px}
 .speciale .gain{font-size:11px;color:#9AA7C2;margin:2px 0 6px;line-height:1.3}
 .speciale .ligne{font-size:11px;color:#C9D3EA;margin-top:5px;display:flex;justify-content:space-between;gap:4px}
 .jauge{height:6px;background:#0D1322;border-radius:3px;margin-top:3px;overflow:hidden}
@@ -101,15 +96,18 @@ img.ty{width:14px;height:14px;vertical-align:-3px;margin:0 3px 0 -5px;image-rend
 @keyframes pk-vole{50%{transform:translate(-50%,-108%)}}
 @keyframes pk-saute{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-112%)}}
 .ombre-heros{width:4.5%;height:1.6%;border-radius:50%;background:rgba(0,0,0,.35);transform:translate(-50%,-50%)}
-.carte-wrap .chef{position:absolute;width:11%;aspect-ratio:1;transform:translate(-30%,-88%);cursor:pointer;z-index:2;
-  filter:drop-shadow(0 1px 0 rgba(0,0,0,.5)) drop-shadow(0 0 3px rgba(255,255,255,.6))}
-.carte-wrap .chef.haut{transform:translate(0,-50%)}
-.carte-wrap .chef canvas{width:100%;height:100%;image-rendering:pixelated}
-.carte-wrap .chef.nouveau:after{content:"!";position:absolute;left:50%;top:-2px;margin-left:-7px;font:900 11px Outfit,sans-serif;
-  color:#fff;background:#E8382F;border-radius:50%;width:14px;height:14px;line-height:14px;text-align:center;
-  animation:pkl-hop .9s ease-in-out infinite;box-shadow:0 0 0 1.5px #fff}
-@keyframes pkl-hop{50%{transform:translateY(-3px)}}
-.bulle-chef{position:absolute;transform:translate(-50%,calc(-100% - 34px));width:min(70%,240px);background:#F8F8F8;color:#383838;
+.carte-wrap .chef{position:absolute;width:8.5%;aspect-ratio:1;transform:translate(-50%,-50%);cursor:pointer;z-index:3}
+.carte-wrap .chef .portrait{width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;
+  background:radial-gradient(circle at 50% 30%,#fff 0%,var(--c) 80%);box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.45),0 2px 5px rgba(0,0,0,.5)}
+.carte-wrap .chef canvas{position:absolute;width:190%;height:190%;left:-45%;top:-14%;image-rendering:pixelated}
+.carte-wrap .chef .bdg{position:absolute;right:-26%;bottom:-20%;width:50%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}
+.carte-wrap .chef.nouveau:before{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2.5px #fff;
+  animation:pk-appel 1.8s ease-out infinite;pointer-events:none}
+@keyframes pk-appel{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.35);opacity:0}}
+.carte-kanto .medaille.gagne{filter:drop-shadow(0 0 2.5px rgba(255,216,74,.95))}
+.carte-kanto .medaille .eclat{animation:pk-eclat 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pk-eclat{0%,55%,100%{opacity:0;transform:scale(.2) rotate(0)}75%{opacity:1;transform:scale(1) rotate(45deg)}}
+.bulle-chef{position:absolute;transform:translate(-50%,calc(-100% - 22px));width:min(70%,240px);background:#F8F8F8;color:#383838;
   border:3px solid #50607E;border-radius:10px;padding:7px 9px;font:500 12.5px/1.35 'Pixelify Sans',Outfit,sans-serif;z-index:5;
   box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pkl-bulle .25s ease-out}
 .bulle-chef b{color:#C03028}
@@ -157,7 +155,7 @@ img.ty{width:14px;height:14px;vertical-align:-3px;margin:0 3px 0 -5px;image-rend
 .mini .nm{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .qd{font-size:9.5px;color:#9AA7C2}
 .mini .eti{position:absolute;top:4px;left:4px;font-size:9px;font-weight:800;border-radius:7px;padding:0 5px}
-.eti.nv{background:#FF5D5D}.eti.sh{background:none;left:auto;right:2px;top:2px;padding:0}
+.eti.nv{background:#FF5D5D}.eti.sh{background:none;left:auto;right:3px;top:3px;padding:0}.eti.sh .ico{width:22px;height:22px}
 
 /* ----- Pokédex ----- */
 #stats{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-bottom:10px}
@@ -172,7 +170,8 @@ img.ty{width:14px;height:14px;vertical-align:-3px;margin:0 3px 0 -5px;image-rend
 .filtre{flex:0 0 auto;background:#1C2740;border:1px solid #2A3756;color:#C9D3EA;border-radius:999px;padding:5px 11px;
   font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .filtre.on{background:#6B8CFF;border-color:#6B8CFF;color:#fff}
-.filtre.ty{border:0;color:#fff;opacity:.45;text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.filtre.ty{border:0;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);padding-left:10px}
+.actif .filtre.ty:not(.on){opacity:.4}
 .filtre.ty.on{opacity:1;box-shadow:0 0 0 2px #fff inset}
 #grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:6px}
 .p{border-radius:12px;height:96px;text-align:center;cursor:pointer;position:relative;padding-top:4px;background:#161F35;
@@ -184,7 +183,7 @@ img.ty{width:14px;height:14px;vertical-align:-3px;margin:0 3px 0 -5px;image-rend
 .p .nm{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
 .p.non .nm{color:#4A5878}
 .p.complet{box-shadow:inset 0 0 0 2px #FFCB05}
-.p .sh{position:absolute;top:2px;right:2px}
+.p .sh{position:absolute;top:3px;right:3px;line-height:0}.p .sh .ico{width:20px;height:20px}
 .p.leg.non{background:repeating-linear-gradient(135deg,#161F35 0 8px,#1A1834 8px 16px)}
 #rien{color:#9AA7C2;font-size:13px;padding:10px 2px;display:none}
 #mon-dresseur{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-family:'Pixelify Sans',Outfit,monospace;
@@ -223,7 +222,11 @@ details.regles li{margin:5px 0;line-height:1.4}
 <script>
 const D = __DONNEES__;
 const P = window.parent.document, PW = window.parent;
-const COUL = D.couleurs, LEG = new Set(D.legendaires);
+// Couleurs des types = le fond des icônes de Pokémon Écarlate / Violet : l'icône se fond dans la pastille
+const COUL = {...D.couleurs, Normal: "#9FA19F", Combat: "#FF8000", Vol: "#81B9EF", Poison: "#9141CB", Sol: "#915121",
+  Roche: "#AFA981", Insecte: "#91A119", Spectre: "#704170", Acier: "#60A1B8", Feu: "#E62829", Eau: "#2980EF",
+  Plante: "#3FA129", "Électrik": "#FAC000", Psy: "#EF4179", Glace: "#3FD8FF", Dragon: "#5060E1", "Ténèbres": "#50413F",
+  "Fée": "#EF70EF"}, LEG = new Set(D.legendaires);
 const DEX = D.dex.map(([num, nom, types]) => ({num, nom, types}));
 const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
 // Les images, directement dans le dépôt public PokeAPI/sprites
@@ -281,12 +284,22 @@ function dessinMonture(k, x, y, t) {  // le Pokémon (ou le vélo, le bateau) qu
 const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball"};
 // Les icônes du jeu (objets, rubans, marques et types de PokeAPI/sprites) à la place des émojis
 const OBJ = n => `${D.images}/items/${n}.png`;
+const ROGUE_UI = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/";
 const IC = {poke: OBJ("poke-ball"), super: OBJ("great-ball"), hyper: OBJ("ultra-ball"), master: OBJ("master-ball"),
-  honneur: OBJ("premier-ball"), shiny: OBJ("shiny-charm"), carte: OBJ("gen3/town-map"), rare: OBJ("star-piece"),
+  honneur: OBJ("premier-ball"), shiny: ROGUE_UI + "ui/shiny.png", carte: ROGUE_UI + "items/map.png", rare: OBJ("star-piece"),
   velo: OBJ("bicycle"), bateau: OBJ("ss-ticket"), tele: OBJ("teachy-tv"), radar: OBJ("poke-radar"),
   ligue: `${D.images}/ribbons/generation-iii/champion-ribbon.png`, effort: `${D.images}/ribbons/generation-iii/effort-ribbon.png`,
-  nuit: `${D.images}/marks/generation-viii/sleepy-time-mark.png`};
-const ico = (cle, cls = "") => `<img class="ico ${cls}" src="${IC[cle] || cle}" alt="">`;
+  nuit: `${D.images}/pokemon/versions/generation-vii/icons/143.png`};
+// (styles des icônes : aussi dans la page parente, pour l'ouverture et la fiche)
+const STYLE_ICO = `.ico{width:24px;height:24px;object-fit:contain;image-rendering:pixelated;vertical-align:-6px;display:inline-block}
+.ico.pt{width:18px;height:18px;vertical-align:-4px}.ico.g{width:32px;height:32px;vertical-align:-9px}
+.ico.brille{filter:drop-shadow(0 0 2px #FFCB05) drop-shadow(0 0 1px #FFCB05)}
+img.ty{width:18px;height:18px;vertical-align:-4px;margin:0 4px 0 -6px;border-radius:50%;image-rendering:auto}
+#pkm-fiche .f img.ico{display:inline-block;width:18px;height:18px;margin:0 2px 0 0;vertical-align:-4px}
+#pkm-fiche .f .trou img.ico{width:36px;height:36px}`;
+document.head.insertAdjacentHTML("beforeend", `<style>${STYLE_ICO}</style>`); installerStyle("pkm2-ico-style", STYLE_ICO);
+// (la classe « p » des cartes du Pokédex est prise : la petite taille s'appelle « pt »)
+const ico = (cle, cls = "") => `<img class="ico ${cls.replace(/\bp\b/, "pt")}" src="${IC[cle] || cle}" alt="">`;
 const TYPE_ID = {Normal: 1, Combat: 2, Vol: 3, Poison: 4, Sol: 5, Roche: 6, Insecte: 7, Spectre: 8, Acier: 9, Feu: 10, Eau: 11,
   Plante: 12, "Électrik": 13, Psy: 14, Glace: 15, Dragon: 16, "Ténèbres": 17, "Fée": 18};
 IMG.type = t => `${D.images}/types/generation-ix/scarlet-violet/small/${TYPE_ID[t]}.png`;
@@ -824,13 +837,13 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const col = collection(), especes = Object.keys(col).length, reste = aOuvrir();
     const shinys = Object.values(col).filter(l => l.some(x => x.shiny)).length;
     const badges = [r.nouveau ? `<span class="badge b-nouveau">NOUVEAU POKÉMON !</span>` : r.shiny ? "" : `<span class="badge b-version">CAPTURÉ !</span>`,
-                    r.shiny ? `<span class="badge b-shiny">${ico("shiny", "p")} SHINY</span>` : "", r.leg ? `<span class="badge b-leg">${ico("master", "p")} LÉGENDAIRE</span>` : ""];
+                    r.shiny ? `<span class="badge b-shiny">${ico("shiny", "p brille")} SHINY</span>` : "", r.leg ? `<span class="badge b-leg">${ico("master", "p")} LÉGENDAIRE</span>` : ""];
     carte.innerHTML = `<div class="badges">${badges.join("")}</div>
       <div class="no">N° ${N3(c.num)}</div><div class="nm">${c.nom}</div><div>${typesHTML(c.types, "pkm-type")}</div>
-      <div class="ver">${c.shiny ? `${ico("shiny", "p")} Shiny · ` : ""}${c.lieu ? `${ico("carte", "p")} ${c.lieu}` : ""}</div>
+      <div class="ver">${c.shiny ? `${ico("shiny", "p brille")} Shiny · ` : ""}${c.lieu ? `${ico("carte", "p")} ${c.lieu}` : ""}</div>
       <div class="rs">${BALLS[c.ball] || "Poké Ball"} · ${raisonHTML(c)} · ${c.quand}</div>
       <div class="compteur"><div><div class="l">Pokédex</div><div class="v">${especes} / 151</div><div class="j"><div style="width:${(especes - (r.nouveau && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div>
-        <div><div class="l">Shiny ${ico("shiny", "p")}</div><div class="v">${shinys} / 151</div><div class="j"><div style="width:${(shinys - (c.shiny && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div></div>
+        <div><div class="l">Shiny ${ico("shiny", "p brille")}</div><div class="v">${shinys} / 151</div><div class="j"><div style="width:${(shinys - (c.shiny && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div></div>
       <div class="boutons">${reste.length && !rejouer ? `<button class="b1 suite">Ouvrir la suivante (${reste.length})</button>` : ""}
         <button class="${reste.length && !rejouer ? "b2" : "b1"} ok">${r.nouveau || r.shiny ? "Génial !" : "Super !"}</button></div>`;
     carte.querySelectorAll(".badge").forEach((b, i) => b.style.animationDelay = `${.15 + i * .18}s${b.classList.contains("b-nouveau") ? ",0s" : ""}`);
@@ -1213,9 +1226,9 @@ function fiche(p) {
        <br>Plus de chances avec : <b>${[...new Set(p.types.flatMap(t => D.conseils[t] || []))].join(", ") || "toutes les activités"}</b>.
        <br>${ico(IMG.badge(1), "p")} Les badges d'arène donnent un Pokémon du type du champion.`;
   const forme = (c, sh) => c
-    ? `<div class="f ${sh ? "sh" : ""}" data-s="${sh ? 1 : 0}"><b>${sh ? `${ico("shiny", "p")} Shiny` : "Normal"}</b>
+    ? `<div class="f ${sh ? "sh" : ""}" data-s="${sh ? 1 : 0}"><b>${sh ? `${ico("shiny", "p brille")} Shiny` : "Normal"}</b>
         <img src="${IMG.anim(p.num, sh)}" ${repli(p.num, sh)}>${c.quand}<br>${c.lieu ? `${ico("carte", "p")} ${c.lieu}` : ""}</div>`
-    : `<div class="f ${sh ? "sh" : ""}"><b>${sh ? `${ico("shiny", "p")} Shiny` : "Normal"}</b><div class="trou">${sh ? ico("shiny", "g") : "?"}</div>
+    : `<div class="f ${sh ? "sh" : ""}"><b>${sh ? `${ico("shiny", "p brille")} Shiny` : "Normal"}</b><div class="trou">${sh ? ico("shiny", "g brille") : "?"}</div>
         ${sh ? "Pas encore : c'est rare (1 chance sur 33 environ)" : "Pas encore attrapé"}</div>`;
   const vue = normal ? false : !!shiny;  // la grande image : la forme attrapée (le normal d'abord)
   const f = P.createElement("div"); f.id = "pkm-fiche";
@@ -1321,9 +1334,9 @@ function dessinerSpeciales() {
       <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
       <div class="reste">${resteMaster}</div></div>
     <div class="speciale ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ico("nuit", "lisse")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
+      <div class="tete">${ico("nuit")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
-      <div class="ligne"><span>${ico("shiny", "p")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
+      <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
       ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
 }
 
@@ -1333,7 +1346,7 @@ function dessinerDernieres() {
   for (const c of CAPTURES) if (estOuverte(c) && !vus.has(c.num)) { vus.add(c.num); premiere[c.id] = 1; }
   document.getElementById("bloc-dernieres").style.display = ok.length ? "" : "none";
   document.getElementById("dernieres").innerHTML = ok.map(c => `<div class="mini" data-i="${CAPTURES.indexOf(c)}">
-    ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? `<span class="eti sh">${ico("shiny", "p")}</span>` : ""}
+    ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? `<span class="eti sh">${ico("shiny", "p brille")}</span>` : ""}
     <img src="${IMG.anim(c.num, c.shiny)}" ${repli(c.num, c.shiny)} loading="lazy"><div class="nm">${c.nom}</div>
     <div class="qd">${c.quand}</div>${c.lieu ? `<div class="lieu">${ico("carte", "p")} ${c.lieu}</div>` : ""}</div>`).join("");
   document.querySelectorAll(".mini").forEach(e => e.onclick = () => ouvrir(CAPTURES[e.dataset.i], true));
@@ -1347,12 +1360,13 @@ function dessinerDex() {
   document.getElementById("stats").innerHTML = `
     <div class="t"><div class="l">Espèces</div><div class="v">${especes} <small>/ 151</small></div>
       <div class="jauge"><div style="width:${especes / 1.51}%;background:linear-gradient(90deg,#FF4B4B,#FFCB05)"></div></div></div>
-    <div class="t"><div class="l">Shiny</div><div class="v">${ico("shiny")} ${sh}</div></div>
+    <div class="t"><div class="l">Shiny</div><div class="v">${ico("shiny", "brille")} ${sh}</div></div>
     <div class="t"><div class="l">Badges</div><div class="v"><img src="${IMG.badge(Math.max(nb, 1))}"> ${nb} <small>/ 8</small></div></div>`;
   const filtres = [["tous", "Tous"], ["oui", `Attrapés ${especes}`], ["non", `Manquants ${151 - especes}`],
-                   ["ici", `${ico("carte", "p")} ${LIEUX[V.ici].nom}`], ["shiny", `${ico("shiny", "p")} Shiny`], ["leg", `${ico("master", "p")} Légendaires`]];
+                   ["ici", `${ico("carte", "p")} ${LIEUX[V.ici].nom}`], ["shiny", `${ico("shiny", "p brille")} Shiny`], ["leg", `${ico("master", "p")} Légendaires`]];
   document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("");
   document.querySelectorAll("#filtres .filtre").forEach(b => b.onclick = () => { filtre = b.dataset.k; dessinerDex(); });
+  document.getElementById("filtres-types").classList.toggle("actif", filtreTypes.size > 0);
   document.getElementById("filtres-types").innerHTML = Object.keys(COUL).map(t =>
     `<button class="filtre ty ${filtreTypes.has(t) ? "on" : ""}" data-t="${t}" style="background:${COUL[t]}">${icoType(t)}${t}</button>`).join("");
   document.querySelectorAll("#filtres-types .filtre").forEach(b => b.onclick = () => {
@@ -1375,7 +1389,7 @@ function dessinerDex() {
     const n = mes.some(c => !c.shiny), s = mes.some(c => c.shiny);
     return `<div class="p ${a ? "" : "non"} ${n && s ? "complet" : ""} ${LEG.has(p.num) ? "leg" : ""}" data-n="${p.num}"
       ${a ? `style="background:radial-gradient(circle at 50% 35%,${c0}66,#1C2740 70%)"` : ""}>
-      ${s ? `<span class="sh">${ico("shiny", "p")}</span>` : ""}<img class="rogne" src="${IMG.mini(p.num, s && !n)}" loading="lazy">
+      ${s ? `<span class="sh">${ico("shiny", "p brille")}</span>` : ""}<img class="rogne" src="${IMG.mini(p.num, s && !n)}" loading="lazy">
       <div class="no">${N3(p.num)}</div><div class="nm">${a ? p.nom : "???"}</div></div>`;
   }).join("");
   document.querySelectorAll("#grille .p").forEach(e => e.onclick = () => fiche(PAR_NUM[e.dataset.n]));
@@ -1422,8 +1436,7 @@ function svgKanto() {
       ${vise ? `<circle class="vise" cx="${l.x}" cy="${l.y}" r="${r + 2}" fill="none" stroke="#FFCB05" stroke-width="2"/>` : ""}
       <circle class="point" cx="${l.x}" cy="${l.y}" r="${r}" fill="${atteint ? (ville ? "#E8382F" : "#FFB020") : "#7C8AA8"}" stroke="#fff" stroke-width="1.6"/>
       ${ville ? `<circle cx="${l.x}" cy="${l.y}" r="${r * .38}" fill="#fff"/>` : ""}
-      ${ar && ar.image ? `<image href="${IMG.badge(ar.image)}" x="${l.x + 3}" y="${l.y - 15}" width="12" height="12" opacity="${gagne ? 1 : .55}" style="${gagne ? "" : "filter:grayscale(1)"}"/>` : ""}
-      ${ar && !ar.image ? `<image href="${IC.ligue}" x="${l.x + 3}" y="${l.y - 16}" width="13" height="13" opacity="${gagne ? 1 : .6}" style="image-rendering:pixelated;${gagne ? "" : "filter:grayscale(1)"}"/>` : ""}
+      ${ar && !vise ? medaille(l, ar, gagne, bas) : ""}
       ${complet ? `<text x="${l.x - 12}" y="${l.y - 4}" font-size="9" style="fill:#FFD84A">★</text>` : ""}
       ${ville ? `<text class="nom" x="${l.nom === "Plateau Indigo" ? l.x + 8 : l.x}" y="${l.nom === "Plateau Indigo" ? l.y - 6 : l.y + (bas ? -9 : 14)}" font-size="8"
         text-anchor="${l.nom === "Plateau Indigo" ? "start" : "middle"}">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
@@ -1433,6 +1446,8 @@ function svgKanto() {
   const tout = faits.flatMap(x => x.pts), arrete = V.defi && V.defi.arrive;
   POSE = {x: mx, y: my, dir: direction(tout), enRoute, arrete};
   return `<svg class="carte-kanto" viewBox="0 0 370 ${HC.toFixed(1)}">
+    <defs><radialGradient id="pk-or" cx=".45" cy=".35" r=".7"><stop offset="0" stop-color="#FFF7CF"/><stop offset=".55" stop-color="#FFD84A"/>
+      <stop offset="1" stop-color="#C08A00"/></radialGradient></defs>
     <image href="${D.carte}" x="0" y="0" width="370" height="${HC.toFixed(1)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>
     ${traits}
     ${noeuds}
@@ -1623,13 +1638,28 @@ function dessinerMonDresseur() {
   el.querySelector(".modifier").onclick = () => editerDresseur();
 }
 // Le prochain champion, debout à côté de son arène sur la carte
+// Le badge de chaque arène sur la carte, dans une médaille : à gagner = fond sombre et liseré blanc en pointillés ;
+// gagné = médaille d'or qui brille, avec un éclat. La prochaine arène : le portrait du champion (chefCarte).
+const posMedaille = (l, bas) => l.nom === "Plateau Indigo" ? [l.x - 3, l.y - 15] : bas ? [l.x + 12, l.y] : [l.x + 10, Math.max(l.y - 10, 9)];
+function medaille(l, ar, gagne, bas) {
+  const [x, y] = posMedaille(l, bas), src = ar.image ? IMG.badge(ar.image) : IC.ligue;
+  const img = s => `<image href="${src}" x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" style="image-rendering:${ar.image ? "auto" : "pixelated"}"/>`;
+  return gagne
+    ? `<g class="medaille gagne"><circle cx="${x}" cy="${y}" r="8.8" fill="url(#pk-or)" stroke="#FFF3B0" stroke-width="1.3"/>${img(12.5)}
+        <path class="eclat" d="M${x + 7},${y - 11} l1.1,2.6 2.6,1.1 -2.6,1.1 -1.1,2.6 -1.1,-2.6 -2.6,-1.1 2.6,-1.1z" fill="#fff"/></g>`
+    : `<g class="medaille"><circle cx="${x}" cy="${y}" r="7.8" fill="#16213A" fill-opacity=".88" stroke="#fff" stroke-width="1.2"
+        stroke-dasharray="2.3 1.5"/>${img(10.5)}</g>`;
+}
 function chefCarte() {
   const d = V.defi; if (!d) return "";
-  const l = LIEUX[d.lieu], ch = CHAMPIONS[d.numero];
-  // tout en haut de la carte : il se tient à hauteur de sa ville (pas au-dessus), pour ne pas dépasser
+  const l = LIEUX[d.lieu], a = l.arene, ch = CHAMPIONS[d.numero];
+  // son portrait dans une médaille à côté de sa ville (à droite du dresseur), avec le badge à gagner ;
+  // un halo blanc l'entoure jusqu'au premier toucher
   let vu = false; try { vu = !!localStorage.getItem("pkm_chef_vu_" + d.numero); } catch (e) {}
-  return `<div class="chef ${l.y < 45 ? "haut" : ""} ${vu ? "" : "nouveau"}" data-n="${d.numero}" style="left:${(l.x + (l.y < 45 ? 18 : 11)) / 370 * 100}%;top:${(l.y + 3) / HC * 100}%">
-    <canvas data-sprite="${ch.sprite}" data-fixe="1"></canvas></div>`;
+  const x = l.nom === "Plateau Indigo" ? l.x : l.x + 28, y = l.nom === "Plateau Indigo" ? l.y - 22 : Math.max(l.y - 14, 17);
+  return `<div class="chef ${vu ? "" : "nouveau"}" data-n="${d.numero}" style="left:${x / 370 * 100}%;top:${y / HC * 100}%;--c:${a.type ? COUL[a.type] : "#B8860B"}">
+    <div class="portrait"><canvas data-sprite="${ch.sprite}" data-fixe="1"></canvas></div>
+    <img class="bdg" src="${a.image ? IMG.badge(a.image) : IC.ligue}"></div>`;
 }
 function heros() {
   if (!POSE) return "";
@@ -1758,7 +1788,7 @@ function dessinerRegles() {
     <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min en zone ou une séance de ${R.exploit_seance} min.</li>
     <li>${ico("master", "p")} <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
-    <li>${ico("nuit", "p lisse")} Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
+    <li>${ico("nuit", "p")} Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
     <li>${ico("carte", "p")} <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
       au Plateau Indigo (environ 3 mois, 4 à 5 barres par lieu). Rien à choisir : bouge, tu avances.</li>
     <li>${ico("poke", "p")} Les Poké Balls donnent surtout les Pokémon de l'endroit où tu es, parfois ceux que tu as ratés plus tôt ou ceux de l'étape

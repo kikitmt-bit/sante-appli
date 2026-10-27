@@ -58,9 +58,11 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   (`trainers/` gen 1-7 : Sacha en 7 tenues, capitaines d'Alola, quelques professeurs) ; Sacha sur la carte = images de
   Red de **pret/pokefirered** (`graphics/object_events/pics/people/red_normal|red_bike|red_surf.png`, commit figé dans
   `SACHA`).
-  **Le prochain champion sur la carte** (`chefCarte`, 30/10) : à côté de son arène (à droite de la ville si elle est
-  tout en haut : classe `haut`), « ! » rouge jusqu'au premier toucher (`pkm_chef_vu_N`) ; le toucher = il s'anime + bulle
-  (son défi, ou « Montre-moi ce que tu vaux ») ; toucher ailleurs ferme la bulle.
+  **Arènes sur la carte** (31/10, demande de Kiki : badges invisibles avant) : chaque arène a sa **médaille** (`medaille`,
+  SVG) : à gagner = rond sombre, liseré blanc en pointillés, badge en couleur ; gagné = médaille d'or qui brille + éclat.
+  La **prochaine arène** = **portrait du champion** dans un médaillon à la couleur du type (`chefCarte`, haut du corps
+  du sprite PokéRogue, badge à gagner en coin), à droite de la ville ; halo blanc discret jusqu'au premier toucher
+  (`pkm_chef_vu_N`, plus de « ! » rouge) ; le toucher = il s'anime + bulle (son défi) ; toucher ailleurs la ferme.
   **Scène du badge** (`sceneBadge(n, capture, rejouer)`, 30/10) : bandes noires qui s'écartent (entrée de combat),
   fond aux couleurs du type, bandeau « ARÈNE D'ARGENTA », champion animé (`championAnime`, canvas) sur une estrade,
   répliques (`CHAMPIONS` : nom, sprite, 2 répliques ; 9 = Régis, Ligue), le badge (PokeAPI `badges/N.png`, trophée 🏆
@@ -148,12 +150,15 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     rien n'est copié dans ce dépôt) : `pokemon/N.png` (petite, Pokédex, carte), `other/showdown/N.gif` (animée,
     1 011 premiers), `other/official-artwork/N.png` (HD, ouverture et fiche), `shiny/` pour chacune, `badges/N.png`
     (1-8 = Kanto, 9-16 = Johto…). Il y a aussi toutes les générations, les icônes, les objets ; pas de cartes.
-    **Icônes du jeu à la place des émojis** (31/10, `IC`, `ico(cle, taille)`, `icoType`, `raisonHTML`) : objets
-    (`items/` : Poké/Super/Hyper/Master/Honor Ball, Charme Chroma = shiny, Carte = lieu et voyage, Morceau d'Étoile = rare,
-    Bicyclette, Passe Bateau, Poké Radar, Télé Apprentissage = « Revoir »), rubans (`ribbons/generation-iii/` : Effort =
-    barre, Champion = Ligue), marque Sommeil (`marks/`, Bonne nuit), badges, et icônes rondes des types
-    (`types/generation-ix/scarlet-violet/small/N.png`, N = numéro du type dans `TYPE_ID`) dans toutes les pastilles de
-    type. Restent en émojis : les activités de sport (👟 🔥 🪜…, ce sont des choses de la vraie vie), ✅, 🔊 et ✕.
+    **Icônes du jeu à la place des émojis** (31/10, `IC`, `ico(cle, taille)` : tailles `pt` 18 px, normale 24, `g` 32 ;
+    jamais la classe `p`, prise par les cartes du Pokédex ; `STYLE_ICO` aussi dans la page parente ; `icoType`,
+    `raisonHTML`) : objets (`items/` : Poké/Super/Hyper/Master/Honor Ball, Morceau d'Étoile = rare, Bicyclette, Passe
+    Bateau, Poké Radar, Télé Apprentissage = « Revoir »), PokéRogue (`ROGUE_UI` : scintillement `ui/shiny.png` avec
+    lueur dorée = shiny, `items/map.png` = lieu et voyage), rubans (`ribbons/generation-iii/` : Effort = barre, Champion =
+    Ligue), Ronflex (`pokemon/versions/generation-vii/icons/143.png`, Bonne nuit), badges, et icônes des types
+    (`types/generation-ix/scarlet-violet/small/N.png`, `TYPE_ID`) dans toutes les pastilles de type ; `COUL` = le fond
+    exact de ces icônes (l'icône se fond dans la pastille) ; filtres de type en couleurs pleines, les autres s'effacent
+    quand un type est choisi. Restent en émojis : les activités de sport (👟 🔥 🪜…, ce sont des choses de la vraie vie), ✅, 🔊 et ✕.
     La `raison` des balls garde son émoji pour la montre ; l'onglet le remplace par l'icône (`raisonHTML`).
     Petites images sans leurs bords vides (`rogne`, classe `rogne`). La montre reçoit la petite image recadrée en
     base64 (`montre.image`, Pillow). L'ancienne branche `sprites` du dépôt privé n'est plus lue.
