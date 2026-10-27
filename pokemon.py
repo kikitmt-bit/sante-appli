@@ -17,7 +17,7 @@ Le Pokédex : une entrée par espèce, en normal et en shiny (plus de « version
 les images viennent du dépôt public PokeAPI/sprites). Jamais de doublon : on tire une espèce pas encore attrapée (ou
 son shiny).
 
-Tout est rejouable : chaque capture a un identifiant (« 2026-10-19#poke3 ») qui sert de graine au hasard, donc les
+Tout est rejouable : chaque capture a un identifiant (« 2026-10-27-p2#poke3 », voir `ident`) qui sert de graine au hasard, donc les
 mêmes données donnent toujours les mêmes Pokémon. Mais le tirage dépend des chiffres du jour (types de la barre,
 balls déjà gagnées) : le calcul de la montre (montre.py, après chaque récolte + chaque heure) fige donc toutes les captures,
 celles d'aujourd'hui comprises, dans data/pokemon/captures_v2.json (branche data) : une capture figée ne change plus
@@ -39,7 +39,10 @@ import kanto
 from pokedex import LEGENDAIRES, POKEMON
 
 REGLAGES = {
-    "debut": dt.date(2026, 10, 19),  # premier jour du jeu (règles v2 rejouées depuis le 19/10 avec les vraies données)
+    # Partie en cours : premier jour et numéro. Recommencer à zéro = nouvelle date + nouveau numéro (les identifiants
+    # des balls changent, donc rien de l'ancienne partie ne revient : captures figées, balls ouvertes). Partie 1 : du
+    # 19/10 au 26/10 ; partie 2 (27/10) : pour régler le jeu avant de le partager.
+    "debut": dt.date(2026, 10, 27), "partie": 2,
     "shiny": 0.03,                   # chance de shiny de base
     "shiny_max": 0.5,
     "nuit": 420, "shiny_nuit": 1.5,  # nuit d'au moins 7 h : shiny ×1,5 toute la journée
@@ -48,7 +51,7 @@ REGLAGES = {
     "barre": 100,                    # points d'effort pour une Poké Ball
     "pas_offerts": 2000,             # les pas de la vie de tous les jours ne comptent pas
     "seance_min": 10,                # une séance compte à partir de 10 min
-    "force": 2, "force_depuis": dt.date(2026, 10, 28),  # points par minute de musculation / rameur (avant : 1)
+    "force": 2, "force_depuis": dt.date(2026, 10, 27),  # points par minute de musculation / rameur (avant : 1)
     "master_jours": 25, "master_fenetre": 30,  # jours avec l'objectif sur les 30 derniers pour un légendaire
     "objectif_pas": 5000, "objectif_zone": 15,
     "exploit_pas": 10000, "exploit_zone": 30, "exploit_seance": 45,
@@ -232,6 +235,11 @@ def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
     return dues
 
 
+def ident(jour, cle):
+    """Identifiant d'une ball (et graine de son tirage) : « 2026-10-27-p2#poke3 » (partie 1 : « 2026-10-19#poke3 »)."""
+    return f"{jour}{'' if REGLAGES['partie'] == 1 else '-p' + str(REGLAGES['partie'])}#{cle}"
+
+
 def jouer(stats, resumes, aujourd, figees=()):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}. Les captures figées sont reprises telles quelles ; les autres sont tirées. -> (captures, état)."""
@@ -256,20 +264,20 @@ def jouer(stats, resumes, aujourd, figees=()):
                                        "force": m["nb_force"], "ok": ok, "super": super_ok(m)}, cumul)
         lieu, poids_lieux = kanto.LIEUX[voyage.ici()]["nom"], voyage.poids()
         dues = balls_du_jour(jour, m, avant, cumul, master, badges)
-        ids = {f"{jour}#{mi['cle']}" for mi in dues}
-        dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(f"{jour}#") and i not in ids]  # figées
-        dues.sort(key=lambda mi: f"{jour}#{mi['cle']}" not in figees)  # figées d'abord : les nouvelles les évitent
+        ids = {ident(jour, mi["cle"]) for mi in dues}
+        dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(ident(jour, "")) and i not in ids]  # figées
+        dues.sort(key=lambda mi: ident(jour, mi["cle"]) not in figees)  # figées d'abord : les nouvelles les évitent
         for mi in dues:  # une capture figée reste, même si les chiffres ont baissé depuis
-            ident = f"{jour}#{mi['cle']}"
-            c = figees.get(ident)
+            i = ident(jour, mi["cle"])
+            c = figees.get(i)
             if c is None:
                 ball = BALLS[mi["ball"]]
                 p = min(REGLAGES["shiny"] * ball["shiny"] * bonus, REGLAGES["shiny_max"])
-                c = tirer(ident, possedees, sans_nouvelle, mi["types"], p, mi.get("nouvelle", ball["nouvelle"]),
+                c = tirer(i, possedees, sans_nouvelle, mi["types"], p, mi.get("nouvelle", ball["nouvelle"]),
                           mi.get("legendaire", False), poids_lieux, mi.get("seul_type"), mi.get("parmi"))
                 if c is None:
                     continue
-                c |= {"id": ident, "jour": str(jour), "ball": mi["ball"], "raison": mi["raison"], "lieu": lieu}
+                c |= {"id": i, "jour": str(jour), "ball": mi["ball"], "raison": mi["raison"], "lieu": lieu}
             else:
                 c.setdefault("lieu", lieu)  # captures figées d'avant le voyage
             captures.append(c)
@@ -297,7 +305,8 @@ def charger_jeu(lire, aujourd):
         resumes.update(f.get(f"data/resume/{y}.json") or {})
     jours = [debut + dt.timedelta(days=i) for i in range((aujourd - debut).days + 1)]
     stats = pd.DataFrame({j: chiffres.stats_jour(resumes.get(str(j))) for j in jours}).T
-    figees = [c for c in (f.get(FIGEES) or {}).get("captures", []) if c["jour"] >= str(REGLAGES["debut"])]
+    figees = [c for c in (f.get(FIGEES) or {}).get("captures", [])  # seulement celles de la partie en cours
+              if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], ""))]
     return jouer(stats, resumes, aujourd, figees)
 
 

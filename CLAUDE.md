@@ -133,8 +133,12 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     Dernières captures : les 8 dernières. Pokémon **rares** ⭐
     (`kanto.RARES`, poids ÷ 3). Choix voulu (29/10, carte blanche de Kiki : « ça reste une appli de sport ») : chemin fixe, pas de
     « rester ici » ni de carrefours (il faudrait enregistrer ces choix côté script Google, car ils changent les tirages).
-  - Identifiants « jour#poke3 / super / hyper / master1 / badge1 / ligue » = graines (rejouable). Règles v2 rejouées depuis le 19/10
-    avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige **toutes** les captures,
+  - **Parties** (`REGLAGES` `debut` + `partie`) : partie 1 du 19/10 au 26/10 ; **partie 2 depuis le 27/10** (Kiki
+    a tout remis à zéro pour régler le jeu ; il recommencera une partie 3 avec ses amis). Recommencer = nouvelle date
+    `debut` + `partie` + 1 : rien de l'ancienne partie ne revient (les données santé ne bougent pas).
+  - Identifiants `ident(jour, cle)` = « 2026-10-27-p2#poke3 / super / hyper / master1 / badge1 / ligue / chen »
+    (partie 1 : sans « -p1 ») = graines (rejouable) ; les captures figées et les balls ouvertes d'une autre partie
+    sont ignorées (autre identifiant). « ! » du champion vu : `pkm_chef_vu_<partie>_<N>`. Le calcul de la montre (GitHub Actions, chaque heure) fige **toutes** les captures,
     aujourd'hui compris (27/10 : avant, seulement les jours finis, et une ball ouverte changeait de Pokémon dans la
     journée car le tirage dépend des types de la barre et des balls gagnées plus tard) →
     `data/pokemon/captures_v2.json` (avant le 25/10 : la tâche du coach, `pokemon.py figer DATA`) (l'ancien `captures.json` du prototype n'est plus lu).

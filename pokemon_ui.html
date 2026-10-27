@@ -1664,7 +1664,7 @@ function chefCarte() {
   const l = LIEUX[d.lieu], a = l.arene, ch = CHAMPIONS[d.numero];
   // son portrait dans une médaille à côté de sa ville (à droite du dresseur), avec le badge à gagner ;
   // un halo blanc l'entoure jusqu'au premier toucher
-  let vu = false; try { vu = !!localStorage.getItem("pkm_chef_vu_" + d.numero); } catch (e) {}
+  let vu = false; try { vu = !!localStorage.getItem(`pkm_chef_vu_${R.partie}_${d.numero}`); } catch (e) {}
   const x = l.nom === "Plateau Indigo" ? l.x : l.x + 32, y = l.nom === "Plateau Indigo" ? l.y - 22 : Math.max(l.y - 14, 23);
   return `<div class="chef ${vu ? "" : "nouveau"}" data-n="${d.numero}" style="left:${x / 370 * 100}%;top:${y / HC * 100}%;--c:${a.type ? COUL[a.type] : "#B8860B"}">
     <div class="portrait"><canvas data-sprite="${ch.sprite}" data-fixe="1"></canvas></div>
@@ -1769,7 +1769,7 @@ function dessinerVoyage() {
   if (chef) chef.onclick = () => {
     const n = +chef.dataset.n, d = V.defi, a = LIEUX[d.lieu].arene, ch = CHAMPIONS[n];
     anims.get(chef.querySelector("canvas")).jouer();
-    chef.classList.remove("nouveau"); try { localStorage.setItem("pkm_chef_vu_" + n, "1"); } catch (e) {}
+    chef.classList.remove("nouveau"); try { localStorage.setItem(`pkm_chef_vu_${R.partie}_${n}`, "1"); } catch (e) {}
     el.querySelectorAll(".bulle-chef").forEach(b => b.remove());
     // la bulle reste dans la carte : centrée sur le champion sans déborder, en dessous de lui s'il est tout en haut
     const x = parseFloat(chef.style.left), y = parseFloat(chef.style.top);

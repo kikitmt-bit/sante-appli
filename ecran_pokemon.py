@@ -67,6 +67,6 @@ def afficher(lire, aujourd):
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance",
-                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force")},
+                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie")},
     }
     components.html(UI.read_text(encoding="utf-8").replace("__DONNEES__", _js(donnees)), height=900)
