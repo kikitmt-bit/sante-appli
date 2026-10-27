@@ -19,15 +19,26 @@ Régions suivantes : Professor Elm à New Bark Town (Johto), Professor Birch à 
 
 ## Arènes (scène du badge) — `arene-1.webp` … `arene-9.webp` (9 = la Ligue)
 
+**Joindre l'image du labo** (`labo-chen.webp`) au message : c'est le modèle de style (version renforcée du 30/10).
+
 ```
-Same art style as our Kanto map and Professor Oak's lab: 16-bit pixel art like Pokémon FireRed/LeafGreen, same palette and pixel size.
+The attached image is Professor Oak's lab that you made for this series. Create the next scene of the SAME series: it must look like it comes from the exact same game as this image.
 
-Draw the inside of a Pokémon Gym, seen from the front with a slight top-down angle like in the games: [GYM]. In the center of the image, the Gym Leader stands facing us, proud and confident: [LEADER].
+Copy the attached image EXACTLY for everything except the content: same 16-bit pixel art style as Pokémon FireRed/LeafGreen, same pixel size, same dark outlines, same soft shading, same color saturation, same camera (seen from the front with a slight top-down angle), same perspective of walls and floor, same canvas size and portrait 9:16 format. The character must have the same size, proportions and level of detail as Professor Oak in the attached image.
 
-Composition for a phone screen: portrait format 9:16. Leader in the middle of the image. Keep the bottom quarter of the image simple (plain floor) because a dialogue box will be placed there.
+Scene: the inside of the [GYM].
 
-Strict rules: no text, no letters, no UI, no dialogue box, no frame, no other characters, no badge.
+Character: [LEADER], the Gym Leader, standing in the middle of the image at the same place and height as Professor Oak, facing us, full body visible, proud and confident.
+
+Composition: the leader in the center, nothing in front of him/her (no table). The bottom 40% of the image must be plain floor, with nothing on it, because a dialogue box will be placed there.
+
+Strict rules: no text, no letters, no numbers, no UI, no dialogue box, no frame or border, no other characters, no Pokémon, no badge, no logo.
 ```
+
+Version complète envoyée pour Pierre : [GYM] = « Pewter City Pokémon Gym. A rocky brown floor, big grey boulders placed on
+the left and right sides, rough brown stone walls at the back, a few small rocks and pebbles, warm lighting » ;
+[LEADER] = « Brock … arms crossed. Tanned skin, spiky brown hair, eyes always closed (drawn as thin lines), orange
+shirt under a green vest, brown trousers ».
 
 | # | [GYM] | [LEADER] |
 |---|---|---|
