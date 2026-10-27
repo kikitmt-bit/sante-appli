@@ -799,7 +799,8 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 // Le laboratoire : image pixel art générée par Kiki avec ChatGPT (même style que la carte, dossier scenes/), position des
 // 3 Poké Balls dessinées sur la table (pixels de l'image). Plus tard : orme (Johto), seko (Hoenn)…
 const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen.webp", largeur: 941, hauteur: 1672,
-  balls: [[362, 785], [470, 785], [575, 785]], rayon: 36, starters: [1, 4, 7]}};
+  balls: [[362, 785], [470, 785], [575, 785]], rayon: 36, table: [290, 785], starters: [1, 4, 7]}};
+// table : un endroit de la table sans ball, à la même hauteur (pour cacher la ball dessinée quand elle saute)
 const STYLE_INTRO = `
 #pkm-intro{position:fixed;inset:0;z-index:999999;background:#C2965F;overflow:hidden;touch-action:manipulation;
   user-select:none;-webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace}
@@ -898,12 +899,17 @@ function intro(c, p, rejouer = false) {
     v.querySelectorAll(".zone").forEach(z => z.onclick = null);
     v.querySelectorAll(".halo").forEach(h => h.classList.toggle("loin", +h.dataset.i !== i));
     SONS.clic(); vibre([15, 40, 15]);
-    // la ball choisie tremble : c'est le morceau de l'image où elle est dessinée qui bouge
-    const [x, y] = p.balls[i], r = p.rayon, b = P.createElement("div"); b.className = "ballc bouge";
-    b.style.cssText = `left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;width:${r * 2 / p.largeur * 100}%;aspect-ratio:1;
-      background-image:url('${D.scenes}${p.image}');background-size:${p.largeur / (2 * r) * 100}% ${p.hauteur / (2 * r) * 100}%;
-      background-position:${(x - r) / (p.largeur - 2 * r) * 100}% ${(y - r) / (p.hauteur - 2 * r) * 100}%`;
-    labo.appendChild(b);
+    // la ball choisie saute : c'est le morceau de l'image où elle est dessinée qui bouge, et un morceau de table vide
+    // la remplace dessous
+    const [x, y] = p.balls[i], r = p.rayon, morceau = (cx, cy, rr) => `width:${rr * 2 / p.largeur * 100}%;aspect-ratio:1;
+      background-image:url('${D.scenes}${p.image}');background-size:${p.largeur / (2 * rr) * 100}% ${p.hauteur / (2 * rr) * 100}%;
+      background-position:${(cx - rr) / (p.largeur - 2 * rr) * 100}% ${(cy - rr) / (p.hauteur - 2 * rr) * 100}%;`;
+    const trou = P.createElement("div"), b = P.createElement("div");
+    trou.style.cssText = `position:absolute;transform:translate(-50%,-50%);left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
+      image-rendering:pixelated;${morceau(p.table[0], p.table[1], r + 2)}`;
+    b.className = "ballc bouge";
+    b.style.cssText = `left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;${morceau(x, y, r)}`;
+    labo.append(trou, b);
     choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
     await dire("Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !");
     fin(true);
