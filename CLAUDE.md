@@ -66,7 +66,8 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   répliques (`CHAMPIONS` : nom, sprite, 2 répliques ; 9 = Régis, Ligue), le badge (PokeAPI `badges/N.png`, trophée 🏆
   pour la Ligue) tombe et tourne avec des rayons, « Touche le badge », il vole dans l'**étui à badges** (8 cases),
   éclats + petit air (`SON_BADGE`), puis Hyper Ball / Master Ball (flash → `ouvrir(c, rejouer, true)`). Lancée par
-  `lancer` pour `badgeN` / `ligue` pas encore ouverts ; rejouée en touchant un badge gagné dans la boîte à badges.
+  `lancer` pour `badgeN` / `ligue` pas encore ouverts ; rejouée en touchant un badge gagné dans la boîte à badges. Tant qu'il n'y a aucun badge : bouton « 🎬 Aperçu de la
+  scène du badge » (Pierre, sans récompense) dans « Comment ça marche ? ».
   Boîte de dialogue commune (`STYLE_DIAL`, `dialogue(v)`, `preparerScene`) au labo et aux arènes.
   **Sacha sur la carte** (30/10, demande de Kiki : Sacha plutôt que Red, compagnon avec lui) : `heros()` en HTML
   par-dessus le SVG (`POSE` calculé dans `svgKanto`) : il marche dans le sens du chemin (`direction`, 4 images de pas

@@ -1549,7 +1549,10 @@ function dessinerRegles() {
     <li>🏅 <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
       6 jours sur 7). Tes points continuent de compter pendant ce temps. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
-    ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">🎬 Revoir l'accueil du Professeur Chen</button></li>` : ""}`;
+    ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">🎬 Revoir l'accueil du Professeur Chen</button></li>` : ""}
+    ${V.badges[1] ? "" : `<li><button class="filtre apercu">🎬 Aperçu de la scène du badge (sans récompense)</button></li>`}`;
+  const ap = document.querySelector("#regles .apercu");
+  if (ap) ap.onclick = () => sceneBadge(1, null, true);
   const r = document.querySelector("#regles .revoir");
   if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
 }
