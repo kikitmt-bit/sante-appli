@@ -70,7 +70,10 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     arrêt jusqu'au défi (7 derniers jours depuis l'arrivée) ou son **plan B** (6 jours sur 7 avec l'objectif : jamais
     bloquant) ; les points continuent de s'accumuler et on repart d'un coup. Badge = Hyper Ball `badgeN` du type du
     champion, espèce nouvelle ; Ligue = Master Ball `ligue` (légendaire). Rejoué chaque fois, rien d'enregistré ;
-    chaque capture a son `lieu`. Écran : carte SVG dessinée (pas de carte dans PokeAPI), chemin parcouru, toucher un
+    chaque capture a son `lieu`. Écran : **carte = image pixel art** `cartes/kanto.webp` (générée par Kiki avec ChatGPT,
+    même style et même prompt pour toutes les régions : `cartes/PROMPT.md` ; servie par raw.githubusercontent.com de
+    ce dépôt ; lieux en pixels de l'image dans `kanto.LIEUX`, ramenés à 370 de large dans l'écran ; pas une carte
+    fidèle de Kanto, choix assumé : jolie et cohérente) avec par-dessus en SVG : chemin parcouru, toucher un
     lieu = ses Pokémon + quand on repart, ★ sur un lieu complété, défi en cours, boîte à badges. Pokémon **rares** ⭐
     (`kanto.RARES`, poids ÷ 3). **Compagnon** (GIF animé sur la carte) : bouton « 🐾 Il m'accompagne » de la fiche,
     gardé dans le localStorage (`pkm_compagnon` = « num:shiny », téléphone seul, purement décoratif), sinon la dernière

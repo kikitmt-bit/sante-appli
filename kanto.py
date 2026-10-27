@@ -25,50 +25,53 @@ def _arene(champion, type_, badge, image, defi, cible, texte, plan_b=PLAN_B):
             "texte": texte, "b": dict(zip(("defi", "cible", "texte"), plan_b)) if plan_b else None}
 
 
-# (nom, points depuis l'étape d'avant, x, y sur la carte (0-370 × 0-300), Pokémon du lieu, arène ou None)
+# (nom, points depuis l'étape d'avant, x, y en pixels sur l'image de la carte (CARTE), Pokémon du lieu, arène ou None)
 # Les badges : images n° 1 à 8 du dépôt PokeAPI/sprites (sprites/badges/N.png), dans l'ordre des jeux.
 LIEUX = [
-    ("Bourg Palette", 0, 95, 240, "Bulbizarre, Salamèche, Carapuce", None),
-    ("Route 1", 150, 95, 205, "Roucool, Rattata", None),
-    ("Jadielle", 250, 95, 168, "Nidoran♀, Nidoran♂, Piafabec, Férosinge", None),
-    ("Forêt de Jade", 300, 95, 118, "Chenipan, Chrysacier, Papilusion, Aspicot, Coconfort, Dardargnan, Pikachu", None),
-    ("Argenta", 400, 92, 72, "Racaillou, Onix",
+    ("Bourg Palette", 0, 340, 722, "Bulbizarre, Salamèche, Carapuce", None),
+    ("Route 1", 150, 262, 640, "Roucool, Rattata", None),
+    ("Jadielle", 250, 190, 556, "Nidoran♀, Nidoran♂, Piafabec, Férosinge", None),
+    ("Forêt de Jade", 300, 222, 380, "Chenipan, Chrysacier, Papilusion, Aspicot, Coconfort, Dardargnan, Pikachu", None),
+    ("Argenta", 400, 195, 200, "Racaillou, Onix",
      _arene("Pierre", "Roche", "Badge Roche", 1, "etages", 35, "35 étages en 7 jours")),
-    ("Route 3", 400, 130, 60, "Rondoudou, Abo, Sabelette, Herbizarre", None),
-    ("Mont Sélénite", 450, 170, 42, "Nosferapti, Paras, Mélofée, Mélodelfe, Grodoudou, Amonita, Kabuto", None),
-    ("Azuria", 450, 240, 55, "Chétiflor, Mystherbe, Abra, Psykokwak, Ptitard, Carabaffe",
+    ("Route 3", 400, 508, 246, "Rondoudou, Abo, Sabelette, Herbizarre", None),
+    ("Mont Sélénite", 450, 600, 140, "Nosferapti, Paras, Mélofée, Mélodelfe, Grodoudou, Amonita, Kabuto", None),
+    ("Azuria", 450, 1168, 58, "Chétiflor, Mystherbe, Abra, Psykokwak, Ptitard, Carabaffe",
      _arene("Ondine", "Eau", "Badge Cascade", 2, "eau", 45, "45 min de rameur ou de natation en 7 jours")),
-    ("Route 5 et Cave Taupiqueur", 400, 212, 108, "Miaouss, Taupiqueur, Triopikeur, Mimitoss, Reptincel", None),
-    ("Carmin-sur-Mer", 450, 232, 208, "Magicarpe, Tentacool, Kokiyas, Krabby, Poissirène",
+    ("Route 5 et Cave Taupiqueur", 400, 1006, 250, "Miaouss, Taupiqueur, Triopikeur, Mimitoss, Reptincel", None),
+    ("Carmin-sur-Mer", 450, 990, 632, "Magicarpe, Tentacool, Kokiyas, Krabby, Poissirène",
      _arene("Major Bob", "Électrik", "Badge Foudre", 3, "zone20", 3, "3 jours avec 20 min en zone")),
-    ("Grotte et Centrale", 500, 305, 82, "Voltorbe, Électrode, Magnéti, Magnéton, Élektek, Machoc, Raichu", None),
-    ("Lavanville", 400, 322, 150, "Fantominus, Spectrum, Osselait, Ossatueur", None),
-    ("Céladopole", 450, 165, 150,
+    ("Grotte et Centrale", 500, 1298, 210, "Voltorbe, Électrode, Magnéti, Magnéton, Élektek, Machoc, Raichu", None),
+    ("Lavanville", 400, 1360, 236, "Fantominus, Spectrum, Osselait, Ossatueur", None),
+    ("Céladopole", 450, 720, 428,
      "Évoli, Aquali, Voltali, Pyroli, Porygon, Ortide, Rafflesia, Boustiflor, Empiflor, Saquedeneu",
      _arene("Erika", "Plante", "Badge Prisme", 4, "pas", 45000, "45 000 pas en 7 jours")),
-    ("Piste cyclable", 500, 128, 205, "Doduo, Dodrio, Ronflex, Rattatac, Rapasdepic, Canarticho, Roucoups", None),
-    ("Parmanie et Parc Safari", 500, 192, 248,
+    ("Piste cyclable", 500, 546, 640, "Doduo, Dodrio, Ronflex, Rattatac, Rapasdepic, Canarticho, Roucoups", None),
+    ("Parmanie et Parc Safari", 500, 724, 822,
      "Rhinocorne, Kangourex, Tauros, Leveinard, Insécateur, Scarabrute, Minidraco, Draco, Nidorina, Nidorino, "
      "Noeunoeuf, Noadkoko, Parasect, Aéromite, Excelangue",
      _arene("Koga", "Poison", "Badge Âme", 5, "objectif", 5, "5 jours sur 7 avec l'objectif du jour", None)),
-    ("Safrania", 600, 232, 150, "Kicklee, Tygnon, Lippoutou, M. Mime, Soporifik, Hypnomade, Lokhlass, Kadabra",
+    ("Safrania", 600, 990, 428, "Kicklee, Tygnon, Lippoutou, M. Mime, Soporifik, Hypnomade, Lokhlass, Kadabra",
      _arene("Morgane", "Psy", "Badge Marais", 6, "force", 2, "2 séances de muscu (pompes, tractions, rameur…)")),
-    ("Îles Écume", 600, 150, 276,
+    ("Îles Écume", 600, 532, 992,
      "Otaria, Lamantine, Stari, Staross, Hypotrempe, Hypocéan, Poissoroy, Crustabri, Tentacruel, Akwakwak, Têtarte, "
      "Krabboss, Ramoloss", None),
-    ("Cramois'Île", 500, 70, 278,
+    ("Cramois'Île", 500, 186, 940,
      "Ponyta, Galopa, Goupix, Feunard, Caninos, Arcanin, Magmar, Tadmorv, Grotadmorv, Smogo, Smogogo, Métamorph, "
      "Ptéra, Amonistar, Kabutops",
      _arene("Auguste", "Feu", "Badge Volcan", 7, "zone", 120, "120 min en zone en 7 jours")),
-    ("Jadielle (retour)", 700, 95, 168, "Rhinoféros, Nidoqueen, Nidoking, Sablaireau, Persian, Colossinge",
+    ("Jadielle (retour)", 700, 190, 556, "Rhinoféros, Nidoqueen, Nidoking, Sablaireau, Persian, Colossinge",
      _arene("Giovanni", "Sol", "Badge Terre", 8, "pas", 60000, "60 000 pas en 7 jours")),
-    ("Route Victoire", 500, 45, 112, "Machopeur, Mackogneur, Gravalanch, Grolem, Nosferalto, Arbok, Tartard, Alakazam",
+    ("Route Victoire", 500, 375, 395, "Machopeur, Mackogneur, Gravalanch, Grolem, Nosferalto, Arbok, Tartard, Alakazam",
      None),
-    ("Plateau Indigo", 500, 42, 50,
+    ("Plateau Indigo", 500, 105, 104,
      "Dracolosse, Léviator, Ectoplasma, Flagadoss, Florizarre, Dracaufeu, Tortank, Roucarnage",
      _arene("Conseil 4", None, "Ligue Pokémon", None, "super", 4, "4 jours avec l'objectif double (Super Ball) en 7 jours",
             ("objectif", 7, "7 jours sur 7 avec ton objectif du jour"))),
 ]
+# La carte : pixel art 16 bits généré par Kiki avec ChatGPT (28/10), même style pour toutes les régions (prompt dans
+# CLAUDE.md) ; servie depuis ce dépôt public (dossier cartes/)
+CARTE = {"image": "cartes/kanto.webp", "largeur": 1448, "hauteur": 1086}
 LIEUX = [{"nom": nom, "x": x, "y": y, "pokemon": _n(pk), "arene": ar, "pas": d} for nom, d, x, y, pk, ar in LIEUX]
 DIST = []  # points cumulés pour atteindre chaque lieu
 for _l in LIEUX:
@@ -163,4 +166,4 @@ class Voyage:
         return {"lieux": [{k: l[k] for k in ("nom", "x", "y", "pokemon", "arene")} | {"dist": d}
                           for l, d in zip(LIEUX, DIST)],
                 "pos": round(self.pos, 1), "ici": i, "badges": {k: str(d) for k, d in self.badges.items()},
-                "defi": defi, "total": DIST[-1], "rares": sorted(RARES)}
+                "defi": defi, "total": DIST[-1], "rares": sorted(RARES), "carte": CARTE}
