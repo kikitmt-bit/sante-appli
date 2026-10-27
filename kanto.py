@@ -14,7 +14,7 @@ _NUM = {p["nom"]: n for n, p in POKEMON.items()}
 
 
 def _n(noms):
-    return [_NUM[x] for x in noms.split(", ")]
+    return [_NUM[x] for x in noms.split(", ")] if noms else []
 
 
 PLAN_B = ("objectif", 6, "6 jours sur 7 avec ton objectif du jour")
@@ -28,7 +28,7 @@ def _arene(champion, type_, badge, image, defi, cible, texte, plan_b=PLAN_B):
 # (nom, points depuis l'étape d'avant, x, y en pixels sur l'image de la carte (CARTE), Pokémon du lieu, arène ou None)
 # Les badges : images n° 1 à 8 du dépôt PokeAPI/sprites (sprites/badges/N.png), dans l'ordre des jeux.
 LIEUX = [
-    ("Bourg Palette", 0, 335, 725, "Bulbizarre, Salamèche, Carapuce", None),
+    ("Bourg Palette", 0, 335, 725, "", None),  # pas de sauvage : les starters sont plus loin (comme dans les jeux)
     ("Route 1", 150, 270, 620, "Roucool, Rattata", None),
     ("Jadielle", 250, 200, 578, "Nidoran♀, Nidoran♂, Piafabec, Férosinge", None),
     ("Forêt de Jade", 300, 200, 400, "Chenipan, Chrysacier, Papilusion, Aspicot, Coconfort, Dardargnan, Pikachu", None),
@@ -36,10 +36,10 @@ LIEUX = [
      _arene("Pierre", "Roche", "Badge Roche", 1, "etages", 35, "35 étages en 7 jours")),
     ("Route 3", 400, 500, 272, "Rondoudou, Abo, Sabelette, Herbizarre", None),
     ("Mont Sélénite", 450, 605, 160, "Nosferapti, Paras, Mélofée, Mélodelfe, Grodoudou, Amonita, Kabuto", None),
-    ("Azuria", 450, 1120, 78, "Chétiflor, Mystherbe, Abra, Psykokwak, Ptitard, Carabaffe",
+    ("Azuria", 450, 1120, 78, "Chétiflor, Mystherbe, Abra, Psykokwak, Ptitard, Carabaffe, Bulbizarre, Salamèche",
      _arene("Ondine", "Eau", "Badge Cascade", 2, "eau", 45, "45 min de rameur ou de natation en 7 jours")),
     ("Route 5 et Cave Taupiqueur", 400, 1010, 300, "Miaouss, Taupiqueur, Triopikeur, Mimitoss, Reptincel", None),
-    ("Carmin-sur-Mer", 450, 1000, 628, "Magicarpe, Tentacool, Kokiyas, Krabby, Poissirène",
+    ("Carmin-sur-Mer", 450, 1000, 628, "Magicarpe, Tentacool, Kokiyas, Krabby, Poissirène, Carapuce",
      _arene("Major Bob", "Électrik", "Badge Foudre", 3, "zone20", 3, "3 jours avec 20 min en zone")),
     ("Grotte et Centrale", 500, 1300, 222, "Voltorbe, Électrode, Magnéti, Magnéton, Élektek, Machoc, Raichu", None),
     ("Lavanville", 400, 1350, 250, "Fantominus, Spectrum, Osselait, Ossatueur", None),
@@ -105,7 +105,7 @@ assert not _hors, f"Pokémon sans lieu : {_hors}"
 # Les Pokémon rares (⭐) : 3 fois moins de chances que les autres Pokémon de leur lieu
 RARES = set(_n("Pikachu, Évoli, Porygon, Minidraco, Draco, Dracolosse, Lokhlass, Ronflex, Insécateur, Scarabrute, "
                "Leveinard, Kangourex, Tauros, Métamorph, Ptéra, Amonita, Kabuto, Lippoutou, M. Mime, Élektek, Magmar, "
-               "Kicklee, Tygnon, Excelangue, Onix, Saquedeneu, Noadkoko, Léviator"))
+               "Kicklee, Tygnon, Excelangue, Onix, Saquedeneu, Noadkoko, Léviator, Bulbizarre, Salamèche, Carapuce"))
 
 DEFIS = {  # défi -> (valeur d'une journée, unité)
     "etages": (lambda j: j["etages"], "étages"),
