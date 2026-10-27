@@ -46,7 +46,11 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   starters au hasard, `pokemon.STARTERS`, ou un tirage normal si on les a déjà ; pas de choix à enregistrer).
   Son ouverture passe par une **scène d'accueil** (`lancer` → `intro` : carte floutée, « Bienvenue à Kanto ! », bulle du
   professeur, 3 Poké Balls sur une table, on en touche une, puis l'ouverture habituelle) ; prévu pour chaque région
-  (`PROFESSEURS` : chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur cadeau et leurs 3 starters).
+  (`PROFESSEURS` : chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur cadeau et leurs 3 starters). Bouton « 🎬 Revoir l'accueil »
+  dans « Comment ça marche ? » (rejoue sans rien changer).
+  **Montre : rien à mettre à jour pendant que le jeu évolue (choix de Kiki, 29/10)** : on la mettra à jour une seule
+  fois, quand le jeu sera fini et testé (à reprendre alors : scène d'accueil du professeur, voyage et carte, compagnon,
+  vols et surf, Pokédex normal + shiny, Master Ball 25/30). D'ici là, elle montre le cadeau comme une Poké Ball normale.
   `pokedex.py` noms/types des 151, `pokemon.py` règles (`REGLAGES`, `BALLS`, `SOURCES`, `SPORTS`), `kanto.py` le
   voyage, `ecran_pokemon.py` prépare les données, `pokemon_ui.html` = tout l'onglet (un seul composant). Audit du 27/10
   (experts sport / mode de vie / jeu / ergonomie) : prochaines étapes = Johto (Gen 2, avant que Kanto soit fini, sinon

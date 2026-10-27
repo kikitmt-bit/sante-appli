@@ -835,7 +835,7 @@ function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur passe d'
   const p = PROFESSEURS[c.id.split("#")[1]];
   if (p && !estOuverte(c)) intro(c, p); else ouvrir(c);
 }
-function intro(c, p) {
+function intro(c, p, rejouer = false) {
   installerStyle("pkm2-intro-style", STYLE_INTRO);
   audio();
   const v = P.createElement("div"); v.id = "pkm-intro";
@@ -849,7 +849,7 @@ function intro(c, p) {
   P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
   const balls = [...v.querySelectorAll(".b")];
   balls.forEach((b, i) => setTimeout(() => { b.classList.add("pose"); SONS.rebond(); vibre(15); }, 2000 + i * 220));
-  const fin = (suite) => { v.classList.add("fin"); setTimeout(() => { v.remove(); if (suite) ouvrir(c); }, 450); };
+  const fin = (suite) => { v.classList.add("fin"); setTimeout(() => { v.remove(); if (suite) ouvrir(c, rejouer); }, 450); };
   v.querySelector(".passer").onclick = () => fin(false);
   let pris = false;
   balls.forEach(b => b.onclick = () => {
@@ -1240,7 +1240,10 @@ function dessinerRegles() {
     <li>🐾 <b>Compagnon</b> : il marche avec toi sur la carte. Choisis-le dans la fiche d'un Pokémon (sinon, c'est ta dernière capture).</li>
     <li>🏅 <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
       6 jours sur 7). Tes points continuent de compter pendant ce temps. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
-    <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>`;
+    <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
+    ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">🎬 Revoir l'accueil du Professeur Chen</button></li>` : ""}`;
+  const r = document.querySelector("#regles .revoir");
+  if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
 }
 
 function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerDernieres(); dessinerDex(); }
