@@ -82,8 +82,21 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-kanto{width:100%;display:block;border-radius:14px 14px 0 0;background:#2B6E9E;touch-action:manipulation}
 .carte-kanto .chemin-fait{stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:pk-trace 1.8s .3s cubic-bezier(.3,.7,.2,1) forwards}
 @keyframes pk-trace{to{stroke-dashoffset:0}}
-.carte-kanto .moi{animation:pk-saute .9s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
-@keyframes pk-saute{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.carte-wrap{position:relative}
+.carte-wrap .heros,.carte-wrap .compa-carte,.ombre-heros{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
+.carte-wrap .heros{display:flex;flex-direction:column;align-items:center;width:20%}
+.carte-wrap .heros .sacha{width:23%!important}
+.carte-wrap .heros:not(.porte) .sacha[style*="red_bike"],.carte-wrap .heros:not(.porte) .sacha[style*="red_surf"]{width:46%!important}
+.sacha{background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
+.sacha.miroir{transform:scaleX(-1)}
+.carte-wrap .heros.porte{animation:pk-vole 1.6s ease-in-out infinite}
+.carte-wrap .heros.porte img{width:45%;margin-top:-30%;image-rendering:pixelated;order:2}
+.carte-wrap .heros.porte .sacha{order:1;position:relative;z-index:1;width:20%!important}
+.carte-wrap .heros.porte .bateau{font-size:22px;line-height:1;margin-top:-30%;order:2}
+@keyframes pk-vole{50%{transform:translate(-50%,-108%)}}
+.carte-wrap .compa-carte{width:8%;image-rendering:pixelated;margin-top:1%;animation:pk-saute .9s ease-in-out infinite}
+@keyframes pk-saute{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-112%)}}
+.ombre-heros{width:4.5%;height:1.6%;border-radius:50%;background:rgba(0,0,0,.35);transform:translate(-50%,-50%)}
 .carte-kanto .vise{animation:pk-vise 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes pk-vise{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
 .carte-kanto .lieu{cursor:pointer}
@@ -109,6 +122,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .arene .q .reste{color:#FFCB05;margin-top:4px}
 .arene .ou-b{font-size:10.5px;color:#9AA7C2;text-transform:uppercase;letter-spacing:.6px;margin-top:6px}
 .boite-badges{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-top:10px}
+.boite-badges .oui{cursor:pointer}
 .boite-badges div{aspect-ratio:1;border-radius:10px;background:rgba(13,19,34,.6);display:flex;align-items:center;justify-content:center;
   position:relative;font-size:18px}
 .boite-badges img{width:78%;height:78%;object-fit:contain;image-rendering:auto;filter:grayscale(1) brightness(.35)}
@@ -821,40 +835,75 @@ const STYLE_INTRO = `
 #pkm-intro .labo{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
 @keyframes pki-tremble{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-12deg)}
   75%{transform:translate(-50%,-50%) rotate(12deg)}}
-#pkm-intro .dial{position:absolute;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));max-width:470px;margin:0 auto;
+`;
+// La boîte de dialogue façon Game Boy Advance (labo, arènes…) et le bouton ✕ des scènes
+const STYLE_DIAL = `
+.pkm-dial{position:absolute;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));max-width:470px;margin:0 auto;z-index:20;
+  font-family:'Pixelify Sans',Outfit,monospace;
   background:#F8F8F8;border:4px solid #50607E;border-radius:10px;box-shadow:0 0 0 3px #F8F8F8,0 0 0 6px #283048,0 8px 22px rgba(0,0,0,.45);
   padding:14px 18px 22px;font-size:19px;line-height:1.38;color:#383838;text-wrap:pretty;text-shadow:2px 2px 0 #D2D2CA;min-height:104px;
   opacity:0;transform:translateY(16px);transition:opacity .35s,transform .35s}
-#pkm-intro .dial.vu{opacity:1;transform:none}
-#pkm-intro .dial .qui{font-weight:700;color:#C03028}
-#pkm-intro .dial .suite{position:absolute;right:14px;bottom:8px;width:0;height:0;border-left:7px solid transparent;
+.pkm-dial.vu{opacity:1;transform:none}
+.pkm-dial .qui{font-weight:700;color:#C03028}
+.pkm-dial .qui:empty{display:none}
+.pkm-dial .suite{position:absolute;right:14px;bottom:8px;width:0;height:0;border-left:7px solid transparent;
   border-right:7px solid transparent;border-top:10px solid #E04040;opacity:0;animation:pki-saute .7s ease-in-out infinite}
-#pkm-intro .dial.attend .suite{opacity:1}
+.pkm-dial.attend .suite{opacity:1}
 @keyframes pki-saute{50%{transform:translateY(3px)}}
-#pkm-intro .passer{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;width:38px;height:38px;border-radius:50%;
+.pkm-passer{position:absolute;top:max(12px,env(safe-area-inset-top));right:12px;width:38px;height:38px;border-radius:50%;z-index:30;
   border:0;background:rgba(0,0,0,.35);color:#fff;font-size:17px;cursor:pointer;font-family:Outfit,sans-serif}
 `;
-function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur passe d'abord par la scène du laboratoire
-  const p = PROFESSEURS[c.id.split("#")[1]];
-  if (p && !estOuverte(c)) intro(c, p); else ouvrir(c);
-}
-function intro(c, p, rejouer = false) {
-  installerStyle("pkm2-intro-style", STYLE_INTRO);
-  if (!P.getElementById("pkm-police-pixel")) {  // la police « pixel » des boîtes de dialogue
+function preparerScene() {  // styles communs + police « pixel » des boîtes de dialogue
+  installerStyle("pkm2-dial-style", STYLE_DIAL);
+  if (!P.getElementById("pkm-police-pixel")) {
     const l = P.createElement("link"); l.id = "pkm-police-pixel"; l.rel = "stylesheet";
     l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap"; P.head.appendChild(l);
   }
   audio();
+}
+// Une boîte de dialogue dans la scène v : dire(texte, qui) écrit le texte lettre par lettre (petit « bip »), toucher =
+// tout afficher, puis passer à la suite ; cacher() la range. Les touchers sur ignorer (sélecteur) ne la font pas avancer.
+function dialogue(v, ignorer = ".pkm-passer") {
+  const dial = P.createElement("div"); dial.className = "pkm-dial";
+  dial.innerHTML = `<span class="qui"></span> <span class="txt"></span><i class="suite"></i>`;
+  v.appendChild(dial);
+  const qui = dial.querySelector(".qui"), txt = dial.querySelector(".txt");
+  let tape = null, attendre = null;
+  const dire = (html, nom = "", attendSuite = true) => new Promise(ok => {
+    clearInterval(tape); dial.classList.add("vu"); dial.classList.remove("attend");
+    qui.textContent = nom ? nom.toUpperCase() + " :" : "";
+    // espace insécable avant ! ? : ; et après « (jamais une ponctuation seule au début d'une ligne)
+    const plein = html.replace(/ ([!?:;»])/g, "\u00A0$1").replace(/« /g, "«\u00A0"), brut = plein.replace(/<[^>]+>/g, "");
+    let n = 0; txt.textContent = "";
+    const finir = () => { clearInterval(tape); tape = null; txt.innerHTML = plein;
+      if (attendSuite) { dial.classList.add("attend"); attendre = () => { attendre = null; ok(); }; } else { attendre = null; ok(); } };
+    tape = setInterval(() => { n += 1; txt.textContent = brut.slice(0, n);
+      if (n % 3 === 0) ton(1250, 0, .028, {type: "square", vol: .018}); if (n >= brut.length) finir(); }, 26);
+    attendre = () => finir();
+  });
+  v.addEventListener("pointerdown", e => { if (e.target.closest(ignorer)) return; if (attendre) attendre(); });
+  return {dire, cacher: () => { dial.classList.remove("vu"); attendre = null; }};
+}
+function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur et les badges passent d'abord par leur scène
+  const cle = c.id.split("#")[1], p = PROFESSEURS[cle];
+  if (estOuverte(c)) return ouvrir(c);
+  if (p) return intro(c, p);
+  if (/^badge\d$/.test(cle)) return sceneBadge(+cle.slice(5), c);
+  if (cle === "ligue") return sceneBadge(9, c);
+  ouvrir(c);
+}
+function intro(c, p, rejouer = false) {
+  installerStyle("pkm2-intro-style", STYLE_INTRO); preparerScene();
   const noms = p.starters.map(n => PAR_NUM[n].nom);
   const v = P.createElement("div"); v.id = "pkm-intro";
   v.innerHTML = `<div class="labo"><img src="${D.scenes}${p.image}" alt="">
       ${p.balls.map(([x, y], i) => `<div class="halo" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
         width:${p.rayon * 2 / p.largeur * 100}%;aspect-ratio:1"></div>
         <div class="zone" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;width:${p.rayon * 3 / p.largeur * 100}%;aspect-ratio:1"></div>`).join("")}
-    </div><div class="noir"></div><div class="blanc"></div>
-    <div class="dial"><span class="qui">${p.prof.toUpperCase()} :</span> <span class="txt"></span><i class="suite"></i></div><button class="passer">✕</button>`;
+    </div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
   P.body.appendChild(v);
-  const labo = v.querySelector(".labo"), dial = v.querySelector(".dial"), txt = v.querySelector(".txt");
+  const labo = v.querySelector(".labo"), {dire: parler} = dialogue(v, ".pkm-passer, .zone");
+  const dire = (html, attendSuite = true) => parler(html, p.prof, attendSuite);
   const taille = () => { const w = Math.min(PW.innerWidth, PW.innerHeight * p.largeur / p.hauteur);  // l'image en entier, en haut
     labo.style.width = w + "px"; labo.style.height = w * p.hauteur / p.largeur + "px"; };
   taille(); PW.addEventListener("resize", taille);
@@ -869,22 +918,7 @@ function intro(c, p, rejouer = false) {
     SONS.montee(.7);
     setTimeout(() => { v.querySelector(".blanc").style.opacity = 1; }, 380);
     setTimeout(() => { ouvrir(c, rejouer, true); v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 850); };
-  v.querySelector(".passer").onclick = () => fin(false);
-
-  // Une réplique : le texte s'écrit lettre par lettre (petit « bip »), toucher = tout afficher, puis passer à la suite
-  let tape = null, attendre = null;
-  const dire = (html, attendSuite = true) => new Promise(ok => {
-    clearInterval(tape); dial.classList.add("vu"); dial.classList.remove("attend");
-    // espace insécable avant ! ? : ; et après « (jamais une ponctuation seule au début d'une ligne)
-    const plein = html.replace(/ ([!?:;»])/g, "\u00A0$1").replace(/« /g, "«\u00A0"), brut = plein.replace(/<[^>]+>/g, "");
-    let n = 0; txt.textContent = "";
-    const finir = () => { clearInterval(tape); tape = null; txt.innerHTML = plein;
-      if (attendSuite) { dial.classList.add("attend"); attendre = () => { attendre = null; ok(); }; } else ok(); };
-    tape = setInterval(() => { n += 1; txt.textContent = brut.slice(0, n);
-      if (n % 3 === 0) ton(1250, 0, .028, {type: "square", vol: .018}); if (n >= brut.length) finir(); }, 26);
-    attendre = () => finir();
-  });
-  v.addEventListener("pointerdown", e => { if (e.target.closest(".passer, .zone")) return; if (attendre) attendre(); });
+  v.querySelector(".pkm-passer").onclick = () => fin(false);
 
   (async () => {
     await new Promise(r => setTimeout(r, 1100));
@@ -912,6 +946,175 @@ function intro(c, p, rejouer = false) {
     labo.append(trou, b);
     choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
     await dire("Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !");
+    fin(true);
+  })().catch(() => {});
+}
+
+// ================================================================================================
+// LA SCÈNE DU BADGE : entrée façon combat, le champion (animé) parle, le badge tombe, on le touche, il rejoint l'étui,
+// puis la Hyper Ball du badge (ou la Master Ball de la Ligue) s'ouvre en 3D
+// ================================================================================================
+// Les champions : images animées du jeu PokéRogue (projet public pagefaultgames/pokerogue-assets, version figée)
+const ROGUE = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/trainer/";
+const CHAMPIONS = {
+  1: {nom: "Pierre", sprite: "brock", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
+      "Une semaine entière d'efforts… Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
+  2: {nom: "Ondine", sprite: "misty", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
+      "Hmpf… Tu as plus de souffle que je ne le pensais. Bien joué !"]},
+  3: {nom: "Major Bob", sprite: "lt_surge", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
+      "Wahou ! Tu as une énergie de 100 000 volts, soldat !"]},
+  4: {nom: "Erika", sprite: "erika", lignes: ["Bienvenue… Je suis Erika, la Championne de Céladopole. J'aime les fleurs et les longues promenades.",
+      "Tant de pas… Tu as la patience d'une graine qui devient un grand arbre."]},
+  5: {nom: "Koga", sprite: "koga", lignes: ["Fwahahaha ! Je suis Koga, le Champion de Parmanie. La discipline du ninja n'a aucun secret pour moi !",
+      "Jour après jour, sans faiblir… Tu as l'endurance d'un vrai ninja !"]},
+  6: {nom: "Morgane", sprite: "sabrina", lignes: ["Je suis Morgane, la Championne de Safrania. Je savais que tu viendrais : je l'avais vu…",
+      "Ta force ne vient pas que de tes muscles. Ton esprit est solide."]},
+  7: {nom: "Auguste", sprite: "blaine", lignes: ["Hah ! Je suis Auguste, le Champion brûlant de Cramois'Île !",
+      "Ton cœur brûle d'une flamme ardente ! Quelle endurance !"]},
+  8: {nom: "Giovanni", sprite: "giovanni", lignes: ["Alors c'est toi qui as battu tous les Champions… Je suis Giovanni, le Champion de Jadielle.",
+      "Impressionnant. Une telle persévérance mérite le respect."]},
+  9: {nom: "Régis", sprite: "blue", lignes: ["Te voilà enfin ! Moi, Régis, je suis le Champion de la Ligue Pokémon !",
+      "Quoi ?! Tout ce chemin… Tu es vraiment devenu le plus fort !"]},
+};
+const STYLE_BADGE = `
+#pkm-badge{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#0B0F1C;touch-action:manipulation;user-select:none;
+  -webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace;color:#fff}
+#pkm-badge .fond{position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,var(--c) 0%,color-mix(in srgb,var(--c) 45%,#0B0F1C) 45%,#0B0F1C 100%)}
+#pkm-badge .lignes{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(-28deg,transparent 0 22px,rgba(255,255,255,.5) 22px 26px);
+  animation:pkb-defile 9s linear infinite}
+@keyframes pkb-defile{to{background-position:300px 0}}
+#pkm-badge .rayons{position:absolute;left:50%;top:34%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;opacity:0;transition:opacity .8s;
+  background:repeating-conic-gradient(rgba(255,240,180,.22) 0 7deg,transparent 7deg 20deg);animation:pkb-rayons 18s linear infinite;
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 42%);mask:radial-gradient(circle,#000 0,transparent 42%)}
+#pkm-badge.badge-la .rayons{opacity:1}
+#pkm-badge .bande{position:absolute;left:0;right:0;height:16.7%;background:#000;z-index:25}
+#pkm-badge .bande.g{animation:pkb-gauche .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
+#pkm-badge .bande.d{animation:pkb-droite .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
+@keyframes pkb-rayons{to{transform:rotate(360deg)}}
+@keyframes pkb-gauche{to{transform:translateX(-102%)}}@keyframes pkb-droite{to{transform:translateX(102%)}}
+#pkm-badge .bandeau{position:absolute;left:0;top:max(16px,env(safe-area-inset-top));padding:8px 18px 8px 16px;font-weight:700;font-size:18px;
+  background:linear-gradient(90deg,rgba(0,0,0,.65),rgba(0,0,0,.25));border-radius:0 14px 14px 0;transform:translateX(-105%);
+  transition:transform .5s cubic-bezier(.2,1.2,.4,1);text-shadow:2px 2px 0 rgba(0,0,0,.5);letter-spacing:.5px}
+#pkm-badge .bandeau small{display:block;font-size:12px;font-weight:500;opacity:.8;letter-spacing:0}
+#pkm-badge.entre .bandeau{transform:none}
+#pkm-badge .scene{position:absolute;left:50%;top:13%;width:min(66vw,290px);transform:translateX(-50%)}
+#pkm-badge .estrade{position:absolute;left:8%;right:8%;bottom:-6%;height:17%;border-radius:50%;
+  background:radial-gradient(ellipse at 50% 35%,rgba(255,255,255,.35),rgba(255,255,255,.08) 60%,transparent 72%);
+  box-shadow:0 0 0 3px rgba(255,255,255,.18) inset;opacity:0;transition:opacity .6s .3s}
+#pkm-badge .champion{display:block;width:100%;image-rendering:pixelated;transform:translateX(70vw);opacity:0;
+  transition:transform .75s cubic-bezier(.2,1,.3,1),opacity .4s,filter .6s;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
+#pkm-badge.entre .champion{transform:none;opacity:1}#pkm-badge.entre .estrade{opacity:1}
+#pkm-badge.badge-la .champion{filter:brightness(.55) drop-shadow(0 6px 10px rgba(0,0,0,.45))}
+#pkm-badge .badge{position:absolute;left:50%;top:34%;width:min(46vw,190px);aspect-ratio:1;transform:translate(-50%,-50%) translateY(-75vh);
+  z-index:10;cursor:pointer;transition:transform .9s cubic-bezier(.3,1.5,.5,1)}
+#pkm-badge.badge-la .badge{transform:translate(-50%,-50%)}
+#pkm-badge .badge .tourne{width:100%;height:100%;animation:pkb-tourne 3.2s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
+#pkm-badge .badge img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(255,240,170,.9))}
+#pkm-badge .badge .trophee{font-size:min(36vw,150px);line-height:1;filter:drop-shadow(0 0 18px rgba(255,220,120,.9))}
+@keyframes pkb-tourne{0%,100%{transform:rotateY(0)}50%{transform:rotateY(180deg)}}
+#pkm-badge .badge.vole{transition:transform .85s cubic-bezier(.5,0,.3,1)}
+#pkm-badge .badge.vole .tourne{animation:none}
+#pkm-badge .aide{position:absolute;left:0;right:0;top:calc(34% + min(23vw,95px) + 22px);text-align:center;font-size:17px;font-weight:700;
+  opacity:0;transition:opacity .4s;text-shadow:2px 2px 0 rgba(0,0,0,.6);z-index:10}
+#pkm-badge .aide.vu{opacity:1;animation:pk-clign 1.6s ease-in-out infinite}
+@keyframes pk-clign{50%{opacity:.45}}
+#pkm-badge .etui{position:absolute;left:50%;bottom:calc(190px + env(safe-area-inset-bottom));width:min(92vw,420px);transform:translate(-50%,calc(100% + 260px));
+  transition:transform .5s cubic-bezier(.2,1.2,.4,1);background:linear-gradient(180deg,#B3392F,#7E1F1A);border-radius:14px;padding:10px 10px 12px;
+  box-shadow:0 0 0 3px #4A0F0C,0 10px 24px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.25);z-index:9}
+#pkm-badge .etui.vu{transform:translate(-50%,0)}
+#pkm-badge .etui .titre{font-size:12px;font-weight:700;text-align:center;margin-bottom:7px;color:#FFE9C7;letter-spacing:1px}
+#pkm-badge .etui .cases{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
+#pkm-badge .etui .case{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 40%,#3A0D0A,#250705);
+  box-shadow:inset 0 2px 4px rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;position:relative}
+#pkm-badge .etui .case img{width:84%;height:84%;object-fit:contain;image-rendering:pixelated}
+#pkm-badge .etui .case.ici{box-shadow:inset 0 2px 4px rgba(0,0,0,.7),0 0 0 2px #FFD84A,0 0 12px #FFD84A;animation:pk-clign 1s ease-in-out infinite}
+#pkm-badge .eclat{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;background:#FFE27A;border-radius:2px;z-index:12;pointer-events:none;
+  animation:pkb-eclat .8s ease-out forwards;transform:rotate(45deg)}
+@keyframes pkb-eclat{to{transform:translate(var(--dx),var(--dy)) rotate(225deg) scale(.2);opacity:0}}
+#pkm-badge .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .4s;pointer-events:none;z-index:40}
+`;
+// Le champion animé : les images de son animation (planche + liste) dessinées sur un canvas, 14 images par seconde
+function championAnime(canvas, sprite) {
+  const im = new Image(); im.crossOrigin = "anonymous";
+  let images = [], arret = false;
+  fetch(ROGUE + sprite + ".json").then(r => r.json()).then(j => {
+    images = j.textures[0].frames.sort((a, b) => a.filename.localeCompare(b.filename));
+    canvas.width = images[0].sourceSize.w; canvas.height = images[0].sourceSize.h;
+  }).catch(() => {});
+  im.src = ROGUE + sprite + ".png";
+  const ctx = canvas.getContext("2d"); let k = 0;
+  const boucle = setInterval(() => {
+    if (arret) return clearInterval(boucle);
+    if (!images.length || !im.complete) return;
+    const f = images[k++ % images.length];
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(im, f.frame.x, f.frame.y, f.frame.w, f.frame.h, f.spriteSourceSize.x, f.spriteSourceSize.y, f.frame.w, f.frame.h);
+  }, 1000 / 14);
+  return () => { arret = true; };
+}
+const SON_BADGE = () => {  // le petit air du badge obtenu
+  [[67, 0, .12], [72, .12, .12], [76, .24, .12], [79, .36, .12], [84, .5, .55]].forEach(([n, t, d]) => {
+    ton(NOTE(n), t, d, {type: "square", vol: .06}); ton(NOTE(n - 12), t, d, {type: "triangle", vol: .1}); });
+  [76, 79, 84].forEach(n => ton(NOTE(n), .5, .9, {type: "triangle", vol: .05}));
+};
+function sceneBadge(n, c, rejouer = false) {
+  installerStyle("pkm2-badge-style", STYLE_BADGE); preparerScene();
+  const lieu = LIEUX.filter(l => l.arene)[n - 1], a = lieu.arene, ch = CHAMPIONS[n], ligue = !a.type;
+  const couleur = ligue ? "#B8860B" : COUL[a.type];
+  const v = P.createElement("div"); v.id = "pkm-badge"; v.style.setProperty("--c", couleur);
+  const ville = lieu.nom.replace(" (retour)", "").replace(" et Parc Safari", "");
+  v.innerHTML = `<div class="fond"></div><div class="lignes"></div><div class="rayons"></div>
+    <div class="bandeau">${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}
+      <small>${ligue ? "Plateau Indigo" : `Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small></div>
+    <div class="scene"><div class="estrade"></div><canvas class="champion"></canvas></div>
+    <div class="badge">${ligue ? `<div class="tourne"><span class="trophee">🏆</span></div>` : `<div class="tourne"><img src="${IMG.badge(a.image)}"></div>`}</div>
+    <div class="aide">Touche ${ligue ? "le trophée" : "le badge"} pour le prendre !</div>
+    ${ligue ? "" : `<div class="etui"><div class="titre">ÉTUI À BADGES</div><div class="cases">${LIEUX.filter(l => l.arene && l.arene.image).map((l, i) =>
+      `<div class="case ${i + 1 === n ? "ici" : ""}">${i + 1 < n && V.badges[i + 1] ? `<img src="${IMG.badge(l.arene.image)}">` : ""}</div>`).join("")}</div></div>`}
+    ${[0, 1, 2, 3, 4, 5].map(i => `<div class="bande ${i % 2 ? "d" : "g"}" style="top:${i * 16.66}%"></div>`).join("")}
+    <div class="blanc"></div><button class="pkm-passer">✕</button>`;
+  P.body.appendChild(v);
+  const {dire, cacher} = dialogue(v, ".pkm-passer, .badge");
+  const stop = championAnime(v.querySelector(".champion"), ch.sprite);
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  let fini = false;
+  const fin = suite => { if (fini) return; fini = true; stop();
+    if (!suite || !c) { v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); return; }
+    SONS.montee(.7); v.querySelector(".blanc").style.opacity = 1;
+    setTimeout(() => { ouvrir(c, rejouer, true); v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 600); };
+  v.querySelector(".pkm-passer").onclick = () => fin(false);
+  const eclats = (x, y, nb) => { for (let i = 0; i < nb; i++) { const e = P.createElement("div"); e.className = "eclat";
+    const ang = i / nb * Math.PI * 2, d = 50 + Math.random() * 60;
+    e.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(ang) * d}px;--dy:${Math.sin(ang) * d}px;background:${["#FFE27A", "#fff", couleur][i % 3]}`;
+    v.appendChild(e); setTimeout(() => e.remove(), 900); } };
+
+  (async () => {
+    SONS.chute();
+    await pause(900); v.classList.add("entre"); SONS.rebond(); vibre(20);
+    await pause(800);
+    for (const l of ch.lignes) await dire(l, ch.nom);
+    await dire(ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom);
+    // le badge (ou le trophée) tombe, tourne, brille : on le touche pour le prendre
+    cacher(); v.classList.add("badge-la"); SONS.chute(); setTimeout(() => { SONS.materialise(); vibre(25); }, 650);
+    const badge = v.querySelector(".badge");
+    await pause(900); v.querySelector(".aide").classList.add("vu");
+    await new Promise(ok => { badge.onclick = ok; });
+    badge.onclick = null; v.querySelector(".aide").classList.remove("vu"); SONS.clic(); vibre(15);
+    const etui = v.querySelector(".etui");
+    if (etui) {  // il file dans l'étui à badges
+      etui.classList.add("vu"); await pause(520);
+      const cible = etui.querySelector(".case.ici").getBoundingClientRect(), r = badge.getBoundingClientRect();
+      const dx = cible.left + cible.width / 2 - (r.left + r.width / 2), dy = cible.top + cible.height / 2 - (r.top + r.height / 2);
+      badge.classList.add("vole"); badge.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${cible.width * .84 / r.width})`;
+      await pause(870);
+      const ici = etui.querySelector(".case.ici"); ici.classList.remove("ici"); ici.innerHTML = `<img src="${IMG.badge(a.image)}">`; badge.style.opacity = 0;
+      eclats(cible.left + cible.width / 2, cible.top + cible.height / 2, 16);
+    } else { eclats(PW.innerWidth / 2, PW.innerHeight * .34, 24); }
+    SON_BADGE(); vibre([40, 60, 80]);
+    await dire(ligue ? "Tu es le nouveau <b>Maître de la Ligue Pokémon</b> !" : `Tu as obtenu le <b>${a.badge}</b> !`);
+    if (!c) return fin(false);
+    await dire(ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
+      : `Et prends aussi ceci : une <b>Hyper Ball</b> ! Un Pokémon de type ${a.type} t'attend à l'intérieur.`, ch.nom);
     fin(true);
   })().catch(() => {});
 }
@@ -1192,19 +1395,69 @@ function svgKanto() {
         text-anchor="${l.nom === "Plateau Indigo" ? "start" : "middle"}">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
       <circle cx="${l.x}" cy="${l.y}" r="13" fill="transparent"/></g>`;
   }).join("");
-  // Le compagnon (en plein vol ou en mer : le Pokémon qui le porte) ; pas encore de Pokémon : une Poké Ball
-  const ami = monCompagnon();
-  const moi = enRoute > 0 && L[enRoute].mode !== "route"
-    ? dessinMonture(enRoute, mx, my, 30)
-    : ami ? `<image href="${IMG.anim(ami.num, ami.shiny)}" x="${mx - 15}" y="${my - 30}" width="30" height="30" style="image-rendering:pixelated"/>`
-    : `<image href="${D.images}/items/poke-ball.png" x="${mx - 12}" y="${my - 22}" width="24" height="24" style="image-rendering:pixelated"/>`;
+  // Sacha (et son compagnon) : posés par-dessus la carte en HTML (heros), à la position actuelle
+  const tout = faits.flatMap(x => x.pts), arrete = V.defi && V.defi.arrive;
+  POSE = {x: mx, y: my, dir: direction(tout), enRoute, arrete, derriere: reculer(tout, 13)};
   return `<svg class="carte-kanto" viewBox="0 0 370 ${HC.toFixed(1)}">
     <image href="${D.carte}" x="0" y="0" width="370" height="${HC.toFixed(1)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>
     ${traits}
     ${noeuds}
-    <g class="moi"><ellipse cx="${mx}" cy="${my + 1}" rx="8" ry="2.6" fill="#000" opacity=".35"/>${moi}</g>
   </svg>`;
 }
+
+// ---------- Sacha sur la carte ----------
+// Ses images de Pokémon Rouge Feu (projet public pret/pokefirered, version figée) : 9 images de 16×32 (marche) ou 32×32
+// (vélo, surf) : 0 face, 1 dos, 2 profil gauche (à droite : retourné), puis 2 pas pour chaque sens.
+const SACHA = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/";
+const PAS = {bas: [0, 3, 0, 4], haut: [1, 5, 1, 6], gauche: [2, 7, 2, 8], droite: [2, 7, 2, 8]};
+let POSE = null;
+function direction(pts) {  // le sens de la marche : d'après le dernier bout de chemin parcouru
+  for (let i = pts.length - 1; i > 0; i--) {
+    const dx = pts[i][0] - pts[i - 1][0], dy = pts[i][1] - pts[i - 1][1];
+    if (Math.hypot(dx, dy) > .5) return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "droite" : "gauche") : (dy > 0 ? "bas" : "haut");
+  }
+  return "bas";
+}
+function reculer(pts, d) {  // le point situé d unités en arrière sur le chemin (là où marche le compagnon)
+  for (let i = pts.length - 1; i > 0; i--) {
+    const [a, b] = pts[i - 1], [c, e] = pts[i], l = Math.hypot(c - a, e - b);
+    if (l >= d) return [c + (a - c) * d / l, e + (b - e) * d / l];
+    d -= l;
+  }
+  return pts.length ? pts[0] : [0, 0];
+}
+function sacha(feuille, dir, marche, large = 1) {  // un div animé (image découpée) ; large = 2 pour les images 32×32
+  const f = PAS[dir];
+  return `<div class="sacha ${dir === "droite" ? "miroir" : ""}" data-pas="${marche ? f.join(",") : f[0]}"
+    style="width:${large * 4.6}%;aspect-ratio:${large * 16}/32;background-image:url('${SACHA}${feuille}.png');
+      background-size:900% 100%;background-position:${f[0] / 8 * 100}% 0"></div>`;
+}
+function heros() {
+  if (!POSE) return "";
+  const {x, y, dir, enRoute, arrete} = POSE, L = LIEUX, mode = enRoute > 0 ? L[enRoute].mode : "route";
+  const pos = (px, py) => `left:${px / 370 * 100}%;top:${py / HC * 100}%`;
+  const ombre = `<div class="ombre-heros" style="${pos(x, y)}"></div>`;
+  if (mode !== "route") {  // en vol ou en mer : sur le dos du Pokémon (ou à vélo, en bateau, sur un Lokhlass sauvage)
+    const m = monture(mode);
+    if (m) return `${ombre}<div class="heros porte" style="${pos(x, y)}">${sacha("red_normal", "bas", false)}
+      <img src="${IMG.anim(m.num, m.shiny)}" ${repli(m.num, m.shiny)}></div>`;
+    if (mode === "vol" && enMer(enRoute)) return `${ombre}<div class="heros porte" style="${pos(x, y)}">${sacha("red_normal", "bas", false)}
+      <span class="bateau">⛵</span></div>`;
+    return `${ombre}<div class="heros" style="${pos(x, y)}">${sacha(mode === "vol" ? "red_bike" : "red_surf", dir, mode === "vol", 2)}</div>`;
+  }
+  // à pied : Sacha marche (de dos, immobile, devant une arène dont il attend le badge) ; le compagnon le suit
+  const ami = monCompagnon(), [cx, cy] = POSE.derriere, devant = cy > y;  // le compagnon passe devant s'il est plus bas
+  const compa = ami ? `<img class="compa-carte" style="${pos(cx, cy)};z-index:${devant ? 3 : 1}" src="${IMG.anim(ami.num, ami.shiny)}" ${repli(ami.num, ami.shiny)}>` : "";
+  return `${ombre}${compa}<div class="heros" style="${pos(x, y)};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
+}
+// Les pas de Sacha : une image toutes les 170 ms
+setInterval(() => {
+  const t = Math.floor(Date.now() / 170);
+  document.querySelectorAll(".sacha[data-pas]").forEach(e => {
+    const f = e.dataset.pas.split(","), k = +f[t % f.length];
+    e.style.backgroundPosition = `${k / 8 * 100}% 0`;
+  });
+}, 170);
 
 function infosLieu(k) {
   const l = LIEUX[k], col = collection(), pris = l.pokemon.filter(n => col[n]).length;
@@ -1253,13 +1506,13 @@ function dessinerVoyage() {
   const el = document.getElementById("voyage"), k = lieuVu ?? V.ici;
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
     const n = i + 1, quand = V.badges[n];
-    return l.arene.image ? `<div class="${quand ? "oui" : "non"}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
-      : `<div class="${quand ? "oui" : "non"}" title="Ligue">🏆</div>`;
+    return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
+      : `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="Ligue">🏆</div>`;
   }).join("");
   el.innerHTML = `<div class="entete"><span class="titre">🗺️ Voyage dans Kanto</span>
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
-    ${blocArene()}${svgKanto()}${infosLieu(k)}
+    ${blocArene()}<div class="carte-wrap">${svgKanto()}${heros()}</div>${infosLieu(k)}
     <div class="boite-badges">${badges}</div>`;
   requestAnimationFrame(() => setTimeout(() => el.querySelector(".avance div").style.width = V.pos / V.total * 100 + "%", 60));
   const brancher = () => { el.querySelectorAll(".coin img").forEach(i => i.onclick = () => fiche(PAR_NUM[i.dataset.n])); rognerImages(el); };
@@ -1269,6 +1522,9 @@ function dessinerVoyage() {
   el.querySelectorAll(".lieu").forEach(g => g.onclick = () => { lieuVu = +g.dataset.k; choisir(lieuVu);
     el.querySelector(".infos-lieu").outerHTML = infosLieu(lieuVu); brancher(); vibre(10); });
   brancher();
+  // toucher un badge gagné : revoir la scène de l'arène (sans rien changer)
+  el.querySelectorAll(".boite-badges .oui").forEach(b => b.onclick = () => {
+    const n = +b.dataset.n; sceneBadge(n, CAPTURES.find(c => c.id.endsWith(n === 9 ? "#ligue" : `#badge${n}`)), true); });
 }
 
 function dessinerRegles() {

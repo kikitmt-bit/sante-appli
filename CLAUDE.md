@@ -54,8 +54,25 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `text-wrap: pretty` (jamais une ponctuation ou un mot seul en dernière ligne, demande de Kiki). Prévu pour chaque région (`PROFESSEURS` :
   chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur labo, leurs balls et leurs 3 starters). Bouton « 🎬 Revoir l'accueil »
   dans « Comment ça marche ? » (rejoue sans rien changer).
-  **Scène du badge (à construire, demandée par Kiki le 30/10)** : quand Kiki enverra la première image d'arène (Pierre),
-  plan et prompts dans `scenes/PROMPT.md` (images `scenes/arene-N.webp`).
+  **Tout en sprites, sans ChatGPT (choix de Kiki le 30/10 : ChatGPT bloque après 2-3 images par jour)** :
+  champions des 9 générations = **PokéRogue** (`pagefaultgames/pokerogue-assets`, `images/trainer/<nom>.png` + `.json`
+  = planche + liste d'images d'animation, version figée par son commit dans `ROGUE`), complété par **smogon/sprites**
+  (`trainers/` gen 1-7 : Sacha en 7 tenues, capitaines d'Alola, quelques professeurs) ; Sacha sur la carte = images de
+  Red de **pret/pokefirered** (`graphics/object_events/pics/people/red_normal|red_bike|red_surf.png`, commit figé dans
+  `SACHA`). Manquent seulement 5 professeurs (Orme, Sorbier, Platane, Magnolia, Saule/Turum) : pour eux, une image de
+  labo ChatGPT par région (une tous les ~3 mois) ou une scène sans professeur.
+  **Scène du badge** (`sceneBadge(n, capture, rejouer)`, 30/10) : bandes noires qui s'écartent (entrée de combat),
+  fond aux couleurs du type, bandeau « ARÈNE D'ARGENTA », champion animé (`championAnime`, canvas) sur une estrade,
+  répliques (`CHAMPIONS` : nom, sprite, 2 répliques ; 9 = Régis, Ligue), le badge (PokeAPI `badges/N.png`, trophée 🏆
+  pour la Ligue) tombe et tourne avec des rayons, « Touche le badge », il vole dans l'**étui à badges** (8 cases),
+  éclats + petit air (`SON_BADGE`), puis Hyper Ball / Master Ball (flash → `ouvrir(c, rejouer, true)`). Lancée par
+  `lancer` pour `badgeN` / `ligue` pas encore ouverts ; rejouée en touchant un badge gagné dans la boîte à badges.
+  Boîte de dialogue commune (`STYLE_DIAL`, `dialogue(v)`, `preparerScene`) au labo et aux arènes.
+  **Sacha sur la carte** (30/10, demande de Kiki : Sacha plutôt que Red, compagnon avec lui) : `heros()` en HTML
+  par-dessus le SVG (`POSE` calculé dans `svgKanto`) : il marche dans le sens du chemin (`direction`, 4 images de pas
+  toutes les 170 ms, miroir vers la droite), immobile de dos devant une arène qu'il attend ; le compagnon le suit 13
+  unités derrière (`reculer`) ; en vol / en mer il est sur le dos de la `monture` (sinon vélo `red_bike`, bateau,
+  `red_surf`).
   **Montre : rien à mettre à jour pendant que le jeu évolue (choix de Kiki, 29/10)** : on la mettra à jour une seule
   fois, quand le jeu sera fini et testé (à reprendre alors : scène d'accueil du professeur, voyage et carte, compagnon,
   vols et surf, Pokédex normal + shiny, Master Ball 25/30). D'ici là, elle montre le cadeau comme une Poké Ball normale.
