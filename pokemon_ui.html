@@ -14,6 +14,11 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .gris{color:#9AA7C2}.petit{font-size:12px}
 .type{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:600;color:#fff;margin:2px 3px 0 0;
   text-shadow:0 1px 1px rgba(0,0,0,.35)}
+/* Les icônes du jeu (objets, rubans, types : PokeAPI/sprites) à la place des émojis */
+.ico{width:20px;height:20px;object-fit:contain;image-rendering:pixelated;vertical-align:-5px;display:inline-block}
+.ico.p{width:15px;height:15px;vertical-align:-3px}.ico.g{width:28px;height:28px;vertical-align:-8px}
+.ico.lisse{image-rendering:auto}
+img.ty{width:14px;height:14px;vertical-align:-3px;margin:0 3px 0 -5px;image-rendering:auto}
 
 /* ----- Barre d'effort ----- */
 #barre{background:radial-gradient(120% 140% at 0% 0%,#3A1830 0%,#1C2740 55%);display:flex;gap:14px;align-items:center}
@@ -57,7 +62,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .speciale{background:#1C2740;border-radius:16px;padding:11px 12px;position:relative;overflow:hidden}
 .speciale.ok{box-shadow:inset 0 0 0 2px #4CD3A0}
 .speciale .tete{display:flex;align-items:center;gap:7px;font-weight:800;font-size:14px}
-.speciale .tete svg{width:26px;height:26px;flex:0 0 26px}
+.speciale .tete .ico{width:28px;height:28px;flex:0 0 28px}
 .speciale .gain{font-size:11px;color:#9AA7C2;margin:2px 0 6px;line-height:1.3}
 .speciale .ligne{font-size:11px;color:#C9D3EA;margin-top:5px;display:flex;justify-content:space-between;gap:4px}
 .jauge{height:6px;background:#0D1322;border-radius:3px;margin-top:3px;overflow:hidden}
@@ -92,7 +97,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-wrap .heros.porte{animation:pk-vole 1.6s ease-in-out infinite}
 .carte-wrap .heros.porte img{width:45%;margin-top:-30%;image-rendering:pixelated;order:2}
 .carte-wrap .heros.porte .sacha{order:1;position:relative;z-index:1;width:20%!important}
-.carte-wrap .heros.porte .bateau{font-size:22px;line-height:1;margin-top:-30%;order:2}
+.carte-wrap .heros.porte .bateau{width:60%;height:auto;margin-top:-30%;order:2}
 @keyframes pk-vole{50%{transform:translate(-50%,-108%)}}
 @keyframes pk-saute{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-112%)}}
 .ombre-heros{width:4.5%;height:1.6%;border-radius:50%;background:rgba(0,0,0,.35);transform:translate(-50%,-50%)}
@@ -130,7 +135,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
   border-radius:14px;padding:8px 10px;margin-bottom:10px}
 .arene .bdg{width:56px;height:56px;flex:0 0 56px;object-fit:contain;image-rendering:pixelated;
   filter:grayscale(.7) brightness(.85) drop-shadow(0 0 8px var(--c,#FFCB05));animation:pkl-hop 2.4s ease-in-out infinite}
-.arene .bdg.ligue{font-size:32px;line-height:38px;text-align:center;filter:none}
+.arene .bdg.ligue{display:flex;align-items:center;justify-content:center;filter:none}.arene .bdg.ligue .ico{width:34px;height:34px}
 .arene .q{flex:1;min-width:0;font-size:11.5px;color:#C9D3EA;line-height:1.35}
 .arene .q b{color:#fff}.arene .q .t{font-size:13px;font-weight:800;color:#fff}
 .arene .q .reste{color:#FFCB05;margin-top:4px}
@@ -152,7 +157,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .mini .nm{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .qd{font-size:9.5px;color:#9AA7C2}
 .mini .eti{position:absolute;top:4px;left:4px;font-size:9px;font-weight:800;border-radius:7px;padding:0 5px}
-.eti.nv{background:#FF5D5D}.eti.sh{background:#C9A227;left:auto;right:4px}
+.eti.nv{background:#FF5D5D}.eti.sh{background:none;left:auto;right:2px;top:2px;padding:0}
 
 /* ----- Pokédex ----- */
 #stats{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-bottom:10px}
@@ -179,7 +184,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .p .nm{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
 .p.non .nm{color:#4A5878}
 .p.complet{box-shadow:inset 0 0 0 2px #FFCB05}
-.p .sh{position:absolute;top:3px;right:5px;font-size:11px}
+.p .sh{position:absolute;top:2px;right:2px}
 .p.leg.non{background:repeating-linear-gradient(135deg,#161F35 0 8px,#1A1834 8px 16px)}
 #rien{color:#9AA7C2;font-size:13px;padding:10px 2px;display:none}
 #mon-dresseur{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-family:'Pixelify Sans',Outfit,monospace;
@@ -201,10 +206,10 @@ details.regles li{margin:5px 0;line-height:1.4}
   <div class="carte" id="barre"></div>
   <div class="carte" id="aouvrir"></div>
   <div class="carte" id="voyage"></div>
-  <h2>🎯 Balls spéciales du jour</h2>
+  <h2><img class="ico g" id="ic-spe" alt="">Balls spéciales du jour</h2>
   <div class="grille2" id="speciales"></div>
-  <div id="bloc-dernieres"><h2>🕘 Dernières captures</h2><div id="dernieres"></div></div>
-  <h2>📕 Pokédex <span class="n" id="dex-n"></span></h2>
+  <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
+  <h2><img class="ico g" id="ic-dex" alt="">Pokédex <span class="n" id="dex-n"></span></h2>
   <div id="stats"></div>
   <input id="recherche" type="search" placeholder="Chercher un Pokémon ou un numéro…" autocomplete="off">
   <div class="defile" id="filtres"></div>
@@ -270,13 +275,32 @@ function dessinMonture(k, x, y, t) {  // le Pokémon (ou le vélo, le bateau) qu
   const mode = LIEUX[k].mode, m = monture(mode);
   const img = src => `<image href="${src}" x="${x - t / 2}" y="${y - t}" width="${t}" height="${t}" style="image-rendering:pixelated"/>`;
   if (m) return img(IMG.anim(m.num, m.shiny));
-  if (mode === "vol" && enMer(k)) return `<text x="${x}" y="${y - t * .15}" font-size="${t * .7}" text-anchor="middle" style="stroke:none">⛵</text>`;
+  if (mode === "vol" && enMer(k)) return img(IC.bateau);
   return img(mode === "vol" ? `${D.images}/items/bicycle.png` : IMG.anim(131, false));
 }
 const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball"};
+// Les icônes du jeu (objets, rubans, marques et types de PokeAPI/sprites) à la place des émojis
+const OBJ = n => `${D.images}/items/${n}.png`;
+const IC = {poke: OBJ("poke-ball"), super: OBJ("great-ball"), hyper: OBJ("ultra-ball"), master: OBJ("master-ball"),
+  honneur: OBJ("premier-ball"), shiny: OBJ("shiny-charm"), carte: OBJ("gen3/town-map"), rare: OBJ("star-piece"),
+  velo: OBJ("bicycle"), bateau: OBJ("ss-ticket"), tele: OBJ("teachy-tv"), radar: OBJ("poke-radar"),
+  ligue: `${D.images}/ribbons/generation-iii/champion-ribbon.png`, effort: `${D.images}/ribbons/generation-iii/effort-ribbon.png`,
+  nuit: `${D.images}/marks/generation-viii/sleepy-time-mark.png`};
+const ico = (cle, cls = "") => `<img class="ico ${cls}" src="${IC[cle] || cle}" alt="">`;
+const TYPE_ID = {Normal: 1, Combat: 2, Vol: 3, Poison: 4, Sol: 5, Roche: 6, Insecte: 7, Spectre: 8, Acier: 9, Feu: 10, Eau: 11,
+  Plante: 12, "Électrik": 13, Psy: 14, Glace: 15, Dragon: 16, "Ténèbres": 17, "Fée": 18};
+IMG.type = t => `${D.images}/types/generation-ix/scarlet-violet/small/${TYPE_ID[t]}.png`;
+const icoType = t => TYPE_ID[t] ? `<img class="ty" src="${IMG.type(t)}" alt="">` : "";
+// La raison d'une ball (écrite avec un émoji pour la montre) : l'icône du jeu à la place de l'émoji du début
+function raisonHTML(c) {
+  const [e, ...reste] = (c.raison || "").split(" "), txt = reste.join(" ");
+  const badge = /#badge(\d)/.exec(c.id), a = badge && LIEUX.filter(l => l.arene)[badge[1] - 1];
+  const i = {"🎁": "poke", "🏆": "ligue", "👑": "master", "🎯": "super", "⚡": "effort"}[e];
+  return a && a.arene.image ? `${ico(IMG.badge(a.arene.image), "p")} ${txt}` : i ? `${ico(i, "p")} ${txt}` : c.raison;
+}
 const N3 = n => String(n).padStart(3, "0");
 const fr = n => Math.round(n).toLocaleString("fr-FR");
-const typesHTML = (ts, cls = "type") => ts.map(t => `<span class="${cls}" style="background:${COUL[t]}">${t}</span>`).join("");
+const typesHTML = (ts, cls = "type") => ts.map(t => `<span class="${cls}" style="background:${COUL[t]}">${icoType(t)}${t}</span>`).join("");
 
 // ---------- Poké Balls ouvertes (ce téléphone + la liste partagée avec la montre) ----------
 let ouvertes = new Set();
@@ -695,7 +719,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     <img class="poke" alt=""><canvas class="fx"></canvas><div class="flash"></div>
     <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${BALLS[c.ball] || "Poké Ball"}</div>
       <button class="rond x">✕</button></div>
-    <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${c.raison}</small></div>
+    <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
     <div class="carte"></div>`;
   P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
@@ -800,13 +824,13 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const col = collection(), especes = Object.keys(col).length, reste = aOuvrir();
     const shinys = Object.values(col).filter(l => l.some(x => x.shiny)).length;
     const badges = [r.nouveau ? `<span class="badge b-nouveau">NOUVEAU POKÉMON !</span>` : r.shiny ? "" : `<span class="badge b-version">CAPTURÉ !</span>`,
-                    r.shiny ? `<span class="badge b-shiny">✨ SHINY</span>` : "", r.leg ? `<span class="badge b-leg">👑 LÉGENDAIRE</span>` : ""];
+                    r.shiny ? `<span class="badge b-shiny">${ico("shiny", "p")} SHINY</span>` : "", r.leg ? `<span class="badge b-leg">${ico("master", "p")} LÉGENDAIRE</span>` : ""];
     carte.innerHTML = `<div class="badges">${badges.join("")}</div>
       <div class="no">N° ${N3(c.num)}</div><div class="nm">${c.nom}</div><div>${typesHTML(c.types, "pkm-type")}</div>
-      <div class="ver">${c.shiny ? "✨ Shiny · " : ""}${c.lieu ? `📍 ${c.lieu}` : ""}</div>
-      <div class="rs">${BALLS[c.ball] || "Poké Ball"} · ${c.raison} · ${c.quand}</div>
+      <div class="ver">${c.shiny ? `${ico("shiny", "p")} Shiny · ` : ""}${c.lieu ? `${ico("carte", "p")} ${c.lieu}` : ""}</div>
+      <div class="rs">${BALLS[c.ball] || "Poké Ball"} · ${raisonHTML(c)} · ${c.quand}</div>
       <div class="compteur"><div><div class="l">Pokédex</div><div class="v">${especes} / 151</div><div class="j"><div style="width:${(especes - (r.nouveau && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div>
-        <div><div class="l">Shiny ✨</div><div class="v">${shinys} / 151</div><div class="j"><div style="width:${(shinys - (c.shiny && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div></div>
+        <div><div class="l">Shiny ${ico("shiny", "p")}</div><div class="v">${shinys} / 151</div><div class="j"><div style="width:${(shinys - (c.shiny && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div></div>
       <div class="boutons">${reste.length && !rejouer ? `<button class="b1 suite">Ouvrir la suivante (${reste.length})</button>` : ""}
         <button class="${reste.length && !rejouer ? "b2" : "b1"} ok">${r.nouveau || r.shiny ? "Génial !" : "Super !"}</button></div>`;
     carte.querySelectorAll(".badge").forEach((b, i) => b.style.animationDelay = `${.15 + i * .18}s${b.classList.contains("b-nouveau") ? ",0s" : ""}`);
@@ -1027,7 +1051,7 @@ const STYLE_BADGE = `
 .pkm-scene.badge-la .badge{transform:translate(-50%,-50%)}
 .pkm-scene .badge .tourne{width:100%;height:100%;animation:pkb-tourne 3.2s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
 .pkm-scene .badge img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(255,240,170,.9))}
-.pkm-scene .badge .trophee{font-size:min(36vw,150px);line-height:1;filter:drop-shadow(0 0 18px rgba(255,220,120,.9))}
+.pkm-scene .badge .trophee{width:min(36vw,150px);height:auto;image-rendering:pixelated;filter:drop-shadow(0 0 18px rgba(255,220,120,.9))}
 @keyframes pkb-tourne{0%,100%{transform:rotateY(0)}50%{transform:rotateY(180deg)}}
 .pkm-scene .badge.vole{transition:transform .85s cubic-bezier(.5,0,.3,1)}
 .pkm-scene .badge.vole .tourne{animation:none}
@@ -1088,7 +1112,7 @@ function sceneBadge(n, c, rejouer = false) {
     <div class="bandeau">${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}
       <small>${ligue ? "Plateau Indigo" : `Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small></div>
     <div class="scene"><div class="estrade"></div><canvas class="champion"></canvas></div>
-    <div class="badge">${ligue ? `<div class="tourne"><span class="trophee">🏆</span></div>` : `<div class="tourne"><img src="${IMG.badge(a.image)}"></div>`}</div>
+    <div class="badge">${ligue ? `<div class="tourne"><img class="trophee" src="${IC.ligue}"></div>` : `<div class="tourne"><img src="${IMG.badge(a.image)}"></div>`}</div>
     <div class="aide">Touche ${ligue ? "le trophée" : "le badge"} pour le prendre !</div>
     ${ligue ? "" : `<div class="etui"><div class="titre">ÉTUI À BADGES</div><div class="cases">${LIEUX.filter(l => l.arene && l.arene.image).map((l, i) =>
       `<div class="case ${i + 1 === n ? "ici" : ""}">${i + 1 < n && V.badges[i + 1] ? `<img src="${IMG.badge(l.arene.image)}">` : ""}</div>`).join("")}</div></div>`}
@@ -1183,15 +1207,15 @@ function fiche(p) {
   const normal = mes.find(c => !c.shiny), shiny = mes.find(c => c.shiny);
   const c0 = COUL[p.types[0]];
   const lieux = LIEUX_DE[p.num] || [];
-  const ou = leg ? `👑 <b>Légendaire</b> : il n'apparaît que dans une <b>Master Ball</b> (ton objectif ${D.regles.master_jours} jours
+  const ou = leg ? `${ico("master", "p")} <b>Légendaire</b> : il n'apparaît que dans une <b>Master Ball</b> (ton objectif ${D.regles.master_jours} jours
       sur ${D.regles.master_fenetre}, ou la victoire à la Ligue Pokémon).`
-    : `📍 <b>${lieux.join(", ")}</b> : les Poké Balls donnent surtout les Pokémon de l'endroit où tu es.
+    : `${ico("carte", "p")} <b>${lieux.join(", ")}</b> : les Poké Balls donnent surtout les Pokémon de l'endroit où tu es.
        <br>Plus de chances avec : <b>${[...new Set(p.types.flatMap(t => D.conseils[t] || []))].join(", ") || "toutes les activités"}</b>.
-       <br>🏅 Les badges d'arène donnent un Pokémon du type du champion.`;
+       <br>${ico(IMG.badge(1), "p")} Les badges d'arène donnent un Pokémon du type du champion.`;
   const forme = (c, sh) => c
-    ? `<div class="f ${sh ? "sh" : ""}" data-s="${sh ? 1 : 0}"><b>${sh ? "✨ Shiny" : "Normal"}</b>
-        <img src="${IMG.anim(p.num, sh)}" ${repli(p.num, sh)}>${c.quand}<br>${c.lieu ? `📍 ${c.lieu}` : ""}</div>`
-    : `<div class="f ${sh ? "sh" : ""}"><b>${sh ? "✨ Shiny" : "Normal"}</b><div class="trou">${sh ? "✨" : "?"}</div>
+    ? `<div class="f ${sh ? "sh" : ""}" data-s="${sh ? 1 : 0}"><b>${sh ? `${ico("shiny", "p")} Shiny` : "Normal"}</b>
+        <img src="${IMG.anim(p.num, sh)}" ${repli(p.num, sh)}>${c.quand}<br>${c.lieu ? `${ico("carte", "p")} ${c.lieu}` : ""}</div>`
+    : `<div class="f ${sh ? "sh" : ""}"><b>${sh ? `${ico("shiny", "p")} Shiny` : "Normal"}</b><div class="trou">${sh ? ico("shiny", "g") : "?"}</div>
         ${sh ? "Pas encore : c'est rare (1 chance sur 33 environ)" : "Pas encore attrapé"}</div>`;
   const vue = normal ? false : !!shiny;  // la grande image : la forme attrapée (le normal d'abord)
   const f = P.createElement("div"); f.id = "pkm-fiche";
@@ -1203,7 +1227,7 @@ function fiche(p) {
         <div class="sous">${a ? `Attrapé ${mes[0].quand}${mes[0].lieu ? ` · ${mes[0].lieu}` : ""}` : "Pas encore attrapé"}</div></div></div>
     <h4>Ses deux formes <span>${(normal ? 1 : 0) + (shiny ? 1 : 0)} / 2</span></h4>
     <div class="formes">${forme(normal, false)}${forme(shiny, true)}</div>
-    <h4>Où le trouver ?</h4><div class="ou">${RARES.has(p.num) ? "⭐ <b>Rare</b> : 3 fois moins de chances que les autres Pokémon de son lieu.<br>" : ""}${ou}</div>
+    <h4>Où le trouver ?</h4><div class="ou">${RARES.has(p.num) ? `${ico("rare", "p")} <b>Rare</b>`+" : 3 fois moins de chances que les autres Pokémon de son lieu.<br>" : ""}${ou}</div>
     <button class="fermer">Fermer</button></div>`;
   P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu"));
   const grande = f.querySelector(".grande");
@@ -1281,25 +1305,25 @@ function dessinerSpeciales() {
   const fen = J.fenetre.concat(Array(Math.max(R.master_fenetre - J.fenetre.length, 0)).fill(undefined));
   document.getElementById("speciales").innerHTML = `
     <div class="speciale ${sup ? "ok" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ballSVG("super")}Super Ball</div><div class="gain">Objectif double · shiny ×2, 1 chance sur 2 d'un nouveau</div>
+      <div class="tete">${ico("super")}Super Ball</div><div class="gain">Objectif double · shiny ×2, 1 chance sur 2 d'un nouveau</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}
       <div class="reste">${resteSuper}</div></div>
     <div class="speciale ${hyp ? "ok" : ""}">${hyp ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ballSVG("hyper")}Hyper Ball</div><div class="gain">Un exploit au choix · shiny ×4, nouveau garanti</div>
+      <div class="tete">${ico("hyper")}Hyper Ball</div><div class="gain">Un exploit au choix · shiny ×4, nouveau garanti</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
       <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}
       <div class="reste">${resteHyper}</div></div>
     <div class="speciale ${mas ? "ok" : ""}">${mas ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ballSVG("master")}Master Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire</div>
-      <div class="ligne"><span>👑 ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
+      <div class="tete">${ico("master")}Master Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire</div>
+      <div class="ligne"><span>${ico("master", "p")} ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
       <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
       <div class="reste">${resteMaster}</div></div>
     <div class="speciale ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete"><span style="font-size:22px">😴</span>Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
+      <div class="tete">${ico("nuit", "lisse")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
-      <div class="ligne"><span>✨ Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
+      <div class="ligne"><span>${ico("shiny", "p")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
       ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
 }
 
@@ -1309,9 +1333,9 @@ function dessinerDernieres() {
   for (const c of CAPTURES) if (estOuverte(c) && !vus.has(c.num)) { vus.add(c.num); premiere[c.id] = 1; }
   document.getElementById("bloc-dernieres").style.display = ok.length ? "" : "none";
   document.getElementById("dernieres").innerHTML = ok.map(c => `<div class="mini" data-i="${CAPTURES.indexOf(c)}">
-    ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? '<span class="eti sh">✨</span>' : ""}
+    ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? `<span class="eti sh">${ico("shiny", "p")}</span>` : ""}
     <img src="${IMG.anim(c.num, c.shiny)}" ${repli(c.num, c.shiny)} loading="lazy"><div class="nm">${c.nom}</div>
-    <div class="qd">${c.quand}</div>${c.lieu ? `<div class="lieu">📍 ${c.lieu}</div>` : ""}</div>`).join("");
+    <div class="qd">${c.quand}</div>${c.lieu ? `<div class="lieu">${ico("carte", "p")} ${c.lieu}</div>` : ""}</div>`).join("");
   document.querySelectorAll(".mini").forEach(e => e.onclick = () => ouvrir(CAPTURES[e.dataset.i], true));
 }
 
@@ -1323,14 +1347,14 @@ function dessinerDex() {
   document.getElementById("stats").innerHTML = `
     <div class="t"><div class="l">Espèces</div><div class="v">${especes} <small>/ 151</small></div>
       <div class="jauge"><div style="width:${especes / 1.51}%;background:linear-gradient(90deg,#FF4B4B,#FFCB05)"></div></div></div>
-    <div class="t"><div class="l">Shiny</div><div class="v">✨ ${sh}</div></div>
+    <div class="t"><div class="l">Shiny</div><div class="v">${ico("shiny")} ${sh}</div></div>
     <div class="t"><div class="l">Badges</div><div class="v"><img src="${IMG.badge(Math.max(nb, 1))}"> ${nb} <small>/ 8</small></div></div>`;
   const filtres = [["tous", "Tous"], ["oui", `Attrapés ${especes}`], ["non", `Manquants ${151 - especes}`],
-                   ["ici", `📍 ${LIEUX[V.ici].nom}`], ["shiny", "✨ Shiny"], ["leg", "👑 Légendaires"]];
+                   ["ici", `${ico("carte", "p")} ${LIEUX[V.ici].nom}`], ["shiny", `${ico("shiny", "p")} Shiny`], ["leg", `${ico("master", "p")} Légendaires`]];
   document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("");
   document.querySelectorAll("#filtres .filtre").forEach(b => b.onclick = () => { filtre = b.dataset.k; dessinerDex(); });
   document.getElementById("filtres-types").innerHTML = Object.keys(COUL).map(t =>
-    `<button class="filtre ty ${filtreTypes.has(t) ? "on" : ""}" data-t="${t}" style="background:${COUL[t]}">${t}</button>`).join("");
+    `<button class="filtre ty ${filtreTypes.has(t) ? "on" : ""}" data-t="${t}" style="background:${COUL[t]}">${icoType(t)}${t}</button>`).join("");
   document.querySelectorAll("#filtres-types .filtre").forEach(b => b.onclick = () => {
     filtreTypes.has(b.dataset.t) ? filtreTypes.delete(b.dataset.t) : filtreTypes.add(b.dataset.t); dessinerDex(); });
 
@@ -1351,7 +1375,7 @@ function dessinerDex() {
     const n = mes.some(c => !c.shiny), s = mes.some(c => c.shiny);
     return `<div class="p ${a ? "" : "non"} ${n && s ? "complet" : ""} ${LEG.has(p.num) ? "leg" : ""}" data-n="${p.num}"
       ${a ? `style="background:radial-gradient(circle at 50% 35%,${c0}66,#1C2740 70%)"` : ""}>
-      ${s ? '<span class="sh">✨</span>' : ""}<img class="rogne" src="${IMG.mini(p.num, s && !n)}" loading="lazy">
+      ${s ? `<span class="sh">${ico("shiny", "p")}</span>` : ""}<img class="rogne" src="${IMG.mini(p.num, s && !n)}" loading="lazy">
       <div class="no">${N3(p.num)}</div><div class="nm">${a ? p.nom : "???"}</div></div>`;
   }).join("");
   document.querySelectorAll("#grille .p").forEach(e => e.onclick = () => fiche(PAR_NUM[e.dataset.n]));
@@ -1399,7 +1423,7 @@ function svgKanto() {
       <circle class="point" cx="${l.x}" cy="${l.y}" r="${r}" fill="${atteint ? (ville ? "#E8382F" : "#FFB020") : "#7C8AA8"}" stroke="#fff" stroke-width="1.6"/>
       ${ville ? `<circle cx="${l.x}" cy="${l.y}" r="${r * .38}" fill="#fff"/>` : ""}
       ${ar && ar.image ? `<image href="${IMG.badge(ar.image)}" x="${l.x + 3}" y="${l.y - 15}" width="12" height="12" opacity="${gagne ? 1 : .55}" style="${gagne ? "" : "filter:grayscale(1)"}"/>` : ""}
-      ${ar && !ar.image ? `<text x="${l.x + 8}" y="${l.y - 5}" font-size="10" style="stroke:none">${gagne ? "🏆" : "🏟️"}</text>` : ""}
+      ${ar && !ar.image ? `<image href="${IC.ligue}" x="${l.x + 3}" y="${l.y - 16}" width="13" height="13" opacity="${gagne ? 1 : .6}" style="image-rendering:pixelated;${gagne ? "" : "filter:grayscale(1)"}"/>` : ""}
       ${complet ? `<text x="${l.x - 12}" y="${l.y - 4}" font-size="9" style="fill:#FFD84A">★</text>` : ""}
       ${ville ? `<text class="nom" x="${l.nom === "Plateau Indigo" ? l.x + 8 : l.x}" y="${l.nom === "Plateau Indigo" ? l.y - 6 : l.y + (bas ? -9 : 14)}" font-size="8"
         text-anchor="${l.nom === "Plateau Indigo" ? "start" : "middle"}">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
@@ -1617,7 +1641,7 @@ function heros() {
     if (m) return `${ombre}<div class="heros porte" style="${pos(x, y)}">${sacha("red_normal", "bas", false)}
       <img src="${IMG.anim(m.num, m.shiny)}" ${repli(m.num, m.shiny)}></div>`;
     if (mode === "vol" && enMer(enRoute)) return `${ombre}<div class="heros porte" style="${pos(x, y)}">${sacha("red_normal", "bas", false)}
-      <span class="bateau">⛵</span></div>`;
+      ${ico("bateau", "bateau")}</div>`;
     return `${ombre}<div class="heros" style="${pos(x, y)}">${sacha(mode === "vol" ? "red_bike" : "red_surf", dir, mode === "vol", 2)}</div>`;
   }
   // à pied : il marche (de dos, immobile, devant une arène dont il attend le badge)
@@ -1641,28 +1665,28 @@ function infosLieu(k) {
       + (() => { if (!suite || suite.mode === "route" || bloque) return "";
         const m = monture(suite.mode);
         return suite.mode === "vol"
-          ? (m ? `<br>🪽 En vol : <b>${m.nom}</b> t'emmène jusqu'à ${suite.nom}.`
-               : enMer(k + 1) ? `<br>⛵ Pas encore de Pokémon Vol : tu prends le bateau jusqu'à ${suite.nom}.`
-               : `<br>🚲 Pas encore de Pokémon Vol : tu y vas à vélo.`)
-          : `<br>🌊 En mer : ${m ? `<b>${m.nom}</b> te fait traverser` : "un Lokhlass sauvage te fait traverser"} jusqu'à ${suite.nom}.`; })();
-  return `<div class="infos-lieu"><div class="nom">📍 ${l.nom}<small>${ici ? "tu es ici" : passe ? "déjà traversé" :
+          ? (m ? `<br>${ico(IMG.mini(m.num, m.shiny), "rogne")} En vol : <b>${m.nom}</b> t'emmène jusqu'à ${suite.nom}.`
+               : enMer(k + 1) ? `<br>${ico("bateau", "p")} Pas encore de Pokémon Vol : tu prends le bateau jusqu'à ${suite.nom}.`
+               : `<br>${ico("velo", "p")} Pas encore de Pokémon Vol : tu y vas à vélo.`)
+          : `<br>${ico(IMG.mini(m ? m.num : 131, m ? m.shiny : false), "rogne")} En mer : ${m ? `<b>${m.nom}</b> te fait traverser` : "un Lokhlass sauvage te fait traverser"} jusqu'à ${suite.nom}.`; })();
+  return `<div class="infos-lieu"><div class="nom">${ico("carte")} ${l.nom}<small>${ici ? "tu es ici" : passe ? "déjà traversé" :
       `dans ${fr(l.dist - V.pos)} pts`}</small></div>
     <div class="petit gris" style="margin-top:3px">${pris === l.pokemon.length ? "★ Lieu complété : tous ses Pokémon sont à toi !"
-      : `Pokémon du coin : ${pris} / ${l.pokemon.length} attrapés${l.pokemon.some(n => RARES.has(n)) ? " · ⭐ = rare" : ""}`}</div>
+      : `Pokémon du coin : ${pris} / ${l.pokemon.length} attrapés${l.pokemon.some(n => RARES.has(n)) ? ` · ${ico("rare", "p")} = rare` : ""}`}</div>
     <div class="coin">${l.pokemon.map(n => `<span class="pk"><img class="rogne ${col[n] ? "" : "non"}" data-n="${n}" src="${IMG.mini(n, false)}" loading="lazy"
-      title="${col[n] ? PAR_NUM[n].nom : "???"}">${RARES.has(n) ? "<i>⭐</i>" : ""}</span>`).join("")}</div>
+      title="${col[n] ? PAR_NUM[n].nom : "???"}">${RARES.has(n) ? `<i>${ico("rare", "p")}</i>` : ""}</span>`).join("")}</div>
     ${depart ? `<div class="petit gris" style="margin-top:8px">${depart}</div>` : ""}</div>`;
 }
 
 function blocArene() {
   const d = V.defi;
-  if (!d) return `<div class="arene"><div class="bdg ligue">🏆</div><div class="q"><div class="t">Champion de Kanto !</div>
+  if (!d) return `<div class="arene"><div class="bdg ligue">${ico("ligue", "g")}</div><div class="q"><div class="t">Champion de Kanto !</div>
       Les 8 badges et la Ligue sont à toi. La suite du voyage (Johto) arrive bientôt.</div></div>`;
   const l = LIEUX[d.lieu], a = l.arene, j = (v, c) => `<div class="jauge"><div class="${v >= c ? "ok" : ""}" style="width:${Math.min(v / c * 100, 100)}%"></div></div>`;
   const nomU = d.unite === "pas" ? "pas" : d.unite;
   const val = v => d.unite === "pas" ? fr(v) : Math.round(v * 10) / 10;
   if (!d.arrive) return "";  // pas encore arrivé : le champion attend sur la carte (le toucher = son défi)
-  const image = a.image ? `<img class="bdg" src="${IMG.badge(a.image)}">` : `<div class="bdg ligue">🏆</div>`;
+  const image = a.image ? `<img class="bdg" src="${IMG.badge(a.image)}">` : `<div class="bdg ligue">${ico("ligue", "g")}</div>`;
   const qui = a.type ? `Arène ${/^[AEIOUÉ]/.test(a.champion) ? "d'" : "de "}${a.champion} · type ${a.type}` : "Ligue Pokémon · Champion Régis";
   const style = `style="--c:${a.type ? COUL[a.type] : "#B8860B"}"`;
   const manque = Math.max(a.cible - d.valeur, 0);
@@ -1679,9 +1703,9 @@ function dessinerVoyage() {
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
     const n = i + 1, quand = V.badges[n];
     return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
-      : `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="Ligue">🏆</div>`;
+      : `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="Ligue"><img src="${IC.ligue}" style="image-rendering:pixelated"></div>`;
   }).join("");
-  el.innerHTML = `<div class="entete"><span class="titre">🗺️ Voyage dans Kanto</span>
+  el.innerHTML = `<div class="entete"><span class="titre">${ico("carte")} Voyage dans Kanto</span>
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
     ${blocArene()}<div class="carte-wrap">${svgKanto()}${chefCarte()}${heros()}</div>${infosLieu(k)}
@@ -1724,28 +1748,27 @@ function dessinerVoyage() {
 
 function dessinerRegles() {
   document.getElementById("regles").innerHTML = `
-    <li>⚡ <b>Barre d'effort</b> (${D.barre.taille} points = une Poké Ball, elle ne se vide jamais) : 1 point par 100 pas au-delà de
+    <li>${ico("effort", "p")} <b>Barre d'effort</b> (${D.barre.taille} points = une Poké Ball, elle ne se vide jamais) : 1 point par 100 pas au-delà de
       ${fr(D.barre.pas_offerts)} (la vie de tous les jours ne compte pas), 2 points par minute en zone, 1 par étage, 1 par minute de séance de sport
       (au moins ${R.seance_min} min), ${R.force} par minute de musculation, pompes, tractions ou rameur.</li>
-    <li>🧭 Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes en zone → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
+    <li>${ico("radar", "p")} Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes en zone → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
       🪜 étages → Roche, Sol, Acier ; 🌳 marche → Plante, Insecte, Poison ; 🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 👟 pas → tous les types.</li>
-    <li>🎯 <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min en zone dans la journée.</li>
-    <li>⭐ <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min en zone ou une séance de ${R.exploit_seance} min.</li>
-    <li>👑 <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire.
+    <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min en zone dans la journée.</li>
+    <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min en zone ou une séance de ${R.exploit_seance} min.</li>
+    <li>${ico("master", "p")} <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
-    <li>😴 Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
-    <li>🗺️ <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
+    <li>${ico("nuit", "p lisse")} Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
+    <li>${ico("carte", "p")} <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
       au Plateau Indigo (environ 3 mois, 4 à 5 barres par lieu). Rien à choisir : bouge, tu avances.</li>
-    <li>📍 Les Poké Balls donnent surtout les Pokémon de l'endroit où tu es, parfois ceux que tu as ratés plus tôt ou ceux de l'étape
-      suivante, et plus souvent ceux des types de ta journée. Les ⭐ rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.
+    <li>${ico("poke", "p")} Les Poké Balls donnent surtout les Pokémon de l'endroit où tu es, parfois ceux que tu as ratés plus tôt ou ceux de l'étape
+      suivante, et plus souvent ceux des types de ta journée. Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.
       Plus rien de nouveau autour de toi : la ball pioche dans tout Kanto, donc aucune n'est perdue.</li>
-    <li>🐾 <b>Compagnon</b> : il marche avec toi sur la carte. Choisis-le dans la fiche d'un Pokémon (sinon, c'est ta dernière capture).</li>
-    <li>🏅 <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
+    <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
       6 jours sur 7). Tes points continuent de compter pendant ce temps. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
-    ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">🎬 Revoir l'accueil du Professeur Chen</button></li>` : ""}
-    ${V.badges[1] ? "" : `<li><button class="filtre apercu">🎬 Aperçu de la scène du badge (sans récompense)</button></li>`}
+    ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
+    ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
 `;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
@@ -1753,6 +1776,7 @@ function dessinerRegles() {
   if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
 }
 
+[["ic-spe", "hyper"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
 function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
 { // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie

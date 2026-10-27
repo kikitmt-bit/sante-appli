@@ -148,6 +148,13 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     rien n'est copié dans ce dépôt) : `pokemon/N.png` (petite, Pokédex, carte), `other/showdown/N.gif` (animée,
     1 011 premiers), `other/official-artwork/N.png` (HD, ouverture et fiche), `shiny/` pour chacune, `badges/N.png`
     (1-8 = Kanto, 9-16 = Johto…). Il y a aussi toutes les générations, les icônes, les objets ; pas de cartes.
+    **Icônes du jeu à la place des émojis** (31/10, `IC`, `ico(cle, taille)`, `icoType`, `raisonHTML`) : objets
+    (`items/` : Poké/Super/Hyper/Master/Honor Ball, Charme Chroma = shiny, Carte = lieu et voyage, Morceau d'Étoile = rare,
+    Bicyclette, Passe Bateau, Poké Radar, Télé Apprentissage = « Revoir »), rubans (`ribbons/generation-iii/` : Effort =
+    barre, Champion = Ligue), marque Sommeil (`marks/`, Bonne nuit), badges, et icônes rondes des types
+    (`types/generation-ix/scarlet-violet/small/N.png`, N = numéro du type dans `TYPE_ID`) dans toutes les pastilles de
+    type. Restent en émojis : les activités de sport (👟 🔥 🪜…, ce sont des choses de la vraie vie), ✅, 🔊 et ✕.
+    La `raison` des balls garde son émoji pour la montre ; l'onglet le remplace par l'icône (`raisonHTML`).
     Petites images sans leurs bords vides (`rogne`, classe `rogne`). La montre reçoit la petite image recadrée en
     base64 (`montre.image`, Pillow). L'ancienne branche `sprites` du dépôt privé n'est plus lue.
   - **Balls ouvertes partagées** (montre + téléphone) : `data/pokemon/ouvertes.json` (branche data, 20 derniers jours),
