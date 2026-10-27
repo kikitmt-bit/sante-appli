@@ -46,7 +46,12 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   voyage, `ecran_pokemon.py` prépare les données, `pokemon_ui.html` = tout l'onglet (un seul composant). Audit du 27/10
   (experts sport / mode de vie / jeu / ergonomie) : prochaines étapes = Johto (Gen 2, avant que Kanto soit fini, sinon
   il ne sort plus que des shiny), saisons/thèmes du mois, peut-être un compagnon qui évolue. Kiki peut fournir des
-  images de carte (pixel art, HD-2D) si besoin.
+  images de carte (pixel art, HD-2D) si besoin. **Régions suivantes (décidé le 29/10)** : même système jusqu'à la
+  Gen 9 (Johto, Hoenn, Sinnoh, Unys, Kalos, Alola, Galar, Paldea), une région après la Ligue de la précédente, à
+  construire quand Kiki aura joué quelques semaines (régler la durée sur son vrai rythme), avant la fin de Kanto.
+  Garde-fou choisi par Kiki : **une ball sur cinq pile** (5e, 10e, 15e…, compteur, pas au hasard ; l'écran peut
+  l'annoncer) donne un Pokémon manquant des régions précédentes, tant qu'il en reste ; les Master Balls donnent d'abord
+  les légendaires manquants des régions précédentes. Pas d'obligation de choisir entre finir le Pokédex et avancer.
   - Barre d'effort (100 points, ne se vide jamais) : 1 pt / 100 pas au-delà de 2 000, 2 pts / min en zone, 1 / étage,
     1 / min de séance (≥ 10 min), 2 / min de musculation ou de rameur
     (`est_force` : type ou nom de la séance, depuis le 28/10). Barre pleine = Poké Ball ; ses types = ce qui a le plus rempli la barre du jour hors
