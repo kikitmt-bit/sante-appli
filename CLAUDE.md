@@ -49,7 +49,9 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   conversation de la carte, même style ; prompt : labo, professeur derrière une table avec 3 Poké Balls, format 9:16,
   bas de l'image libre), fondu depuis le noir, boîte de dialogue façon GBA (police Pixelify Sans, texte lettre par
   lettre avec un bip, ▼), on touche une des 3 balls dessinées (halos ; position en pixels dans `PROFESSEURS`), elle
-  tremble (morceau de l'image), flash blanc, puis l'ouverture habituelle. Prévu pour chaque région (`PROFESSEURS` :
+  saute (morceau de l'image), zoom dessus + flash blanc, puis l'ouverture en 3D **sans 2e toucher** (`ouvrir(c, rejouer,
+  direct)` : elle tombe, gigote 3-4 fois, s'ouvre, aussi quand on rejoue). Texte : espace insécable avant ! ? : ; et
+  `text-wrap: pretty` (jamais une ponctuation ou un mot seul en dernière ligne, demande de Kiki). Prévu pour chaque région (`PROFESSEURS` :
   chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur labo, leurs balls et leurs 3 starters). Bouton « 🎬 Revoir l'accueil »
   dans « Comment ça marche ? » (rejoue sans rien changer).
   **Montre : rien à mettre à jour pendant que le jeu évolue (choix de Kiki, 29/10)** : on la mettra à jour une seule

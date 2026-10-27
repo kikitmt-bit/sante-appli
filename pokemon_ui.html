@@ -652,7 +652,7 @@ function Ball2D(el, type) {
 }
 
 // ----- La séquence complète -----
-function ouvrir(c, rejouer = false) {
+function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de la scène du labo (la ball a déjà été choisie)
   ouverture = true;
   installerStyle("pkm2-style", STYLE_VOILE);
   audio();  // le toucher qui ouvre autorise le son
@@ -711,14 +711,16 @@ function ouvrir(c, rejouer = false) {
     SONS.chute();
     await tween(950, (e, t) => { B.y = 5 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
     SONS.rebond(); vibre(20);
-    if (rejouer) return devoiler(true);
-    // 2. Elle attend qu'on la touche
-    aide.classList.add("vu");
-    let tAtt = maintenant(), attend = true;
-    anims.push(now => { if (!attend) return false; const t = (now - tAtt) / 1000;
-      B.y = .08 + Math.sin(t * 2.2) * .08; B.rotY = Math.sin(t * .9) * .5; B.lueurBouton(.25 + .25 * Math.sin(t * 4)); });
-    await touche(); attend = false; aide.classList.remove("vu");
-    await tween(250, e => { B.y = .08 * (1 - e); B.rotY *= (1 - e); B.lueurBouton(0); });
+    if (rejouer && !direct) return devoiler(true);
+    // 2. Elle attend qu'on la touche (sauf en arrivant du labo : elle a déjà été choisie)
+    if (!direct) {
+      aide.classList.add("vu");
+      let tAtt = maintenant(), attend = true;
+      anims.push(now => { if (!attend) return false; const t = (now - tAtt) / 1000;
+        B.y = .08 + Math.sin(t * 2.2) * .08; B.rotY = Math.sin(t * .9) * .5; B.lueurBouton(.25 + .25 * Math.sin(t * 4)); });
+      await touche(); attend = false; aide.classList.remove("vu");
+      await tween(250, e => { B.y = .08 * (1 - e); B.rotY *= (1 - e); B.lueurBouton(0); });
+    }
     // 3. Les secousses : une de plus quand c'est rare, et de plus en plus longues
     const n = r.leg || r.shiny || r.nouveau ? 4 : 3;
     for (let i = 0; i < n; i++) {
@@ -813,12 +815,14 @@ const STYLE_INTRO = `
 #pkm-intro .zone{position:absolute;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer}
 #pkm-intro .ballc{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
 #pkm-intro .ballc{border-radius:50%;background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 8px rgba(255,240,170,.95))}
-#pkm-intro .ballc.bouge{animation:pki-tremble .9s ease-in-out 2}
+#pkm-intro .ballc.bouge{animation:pki-saute-ball .5s ease-out 2}
+@keyframes pki-saute-ball{0%,100%{transform:translate(-50%,-50%)}40%{transform:translate(-50%,-85%)}}
+#pkm-intro .labo{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
 @keyframes pki-tremble{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-12deg)}
   75%{transform:translate(-50%,-50%) rotate(12deg)}}
 #pkm-intro .dial{position:absolute;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));max-width:470px;margin:0 auto;
   background:#F8F8F8;border:4px solid #50607E;border-radius:10px;box-shadow:0 0 0 3px #F8F8F8,0 0 0 6px #283048,0 8px 22px rgba(0,0,0,.45);
-  padding:14px 18px 22px;font-size:19px;line-height:1.38;color:#383838;text-shadow:2px 2px 0 #D2D2CA;min-height:104px;
+  padding:14px 18px 22px;font-size:19px;line-height:1.38;color:#383838;text-wrap:pretty;text-shadow:2px 2px 0 #D2D2CA;min-height:104px;
   opacity:0;transform:translateY(16px);transition:opacity .35s,transform .35s}
 #pkm-intro .dial.vu{opacity:1;transform:none}
 #pkm-intro .dial .qui{font-weight:700;color:#C03028}
@@ -854,18 +858,24 @@ function intro(c, p, rejouer = false) {
     labo.style.width = w + "px"; labo.style.height = w * p.hauteur / p.largeur + "px"; };
   taille(); PW.addEventListener("resize", taille);
   requestAnimationFrame(() => setTimeout(() => v.querySelector(".noir").style.opacity = 0, 80));
-  let fini = false;
-  const fin = suite => { if (fini) return; fini = true; PW.removeEventListener("resize", taille);
-    v.querySelector(".blanc").style.opacity = suite ? 1 : 0; v.style.transition = "opacity .45s";
-    setTimeout(() => { v.style.opacity = 0; }, suite ? 350 : 0);
-    setTimeout(() => { v.remove(); if (suite) ouvrir(c, rejouer); }, suite ? 800 : 450); };
+  let fini = false, choisie = null;
+  // La sortie : vers l'ouverture en 3D, on plonge dans la Poké Ball choisie (zoom + flash blanc), puis elle tombe,
+  // gigote et s'ouvre ; ✕ : simple fondu
+  const fin = suite => { if (fini) return; fini = true; PW.removeEventListener("resize", taille); v.style.transition = "opacity .45s";
+    if (!suite) { v.style.opacity = 0; setTimeout(() => v.remove(), 450); return; }
+    if (choisie !== null) { const [x, y] = p.balls[choisie];
+      labo.style.transformOrigin = `${x / p.largeur * 100}% ${y / p.hauteur * 100}%`; labo.style.transform = "translateX(-50%) scale(4)"; }
+    SONS.montee(.7);
+    setTimeout(() => { v.querySelector(".blanc").style.opacity = 1; }, 380);
+    setTimeout(() => { ouvrir(c, rejouer, true); v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 850); };
   v.querySelector(".passer").onclick = () => fin(false);
 
   // Une réplique : le texte s'écrit lettre par lettre (petit « bip »), toucher = tout afficher, puis passer à la suite
   let tape = null, attendre = null;
   const dire = (html, attendSuite = true) => new Promise(ok => {
     clearInterval(tape); dial.classList.add("vu"); dial.classList.remove("attend");
-    const plein = html, brut = plein.replace(/<[^>]+>/g, "");
+    // espace insécable avant ! ? : ; et après « (jamais une ponctuation seule au début d'une ligne)
+    const plein = html.replace(/ ([!?:;»])/g, "\u00A0$1").replace(/« /g, "«\u00A0"), brut = plein.replace(/<[^>]+>/g, "");
     let n = 0; txt.textContent = "";
     const finir = () => { clearInterval(tape); tape = null; txt.innerHTML = plein;
       if (attendSuite) { dial.classList.add("attend"); attendre = () => { attendre = null; ok(); }; } else ok(); };
@@ -894,7 +904,7 @@ function intro(c, p, rejouer = false) {
       background-image:url('${D.scenes}${p.image}');background-size:${p.largeur / (2 * r) * 100}% ${p.hauteur / (2 * r) * 100}%;
       background-position:${(x - r) / (p.largeur - 2 * r) * 100}% ${(y - r) / (p.hauteur - 2 * r) * 100}%`;
     labo.appendChild(b);
-    setTimeout(() => { SONS.secousse(); vibre(25); }, 200); setTimeout(() => { SONS.secousse(); vibre(25); }, 1100);
+    choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
     await dire("Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !");
     fin(true);
   })().catch(() => {});
