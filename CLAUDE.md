@@ -73,8 +73,13 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     chaque capture a son `lieu`. Écran : **carte = image pixel art** `cartes/kanto.webp` (générée par Kiki avec ChatGPT,
     même style et même prompt pour toutes les régions : `cartes/PROMPT.md` ; servie par raw.githubusercontent.com de
     ce dépôt ; lieux en pixels de l'image dans `kanto.LIEUX`, ramenés à 370 de large dans l'écran ; pas une carte
-    fidèle de Kanto, choix assumé : jolie et cohérente) avec par-dessus en SVG : chemin parcouru, toucher un
-    lieu = ses Pokémon + quand on repart, ★ sur un lieu complété, défi en cours, boîte à badges. Pokémon **rares** ⭐
+    fidèle de Kanto, choix assumé : jolie et cohérente) avec par-dessus en SVG : chemin qui **suit les routes de
+    l'image** (`kanto.VIA` = points de passage par étape, en pixels ; parcouru = rouge bordé de blanc, la suite = petits
+    points sombres ; position = fraction des points le long du tracé), toucher un lieu = anneau blanc qui pulse + nom
+    en jaune, et ses Pokémon dans le panneau collé sous la carte (+ quand on repart), ★ sur un lieu complété. Ordre
+    (choix de Kiki, 29/10) : tuile de l'arène (compacte) au-dessus de la carte, carte, Pokémon du lieu, boîte à badges ;
+    pas de phrase sur le compagnon (à découvrir) ; sans Pokémon : une Poké Ball (pas d'image de Sacha dans PokeAPI).
+    Dernières captures : les 8 dernières. Pokémon **rares** ⭐
     (`kanto.RARES`, poids ÷ 3). **Compagnon** (GIF animé sur la carte) : bouton « 🐾 Il m'accompagne » de la fiche,
     gardé dans le localStorage (`pkm_compagnon` = « num:shiny », téléphone seul, purement décoratif), sinon la dernière
     capture ouverte. Choix voulu (29/10, carte blanche de Kiki : « ça reste une appli de sport ») : chemin fixe, pas de
