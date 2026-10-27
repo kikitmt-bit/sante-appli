@@ -209,10 +209,10 @@ def main(args):
         lire = lecteur_github(session)
         texte = json.dumps(contenu(lire, maintenant), ensure_ascii=False, separators=(",", ":"))
         print("montre.json :", ecrire_github(session, texte))
-        # Captures des jours finis figées (avant, c'était la tâche du coach du matin ; le coach est maintenant à la demande)
+        # Toutes les captures figées, aujourd'hui compris : le tirage dépend des chiffres du jour (types de la barre,
+        # balls gagnées plus tard), donc sans ça une ball déjà ouverte pouvait changer de Pokémon dans la journée
         captures, _ = pokemon.charger_jeu(lire, maintenant.date())
-        figees = json.dumps({"captures": [c for c in captures if c["jour"] < str(maintenant.date())]},
-                            ensure_ascii=False, indent=0)
+        figees = json.dumps({"captures": captures}, ensure_ascii=False, indent=0)
         print("captures figées :", ecrire_github(session, figees, pokemon.FIGEES,
                                                  lambda a, b: json.loads(a) == json.loads(b)))
     elif args:

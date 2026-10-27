@@ -48,7 +48,9 @@ téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directe
     zone ou séance de 45 min ; Master Ball = 30 jours de série (5 000 pas ou 15 min, joker hebdo) = légendaire.
     Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball). Jamais de doublon.
   - Identifiants « jour#poke3 / super / hyper / master30 » = graines (rejouable). Règles v2 rejouées depuis le 19/10
-    avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige les jours finis →
+    avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige **toutes** les captures,
+    aujourd'hui compris (27/10 : avant, seulement les jours finis, et une ball ouverte changeait de Pokémon dans la
+    journée car le tirage dépend des types de la barre et des balls gagnées plus tard) →
     `data/pokemon/captures_v2.json` (avant le 25/10 : la tâche du coach, `pokemon.py figer DATA`) (l'ancien `captures.json` du prototype n'est plus lu).
   - Écran : barre d'effort (anneau), Poké Balls à ouvrir, balls spéciales du jour, dernières captures, Pokédex (filtres,
     types, recherche, fiche en feuille qui monte du bas avec versions manquantes et « Où le trouver »).

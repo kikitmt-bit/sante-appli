@@ -11,11 +11,12 @@
 - Une nuit de 7 h ne donne pas de Poké Ball mais rend les shiny plus fréquents toute la journée (×1,5).
 
 Tout est rejouable : chaque capture a un identifiant (« 2026-10-19#poke3 ») qui sert de graine au hasard, donc les
-mêmes données donnent toujours les mêmes Pokémon. Chaque matin, la tâche du coach fige les jours passés dans
-data/pokemon/captures_v2.json (branche data) : une capture figée ne change plus jamais, même si la montre synchronise
-tard. (captures.json = l'ancien prototype, une Poké Ball offerte chaque jour : plus lu.)
+mêmes données donnent toujours les mêmes Pokémon. Mais le tirage dépend des chiffres du jour (types de la barre,
+balls déjà gagnées) : le calcul de la montre (montre.py, après chaque récolte + chaque heure) fige donc toutes les captures,
+celles d'aujourd'hui comprises, dans data/pokemon/captures_v2.json (branche data) : une capture figée ne change plus
+jamais, même si la journée continue ou si la montre synchronise tard. (captures.json = l'ancien prototype, une Poké Ball offerte chaque jour : plus lu.)
 
-    python3 pokemon.py figer DOSSIER_DATA   -> ajoute à data/pokemon/captures_v2.json les captures des jours passés
+    python3 pokemon.py figer DOSSIER_DATA   -> écrit data/pokemon/captures_v2.json (toutes les captures)
 """
 import datetime as dt
 import json
@@ -195,6 +196,7 @@ def jouer(stats, resumes, aujourd, figees=()):
         dues = balls_du_jour(jour, m, avant, cumul, ok, serie)
         ids = {f"{jour}#{mi['cle']}" for mi in dues}
         dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(f"{jour}#") and i not in ids]  # figées
+        dues.sort(key=lambda mi: f"{jour}#{mi['cle']}" not in figees)  # figées d'abord : les nouvelles les évitent
         for mi in dues:  # une capture figée reste, même si les chiffres ont baissé depuis
             ident = f"{jour}#{mi['cle']}"
             c = figees.get(ident)
@@ -230,15 +232,14 @@ def charger_jeu(lire, aujourd):
 
 
 def figer(dossier):
-    """Écrit le fichier des captures figées : celles des jours passés (jamais aujourd'hui, qui n'est pas fini)."""
+    """Écrit le fichier des captures figées : toutes, aujourd'hui compris (une ball vue ne change plus)."""
     import coach
     aujourd = dt.datetime.now(chiffres.TZ).date()
     captures, _ = charger_jeu(coach.lecteur(dossier), aujourd)
-    passees = [c for c in captures if c["jour"] < str(aujourd)]
     chemin = Path(dossier) / FIGEES
     chemin.parent.mkdir(parents=True, exist_ok=True)
-    chemin.write_text(json.dumps({"captures": passees}, ensure_ascii=False, indent=0), encoding="utf-8")
-    print(f"{chemin} : {len(passees)} captures figées")
+    chemin.write_text(json.dumps({"captures": captures}, ensure_ascii=False, indent=0), encoding="utf-8")
+    print(f"{chemin} : {len(captures)} captures figées")
 
 
 if __name__ == "__main__":
