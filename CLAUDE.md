@@ -75,7 +75,9 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     ce dépôt ; lieux en pixels de l'image dans `kanto.LIEUX`, ramenés à 370 de large dans l'écran ; pas une carte
     fidèle de Kanto, choix assumé : jolie et cohérente) avec par-dessus en SVG : chemin qui **suit les routes de
     l'image** (`kanto.VIA` = points de passage par étape, en pixels ; parcouru = rouge bordé de blanc, la suite = petits
-    points sombres ; position = fraction des points le long du tracé), toucher un lieu = anneau blanc qui pulse + nom
+    points sombres ; position = fraction des points le long du tracé ; pour ne pas repasser par une route déjà faite,
+    `kanto.MODES` : « vol » = arc en tirets avec un Roucool animé au milieu, « surf » = tirets en mer avec un Lokhlass,
+    idée de Kiki, même nombre de points : seul le dessin change), toucher un lieu = anneau blanc qui pulse + nom
     en jaune, et ses Pokémon dans le panneau collé sous la carte (+ quand on repart), ★ sur un lieu complété. Ordre
     (choix de Kiki, 29/10) : tuile de l'arène (compacte) au-dessus de la carte, carte, Pokémon du lieu, boîte à badges ;
     pas de phrase sur le compagnon (à découvrir) ; sans Pokémon : une Poké Ball (pas d'image de Sacha dans PokeAPI).

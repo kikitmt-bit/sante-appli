@@ -83,18 +83,17 @@ VIA = {
     "Carmin-sur-Mer": [(1008, 420), (1000, 470)],
     "Grotte et Centrale": [(1000, 470), (1040, 420), (1300, 420)],
     "Lavanville": [(1300, 250)],
-    "Céladopole": [(1300, 250), (1300, 420), (1040, 420), (830, 418)],
     "Piste cyclable": [(660, 452), (545, 452)],
     "Parmanie et Parc Safari": [(545, 848), (725, 848)],
     "Safrania": [(990, 832), (1000, 700), (1000, 470)],
-    "Îles Écume": [(1000, 470), (1000, 700), (990, 832), (725, 848), (725, 905)],
     "Cramois'Île": [(400, 985)],
-    "Jadielle (retour)": [(330, 870), (330, 725), (330, 680), (300, 640), (270, 585), (200, 585)],
     "Route Victoire": [(200, 402)],
     "Plateau Indigo": [(200, 402), (200, 232), (105, 232)],
 }
-LIEUX = [{"nom": nom, "x": x, "y": y, "pokemon": _n(pk), "arene": ar, "pas": d, "via": VIA.get(nom, [])}
-         for nom, d, x, y, pk, ar in LIEUX]
+# Pour ne pas repasser par une route déjà faite : on vole (CS Vol, arc) ou on surfe (CS Surf) ; même nombre de points
+MODES = {"Céladopole": "vol", "Îles Écume": "vol", "Cramois'Île": "surf", "Jadielle (retour)": "vol"}
+LIEUX = [{"nom": nom, "x": x, "y": y, "pokemon": _n(pk), "arene": ar, "pas": d, "via": VIA.get(nom, []),
+          "mode": MODES.get(nom, "route")} for nom, d, x, y, pk, ar in LIEUX]
 DIST = []  # points cumulés pour atteindre chaque lieu
 for _l in LIEUX:
     DIST.append((DIST[-1] if DIST else 0) + _l["pas"])
@@ -185,7 +184,7 @@ class Voyage:
             defi = {"lieu": a, "numero": ARENES.index(a) + 1, "valeur": round(valeurs[0], 1), "unite": DEFIS[ar["defi"]][1],
                     "valeur_b": round(valeurs[1], 1) if ar["b"] else None,
                     "arrive": arrive, "depuis": str(self.arrivee) if self.arrivee else None, "reste": round(DIST[a] - self.pos)}
-        return {"lieux": [{k: l[k] for k in ("nom", "x", "y", "pokemon", "arene", "via")} | {"dist": d}
+        return {"lieux": [{k: l[k] for k in ("nom", "x", "y", "pokemon", "arene", "via", "mode")} | {"dist": d}
                           for l, d in zip(LIEUX, DIST)],
                 "pos": round(self.pos, 1), "ici": i, "badges": {k: str(d) for k, d in self.badges.items()},
                 "defi": defi, "total": DIST[-1], "rares": sorted(RARES), "carte": CARTE}

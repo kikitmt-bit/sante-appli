@@ -195,7 +195,17 @@ const V = D.voyage;
 const KC = 370 / V.carte.largeur, HC = V.carte.hauteur * KC;
 const LIEUX = V.lieux.map(l => ({...l, x: l.x * KC, y: l.y * KC, via: (l.via || []).map(([x, y]) => [x * KC, y * KC])}));
 // Le tracé de chaque étape (depuis la précédente) en suivant les routes de la carte
-const TRACE = LIEUX.map((l, k) => k ? [[LIEUX[k - 1].x, LIEUX[k - 1].y], ...l.via, [l.x, l.y]] : [[l.x, l.y]]);
+// (un vol : un arc, comme la CS Vol, pour ne pas repasser par une route déjà faite)
+const TRACE = LIEUX.map((l, k) => {
+  if (!k) return [[l.x, l.y]];
+  const a = [LIEUX[k - 1].x, LIEUX[k - 1].y], b = [l.x, l.y];
+  if (l.mode !== "vol") return [a, ...l.via, b];
+  const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1;
+  let nx = -dy / d, ny = dx / d; if (ny > 0 || (ny === 0 && nx < 0)) { nx = -nx; ny = -ny; }  // l'arc monte
+  const c = [(a[0] + b[0]) / 2 + nx * d * .3, (a[1] + b[1]) / 2 + ny * d * .3];
+  return Array.from({length: 17}, (_, i) => { const t = i / 16, u = 1 - t;
+    return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]; });
+});
 const longueur = pts => pts.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]), 0);
 function jusqua(pts, t) {  // le début d'un tracé, jusqu'à la fraction t de sa longueur
   let reste = longueur(pts) * t; const sortie = [pts[0]];
@@ -995,25 +1005,33 @@ function dessinerDex() {
 
 // ---------- Le voyage dans Kanto ----------
 let lieuVu = null;  // le lieu touché sur la carte (sinon : là où l'on est)
-function cheminFait() {  // le tracé déjà parcouru, en suivant les routes, jusqu'à la position actuelle
-  const L = LIEUX, pts = [[L[0].x, L[0].y]];
+function morceaux() {  // chaque étape : la partie faite et la partie à faire, avec sa façon de voyager
+  const L = LIEUX, m = [];
   for (let k = 1; k < L.length; k++) {
-    if (V.pos >= L[k].dist) { pts.push(...TRACE[k].slice(1)); continue; }
-    if (V.pos > L[k - 1].dist) pts.push(...jusqua(TRACE[k], (V.pos - L[k - 1].dist) / (L[k].dist - L[k - 1].dist)).slice(1));
-    break;
+    const tr = TRACE[k], mode = L[k].mode;
+    if (V.pos >= L[k].dist) m.push({pts: tr, fait: true, mode});
+    else if (V.pos > L[k - 1].dist) {
+      const f = jusqua(tr, (V.pos - L[k - 1].dist) / (L[k].dist - L[k - 1].dist));
+      m.push({pts: f, fait: true, mode, ici: true}, {pts: [f[f.length - 1], ...tr.slice(f.length - 1)], fait: false, mode});
+    } else m.push({pts: tr, fait: false, mode});
   }
-  return pts;
+  return m;
 }
 function svgKanto() {
-  const L = LIEUX, fait = cheminFait(), [mx, my] = fait[fait.length - 1];
+  const L = LIEUX, M = morceaux(), faits = M.filter(x => x.fait);
+  const [mx, my] = faits.length ? faits[faits.length - 1].pts.slice(-1)[0] : [L[0].x, L[0].y];
   const pt = pts => pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  // la suite du voyage : petits points discrets, de la position actuelle à la Ligue
-  const k0 = L.findIndex(l => l.dist > V.pos);
-  let reste = [];
-  if (k0 > 0) {  // la fin de l'étape en cours (ce qui dépasse la partie faite), puis les étapes suivantes
-    const t = (V.pos - L[k0 - 1].dist) / (L[k0].dist - L[k0 - 1].dist), n = jusqua(TRACE[k0], t).length;
-    reste = [[mx, my], ...TRACE[k0].slice(n - 1), ...TRACE.slice(k0 + 1).flatMap(tr => tr.slice(1))];
-  }
+  // le chemin : à faire = petits points sombres ; fait = rouge bordé de blanc (tirets pour un vol ou en mer),
+  // avec un petit Roucool (Vol) ou Lokhlass (Surf) au milieu
+  const traits = M.filter(x => !x.fait).map(x => `<polyline points="${pt(x.pts)}" fill="none" stroke="#1B2A4A" stroke-width="1.8"
+      stroke-dasharray="0.1 4.2" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>`).join("") +
+    M.filter(x => x.fait).map(x => { const tiret = x.mode === "route" ? "" : `stroke-dasharray="5 3.5"`;
+      return `<polyline points="${pt(x.pts)}" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".9" ${tiret}/>
+        <polyline ${x.mode === "route" ? `class="chemin-fait" style="--l:${Math.ceil(longueur(x.pts)) + 2}"` : tiret} points="${pt(x.pts)}" fill="none"
+          stroke="#E8382F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`; }).join("") +
+    L.slice(1).map((l, j) => { if (l.mode === "route") return "";
+      const tr = TRACE[j + 1], [x, y] = jusqua(tr, .5).slice(-1)[0];
+      return `<image href="${IMG.anim(l.mode === "vol" ? 16 : 131, false)}" x="${x - 11}" y="${y - 13}" width="22" height="22" style="image-rendering:pixelated"/>`; }).join("");
   const col = collection();
   const noeuds = L.map((l, k) => {
     if (k === 18) return "";  // Jadielle (retour) : même endroit que Jadielle
@@ -1031,7 +1049,8 @@ function svgKanto() {
       ${ar && ar.image ? `<image href="${IMG.badge(ar.image)}" x="${l.x + 3}" y="${l.y - 15}" width="12" height="12" opacity="${gagne ? 1 : .55}" style="${gagne ? "" : "filter:grayscale(1)"}"/>` : ""}
       ${ar && !ar.image ? `<text x="${l.x + 8}" y="${l.y - 5}" font-size="10" style="stroke:none">${gagne ? "🏆" : "🏟️"}</text>` : ""}
       ${complet ? `<text x="${l.x - 12}" y="${l.y - 4}" font-size="9" style="fill:#FFD84A">★</text>` : ""}
-      ${ville ? `<text class="nom" x="${l.x}" y="${l.y + (bas ? -9 : 14)}" font-size="8" text-anchor="middle">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
+      ${ville ? `<text class="nom" x="${l.nom === "Plateau Indigo" ? l.x + 8 : l.x}" y="${l.nom === "Plateau Indigo" ? l.y - 6 : l.y + (bas ? -9 : 14)}" font-size="8"
+        text-anchor="${l.nom === "Plateau Indigo" ? "start" : "middle"}">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
       <circle cx="${l.x}" cy="${l.y}" r="13" fill="transparent"/></g>`;
   }).join("");
   // Le compagnon ; pas encore de Pokémon : une Poké Ball
@@ -1040,10 +1059,7 @@ function svgKanto() {
     : `<image href="${D.images}/items/poke-ball.png" x="${mx - 12}" y="${my - 22}" width="24" height="24" style="image-rendering:pixelated"/>`;
   return `<svg class="carte-kanto" viewBox="0 0 370 ${HC.toFixed(1)}">
     <image href="${D.carte}" x="0" y="0" width="370" height="${HC.toFixed(1)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>
-    <polyline points="${pt(reste)}" fill="none" stroke="#1B2A4A" stroke-width="1.8" stroke-dasharray="0.1 4.2" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>
-    <polyline points="${pt(fait)}" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>
-    <polyline class="chemin-fait" points="${pt(fait)}" fill="none" stroke="#E8382F" stroke-width="2.8" stroke-linecap="round"
-      stroke-linejoin="round" style="--l:${Math.ceil(longueur(fait)) + 2}"/>
+    ${traits}
     ${noeuds}
     <g class="moi"><ellipse cx="${mx}" cy="${my + 1}" rx="8" ry="2.6" fill="#000" opacity=".35"/>${moi}</g>
   </svg>`;
