@@ -85,7 +85,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     fidèle de Kanto, choix assumé : jolie et cohérente) avec par-dessus en SVG : chemin qui **suit les routes de
     l'image** (`kanto.VIA` = points de passage par étape, en pixels ; parcouru = rouge bordé de blanc, la suite = petits
     points sombres ; position = fraction des points le long du tracé ; pour ne pas repasser par une route déjà faite,
-    `kanto.MODES` : « vol » = arc en tirets avec un Roucool animé au milieu, « surf » = tirets en mer avec un Lokhlass,
+    `kanto.MODES` : « vol » = arc en tirets, « surf » = tirets en mer ; **un seul Pokémon visible sur la carte** (Kiki, 30/10),
     idée de Kiki, même nombre de points : seul le dessin change ; `monture` : c'est un Pokémon de la collection qui
     porte (Vol pour voler, Eau en mer : le compagnon s'il a le type, sinon la dernière capture du type ; personne :
     vélo sur la terre, bateau ⛵ pour un vol au-dessus de la mer, Lokhlass sauvage en mer), sans choix ni tirage truqué, et « 🪽 En vol : X t'emmène jusqu'à… » sous la carte avant
