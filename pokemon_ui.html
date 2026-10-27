@@ -100,7 +100,8 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-wrap .chef .portrait{width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;
   background:radial-gradient(circle at 50% 30%,#fff 0%,var(--c) 80%);box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.45),0 2px 5px rgba(0,0,0,.5)}
 .carte-wrap .chef canvas{position:absolute;width:190%;height:190%;left:-45%;top:-14%;image-rendering:pixelated}
-.carte-wrap .chef .bdg{position:absolute;right:-26%;bottom:-20%;width:50%;filter:drop-shadow(0 1px 1px rgba(0,0,0,.7))}
+.carte-wrap .chef .bdg{position:absolute;right:-20%;top:-20%;width:52%;height:52%;object-fit:contain;padding:7%;border-radius:50%;
+  background:#16213A;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.6)}
 .carte-wrap .chef.nouveau:before{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2.5px #fff;
   animation:pk-appel 1.8s ease-out infinite;pointer-events:none}
 @keyframes pk-appel{0%{transform:scale(1);opacity:.8}100%{transform:scale(1.35);opacity:0}}
@@ -167,6 +168,10 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
   font:500 14px Outfit,sans-serif;outline:none;margin-bottom:8px}
 #recherche:focus{border-color:#6B8CFF}
 .defile{display:flex;flex-wrap:wrap;gap:6px;padding-bottom:6px}
+#filtres-types{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;padding-bottom:6px}
+#filtres-types .filtre.ty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;
+  padding:6px 0 5px;border-radius:12px;font-size:10px;font-weight:700;letter-spacing:-.1px}
+#filtres-types .filtre.ty img.ty{width:24px;height:24px;margin:0}
 .filtre{flex:0 0 auto;background:#1C2740;border:1px solid #2A3756;color:#C9D3EA;border-radius:999px;padding:5px 11px;
   font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap}
 .filtre.on{background:#6B8CFF;border-color:#6B8CFF;color:#fff}
@@ -212,7 +217,7 @@ details.regles li{margin:5px 0;line-height:1.4}
   <div id="stats"></div>
   <input id="recherche" type="search" placeholder="Chercher un Pokémon ou un numéro…" autocomplete="off">
   <div class="defile" id="filtres"></div>
-  <div class="defile" id="filtres-types"></div>
+  <div id="filtres-types"></div>
   <div id="grille"></div><div id="rien">Aucun Pokémon ici.</div>
   <h2>Mon dresseur</h2>
   <div id="mon-dresseur"></div>
@@ -291,7 +296,8 @@ const IC = {poke: OBJ("poke-ball"), super: OBJ("great-ball"), hyper: OBJ("ultra-
   ligue: `${D.images}/ribbons/generation-iii/champion-ribbon.png`, effort: `${D.images}/ribbons/generation-iii/effort-ribbon.png`,
   nuit: `${D.images}/pokemon/versions/generation-vii/icons/143.png`};
 // (styles des icônes : aussi dans la page parente, pour l'ouverture et la fiche)
-const STYLE_ICO = `.ico{width:24px;height:24px;object-fit:contain;image-rendering:pixelated;vertical-align:-6px;display:inline-block}
+const STYLE_ICO = `.ico{width:24px;height:24px;object-fit:contain;image-rendering:pixelated;vertical-align:-6px;display:inline-block;
+  transform:scale(var(--k,1));margin-inline:calc((var(--k,1) - 1) * 10px)}
 .ico.pt{width:18px;height:18px;vertical-align:-4px}.ico.g{width:32px;height:32px;vertical-align:-9px}
 .ico.brille{filter:drop-shadow(0 0 2px #FFCB05) drop-shadow(0 0 1px #FFCB05)}
 img.ty{width:18px;height:18px;vertical-align:-4px;margin:0 4px 0 -6px;border-radius:50%;image-rendering:auto}
@@ -299,7 +305,10 @@ img.ty{width:18px;height:18px;vertical-align:-4px;margin:0 4px 0 -6px;border-rad
 #pkm-fiche .f .trou img.ico{width:36px;height:36px}`;
 document.head.insertAdjacentHTML("beforeend", `<style>${STYLE_ICO}</style>`); installerStyle("pkm2-ico-style", STYLE_ICO);
 // (la classe « p » des cartes du Pokédex est prise : la petite taille s'appelle « pt »)
-const ico = (cle, cls = "") => `<img class="ico ${cls.replace(/\bp\b/, "pt")}" src="${IC[cle] || cle}" alt="">`;
+const ZOOM = {poke: 1.4, super: 1.4, hyper: 1.4, master: 1.4, honneur: 1.4, rare: 1.45, effort: 1.23, ligue: 1.15,
+  bateau: 1.15, radar: 1.1, velo: 1.1, tele: .88, shiny: .92};
+const ico = (cle, cls = "") => { const k = ZOOM[cle] || (/\/badges\//.test(cle) ? .85 : 1);
+  return `<img class="ico ${cls.replace(/\bp\b/, "pt")}" src="${IC[cle] || cle}" alt=""${k !== 1 ? ` style="--k:${k}"` : ""}>`; };
 const TYPE_ID = {Normal: 1, Combat: 2, Vol: 3, Poison: 4, Sol: 5, Roche: 6, Insecte: 7, Spectre: 8, Acier: 9, Feu: 10, Eau: 11,
   Plante: 12, "Électrik": 13, Psy: 14, Glace: 15, Dragon: 16, "Ténèbres": 17, "Fée": 18};
 IMG.type = t => `${D.images}/types/generation-ix/scarlet-violet/small/${TYPE_ID[t]}.png`;
@@ -1656,7 +1665,7 @@ function chefCarte() {
   // son portrait dans une médaille à côté de sa ville (à droite du dresseur), avec le badge à gagner ;
   // un halo blanc l'entoure jusqu'au premier toucher
   let vu = false; try { vu = !!localStorage.getItem("pkm_chef_vu_" + d.numero); } catch (e) {}
-  const x = l.nom === "Plateau Indigo" ? l.x : l.x + 28, y = l.nom === "Plateau Indigo" ? l.y - 22 : Math.max(l.y - 14, 17);
+  const x = l.nom === "Plateau Indigo" ? l.x : l.x + 32, y = l.nom === "Plateau Indigo" ? l.y - 22 : Math.max(l.y - 14, 23);
   return `<div class="chef ${vu ? "" : "nouveau"}" data-n="${d.numero}" style="left:${x / 370 * 100}%;top:${y / HC * 100}%;--c:${a.type ? COUL[a.type] : "#B8860B"}">
     <div class="portrait"><canvas data-sprite="${ch.sprite}" data-fixe="1"></canvas></div>
     <img class="bdg" src="${a.image ? IMG.badge(a.image) : IC.ligue}"></div>`;

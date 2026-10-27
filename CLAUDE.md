@@ -61,7 +61,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   **Arènes sur la carte** (31/10, demande de Kiki : badges invisibles avant) : chaque arène a sa **médaille** (`medaille`,
   SVG) : à gagner = rond sombre, liseré blanc en pointillés, badge en couleur ; gagné = médaille d'or qui brille + éclat.
   La **prochaine arène** = **portrait du champion** dans un médaillon à la couleur du type (`chefCarte`, haut du corps
-  du sprite PokéRogue, badge à gagner en coin), à droite de la ville ; halo blanc discret jusqu'au premier toucher
+  du sprite PokéRogue, badge à gagner en pastille en haut à droite, comme une notification), à droite de la ville ; halo blanc discret jusqu'au premier toucher
   (`pkm_chef_vu_N`, plus de « ! » rouge) ; le toucher = il s'anime + bulle (son défi) ; toucher ailleurs la ferme.
   **Scène du badge** (`sceneBadge(n, capture, rejouer)`, 30/10) : bandes noires qui s'écartent (entrée de combat),
   fond aux couleurs du type, bandeau « ARÈNE D'ARGENTA », champion animé (`championAnime`, canvas) sur une estrade,
@@ -158,7 +158,8 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     Ligue), Ronflex (`pokemon/versions/generation-vii/icons/143.png`, Bonne nuit), badges, et icônes des types
     (`types/generation-ix/scarlet-violet/small/N.png`, `TYPE_ID`) dans toutes les pastilles de type ; `COUL` = le fond
     exact de ces icônes (l'icône se fond dans la pastille) ; filtres de type en couleurs pleines, les autres s'effacent
-    quand un type est choisi. Restent en émojis : les activités de sport (👟 🔥 🪜…, ce sont des choses de la vraie vie), ✅, 🔊 et ✕.
+    quand un type est choisi ; les 18 types = grille de 3 lignes × 6 tuiles égales (icône au-dessus du nom). `ZOOM` :
+    agrandit les images qui ont beaucoup de marge (balls, Morceau d'Étoile…) pour que toutes les icônes paraissent de même taille. Restent en émojis : les activités de sport (👟 🔥 🪜…, ce sont des choses de la vraie vie), ✅, 🔊 et ✕.
     La `raison` des balls garde son émoji pour la montre ; l'onglet le remplace par l'icône (`raisonHTML`).
     Petites images sans leurs bords vides (`rogne`, classe `rogne`). La montre reçoit la petite image recadrée en
     base64 (`montre.image`, Pillow). L'ancienne branche `sprites` du dépôt privé n'est plus lue.
