@@ -72,10 +72,49 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .speciale .reste{font-size:11px;color:#FFCB05;margin-top:7px;line-height:1.35}
 .speciale.ok .reste{color:#4CD3A0}
 
+/* ----- Voyage dans Kanto ----- */
+#voyage{padding:14px 12px 12px;background:radial-gradient(120% 90% at 50% 0%,#1D4A5E 0%,#1C2740 70%)}
+#voyage .entete{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+#voyage .entete .titre{font-weight:900;font-size:17px}
+#voyage .entete .ou{font-size:12px;color:#C9D3EA;margin-left:auto}
+.avance{height:7px;background:#0D1322;border-radius:4px;margin:8px 0 10px;overflow:hidden}
+.avance div{height:100%;border-radius:4px;background:linear-gradient(90deg,#FFCB05,#FF8A3D);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
+.carte-kanto{width:100%;display:block;border-radius:14px;background:#2B6E9E;touch-action:manipulation}
+.carte-kanto .chemin-fait{stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:pk-trace 1.8s .3s cubic-bezier(.3,.7,.2,1) forwards}
+@keyframes pk-trace{to{stroke-dashoffset:0}}
+.carte-kanto .moi{animation:pk-saute .9s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+@keyframes pk-saute{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.carte-kanto .vise{animation:pk-vise 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
+@keyframes pk-vise{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
+.carte-kanto .lieu{cursor:pointer}
+.carte-kanto text{font-family:Outfit,sans-serif;font-weight:700;paint-order:stroke;stroke:#0E2030;stroke-width:2.4px;fill:#fff}
+.infos-lieu{background:rgba(13,19,34,.55);border-radius:14px;padding:10px 12px;margin-top:10px}
+.infos-lieu .nom{font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px}
+.infos-lieu .nom small{font-weight:600;color:#9AA7C2;font-size:11.5px;margin-left:auto}
+.coin{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.coin img{width:40px;height:40px;object-fit:contain;background:rgba(255,255,255,.05);border-radius:10px;cursor:pointer}
+.coin img.non{filter:brightness(0);opacity:.35}
+.arene{display:flex;gap:12px;align-items:center;background:linear-gradient(135deg,rgba(255,203,5,.14),rgba(13,19,34,.5));
+  border-radius:14px;padding:10px 12px;margin-top:10px}
+.arene .bdg{width:46px;height:46px;flex:0 0 46px;object-fit:contain;image-rendering:auto;filter:grayscale(1) brightness(.6)}
+.arene .bdg.ligue{font-size:38px;line-height:46px;text-align:center;filter:none}
+.arene .q{flex:1;min-width:0;font-size:12px;color:#C9D3EA;line-height:1.4}
+.arene .q b{color:#fff}.arene .q .t{font-size:14px;font-weight:800;color:#fff}
+.arene .q .reste{color:#FFCB05;margin-top:4px}
+.arene .ou-b{font-size:10.5px;color:#9AA7C2;text-transform:uppercase;letter-spacing:.6px;margin-top:6px}
+.boite-badges{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-top:10px}
+.boite-badges div{aspect-ratio:1;border-radius:10px;background:rgba(13,19,34,.6);display:flex;align-items:center;justify-content:center;
+  position:relative;font-size:18px}
+.boite-badges img{width:78%;height:78%;object-fit:contain;image-rendering:auto;filter:grayscale(1) brightness(.35)}
+.boite-badges .oui img{filter:drop-shadow(0 0 4px rgba(255,230,140,.7))}
+.boite-badges .oui{background:radial-gradient(circle,rgba(255,203,5,.25),rgba(13,19,34,.6) 70%)}
+.boite-badges .non{opacity:.55}
+
 /* ----- Dernières captures ----- */
 #dernieres{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;padding:2px 0 8px}
 .mini{min-width:0;background:#1C2740;border-radius:14px;text-align:center;padding:6px 4px;cursor:pointer;position:relative}
 .mini img{width:64px;height:64px;object-fit:contain}
+.mini .lieu{font-size:9px;color:#6F7FA3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .nm{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mini .qd{font-size:9.5px;color:#9AA7C2}
 .mini .eti{position:absolute;top:4px;left:4px;font-size:9px;font-weight:800;border-radius:7px;padding:0 5px}
@@ -83,6 +122,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 
 /* ----- Pokédex ----- */
 #stats{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:8px;margin-bottom:10px}
+#stats .t img{width:18px;height:18px;vertical-align:-3px;image-rendering:auto}
 #stats .t{background:#1C2740;border-radius:14px;padding:9px 11px}
 #stats .l{font-size:11px;color:#9AA7C2}#stats .v{font-size:19px;font-weight:900}
 #stats .v small{font-size:12px;color:#9AA7C2;font-weight:600}
@@ -96,7 +136,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .filtre.ty{border:0;color:#fff;opacity:.45;text-shadow:0 1px 1px rgba(0,0,0,.35)}
 .filtre.ty.on{opacity:1;box-shadow:0 0 0 2px #fff inset}
 #grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:6px}
-.p{border-radius:12px;height:102px;text-align:center;cursor:pointer;position:relative;padding-top:4px;background:#161F35;
+.p{border-radius:12px;height:96px;text-align:center;cursor:pointer;position:relative;padding-top:4px;background:#161F35;
   overflow:hidden;transition:transform .15s}
 .p:active{transform:scale(.95)}
 .p img{width:56px;height:56px;object-fit:contain}
@@ -104,9 +144,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .p .no{font-size:10px;color:#9AA7C2;font-weight:600}
 .p .nm{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
 .p.non .nm{color:#4A5878}
-.p .mb{position:absolute;left:8px;right:8px;bottom:6px;height:3px;border-radius:2px;background:rgba(0,0,0,.35);overflow:hidden}
-.p .mb div{height:100%;background:#9AA7C2}
-.p.complet{box-shadow:inset 0 0 0 2px #FFCB05}.p.complet .mb div{background:#FFCB05}
+.p.complet{box-shadow:inset 0 0 0 2px #FFCB05}
 .p .sh{position:absolute;top:3px;right:5px;font-size:11px}
 .p.leg.non{background:repeating-linear-gradient(135deg,#161F35 0 8px,#1A1834 8px 16px)}
 #rien{color:#9AA7C2;font-size:13px;padding:10px 2px;display:none}
@@ -118,6 +156,7 @@ details.regles li{margin:5px 0;line-height:1.4}
 <div id="app" style="padding-bottom:56px">
   <div class="carte" id="barre"></div>
   <div class="carte" id="aouvrir"></div>
+  <div class="carte" id="voyage"></div>
   <h2>🎯 Balls spéciales du jour</h2>
   <div class="grille2" id="speciales"></div>
   <div id="bloc-dernieres"><h2>🕘 Dernières captures</h2><div id="dernieres"></div></div>
@@ -127,16 +166,27 @@ details.regles li{margin:5px 0;line-height:1.4}
   <div class="defile" id="filtres"></div>
   <div class="defile" id="filtres-types"></div>
   <div id="grille"></div><div id="rien">Aucun Pokémon ici.</div>
-  <details class="regles"><summary>Comment gagner des Poké Balls ?</summary><ul id="regles"></ul></details>
+  <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
 </div>
 
 <script>
 const D = __DONNEES__;
 const P = window.parent.document, PW = window.parent;
 const COUL = D.couleurs, LEG = new Set(D.legendaires);
-const DEX = D.dex.map(([num, nom, types, vignette, versions]) =>
-  ({num, nom, types, vignette, versions: versions.map(([f, t, s]) => ({f, t, s: !!s}))}));
+const DEX = D.dex.map(([num, nom, types]) => ({num, nom, types}));
 const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
+// Les images, directement dans le dépôt public PokeAPI/sprites
+const IMG = {
+  mini: (n, s) => `${D.images}/pokemon/${s ? "shiny/" : ""}${n}.png`,                    // 96 px, pixel art
+  anim: (n, s) => `${D.images}/pokemon/other/showdown/${s ? "shiny/" : ""}${n}.gif`,      // animée
+  hd: (n, s) => `${D.images}/pokemon/other/official-artwork/${s ? "shiny/" : ""}${n}.png`, // grande illustration
+  badge: i => `${D.images}/badges/${i}.png`,
+};
+// Image animée absente (les tout derniers Pokémon) : la petite image à la place
+const repli = (n, s) => `onerror="this.onerror=null;this.src='${IMG.mini(n, s)}'"`;
+const V = D.voyage, LIEUX = V.lieux;
+const LIEUX_DE = {};  // Pokémon -> lieux où on le trouve
+LIEUX.forEach(l => l.pokemon.forEach(n => (LIEUX_DE[n] = LIEUX_DE[n] || []).push(l.nom)));
 const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball"};
 const N3 = n => String(n).padStart(3, "0");
 const fr = n => Math.round(n).toLocaleString("fr-FR");
@@ -164,8 +214,7 @@ function partager(ids) {
 }
 serveur.forEach(id => ouvertes.add(id)); garder();
 const memoriser = id => { ouvertes.add(id); garder(); partager([id]); };
-const CAPTURES = D.captures.map(c => ({...c, ...PAR_NUM[c.num] && {nom: PAR_NUM[c.num].nom, types: PAR_NUM[c.num].types},
-  image: D.images[`${c.num}/${c.fichier}`] || ""}));
+const CAPTURES = D.captures.map(c => ({...c, nom: PAR_NUM[c.num].nom, types: PAR_NUM[c.num].types}));
 const aOuvrir = () => CAPTURES.filter(c => !estOuverte(c));
 function collection() {  // ce que le Pokédex montre : seulement les Poké Balls ouvertes
   const par = {};
@@ -174,12 +223,12 @@ function collection() {  // ce que le Pokédex montre : seulement les Poké Ball
 }
 
 // ---------- Images sans leurs bords transparents ----------
-// Les images des jeux récents (X/Y, Soleil/Lune…) ont de grandes marges vides : sans elles, tous les Pokémon ont la même
-// taille à l'écran. -> [image recadrée, largeur, hauteur] (gardée en mémoire).
+// Les petites images ont de grandes marges vides : sans elles, tous les Pokémon ont la même taille à l'écran. -> [image recadrée, largeur, hauteur] (gardée en mémoire).
 const ROGNEES = new Map();
 function rogne(src) {
   if (!ROGNEES.has(src)) ROGNEES.set(src, new Promise(ok => {
     const im = new Image();
+    im.crossOrigin = "anonymous";  // GitHub autorise la lecture des pixels (sinon : image telle quelle)
     im.onload = () => {
       try {
         const W = im.naturalWidth, H = im.naturalHeight, cv = document.createElement("canvas");
@@ -200,11 +249,11 @@ function rogne(src) {
   }));
   return ROGNEES.get(src);
 }
-// Remplace les images d'un bloc par leur version recadrée (dernières captures, Pokédex, fiche)
+// Remplace les petites images d'un bloc (classe « rogne ») par leur version recadrée (Pokédex, carte…)
 function rognerImages(racine) {
-  racine.querySelectorAll("img:not([data-r])").forEach(img => {
+  racine.querySelectorAll("img.rogne:not([data-r])").forEach(img => {
     img.dataset.r = 1;
-    if (img.src.startsWith("data:")) rogne(img.src).then(([src]) => { img.src = src; });
+    rogne(img.src).then(([src]) => { img.src = src; });
   });
 }
 
@@ -317,8 +366,8 @@ const STYLE_VOILE = `
 #pkm-voile .scene{position:absolute;left:0;right:0;top:0;height:68%;width:100%;display:block}
 #pkm-voile .ball2d{position:absolute;left:50%;top:34%;width:150px;height:150px;margin:-75px 0 0 -75px;transform-origin:50% 80%}
 #pkm-voile .ball2d svg{width:100%;height:100%}
-#pkm-voile .poke{position:absolute;left:50%;top:34%;transform:translate(-50%,-50%) scale(.05);opacity:0;
-  filter:brightness(0) invert(1) drop-shadow(0 0 14px #fff);image-rendering:pixelated;pointer-events:none;
+#pkm-voile .poke{position:absolute;left:50%;top:34%;width:min(250px,64vw);transform:translate(-50%,-50%) scale(.05);opacity:0;
+  filter:brightness(0) invert(1) drop-shadow(0 0 14px #fff);image-rendering:auto;pointer-events:none;
   transition:transform .6s cubic-bezier(.2,1.5,.4,1),opacity .2s,filter .9s ease}
 #pkm-voile .poke.sort{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #pkm-voile .poke.couleur{filter:drop-shadow(0 0 18px rgba(140,170,255,.55))}
@@ -591,9 +640,9 @@ function ouvrir(c, rejouer = false) {
   $(".x").onclick = fermer;
   $(".son").onclick = e => { son = !son; e.target.textContent = son ? "🔊" : "🔇"; try { localStorage.setItem("pkm_son", son ? "1" : "0"); } catch (x) {} };
 
-  // L'image du Pokémon : sans ses bords vides (les images récentes en ont beaucoup), environ 230 px de haut ou de large
-  rogne(c.image).then(([src, w, h]) => { const f = Math.min(230 / w, 230 / h, 6);
-    poke.style.width = w * f + "px"; poke.src = src; });
+  // La grande illustration officielle (chargée pendant que la ball tombe) ; sinon l'image animée
+  poke.onerror = () => { poke.onerror = null; poke.src = IMG.anim(c.num, c.shiny); };
+  poke.src = IMG.hd(c.num, c.shiny);
 
   const centre = () => B.ecran();
   (async () => {
@@ -660,22 +709,22 @@ function ouvrir(c, rejouer = false) {
   }
 
   function montrerCarte() {
-    const col = collection(), especes = Object.keys(col).length, versions = (col[c.num] || []).length;
-    const total = PAR_NUM[c.num].versions.length, reste = aOuvrir();
-    const badges = [r.nouveau ? `<span class="badge b-nouveau">NOUVEAU POKÉMON !</span>` : `<span class="badge b-version">NOUVELLE VERSION</span>`,
+    const col = collection(), especes = Object.keys(col).length, reste = aOuvrir();
+    const shinys = Object.values(col).filter(l => l.some(x => x.shiny)).length;
+    const badges = [r.nouveau ? `<span class="badge b-nouveau">NOUVEAU POKÉMON !</span>` : r.shiny ? "" : `<span class="badge b-version">CAPTURÉ !</span>`,
                     r.shiny ? `<span class="badge b-shiny">✨ SHINY</span>` : "", r.leg ? `<span class="badge b-leg">👑 LÉGENDAIRE</span>` : ""];
     carte.innerHTML = `<div class="badges">${badges.join("")}</div>
       <div class="no">N° ${N3(c.num)}</div><div class="nm">${c.nom}</div><div>${typesHTML(c.types, "pkm-type")}</div>
-      <div class="ver">${c.shiny ? "✨ Shiny · " : ""}${c.version}</div>
+      <div class="ver">${c.shiny ? "✨ Shiny · " : ""}${c.lieu ? `📍 ${c.lieu}` : ""}</div>
       <div class="rs">${BALLS[c.ball] || "Poké Ball"} · ${c.raison} · ${c.quand}</div>
       <div class="compteur"><div><div class="l">Pokédex</div><div class="v">${especes} / 151</div><div class="j"><div style="width:${(especes - (r.nouveau && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div>
-        <div><div class="l">Versions de ${c.nom}</div><div class="v">${versions} / ${total}</div><div class="j"><div style="width:${(versions - (rejouer ? 0 : 1)) / total * 100}%"></div></div></div></div>
+        <div><div class="l">Shiny ✨</div><div class="v">${shinys} / 151</div><div class="j"><div style="width:${(shinys - (c.shiny && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div></div>
       <div class="boutons">${reste.length && !rejouer ? `<button class="b1 suite">Ouvrir la suivante (${reste.length})</button>` : ""}
         <button class="${reste.length && !rejouer ? "b2" : "b1"} ok">${r.nouveau || r.shiny ? "Génial !" : "Super !"}</button></div>`;
     carte.querySelectorAll(".badge").forEach((b, i) => b.style.animationDelay = `${.15 + i * .18}s${b.classList.contains("b-nouveau") ? ",0s" : ""}`);
     setTimeout(() => { carte.classList.add("vu");
       setTimeout(() => { const j = carte.querySelectorAll(".compteur .j div");
-        if (j[0]) j[0].style.width = especes / 1.51 + "%"; if (j[1]) j[1].style.width = versions / total * 100 + "%"; }, 500); }, 350);
+        if (j[0]) j[0].style.width = especes / 1.51 + "%"; if (j[1]) j[1].style.width = shinys / 1.51 + "%"; }, 500); }, 350);
     carte.querySelector(".ok").onclick = fermer;
     const s = carte.querySelector(".suite");
     if (s) s.onclick = () => { fermer(); setTimeout(() => ouvrir(aOuvrir()[0]), 340); };
@@ -694,20 +743,21 @@ const STYLE_FICHE = `
   transform:translateY(100%);transition:transform .38s cubic-bezier(.2,1,.3,1);box-shadow:0 -10px 40px rgba(0,0,0,.6)}
 #pkm-fiche.vu .feuille{transform:none}
 #pkm-fiche .poignee{width:42px;height:5px;border-radius:3px;background:#2A3756;margin:4px auto 10px}
-#pkm-fiche .tete{display:flex;gap:14px;align-items:center;border-radius:18px;padding:12px}
-#pkm-fiche .tete img{width:110px;height:110px;object-fit:contain;image-rendering:pixelated}
-#pkm-fiche .tete img.non{filter:brightness(0);opacity:.35}
+#pkm-fiche .tete{display:flex;gap:12px;align-items:center;border-radius:18px;padding:10px 12px}
+#pkm-fiche .tete .grande{width:132px;height:132px;flex:0 0 132px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.45));
+  transition:opacity .25s}
+#pkm-fiche .tete .grande.non{filter:brightness(0);opacity:.35;image-rendering:pixelated}
 #pkm-fiche .no{font-size:12px;color:#C9D3EA}#pkm-fiche h3{margin:0;font-size:26px;font-weight:900}
 #pkm-fiche .sous{font-size:12.5px;color:#C9D3EA;margin-top:4px}
 #pkm-fiche h4{font-size:14px;margin:16px 2px 8px;display:flex;justify-content:space-between}
 #pkm-fiche h4 span{color:#9AA7C2;font-weight:600;font-size:12px}
-#pkm-fiche .vers{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
-#pkm-fiche .v{background:#1C2740;border-radius:12px;padding:6px 4px;text-align:center;font-size:10px;color:#9AA7C2;line-height:1.25}
-#pkm-fiche .v img{width:70px;height:70px;object-fit:contain;image-rendering:pixelated;display:block;margin:0 auto 2px}
-#pkm-fiche .v.sh{box-shadow:inset 0 0 0 2px #C9A227}#pkm-fiche .v.sh b{color:#FFE27A}
-#pkm-fiche .v .trou{width:70px;height:70px;margin:0 auto 2px;border-radius:10px;border:2px dashed #2A3756;display:flex;
-  align-items:center;justify-content:center;font-size:24px;color:#2A3756}
-#pkm-fiche .v.sh .trou{border-color:#5C4A12;color:#5C4A12}
+#pkm-fiche .formes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#pkm-fiche .f{background:#1C2740;border-radius:14px;padding:8px;text-align:center;font-size:11px;color:#9AA7C2;line-height:1.35;cursor:pointer}
+#pkm-fiche .f.on{box-shadow:inset 0 0 0 2px #6B8CFF}
+#pkm-fiche .f.sh{background:linear-gradient(160deg,#3A3010,#1C2740 60%)}#pkm-fiche .f.sh.on{box-shadow:inset 0 0 0 2px #C9A227}
+#pkm-fiche .f b{display:block;color:#fff;font-size:12.5px}
+#pkm-fiche .f img{height:84px;max-width:100%;object-fit:contain;image-rendering:pixelated;display:block;margin:4px auto}
+#pkm-fiche .f .trou{height:84px;margin:4px auto;display:flex;align-items:center;justify-content:center;font-size:30px;color:#2A3756}
 #pkm-fiche .ou{background:#1C2740;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.5;color:#C9D3EA}
 #pkm-fiche .ou b{color:#fff}
 #pkm-fiche .fermer{display:block;width:100%;margin-top:14px;border:0;border-radius:14px;padding:12px;background:#1C2740;color:#fff;
@@ -719,27 +769,38 @@ const STYLE_FICHE = `
 function fiche(p) {
   installerStyle("pkm2-fiche-style", STYLE_FICHE);
   const col = collection(), mes = col[p.num] || [], a = mes.length > 0, leg = LEG.has(p.num);
-  const parFichier = Object.fromEntries(mes.map(c => [c.fichier, c]));
-  const meilleure = mes.find(c => c.shiny) || mes[mes.length - 1];
+  const normal = mes.find(c => !c.shiny), shiny = mes.find(c => c.shiny);
   const c0 = COUL[p.types[0]];
-  const ou = leg ? `👑 <b>Légendaire</b> : il n'apparaît que dans une <b>Master Ball</b>, quand tu as tenu ton objectif ${D.regles.master_jours} jours sur ${D.regles.master_fenetre}.`
-    : `${a ? "Ses versions qui manquent" : "Il"} sortent plus souvent avec : <b>${[...new Set(p.types.flatMap(t => D.conseils[t] || []))].join(", ") || "toutes les activités"}</b>.
-       <br>🎯 Super Ball et ⭐ Hyper Ball : plus de chances d'une espèce jamais vue.`;
+  const lieux = LIEUX_DE[p.num] || [];
+  const ou = leg ? `👑 <b>Légendaire</b> : il n'apparaît que dans une <b>Master Ball</b> (ton objectif ${D.regles.master_jours} jours
+      sur ${D.regles.master_fenetre}, ou la victoire à la Ligue Pokémon).`
+    : `📍 <b>${lieux.join(", ")}</b> : les Poké Balls donnent surtout les Pokémon de l'endroit où tu es.
+       <br>Plus de chances avec : <b>${[...new Set(p.types.flatMap(t => D.conseils[t] || []))].join(", ") || "toutes les activités"}</b>.
+       <br>🏅 Les badges d'arène donnent un Pokémon du type du champion.`;
+  const forme = (c, sh) => c
+    ? `<div class="f ${sh ? "sh" : ""}" data-s="${sh ? 1 : 0}"><b>${sh ? "✨ Shiny" : "Normal"}</b>
+        <img src="${IMG.anim(p.num, sh)}" ${repli(p.num, sh)}>${c.quand}<br>${c.lieu ? `📍 ${c.lieu}` : ""}</div>`
+    : `<div class="f ${sh ? "sh" : ""}"><b>${sh ? "✨ Shiny" : "Normal"}</b><div class="trou">${sh ? "✨" : "?"}</div>
+        ${sh ? "Pas encore : c'est rare (1 chance sur 33 environ)" : "Pas encore attrapé"}</div>`;
+  const vue = normal ? false : !!shiny;  // la grande image : la forme attrapée (le normal d'abord)
   const f = P.createElement("div"); f.id = "pkm-fiche";
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
     <div class="tete" style="background:linear-gradient(135deg,${c0}55,#1C2740 70%)">
-      <img class="${a ? "" : "non"}" src="${a ? D.images[`${meilleure.num}/${meilleure.fichier}`] || p.vignette : p.vignette}">
+      <img class="grande ${a ? "" : "non"}" src="${a ? IMG.hd(p.num, vue) : IMG.mini(p.num, false)}">
       <div><div class="no">N° ${N3(p.num)}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
         <div>${typesHTML(p.types, "pkm-type")}</div>
-        <div class="sous">${a ? `Première capture : ${mes[0].quand} · ${mes.length} version${mes.length > 1 ? "s" : ""}` : "Pas encore attrapé"}</div></div></div>
-    ${a ? `<h4>Versions <span>${mes.length} / ${p.versions.length} · ✨ ${mes.filter(c => c.shiny).length} / ${p.versions.filter(x => x.s).length}</span></h4>
-      <div class="vers">${p.versions.map(x => parFichier[x.f]
-        ? `<div class="v ${x.s ? "sh" : ""}"><img src="${D.images[`${p.num}/${x.f}`]}">${x.s ? "<b>✨ Shiny</b><br>" : ""}${x.t}</div>`
-        : `<div class="v ${x.s ? "sh" : ""}"><div class="trou">${x.s ? "✨" : "?"}</div>${x.s ? "Shiny<br>" : ""}${x.t}</div>`).join("")}</div>`
-      : `<h4>À trouver <span>${p.versions.length} versions dont ${p.versions.filter(x => x.s).length} shiny</span></h4>`}
+        <div class="sous">${a ? `Attrapé ${mes[0].quand}${mes[0].lieu ? ` · ${mes[0].lieu}` : ""}` : "Pas encore attrapé"}</div></div></div>
+    <h4>Ses deux formes <span>${(normal ? 1 : 0) + (shiny ? 1 : 0)} / 2</span></h4>
+    <div class="formes">${forme(normal, false)}${forme(shiny, true)}</div>
     <h4>Où le trouver ?</h4><div class="ou">${ou}</div>
     <button class="fermer">Fermer</button></div>`;
-  P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu")); rognerImages(f);
+  P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu"));
+  const grande = f.querySelector(".grande");
+  f.querySelectorAll(".f[data-s]").forEach(e => {
+    if (+e.dataset.s === +vue) e.classList.add("on");
+    e.onclick = () => { f.querySelectorAll(".f").forEach(x => x.classList.remove("on")); e.classList.add("on");
+      grande.style.opacity = 0; setTimeout(() => { grande.src = IMG.hd(p.num, e.dataset.s === "1"); grande.style.opacity = 1; }, 200); };
+  });
   const fermer = () => { f.classList.remove("vu"); setTimeout(() => f.remove(), 350); };
   f.querySelector(".ombre").onclick = fermer; f.querySelector(".fermer").onclick = fermer;
   // glisser la feuille vers le bas pour la fermer
@@ -837,23 +898,23 @@ function dessinerDernieres() {
   document.getElementById("bloc-dernieres").style.display = ok.length ? "" : "none";
   document.getElementById("dernieres").innerHTML = ok.map(c => `<div class="mini" data-i="${CAPTURES.indexOf(c)}">
     ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? '<span class="eti sh">✨</span>' : ""}
-    <img src="${c.image}"><div class="nm">${c.nom}</div><div class="qd">${c.quand}</div></div>`).join("");
+    <img src="${IMG.anim(c.num, c.shiny)}" ${repli(c.num, c.shiny)} loading="lazy"><div class="nm">${c.nom}</div>
+    <div class="qd">${c.quand}</div>${c.lieu ? `<div class="lieu">📍 ${c.lieu}</div>` : ""}</div>`).join("");
   document.querySelectorAll(".mini").forEach(e => e.onclick = () => ouvrir(CAPTURES[e.dataset.i], true));
-  rognerImages(document.getElementById("dernieres"));
 }
 
 function dessinerDex() {
   const col = collection(), especes = Object.keys(col).length;
-  const nv = Object.values(col).reduce((s, l) => s + l.length, 0), sh = Object.values(col).reduce((s, l) => s + l.filter(c => c.shiny).length, 0);
-  const totalV = DEX.reduce((s, p) => s + p.versions.length, 0);
+  const sh = Object.values(col).filter(l => l.some(c => c.shiny)).length, nb = Object.keys(V.badges).filter(k => k <= 8).length;
+  const ici = new Set(LIEUX[V.ici].pokemon);
   document.getElementById("dex-n").textContent = `${especes} / 151`;
   document.getElementById("stats").innerHTML = `
     <div class="t"><div class="l">Espèces</div><div class="v">${especes} <small>/ 151</small></div>
       <div class="jauge"><div style="width:${especes / 1.51}%;background:linear-gradient(90deg,#FF4B4B,#FFCB05)"></div></div></div>
-    <div class="t"><div class="l">Versions</div><div class="v">${nv} <small>/ ${fr(totalV)}</small></div></div>
-    <div class="t"><div class="l">Shiny</div><div class="v">✨ ${sh}</div></div>`;
+    <div class="t"><div class="l">Shiny</div><div class="v">✨ ${sh}</div></div>
+    <div class="t"><div class="l">Badges</div><div class="v"><img src="${IMG.badge(Math.max(nb, 1))}"> ${nb} <small>/ 8</small></div></div>`;
   const filtres = [["tous", "Tous"], ["oui", `Attrapés ${especes}`], ["non", `Manquants ${151 - especes}`],
-                   ["incomplet", "À compléter"], ["shiny", "✨ Shiny"], ["leg", "👑 Légendaires"]];
+                   ["ici", `📍 ${LIEUX[V.ici].nom}`], ["shiny", "✨ Shiny"], ["leg", "👑 Légendaires"]];
   document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("");
   document.querySelectorAll("#filtres .filtre").forEach(b => b.onclick = () => { filtre = b.dataset.k; dessinerDex(); });
   document.getElementById("filtres-types").innerHTML = Object.keys(COUL).map(t =>
@@ -865,7 +926,7 @@ function dessinerDex() {
   const liste = DEX.filter(p => {
     const mes = col[p.num] || [], a = mes.length > 0;
     if (filtre === "oui" && !a || filtre === "non" && a) return false;
-    if (filtre === "incomplet" && !(a && mes.length < p.versions.length)) return false;
+    if (filtre === "ici" && !ici.has(p.num)) return false;
     if (filtre === "shiny" && !mes.some(c => c.shiny)) return false;
     if (filtre === "leg" && !LEG.has(p.num)) return false;
     if (filtreTypes.size && !p.types.some(t => filtreTypes.has(t))) return false;
@@ -874,16 +935,132 @@ function dessinerDex() {
   });
   document.getElementById("rien").style.display = liste.length ? "none" : "block";
   document.getElementById("grille").innerHTML = liste.map(p => {
-    const mes = col[p.num] || [], a = mes.length > 0, t = p.versions.length, c0 = COUL[p.types[0]];
-    const img = a ? (mes.find(c => c.shiny) || mes[mes.length - 1]).image || p.vignette : p.vignette;
-    return `<div class="p ${a ? "" : "non"} ${a && mes.length === t ? "complet" : ""} ${LEG.has(p.num) ? "leg" : ""}" data-n="${p.num}"
+    const mes = col[p.num] || [], a = mes.length > 0, c0 = COUL[p.types[0]];
+    const n = mes.some(c => !c.shiny), s = mes.some(c => c.shiny);
+    return `<div class="p ${a ? "" : "non"} ${n && s ? "complet" : ""} ${LEG.has(p.num) ? "leg" : ""}" data-n="${p.num}"
       ${a ? `style="background:radial-gradient(circle at 50% 35%,${c0}66,#1C2740 70%)"` : ""}>
-      ${mes.some(c => c.shiny) ? '<span class="sh">✨</span>' : ""}<img src="${img}" loading="lazy">
-      <div class="no">${N3(p.num)}</div><div class="nm">${a ? p.nom : "???"}</div>
-      ${a ? `<div class="mb"><div style="width:${mes.length / t * 100}%"></div></div>` : ""}</div>`;
+      ${s ? '<span class="sh">✨</span>' : ""}<img class="rogne" src="${IMG.mini(p.num, s && !n)}" loading="lazy">
+      <div class="no">${N3(p.num)}</div><div class="nm">${a ? p.nom : "???"}</div></div>`;
   }).join("");
   document.querySelectorAll("#grille .p").forEach(e => e.onclick = () => fiche(PAR_NUM[e.dataset.n]));
   rognerImages(document.getElementById("grille"));
+}
+
+// ---------- Le voyage dans Kanto ----------
+let lieuVu = null;  // le lieu touché sur la carte (sinon : là où l'on est)
+function pointCarte(pos) {  // la position (en points) -> [x, y] sur le chemin
+  const L = LIEUX;
+  if (pos >= L[L.length - 1].dist) return [L[L.length - 1].x, L[L.length - 1].y];
+  const i = L.findIndex((l, k) => k < L.length - 1 && pos < L[k + 1].dist);
+  const t = (pos - L[i].dist) / (L[i + 1].dist - L[i].dist);
+  return [L[i].x + (L[i + 1].x - L[i].x) * t, L[i].y + (L[i + 1].y - L[i].y) * t];
+}
+function svgKanto() {
+  const L = LIEUX, ici = V.ici, [mx, my] = pointCarte(V.pos);
+  const fait = L.slice(0, ici + 1).map(l => `${l.x},${l.y}`).concat(`${mx.toFixed(1)},${my.toFixed(1)}`);
+  let lg = 0; for (let k = 1; k < fait.length; k++) { const [a, b] = fait[k - 1].split(",").map(Number), [c, d] = fait[k].split(",").map(Number); lg += Math.hypot(c - a, d - b); }
+  const mer = (a, b) => /Îles|Cramois/.test(b.nom) || /Îles|Cramois/.test(a.nom);  // les trajets en mer : en pointillé bleu
+  const traits = L.slice(1).map((l, k) => `<line x1="${L[k].x}" y1="${L[k].y}" x2="${l.x}" y2="${l.y}" stroke="${mer(L[k], l) ? "#BFE6FF" : "#F4E3B5"}"
+      stroke-width="${mer(L[k], l) ? 2 : 3.2}" stroke-dasharray="${mer(L[k], l) ? "3 4" : "0"}" stroke-linecap="round" opacity=".75"/>`).join("");
+  const montagne = (x, y, h) => `<path d="M${x - h * .8},${y} L${x},${y - h} L${x + h * .8},${y}Z" fill="#8A7A62"/><path d="M${x - h * .25},${y - h * .7} L${x},${y - h} L${x + h * .25},${y - h * .7} L${x + h * .08},${y - h * .62} L${x - h * .1},${y - h * .72}Z" fill="#F4F1EA"/>`;
+  const arbre = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#2F7D3A"/><circle cx="${x - r * .3}" cy="${y - r * .3}" r="${r * .45}" fill="#46A050"/>`;
+  const deco = [
+    [150, 40, 13], [165, 30, 16], [182, 40, 12], [196, 34, 10],             // Mont Sélénite
+    [30, 98, 14], [52, 90, 12], [26, 70, 12], [56, 64, 15], [34, 40, 13],   // Route Victoire
+    [292, 70, 12], [312, 64, 10],                                           // Grotte
+  ].map(([x, y, h]) => montagne(x, y, h)).join("") +
+    [[80, 108, 7], [108, 104, 8], [84, 128, 8], [110, 128, 7], [72, 118, 6], [118, 116, 6], [96, 98, 6], [100, 138, 6],
+     [150, 122, 6], [178, 128, 5], [262, 128, 6], [205, 178, 6], [276, 182, 5], [60, 200, 6], [140, 172, 5]]
+      .map(([x, y, r]) => arbre(x, y, r)).join("");
+  const noeuds = L.map((l, k) => {
+    if (k === 18) return "";  // Jadielle (retour) : même endroit que Jadielle
+    const a = l.arene, k2 = k === 2 ? 18 : k, ar = L[k2].arene;  // Jadielle porte l'arène de Giovanni
+    const num = ar ? L.filter((x, j) => x.arene && j <= k2).length : 0, gagne = num && V.badges[num];
+    const atteint = V.pos >= l.dist, vise = V.defi && V.defi.lieu === k2;
+    const ville = !!ar || /Bourg|Jadielle|Lavanville|Céladopole|Safrania|Azuria|Carmin|Parmanie|Cramois|Argenta|Plateau/.test(l.nom);
+    const r = ville ? 6.5 : 4.2;
+    return `<g class="lieu" data-k="${k}">
+      ${vise ? `<circle class="vise" cx="${l.x}" cy="${l.y}" r="${r + 2}" fill="none" stroke="#FFCB05" stroke-width="2"/>` : ""}
+      <circle cx="${l.x}" cy="${l.y}" r="${r}" fill="${atteint ? (ville ? "#FF6B5B" : "#FFE9A8") : "#5F6F8F"}" stroke="#0E2030" stroke-width="1.6"/>
+      ${ville ? `<rect x="${l.x - 2.6}" y="${l.y - 1.4}" width="5.2" height="4" fill="#fff" opacity=".85"/><path d="M${l.x - 3.4},${l.y - 1.2} L${l.x},${l.y - 4.2} L${l.x + 3.4},${l.y - 1.2}Z" fill="#fff" opacity=".85"/>` : ""}
+      ${ar && ar.image ? `<image href="${IMG.badge(ar.image)}" x="${l.x + 4}" y="${l.y - 16}" width="12" height="12" opacity="${gagne ? 1 : .35}" style="${gagne ? "" : "filter:grayscale(1)"}"/>` : ""}
+      ${ar && !ar.image ? `<text x="${l.x + 9}" y="${l.y - 6}" font-size="11" style="stroke:none">${gagne ? "🏆" : "🏟️"}</text>` : ""}
+      ${ville ? `<text x="${l.x}" y="${l.y + (l.y > 250 ? -10 : 15)}" font-size="8.5" text-anchor="middle">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
+      <circle cx="${l.x}" cy="${l.y}" r="14" fill="transparent"/></g>`;
+  }).join("");
+  const dernier = CAPTURES.filter(estOuverte).slice(-1)[0];  // le compagnon : la dernière capture ouverte
+  const moi = dernier ? `<image href="${IMG.anim(dernier.num, dernier.shiny)}" x="${mx - 15}" y="${my - 30}" width="30" height="30" style="image-rendering:pixelated"/>`
+    : `<circle cx="${mx}" cy="${my - 8}" r="6" fill="#E3262E" stroke="#151515" stroke-width="1.5"/><rect x="${mx - 6}" y="${my - 8.6}" width="12" height="1.4" fill="#151515"/>`;
+  return `<svg class="carte-kanto" viewBox="0 0 370 300">
+    <defs>
+      <pattern id="vagues" width="22" height="12" patternUnits="userSpaceOnUse"><path d="M2,8 q3,-3 6,0 t6,0" fill="none" stroke="#5FA8D8" stroke-width="1.1" opacity=".55"/></pattern>
+      <linearGradient id="terre" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8FD16A"/><stop offset="1" stop-color="#6DB552"/></linearGradient>
+      <filter id="lueur"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    </defs>
+    <rect width="370" height="300" fill="#2B6E9E"/><rect width="370" height="300" fill="url(#vagues)"/>
+    <path d="M18,30 Q60,10 120,20 Q180,8 250,20 Q322,16 352,45 Q364,100 350,150 Q362,192 330,206 Q292,202 262,222 Q240,238 222,262 Q190,272 160,258 Q128,250 112,258 Q80,264 62,250 Q30,230 22,180 Q8,120 18,30Z"
+      fill="#E9D9A6" transform="translate(0,3)" opacity=".9"/>
+    <path d="M18,30 Q60,10 120,20 Q180,8 250,20 Q322,16 352,45 Q364,100 350,150 Q362,192 330,206 Q292,202 262,222 Q240,238 222,262 Q190,272 160,258 Q128,250 112,258 Q80,264 62,250 Q30,230 22,180 Q8,120 18,30Z" fill="url(#terre)"/>
+    <ellipse cx="70" cy="280" rx="20" ry="13" fill="#E9D9A6"/><ellipse cx="70" cy="278" rx="18" ry="11" fill="url(#terre)"/>
+    ${montagne(66, 280, 10)}
+    <ellipse cx="146" cy="278" rx="9" ry="6" fill="#E9D9A6"/><ellipse cx="146" cy="277" rx="8" ry="5" fill="#CFE9F5"/>
+    <ellipse cx="160" cy="283" rx="7" ry="4.5" fill="#E9D9A6"/><ellipse cx="160" cy="282" rx="6" ry="3.6" fill="#CFE9F5"/>
+    ${deco}${traits}
+    <polyline class="chemin-fait" points="${fait.join(" ")}" fill="none" stroke="#FFCB05" stroke-width="4.2" stroke-linecap="round"
+      stroke-linejoin="round" filter="url(#lueur)" style="--l:${Math.ceil(lg) + 2}"/>
+    ${noeuds}
+    <g class="moi"><ellipse cx="${mx}" cy="${my + 1}" rx="8" ry="2.6" fill="#000" opacity=".3"/>${moi}</g>
+  </svg>`;
+}
+
+function infosLieu(k) {
+  const l = LIEUX[k], col = collection(), pris = l.pokemon.filter(n => col[n]).length;
+  const passe = V.pos >= l.dist, ici = k === V.ici;
+  return `<div class="infos-lieu"><div class="nom">📍 ${l.nom}<small>${ici ? "tu es ici" : passe ? "déjà traversé" :
+      `dans ${fr(l.dist - V.pos)} pts`}</small></div>
+    <div class="petit gris" style="margin-top:3px">Pokémon du coin : ${pris} / ${l.pokemon.length} attrapés</div>
+    <div class="coin">${l.pokemon.map(n => `<img class="rogne ${col[n] ? "" : "non"}" data-n="${n}" src="${IMG.mini(n, false)}" loading="lazy" title="${col[n] ? PAR_NUM[n].nom : "???"}">`).join("")}</div></div>`;
+}
+
+function blocArene() {
+  const d = V.defi;
+  if (!d) return `<div class="arene"><div class="bdg ligue">🏆</div><div class="q"><div class="t">Champion de Kanto !</div>
+      Les 8 badges et la Ligue sont à toi. La suite du voyage (Johto) arrive bientôt.</div></div>`;
+  const l = LIEUX[d.lieu], a = l.arene, j = (v, c) => `<div class="jauge"><div class="${v >= c ? "ok" : ""}" style="width:${Math.min(v / c * 100, 100)}%"></div></div>`;
+  const nomU = d.unite === "pas" ? "pas" : d.unite;
+  const val = v => d.unite === "pas" ? fr(v) : Math.round(v * 10) / 10;
+  const image = a.image ? `<img class="bdg" src="${IMG.badge(a.image)}">` : `<div class="bdg ligue">🏟️</div>`;
+  const qui = a.type ? `Arène ${/^[AEIOUÉ]/.test(a.champion) ? "d'" : "de "}${a.champion} · type ${a.type}` : "Ligue Pokémon · Conseil 4";
+  if (!d.arrive) return `<div class="arene">${image}<div class="q"><div class="t">${a.badge}</div>${qui} à <b>${l.nom}</b>
+      <div class="reste">Encore ${fr(d.reste)} pts de route (≈ ${Math.max(1, Math.round(d.reste / D.barre.taille))} barre${d.reste > 150 ? "s" : ""} d'effort)</div>
+      <div class="petit gris">Le défi : ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}.</div></div></div>`;
+  const manque = Math.max(a.cible - d.valeur, 0);
+  return `<div class="arene">${image}<div class="q"><div class="t">${qui}</div>
+      <div><b>${a.texte}</b></div>${j(d.valeur, a.cible)}<div class="petit">${val(d.valeur)} / ${val(a.cible)} ${nomU}</div>
+      ${a.b ? `<div class="ou-b">ou plan B</div><div>${a.b.texte}</div>${j(d.valeur_b, a.b.cible)}<div class="petit">${d.valeur_b} / ${a.b.cible} jours</div>` : ""}
+      <div class="reste">${manque ? `Encore ${val(manque)} ${nomU}${a.b ? ` (ou ${Math.max(a.b.cible - d.valeur_b, 0)} jour${a.b.cible - d.valeur_b > 1 ? "s" : ""} d'objectif)` : ""}.
+        Tes points continuent de compter : tu repartiras d'un coup.` : "Défi réussi !"}</div>
+      <div class="petit gris">Compté sur les 7 derniers jours depuis ton arrivée (le ${V.defi.depuis ? V.defi.depuis.slice(8) + "/" + V.defi.depuis.slice(5, 7) : "—"}).</div></div></div>`;
+}
+
+function dessinerVoyage() {
+  const el = document.getElementById("voyage"), k = lieuVu ?? V.ici;
+  const badges = LIEUX.filter(l => l.arene).map((l, i) => {
+    const n = i + 1, quand = V.badges[n];
+    return l.arene.image ? `<div class="${quand ? "oui" : "non"}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
+      : `<div class="${quand ? "oui" : "non"}" title="Ligue">🏆</div>`;
+  }).join("");
+  el.innerHTML = `<div class="entete"><span class="titre">🗺️ Voyage dans Kanto</span>
+      <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
+    <div class="avance"><div style="width:0"></div></div>
+    ${svgKanto()}${blocArene()}${infosLieu(k)}
+    <div class="boite-badges">${badges}</div>`;
+  requestAnimationFrame(() => setTimeout(() => el.querySelector(".avance div").style.width = V.pos / V.total * 100 + "%", 60));
+  const brancher = () => { el.querySelectorAll(".coin img").forEach(i => i.onclick = () => fiche(PAR_NUM[i.dataset.n])); rognerImages(el); };
+  // toucher un lieu : ses Pokémon (sans redessiner la carte)
+  el.querySelectorAll(".lieu").forEach(g => g.onclick = () => { lieuVu = +g.dataset.k;
+    el.querySelector(".infos-lieu").outerHTML = infosLieu(lieuVu); brancher(); });
+  brancher();
 }
 
 function dessinerRegles() {
@@ -899,10 +1076,14 @@ function dessinerRegles() {
     <li>👑 <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
     <li>😴 Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
-    <li>Jamais de doublon : chaque capture est une version que tu n'avais pas.</li>`;
+    <li>🗺️ <b>Voyage dans Kanto</b> : les mêmes points font avancer sur la carte, de Bourg Palette au Plateau Indigo (environ 3 mois).
+      Les Poké Balls donnent surtout les Pokémon de l'endroit où tu es (touche un lieu pour voir les siens).</li>
+    <li>🏅 <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
+      6 jours sur 7). Tes points continuent de compter pendant ce temps. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
+    <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>`;
 }
 
-function dessiner() { dessinerAOuvrir(); dessinerDernieres(); dessinerDex(); }
+function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerDernieres(); dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
 { // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie
   const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);

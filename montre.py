@@ -18,11 +18,11 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import chiffres
+import kanto
 import pokemon
 from pokedex import LEGENDAIRES, POKEMON
 
 MONTRE = "data/pokemon/montre.json"
-PAQUET = "sprites:paquets/{:03d}.json"  # comme ecran_pokemon.py
 JOURS_OUVERTES = 14  # plus vieilles : comptées ouvertes (comme sur le téléphone)
 DEPOT = "kikitmt-bit/sante"
 
@@ -38,7 +38,9 @@ def contenu(lire, maintenant):
     # Le Pokédex de la montre : espèces des Poké Balls ouvertes (ou de plus de 14 jours) et les 6 dernières ouvertes
     vues = [c for c in captures if c["id"] in ouvertes or c["jour"] < limite]
     recentes = vues[-6:][::-1]
-    paquets = lire([PAQUET.format(n) for n in sorted({c["num"] for c in a_ouvrir + derniere + recentes})])
+    with ThreadPoolExecutor(8) as ex:
+        cles = sorted({(c["num"], c["shiny"]) for c in a_ouvrir + derniere + recentes})
+        images = dict(zip(cles, ex.map(lambda k: image(*k), cles)))
     m, ic_nom = etat["mesures"], etat["origine"]
     # La nuit qui finit ce matin (heures de coucher et de lever, pour l'afficher la première heure après le réveil)
     resume = (lire([f"data/resume/{aujourd.year}.json"])[f"data/resume/{aujourd.year}.json"] or {}).get(str(aujourd))
@@ -49,7 +51,7 @@ def contenu(lire, maintenant):
     une = lambda c: {"id": c["id"], "jour": c["jour"], "ball": c["ball"], "raison": c["raison"],  # noqa: E731
                      "num": c["num"], "nom": POKEMON[c["num"]]["nom"], "types": POKEMON[c["num"]]["types"],
                      "shiny": c["shiny"], "nouvelle": c["nouvelle"], "legendaire": c["num"] in LEGENDAIRES,
-                     "image": (paquets[PAQUET.format(c["num"])] or {}).get(c["fichier"], "")}
+                     "image": images.get((c["num"], c["shiny"]), "")}
     return {
         "v": 1, "maj": maintenant.isoformat(timespec="minutes"), "jour": str(aujourd),
         "barre": {"points": round(etat["barre"], 1), "taille": pokemon.REGLAGES["barre"],
@@ -73,7 +75,36 @@ def contenu(lire, maintenant):
                  | {"sport": pokemon.sport_principal(m)[1] if m.get("sports") else None},
         "pokedex": {"especes": len({c["num"] for c in vues}), "total": len(POKEMON), "dernieres": [une(c) for c in recentes]},
         "coeur": coeur(lire, maintenant),
+        "voyage": voyage(etat["voyage"]),
     }
+
+
+def voyage(v):
+    """Le voyage dans Kanto, en bref (pas encore affiché par la montre)."""
+    d = v["defi"]
+    a = kanto.LIEUX[d["lieu"]]["arene"] if d else None
+    return {"lieu": v["lieux"][v["ici"]]["nom"], "badges": len([k for k in v["badges"] if int(k) <= 8]),
+            "champion": 9 in v["badges"] or "9" in v["badges"],
+            "defi": f"{a['champion']} : {a['texte']}" if a and d["arrive"] else None,
+            "prochain": f"{kanto.LIEUX[d['lieu']]['nom']} dans {d['reste']} pts" if d and not d["arrive"] else None}
+
+
+def image(num, shiny):
+    """La petite image d'un Pokémon (dépôt PokeAPI/sprites), sans ses bords vides, en base64 (PNG)."""
+    import io
+
+    import requests
+    from PIL import Image
+    try:
+        r = requests.get(pokemon.image(num, shiny), timeout=30)
+        r.raise_for_status()
+        im = Image.open(io.BytesIO(r.content)).convert("RGBA")
+        im = im.crop(im.getbbox() or (0, 0, *im.size))
+        sortie = io.BytesIO()
+        im.save(sortie, "PNG")
+        return base64.b64encode(sortie.getvalue()).decode()
+    except Exception:  # noqa: BLE001 - pas d'image plutôt que pas de fichier pour la montre
+        return ""
 
 
 def coeur(lire, maintenant):

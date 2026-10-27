@@ -41,9 +41,12 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   durée de nuit → activité, heure de coucher → récupération, jour de la semaine, lendemain d'une grosse journée,
   30 j / 90 j) et le **carnet** du coach (`data/coach/memoire.json`, réécrit chaque matin : `coach.py carnet DATA f.md`).
   Phase de calibrage : on affine `coach.md` au fil des retours de Kiki.
-- **Pokémon v2** (22/10, plus un prototype : **jamais de Pokémon offert**, tout se gagne en faisant du sport).
-  `pokedex.py` noms/types des 151, `versions.json` liste des images, `pokemon.py` règles (`REGLAGES`, `BALLS`,
-  `SOURCES`, `SPORTS`), `ecran_pokemon.py` prépare les données, `pokemon_ui.html` = tout l'onglet (un seul composant).
+- **Pokémon v3** (28/10, plus un prototype : **jamais de Pokémon offert**, tout se gagne en faisant du sport).
+  `pokedex.py` noms/types des 151, `pokemon.py` règles (`REGLAGES`, `BALLS`, `SOURCES`, `SPORTS`), `kanto.py` le
+  voyage, `ecran_pokemon.py` prépare les données, `pokemon_ui.html` = tout l'onglet (un seul composant). Audit du 27/10
+  (experts sport / mode de vie / jeu / ergonomie) : prochaines étapes = Johto (Gen 2, avant que Kanto soit fini, sinon
+  il ne sort plus que des shiny), saisons/thèmes du mois, peut-être un compagnon qui évolue. Kiki peut fournir des
+  images de carte (pixel art, HD-2D) si besoin.
   - Barre d'effort (100 points, ne se vide jamais) : 1 pt / 100 pas au-delà de 2 000, 2 pts / min en zone, 1 / étage,
     1 / min de séance (≥ 10 min), 2 / min de musculation ou de rameur
     (`est_force` : type ou nom de la séance, depuis le 28/10). Barre pleine = Poké Ball ; ses types = ce qui a le plus rempli la barre du jour hors
@@ -51,22 +54,38 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     zone ou séance de 45 min ; Master Ball = 25 jours sur les 30 derniers (5 000 pas ou
     15 min ; fenêtre glissante, rien ne remet à zéro, on recompte après chaque Master Ball ; avant le 27/10 : 30 jours
     d'affilée avec joker) = légendaire. Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball ; plus de bonus masse grasse).
-    Chaque ball spéciale affiche ce qu'il reste à faire. Jamais de doublon. Pas de bouton « tout ouvrir » (choix de Kiki).
-  - Identifiants « jour#poke3 / super / hyper / master30 » = graines (rejouable). Règles v2 rejouées depuis le 19/10
+    Chaque ball spéciale affiche ce qu'il reste à faire. Pas de bouton « tout ouvrir » (choix de Kiki).
+  - **Pokédex = une entrée par espèce, normal + shiny** (28/10 : plus les ~14 « versions » des différents jeux, carte
+    blanche de Kiki). Jamais de doublon : `tirer` prend une espèce pas encore attrapée (ou son shiny ; quand toutes les
+    espèces sont là, il ne sort plus que des shiny). Les anciennes captures gardent leur `fichier` (plus lu).
+  - **Voyage dans Kanto** (`kanto.py`, 28/10) : les points de la barre (cumul depuis le 19/10) font avancer de Bourg
+    Palette au Plateau Indigo (21 lieux, 9 000 points ≈ 3 mois, choix de Kiki : 3 mois pour toute l'aventure). Chaque
+    lieu a ses Pokémon (les 146 non légendaires répartis, chacun dans un seul lieu) : poids 6 ici, 2 lieux traversés,
+    1 étape suivante, ×3 si type de la barre ; plus rien de nouveau dans le coin → tout Kanto. Arènes (9 = la Ligue) :
+    arrêt jusqu'au défi (7 derniers jours depuis l'arrivée) ou son **plan B** (6 jours sur 7 avec l'objectif : jamais
+    bloquant) ; les points continuent de s'accumuler et on repart d'un coup. Badge = Hyper Ball `badgeN` du type du
+    champion, espèce nouvelle ; Ligue = Master Ball `ligue` (légendaire). Rejoué chaque fois, rien d'enregistré ;
+    chaque capture a son `lieu`. Écran : carte SVG dessinée (pas de carte dans PokeAPI), chemin parcouru, compagnon =
+    dernière capture ouverte (GIF animé), toucher un lieu = ses Pokémon, défi en cours, boîte à badges.
+  - Identifiants « jour#poke3 / super / hyper / master1 / badge1 / ligue » = graines (rejouable). Règles v2 rejouées depuis le 19/10
     avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige **toutes** les captures,
     aujourd'hui compris (27/10 : avant, seulement les jours finis, et une ball ouverte changeait de Pokémon dans la
     journée car le tirage dépend des types de la barre et des balls gagnées plus tard) →
     `data/pokemon/captures_v2.json` (avant le 25/10 : la tâche du coach, `pokemon.py figer DATA`) (l'ancien `captures.json` du prototype n'est plus lu).
-  - Écran : barre d'effort (anneau), Poké Balls à ouvrir, balls spéciales du jour, dernières captures, Pokédex (filtres,
-    types, recherche, fiche en feuille qui monte du bas avec versions manquantes et « Où le trouver »).
+  - Écran : barre d'effort (anneau), Poké Balls à ouvrir, voyage, balls spéciales du jour, dernières captures, Pokédex
+    (filtres dont « 📍 lieu actuel », types, recherche, fiche en feuille qui monte du bas : grande illustration,
+    normal / shiny animés, lieux).
     Ouverture = calque plein écran dans la page parente : Poké Ball **3D** (three.js 0.160 UMD depuis jsDelivr, repli SVG
     sinon) qui tombe, attend qu'on la touche, secousses (4 si rare), clic, lueur selon la rareté, ouverture, faisceau,
-    silhouette puis couleurs ; nouveau = confettis + fanfare, shiny = or + étincelles, légendaire = violet. Sons
+    silhouette puis couleurs (grande illustration officielle) ; nouveau = confettis + fanfare, shiny = or + étincelles, légendaire = violet. Sons
     synthétisés (WebAudio, bouton 🔊), vibrations. Les Poké Balls ouvertes sont dans le localStorage
     (`pkm2_ouvertes`, celles de plus de 14 jours comptent ouvertes) et le Pokédex ne montre que les ouvertes.
-  - Images sans leurs bords transparents (`rogne`, `rognerImages`) : X/Y, Soleil/Lune… ont de grandes marges.
-  - Images dans la branche **`sprites`** du dépôt privé (`paquets/vignettes.json`, `paquets/NNN.json` en base64),
-    lues avec le préfixe `sprites:` dans `lire` et gardées sans limite.
+  - **Images : dépôt public `PokeAPI/sprites`** (28/10), lues directement sur raw.githubusercontent.com (CORS ouvert,
+    rien n'est copié dans ce dépôt) : `pokemon/N.png` (petite, Pokédex, carte), `other/showdown/N.gif` (animée,
+    1 011 premiers), `other/official-artwork/N.png` (HD, ouverture et fiche), `shiny/` pour chacune, `badges/N.png`
+    (1-8 = Kanto, 9-16 = Johto…). Il y a aussi toutes les générations, les icônes, les objets ; pas de cartes.
+    Petites images sans leurs bords vides (`rogne`, classe `rogne`). La montre reçoit la petite image recadrée en
+    base64 (`montre.image`, Pillow). L'ancienne branche `sprites` du dépôt privé n'est plus lue.
   - **Balls ouvertes partagées** (montre + téléphone) : `data/pokemon/ouvertes.json` (branche data, 20 derniers jours),
     écrit seulement par le script Google (`doGet ?quoi=ouvrir&ids=…&ou=…`, clé `JEU_CLE`). Le téléphone l'a dans
     `D.ouvertes` (+ son localStorage) et envoie chaque ouverture (`partager`), et au chargement celles qu'il a en plus

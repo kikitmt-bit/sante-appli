@@ -10,6 +10,12 @@
 - **Master Ball** : 25 jours avec l'objectif (5 000 pas ou 15 min en zone) sur les 30 derniers = un légendaire. Une
   journée ratée ne remet rien à zéro : elle sort de la fenêtre 30 jours plus tard.
 - Une nuit de 7 h ne donne pas de Poké Ball mais rend les shiny plus fréquents toute la journée (×1,5).
+- **Voyage dans Kanto** (kanto.py) : les mêmes points font avancer sur la carte ; les Poké Balls donnent surtout les
+  Pokémon du lieu où l'on est. Badge d'arène = Hyper Ball du type du champion ; Ligue = Master Ball.
+
+Le Pokédex : une entrée par espèce, en normal et en shiny (plus de « versions » des différents jeux depuis le 28/10 ;
+les images viennent du dépôt public PokeAPI/sprites). Jamais de doublon : on tire une espèce pas encore attrapée (ou
+son shiny).
 
 Tout est rejouable : chaque capture a un identifiant (« 2026-10-19#poke3 ») qui sert de graine au hasard, donc les
 mêmes données donnent toujours les mêmes Pokémon. Mais le tirage dépend des chiffres du jour (types de la barre,
@@ -29,6 +35,7 @@ from pathlib import Path
 import pandas as pd
 
 import chiffres
+import kanto
 from pokedex import LEGENDAIRES, POKEMON
 
 REGLAGES = {
@@ -75,9 +82,15 @@ FORCE_TYPES = ("ROWING", "STRENGTH", "WEIGHT", "CALISTHENIC", "CIRCUIT", "HIIT",
 FORCE_NOMS = ("muscu", "renfo", "force", "poids", "haltère", "pompe", "traction", "gainage", "circuit", "hiit",
               "crossfit", "fractionné", "rameur", "strength", "weight", "rowing")
 
-VERSIONS = {int(k): [dict(zip(("fichier", "generation", "jeu", "variante"), v)) for v in vs]
-            for k, vs in json.loads(Path(__file__).with_name("versions.json").read_text(encoding="utf-8")).items()}
-TOTAL_VERSIONS = sum(len(v) for v in VERSIONS.values())
+# Les images (dépôt public PokeAPI/sprites)
+IMAGES = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites"
+
+
+def image(num, shiny=False):
+    """La petite image (96 px) d'un Pokémon, normale ou shiny."""
+    return f"{IMAGES}/pokemon/{'shiny/' if shiny else ''}{num}.png"
+
+
 FIGEES = "data/pokemon/captures_v2.json"
 OUVERTES = "data/pokemon/ouvertes.json"  # Poké Balls ouvertes, partagées par la montre et le téléphone (script Google)
 
@@ -98,13 +111,16 @@ def est_force(c):
 def mesures(s, exercices, jour=None):
     """Les chiffres du jour utilisés par le jeu : pas, zone, étages, sommeil, minutes de sport par type de séance."""
     m = {k: s[k] if pd.notna(s.get(k)) else 0 for k in ("pas", "zone", "etages", "sommeil")}
-    m["sports"], m["seance_max"], m["force"] = {}, 0, 0
+    m["sports"], m["seance_max"], m["force"], m["nb_force"], m["eau"] = {}, 0, 0, 0, 0
     for c in exercices:
         minutes = chiffres.duree(c.get("activeDuration")) / 60
         if minutes >= REGLAGES["seance_min"]:
             t = c.get("exerciseType") or "OTHER"
             if est_force(c):
                 m["force"] += minutes
+                m["nb_force"] += 1
+            if "ROWING" in t or "SWIM" in t:
+                m["eau"] += minutes
                 t = t if t in SPORTS else "FORCE"
             m["sports"][t] = m["sports"].get(t, 0) + minutes
             m["seance_max"] = max(m["seance_max"], minutes)
@@ -141,34 +157,36 @@ def exploit(m):
     return None
 
 
-def tirer(graine, possedees, sans_nouvelle, types=None, shiny=0.03, p_nouvelle=0.0, legendaire=False):
-    """Une capture : d'abord l'espèce (nouvelle espèce selon la ball, biais de type, garde-fou), puis une version pas
-    encore possédée (jamais de doublon)."""
+def tirer(graine, possedees, sans_nouvelle, types=None, shiny=0.03, p_nouvelle=0.0, legendaire=False, lieux=None,
+          seul_type=None):
+    """Une capture : une espèce (ou son shiny) pas encore attrapée, jamais de doublon. lieux = poids des Pokémon selon
+    l'endroit du voyage ; types = types favoris de la barre (×3) ; seul_type = ball d'arène (ce type seulement)."""
     rng = random.Random(graine)
-    manquantes = {n: [v for v in VERSIONS[n] if (n, v["fichier"]) not in possedees] for n in VERSIONS}
     especes = {n for n, _ in possedees}
-    num = None
-    if legendaire:
-        num = next((n for n in LEGENDAIRES if n not in especes), None) or \
-              next((n for n in LEGENDAIRES if manquantes[n]), None)
-    if num is None:
-        pool = [n for n in POKEMON if n not in LEGENDAIRES and manquantes[n]]
+    est_shiny = rng.random() < shiny
+    base = list(LEGENDAIRES) if legendaire else [n for n in POKEMON if n not in LEGENDAIRES]
+    if seul_type and any((n, False) not in possedees for n in base if seul_type in POKEMON[n]["types"]):
+        base, lieux = [n for n in base if seul_type in POKEMON[n]["types"]], None
+    pool = [n for n in base if (n, est_shiny) not in possedees]
+    if not pool:  # tout est attrapé dans cette variante : l'autre (les shiny quand toutes les espèces sont là)
+        est_shiny = not est_shiny
+        pool = [n for n in base if (n, est_shiny) not in possedees]
         if not pool:
             return None  # tout est complet !
-        if sans_nouvelle >= REGLAGES["garde_fou"] or rng.random() < p_nouvelle:
-            pool = [n for n in pool if n not in especes] or pool
-        poids = [1.0] * len(pool)
-        if types and rng.random() < REGLAGES["biais_type"]:
-            # Un Pokémon à deux types compte pour moitié dans chacun (équitable sur la durée)
-            w = [sum(t in types for t in POKEMON[n]["types"]) / len(POKEMON[n]["types"]) for n in pool]
-            if any(w):
-                poids = w
-        num = rng.choices(pool, weights=poids)[0]
-    est_shiny = rng.random() < shiny
-    choix = [v for v in manquantes[num] if (v["variante"] == "shiny") == est_shiny] or manquantes[num]
-    v = rng.choice(choix)
-    return {"num": num, "fichier": v["fichier"], "shiny": v["variante"] == "shiny", "jeu": v["jeu"],
-            "generation": v["generation"], "nouvelle": num not in especes}
+    if sans_nouvelle >= REGLAGES["garde_fou"] or rng.random() < p_nouvelle:
+        pool = [n for n in pool if n not in especes] or pool
+    poids = [lieux.get(n, 0) for n in pool] if lieux else [1] * len(pool)
+    if not any(poids):  # plus rien de nouveau par ici : n'importe où dans Kanto
+        poids = [1] * len(pool)
+    if types:
+        poids = [w * (3 if set(types) & set(POKEMON[n]["types"]) else 1) for w, n in zip(poids, pool)]
+    num = rng.choices(pool, weights=poids)[0]
+    return {"num": num, "shiny": est_shiny, "nouvelle": num not in especes}
+
+
+def super_ok(m):
+    """Journée « objectif double » (Super Ball)."""
+    return m["pas"] >= REGLAGES["objectif_pas"] and m["zone"] >= REGLAGES["objectif_zone"]
 
 
 def objectif_ok(m):
@@ -176,10 +194,18 @@ def objectif_ok(m):
     return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= REGLAGES["objectif_zone"]
 
 
-def balls_du_jour(jour, m, avant, apres, master=None):
+def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
     """Les Poké Balls gagnées un jour : avant / apres = points d'effort cumulés depuis le début du jeu ; master = numéro
-    de la Master Ball gagnée ce jour-là, ou None."""
+    de la Master Ball gagnée ce jour-là, ou None ; badges = [(numéro, lieu)] des arènes gagnées ce jour-là."""
     dues = []
+    for k, lieu in badges:
+        a = lieu["arene"]
+        if a["type"] is None:  # la Ligue
+            dues.append({"cle": "ligue", "ball": "master", "raison": "🏆 Champion de la Ligue Pokémon !",
+                         "types": None, "legendaire": True})
+        else:
+            dues.append({"cle": f"badge{k}", "ball": "hyper", "types": None, "seul_type": a["type"], "nouvelle": 1,
+                         "raison": f"🏅 {a['badge']} ({a['champion']}, {lieu['nom']})"})
     if master:
         dues.append({"cle": f"master{master}", "ball": "master",
                      "raison": f"👑 {REGLAGES['master_jours']} jours sur {REGLAGES['master_fenetre']}",
@@ -187,7 +213,7 @@ def balls_du_jour(jour, m, avant, apres, master=None):
     e = exploit(m)
     if e:
         dues.append({"cle": "hyper", "ball": "hyper", "raison": f"{e[0]} Exploit : {e[1]}", "types": e[2]})
-    if m["pas"] >= REGLAGES["objectif_pas"] and m["zone"] >= REGLAGES["objectif_zone"]:
+    if super_ok(m):
         dues.append({"cle": "super", "ball": "super", "raison": "🎯 Objectif double : pas et minutes en zone",
                      "types": None})
     ic, nom, types = origine_barre(m)
@@ -204,6 +230,7 @@ def jouer(stats, resumes, aujourd, figees=()):
     figees = {c["id"]: c for c in figees}
     captures, possedees, sans_nouvelle, cumul = [], set(), 0, 0.0
     jours_ok, masters, depuis_master = [], 0, REGLAGES["debut"]  # Master Ball : jours avec l'objectif dans la fenêtre
+    voyage = kanto.Voyage()
     jour, m, ok, bonus = REGLAGES["debut"], {}, False, 1
     while jour <= aujourd:
         s = stats.loc[jour].to_dict() if jour in stats.index else {}
@@ -217,7 +244,10 @@ def jouer(stats, resumes, aujourd, figees=()):
             master, jours_ok, depuis_master = masters, [], jour + dt.timedelta(days=1)
         bonus = REGLAGES["shiny_nuit"] if m["sommeil"] >= REGLAGES["nuit"] else 1
         avant, cumul = cumul, cumul + sum(m["points"].values())
-        dues = balls_du_jour(jour, m, avant, cumul, master)
+        badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"],
+                                       "force": m["nb_force"], "ok": ok, "super": super_ok(m)}, cumul)
+        lieu, poids_lieux = kanto.LIEUX[voyage.ici()]["nom"], voyage.poids()
+        dues = balls_du_jour(jour, m, avant, cumul, master, badges)
         ids = {f"{jour}#{mi['cle']}" for mi in dues}
         dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(f"{jour}#") and i not in ids]  # figées
         dues.sort(key=lambda mi: f"{jour}#{mi['cle']}" not in figees)  # figées d'abord : les nouvelles les évitent
@@ -227,12 +257,15 @@ def jouer(stats, resumes, aujourd, figees=()):
             if c is None:
                 ball = BALLS[mi["ball"]]
                 p = min(REGLAGES["shiny"] * ball["shiny"] * bonus, REGLAGES["shiny_max"])
-                c = tirer(ident, possedees, sans_nouvelle, mi["types"], p, ball["nouvelle"], mi.get("legendaire", False))
+                c = tirer(ident, possedees, sans_nouvelle, mi["types"], p, mi.get("nouvelle", ball["nouvelle"]),
+                          mi.get("legendaire", False), poids_lieux, mi.get("seul_type"))
                 if c is None:
                     continue
-                c |= {"id": ident, "jour": str(jour), "ball": mi["ball"], "raison": mi["raison"]}
+                c |= {"id": ident, "jour": str(jour), "ball": mi["ball"], "raison": mi["raison"], "lieu": lieu}
+            else:
+                c.setdefault("lieu", lieu)  # captures figées d'avant le voyage
             captures.append(c)
-            possedees.add((c["num"], c["fichier"]))
+            possedees.add((c["num"], c["shiny"]))
             sans_nouvelle = 0 if c["nouvelle"] else sans_nouvelle + 1
         jour += dt.timedelta(days=1)
     b = REGLAGES["barre"]
@@ -241,7 +274,7 @@ def jouer(stats, resumes, aujourd, figees=()):
     debut_fenetre = max(depuis_master, aujourd - dt.timedelta(days=REGLAGES["master_fenetre"] - 1))
     fenetre = [1 if j in jours_ok else (None if j == aujourd else 0)
                for j in (debut_fenetre + dt.timedelta(days=i) for i in range((aujourd - debut_fenetre).days + 1))]
-    return captures, {"serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre,
+    return captures, {"serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
                       "possedees": possedees, "mesures": m, "sans_nouvelle": sans_nouvelle,
                       "barre": cumul % b, "origine": origine_barre(m) if m else SOURCES["pas"], "shiny_bonus": bonus}
 

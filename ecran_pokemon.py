@@ -1,5 +1,6 @@
-"""Onglet 🎮 Pokémon : barre d'effort, Poké Balls à ouvrir (animation 3D, plein écran), balls spéciales du jour,
-dernières captures et Pokédex. Tout l'écran est un seul composant HTML (pokemon_ui.html) : c'est lui qui sait quelles
+"""Onglet 🎮 Pokémon : barre d'effort, Poké Balls à ouvrir (animation 3D, plein écran), voyage dans Kanto (carte,
+arènes), balls spéciales du jour, dernières captures et Pokédex. Les images viennent directement du dépôt public
+PokeAPI/sprites (pokemon.IMAGES). Tout l'écran est un seul composant HTML (pokemon_ui.html) : c'est lui qui sait quelles
 Poké Balls ont été ouvertes (localStorage du téléphone + liste partagée avec la montre, data/pokemon/ouvertes.json, écrite
 par le script Google : secrets SCRIPT_URL et JEU_CLE), donc ce qui apparaît déjà dans le Pokédex."""
 import datetime as dt
@@ -11,19 +12,13 @@ import streamlit as st
 
 import chiffres
 import pokemon
-from pokedex import COULEURS_TYPES, JEUX, LEGENDAIRES, POKEMON
+from pokedex import COULEURS_TYPES, LEGENDAIRES, POKEMON
 
-PAQUET = "sprites:paquets/{:03d}.json"  # toutes les versions d'un Pokémon (images en base64), branche « sprites »
-VIGNETTES = "sprites:paquets/vignettes.json"
 UI = Path(__file__).with_name("pokemon_ui.html")
 
 
 def _js(objet):
     return json.dumps(objet, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-
-
-def _version(v):
-    return f"Gén. {v['generation']} · {JEUX.get(v['jeu'], v['jeu'])}"
 
 
 def _conseils():
@@ -39,9 +34,7 @@ def _conseils():
 def afficher(lire, aujourd):
     with st.spinner("Ouverture du Pokédex…"):
         captures, etat = pokemon.charger_jeu(lire, aujourd)
-        especes = sorted({c["num"] for c in captures})
-        f = lire([VIGNETTES, pokemon.OUVERTES] + [PAQUET.format(n) for n in especes])
-    vignettes, paquets = f[VIGNETTES] or {}, {n: f[PAQUET.format(n)] or {} for n in especes}
+        f = lire([pokemon.OUVERTES])
 
     m, R = etat["mesures"], pokemon.REGLAGES
     ic, nom, types = etat["origine"]
@@ -54,15 +47,14 @@ def afficher(lire, aujourd):
         "jeu": {"url": st.secrets["SCRIPT_URL"], "cle": st.secrets["JEU_CLE"]}
                if st.secrets.get("SCRIPT_URL") and st.secrets.get("JEU_CLE") else None,
         "captures": [{
-            "id": c["id"], "jour": c["jour"], "num": c["num"], "fichier": c["fichier"], "ball": c.get("ball", "poke"),
-            "shiny": c["shiny"], "raison": c["raison"], "version": _version(c), "legendaire": c["num"] in LEGENDAIRES,
+            "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
+            "shiny": c["shiny"], "raison": c["raison"], "lieu": c.get("lieu", ""), "legendaire": c["num"] in LEGENDAIRES,
             "quand": "aujourd'hui" if c["jour"] == str(aujourd) else
                      f"{chiffres.JOURS[dt.date.fromisoformat(c['jour']).weekday()]} {c['jour'][8:]}/{c['jour'][5:7]}",
         } for c in captures],
-        "images": {f"{c['num']}/{c['fichier']}": paquets[c["num"]].get(c["fichier"], "") for c in captures},
-        "dex": [[n, p["nom"], p["types"], vignettes.get(str(n), ""),
-                 [[v["fichier"], _version(v), int(v["variante"] == "shiny")] for v in pokemon.VERSIONS[n]]]
-                for n, p in POKEMON.items()],
+        "images": pokemon.IMAGES,
+        "dex": [[n, p["nom"], p["types"]] for n, p in POKEMON.items()],
+        "voyage": etat["voyage"],
         "legendaires": LEGENDAIRES,
         "couleurs": COULEURS_TYPES,
         "conseils": _conseils(),

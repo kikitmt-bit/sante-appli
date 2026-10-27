@@ -34,14 +34,7 @@ for _i, _p in enumerate(_LISTE.split(), 1):
     POKEMON[_i] = {"nom": _nom.replace("_", " "), "types": _types.split("/")}
 assert len(POKEMON) == 151
 
-LEGENDAIRES = [144, 145, 146, 150, 151]  # hors tirage : réservés aux longues séries, dans cet ordre
-
-JEUX = {
-    "red-blue": "Rouge / Bleu", "silver": "Argent", "ruby-sapphire": "Rubis / Saphir", "diamond-pearl": "Diamant / Perle",
-    "black-white": "Noir / Blanc", "x-y": "X / Y", "sun-moon": "Soleil / Lune", "ultra-sun-ultra-moon": "Ultra-Soleil",
-    "lets-go-pikachu-eevee": "Let's Go", "sword-shield": "Épée / Bouclier",
-    "brilliant-diamond-shining-pearl": "Diamant Étincelant", "scarlet-violet": "Écarlate / Violet",
-}
+LEGENDAIRES = [144, 145, 146, 150, 151]  # seulement dans les Master Balls
 
 COULEURS_TYPES = {
     "Normal": "#A8A77A", "Feu": "#EE8130", "Eau": "#6390F0", "Électrik": "#F7D02C", "Plante": "#7AC74C",
