@@ -54,6 +54,8 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `text-wrap: pretty` (jamais une ponctuation ou un mot seul en dernière ligne, demande de Kiki). Prévu pour chaque région (`PROFESSEURS` :
   chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur labo, leurs balls et leurs 3 starters). Bouton « 🎬 Revoir l'accueil »
   dans « Comment ça marche ? » (rejoue sans rien changer).
+  **Scène du badge (à construire, demandée par Kiki le 30/10)** : quand Kiki enverra la première image d'arène (Pierre),
+  plan et prompts dans `scenes/PROMPT.md` (images `scenes/arene-N.webp`).
   **Montre : rien à mettre à jour pendant que le jeu évolue (choix de Kiki, 29/10)** : on la mettra à jour une seule
   fois, quand le jeu sera fini et testé (à reprendre alors : scène d'accueil du professeur, voyage et carte, compagnon,
   vols et surf, Pokédex normal + shiny, Master Ball 25/30). D'ici là, elle montre le cadeau comme une Poké Ball normale.
