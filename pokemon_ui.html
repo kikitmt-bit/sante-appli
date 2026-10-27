@@ -84,7 +84,6 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 @keyframes pk-trace{to{stroke-dashoffset:0}}
 .carte-wrap{position:relative;margin-top:14px}
 .carte-wrap .heros,.ombre-heros{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
-.carte-wrap .heros .sacha.touche{pointer-events:auto;cursor:pointer}
 .carte-wrap .heros{display:flex;flex-direction:column;align-items:center;width:20%}
 .carte-wrap .heros .sacha{width:23%!important}
 .carte-wrap .heros:not(.porte) .sacha[style*="red_bike"],.carte-wrap .heros:not(.porte) .sacha[style*="red_surf"]{width:46%!important}
@@ -99,9 +98,9 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .ombre-heros{width:4.5%;height:1.6%;border-radius:50%;background:rgba(0,0,0,.35);transform:translate(-50%,-50%)}
 .carte-wrap .chef{position:absolute;width:11%;aspect-ratio:1;transform:translate(-30%,-88%);cursor:pointer;z-index:2;
   filter:drop-shadow(0 1px 0 rgba(0,0,0,.5)) drop-shadow(0 0 3px rgba(255,255,255,.6))}
-.carte-wrap .chef.dessous{transform:translate(-30%,0)}
+.carte-wrap .chef.haut{transform:translate(0,-50%)}
 .carte-wrap .chef canvas{width:100%;height:100%;image-rendering:pixelated}
-.carte-wrap .chef:after{content:"!";position:absolute;left:50%;top:-2px;margin-left:-7px;font:900 11px Outfit,sans-serif;
+.carte-wrap .chef.nouveau:after{content:"!";position:absolute;left:50%;top:-2px;margin-left:-7px;font:900 11px Outfit,sans-serif;
   color:#fff;background:#E8382F;border-radius:50%;width:14px;height:14px;line-height:14px;text-align:center;
   animation:pkl-hop .9s ease-in-out infinite;box-shadow:0 0 0 1.5px #fff}
 @keyframes pkl-hop{50%{transform:translateY(-3px)}}
@@ -110,7 +109,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
   box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pkl-bulle .25s ease-out}
 .bulle-chef b{color:#C03028}
 @keyframes pkl-bulle{from{opacity:0}}
-.bulle-chef.dessous{transform:translate(-50%,calc(14px + 12vw))}
+.bulle-chef.dessous{transform:translate(-50%,calc(10px + 6vw))}
 .carte-kanto .vise{animation:pk-vise 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes pk-vise{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.2);opacity:0}}
 .carte-kanto .lieu{cursor:pointer}
@@ -183,6 +182,16 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .p .sh{position:absolute;top:3px;right:5px;font-size:11px}
 .p.leg.non{background:repeating-linear-gradient(135deg,#161F35 0 8px,#1A1834 8px 16px)}
 #rien{color:#9AA7C2;font-size:13px;padding:10px 2px;display:none}
+#mon-dresseur{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-family:'Pixelify Sans',Outfit,monospace;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,transparent 2px 6px),linear-gradient(180deg,#5AA8E6,#3577C6);
+  border:3px solid #F8F8F8;box-shadow:0 0 0 3px #283048}
+#mon-dresseur .photo{width:52px;height:74px;flex:0 0 52px;border-radius:6px;border:2px solid #F8F8F8;position:relative;
+  background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/12px 12px}
+#mon-dresseur canvas{position:absolute;left:50%;bottom:2px;width:32px;height:64px;transform:translateX(-50%);image-rendering:pixelated}
+#mon-dresseur .txt{flex:1;min-width:0;color:#fff;text-shadow:2px 2px 0 #1F4E9A}
+#mon-dresseur .nom{font-size:20px;font-weight:700}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:13px;opacity:.95}
+#mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 15px 'Pixelify Sans',Outfit,monospace;background:#F8F8F8;color:#283048;
+  box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048;cursor:pointer}
 details.regles{background:#1C2740;border-radius:14px;padding:10px 14px;margin:14px 0 4px;font-size:13px;color:#C9D3EA}
 details.regles summary{cursor:pointer;font-weight:700;color:#EEF2FA}
 details.regles li{margin:5px 0;line-height:1.4}
@@ -201,6 +210,8 @@ details.regles li{margin:5px 0;line-height:1.4}
   <div class="defile" id="filtres"></div>
   <div class="defile" id="filtres-types"></div>
   <div id="grille"></div><div id="rien">Aucun Pokémon ici.</div>
+  <h2>Mon dresseur</h2>
+  <div id="mon-dresseur"></div>
   <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
 </div>
 
@@ -811,28 +822,31 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 // ================================================================================================
 // LE CADEAU DU PROFESSEUR (premier jour d'une région) : scène d'accueil, 3 Poké Balls sur la table, puis l'ouverture
 // ================================================================================================
-// Le professeur de chaque région (image de Pokémon Rouge Feu pour Chen : projet public pret/pokefirered, version figée)
-const DRESSEURS_RF = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/trainers/front_pics/";
-const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", ville: "Bourg Palette", image: DRESSEURS_RF + "professor_oak_front_pic.png",
-  couleur: "#5FA9C4", starters: [1, 4, 7]}};  // plus tard : orme (Johto), seko (Hoenn)…
-const STYLE_LABO = `
-#pkm-labo .champion.fixe{animation:pkl-souffle 2.4s ease-in-out infinite;transform-origin:50% 100%}
-#pkm-labo.entre .champion.fixe{transform:none}
-@keyframes pkl-souffle{50%{transform:scaleY(1.025)}}
-#pkm-labo .table{position:absolute;left:-14%;right:-14%;top:66%;height:34%;border-radius:10px;opacity:0;transform:translateY(20px);
-  transition:opacity .5s .5s,transform .5s .5s;background:linear-gradient(180deg,#D9A867 0 30%,#B07A43 30% 100%);
-  box-shadow:0 0 0 3px #5B3A1C,0 10px 18px rgba(0,0,0,.45),inset 0 3px 0 rgba(255,255,255,.3)}
-#pkm-labo.entre .table{opacity:1;transform:none}
-#pkm-labo .table .balls{position:absolute;left:0;right:0;top:-24%;display:flex;justify-content:space-around;padding:0 12%}
-#pkm-labo .pb{width:26%;aspect-ratio:1;border:0;padding:0;background:none;position:relative;cursor:pointer;transition:opacity .4s,transform .3s}
-#pkm-labo .pb img{width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.35))}
-#pkm-labo.choix .pb:before{content:"";position:absolute;inset:-6%;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 16px 6px rgba(255,230,120,.85);
-  animation:pki-halo 1.2s ease-in-out infinite}
-@keyframes pki-halo{50%{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 26px 12px rgba(255,230,120,.95)}}
-#pkm-labo .pb.loin{opacity:.25}
-#pkm-labo .pb.prise{animation:pki-saute-ball .5s ease-out 2}
-@keyframes pki-saute-ball{0%,100%{transform:translateY(0)}40%{transform:translateY(-45%)}}
-#pkm-labo .scene{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
+// Le laboratoire : image pixel art générée par Kiki avec ChatGPT (même style que la carte, dossier scenes/), position des
+// 3 Poké Balls dessinées sur la table (pixels de l'image). Plus tard : orme (Johto), seko (Hoenn)…
+const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen.webp", largeur: 941, hauteur: 1672,
+  balls: [[362, 785], [470, 785], [575, 785]], rayon: 36, table: [290, 785], starters: [1, 4, 7]}};
+// table : un endroit de la table sans ball, à la même hauteur (pour cacher la ball dessinée quand elle saute)
+const STYLE_INTRO = `
+#pkm-intro{position:fixed;inset:0;z-index:999999;background:#C2965F;overflow:hidden;touch-action:manipulation;
+  user-select:none;-webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace}
+#pkm-intro .labo{position:absolute;left:50%;top:0;transform:translateX(-50%)}
+#pkm-intro .labo img{width:100%;height:100%;display:block;image-rendering:pixelated}
+#pkm-intro .noir{position:absolute;inset:0;background:#000;transition:opacity 1.2s;pointer-events:none}
+#pkm-intro .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .45s;pointer-events:none}
+#pkm-intro .halo{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .4s;
+  box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 18px 6px rgba(255,230,120,.85)}
+#pkm-intro.choix .halo{opacity:1;animation:pki-halo 1.2s ease-in-out infinite}
+#pkm-intro .halo.loin{opacity:0!important}
+@keyframes pki-halo{50%{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 28px 12px rgba(255,230,120,.95)}}
+#pkm-intro .zone{position:absolute;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer}
+#pkm-intro .ballc{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
+#pkm-intro .ballc{border-radius:50%;background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 8px rgba(255,240,170,.95))}
+#pkm-intro .ballc.bouge{animation:pki-saute-ball .5s ease-out 2}
+@keyframes pki-saute-ball{0%,100%{transform:translate(-50%,-50%)}40%{transform:translate(-50%,-85%)}}
+#pkm-intro .labo{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
+@keyframes pki-tremble{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-12deg)}
+  75%{transform:translate(-50%,-50%) rotate(12deg)}}
 `;
 // La boîte de dialogue façon Game Boy Advance (labo, arènes…) et le bouton ✕ des scènes
 const STYLE_DIAL = `
@@ -891,36 +905,35 @@ function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur et les b
   ouvrir(c);
 }
 function intro(c, p, rejouer = false) {
-  installerStyle("pkm2-badge-style", STYLE_BADGE); installerStyle("pkm2-labo-style", STYLE_LABO); preparerScene();
-  const noms = p.starters.map(n => PAR_NUM[n].nom), balle = `${D.images}/items/poke-ball.png`;
-  const v = P.createElement("div"); v.id = "pkm-labo"; v.className = "pkm-scene"; v.style.setProperty("--c", p.couleur);
-  v.innerHTML = `<div class="fond"></div><div class="lignes"></div><div class="rayons"></div>
-    <div class="bandeau">LABORATOIRE POKÉMON<small>${p.ville} · Professeur ${p.prof}</small></div>
-    <div class="scene"><div class="estrade"></div><img class="champion fixe" src="${p.image}" alt="">
-      <div class="table"><div class="balls">${[0, 1, 2].map(i => `<button class="pb" data-i="${i}"><img src="${balle}" alt=""></button>`).join("")}</div></div></div>
-    ${[0, 1, 2, 3, 4, 5].map(i => `<div class="bande ${i % 2 ? "d" : "g"}" style="top:${i * 16.66}%"></div>`).join("")}
-    <div class="blanc"></div><button class="pkm-passer">✕</button>`;
+  installerStyle("pkm2-intro-style", STYLE_INTRO); preparerScene();
+  const noms = p.starters.map(n => PAR_NUM[n].nom);
+  const v = P.createElement("div"); v.id = "pkm-intro";
+  v.innerHTML = `<div class="labo"><img src="${D.scenes}${p.image}" alt="">
+      ${p.balls.map(([x, y], i) => `<div class="halo" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
+        width:${p.rayon * 2 / p.largeur * 100}%;aspect-ratio:1"></div>
+        <div class="zone" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;width:${p.rayon * 3 / p.largeur * 100}%;aspect-ratio:1"></div>`).join("")}
+    </div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
   P.body.appendChild(v);
-  const {dire: parler} = dialogue(v, ".pkm-passer, .pb");
+  const labo = v.querySelector(".labo"), {dire: parler} = dialogue(v, ".pkm-passer, .zone");
   const dire = (html, attendSuite = true) => parler(html, p.prof, attendSuite);
-  const pause = ms => new Promise(r => setTimeout(r, ms));
+  const taille = () => { const w = Math.min(PW.innerWidth, PW.innerHeight * p.largeur / p.hauteur);  // l'image en entier, en haut
+    labo.style.width = w + "px"; labo.style.height = w * p.hauteur / p.largeur + "px"; };
+  taille(); PW.addEventListener("resize", taille);
+  requestAnimationFrame(() => setTimeout(() => v.querySelector(".noir").style.opacity = 0, 80));
   let fini = false, choisie = null;
   // La sortie : vers l'ouverture en 3D, on plonge dans la Poké Ball choisie (zoom + flash blanc), puis elle tombe,
   // gigote et s'ouvre ; ✕ : simple fondu
-  const fin = suite => { if (fini) return; fini = true; v.style.transition = "opacity .45s";
+  const fin = suite => { if (fini) return; fini = true; PW.removeEventListener("resize", taille); v.style.transition = "opacity .45s";
     if (!suite) { v.style.opacity = 0; setTimeout(() => v.remove(), 450); return; }
-    const scene = v.querySelector(".scene"), r = scene.getBoundingClientRect(), b = choisie.getBoundingClientRect();
-    scene.style.transformOrigin = `${(b.left + b.width / 2 - r.left) / r.width * 100}% ${(b.top + b.height / 2 - r.top) / r.height * 100}%`;
-    scene.style.transform = "translateX(-50%) scale(4)";
+    if (choisie !== null) { const [x, y] = p.balls[choisie];
+      labo.style.transformOrigin = `${x / p.largeur * 100}% ${y / p.hauteur * 100}%`; labo.style.transform = "translateX(-50%) scale(4)"; }
     SONS.montee(.7);
     setTimeout(() => { v.querySelector(".blanc").style.opacity = 1; }, 380);
     setTimeout(() => { ouvrir(c, rejouer, true); v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 850); };
   v.querySelector(".pkm-passer").onclick = () => fin(false);
 
   (async () => {
-    SONS.chute();
-    await pause(900); v.classList.add("entre"); SONS.rebond(); vibre(20);
-    await pause(1100);
+    await new Promise(r => setTimeout(r, 1100));
     // le début reprend celui de Pokémon Rouge / Bleu
     await dire("Bienvenue dans le monde magique des Pokémon !");
     await dire(`Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`);
@@ -933,10 +946,22 @@ function intro(c, p, rejouer = false) {
     await dire(`Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`);
     await dire("Choisis-en une. Le Pokémon qu'elle contient sera le tien !", false);
     v.classList.add("choix");
-    choisie = await new Promise(ok => v.querySelectorAll(".pb").forEach(b => b.onclick = () => ok(b)));
-    v.querySelectorAll(".pb").forEach(b => { b.onclick = null; b.classList.toggle("loin", b !== choisie); });
-    v.classList.remove("choix"); choisie.classList.add("prise");
-    SONS.clic(); vibre([15, 40, 15]); setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
+    const i = await new Promise(ok => v.querySelectorAll(".zone").forEach(z => z.onclick = () => ok(+z.dataset.i)));
+    v.querySelectorAll(".zone").forEach(z => z.onclick = null);
+    v.querySelectorAll(".halo").forEach(h => h.classList.toggle("loin", +h.dataset.i !== i));
+    SONS.clic(); vibre([15, 40, 15]);
+    // la ball choisie saute : c'est le morceau de l'image où elle est dessinée qui bouge, et un morceau de table vide
+    // la remplace dessous
+    const [x, y] = p.balls[i], r = p.rayon, morceau = (cx, cy, rr) => `width:${rr * 2 / p.largeur * 100}%;aspect-ratio:1;
+      background-image:url('${D.scenes}${p.image}');background-size:${p.largeur / (2 * rr) * 100}% ${p.hauteur / (2 * rr) * 100}%;
+      background-position:${(cx - rr) / (p.largeur - 2 * rr) * 100}% ${(cy - rr) / (p.hauteur - 2 * rr) * 100}%;`;
+    const trou = P.createElement("div"), b = P.createElement("div");
+    trou.style.cssText = `position:absolute;transform:translate(-50%,-50%);left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
+      image-rendering:pixelated;${morceau(p.table[0], p.table[1], r + 2)}`;
+    b.className = "ballc bouge";
+    b.style.cssText = `left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;${morceau(x, y, r)}`;
+    labo.append(trou, b);
+    choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
     await dire("Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !");
     fin(true);
   })().catch(() => {});
@@ -1422,13 +1447,17 @@ const COULEURS_TISSU = {  // 3 tons d'un vêtement : ombre, couleur, reflet
   "Orange": [[118, 58, 10], [230, 118, 30], [255, 174, 94]], "Rose": [[118, 38, 78], [222, 94, 158], [255, 158, 206]],
   "Violet": [[62, 30, 102], [126, 70, 190], [182, 134, 238]], "Noir": [[20, 20, 28], [52, 52, 66], [106, 106, 126]],
   "Blanc": [[96, 96, 112], [218, 218, 230], [255, 255, 255]]};
-const PEAU_SACHA = COULEURS_PEAU["Claire"], TISSU_SACHA = COULEURS_TISSU["Rouge"];
-let DRESSEUR = {nom: "", peau: "Claire", casquette: "Rouge", veste: "Rouge"};
+const COULEURS_PANTALON = {  // 2 tons : ombre, couleur
+  "Jean": [[57, 57, 123], [115, 164, 197]], "Noir": [[28, 28, 38], [78, 78, 94]], "Gris": [[66, 66, 78], [148, 148, 164]],
+  "Beige": [[116, 92, 58], [204, 178, 128]], "Kaki": [[52, 66, 34], [122, 142, 82]], "Bordeaux": [[84, 24, 34], [168, 62, 78]],
+  "Blanc": [[108, 108, 124], [232, 232, 242]]};
+const PEAU_SACHA = COULEURS_PEAU["Claire"], TISSU_SACHA = COULEURS_TISSU["Rouge"], JEAN_SACHA = COULEURS_PANTALON["Jean"];
+let DRESSEUR = {nom: "", peau: "Claire", casquette: "Rouge", veste: "Rouge", pantalon: "Jean"};
 try { DRESSEUR = {...DRESSEUR, ...JSON.parse(localStorage.getItem("pkm_dresseur") || "{}")}; } catch (e) {}
 const nomDresseur = () => DRESSEUR.nom || "Sacha";
 const IMAGES_DRESSEUR = new Map();  // feuille + couleurs -> image recoloriée (data URL)
 function feuilleColoree(feuille, d = DRESSEUR) {
-  const cle = [feuille, d.peau, d.casquette, d.veste].join("|");
+  const cle = [feuille, d.peau, d.casquette, d.veste, d.pantalon].join("|");
   if (!IMAGES_DRESSEUR.has(cle)) IMAGES_DRESSEUR.set(cle, new Promise(ok => {
     const im = new Image(); im.crossOrigin = "anonymous";
     im.onload = () => {
@@ -1438,8 +1467,10 @@ function feuilleColoree(feuille, d = DRESSEUR) {
         const img = ctx.getImageData(0, 0, W, H), px = img.data, fw = W / 9;
         const memes = (i, c) => px[i] === c[0] && px[i + 1] === c[1] && px[i + 2] === c[2];
         const peau = COULEURS_PEAU[d.peau], cas = COULEURS_TISSU[d.casquette], ves = COULEURS_TISSU[d.veste];
+        const pan = COULEURS_PANTALON[d.pantalon] || JEAN_SACHA;
         for (let f = 0; f < 9; f++) {
-          // la casquette : les 7 premières lignes dessinées de chaque image ; le rouge en dessous, c'est la veste
+          // la casquette : les 7 premières lignes dessinées de chaque image ; le rouge en dessous, c'est la veste ; le bleu
+          // foncé des cheveux est aussi celui du jean : le pantalon commence 15 lignes sous le haut de la casquette
           let haut = H;
           for (let y = 0; y < H && haut === H; y++) for (let x = f * fw; x < (f + 1) * fw; x++) if (px[(y * W + x) * 4 + 3]) { haut = y; break; }
           for (let y = 0; y < H; y++) for (let x = f * fw; x < (f + 1) * fw; x++) {
@@ -1447,6 +1478,7 @@ function feuilleColoree(feuille, d = DRESSEUR) {
             for (let k = 0; k < 3; k++) {
               if (memes(i, PEAU_SACHA[k])) { px.set(peau[k], i); break; }
               if (memes(i, TISSU_SACHA[k])) { px.set((y < haut + 7 ? cas : ves)[k], i); break; }
+              if (k < 2 && y >= haut + 15 && memes(i, JEAN_SACHA[k])) { px.set(pan[k], i); break; }
             }
           }
         }
@@ -1462,29 +1494,58 @@ function colorerDresseur(racine) {  // remplace les images de Sacha d'un bloc pa
   racine.querySelectorAll(".sacha[data-feuille]").forEach(e =>
     feuilleColoree(e.dataset.feuille).then(src => { e.style.backgroundImage = `url('${src}')`; }));
 }
+// La carte dresseur (comme dans Rouge Feu) : on y règle son nom et ses couleurs
 const STYLE_DRESSEUR = `
-#pkm-dresseur{position:fixed;inset:0;z-index:999998;font-family:Outfit,system-ui,sans-serif;color:#EEF2FA}
-#pkm-dresseur .ombre{position:absolute;inset:0;background:rgba(3,6,14,.7)}
-#pkm-dresseur .feuille{position:absolute;left:0;right:0;bottom:0;margin:0 auto;max-width:520px;max-height:90vh;overflow-y:auto;
-  background:#121A2E;border-radius:24px 24px 0 0;padding:14px 16px calc(64px + env(safe-area-inset-bottom));
-  animation:pkd-monte .35s cubic-bezier(.2,1,.3,1)}
-@keyframes pkd-monte{from{transform:translateY(100%)}}
-#pkm-dresseur h3{margin:0 0 4px;font-size:20px;font-weight:900;text-align:center}
-#pkm-dresseur .sous{font-size:12.5px;color:#9AA7C2;text-align:center}
-#pkm-dresseur .apercu{width:120px;height:200px;margin:10px auto 6px;border-radius:50%/40%;position:relative;
-  background:radial-gradient(ellipse 34% 7% at 50% 87%,rgba(0,0,0,.45) 0 98%,transparent),radial-gradient(circle at 50% 45%,#2A3F7A,#121A2E 70%)}
-#pkm-dresseur .apercu canvas{position:absolute;left:50%;bottom:24px;width:72px;height:144px;transform:translateX(-50%);image-rendering:pixelated}
-#pkm-dresseur label{display:block;font-size:12px;font-weight:700;color:#9AA7C2;margin:12px 2px 6px;text-transform:uppercase;letter-spacing:.6px}
-#pkm-dresseur input{width:100%;box-sizing:border-box;background:#1C2740;border:1px solid #2A3756;border-radius:12px;color:#fff;padding:11px 12px;
-  font:700 17px 'Pixelify Sans',Outfit,sans-serif;outline:none}
-#pkm-dresseur input:focus{border-color:#6B8CFF}
-#pkm-dresseur .nuancier{display:flex;flex-wrap:wrap;gap:8px}
-#pkm-dresseur .pastille{width:36px;height:36px;border-radius:50%;border:3px solid #121A2E;box-shadow:0 0 0 2px #2A3756;cursor:pointer;padding:0}
-#pkm-dresseur .pastille.on{box-shadow:0 0 0 3px #FFCB05}
-#pkm-dresseur .valider{display:block;width:100%;margin-top:18px;border:0;border-radius:14px;padding:13px;font:800 16px Outfit,sans-serif;color:#fff;
-  background:linear-gradient(180deg,#FF4B4B,#D21F2E);box-shadow:0 4px 0 #8E1220;cursor:pointer}
+#pkm-dresseur{position:fixed;inset:0;z-index:1000001;display:flex;align-items:center;justify-content:center;padding:16px 12px 70px;
+  font-family:'Pixelify Sans',Outfit,monospace;color:#283048}
+#pkm-dresseur .ombre{position:absolute;inset:0;background:rgba(5,8,16,.78)}
+.carte-dresseur{position:relative;width:min(100%,430px);max-height:100%;overflow-y:auto;border-radius:14px;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,transparent 2px 6px),linear-gradient(180deg,#5AA8E6,#3577C6);
+  border:4px solid #F8F8F8;box-shadow:0 0 0 4px #283048,0 14px 34px rgba(0,0,0,.55);padding:0 12px 12px;animation:pkd-entre .3s ease-out}
+@keyframes pkd-entre{from{transform:scale(.92);opacity:0}}
+.carte-dresseur .entete{display:flex;justify-content:space-between;align-items:center;margin:0 -12px 12px;padding:9px 14px;
+  background:#1F4E9A;color:#fff;font-weight:700;font-size:17px;letter-spacing:1px;text-shadow:2px 2px 0 #102850}
+.carte-dresseur .entete small{font-size:13px;font-weight:500;opacity:.9}
+.carte-dresseur .corps{display:flex;gap:12px;align-items:stretch}
+.carte-dresseur .photo{width:96px;flex:0 0 96px;border:3px solid #F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;position:relative;
+  background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/16px 16px}
+.carte-dresseur .photo canvas{position:absolute;left:50%;bottom:6px;width:56px;height:112px;transform:translateX(-50%);image-rendering:pixelated}
+.carte-dresseur .infos{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.carte-dresseur .boite{background:#F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;padding:6px 10px;font-size:15px;display:flex;justify-content:space-between}
+.carte-dresseur .boite b{color:#283048}
+.carte-dresseur .boite span{color:#5A6585}
+.carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 17px 'Pixelify Sans',Outfit,monospace;color:#283048;outline:none;
+  text-align:right;padding:0}
+.carte-dresseur .reglages{margin-top:12px;background:#F8F8F8;border-radius:10px;box-shadow:0 0 0 2px #283048;padding:4px 10px}
+.carte-dresseur .choix{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:2px dashed #D4D8E4;font-size:16px}
+.carte-dresseur .choix:last-child{border-bottom:0}
+.carte-dresseur .choix .lib{width:92px;color:#5A6585;font-size:14px}
+.carte-dresseur .choix .val{flex:1;display:flex;align-items:center;gap:8px;justify-content:center;font-weight:700}
+.carte-dresseur .choix .val i{width:18px;height:18px;border-radius:3px;box-shadow:0 0 0 2px #283048;display:inline-block}
+.carte-dresseur .fl{width:30px;height:30px;border:0;background:none;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.carte-dresseur .fl:before{content:"";border-top:8px solid transparent;border-bottom:8px solid transparent}
+.carte-dresseur .fl.g:before{border-right:11px solid #E04040}.carte-dresseur .fl.d:before{border-left:11px solid #E04040}
+.carte-dresseur .fl:active{transform:scale(.85)}
+.carte-dresseur .boutons{display:flex;gap:8px;margin-top:12px}
+.carte-dresseur .boutons button{flex:1;border:0;border-radius:8px;padding:10px;font:700 17px 'Pixelify Sans',Outfit,monospace;cursor:pointer;
+  background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
+.carte-dresseur .boutons .ok:before{content:"▶ ";color:#E04040}
+.carte-dresseur .boutons button:active{transform:translateY(2px);box-shadow:0 0 0 2px #283048}
 `;
-// La fiche du dresseur (pseudo, peau, casquette, veste), avec l'aperçu qui marche ; -> une promesse résolue à la validation
+const CHOIX_DRESSEUR = [["peau", "Peau", COULEURS_PEAU, 0], ["casquette", "Casquette", COULEURS_TISSU, 1],
+  ["veste", "Veste", COULEURS_TISSU, 1], ["pantalon", "Pantalon", COULEURS_PANTALON, 1]];
+const idDresseur = nom => String([...(nom || "Sacha")].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 100000, 7)).padStart(5, "0");
+// Dessine le dresseur (image fixe ou qui marche vers nous) dans un canvas 16×32 ; -> une fonction pour l'arrêter
+function apercuDresseur(cv, d = DRESSEUR, marche = true) {
+  const ctx = cv.getContext("2d"); let img = null, t = 0, fini = false;
+  const charger = dd => feuilleColoree("red_normal", dd).then(src => { const im = new Image(); im.onload = () => { img = im; dessin(); }; im.src = src; });
+  const dessin = () => { if (!img) return; const k = marche ? [0, 3, 0, 4][t++ % 4] : 0;
+    ctx.clearRect(0, 0, 16, 32); ctx.drawImage(img, k * 16, 0, 16, 32, 0, 0, 16, 32); };
+  charger(d);
+  const anim = marche ? setInterval(() => { if (fini || !cv.isConnected) return clearInterval(anim); dessin(); }, 200) : null;
+  return {charger, stop: () => { fini = true; }};
+}
+// La carte dresseur : nom, peau, casquette, veste, pantalon (flèches ◀ ▶) ; -> une promesse résolue à la fermeture
 function editerDresseur() {
   installerStyle("pkm2-dresseur-style", STYLE_DRESSEUR);
   if (!P.getElementById("pkm-police-pixel")) {
@@ -1492,41 +1553,58 @@ function editerDresseur() {
     l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap"; P.head.appendChild(l);
   }
   const d = {...DRESSEUR}, rgb = c => `rgb(${c.join(",")})`;
-  const nuancier = (cle, liste, ton) => `<div class="nuancier" data-cle="${cle}">${Object.entries(liste).map(([nom, c]) =>
-    `<button class="pastille ${d[cle] === nom ? "on" : ""}" data-v="${nom}" title="${nom}" style="background:${rgb(c[ton])}"></button>`).join("")}</div>`;
+  const nb = Object.keys(collection()).length, badges = Object.keys(V.badges).filter(k => k <= 8).length;
   const f = P.createElement("div"); f.id = "pkm-dresseur";
-  f.innerHTML = `<div class="ombre"></div><div class="feuille">
-    <h3>🎨 Ton dresseur</h3><div class="sous">C'est toi sur la carte. Tes amis te verront comme ça.</div>
-    <div class="apercu"><canvas width="16" height="32"></canvas></div>
-    <label>Ton nom</label><input maxlength="12" placeholder="Sacha" value="${d.nom.replace(/"/g, "")}" autocomplete="off">
-    <label>Peau</label>${nuancier("peau", COULEURS_PEAU, 0)}
-    <label>Casquette</label>${nuancier("casquette", COULEURS_TISSU, 1)}
-    <label>Veste</label>${nuancier("veste", COULEURS_TISSU, 1)}
-    <button class="valider">C'est moi !</button></div>`;
+  f.innerHTML = `<div class="ombre"></div><div class="carte-dresseur">
+    <div class="entete"><span>CARTE DRESSEUR</span><small class="id">N° ID ${idDresseur(d.nom)}</small></div>
+    <div class="corps"><div class="photo"><canvas width="16" height="32"></canvas></div>
+      <div class="infos"><div class="boite"><span>NOM</span><input maxlength="12" placeholder="Sacha" value="${d.nom.replace(/"/g, "")}" autocomplete="off"></div>
+        <div class="boite"><span>POKÉDEX</span><b>${nb}</b></div><div class="boite"><span>BADGES</span><b>${badges}</b></div>
+        <div class="boite"><span>RÉGION</span><b>Kanto</b></div></div></div>
+    <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
+      <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
+    <div class="boutons"><button class="non">RETOUR</button><button class="ok">OK</button></div></div>`;
   P.body.appendChild(f);
-  // l'aperçu : il marche vers nous
-  const cv = f.querySelector("canvas"), ctx = cv.getContext("2d"); let img = null, t = 0;
-  const charger = () => feuilleColoree("red_normal", d).then(src => { const im = new Image(); im.onload = () => { img = im; }; im.src = src; });
-  charger();
-  const anim = setInterval(() => { if (!img) return; const k = [0, 3, 0, 4][t++ % 4];
-    ctx.clearRect(0, 0, 16, 32); ctx.drawImage(img, k * 16, 0, 16, 32, 0, 0, 16, 32); }, 200);
-  f.querySelectorAll(".nuancier").forEach(n => n.querySelectorAll(".pastille").forEach(b => b.onclick = () => {
-    d[n.dataset.cle] = b.dataset.v; n.querySelectorAll(".pastille").forEach(x => x.classList.toggle("on", x === b)); charger(); vibre(8); }));
+  const ap = apercuDresseur(f.querySelector("canvas"), d);
+  const maj = cle => { const [, , liste, ton] = CHOIX_DRESSEUR.find(c => c[0] === cle);
+    f.querySelector(`[data-cle="${cle}"] .val`).innerHTML = `<i style="background:${rgb(liste[d[cle]][ton])}"></i>${d[cle]}`; };
+  CHOIX_DRESSEUR.forEach(([cle, , liste]) => {
+    maj(cle);
+    const noms = Object.keys(liste), tourner = sens => { d[cle] = noms[(noms.indexOf(d[cle]) + sens + noms.length) % noms.length];
+      maj(cle); ap.charger(d); vibre(8); ton(1250, 0, .03, {type: "square", vol: .02}); };
+    f.querySelector(`[data-cle="${cle}"] .g`).onclick = () => tourner(-1);
+    f.querySelector(`[data-cle="${cle}"] .d`).onclick = () => tourner(1);
+  });
+  const champ = f.querySelector("input");
+  champ.oninput = () => { f.querySelector(".id").textContent = "N° ID " + idDresseur(champ.value.trim()); };
   return new Promise(ok => {
-    const fermer = enregistrer => { clearInterval(anim);
-      if (enregistrer) { d.nom = f.querySelector("input").value.trim().slice(0, 12); DRESSEUR = d;
-        try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} }
+    const fermer = enregistrer => { ap.stop();
+      if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); DRESSEUR = d;
+        try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur(); }
       f.remove(); ok(enregistrer); };
-    f.querySelector(".valider").onclick = () => { fermer(true); dessinerVoyage(); dessinerRegles(); };
+    f.querySelector(".ok").onclick = () => fermer(true);
+    f.querySelector(".non").onclick = () => fermer(false);
     f.querySelector(".ombre").onclick = () => fermer(false);
   });
+}
+// « Mon dresseur », en bas de l'onglet : la carte en petit, et le bouton pour la modifier
+function dessinerMonDresseur() {
+  const el = document.getElementById("mon-dresseur");
+  const nb = Object.keys(collection()).length, badges = Object.keys(V.badges).filter(k => k <= 8).length;
+  el.innerHTML = `<div class="photo"><canvas width="16" height="32"></canvas></div>
+    <div class="txt"><div class="nom">${nomDresseur()}</div><div class="id">N° ID ${idDresseur(DRESSEUR.nom)}</div>
+      <div class="chiffres">Pokédex ${nb} · Badges ${badges}</div></div>
+    <button class="modifier">Modifier</button>`;
+  apercuDresseur(el.querySelector("canvas"), DRESSEUR, false);
+  el.querySelector(".modifier").onclick = () => editerDresseur();
 }
 // Le prochain champion, debout à côté de son arène sur la carte
 function chefCarte() {
   const d = V.defi; if (!d) return "";
   const l = LIEUX[d.lieu], ch = CHAMPIONS[d.numero];
-  const bas = l.y < 45;  // tout en haut de la carte : il se tient sous sa ville, pour ne pas dépasser
-  return `<div class="chef ${bas ? "dessous" : ""}" data-n="${d.numero}" style="left:${(l.x + 11) / 370 * 100}%;top:${(l.y + (bas ? 6 : 3)) / HC * 100}%">
+  // tout en haut de la carte : il se tient à hauteur de sa ville (pas au-dessus), pour ne pas dépasser
+  let vu = false; try { vu = !!localStorage.getItem("pkm_chef_vu_" + d.numero); } catch (e) {}
+  return `<div class="chef ${l.y < 45 ? "haut" : ""} ${vu ? "" : "nouveau"}" data-n="${d.numero}" style="left:${(l.x + (l.y < 45 ? 18 : 11)) / 370 * 100}%;top:${(l.y + 3) / HC * 100}%">
     <canvas data-sprite="${ch.sprite}" data-fixe="1"></canvas></div>`;
 }
 function heros() {
@@ -1542,8 +1620,8 @@ function heros() {
       <span class="bateau">⛵</span></div>`;
     return `${ombre}<div class="heros" style="${pos(x, y)}">${sacha(mode === "vol" ? "red_bike" : "red_surf", dir, mode === "vol", 2)}</div>`;
   }
-  // à pied : il marche (de dos, immobile, devant une arène dont il attend le badge) ; le toucher = personnaliser
-  return `${ombre}<div class="heros" style="${pos(x, y)};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete).replace('class="sacha', 'class="sacha touche')}</div>`;
+  // à pied : il marche (de dos, immobile, devant une arène dont il attend le badge)
+  return `${ombre}<div class="heros" style="${pos(x, y)};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
 }
 // Les pas de Sacha : une image toutes les 170 ms
 setInterval(() => {
@@ -1620,12 +1698,15 @@ function dessinerVoyage() {
   const anims = new Map();
   el.querySelectorAll("canvas[data-sprite]").forEach(cv => anims.set(cv, championAnime(cv, cv.dataset.sprite, !!cv.dataset.fixe)));
   colorerDresseur(el);
-  const moi = el.querySelector(".sacha.touche"); if (moi) moi.onclick = () => editerDresseur();
   // toucher le champion sur la carte : il parle (bulle), et son arène s'affiche sous la carte
+  // la bulle se ferme quand on touche ailleurs sur la carte (ou la bulle elle-même)
+  el.querySelector(".carte-wrap").addEventListener("click", e => {
+    if (!e.target.closest(".chef")) el.querySelectorAll(".bulle-chef").forEach(b => b.remove()); }, true);
   const chef = el.querySelector(".chef");
   if (chef) chef.onclick = () => {
     const n = +chef.dataset.n, d = V.defi, a = LIEUX[d.lieu].arene, ch = CHAMPIONS[n];
     anims.get(chef.querySelector("canvas")).jouer();
+    chef.classList.remove("nouveau"); try { localStorage.setItem("pkm_chef_vu_" + n, "1"); } catch (e) {}
     el.querySelectorAll(".bulle-chef").forEach(b => b.remove());
     // la bulle reste dans la carte : centrée sur le champion sans déborder, en dessous de lui s'il est tout en haut
     const x = parseFloat(chef.style.left), y = parseFloat(chef.style.top);
@@ -1634,7 +1715,6 @@ function dessinerVoyage() {
     b.innerHTML = `<b>${ch.nom}</b> : ${d.arrive ? `« Montre-moi ce que tu vaux ! ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}. »`
       : `« Je t'attends ! Encore ${fr(d.reste)} pts de route. Mon défi : ${a.texte}. »`}`;
     el.querySelector(".carte-wrap").appendChild(b); vibre(10); ton(1250, 0, .05, {type: "square", vol: .03});
-    setTimeout(() => b.remove(), 5000);
     lieuVu = d.lieu === 18 ? 2 : d.lieu; choisir(lieuVu); el.querySelector(".infos-lieu").outerHTML = infosLieu(d.lieu); brancher();
   };
   // toucher un badge gagné : revoir la scène de l'arène (sans rien changer)
@@ -1666,15 +1746,14 @@ function dessinerRegles() {
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">🎬 Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">🎬 Aperçu de la scène du badge (sans récompense)</button></li>`}
-    <li><button class="filtre dresseur">🎨 ${DRESSEUR.nom ? `Mon dresseur : ${DRESSEUR.nom}` : "Personnaliser mon dresseur"}</button> (ou touche-le sur la carte)</li>`;
-  document.querySelector("#regles .dresseur").onclick = () => editerDresseur();
+`;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
   const r = document.querySelector("#regles .revoir");
   if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
 }
 
-function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerDernieres(); dessinerDex(); }
+function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
 { // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie
   const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);

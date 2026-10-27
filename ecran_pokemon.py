@@ -56,6 +56,7 @@ def afficher(lire, aujourd):
         "dex": [[n, p["nom"], p["types"]] for n, p in POKEMON.items()],
         "voyage": etat["voyage"],
         "carte": f"https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/{etat['voyage']['carte']['image']}",
+        "scenes": "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
         "legendaires": LEGENDAIRES,
         "couleurs": COULEURS_TYPES,
         "conseils": _conseils(),

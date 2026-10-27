@@ -44,24 +44,23 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
 - **Pokémon v3** (28/10, plus un prototype : **jamais de Pokémon offert**, tout se gagne en faisant du sport ; seule
   exception, voulue par Kiki le 29/10 : le premier jour, Poké Ball `chen` « 🎁 Cadeau du Professeur Chen » = un des 3
   starters au hasard, `pokemon.STARTERS`, ou un tirage normal si on les a déjà ; pas de choix à enregistrer).
-  Son ouverture passe par la **scène du laboratoire** (`lancer` → `intro`, refaite **en sprites** le 30/10 pour la
-  cohérence avec les arènes ; l'image ChatGPT du labo et le dossier `scenes/` ont été retirés) : même scène que les
-  arènes (classe `.pkm-scene` : bandes noires, fond à la couleur du labo, bandeau « LABORATOIRE POKÉMON · Bourg Palette »),
-  le professeur (Chen = image de Rouge Feu, `PROFESSEURS`, souffle doucement) derrière une table en bois avec 3 Poké
-  Balls (objet PokeAPI `items/poke-ball.png`), répliques façon GBA (le début reprend Rouge / Bleu), on touche une ball
-  (halos), elle saute, zoom dessus + flash blanc, puis l'ouverture en 3D **sans 2e toucher** (`ouvrir(c, rejouer,
-  direct)`). Texte : espace insécable avant ! ? : ; et `text-wrap: pretty` (jamais une ponctuation ou un mot seul en
-  dernière ligne, demande de Kiki). Prévu pour chaque région (`PROFESSEURS` : chen ; plus tard orme, seko… avec leur
-  image, leur couleur et leurs 3 starters). Bouton « 🎬 Revoir l'accueil » dans « Comment ça marche ? ».
-  **Tout en sprites, sans ChatGPT (choix de Kiki le 30/10 : ChatGPT bloque après 2-3 images par jour)** :
+  Son ouverture passe par la **scène du laboratoire** (`lancer` → `intro`) : **image ChatGPT** `scenes/labo-chen.webp`
+  (essayée en sprites le 30/10, jugée laide par Kiki : on garde ChatGPT pour les labos, une image par région, consigne
+  dans `scenes/PROMPT.md`), Chen derrière une table avec 3 Poké Balls (`PROFESSEURS` : image, taille, position des
+  balls et de la table en pixels de l'image), répliques façon GBA, Chen demande le nom au premier passage
+  (« Et toi, qui es-tu ? » → carte dresseur), on touche une ball (halos), elle saute, zoom + flash blanc, puis
+  l'ouverture en 3D **sans 2e toucher** (`ouvrir(c, rejouer, direct)`). Texte : espace insécable avant ! ? : ; et
+  `text-wrap: pretty` (jamais une ponctuation ou un mot seul en dernière ligne, demande de Kiki). Bouton « 🎬 Revoir
+  l'accueil » dans « Comment ça marche ? ».
+  **Arènes en sprites, sans ChatGPT (choix de Kiki le 30/10 : ChatGPT bloque après 2-3 images par jour)** :
   champions des 9 générations = **PokéRogue** (`pagefaultgames/pokerogue-assets`, `images/trainer/<nom>.png` + `.json`
   = planche + liste d'images d'animation, version figée par son commit dans `ROGUE`), complété par **smogon/sprites**
   (`trainers/` gen 1-7 : Sacha en 7 tenues, capitaines d'Alola, quelques professeurs) ; Sacha sur la carte = images de
   Red de **pret/pokefirered** (`graphics/object_events/pics/people/red_normal|red_bike|red_surf.png`, commit figé dans
-  `SACHA`). Manquent seulement 5 professeurs (Orme, Sorbier, Platane, Magnolia, Saule/Turum) : pour eux, une image
-  ChatGPT du professeur seul, ou une scène sans professeur.
-  **Le prochain champion sur la carte** (`chefCarte`, 30/10) : animé à côté de son arène, « ! » au-dessus ; le toucher
-  = bulle (son défi, ou « Montre-moi ce que tu vaux ») + son lieu sous la carte.
+  `SACHA`).
+  **Le prochain champion sur la carte** (`chefCarte`, 30/10) : à côté de son arène (à droite de la ville si elle est
+  tout en haut : classe `haut`), « ! » rouge jusqu'au premier toucher (`pkm_chef_vu_N`) ; le toucher = il s'anime + bulle
+  (son défi, ou « Montre-moi ce que tu vaux ») ; toucher ailleurs ferme la bulle.
   **Scène du badge** (`sceneBadge(n, capture, rejouer)`, 30/10) : bandes noires qui s'écartent (entrée de combat),
   fond aux couleurs du type, bandeau « ARÈNE D'ARGENTA », champion animé (`championAnime`, canvas) sur une estrade,
   répliques (`CHAMPIONS` : nom, sprite, 2 répliques ; 9 = Régis, Ligue), le badge (PokeAPI `badges/N.png`, trophée 🏆
@@ -74,17 +73,18 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   marche dans le sens du chemin (`direction`, 4 images de pas toutes les 170 ms, miroir vers la droite), immobile de dos
   devant une arène qu'il attend ; en vol / en mer sur le dos de la `monture` (dernière capture Vol / Eau ; sinon vélo
   `red_bike`, bateau, `red_surf`). **Plus de compagnon** (Kiki, 30/10 : « gadget », bouton de la fiche retiré).
-  **Personnalisation** (`editerDresseur`, `DRESSEUR` = {nom, peau, casquette, veste} dans le localStorage
-  `pkm_dresseur` ; à passer côté serveur avec le multijoueur) : pseudo (12 lettres, « Sacha » par défaut), 5 peaux, 9
-  couleurs de casquette et de veste ; `feuilleColoree` recolore les images de Red (peau = 3 tons, rouge = 3 tons :
-  les 7 premières lignes dessinées de chaque image = casquette, le reste = veste) ; Chen demande le nom au premier
-  passage (« Et toi, qui es-tu ? »), toucher le dresseur sur la carte ou « 🎨 » dans « Comment ça marche ? » = la
-  fiche ; « Kiki obtient le Badge Roche ! ».
+  **Mon dresseur** (31/10, section avant « Comment ça marche ? », `dessinerMonDresseur`) : mini carte dresseur +
+  « Modifier » → `editerDresseur` = **Carte Dresseur** façon Rouge Feu (fond bleu rayé, police pixel, NOM / POKÉDEX /
+  BADGES / RÉGION, flèches rouges ◀ ▶ : peau, casquette, veste, pantalon ; RETOUR / ▶ OK). Plus d'emoji ni de dégradé
+  (Kiki : « ça fait IA ») ; plus de réglage en touchant la carte. `DRESSEUR` = {nom, peau, casquette, veste, pantalon}
+  dans le localStorage `pkm_dresseur` (à passer côté serveur avec le multijoueur) ; `feuilleColoree` recolore les
+  images de Red (peau 3 tons ; rouge 3 tons : 7 premières lignes = casquette, le reste = veste ; jean = pantalon).
+  Couleur des yeux : non (1-2 pixels, invisible). « Kiki obtient le Badge Roche ! ».
   **Champion sur la carte** : **pose fixe** (première image), il ne bouge qu'au toucher (`championAnime(…, fixe)` →
-  `jouer()`), sous sa ville si elle est tout en haut. **Tuile de l'arène** seulement **une fois arrivé** (avant : le
+  `jouer()`). **Tuile de l'arène** seulement **une fois arrivé** (avant : le
   champion sur la carte suffit), avec le badge, le défi et les jauges.
   **Montre : rien à mettre à jour pendant que le jeu évolue (choix de Kiki, 29/10)** : on la mettra à jour une seule
-  fois, quand le jeu sera fini et testé (à reprendre alors : scène d'accueil du professeur, voyage et carte, compagnon,
+  fois, quand le jeu sera fini et testé (à reprendre alors : scène d'accueil du professeur, voyage et carte,
   vols et surf, Pokédex normal + shiny, Master Ball 25/30). D'ici là, elle montre le cadeau comme une Poké Ball normale.
   `pokedex.py` noms/types des 151, `pokemon.py` règles (`REGLAGES`, `BALLS`, `SOURCES`, `SPORTS`), `kanto.py` le
   voyage, `ecran_pokemon.py` prépare les données, `pokemon_ui.html` = tout l'onglet (un seul composant). Audit du 27/10
@@ -122,16 +122,14 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     points sombres ; position = fraction des points le long du tracé ; pour ne pas repasser par une route déjà faite,
     `kanto.MODES` : « vol » = arc en tirets, « surf » = tirets en mer ; **un seul Pokémon visible sur la carte** (Kiki, 30/10),
     idée de Kiki, même nombre de points : seul le dessin change ; `monture` : c'est un Pokémon de la collection qui
-    porte (Vol pour voler, Eau en mer : le compagnon s'il a le type, sinon la dernière capture du type ; personne :
+    porte (Vol pour voler, Eau en mer : la dernière capture du type ; personne :
     vélo sur la terre, bateau ⛵ pour un vol au-dessus de la mer, Lokhlass sauvage en mer), sans choix ni tirage truqué, et « 🪽 En vol : X t'emmène jusqu'à… » sous la carte avant
     l'étape), toucher un lieu = anneau blanc qui pulse + nom
     en jaune, et ses Pokémon dans le panneau collé sous la carte (+ quand on repart), ★ sur un lieu complété. Ordre
     (choix de Kiki, 29/10) : tuile de l'arène (compacte) au-dessus de la carte, carte, Pokémon du lieu, boîte à badges ;
-    pas de phrase sur le compagnon (à découvrir) ; sans Pokémon : une Poké Ball (pas d'image de Sacha dans PokeAPI).
+    sans Pokémon : une Poké Ball (pas d'image de Sacha dans PokeAPI).
     Dernières captures : les 8 dernières. Pokémon **rares** ⭐
-    (`kanto.RARES`, poids ÷ 3). **Compagnon** (GIF animé sur la carte) : bouton « 🐾 Il m'accompagne » de la fiche,
-    gardé dans le localStorage (`pkm_compagnon` = « num:shiny », téléphone seul, purement décoratif), sinon la dernière
-    capture ouverte. Choix voulu (29/10, carte blanche de Kiki : « ça reste une appli de sport ») : chemin fixe, pas de
+    (`kanto.RARES`, poids ÷ 3). Choix voulu (29/10, carte blanche de Kiki : « ça reste une appli de sport ») : chemin fixe, pas de
     « rester ici » ni de carrefours (il faudrait enregistrer ces choix côté script Google, car ils changent les tirages).
   - Identifiants « jour#poke3 / super / hyper / master1 / badge1 / ligue » = graines (rejouable). Règles v2 rejouées depuis le 19/10
     avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige **toutes** les captures,
