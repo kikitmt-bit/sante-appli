@@ -44,9 +44,13 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
 - **Pokémon v3** (28/10, plus un prototype : **jamais de Pokémon offert**, tout se gagne en faisant du sport ; seule
   exception, voulue par Kiki le 29/10 : le premier jour, Poké Ball `chen` « 🎁 Cadeau du Professeur Chen » = un des 3
   starters au hasard, `pokemon.STARTERS`, ou un tirage normal si on les a déjà ; pas de choix à enregistrer).
-  Son ouverture passe par une **scène d'accueil** (`lancer` → `intro` : carte floutée, « Bienvenue à Kanto ! », bulle du
-  professeur, 3 Poké Balls sur une table, on en touche une, puis l'ouverture habituelle) ; prévu pour chaque région
-  (`PROFESSEURS` : chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur cadeau et leurs 3 starters). Bouton « 🎬 Revoir l'accueil »
+  Son ouverture passe par la **scène du laboratoire** (`lancer` → `intro`, refaite le 30/10 : la première « carte
+  floutée + bulle » était trop moche) : image pixel art `scenes/labo-chen.webp` (générée par Kiki avec ChatGPT dans la
+  conversation de la carte, même style ; prompt : labo, professeur derrière une table avec 3 Poké Balls, format 9:16,
+  bas de l'image libre), fondu depuis le noir, boîte de dialogue façon GBA (police Pixelify Sans, texte lettre par
+  lettre avec un bip, ▼), on touche une des 3 balls dessinées (halos ; position en pixels dans `PROFESSEURS`), elle
+  tremble (morceau de l'image), flash blanc, puis l'ouverture habituelle. Prévu pour chaque région (`PROFESSEURS` :
+  chen ; plus tard orme pour Johto, seko pour Hoenn… avec leur labo, leurs balls et leurs 3 starters). Bouton « 🎬 Revoir l'accueil »
   dans « Comment ça marche ? » (rejoue sans rien changer).
   **Montre : rien à mettre à jour pendant que le jeu évolue (choix de Kiki, 29/10)** : on la mettra à jour une seule
   fois, quand le jeu sera fini et testé (à reprendre alors : scène d'accueil du professeur, voyage et carte, compagnon,
