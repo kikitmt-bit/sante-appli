@@ -232,13 +232,21 @@ function monCompagnon() {
   return CAPTURES.filter(estOuverte).slice(-1)[0];
 }
 // Qui t'emmène pour un vol (type Vol) ou en mer (type Eau) : ton compagnon s'il peut, sinon ta dernière capture du bon
-// type ; personne : à vélo (vol) ou un Lokhlass sauvage (mer). Rien à choisir, jamais bloquant.
+// type ; personne : à vélo (vol sur la terre), en bateau (vol au-dessus de la mer) ou un Lokhlass sauvage (mer).
+// Rien à choisir, jamais bloquant.
 function monture(mode) {
   const type = mode === "vol" ? "Vol" : "Eau", ami = monCompagnon();
   if (ami && ami.types.includes(type)) return ami;
   return CAPTURES.filter(c => estOuverte(c) && c.types.includes(type)).slice(-1)[0] || null;
 }
-const imageMonture = (mode, m) => m ? IMG.anim(m.num, m.shiny) : mode === "vol" ? `${D.images}/items/bicycle.png` : IMG.anim(131, false);
+const enMer = k => /Îles|Cramois/.test(LIEUX[k].nom + LIEUX[k - 1].nom);  // l'étape k passe au-dessus de la mer
+function dessinMonture(k, x, y, t) {  // le Pokémon (ou le vélo, le bateau) qui porte pendant l'étape k, centré en x, posé en y
+  const mode = LIEUX[k].mode, m = monture(mode);
+  const img = src => `<image href="${src}" x="${x - t / 2}" y="${y - t}" width="${t}" height="${t}" style="image-rendering:pixelated"/>`;
+  if (m) return img(IMG.anim(m.num, m.shiny));
+  if (mode === "vol" && enMer(k)) return `<text x="${x}" y="${y - t * .15}" font-size="${t * .7}" text-anchor="middle" style="stroke:none">⛵</text>`;
+  return img(mode === "vol" ? `${D.images}/items/bicycle.png` : IMG.anim(131, false));
+}
 const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball"};
 const N3 = n => String(n).padStart(3, "0");
 const fr = n => Math.round(n).toLocaleString("fr-FR");
@@ -1040,7 +1048,7 @@ function svgKanto() {
           stroke="#E8382F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`; }).join("") +
     L.slice(1).map((l, j) => { if (l.mode === "route" || enRoute === j + 1) return "";  // en plein trajet : il porte le compagnon
       const tr = TRACE[j + 1], [x, y] = jusqua(tr, .5).slice(-1)[0];
-      return `<image href="${imageMonture(l.mode, monture(l.mode))}" x="${x - 11}" y="${y - 13}" width="22" height="22" style="image-rendering:pixelated"/>`; }).join("");
+      return dessinMonture(j + 1, x, y + 9, 22); }).join("");
   const col = collection();
   const noeuds = L.map((l, k) => {
     if (k === 18) return "";  // Jadielle (retour) : même endroit que Jadielle
@@ -1065,7 +1073,7 @@ function svgKanto() {
   // Le compagnon (en plein vol ou en mer : le Pokémon qui le porte) ; pas encore de Pokémon : une Poké Ball
   const ami = monCompagnon();
   const moi = enRoute > 0 && L[enRoute].mode !== "route"
-    ? `<image href="${imageMonture(L[enRoute].mode, monture(L[enRoute].mode))}" x="${mx - 15}" y="${my - 30}" width="30" height="30" style="image-rendering:pixelated"/>`
+    ? dessinMonture(enRoute, mx, my, 30)
     : ami ? `<image href="${IMG.anim(ami.num, ami.shiny)}" x="${mx - 15}" y="${my - 30}" width="30" height="30" style="image-rendering:pixelated"/>`
     : `<image href="${D.images}/items/poke-ball.png" x="${mx - 12}" y="${my - 22}" width="24" height="24" style="image-rendering:pixelated"/>`;
   return `<svg class="carte-kanto" viewBox="0 0 370 ${HC.toFixed(1)}">
@@ -1085,7 +1093,9 @@ function infosLieu(k) {
       + (() => { if (!suite || suite.mode === "route" || bloque) return "";
         const m = monture(suite.mode);
         return suite.mode === "vol"
-          ? (m ? `<br>🪽 En vol : <b>${m.nom}</b> t'emmène jusqu'à ${suite.nom}.` : `<br>🚲 Pas encore de Pokémon Vol : tu y vas à vélo.`)
+          ? (m ? `<br>🪽 En vol : <b>${m.nom}</b> t'emmène jusqu'à ${suite.nom}.`
+               : enMer(k + 1) ? `<br>⛵ Pas encore de Pokémon Vol : tu prends le bateau jusqu'à ${suite.nom}.`
+               : `<br>🚲 Pas encore de Pokémon Vol : tu y vas à vélo.`)
           : `<br>🌊 En mer : ${m ? `<b>${m.nom}</b> te fait traverser` : "un Lokhlass sauvage te fait traverser"} jusqu'à ${suite.nom}.`; })();
   return `<div class="infos-lieu"><div class="nom">📍 ${l.nom}<small>${ici ? "tu es ici" : passe ? "déjà traversé" :
       `dans ${fr(l.dist - V.pos)} pts`}</small></div>

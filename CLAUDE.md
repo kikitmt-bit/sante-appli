@@ -79,7 +79,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     `kanto.MODES` : « vol » = arc en tirets avec un Roucool animé au milieu, « surf » = tirets en mer avec un Lokhlass,
     idée de Kiki, même nombre de points : seul le dessin change ; `monture` : c'est un Pokémon de la collection qui
     porte (Vol pour voler, Eau en mer : le compagnon s'il a le type, sinon la dernière capture du type ; personne :
-    vélo / Lokhlass sauvage), sans choix ni tirage truqué, et « 🪽 En vol : X t'emmène jusqu'à… » sous la carte avant
+    vélo sur la terre, bateau ⛵ pour un vol au-dessus de la mer, Lokhlass sauvage en mer), sans choix ni tirage truqué, et « 🪽 En vol : X t'emmène jusqu'à… » sous la carte avant
     l'étape), toucher un lieu = anneau blanc qui pulse + nom
     en jaune, et ses Pokémon dans le panneau collé sous la carte (+ quand on repart), ★ sur un lieu complété. Ordre
     (choix de Kiki, 29/10) : tuile de l'arène (compacte) au-dessus de la carte, carte, Pokémon du lieu, boîte à badges ;
