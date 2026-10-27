@@ -92,7 +92,12 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .infos-lieu .nom{font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px}
 .infos-lieu .nom small{font-weight:600;color:#9AA7C2;font-size:11.5px;margin-left:auto}
 .coin{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.coin img{width:40px;height:40px;object-fit:contain;background:rgba(255,255,255,.05);border-radius:10px;cursor:pointer}
+.coin img{width:40px;height:40px;object-fit:contain;background:rgba(255,255,255,.05);border-radius:10px;cursor:pointer;display:block}
+.coin .pk{position:relative}
+.coin .pk i{position:absolute;top:-4px;right:-3px;font-size:10px;font-style:normal;pointer-events:none}
+.ami{display:flex;align-items:center;gap:8px;font-size:12px;color:#C9D3EA;margin-top:8px;cursor:pointer}
+.ami img{width:34px;height:34px;object-fit:contain}
+.ami b{color:#fff}
 .coin img.non{filter:brightness(0);opacity:.35}
 .arene{display:flex;gap:12px;align-items:center;background:linear-gradient(135deg,rgba(255,203,5,.14),rgba(13,19,34,.5));
   border-radius:14px;padding:10px 12px;margin-top:10px}
@@ -187,6 +192,19 @@ const repli = (n, s) => `onerror="this.onerror=null;this.src='${IMG.mini(n, s)}'
 const V = D.voyage, LIEUX = V.lieux;
 const LIEUX_DE = {};  // Pokémon -> lieux où on le trouve
 LIEUX.forEach(l => l.pokemon.forEach(n => (LIEUX_DE[n] = LIEUX_DE[n] || []).push(l.nom)));
+const RARES = new Set(V.rares || []);
+// Le compagnon (sur la carte) : choisi dans la fiche d'un Pokémon (« numéro:shiny », gardé sur ce téléphone),
+// sinon la dernière Poké Ball ouverte
+let compagnon = null;
+try { compagnon = localStorage.getItem("pkm_compagnon"); } catch (e) {}
+function monCompagnon() {
+  const col = collection();
+  if (compagnon) {
+    const [n, s] = compagnon.split(":"), c = (col[n] || []).find(x => String(+x.shiny) === s);
+    if (c) return c;
+  }
+  return CAPTURES.filter(estOuverte).slice(-1)[0];
+}
 const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball"};
 const N3 = n => String(n).padStart(3, "0");
 const fr = n => Math.round(n).toLocaleString("fr-FR");
@@ -760,6 +778,9 @@ const STYLE_FICHE = `
 #pkm-fiche .f .trou{height:84px;margin:4px auto;display:flex;align-items:center;justify-content:center;font-size:30px;color:#2A3756}
 #pkm-fiche .ou{background:#1C2740;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.5;color:#C9D3EA}
 #pkm-fiche .ou b{color:#fff}
+#pkm-fiche .compa{display:block;width:100%;margin-top:10px;border:0;border-radius:14px;padding:11px;cursor:pointer;color:#fff;
+  font:800 14px Outfit,sans-serif;background:linear-gradient(180deg,#4CD3A0,#2E9E76);box-shadow:0 3px 0 #1E6B50}
+#pkm-fiche .compa.lui{background:#1C2740;box-shadow:inset 0 0 0 2px #4CD3A0;color:#4CD3A0;font-weight:700}
 #pkm-fiche .fermer{display:block;width:100%;margin-top:14px;border:0;border-radius:14px;padding:12px;background:#1C2740;color:#fff;
   font:700 15px Outfit,sans-serif;cursor:pointer}
 .pkm-type{display:inline-block;padding:2px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#fff;margin:6px 2px 0;
@@ -792,14 +813,24 @@ function fiche(p) {
         <div class="sous">${a ? `Attrapé ${mes[0].quand}${mes[0].lieu ? ` · ${mes[0].lieu}` : ""}` : "Pas encore attrapé"}</div></div></div>
     <h4>Ses deux formes <span>${(normal ? 1 : 0) + (shiny ? 1 : 0)} / 2</span></h4>
     <div class="formes">${forme(normal, false)}${forme(shiny, true)}</div>
-    <h4>Où le trouver ?</h4><div class="ou">${ou}</div>
+    ${a ? `<button class="compa"></button>` : ""}
+    <h4>Où le trouver ?</h4><div class="ou">${RARES.has(p.num) ? "⭐ <b>Rare</b> : 3 fois moins de chances que les autres Pokémon de son lieu.<br>" : ""}${ou}</div>
     <button class="fermer">Fermer</button></div>`;
   P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu"));
-  const grande = f.querySelector(".grande");
+  const grande = f.querySelector(".grande"), compa = f.querySelector(".compa");
+  let choisie = vue;  // la forme affichée : c'est elle qui accompagne
+  const majCompa = () => { if (!compa) return; const ami = monCompagnon(), lui = ami && ami.num === p.num && ami.shiny === choisie;
+    compa.className = "compa" + (lui ? " lui" : "");
+    compa.textContent = lui ? `🐾 ${p.nom}${choisie ? " ✨" : ""} t'accompagne sur la carte` : `🐾 Il m'accompagne${choisie ? " (shiny)" : ""}`; };
+  majCompa();
+  if (compa) compa.onclick = () => { compagnon = `${p.num}:${+choisie}`;
+    try { localStorage.setItem("pkm_compagnon", compagnon); } catch (e) {}
+    majCompa(); dessinerVoyage(); vibre(20); };
   f.querySelectorAll(".f[data-s]").forEach(e => {
     if (+e.dataset.s === +vue) e.classList.add("on");
     e.onclick = () => { f.querySelectorAll(".f").forEach(x => x.classList.remove("on")); e.classList.add("on");
-      grande.style.opacity = 0; setTimeout(() => { grande.src = IMG.hd(p.num, e.dataset.s === "1"); grande.style.opacity = 1; }, 200); };
+      choisie = e.dataset.s === "1"; majCompa();
+      grande.style.opacity = 0; setTimeout(() => { grande.src = IMG.hd(p.num, choisie); grande.style.opacity = 1; }, 200); };
   });
   const fermer = () => { f.classList.remove("vu"); setTimeout(() => f.remove(), 350); };
   f.querySelector(".ombre").onclick = fermer; f.querySelector(".fermer").onclick = fermer;
@@ -972,8 +1003,10 @@ function svgKanto() {
     [[80, 108, 7], [108, 104, 8], [84, 128, 8], [110, 128, 7], [72, 118, 6], [118, 116, 6], [96, 98, 6], [100, 138, 6],
      [150, 122, 6], [178, 128, 5], [262, 128, 6], [205, 178, 6], [276, 182, 5], [60, 200, 6], [140, 172, 5]]
       .map(([x, y, r]) => arbre(x, y, r)).join("");
+  const col = collection();
   const noeuds = L.map((l, k) => {
     if (k === 18) return "";  // Jadielle (retour) : même endroit que Jadielle
+    const complet = l.pokemon.every(n => col[n]) && (k !== 2 || L[18].pokemon.every(n => col[n]));
     const a = l.arene, k2 = k === 2 ? 18 : k, ar = L[k2].arene;  // Jadielle porte l'arène de Giovanni
     const num = ar ? L.filter((x, j) => x.arene && j <= k2).length : 0, gagne = num && V.badges[num];
     const atteint = V.pos >= l.dist, vise = V.defi && V.defi.lieu === k2;
@@ -985,11 +1018,12 @@ function svgKanto() {
       ${ville ? `<rect x="${l.x - 2.6}" y="${l.y - 1.4}" width="5.2" height="4" fill="#fff" opacity=".85"/><path d="M${l.x - 3.4},${l.y - 1.2} L${l.x},${l.y - 4.2} L${l.x + 3.4},${l.y - 1.2}Z" fill="#fff" opacity=".85"/>` : ""}
       ${ar && ar.image ? `<image href="${IMG.badge(ar.image)}" x="${l.x + 4}" y="${l.y - 16}" width="12" height="12" opacity="${gagne ? 1 : .35}" style="${gagne ? "" : "filter:grayscale(1)"}"/>` : ""}
       ${ar && !ar.image ? `<text x="${l.x + 9}" y="${l.y - 6}" font-size="11" style="stroke:none">${gagne ? "🏆" : "🏟️"}</text>` : ""}
+      ${complet ? `<text x="${l.x - 13}" y="${l.y - 4}" font-size="9" style="fill:#FFD84A">★</text>` : ""}
       ${ville ? `<text x="${l.x}" y="${l.y + (l.y > 250 ? -10 : 15)}" font-size="8.5" text-anchor="middle">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
       <circle cx="${l.x}" cy="${l.y}" r="14" fill="transparent"/></g>`;
   }).join("");
-  const dernier = CAPTURES.filter(estOuverte).slice(-1)[0];  // le compagnon : la dernière capture ouverte
-  const moi = dernier ? `<image href="${IMG.anim(dernier.num, dernier.shiny)}" x="${mx - 15}" y="${my - 30}" width="30" height="30" style="image-rendering:pixelated"/>`
+  const ami = monCompagnon();
+  const moi = ami ? `<image href="${IMG.anim(ami.num, ami.shiny)}" x="${mx - 15}" y="${my - 30}" width="30" height="30" style="image-rendering:pixelated"/>`
     : `<circle cx="${mx}" cy="${my - 8}" r="6" fill="#E3262E" stroke="#151515" stroke-width="1.5"/><rect x="${mx - 6}" y="${my - 8.6}" width="12" height="1.4" fill="#151515"/>`;
   return `<svg class="carte-kanto" viewBox="0 0 370 300">
     <defs>
@@ -1015,11 +1049,17 @@ function svgKanto() {
 
 function infosLieu(k) {
   const l = LIEUX[k], col = collection(), pris = l.pokemon.filter(n => col[n]).length;
-  const passe = V.pos >= l.dist, ici = k === V.ici;
+  const passe = V.pos >= l.dist, ici = k === V.ici, suite = LIEUX[k + 1], d = V.defi;
+  const bloque = d && d.arrive && d.lieu === k;
+  const depart = !ici || !suite ? "" : bloque ? "Tu repars après le badge de l'arène."
+    : `Étape suivante : ${suite.nom}, dans ${fr(suite.dist - V.pos)} pts (≈ ${Math.max(1, Math.round((suite.dist - V.pos) / D.barre.taille))} barre${suite.dist - V.pos > 150 ? "s" : ""}).`;
   return `<div class="infos-lieu"><div class="nom">📍 ${l.nom}<small>${ici ? "tu es ici" : passe ? "déjà traversé" :
       `dans ${fr(l.dist - V.pos)} pts`}</small></div>
-    <div class="petit gris" style="margin-top:3px">Pokémon du coin : ${pris} / ${l.pokemon.length} attrapés</div>
-    <div class="coin">${l.pokemon.map(n => `<img class="rogne ${col[n] ? "" : "non"}" data-n="${n}" src="${IMG.mini(n, false)}" loading="lazy" title="${col[n] ? PAR_NUM[n].nom : "???"}">`).join("")}</div></div>`;
+    <div class="petit gris" style="margin-top:3px">${pris === l.pokemon.length ? "★ Lieu complété : tous ses Pokémon sont à toi !"
+      : `Pokémon du coin : ${pris} / ${l.pokemon.length} attrapés${l.pokemon.some(n => RARES.has(n)) ? " · ⭐ = rare" : ""}`}</div>
+    <div class="coin">${l.pokemon.map(n => `<span class="pk"><img class="rogne ${col[n] ? "" : "non"}" data-n="${n}" src="${IMG.mini(n, false)}" loading="lazy"
+      title="${col[n] ? PAR_NUM[n].nom : "???"}">${RARES.has(n) ? "<i>⭐</i>" : ""}</span>`).join("")}</div>
+    ${depart ? `<div class="petit gris" style="margin-top:8px">${depart}</div>` : ""}</div>`;
 }
 
 function blocArene() {
@@ -1044,7 +1084,7 @@ function blocArene() {
 }
 
 function dessinerVoyage() {
-  const el = document.getElementById("voyage"), k = lieuVu ?? V.ici;
+  const el = document.getElementById("voyage"), k = lieuVu ?? V.ici, ami = monCompagnon();
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
     const n = i + 1, quand = V.badges[n];
     return l.arene.image ? `<div class="${quand ? "oui" : "non"}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
@@ -1053,8 +1093,12 @@ function dessinerVoyage() {
   el.innerHTML = `<div class="entete"><span class="titre">🗺️ Voyage dans Kanto</span>
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
-    ${svgKanto()}${blocArene()}${infosLieu(k)}
+    ${svgKanto()}${ami ? `<div class="ami"><img src="${IMG.anim(ami.num, ami.shiny)}" ${repli(ami.num, ami.shiny)}>
+      <span><b>${ami.nom}${ami.shiny ? " ✨" : ""}</b> t'accompagne. Pour en changer : ouvre la fiche d'un Pokémon,
+      « 🐾 Il m'accompagne ».</span></div>` : ""}
+    ${blocArene()}${infosLieu(k)}
     <div class="boite-badges">${badges}</div>`;
+  const a = el.querySelector(".ami"); if (a) a.onclick = () => fiche(PAR_NUM[ami.num]);
   requestAnimationFrame(() => setTimeout(() => el.querySelector(".avance div").style.width = V.pos / V.total * 100 + "%", 60));
   const brancher = () => { el.querySelectorAll(".coin img").forEach(i => i.onclick = () => fiche(PAR_NUM[i.dataset.n])); rognerImages(el); };
   // toucher un lieu : ses Pokémon (sans redessiner la carte)
@@ -1076,8 +1120,12 @@ function dessinerRegles() {
     <li>👑 <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
     <li>😴 Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
-    <li>🗺️ <b>Voyage dans Kanto</b> : les mêmes points font avancer sur la carte, de Bourg Palette au Plateau Indigo (environ 3 mois).
-      Les Poké Balls donnent surtout les Pokémon de l'endroit où tu es (touche un lieu pour voir les siens).</li>
+    <li>🗺️ <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
+      au Plateau Indigo (environ 3 mois, 4 à 5 barres par lieu). Rien à choisir : bouge, tu avances.</li>
+    <li>📍 Les Poké Balls donnent surtout les Pokémon de l'endroit où tu es, parfois ceux que tu as ratés plus tôt ou ceux de l'étape
+      suivante, et plus souvent ceux des types de ta journée. Les ⭐ rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.
+      Plus rien de nouveau autour de toi : la ball pioche dans tout Kanto, donc aucune n'est perdue.</li>
+    <li>🐾 <b>Compagnon</b> : il marche avec toi sur la carte. Choisis-le dans la fiche d'un Pokémon (sinon, c'est ta dernière capture).</li>
     <li>🏅 <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
       6 jours sur 7). Tes points continuent de compter pendant ce temps. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>`;

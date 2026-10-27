@@ -78,6 +78,11 @@ ARENES = [i for i, l in enumerate(LIEUX) if l["arene"]]  # la dernière = la Lig
 _hors = set(POKEMON) - {n for l in LIEUX for n in l["pokemon"]} - {144, 145, 146, 150, 151}
 assert not _hors, f"Pokémon sans lieu : {_hors}"
 
+# Les Pokémon rares (⭐) : 3 fois moins de chances que les autres Pokémon de leur lieu
+RARES = set(_n("Pikachu, Évoli, Porygon, Minidraco, Draco, Dracolosse, Lokhlass, Ronflex, Insécateur, Scarabrute, "
+               "Leveinard, Kangourex, Tauros, Métamorph, Ptéra, Amonita, Kabuto, Lippoutou, M. Mime, Élektek, Magmar, "
+               "Kicklee, Tygnon, Excelangue, Onix, Saquedeneu, Noadkoko, Léviator"))
+
 DEFIS = {  # défi -> (valeur d'une journée, unité)
     "etages": (lambda j: j["etages"], "étages"),
     "eau": (lambda j: j["eau"], "min"),
@@ -136,11 +141,12 @@ class Voyage:
         return max(i for i, d in enumerate(DIST) if d <= self.pos)
 
     def poids(self):
-        """Pokémon -> poids au tirage : le lieu actuel surtout, puis les lieux traversés et l'étape suivante."""
+        """Pokémon -> poids au tirage : le lieu actuel surtout, puis les lieux traversés et l'étape suivante ; les rares
+        3 fois moins."""
         i, p = self.ici(), {}
         for k, l in enumerate(LIEUX[:i + 2]):
             for n in l["pokemon"]:
-                p[n] = max(p.get(n, 0), 6 if k == i else 2 if k < i else 1)
+                p[n] = max(p.get(n, 0), (6 if k == i else 2 if k < i else 1) / (3 if n in RARES else 1))
         return p
 
     def etat(self, jour):
@@ -157,4 +163,4 @@ class Voyage:
         return {"lieux": [{k: l[k] for k in ("nom", "x", "y", "pokemon", "arene")} | {"dist": d}
                           for l, d in zip(LIEUX, DIST)],
                 "pos": round(self.pos, 1), "ici": i, "badges": {k: str(d) for k, d in self.badges.items()},
-                "defi": defi, "total": DIST[-1]}
+                "defi": defi, "total": DIST[-1], "rares": sorted(RARES)}

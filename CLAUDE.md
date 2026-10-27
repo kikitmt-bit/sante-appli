@@ -65,8 +65,12 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     arrêt jusqu'au défi (7 derniers jours depuis l'arrivée) ou son **plan B** (6 jours sur 7 avec l'objectif : jamais
     bloquant) ; les points continuent de s'accumuler et on repart d'un coup. Badge = Hyper Ball `badgeN` du type du
     champion, espèce nouvelle ; Ligue = Master Ball `ligue` (légendaire). Rejoué chaque fois, rien d'enregistré ;
-    chaque capture a son `lieu`. Écran : carte SVG dessinée (pas de carte dans PokeAPI), chemin parcouru, compagnon =
-    dernière capture ouverte (GIF animé), toucher un lieu = ses Pokémon, défi en cours, boîte à badges.
+    chaque capture a son `lieu`. Écran : carte SVG dessinée (pas de carte dans PokeAPI), chemin parcouru, toucher un
+    lieu = ses Pokémon + quand on repart, ★ sur un lieu complété, défi en cours, boîte à badges. Pokémon **rares** ⭐
+    (`kanto.RARES`, poids ÷ 3). **Compagnon** (GIF animé sur la carte) : bouton « 🐾 Il m'accompagne » de la fiche,
+    gardé dans le localStorage (`pkm_compagnon` = « num:shiny », téléphone seul, purement décoratif), sinon la dernière
+    capture ouverte. Choix voulu (29/10, carte blanche de Kiki : « ça reste une appli de sport ») : chemin fixe, pas de
+    « rester ici » ni de carrefours (il faudrait enregistrer ces choix côté script Google, car ils changent les tirages).
   - Identifiants « jour#poke3 / super / hyper / master1 / badge1 / ligue » = graines (rejouable). Règles v2 rejouées depuis le 19/10
     avec les vraies données. Le calcul de la montre (GitHub Actions, chaque heure) fige **toutes** les captures,
     aujourd'hui compris (27/10 : avant, seulement les jours finis, et une ball ouverte changeait de Pokémon dans la
