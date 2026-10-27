@@ -82,6 +82,8 @@ FORCE_TYPES = ("ROWING", "STRENGTH", "WEIGHT", "CALISTHENIC", "CIRCUIT", "HIIT",
 FORCE_NOMS = ("muscu", "renfo", "force", "poids", "haltère", "pompe", "traction", "gainage", "circuit", "hiit",
               "crossfit", "fractionné", "rameur", "strength", "weight", "rowing")
 
+STARTERS = [1, 4, 7]  # Bulbizarre, Salamèche, Carapuce : le cadeau du Professeur Chen (seul Pokémon offert)
+
 # Les images (dépôt public PokeAPI/sprites)
 IMAGES = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites"
 
@@ -158,13 +160,16 @@ def exploit(m):
 
 
 def tirer(graine, possedees, sans_nouvelle, types=None, shiny=0.03, p_nouvelle=0.0, legendaire=False, lieux=None,
-          seul_type=None):
+          seul_type=None, parmi=None):
     """Une capture : une espèce (ou son shiny) pas encore attrapée, jamais de doublon. lieux = poids des Pokémon selon
-    l'endroit du voyage ; types = types favoris de la barre (×3) ; seul_type = ball d'arène (ce type seulement)."""
+    l'endroit du voyage ; types = types favoris de la barre (×3) ; seul_type = ball d'arène (ce type seulement) ;
+    parmi = seulement ces espèces s'il en reste à attraper (cadeau du Professeur Chen : les 3 starters)."""
     rng = random.Random(graine)
     especes = {n for n, _ in possedees}
     est_shiny = rng.random() < shiny
     base = list(LEGENDAIRES) if legendaire else [n for n in POKEMON if n not in LEGENDAIRES]
+    if parmi and any((n, False) not in possedees for n in parmi):
+        base, lieux, shiny = [n for n in parmi if (n, False) not in possedees], None, 0
     if seul_type and any((n, False) not in possedees for n in base if seul_type in POKEMON[n]["types"]):
         base, lieux = [n for n in base if seul_type in POKEMON[n]["types"]], None
     pool = [n for n in base if (n, est_shiny) not in possedees]
@@ -198,6 +203,9 @@ def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
     """Les Poké Balls gagnées un jour : avant / apres = points d'effort cumulés depuis le début du jeu ; master = numéro
     de la Master Ball gagnée ce jour-là, ou None ; badges = [(numéro, lieu)] des arènes gagnées ce jour-là."""
     dues = []
+    if jour == REGLAGES["debut"]:  # le premier jour : le Professeur Chen offre un des 3 starters, au hasard
+        dues.append({"cle": "chen", "ball": "poke", "raison": "🎁 Cadeau du Professeur Chen", "types": None,
+                     "parmi": STARTERS})
     for k, lieu in badges:
         a = lieu["arene"]
         if a["type"] is None:  # la Ligue
@@ -258,7 +266,7 @@ def jouer(stats, resumes, aujourd, figees=()):
                 ball = BALLS[mi["ball"]]
                 p = min(REGLAGES["shiny"] * ball["shiny"] * bonus, REGLAGES["shiny_max"])
                 c = tirer(ident, possedees, sans_nouvelle, mi["types"], p, mi.get("nouvelle", ball["nouvelle"]),
-                          mi.get("legendaire", False), poids_lieux, mi.get("seul_type"))
+                          mi.get("legendaire", False), poids_lieux, mi.get("seul_type"), mi.get("parmi"))
                 if c is None:
                     continue
                 c |= {"id": ident, "jour": str(jour), "ball": mi["ball"], "raison": mi["raison"], "lieu": lieu}
