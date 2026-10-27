@@ -41,8 +41,8 @@ from pokedex import LEGENDAIRES, POKEMON
 REGLAGES = {
     # Partie en cours : premier jour et numéro. Recommencer à zéro = nouvelle date + nouveau numéro (les identifiants
     # des balls changent, donc rien de l'ancienne partie ne revient : captures figées, balls ouvertes). Partie 1 : du
-    # 19/10 au 26/10 ; partie 2 (27/10) : pour régler le jeu avant de le partager.
-    "debut": dt.date(2026, 10, 27), "partie": 2,
+    # 19/10 au 26/10 ; parties 2 et 3 (27/10) : pour régler le jeu avant de le partager.
+    "debut": dt.date(2026, 10, 27), "partie": 3,
     "shiny": 0.03,                   # chance de shiny de base
     "shiny_max": 0.5,
     "nuit": 420, "shiny_nuit": 1.5,  # nuit d'au moins 7 h : shiny ×1,5 toute la journée

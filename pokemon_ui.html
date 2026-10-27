@@ -983,10 +983,6 @@ function intro(c, p, rejouer = false) {
     // le début reprend celui de Pokémon Rouge / Bleu
     await dire("Bienvenue dans le monde magique des Pokémon !");
     await dire(`Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`);
-    if (!rejouer || !DRESSEUR.nom) {  // comme dans les jeux : « Et toi, comment t'appelles-tu ? »
-      await dire("Et toi, qui es-tu ? Comment t'appelles-tu ?");
-      await editerDresseur();
-    }
     await dire(`Enchanté, ${nomDresseur()} ! Ton aventure Pokémon commence aujourd'hui !`);
     await dire("Ici, à " + p.region + ", chaque pas que tu fais te rapproche de nouveaux Pokémon !");
     await dire(`Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`);
@@ -1579,6 +1575,15 @@ const STYLE_DRESSEUR = `
   background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
 .carte-dresseur .boutons .ok:before{content:"▶ ";color:#E04040}
 .carte-dresseur .boutons button:active{transform:translateY(2px);box-shadow:0 0 0 2px #283048}
+#pkm-dresseur.accueil{flex-direction:column;gap:14px}
+#pkm-dresseur.accueil .ombre{background:radial-gradient(circle at 50% 28%,#26386A 0%,#101830 55%,#070B16 100%)}
+#pkm-dresseur .titre-jeu{position:relative;text-align:center;color:#FFCB05;font:700 30px/1 'Pixelify Sans',monospace;letter-spacing:2px;
+  text-shadow:3px 3px 0 #2A5BB0,-1px -1px 0 #2A5BB0,1px -1px 0 #2A5BB0,-1px 1px 0 #2A5BB0;animation:pkd-entre .5s ease-out}
+#pkm-dresseur .titre-jeu small{display:block;margin-top:8px;color:#C9D3EA;font:500 14px 'Pixelify Sans',monospace;letter-spacing:0;text-shadow:none}
+.carte-dresseur .boutons .go{background:#E8382F;color:#fff;box-shadow:0 0 0 2px #283048,0 3px 0 2px #7A1712;text-shadow:1px 1px 0 #7A1712}
+.carte-dresseur .boutons .go:before{content:"";}
+.carte-dresseur .boite.manque{animation:pkd-non .35s;box-shadow:0 0 0 2px #E04040}
+@keyframes pkd-non{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
 `;
 const CHOIX_DRESSEUR = [["peau", "Peau", COULEURS_PEAU, 0], ["casquette", "Casquette", COULEURS_TISSU, 1],
   ["veste", "Veste", COULEURS_TISSU, 1], ["pantalon", "Pantalon", COULEURS_PANTALON, 1]];
@@ -1594,24 +1599,29 @@ function apercuDresseur(cv, d = DRESSEUR, marche = true) {
   return {charger, stop: () => { fini = true; }};
 }
 // La carte dresseur : nom, peau, casquette, veste, pantalon (flèches ◀ ▶) ; -> une promesse résolue à la fermeture
-function editerDresseur() {
+// accueil = premier lancement d'une partie (bientôt : premier passage d'un compte) : plein écran, pseudo obligatoire,
+// un seul bouton « Commencer l'aventure »
+function editerDresseur(accueil = false) {
   installerStyle("pkm2-dresseur-style", STYLE_DRESSEUR);
   if (!P.getElementById("pkm-police-pixel")) {
     const l = P.createElement("link"); l.id = "pkm-police-pixel"; l.rel = "stylesheet";
     l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap"; P.head.appendChild(l);
   }
   const d = {...DRESSEUR}, rgb = c => `rgb(${c.join(",")})`;
+  if (accueil && d.partie !== R.partie) d.nom = "";  // nouvelle partie : comme un nouveau compte, on choisit son pseudo
   const nb = Object.keys(collection()).length, badges = Object.keys(V.badges).filter(k => k <= 8).length;
-  const f = P.createElement("div"); f.id = "pkm-dresseur";
-  f.innerHTML = `<div class="ombre"></div><div class="carte-dresseur">
-    <div class="entete"><span>CARTE DRESSEUR</span><small class="id">N° ID ${idDresseur(d.nom)}</small></div>
+  const f = P.createElement("div"); f.id = "pkm-dresseur"; f.className = accueil ? "accueil" : "";
+  f.innerHTML = `<div class="ombre"></div>${accueil ? `<div class="titre-jeu">POKÉMON SPORT<small>Crée ton dresseur pour commencer</small></div>` : ""}
+    <div class="carte-dresseur">
+    <div class="entete"><span>${accueil ? "NOUVEAU DRESSEUR" : "CARTE DRESSEUR"}</span><small class="id">N° ID ${idDresseur(d.nom)}</small></div>
     <div class="corps"><div class="photo"><canvas width="16" height="32"></canvas></div>
-      <div class="infos"><div class="boite"><span>NOM</span><input maxlength="12" placeholder="Sacha" value="${d.nom.replace(/"/g, "")}" autocomplete="off"></div>
+      <div class="infos"><div class="boite"><span>NOM</span><input maxlength="12" placeholder="${accueil ? "Ton pseudo" : "Sacha"}" value="${d.nom.replace(/"/g, "")}" autocomplete="off"></div>
         <div class="boite"><span>POKÉDEX</span><b>${nb}</b></div><div class="boite"><span>BADGES</span><b>${badges}</b></div>
         <div class="boite"><span>RÉGION</span><b>Kanto</b></div></div></div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
-    <div class="boutons"><button class="non">RETOUR</button><button class="ok">OK</button></div></div>`;
+    <div class="boutons">${accueil ? `<button class="ok go">COMMENCER L'AVENTURE</button>`
+      : `<button class="non">RETOUR</button><button class="ok">OK</button>`}</div></div>`;
   P.body.appendChild(f);
   const ap = apercuDresseur(f.querySelector("canvas"), d);
   const maj = cle => { const [, , liste, ton] = CHOIX_DRESSEUR.find(c => c[0] === cle);
@@ -1627,10 +1637,17 @@ function editerDresseur() {
   champ.oninput = () => { f.querySelector(".id").textContent = "N° ID " + idDresseur(champ.value.trim()); };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
-      if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); DRESSEUR = d;
+      if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); d.partie = R.partie; DRESSEUR = d;
         try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur(); }
       f.remove(); ok(enregistrer); };
-    f.querySelector(".ok").onclick = () => fermer(true);
+    f.querySelector(".ok").onclick = () => {
+      if (accueil && !champ.value.trim()) {  // le pseudo d'abord
+        const b = champ.closest(".boite"); b.classList.remove("manque"); void b.offsetWidth; b.classList.add("manque");
+        champ.focus(); vibre(30); return;
+      }
+      fermer(true);
+    };
+    if (accueil) return;
     f.querySelector(".non").onclick = () => fermer(false);
     f.querySelector(".ombre").onclick = () => fermer(false);
   });
@@ -1818,6 +1835,10 @@ function dessinerRegles() {
 [["ic-spe", "hyper"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
 function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
+{ // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
+  const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
+  if (chen && !estOuverte(chen)) setTimeout(async () => { await editerDresseur(true); lancer(chen); }, 400);
+}
 { // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie
   const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);
   partager([...ouvertes].filter(id => !serveur.has(id) && id.slice(0, 10) >= depuis));

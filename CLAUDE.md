@@ -47,8 +47,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   Son ouverture passe par la **scène du laboratoire** (`lancer` → `intro`) : **image ChatGPT** `scenes/labo-chen.webp`
   (essayée en sprites le 30/10, jugée laide par Kiki : on garde ChatGPT pour les labos, une image par région, consigne
   dans `scenes/PROMPT.md`), Chen derrière une table avec 3 Poké Balls (`PROFESSEURS` : image, taille, position des
-  balls et de la table en pixels de l'image), répliques façon GBA, Chen demande le nom au premier passage
-  (« Et toi, qui es-tu ? » → carte dresseur), on touche une ball (halos), elle saute, zoom + flash blanc, puis
+  balls et de la table en pixels de l'image), répliques façon GBA (il ne demande plus le nom), on touche une ball (halos), elle saute, zoom + flash blanc, puis
   l'ouverture en 3D **sans 2e toucher** (`ouvrir(c, rejouer, direct)`). Texte : espace insécable avant ! ? : ; et
   `text-wrap: pretty` (jamais une ponctuation ou un mot seul en dernière ligne, demande de Kiki). Bouton « 🎬 Revoir
   l'accueil » dans « Comment ça marche ? ».
@@ -75,6 +74,10 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   marche dans le sens du chemin (`direction`, 4 images de pas toutes les 170 ms, miroir vers la droite), immobile de dos
   devant une arène qu'il attend ; en vol / en mer sur le dos de la `monture` (dernière capture Vol / Eau ; sinon vélo
   `red_bike`, bateau, `red_surf`). **Plus de compagnon** (Kiki, 30/10 : « gadget », bouton de la fiche retiré).
+  **Premier lancement d'une partie** (27/10, demande de Kiki ; à terme = premier passage d'un compte) : tant que le
+  cadeau `chen` n'est pas ouvert, l'onglet ouvre tout seul l'**accueil** = `editerDresseur(true)` en plein écran
+  (titre « POKÉMON SPORT », carte « NOUVEAU DRESSEUR », pseudo obligatoire, vide si `DRESSEUR.partie` ≠ partie en
+  cours, un seul bouton rouge « COMMENCER L'AVENTURE ») → scène du labo → ouverture 3D du starter → l'onglet.
   **Mon dresseur** (31/10, section avant « Comment ça marche ? », `dessinerMonDresseur`) : mini carte dresseur +
   « Modifier » → `editerDresseur` = **Carte Dresseur** façon Rouge Feu (fond bleu rayé, police pixel, NOM / POKÉDEX /
   BADGES / RÉGION, flèches rouges ◀ ▶ : peau, casquette, veste, pantalon ; RETOUR / ▶ OK). Plus d'emoji ni de dégradé
@@ -133,8 +136,8 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     Dernières captures : les 8 dernières. Pokémon **rares** ⭐
     (`kanto.RARES`, poids ÷ 3). Choix voulu (29/10, carte blanche de Kiki : « ça reste une appli de sport ») : chemin fixe, pas de
     « rester ici » ni de carrefours (il faudrait enregistrer ces choix côté script Google, car ils changent les tirages).
-  - **Parties** (`REGLAGES` `debut` + `partie`) : partie 1 du 19/10 au 26/10 ; **partie 2 depuis le 27/10** (Kiki
-    a tout remis à zéro pour régler le jeu ; il recommencera une partie 3 avec ses amis). Recommencer = nouvelle date
+  - **Parties** (`REGLAGES` `debut` + `partie`) : partie 1 du 19/10 au 26/10 ; **partie 3 depuis le 27/10** (Kiki
+    a tout remis à zéro pour régler le jeu, la 2 n'a duré que quelques heures ; nouvelle partie avec ses amis plus tard). Recommencer = nouvelle date
     `debut` + `partie` + 1 : rien de l'ancienne partie ne revient (les données santé ne bougent pas).
   - Identifiants `ident(jour, cle)` = « 2026-10-27-p2#poke3 / super / hyper / master1 / badge1 / ligue / chen »
     (partie 1 : sans « -p1 ») = graines (rejouable) ; les captures figées et les balls ouvertes d'une autre partie
