@@ -302,6 +302,26 @@ b.onclick = async () => {{
 
 
 # ---------- Mot de passe (l'appli est publique sur Streamlit : rien n'est affiché sans lui) ----------
+def comptes():
+    """Adresses Gmail qui ont le droit d'entrer (secret COMPTES : liste, ou adresses séparées par des virgules)."""
+    c = st.secrets.get("COMPTES", [])
+    return {a.strip().lower() for a in (c.split(",") if isinstance(c, str) else c) if a.strip()}
+
+
+def connexion_google():
+    """Connexion avec Google (st.login, secrets [auth]) ; seules les adresses de COMPTES entrent. Streamlit retient la
+    connexion 30 jours sur le téléphone."""
+    if not st.user.get("is_logged_in"):
+        st.markdown("## ❤️ Ma santé")
+        st.button("Se connecter avec Google", type="primary", width="stretch", on_click=st.login)
+        st.stop()
+    if str(st.user.get("email", "")).lower() not in comptes():
+        st.markdown("## ❤️ Ma santé")
+        st.error(f"Le compte {st.user.get('email', '')} n'a pas accès à cette appli.")
+        st.button("Changer de compte", width="stretch", on_click=st.logout)
+        st.stop()
+
+
 def verrou():
     """Mot de passe APP_PASSWORD tapé une fois, puis mémorisé sur ce téléphone (localStorage + cookie : le cookie seul
     ne suffit pas sur Streamlit Cloud). Ce qui est mémorisé est une empreinte, pas le mot de passe."""
@@ -351,7 +371,8 @@ def decaler(sens):
 if "GITHUB_TOKEN" not in st.secrets:
     st.error("Secrets manquants : GITHUB_TOKEN, GITHUB_REPO (Streamlit Cloud → Settings → Secrets).")
     st.stop()
-JETON = verrou()
+GOOGLE = "auth" in st.secrets  # connexion Google ; sinon l'ancien mot de passe APP_PASSWORD (le temps de la régler)
+JETON = connexion_google() if GOOGLE else verrou()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
@@ -529,7 +550,10 @@ def configuration():
                     st.dataframe(lignes, width="stretch", hide_index=True)
 
     st.divider()
-    if st.button("🔒 Ne plus mémoriser ce téléphone"):
+    if GOOGLE:
+        st.caption(f"Connecté avec {st.user.get('email', '')}")
+        st.button("🚪 Se déconnecter", on_click=st.logout)
+    elif st.button("🔒 Ne plus mémoriser ce téléphone"):
         streamlit_js_eval(js_expressions="localStorage.removeItem('sante_ok'); "
                           "document.cookie='sante_ok=; max-age=0; path=/; SameSite=Lax; Secure'; 1", key="oubli_ok")
         st.session_state.clear()

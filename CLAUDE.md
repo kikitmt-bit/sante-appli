@@ -4,8 +4,10 @@ Appli Streamlit perso de Kiki (pas développeur, réponses en français, simples
 jamais de données, de jeton ni de mot de passe ici. Les données et le script de récolte (Apps Script `sante.gs`) sont dans
 le dépôt **privé** `kikitmt-bit/sante` (branche `data`, format décrit dans son CLAUDE.md) ; l'appli les lit par l'API
 GitHub avec les secrets `GITHUB_TOKEN`, `GITHUB_REPO` (= kikitmt-bit/sante). L'appli est publique sur Streamlit (la seule
-appli privée gratuite de Kiki est prise par le padel) : `verrou()` bloque tout sans `APP_PASSWORD`, mémorisé sur le
-téléphone (localStorage + cookie `sante_ok` = empreinte). On travaille directement sur `main`.
+appli privée gratuite de Kiki est prise par le padel) : **connexion Google** (27/10, `connexion_google()`, `st.login`,
+secrets `[auth]` + `COMPTES` = adresses Gmail autorisées, jamais dans le dépôt ; ⚙️ → Se déconnecter). Tant que `[auth]`
+manque, repli sur l'ancien `verrou()` (`APP_PASSWORD`, mémorisé : localStorage + cookie `sante_ok`). Comptes pour
+les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur `main`.
 
 - `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; deux onglets « ❤️ Santé » et
   « Pokémon » (icône = Pikachu de Rubis/Saphir, `pikachu.png`, en CSS) ; sur la même ligne à droite, deux petits boutons
