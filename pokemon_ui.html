@@ -877,8 +877,10 @@ function intro(c, p, rejouer = false) {
 
   (async () => {
     await new Promise(r => setTimeout(r, 1100));
-    await dire("Bonjour ! Bienvenue dans le monde des Pokémon !");
-    await dire("On m'appelle le Professeur Pokémon. Ici, à " + p.region + ", chaque pas que tu fais te rapproche de nouveaux Pokémon !");
+    // le début reprend celui de Pokémon Rouge / Bleu
+    await dire("Bienvenue dans le monde magique des Pokémon !");
+    await dire(`Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`);
+    await dire("Ici, à " + p.region + ", chaque pas que tu fais te rapproche de nouveaux Pokémon !");
     await dire(`Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`);
     await dire("Choisis-en une. Le Pokémon qu'elle contient sera le tien !", false);
     v.classList.add("choix");
