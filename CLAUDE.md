@@ -59,8 +59,8 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `SACHA`).
   **Arènes sur la carte** (31/10, demande de Kiki : badges invisibles avant) : chaque arène a sa **médaille** (`medaille`,
   SVG) : à gagner = rond sombre, liseré blanc en pointillés, badge en couleur ; gagné = médaille d'or qui brille + éclat.
-  La **prochaine arène** = **portrait du champion** dans un médaillon à la couleur du type (`chefCarte`, haut du corps
-  du sprite PokéRogue, badge à gagner en pastille en haut à droite, comme une notification), à droite de la ville ; halo blanc discret jusqu'au premier toucher
+  La **prochaine arène** = **portrait du champion** dans un médaillon à la couleur du type (`chefCarte`, **tête et buste**
+  recadrés tout seuls sur la 1re image du sprite PokéRogue : `championAnime(…, portrait)` / `trouverCadre`, badge à gagner en pastille en haut à droite, comme une notification), à droite de la ville ; halo blanc discret jusqu'au premier toucher
   (`pkm_chef_vu_N`, plus de « ! » rouge) ; le toucher = il s'anime + bulle (son défi) ; toucher ailleurs la ferme.
   **Scène du badge** (`sceneBadge(n, capture, rejouer)`, 30/10) : bandes noires qui s'écartent (entrée de combat),
   fond aux couleurs du type, bandeau « ARÈNE D'ARGENTA », champion animé (`championAnime`, canvas) sur une estrade,
