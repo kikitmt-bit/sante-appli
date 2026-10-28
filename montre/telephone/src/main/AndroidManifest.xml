@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="false"
+        android:icon="@drawable/ic_lanceur"
+        android:label="Pokémon (montre)"
+        android:theme="@android:style/Theme.DeviceDefault">
+
+        <!-- Un seul écran : dit si l'accès aux notifications est donné, et y mène -->
+        <activity
+            android:name=".Accueil"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Lit les notifications du téléphone et envoie les messages à la montre -->
+        <service
+            android:name=".Relais"
+            android:exported="true"
+            android:label="Messages vers la montre (case du cadran)"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

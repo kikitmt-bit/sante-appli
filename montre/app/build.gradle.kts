@@ -19,8 +19,8 @@ android {
         applicationId = "fr.kiki.pokemontre"
         minSdk = 30
         targetSdk = 34
-        versionCode = 14
-        versionName = "14.0"
+        versionCode = 15
+        versionName = "15.0"
         buildConfigField("String", "SCRIPT_URL", "\"${secret.getProperty("SCRIPT_URL", "")}\"")
         buildConfigField("String", "JEU_CLE", "\"${secret.getProperty("JEU_CLE", "")}\"")
         buildConfigField("String", "APPLI_CLE", "\"${secret.getProperty("APPLI_CLE", "")}\"")
@@ -46,4 +46,7 @@ dependencies {
     implementation("androidx.wear.protolayout:protolayout:1.2.1")
     implementation("androidx.wear.protolayout:protolayout-material:1.2.1")
     implementation("com.google.guava:guava:33.3.1-android")
+    // Messages du téléphone (Data Layer) et ouverture du site des pronos sur le téléphone
+    implementation("com.google.android.gms:play-services-wearable:18.2.0")
+    implementation("androidx.wear:wear-remote-interactions:1.0.0")
 }

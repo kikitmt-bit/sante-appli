@@ -5,4 +5,4 @@ dependencyResolutionManagement {
     repositories { google(); mavenCentral() }
 }
 rootProject.name = "pokemontre"
-include(":app", ":cadran")
+include(":app", ":cadran", ":telephone")

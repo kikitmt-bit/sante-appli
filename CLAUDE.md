@@ -183,16 +183,28 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     GitHub Actions (`.github/workflows/montre.yml`, secret `SANTE_TOKEN`, rien de privé dans le journal), lancé par le
     script Google après chaque récolte (`calculerMontre`, `MONTRE_TOKEN`) + chaque heure. Lu par `doGet ?quoi=montre`.
   - Module `app` (appli « Pokémon ») : `BarreComplication` (RANGED_VALUE : points en direct, image de la ball 3D quand
-    il y a des balls ; toucher = ouverture, sinon espace Pokémon), `BasComplication` = case libre (LONG_TEXT, **jamais de Pokémon**, choix de Kiki :
-    notification utile < 30 min (`Notifs`, autorisation par le shell de Bugjaeger : `cmd notification allow_listener
-    fr.kiki.pokemontre/fr.kiki.pokemontre.Notifs`) > rendez-vous dans les 3 h > nuit l'heure après le lever >
-    rendez-vous plus tard ; sinon la case reste vide, choix de Kiki),
+    il y a des balls ; toucher = ouverture, sinon espace Pokémon), `BasComplication` = case libre (LONG_TEXT, **jamais de Pokémon** ; ordre de Kiki, v15 du 28/10 :
+    rendez-vous dans les 3 h > pronos NFL pas faits, dès 48 h avant le 1er coup d'envoi concerné (`pronos.manque` de
+    montre.json, lu par montre.py dans `kikitmt-bit/bada-bing-nfl` avec `SANTE_TOKEN` ; toucher = site sur le téléphone,
+    `OuvrirSite` / RemoteActivityHelper) > padel du jour (événement « 🎾 Padel … · 🔑 code » que le script du padel écrit
+    dans l'agenda ; toucher = appli `fr.kiki.padel.montre`) > dernier message < 30 min > nuit l'heure après le lever >
+    rendez-vous plus tard ; sinon vide ; heures locales de la montre, **pas d'heure de Paris au Japon**, refusé par Kiki).
+    **Messages** : ceux du téléphone ne passent PAS par les notifications de la montre (Wear OS les affiche par son propre
+    circuit : `Notifs` ne voyait que les appels manqués de la montre). D'où le module **`telephone`** (appli « Pokémon
+    (montre) » du téléphone, même paquet et même signature de débogage du PC : `Relais` lit les notifications du téléphone
+    et les envoie par Data Layer, chemins `/notif` et `/notif/efface`, reçus par `DuTelephone` sur la montre) ; Kiki
+    installe son APK sur le téléphone et autorise « Accès aux notifications ». `Notifs` (montre) reste pour les
+    notifications de la montre elle-même (autorisation par ADB : `cmd notification allow_listener
+    fr.kiki.pokemontre/fr.kiki.pokemontre.Notifs`). Toucher un message = son appli sur la montre s'il y en a une, et il
+    quitte la case.
     `PokemonActivity` (pages : barre, balls du jour, Pokédex) et `SanteActivity` (activité, cœur et nuit), pages à la
     couronne ou en glissant haut/bas, bouton ↻ (récolte immédiate avec `APPLI_CLE`, puis relecture après ~1 min),
     `OuvrirActivity` (ouverture animée ; ball 3D = images du modèle three.js du téléphone, `assets/ball/*.webp`).
     **Direct** (`Direct.kt`) : Health Services passif (pas, étages, distance, calories du jour, sans batterie en plus) ;
-    barre = points du site + ce que la montre a compté depuis l'arrivée des dernières données (les minutes en zone
-    restent celles du site). Permissions ACTIVITY_RECOGNITION et READ_CALENDAR demandées à la 1re ouverture.
+    barre (v15) = points du site + différence entre les pas / étages de la montre et ceux du site quand la montre est en
+    avance (mêmes règles : 1 pt / 100 pas au-delà de `pas_offerts`, 1 / étage) ; les minutes en zone et les séances restent
+    celles du site. Avant la v15, la montre repartait de son compteur à chaque arrivée des données du site (en retard) :
+    des pas étaient perdus, d'où la barre en retard. Permissions ACTIVITY_RECOGNITION et READ_CALENDAR demandées à la 1re ouverture.
   - **v8 (23/10)** : `CoeurActivity` (toucher le cœur du cadran ; cœur en direct par `MeasureClient`, courbe 24 h par
     demi-heure, repos et VFC 7 jours, zones du jour : bloc `coeur` de montre.py, lu dans `data/jour/` d'hier et
     d'aujourd'hui) ; les pas ouvrent toujours `SanteActivity`. Tuiles `TuilePokemon`, `TuileSante`, `TuileClaude`
@@ -204,6 +216,8 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
     batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /
     petite ball au trait « 48% » (slot 1), case libre en bas (slot 2) ; veille : heure fine. Pas d'anneau (trop voyant).
+    Balls à ouvrir : la Poké Ball 3D + « ×5 » ; le cadran le sait par `RANGED_VALUE_MAX` = 1000 (v15 : la condition
+    `[COMPLICATION.SMALL_IMAGE] != null` n'était jamais vraie sur la montre, on voyait « ×5% » et la ball au trait).
   - **Claude sur la montre (sans clé API)** : **appui long sur le bouton** (rôle Assistant ; plus d'étoile sur le cadran
     depuis le 23/10) ou appli « Claude » de la liste -> `ClaudeActivity` (le micro écoute dès l'ouverture, aussi quand
     l'écran était resté ouvert : `onNewIntent`. Pas de reconnaissance vocale sur la montre, donc écran de dictée de
@@ -232,10 +246,10 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     réponse porte `semaine` (questions/actions depuis lundi, par compte) affiché en bas de l'accueil, et une question
     que personne ne prend en 50 s fait afficher « Compte B à sa limite ? » + **« Demander au compte A »** : même question
     avec `&compte=A` -> dépôt `montre-claude-a` -> routines du compte A (réponse `compte: "A"`, « · compte A » en pied).
-  - **À faire plus tard (demandé par Kiki le 22/10)** : brancher la case libre du bas du cadran sur
-    1) **les pronos NFL** (appli Bada Bing, dépôt `kikitmt-bit/bada-bing-nfl`, `pronos_data.json`) : « pronos à faire
-    avant dim. 19:00 », toucher = ouvrir le site ; 2) **le padel** (dépôt privé `kikitmt-bit/padel_resa`, script Google) :
-    le jour d'une réservation « 18:30 Padel · code 4821 », toucher = ouvrir l'appli du padel sur la montre. Questions
-    à poser à Kiki : d'où vient le code (mail du club, SMS, son site) et quelle est l'appli du padel sur la montre.
+    **v15 (28/10, compte A)** : écran d'attente inchangé mais chaque chose à sa place (étape en 2 lignes au plus, coupée
+    par « … ») ; l'écran reste allumé **120 s** après le dernier geste ou l'envoi (`ClaudeActivity.ALLUME`), puis veille
+    normale ; `SuiviClaude` (service au premier plan + verrou du processeur) empêche Android de geler l'appli écran
+    éteint, la montre continue de suivre la réponse et **vibre** à l'arrivée (canal de notification `claude_reponse`).
+  - Pronos NFL et padel dans la case du bas : faits en v15 (voir `BasComplication` plus haut).
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).

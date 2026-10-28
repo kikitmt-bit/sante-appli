@@ -33,10 +33,11 @@ object Donnees {
 
     data class Etat(
         val points: Float, val taille: Int, val origine: String, val balls: List<Ball>,
-        val maj: String, val pas: Int, val zone: Int, val recu: Long, val derniere: Ball?,
+        val maj: String, val pas: Int, val zone: Int, val etages: Int?, val recu: Long, val derniere: Ball?,
         val jour: String, val objectifs: Objectifs?, val nuit: Nuit?, val sante: Sante?,
         val especes: Int, val totalEspeces: Int, val dernieres: List<Ball>,
         val coeur: JSONObject? = null,
+        val pronos: List<Long>? = null,  // coups d'envoi (ms) des matchs NFL de la semaine pas encore pronostiqués
     )
 
     /** La santé du jour d'après le site (les pas, étages, distance et calories en direct viennent de la montre). */
@@ -50,7 +51,7 @@ object Donnees {
         val pas: Int, val zone: Int, val seance: Int, val serie: Int, val serieOk: Boolean, val joker: Boolean,
         val superOk: Boolean, val hyperOk: Boolean, val shiny: Float,
         val objPas: Int, val objZone: Int, val exploitPas: Int, val exploitZone: Int, val exploitSeance: Int,
-        val serieLegendaire: Int, val nuitMin: Int,
+        val serieLegendaire: Int, val nuitMin: Int, val pasOfferts: Int,
     )
 
     /** La nuit qui finit ce matin. */
@@ -87,7 +88,7 @@ object Donnees {
                 origine = barre.optString("origine", ""),
                 balls = (0 until balls.length()).map { ball(balls.getJSONObject(it)) }.filter { it.id !in ouvertes },
                 maj = j.optString("maj", ""),
-                pas = auj.optInt("pas"), zone = auj.optInt("zone"),
+                pas = auj.optInt("pas"), zone = auj.optInt("zone"), etages = auj.entier("etages"),
                 recu = p.getLong("recu", 0),
                 derniere = j.optJSONObject("derniere")?.let { ball(it) },
                 jour = j.optString("jour", ""),
@@ -98,7 +99,7 @@ object Donnees {
                         o.optBoolean("joker"), o.optBoolean("super"), o.optBoolean("hyper"), o.optDouble("shiny", 1.0).toFloat(),
                         r.optInt("objectif_pas", 5000), r.optInt("objectif_zone", 15), r.optInt("exploit_pas", 10000),
                         r.optInt("exploit_zone", 30), r.optInt("exploit_seance", 45), r.optInt("serie_legendaire", 30),
-                        r.optInt("nuit", 420),
+                        r.optInt("nuit", 420), r.optInt("pas_offerts", 2000),
                     )
                 },
                 nuit = j.optJSONObject("nuit")?.let {
@@ -115,6 +116,8 @@ object Donnees {
                 especes = j.optJSONObject("pokedex")?.optInt("especes") ?: 0,
                 totalEspeces = j.optJSONObject("pokedex")?.optInt("total", 151) ?: 151,
                 coeur = j.optJSONObject("coeur"),
+                pronos = j.optJSONObject("pronos")?.optJSONArray("manque")?.let { a ->
+                    (0 until a.length()).mapNotNull { i -> try { java.time.Instant.parse(a.getString(i).replace("Z", ":00Z")).toEpochMilli() } catch (x: Exception) { null } } },
                 dernieres = j.optJSONObject("pokedex")?.optJSONArray("dernieres")?.let { a ->
                     (0 until a.length()).map { ball(a.getJSONObject(it)) } } ?: emptyList(),
             )
@@ -150,7 +153,6 @@ object Donnees {
         val ici = p.getStringSet("ouvertes", emptySet())!!.filter { it !in connues || it in attente(ctx) }.toSet()
         p.edit().putString("json", j.toString()).putLong("recu", System.currentTimeMillis())
             .putStringSet("ouvertes", ici).apply()
-        Direct.nouvelleBase(ctx)
         return true
     }
 

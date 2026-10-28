@@ -15,8 +15,15 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.app.Notification
+import android.app.Service
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -55,14 +62,27 @@ import kotlin.math.sin
  * Le modèle se choisit tout seul : Haiku lit la question, répond aux simples et confie les difficiles à Opus.
  * Ouvert par l'appui long sur le bouton (rôle Assistant) : le micro écoute tout de suite, même si l'écran était déjà
  * ouvert en arrière-plan. Les 10 dernières questions sont gardées sur la montre.
+ * L'écran reste allumé 120 s après le dernier geste (une question normale prend 25-35 s), puis la montre se met en
+ * veille comme d'habitude ; elle continue de suivre la réponse écran éteint (SuiviClaude) et vibre quand elle arrive,
+ * avec la notification « Claude a répondu » (toucher = la réponse).
  */
 class ClaudeActivity : Activity() {
     lateinit var vue: ClaudeView
     private var visible = false
 
+    private val minuterie = Handler(Looper.getMainLooper())
+    private val laisserEteindre = Runnable { window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) }
+
+    /** L'écran reste allumé ALLUME ms à partir de maintenant (chaque geste, chaque question envoyée), puis veille normale. */
+    fun garderAllume() {
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        minuterie.removeCallbacks(laisserEteindre)
+        minuterie.postDelayed(laisserEteindre, ALLUME)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        garderAllume()
         vue = ClaudeView(this)
         setContentView(vue)
         vue.requestFocus()
@@ -78,6 +98,7 @@ class ClaudeActivity : Activity() {
     /** L'écran était resté ouvert en arrière-plan (singleTask) : l'appui long relance l'écoute. */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        garderAllume()
         if (intent.getBooleanExtra(VOIR_REPONSE, false)) { vue.montrerDerniere(); return }
         if (Claude.enAttente(this) == null && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             vue.nouvelle(); dicter()
@@ -90,7 +111,7 @@ class ClaudeActivity : Activity() {
 
     override fun onResume() { super.onResume(); visible = true }
     override fun onPause() { super.onPause(); visible = false }
-    override fun onDestroy() { reco?.destroy(); super.onDestroy() }
+    override fun onDestroy() { reco?.destroy(); minuterie.removeCallbacks(laisserEteindre); super.onDestroy() }
 
     // ---------- La dictée, dans l'écran même (pas l'écran de dictée de Google, lent à s'initialiser) ----------
     // D'abord la reconnaissance de la montre elle-même (sur l'appareil, sans réseau : la plus rapide), sinon celle de
@@ -161,24 +182,61 @@ class ClaudeActivity : Activity() {
     }
 
 
-    /** Réponse arrivée alors qu'on regarde ailleurs : une notification (toucher = la réponse). */
+    /** La réponse est arrivée : vibration ; écran éteint ou autre écran, la notification (qui vibre ; toucher = la réponse). */
     fun prevenir(court: String) {
-        vibre(this, longArrayOf(0, 60, 80, 60))
-        if (visible) return
+        if (visible) { vibre(this, MOTIF); return }
         val nm = getSystemService(NotificationManager::class.java)
-        nm.createNotificationChannel(NotificationChannel("claude", "Réponses de Claude", NotificationManager.IMPORTANCE_HIGH))
+        // Un canal qui vibre (les réglages d'un canal ne changent plus une fois créé : d'où un nouveau nom en v15)
+        nm.createNotificationChannel(NotificationChannel("claude_reponse", "Réponses de Claude", NotificationManager.IMPORTANCE_HIGH)
+            .apply { enableVibration(true); vibrationPattern = MOTIF })
+        nm.deleteNotificationChannel("claude")
         val tap = PendingIntent.getActivity(this, 5, Intent(this, ClaudeActivity::class.java).putExtra(VOIR_REPONSE, true)
             .addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
-        nm.notify(7, android.app.Notification.Builder(this, "claude").setSmallIcon(R.drawable.ic_claude)
-            .setContentTitle("Claude a répondu").setContentText(court).setContentIntent(tap).setAutoCancel(true).build())
+        nm.notify(7, Notification.Builder(this, "claude_reponse").setSmallIcon(R.drawable.ic_claude)
+            .setContentTitle("Claude a répondu").setContentText(court).setContentIntent(tap).setAutoCancel(true)
+            .setCategory(Notification.CATEGORY_MESSAGE).build())
     }
 
     companion object {
         const val VOIR_REPONSE = "voir_reponse"
+        const val ALLUME = 120_000L  // durée choisie par Kiki (28/10), à ajuster s'il le demande
+        val MOTIF = longArrayOf(0, 60, 80, 60)
 
         fun vibre(ctx: Context, motif: LongArray) {
             try { ctx.getSystemService(Vibrator::class.java)?.vibrate(VibrationEffect.createWaveform(motif, -1)) } catch (e: Exception) { }
         }
+    }
+}
+
+/**
+ * Pendant qu'une question attend sa réponse : un service « au premier plan » (petite notification discrète) qui empêche
+ * Android de geler l'appli quand l'écran s'éteint, et garde le processeur éveillé ; c'est l'écran Claude qui continue de
+ * suivre la réponse. Arrêté dès la réponse (ou l'abandon), 30 min au plus.
+ */
+class SuiviClaude : Service() {
+    private var verrou: PowerManager.WakeLock? = null
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.createNotificationChannel(NotificationChannel("claude_suivi", "Claude prépare la réponse", NotificationManager.IMPORTANCE_MIN))
+        val tap = PendingIntent.getActivity(this, 6, Intent(this, ClaudeActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
+        val n = Notification.Builder(this, "claude_suivi").setSmallIcon(R.drawable.ic_claude).setContentTitle("Claude")
+            .setContentText("Claude prépare ta réponse…").setOngoing(true).setCategory(Notification.CATEGORY_PROGRESS)
+            .setContentIntent(tap).build()
+        if (Build.VERSION.SDK_INT >= 34) startForeground(8, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        else startForeground(8, n)
+        if (verrou == null) verrou = getSystemService(PowerManager::class.java)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "pokemontre:claude").apply { acquire(30 * 60_000L) }
+        return START_NOT_STICKY
+    }
+
+    override fun onDestroy() { verrou?.let { if (it.isHeld) it.release() }; super.onDestroy() }
+
+    companion object {
+        fun demarrer(ctx: Context) { try { ctx.startForegroundService(Intent(ctx, SuiviClaude::class.java)) } catch (e: Exception) { } }
+        fun arreter(ctx: Context) { ctx.stopService(Intent(ctx, SuiviClaude::class.java)) }
     }
 }
 
@@ -362,6 +420,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
 
     private fun envoyer(versCompte: String = "B") {
         val q = texteQuestion
+        act.garderAllume()  // 120 s d'écran allumé à partir de l'envoi
         id = null; compte = versCompte; personne = false
         envoi = System.currentTimeMillis(); etape = "Envoi de la question…"; debutReflexion = 0; etat = Etat.ATTENTE; invalidate()
         Thread {
@@ -381,6 +440,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         id = n; texteQuestion = q; envoi = depuis; etat = Etat.ATTENTE; difficile = false; action = false
         compte = versCompte; personne = false
         etape = "Claude démarre…"; invalidate()
+        SuiviClaude.demarrer(act)  // le suivi continue écran éteint
         Thread {
             var pris = false  // une routine a pris la question
             var longue = false  // c'est une action : jusqu'à 25 min au lieu de 6
@@ -393,6 +453,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
                         Claude.finAttente(act); Claude.garder(act, r); Claude.retenirSemaine(act, r)
                         id = null; montrer(r)
                         act.prevenir(r.optString("court"))
+                        SuiviClaude.arreter(act)
                     }
                     return@Thread
                 }
@@ -419,6 +480,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
                 Thread.sleep(2000)
             }
             act.runOnUiThread {
+                SuiviClaude.arreter(act)
                 if (id != n) return@runOnUiThread
                 id = null; Claude.finAttente(act)
                 if (!pris && compte == "B") { Claude.retenirLimiteB(act); personne = true }
@@ -433,7 +495,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(e: MotionEvent): Boolean {
         when (e.action) {
-            MotionEvent.ACTION_DOWN -> { y0 = e.y; x0 = e.x; dernierY = e.y; bouge = false }
+            MotionEvent.ACTION_DOWN -> { y0 = e.y; x0 = e.x; dernierY = e.y; bouge = false; act.garderAllume() }
             MotionEvent.ACTION_MOVE -> {
                 if (abs(e.y - y0) > 12) bouge = true
                 if (etat == Etat.REPONSE || etat == Etat.HISTORIQUE) { defiler(dernierY - e.y); dernierY = e.y }
@@ -445,6 +507,7 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
 
     override fun onGenericMotionEvent(e: MotionEvent): Boolean {
         if (e.action == MotionEvent.ACTION_SCROLL && e.isFromSource(InputDevice.SOURCE_ROTARY_ENCODER)) {
+            act.garderAllume()
             defiler(-e.getAxisValue(MotionEvent.AXIS_SCROLL) * S * 0.12f); return true
         }
         return super.onGenericMotionEvent(e)
@@ -495,11 +558,13 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     }
 
     private fun texteCentre(c: Canvas, s: String, y: Float, taille: Float, couleur: Int, largeur: Float, enGras: Boolean = false,
-                            lignesMax: Int = 6): Float {
+                            lignesMax: Int = 6, boite: Float = 0f): Float {
         t.textSize = taille; t.color = couleur; t.typeface = if (enGras) gras else Typeface.DEFAULT
         val l = StaticLayout.Builder.obtain(s, 0, s.length, t, largeur.toInt()).setAlignment(Layout.Alignment.ALIGN_CENTER)
             .setMaxLines(lignesMax).setEllipsize(android.text.TextUtils.TruncateAt.END).build()
-        c.save(); c.translate(width / 2f - largeur / 2, y); l.draw(c); c.restore()
+        // boite > 0 : centré verticalement dans une zone de cette hauteur (le texte ne bouge pas le reste de l'écran)
+        val dy = if (boite > 0) maxOf(0f, (boite - l.height) / 2) else 0f
+        c.save(); c.translate(width / 2f - largeur / 2, y + dy); l.draw(c); c.restore()
         return l.height.toFloat()
     }
 
@@ -557,9 +622,11 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         val ms = System.currentTimeMillis() - envoi
         val s = ms / 1000
         val tour = (SystemClock.uptimeMillis() % 4000) / 4000f * 2 * PI.toFloat()
-        etoile(c, width / 2f, S * 0.3f, S * (0.085f + 0.01f * sin(tour * 3)), orange, tour)
-        texteCentre(c, etape, S * 0.43f, S * 0.055f, Color.WHITE, S * 0.75f, true)
-        texteCentre(c, "${s / 60}:${"%02d".format(s % 60)}", S * 0.51f, S * 0.08f, orange, S * 0.5f, true)
+        // Chaque chose a sa place (écran rond) : étoile, étape (2 lignes au plus, coupée par « … »), chrono, barre, question
+        etoile(c, width / 2f, S * 0.27f, S * (0.085f + 0.01f * sin(tour * 3)), orange, tour)
+        val taille = if (etape.length > 26) S * 0.046f else S * 0.055f
+        texteCentre(c, etape, S * 0.385f, taille, Color.WHITE, S * 0.78f, true, 2, S * 0.135f)
+        texteCentre(c, "${s / 60}:${"%02d".format(s % 60)}", S * 0.525f, S * 0.08f, orange, S * 0.5f, true, 1)
         // Progression estimée (mesuré le 22/10) : GitHub + démarrage ~25 s (jusqu'à 70 %), puis Claude répond en ~6 s
         // (Haiku) ou ~12 s de plus quand la question passe à Opus (jusqu'à 97 %) ; la barre avance toujours, sans jamais
         // être pleine avant la réponse
@@ -567,13 +634,13 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         val lent = if (action) 150_000.0 else if (difficile) 8_000.0 else 4_000.0
         val part = if (debutReflexion == 0L) 0.7f * (1 - exp(-ms / 14_000.0).toFloat())
                    else 0.7f + 0.27f * (1 - exp(-(System.currentTimeMillis() - debutReflexion) / lent).toFloat())
-        val l = S * 0.6f; val x = width / 2f - l / 2; val y = S * 0.66f; val h = S * 0.022f
+        val l = S * 0.6f; val x = width / 2f - l / 2; val y = S * 0.655f; val h = S * 0.022f
         p.color = 0xFF2A2420.toInt(); c.drawRoundRect(RectF(x, y, x + l, y + h), h / 2, h / 2, p)
         p.color = orange; c.drawRoundRect(RectF(x, y, x + l * part, y + h), h / 2, h / 2, p)
         if (personne && compte == "B") {
             texteCentre(c, "Compte B à sa limite ?", S * 0.71f, S * 0.034f, gris, S * 0.62f, false, 1)
             bouton(c, "Demander au compte A", width / 2f, S * 0.81f, S * 0.62f, orange) { demanderA() }
-        } else texteCentre(c, "« $texteQuestion »", S * 0.73f, S * 0.036f, gris, S * 0.62f, false, 2)
+        } else texteCentre(c, "« $texteQuestion »", S * 0.71f, S * 0.036f, gris, S * 0.62f, false, 2)
     }
 
     /** La réponse, sur une seule page qui défile (doigt ou couronne) ; les boutons sont tout en bas. */

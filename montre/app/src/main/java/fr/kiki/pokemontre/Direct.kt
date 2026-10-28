@@ -16,8 +16,7 @@ import kotlin.math.max
 /**
  * Les chiffres en direct de la montre (pas, étages, distance, calories du jour), par Health Services en mode passif :
  * les capteurs tournent de toute façon, la montre nous les donne par paquets, sans dépense de batterie en plus.
- * Ils font avancer la barre Pokémon sans attendre le site : on ajoute ce qui a été fait depuis l'arrivée des
- * dernières données du site (jamais plus, pour ne pas compter deux fois). Les minutes en zone viennent du site.
+ * Ils font avancer la barre Pokémon sans attendre le site (voir bonus). Les minutes en zone viennent du site.
  */
 object Direct {
     private const val PREFS = "direct"
@@ -64,27 +63,22 @@ object Direct {
         }
     }
 
-    /** Les données du site viennent d'arriver : on note où en était la montre (le direct repart de là). */
-    fun nouvelleBase(ctx: Context) {
-        val c = lire(ctx)
-        prefs(ctx).edit().putString("base_jour", aujourdhui()).putLong("base_pas", c?.pas ?: 0)
-            .putFloat("base_etages", (c?.etages ?: 0.0).toFloat()).apply()
-    }
-
-    /** Les points gagnés depuis l'arrivée des dernières données du site (pas au-delà des 2 000 du jour, étages). */
+    /**
+     * Les points de la barre en plus de ceux du site, calculés sur la montre : les pas et étages du jour comptent avec
+     * le plus grand des deux chiffres (montre en direct ou site), avec les mêmes règles que le site (1 point par 100 pas
+     * au-delà des 2 000 de la vie de tous les jours, 1 par étage). Les minutes en zone et les séances viennent du site.
+     * (Avant la v15, la montre repartait de son compteur à chaque arrivée des données du site, souvent en retard sur
+     * elle : les pas entre les deux étaient perdus jusqu'à la récolte suivante.)
+     */
     fun bonus(ctx: Context, e: Donnees.Etat): Float {
         val c = lire(ctx) ?: return 0f
-        val p = prefs(ctx)
-        val offerts = 2000.0
+        val offerts = (e.objectifs?.pasOfferts ?: 2000).toDouble()
         val f = { pas: Double -> max(pas - offerts, 0.0) / 100 }
-        if (e.jour != aujourdhui() || p.getString("base_jour", null) != aujourdhui()) {
-            // Les données du site sont d'hier (peu après minuit) : tout ce que la montre a compté aujourd'hui
-            return (f(c.pas.toDouble()) + c.etages).toFloat()
-        }
-        val serveur = (e.sante?.pas ?: e.pas).toDouble()
-        val dPas = max(c.pas - p.getLong("base_pas", c.pas), 0L).toDouble()
-        val dEtages = max(c.etages - p.getFloat("base_etages", c.etages.toFloat()), 0.0)
-        return (f(serveur + dPas) - f(serveur) + dEtages).toFloat()
+        // Données du site d'hier (peu après minuit) : tout ce que la montre a compté aujourd'hui
+        if (e.jour != aujourdhui()) return (f(c.pas.toDouble()) + c.etages).toFloat()
+        val pasSite = (e.sante?.pas ?: e.pas).toDouble()
+        val etagesSite = (e.etages ?: e.sante?.etages ?: 0).toDouble()
+        return (f(max(c.pas.toDouble(), pasSite)) - f(pasSite) + max(c.etages - etagesSite, 0.0)).toFloat()
     }
 
     /** Les points de la barre en direct. */

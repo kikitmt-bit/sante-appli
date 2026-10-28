@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- Claude : la montre suit la réponse écran éteint (SuiviClaude) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <!-- Pas, étages, distance, calories en direct (Health Services) ; agenda pour la case du bas du cadran -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
@@ -20,6 +23,8 @@
     <queries>
         <intent><action android:name="android.speech.action.RECOGNIZE_SPEECH" /></intent>
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
+        <!-- Case du bas : ouvrir l'appli d'un message, l'appli padel -->
+        <intent><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent>
     </queries>
 
     <application
@@ -114,6 +119,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Claude : suivi de la réponse écran éteint -->
+        <service
+            android:name=".SuiviClaude"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+
         <!-- Plein écran : ouverture des Poké Balls -->
         <activity
             android:name=".OuvrirActivity"
@@ -131,6 +142,20 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+        <!-- Les messages du téléphone, envoyés par l'appli « Pokémon » du téléphone (module telephone/) -->
+        <service
+            android:name=".DuTelephone"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <data android:scheme="wear" android:host="*" android:pathPrefix="/notif" />
+            </intent-filter>
+        </service>
+        <activity
+            android:name=".OuvrirSite"
+            android:exported="false"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <activity
             android:name=".OuvrirNotif"
             android:exported="false"

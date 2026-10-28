@@ -65,7 +65,10 @@ class BarreComplication : SuspendingComplicationDataSourceService() {
             val valeur = if (balls > 0) "×$balls" else "${minOf(points, taille.toFloat()).toInt()}"
             return when (type) {
                 ComplicationType.RANGED_VALUE ->
-                    RangedValueComplicationData.Builder(points.coerceIn(0f, taille.toFloat()), 0f, taille.toFloat(), dit)
+                    // Des balls : maximum à 1000, c'est ce que le cadran regarde pour montrer la Poké Ball 3D (sa condition
+                    // sur l'image, [COMPLICATION.SMALL_IMAGE] != null, n'était jamais vraie sur la montre : « ×5% »)
+                    (if (balls > 0) RangedValueComplicationData.Builder(1000f, 0f, 1000f, dit)
+                     else RangedValueComplicationData.Builder(points.coerceIn(0f, taille.toFloat()), 0f, taille.toFloat(), dit))
                         .setText(texte(valeur))
                         .setTitle(texte(if (balls > 0) "à ouvrir" else "/$taille"))
                         .setMonochromaticImage(icone).setTapAction(tap)

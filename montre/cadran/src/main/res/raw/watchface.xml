@@ -164,7 +164,7 @@
       <Complication type="RANGED_VALUE">
         <Condition>
           <Expressions>
-            <Expression name="balls"><![CDATA[[COMPLICATION.SMALL_IMAGE] != null]]></Expression>
+            <Expression name="balls"><![CDATA[[COMPLICATION.RANGED_VALUE_MAX] > 500]]></Expression>
           </Expressions>
           <Compare expression="balls">
             <PartImage x="0" y="2" width="48" height="48" alpha="255" name="ball3d">

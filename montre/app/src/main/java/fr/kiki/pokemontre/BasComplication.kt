@@ -27,14 +27,18 @@ import java.time.LocalDate
 import java.time.ZoneId
 
 /**
- * Complication « case libre » du bas du cadran : un message à la fois, seulement des infos utiles (rien de Pokémon) :
- *  1. la dernière notification utile (message, mail, rappel…) des 30 dernières minutes, affichée directement
- *     (toucher = l'appli qui l'a envoyée) ;
- *  2. un rendez-vous de l'agenda qui commence dans les 3 h (toucher = agenda) ;
- *  3. la première heure après le réveil : la nuit (toucher = Santé, page de la nuit) ;
- *  4. un rendez-vous plus tard (aujourd'hui ou demain) ;
- *  sinon rien : la case reste vide.
- * À venir (noté dans CLAUDE.md) : les pronos NFL et le padel.
+ * Complication « case libre » du bas du cadran : une seule info à la fois, seulement des infos utiles (jamais de Pokémon),
+ * dans l'ordre choisi par Kiki (28/10) :
+ *  1. un rendez-vous de l'agenda qui commence dans les 3 h (toucher = agenda) ;
+ *  2. les pronos NFL qui restent à faire, à partir de 48 h avant le premier coup d'envoi concerné (« 🏈 3 pronos avant
+ *     dim. 19:00 », toucher = le site sur le téléphone) ;
+ *  3. le jour d'une réservation de padel : l'heure et le code (le script du padel les écrit dans l'agenda, « 🎾 Padel ✅
+ *     réservé · 🔑 4821 » ; toucher = l'appli padel de la montre) ;
+ *  4. le dernier message des 30 dernières minutes (notifications de la montre, et celles du téléphone envoyées par la
+ *     petite appli « Pokémon » du téléphone, voir Notifs.kt ; toucher = l'appli du message sur la montre) ;
+ *  puis, s'il n'y a rien de tout ça : la nuit la première heure après le réveil, ou un rendez-vous plus tard
+ *  (aujourd'hui ou demain) ; sinon la case reste vide. Toutes les heures à l'heure de la montre (pas d'heure de Paris
+ *  pendant le voyage au Japon, refusé par Kiki).
  */
 class BasComplication : SuspendingComplicationDataSourceService() {
 
@@ -44,18 +48,29 @@ class BasComplication : SuspendingComplicationDataSourceService() {
 
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
         if (request.complicationType != ComplicationType.LONG_TEXT) return null
+        val maintenant = System.currentTimeMillis()
+        val agenda = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_CALENDAR)
+        val rdvs = rendezVous(this)
+        val rdv = rdvs.firstOrNull { !it.padel }
+        // 1. Un rendez-vous dans les 3 h
+        if (rdv != null && rdv.debut - maintenant < 3 * 3600_000) return message(rdv.ligne(), "agenda", agenda, 4)
+        // 2. Les pronos NFL
+        val e = Donnees.lire(this)
+        ligneProns(e, maintenant)?.let { return message(it, "pronos NFL", Intent(this, OuvrirSite::class.java), 6) }
+        // 3. Le padel du jour
+        rdvs.firstOrNull { it.padel && it.aujourdhui }?.let { pa ->
+            val tap = packageManager.getLaunchIntentForPackage(PADEL) ?: agenda
+            return message("🎾 ${pa.heure} Padel" + (pa.code?.let { " · code $it" } ?: ""), "padel", tap, 7)
+        }
+        // 4. Le dernier message
         Notifs.derniere(this)?.let { (titre, texte) ->
             return message("💬 " + titre.ifEmpty { texte }, if (titre.isEmpty()) "" else texte, Intent(this, OuvrirNotif::class.java), 5)
         }
-        val agenda = Intent.makeMainSelectorActivity(Intent.ACTION_MAIN, Intent.CATEGORY_APP_CALENDAR)
-        val rdv = rendezVous(this)
-        if (rdv != null && rdv.third - System.currentTimeMillis() < 3 * 3600_000) return message(rdv.first, rdv.second, agenda, 4)
-        val e = Donnees.lire(this)
         if (e != null && Jeu.matin(e)) {
             val (titre, detail) = Jeu.ligneNuit(e)
             return message(titre, detail.replace(" · shiny ×1,5", ""), Intent(this, SanteActivity::class.java).putExtra("page", 1), 3)
         }
-        if (rdv != null) return message(rdv.first, rdv.second, agenda, 4)
+        if (rdv != null) return message(rdv.ligne(), "agenda", agenda, 4)
         return NoDataComplicationData()  // rien d'utile : la case reste vide (choix de Kiki)
     }
 
@@ -81,28 +96,53 @@ class BasComplication : SuspendingComplicationDataSourceService() {
             return "$p · $z" to "objectifs du jour"
         }
 
-        /** Le prochain rendez-vous (hors journée entière) des prochaines 24 h : (titre, détail, début en ms). */
-        fun rendezVous(ctx: Context): Triple<String, String, Long>? {
-            if (ctx.checkSelfPermission(Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) return null
+        const val PADEL = "fr.kiki.padel.montre"
+        const val SITE_PRONOS = "https://badabingnfl.streamlit.app"
+
+        /** Un rendez-vous de l'agenda ; padel = l'événement écrit par le script du padel (« 🎾 Padel … · 🔑 4821 »). */
+        data class Rdv(val titre: String, val debut: Long, val heure: String, val aujourdhui: Boolean) {
+            val padel get() = titre.startsWith("🎾 Padel")
+            val code get() = titre.substringAfter("🔑", "").trim().takeIf { it.isNotEmpty() }
+            fun ligne() = "📅 ${if (aujourdhui) heure else "demain $heure"} · $titre"
+        }
+
+        /** Les rendez-vous (hors journée entière) des prochaines 24 h, dans l'ordre ; ceux commencés depuis 15 min sont passés. */
+        fun rendezVous(ctx: Context): List<Rdv> {
+            if (ctx.checkSelfPermission(Manifest.permission.READ_CALENDAR) != PackageManager.PERMISSION_GRANTED) return emptyList()
             val maintenant = System.currentTimeMillis()
             // L'agenda synchronisé sur la montre (fournisseur de Wear OS, les prochaines 24 h)
             val uri = Uri.parse("content://com.google.android.wearable.provider.calendar/instances/when").buildUpon().also {
                 ContentUris.appendId(it, maintenant - 30 * 60_000); ContentUris.appendId(it, maintenant + 24 * 3600_000)
             }.build()
-            return try {
+            val liste = mutableListOf<Rdv>()
+            try {
                 ctx.contentResolver.query(uri, arrayOf(CalendarContract.Instances.TITLE, CalendarContract.Instances.BEGIN,
                     CalendarContract.Instances.ALL_DAY), null, null, CalendarContract.Instances.BEGIN + " ASC")?.use { c ->
                     while (c.moveToNext()) {
                         if (c.getInt(2) == 1) continue
                         val debut = Instant.ofEpochMilli(c.getLong(1)).atZone(ZoneId.systemDefault())
                         if (debut.toInstant().toEpochMilli() < maintenant - 15 * 60_000) continue
-                        val heure = "%02d:%02d".format(debut.hour, debut.minute)
-                        val quand = if (debut.toLocalDate() == LocalDate.now()) heure else "demain $heure"
-                        return@use Triple("📅 $quand · ${c.getString(0) ?: ""}", "agenda", debut.toInstant().toEpochMilli())
+                        liste += Rdv((c.getString(0) ?: "").trim(), debut.toInstant().toEpochMilli(),
+                            "%02d:%02d".format(debut.hour, debut.minute), debut.toLocalDate() == LocalDate.now())
                     }
-                    null
                 }
-            } catch (e: Exception) { null }
+            } catch (e: Exception) { }
+            return liste
+        }
+
+        /** « 🏈 3 pronos avant dim. 19:00 » : matchs pas encore pronostiqués, dès 48 h avant le premier ; sinon null. */
+        fun ligneProns(e: Donnees.Etat?, maintenant: Long): String? {
+            val restent = e?.pronos?.filter { it > maintenant }?.sorted() ?: return null
+            val premier = restent.firstOrNull() ?: return null
+            if (premier - maintenant > 48 * 3600_000) return null
+            val d = Instant.ofEpochMilli(premier).atZone(ZoneId.systemDefault())
+            val jour = when (d.toLocalDate()) {
+                LocalDate.now() -> ""
+                LocalDate.now().plusDays(1) -> "demain "
+                else -> listOf("lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim.")[d.dayOfWeek.value - 1] + " "
+            }
+            val n = restent.size
+            return "🏈 $n prono${if (n > 1) "s" else ""} avant $jour%02d:%02d".format(d.hour, d.minute)
         }
 
         /** La Poké Ball 3D avec une pastille jaune et le nombre de balls. */
