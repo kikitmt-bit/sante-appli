@@ -224,6 +224,14 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     Seuls les **push** déclenchent (pas la création de branche) et le filtre des déclencheurs est ignoré :
     d'où un dépôt à part où rien d'autre n'est poussé. Routine d'essai `trig_01DytNizq4c4NDSt9Xhn3oMU` en pause
     (déclencheur sur tous les push de sante : ne JAMAIS la réactiver ; à supprimer sur claude.ai/code/routines).
+    **Actions (v14, 28/10)** : Haiku reconnaît une demande de modification d'un projet (`confier <id> action`, `type: action`) ;
+    Opus (dépôts kiki-cerveau, photobooth, bada-bing-nfl/nba, padel_resa, sante-appli, hail_mary montés) fait le travail,
+    pousse sur `main`, note le JOURNAL du cerveau, et envoie ses étapes (`outil.py etape <id> "…"`) : la montre affiche
+    « Claude y travaille : … » et attend 25 min au lieu de 6 (essai du 28/10 : sorcière du photobooth en 2 min).
+    **% d'utilisation** : illisible depuis une routine (il faudrait le jeton de connexion : refusé). À la place, chaque
+    réponse porte `semaine` (questions/actions depuis lundi, par compte) affiché en bas de l'accueil, et une question
+    que personne ne prend en 50 s fait afficher « Compte B à sa limite ? » + **« Demander au compte A »** : même question
+    avec `&compte=A` -> dépôt `montre-claude-a` -> routines du compte A (réponse `compte: "A"`, « · compte A » en pied).
   - **À faire plus tard (demandé par Kiki le 22/10)** : brancher la case libre du bas du cadran sur
     1) **les pronos NFL** (appli Bada Bing, dépôt `kikitmt-bit/bada-bing-nfl`, `pronos_data.json`) : « pronos à faire
     avant dim. 19:00 », toucher = ouvrir le site ; 2) **le padel** (dépôt privé `kikitmt-bit/padel_resa`, script Google) :

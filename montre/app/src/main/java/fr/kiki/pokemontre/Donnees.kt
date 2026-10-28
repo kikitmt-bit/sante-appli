@@ -122,8 +122,9 @@ object Donnees {
     }
 
     /** Claude depuis la montre (script Google, ?quoi=claude) : poser une question, ou suivre sa réponse. */
-    fun claudePoser(question: String, modele: String): String? =
-        appel("quoi=claude&modele=$modele&q=" + URLEncoder.encode(question, "UTF-8"))?.optString("id")?.takeIf { it.isNotEmpty() }
+    /** compte = "A" : au compte de secours (dépôt montre-claude-a, routines du compte A) ; sinon au compte B. */
+    fun claudePoser(question: String, modele: String, compte: String = "B"): String? =
+        appel("quoi=claude&modele=$modele&compte=$compte&q=" + URLEncoder.encode(question, "UTF-8"))?.optString("id")?.takeIf { it.isNotEmpty() }
 
     fun claudeSuivre(id: String): JSONObject? = appel("quoi=claude&id=" + URLEncoder.encode(id, "UTF-8"))
 

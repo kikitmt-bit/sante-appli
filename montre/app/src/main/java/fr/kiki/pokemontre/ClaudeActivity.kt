@@ -68,7 +68,7 @@ class ClaudeActivity : Activity() {
         vue.requestFocus()
         val enAttente = Claude.enAttente(this)
         if (intent.getBooleanExtra(VOIR_REPONSE, false) && vue.montrerDerniere()) return
-        if (enAttente != null) vue.suivre(enAttente.first, enAttente.second, enAttente.third)  // une question partie avant
+        if (enAttente != null) vue.suivre(enAttente.first, enAttente.second, enAttente.third, Claude.compteAttente(this))  // une question partie avant
         val manque = listOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
             .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
         if (manque.isNotEmpty()) requestPermissions(manque.toTypedArray(), 2)
@@ -191,17 +191,53 @@ object Claude {
     fun sansLocal(ctx: Context) = prefs(ctx).getBoolean("sans_local", false)
     fun retenirSansLocal(ctx: Context) = prefs(ctx).edit().putBoolean("sans_local", true).apply()
 
-    /** (id, question, envoyée à) d'une question partie il y a moins de 10 min et sans réponse. */
+    /** (id, question, envoyée à) d'une question partie il y a moins de 30 min (une action peut être longue) et sans réponse. */
     fun enAttente(ctx: Context): Triple<String, String, Long>? {
         val p = prefs(ctx)
         val id = p.getString("attente_id", null) ?: return null
         val quand = p.getLong("attente_quand", 0)
-        if (System.currentTimeMillis() - quand > 10 * 60_000) return null
+        if (System.currentTimeMillis() - quand > 30 * 60_000) return null
         return Triple(id, p.getString("attente_q", "")!!, quand)
     }
-    fun attendre(ctx: Context, id: String, q: String, quand: Long) =
-        prefs(ctx).edit().putString("attente_id", id).putString("attente_q", q).putLong("attente_quand", quand).apply()
+    fun attendre(ctx: Context, id: String, q: String, quand: Long, compte: String = "B") =
+        prefs(ctx).edit().putString("attente_id", id).putString("attente_q", q).putLong("attente_quand", quand)
+            .putString("attente_compte", compte).apply()
+    fun compteAttente(ctx: Context) = prefs(ctx).getString("attente_compte", "B") ?: "B"
     fun finAttente(ctx: Context) = prefs(ctx).edit().remove("attente_id").apply()
+
+    // ---------- Le compteur de la semaine et la limite du compte B ----------
+    // Le % d'utilisation de l'abonnement n'est pas lisible depuis une routine : la routine renvoie, avec chaque réponse,
+    // le nombre de questions et d'actions de la montre depuis lundi (par compte). Une question que personne ne prend
+    // (routines qui échouent, souvent la limite d'utilisation) fait proposer le compte de secours A, en un toucher.
+
+    /** Retient le compteur de la semaine reçu avec une réponse ; un compte qui répond n'est plus « à sa limite ». */
+    fun retenirSemaine(ctx: Context, r: JSONObject) {
+        val e = prefs(ctx).edit()
+        r.optJSONObject("semaine")?.let { e.putString("semaine", it.toString()).putLong("semaine_quand", System.currentTimeMillis()) }
+        if (r.optString("compte", "B") == "B") e.remove("limite_b")
+        e.apply()
+    }
+
+    /** « 12 questions cette semaine » (compte B, et A s'il a servi), ou "" ; remis à zéro le lundi. */
+    fun texteSemaine(ctx: Context): String {
+        val p = prefs(ctx)
+        val quand = p.getLong("semaine_quand", 0)
+        val lundi = java.util.Calendar.getInstance().apply {
+            set(java.util.Calendar.DAY_OF_WEEK, java.util.Calendar.MONDAY)
+            if (timeInMillis > System.currentTimeMillis()) add(java.util.Calendar.DAY_OF_YEAR, -7)
+            set(java.util.Calendar.HOUR_OF_DAY, 0); set(java.util.Calendar.MINUTE, 0); set(java.util.Calendar.SECOND, 0)
+        }.timeInMillis
+        if (quand < lundi) return ""
+        val s = try { JSONObject(p.getString("semaine", "{}")!!) } catch (e: Exception) { return "" }
+        fun n(c: String) = s.optJSONObject(c)?.let { it.optInt("questions") + it.optInt("actions") } ?: 0
+        val b = n("B"); val a = n("A")
+        if (a + b == 0) return ""
+        return "$b question${if (b > 1) "s" else ""} cette semaine" + (if (a > 0) " · compte A : $a" else "")
+    }
+
+    fun retenirLimiteB(ctx: Context) = prefs(ctx).edit().putLong("limite_b", System.currentTimeMillis()).apply()
+    /** Le compte B n'a pas répondu il y a moins de 5 h (sa limite se recharge par tranches de 5 h). */
+    fun limiteB(ctx: Context) = System.currentTimeMillis() - prefs(ctx).getLong("limite_b", 0) < 5 * 3600_000L
 
     fun historique(ctx: Context): List<JSONObject> = try {
         val a = JSONArray(prefs(ctx).getString("historique", "[]"))
@@ -263,6 +299,9 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     private var etape = "Envoi…"
     private var debutReflexion = 0L
     private var difficile = false   // Haiku a confié la question à Opus
+    private var action = false      // Kiki demande de modifier un projet : Opus y travaille (plusieurs minutes)
+    private var compte = "B"        // le compte Claude qui reçoit la question (A = compte de secours)
+    private var personne = false    // aucune routine n'a pris la question : compte B à sa limite ?
     private var reponse: JSONObject? = null
     private var message = ""
     private var defile = 0f
@@ -321,44 +360,72 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
 
     fun erreur(m: String) { message = m; etat = Etat.ERREUR; invalidate() }
 
-    private fun envoyer() {
+    private fun envoyer(versCompte: String = "B") {
         val q = texteQuestion
+        id = null; compte = versCompte; personne = false
         envoi = System.currentTimeMillis(); etape = "Envoi de la question…"; debutReflexion = 0; etat = Etat.ATTENTE; invalidate()
         Thread {
-            val n = Donnees.claudePoser(q, "rapide")  // Haiku trie
+            val n = Donnees.claudePoser(q, "rapide", versCompte)  // Haiku trie
             act.runOnUiThread {
                 if (n == null) erreur("La question n'est pas partie (réseau ?)")
-                else { Claude.attendre(act, n, q, envoi); suivre(n, q, envoi) }
+                else { Claude.attendre(act, n, q, envoi, versCompte); suivre(n, q, envoi, versCompte) }
             }
         }.start()
     }
 
+    /** Un toucher : la même question au compte de secours A. */
+    private fun demanderA() { Claude.finAttente(act); envoyer("A") }
+
     /** Suit la réponse toutes les 3 s (aussi pour une question partie avant d'ouvrir l'écran). */
-    fun suivre(n: String, q: String, depuis: Long) {
-        id = n; texteQuestion = q; envoi = depuis; etat = Etat.ATTENTE; difficile = false
+    fun suivre(n: String, q: String, depuis: Long, versCompte: String = "B") {
+        id = n; texteQuestion = q; envoi = depuis; etat = Etat.ATTENTE; difficile = false; action = false
+        compte = versCompte; personne = false
         etape = "Claude démarre…"; invalidate()
         Thread {
-            while (id == n && System.currentTimeMillis() - envoi < 6 * 60_000) {
+            var pris = false  // une routine a pris la question
+            var longue = false  // c'est une action : jusqu'à 25 min au lieu de 6
+            while (id == n && System.currentTimeMillis() - envoi < (if (longue) 25 else 6) * 60_000) {
                 val r = Donnees.claudeSuivre(n)
                 val statut = r?.optString("statut")
                 if (statut == "fini") {
                     act.runOnUiThread {
                         if (id != n) return@runOnUiThread
-                        Claude.finAttente(act); Claude.garder(act, r)
+                        Claude.finAttente(act); Claude.garder(act, r); Claude.retenirSemaine(act, r)
                         id = null; montrer(r)
                         act.prevenir(r.optString("court"))
                     }
                     return@Thread
                 }
+                if (statut == "en_cours" || statut == "pour_opus") pris = true
+                if (r?.optString("type") == "action") longue = true
+                // Personne n'a pris la question au bout de 50 s (d'habitude ~20 s) : les routines du compte B échouent,
+                // le plus souvent parce que sa limite d'utilisation est atteinte
+                val muet = !pris && statut == "envoye" && System.currentTimeMillis() - envoi > 50_000
                 act.runOnUiThread {
+                    if (id != n) return@runOnUiThread
+                    if (longue && !action) { action = true; ClaudeActivity.vibre(act, longArrayOf(0, 25)) }
                     if (statut == "en_cours" && debutReflexion == 0L) { debutReflexion = System.currentTimeMillis(); ClaudeActivity.vibre(act, longArrayOf(0, 25)) }
                     if (statut == "pour_opus" && !difficile) { difficile = true; debutReflexion = System.currentTimeMillis() }
-                    etape = when (statut) { "en_cours" -> if (difficile) "Opus réfléchit…" else "Claude réfléchit…"
-                        "pour_opus" -> "Question difficile : Opus arrive…"; null -> "Réseau lent…"; else -> "Claude démarre…" }
+                    if (muet && !personne && compte == "B") { personne = true; Claude.retenirLimiteB(act) }
+                    if (pris) personne = false
+                    val faire = r?.optString("etape").orEmpty()
+                    etape = when {
+                        action -> if (faire.isNotEmpty()) "Claude y travaille : $faire" else "Claude y travaille…"
+                        personne -> "Personne ne répond…"
+                        else -> when (statut) { "en_cours" -> if (difficile) "Opus réfléchit…" else "Claude réfléchit…"
+                            "pour_opus" -> "Question difficile : Opus arrive…"; null -> "Réseau lent…"; else -> "Claude démarre…" }
+                    }
                 }
                 Thread.sleep(2000)
             }
-            act.runOnUiThread { if (id == n) { id = null; Claude.finAttente(act); erreur("Pas de réponse au bout de 6 min. Réessaie.") } }
+            act.runOnUiThread {
+                if (id != n) return@runOnUiThread
+                id = null; Claude.finAttente(act)
+                if (!pris && compte == "B") { Claude.retenirLimiteB(act); personne = true }
+                erreur(if (longue) "L'action n'est pas finie au bout de 25 min. Regarde plus tard dans le projet."
+                       else if (!pris) "Personne n'a pris la question. Compte $compte à sa limite ?"
+                       else "Pas de réponse au bout de 6 min. Réessaie.")
+            }
         }.start()
     }
 
@@ -400,8 +467,14 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
             Etat.REPONSE -> pageReponse(c)
             Etat.HISTORIQUE -> pageHistorique(c)
             Etat.ERREUR -> {
-                texteCentre(c, message, S * 0.42f, S * 0.05f, Color.WHITE, S * 0.7f)
-                bouton(c, "Réessayer", width / 2f, S * 0.66f, S * 0.45f, orange) { act.dicter() }
+                if (personne && compte == "B" && texteQuestion.isNotEmpty()) {
+                    texteCentre(c, message, S * 0.3f, S * 0.05f, Color.WHITE, S * 0.7f)
+                    bouton(c, "Demander au compte A", width / 2f, S * 0.6f, S * 0.66f, orange) { demanderA() }
+                    bouton(c, "Réessayer", width / 2f, S * 0.76f, S * 0.45f, orange, false) { personne = false; act.dicter() }
+                } else {
+                    texteCentre(c, message, S * 0.42f, S * 0.05f, Color.WHITE, S * 0.7f)
+                    bouton(c, "Réessayer", width / 2f, S * 0.66f, S * 0.45f, orange) { act.dicter() }
+                }
             }
         }
         if (etat == Etat.ATTENTE || etat == Etat.ECOUTE) postInvalidateOnAnimation()
@@ -455,6 +528,9 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         zones += RectF(cx - r * 1.3f, cy - r * 1.3f, cx + r * 1.3f, cy + r * 1.3f) to { message = ""; act.dicter() }
         if (Claude.historique(act).isNotEmpty())
             bouton(c, "Dernières questions", width / 2f, S * 0.74f, S * 0.52f, orange, false) { defile = 0f; etat = Etat.HISTORIQUE; invalidate() }
+        // En bas : le compteur de la semaine, ou l'alerte « compte B à sa limite »
+        if (Claude.limiteB(act)) texteCentre(c, "Compte B à sa limite ?", S * 0.84f, S * 0.034f, orange, S * 0.6f, true, 1)
+        else Claude.texteSemaine(act).takeIf { it.isNotEmpty() }?.let { texteCentre(c, it, S * 0.84f, S * 0.032f, gris, S * 0.6f, false, 1) }
     }
 
     /** On parle : micro orange qui bat avec la voix, la phrase s'écrit en direct ; toucher le micro = fini. */
@@ -487,13 +563,17 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         // Progression estimée (mesuré le 22/10) : GitHub + démarrage ~25 s (jusqu'à 70 %), puis Claude répond en ~6 s
         // (Haiku) ou ~12 s de plus quand la question passe à Opus (jusqu'à 97 %) ; la barre avance toujours, sans jamais
         // être pleine avant la réponse
-        val reflechi = difficile
+        // Une action (Opus modifie un projet) prend plusieurs minutes : la barre avance bien plus lentement
+        val lent = if (action) 150_000.0 else if (difficile) 8_000.0 else 4_000.0
         val part = if (debutReflexion == 0L) 0.7f * (1 - exp(-ms / 14_000.0).toFloat())
-                   else 0.7f + 0.27f * (1 - exp(-(System.currentTimeMillis() - debutReflexion) / (if (reflechi) 8_000.0 else 4_000.0)).toFloat())
+                   else 0.7f + 0.27f * (1 - exp(-(System.currentTimeMillis() - debutReflexion) / lent).toFloat())
         val l = S * 0.6f; val x = width / 2f - l / 2; val y = S * 0.66f; val h = S * 0.022f
         p.color = 0xFF2A2420.toInt(); c.drawRoundRect(RectF(x, y, x + l, y + h), h / 2, h / 2, p)
         p.color = orange; c.drawRoundRect(RectF(x, y, x + l * part, y + h), h / 2, h / 2, p)
-        texteCentre(c, "« $texteQuestion »", S * 0.73f, S * 0.036f, gris, S * 0.62f, false, 2)
+        if (personne && compte == "B") {
+            texteCentre(c, "Compte B à sa limite ?", S * 0.71f, S * 0.034f, gris, S * 0.62f, false, 1)
+            bouton(c, "Demander au compte A", width / 2f, S * 0.81f, S * 0.62f, orange) { demanderA() }
+        } else texteCentre(c, "« $texteQuestion »", S * 0.73f, S * 0.036f, gris, S * 0.62f, false, 2)
     }
 
     /** La réponse, sur une seule page qui défile (doigt ou couronne) ; les boutons sont tout en bas. */
@@ -522,7 +602,8 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
             c.save(); c.translate(cx - largeur / 2f, y); l.draw(c); c.restore()
             y += l.height + S * 0.035f
         }
-        val pied = (if (sources.isNotEmpty()) "Sources : $sources · " else "") + r.optString("modele")
+        val pied = (if (sources.isNotEmpty()) "Sources : $sources · " else "") + r.optString("modele") +
+            (if (r.optString("compte") == "A") " · compte A" else "")
         y += texteCentre(c, pied, y, S * 0.032f, gris, S * 0.7f, false, 3) + S * 0.08f
         bouton(c, "Nouvelle question", cx, y, S * 0.66f, orange) { nouvelle(); act.dicter() }
         y += S * 0.16f
