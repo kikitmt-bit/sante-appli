@@ -65,9 +65,11 @@ class BarreComplication : SuspendingComplicationDataSourceService() {
             val valeur = if (balls > 0) "×$balls" else "${minOf(points, taille.toFloat()).toInt()}"
             return when (type) {
                 ComplicationType.RANGED_VALUE ->
-                    // Des balls : maximum à 1000, c'est ce que le cadran regarde pour montrer la Poké Ball 3D (sa condition
-                    // sur l'image, [COMPLICATION.SMALL_IMAGE] != null, n'était jamais vraie sur la montre : « ×5% »)
-                    (if (balls > 0) RangedValueComplicationData.Builder(1000f, 0f, 1000f, dit)
+                    // Des balls : maximum à 1000, c'est ce que le cadran regarde pour montrer la Poké Ball 3D, et la valeur dit
+                    // laquelle (1 Poké, 2 Super, 3 Hyper, 4 Master : images du cadran). Un cadran WFF ne reçoit pas l'image
+                    // d'une complication RANGED_VALUE (on voyait « ×5% » et la ball au trait avant la v15).
+                    (if (balls > 0) RangedValueComplicationData.Builder(
+                        when (typeBall) { "super" -> 2f; "hyper" -> 3f; "master" -> 4f; else -> 1f }, 0f, 1000f, dit)
                      else RangedValueComplicationData.Builder(points.coerceIn(0f, taille.toFloat()), 0f, taille.toFloat(), dit))
                         .setText(texte(valeur))
                         .setTitle(texte(if (balls > 0) "à ouvrir" else "/$taille"))

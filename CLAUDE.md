@@ -216,7 +216,9 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     `wff-validator.jar` et `memory-footprint.jar` (Google, dans `C:\Users\kikit\Android\wff`). Fond noir, heure
     batterie en 4 barres en haut, date + météo, heure blanche, ligne cardio / pas (`Launch` vers `SanteActivity`) /
     petite ball au trait « 48% » (slot 1), case libre en bas (slot 2) ; veille : heure fine. Pas d'anneau (trop voyant).
-    Balls à ouvrir : la Poké Ball 3D + « ×5 » ; le cadran le sait par `RANGED_VALUE_MAX` = 1000 (v15 : la condition
+    Balls à ouvrir : la Poké Ball 3D + « ×5 » ; le cadran le sait par `RANGED_VALUE_MAX` = 1000, et la valeur dit quelle ball (1 Poké,
+    2 Super, 3 Hyper, 4 Master : images `ball_*.png` du cadran, v11) ; un cadran WFF ne reçoit pas l'image d'une
+    complication RANGED_VALUE (v15 : la condition
     `[COMPLICATION.SMALL_IMAGE] != null` n'était jamais vraie sur la montre, on voyait « ×5% » et la ball au trait).
   - **Claude sur la montre (sans clé API)** : **appui long sur le bouton** (rôle Assistant ; plus d'étoile sur le cadran
     depuis le 23/10) ou appli « Claude » de la liste -> `ClaudeActivity` (le micro écoute dès l'ouverture, aussi quand
