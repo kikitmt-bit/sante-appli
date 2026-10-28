@@ -25,6 +25,8 @@ from pokedex import LEGENDAIRES, POKEMON
 MONTRE = "data/pokemon/montre.json"
 JOURS_OUVERTES = 14  # plus vieilles : comptées ouvertes (comme sur le téléphone)
 DEPOT = "kikitmt-bit/sante"
+PRONOS = "kikitmt-bit/bada-bing-nfl"  # le concours de pronos NFL (pronos_data.json), pour la case du bas du cadran
+JOUEUR = "Kiki"
 
 
 def contenu(lire, maintenant):
@@ -77,6 +79,25 @@ def contenu(lire, maintenant):
         "coeur": coeur(lire, maintenant),
         "voyage": voyage(etat["voyage"]),
     }
+
+
+def pronos(donnees, maintenant):
+    """Les coups d'envoi (UTC, ISO) des matchs de la semaine que Kiki n'a pas encore pronostiqués et qu'il peut encore
+    pronostiquer (pas commencés, cotes là) : la montre affiche « 🏈 3 pronos avant dim. 19:00 » à son heure locale."""
+    if not donnees:
+        return None
+    semaine = donnees.get("current_week")
+    faits = ((donnees.get("pronostics") or {}).get(semaine) or {}).get(JOUEUR) or {}
+    manque = []
+    for m in (donnees.get("matchs_par_semaine") or {}).get(semaine) or []:
+        try:
+            debut = dt.datetime.fromisoformat(m["date"].replace("Z", "+00:00"))
+        except (KeyError, ValueError, AttributeError):
+            continue
+        if (str(m.get("id")) not in faits and debut > maintenant and m.get("status", "STATUS_SCHEDULED") == "STATUS_SCHEDULED"
+                and m.get("cote_source", "default") != "default"):
+            manque.append(debut.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%MZ"))
+    return {"semaine": semaine, "manque": sorted(manque)}
 
 
 def voyage(v):
@@ -240,7 +261,13 @@ def main(args):
             return print("Secret SANTE_TOKEN pas encore créé : rien à faire.")
         session = _api(os.environ["SANTE_TOKEN"])
         lire = lecteur_github(session)
-        texte = json.dumps(contenu(lire, maintenant), ensure_ascii=False, separators=(",", ":"))
+        d = contenu(lire, maintenant)
+        # Les pronos NFL (autre dépôt privé : il faut que le jeton SANTE_TOKEN y ait accès en lecture)
+        r = session.get(f"https://api.github.com/repos/{PRONOS}/contents/pronos_data.json", timeout=60,
+                        headers={"Accept": "application/vnd.github.raw+json"})
+        d["pronos"] = pronos(r.json(), maintenant) if r.status_code == 200 else None
+        print("pronos NFL :", "lus" if r.status_code == 200 else f"pas d'accès ({r.status_code})")
+        texte = json.dumps(d, ensure_ascii=False, separators=(",", ":"))
         print("montre.json :", ecrire_github(session, texte))
         # Toutes les captures figées, aujourd'hui compris : le tirage dépend des chiffres du jour (types de la barre,
         # balls gagnées plus tard), donc sans ça une ball déjà ouverte pouvait changer de Pokémon dans la journée
