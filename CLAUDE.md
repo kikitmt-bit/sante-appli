@@ -69,6 +69,13 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   éclats + petit air (`SON_BADGE`), puis Hyper Ball / Master Ball (flash → `ouvrir(c, rejouer, true)`). Lancée par
   `lancer` pour `badgeN` / `ligue` pas encore ouverts ; rejouée en touchant un badge gagné dans la boîte à badges. Tant qu'il n'y a aucun badge : bouton « 🎬 Aperçu de la
   scène du badge » (Pierre, sans récompense) dans « Comment ça marche ? ».
+  **Badges (29/10)** : un badge gagné qui attend (`badgeN` / `ligue` pas ouvert, `estBadge`) s'affiche en haut de
+  « à ouvrir » comme le **badge doré qui tourne** (`.badge-attente`, pas une Hyper Ball) + **bandeau doré** en haut de
+  l'onglet (passe avant celui du voyage) ; toucher = `sceneBadge`. Arrivé à une arène : carte **« Défi de l'arène »**
+  (`carteDefi`, portrait animé du champion, jauge + plan B) en tête des balls spéciales ; à la fin du voyage qui y arrive,
+  le champion se présente tout seul (bulle = sa 1re réplique + le défi). **Mode test** (« Comment ça marche ? » →
+  « Tester les arènes » : arriver chez Pierre, gagner le Badge Roche ; `TEST`, faux état en mémoire, captures `test#…`
+  jamais gardées ni partagées, « Quitter le test » remet tout).
   Boîte de dialogue commune (`STYLE_DIAL`, `dialogue(v)`, `preparerScene`) au labo et aux arènes.
   **Le dresseur sur la carte** (30/10) : `heros()` en HTML par-dessus le SVG (`POSE` calculé dans `svgKanto`) : il
   marche dans le sens du chemin (`direction`, 4 images de pas toutes les 170 ms, miroir vers la droite), immobile de dos

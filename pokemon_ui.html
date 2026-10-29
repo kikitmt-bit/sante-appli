@@ -69,6 +69,32 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .points-serie i.on{background:#B57BFF;box-shadow:0 0 6px #B57BFF}
 .points-serie i.rate{background:#5A2A38}
 .points-serie i.auj{box-shadow:inset 0 0 0 1.5px #B57BFF}
+.speciale.defi{grid-column:1/-1;padding-left:84px;min-height:86px;box-shadow:0 0 0 2px var(--c) inset;
+  background:linear-gradient(120deg,color-mix(in srgb,var(--c) 30%,#1C2740),#1C2740 60%)}
+.speciale.defi .portrait{position:absolute;left:12px;top:12px;width:60px;height:60px;border-radius:50%;overflow:hidden;
+  background:radial-gradient(circle at 50% 30%,#fff 0%,var(--c) 80%);box-shadow:0 0 0 2px #fff,0 2px 6px rgba(0,0,0,.5)}
+.speciale.defi .portrait canvas{width:100%;height:100%;image-rendering:pixelated}
+.speciale.defi .ligne b{color:#fff}
+/* le badge gagné qui attend d'être pris (à la place d'une Poké Ball) */
+.bandeau-test{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px;padding:7px 10px;border-radius:10px;
+  background:repeating-linear-gradient(135deg,#3A2E05 0 10px,#2A2204 10px 20px);color:#FFE27A;font:800 12.5px Outfit,sans-serif;
+  box-shadow:0 0 0 1.5px #FFCB05 inset}
+.bandeau-test button{border:0;border-radius:999px;padding:5px 10px;background:#FFCB05;color:#1C2740;font:800 12px Outfit,sans-serif;cursor:pointer}
+.zone-test{border-top:1px dashed rgba(255,255,255,.2);padding-top:8px;margin-top:6px}
+.zone-test .filtre{margin:6px 6px 0 0}
+.badge-attente{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 12px;padding:12px;border:0;border-radius:14px;cursor:pointer;
+  text-align:left;color:#fff;font-family:Outfit,sans-serif;background:radial-gradient(120% 140% at 0% 50%,color-mix(in srgb,var(--c) 55%,#1C2740),#1C2740 70%);
+  box-shadow:0 0 0 2px #FFD84A inset,0 0 18px rgba(255,216,74,.35)}
+.badge-attente .disque{width:64px;height:64px;flex:none;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 40% 30%,#FFF7CF,#FFD84A 55%,#C08A00);box-shadow:0 0 0 2px #FFF3B0,0 0 20px 4px rgba(255,216,74,.6);
+  animation:pk-badge-att 2.4s ease-in-out infinite}
+.badge-attente .disque img{width:66%;height:66%;object-fit:contain;animation:pk-badge-tourne 3s linear infinite}
+@keyframes pk-badge-att{50%{transform:translateY(-4px) scale(1.05);box-shadow:0 0 0 2px #FFF3B0,0 0 30px 8px rgba(255,216,74,.8)}}
+@keyframes pk-badge-tourne{to{transform:rotateY(360deg)}}
+.badge-attente .txt{display:flex;flex-direction:column;gap:3px}
+.badge-attente b{font-size:17px;font-weight:900}
+.badge-attente small{font-size:12.5px;color:#FFE27A;font-weight:700}
+.bandeau-voyage.or{box-shadow:0 0 0 2px #FFD84A inset,0 0 18px rgba(255,216,74,.5);background:linear-gradient(135deg,#5A4A12,#1C2740)}
 .speciale .reste{font-size:11px;color:#FFCB05;margin-top:7px;line-height:1.35}
 .speciale.ok .reste{color:#4CD3A0}
 
@@ -253,6 +279,7 @@ details.regles li{margin:5px 0;line-height:1.4}
 </style>
 
 <div id="app" style="padding-bottom:56px">
+  <div id="bandeau-test"></div>
   <div id="bandeau-voyage"></div>
   <div class="carte" id="barre"></div>
   <div class="carte" id="aouvrir"></div>
@@ -385,7 +412,7 @@ let ouvertes = new Set();
 try { ouvertes = new Set(JSON.parse(localStorage.getItem("pkm2_ouvertes") || "[]")); } catch (e) {}
 const LIMITE = new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10);  // plus vieilles : comptées ouvertes
 const estOuverte = c => ouvertes.has(c.id) || c.jour < LIMITE;
-const garder = () => { try { localStorage.setItem("pkm2_ouvertes", JSON.stringify([...ouvertes].slice(-800))); } catch (e) {} };
+const garder = () => { try { localStorage.setItem("pkm2_ouvertes", JSON.stringify([...ouvertes].filter(id => !id.startsWith("test")).slice(-800))); } catch (e) {} };
 const serveur = new Set(D.ouvertes || []);
 let ouverture = false;  // une animation est en cours : on ne redessine pas l'écran dessous
 // Envoie au script Google les Poké Balls ouvertes ici (ids vide : demande juste la liste à jour) ; ce qui a été ouvert
@@ -401,9 +428,11 @@ function partager(ids) {
   }).catch(() => {});
 }
 serveur.forEach(id => ouvertes.add(id)); garder();
-const memoriser = id => { ouvertes.add(id); garder(); partager([id]); };
+const memoriser = id => { ouvertes.add(id); if (id.startsWith("test")) return; garder(); partager([id]); };  // test : rien de gardé
 const CAPTURES = D.captures.map(c => ({...c, nom: PAR_NUM[c.num].nom, types: PAR_NUM[c.num].types}));
 const aOuvrir = () => CAPTURES.filter(c => !estOuverte(c));
+const estBadge = c => /#(badge\d|ligue)$/.test(c.id);
+const numBadge = c => c.id.endsWith("#ligue") ? 9 : +c.id.slice(-1);
 function collection() {  // ce que le Pokédex montre : seulement les Poké Balls ouvertes
   const par = {};
   for (const c of CAPTURES) if (estOuverte(c)) (par[c.num] = par[c.num] || []).push(c);
@@ -1366,19 +1395,30 @@ function dessinerBarre() {
 }
 
 function dessinerAOuvrir() {
-  const liste = aOuvrir(), el = document.getElementById("aouvrir");
-  el.classList.toggle("vide", !liste.length);
+  const tout = aOuvrir(), el = document.getElementById("aouvrir");
+  const badges = tout.filter(estBadge), liste = tout.filter(c => !estBadge(c));
+  el.classList.toggle("vide", !tout.length);
+  // un badge gagné (la plus grosse récompense) : il attend, doré, qui tourne ; le toucher lance la scène de l'arène
+  const blocBadges = badges.map(c => { const n = numBadge(c), a = LIEUX.filter(l => l.arene)[n - 1].arene;
+    return `<button class="badge-attente" data-i="${CAPTURES.indexOf(c)}" style="--c:${a.type ? COUL[a.type] : "#B8860B"}">
+      <span class="disque"><img src="${a.image ? IMG.badge(a.image) : IC.ligue}"></span>
+      <span class="txt"><b>${a.image ? `${a.badge} gagné !` : "La Ligue est à toi !"}</b><small>${CHAMPIONS[n].nom} t'attend pour te le remettre · touche-le</small></span></button>`; }).join("");
+  if (!liste.length && badges.length) {
+    el.innerHTML = blocBadges; el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
+    return;
+  }
   if (!liste.length) {
     el.innerHTML = `<div class="titre" style="font-size:16px">Aucune Poké Ball à ouvrir</div>
       <div class="petit gris" style="margin-top:4px">Remplis ta barre d'effort, ou décroche une Super / Hyper Ball !</div>`;
     return;
   }
-  el.innerHTML = `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
+  el.innerHTML = blocBadges + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
     <div class="rang">${liste.slice(0, 12).map((c, i) => `<button class="bouton-ball" data-i="${CAPTURES.indexOf(c)}"
       style="animation-delay:${i * .25}s">${ballSVG(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
   el.querySelectorAll(".bouton-ball").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
-  el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir()[0]);
+  el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir().filter(c => !estBadge(c))[0]);
+  el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
 }
 
 function dessinerSpeciales() {
@@ -1396,7 +1436,7 @@ function dessinerSpeciales() {
     : `Encore <b>${R.master_jours - J.serie} jour${R.master_jours - J.serie > 1 ? "s" : ""}</b> avec l'objectif. ` +
       (J.serie_ok ? "Aujourd'hui compte déjà ✅" : `Pour qu'aujourd'hui compte : <b>${mPas}</b> ou <b>${mZone}</b>.`);
   const fen = J.fenetre.concat(Array(Math.max(R.master_fenetre - J.fenetre.length, 0)).fill(undefined));
-  document.getElementById("speciales").innerHTML = `
+  document.getElementById("speciales").innerHTML = carteDefi() + `
     <div class="speciale ${sup ? "ok" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}Super Ball</div><div class="gain">Objectif double · shiny ×2, 1 chance sur 2 d'un nouveau</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
@@ -1418,6 +1458,22 @@ function dessinerSpeciales() {
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
       <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
       ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
+  document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
+}
+// 3. Le défi de l'arène où l'on est arrivé, avec les missions du jour (sur 7 jours, ou son plan B)
+function carteDefi() {
+  const d = V.defi; if (!d || !d.arrive) return "";
+  const a = LIEUX[d.lieu].arene, ch = CHAMPIONS[d.numero], ligue = !a.type;
+  const j = (v, c) => `<div class="jauge"><div class="${v >= c ? "ok" : ""}" style="width:${Math.min(v / c * 100, 100)}%"></div></div>`;
+  const val = v => d.unite === "pas" ? fr(v) : Math.round(v * 10) / 10, manque = Math.max(a.cible - d.valeur, 0);
+  const ok = manque === 0 || (a.b && d.valeur_b >= a.b.cible);
+  return `<div class="speciale defi ${ok ? "ok" : ""}" style="--c:${ligue ? "#B8860B" : COUL[a.type]}">
+    <div class="portrait"><canvas data-sprite="${ch.sprite}"></canvas></div>
+    <div class="tete">${a.image ? ico(IMG.badge(a.image)) : ico("ligue")}Défi de l'arène · ${ch.nom}</div>
+    <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté sur 7 jours</div>
+    <div class="ligne"><span><b>${a.texte}</b></span><span>${val(d.valeur)} / ${val(a.cible)}</span></div>${j(d.valeur, a.cible)}
+    ${a.b ? `<div class="ligne"><span>ou plan B : ${a.b.texte}</span><span>${d.valeur_b} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}` : ""}
+    <div class="reste">${ok ? "Défi réussi : ton badge arrive !" : `Encore <b>${val(manque)} ${d.unite}</b>${a.b ? ` (ou ${Math.max(a.b.cible - d.valeur_b, 0)} jour${a.b.cible - d.valeur_b > 1 ? "s" : ""} d'objectif)` : ""}.`}</div></div>`;
 }
 
 function dessinerDernieres() {
@@ -1926,6 +1982,7 @@ let VOYAGE = null;
 function etatVoyage() {
   if (VOYAGE) return VOYAGE;
   let vu = NaN; try { vu = parseFloat(localStorage.getItem(`pkm_pos_vu_${R.partie}`)); } catch (e) {}
+  if (TEST && TEST.vu != null) vu = TEST.vu;
   vu = Math.min(isNaN(vu) ? 0 : vu, V.pos);
   const lieux = LIEUX.filter((l, k) => k && l.dist > vu && l.dist <= V.pos).map(l => l.nom.replace(" (retour)", ""));
   const attente = V.pos - vu >= SEUIL_VOYAGE || lieux.length > 0;
@@ -1938,7 +1995,14 @@ function texteVoyage(v) {
   return `${der === "Plateau Indigo" ? "Tu es arrivé au Plateau Indigo !" : ville ? `Tu es arrivé à ${der} !` : `Nouvelle étape : ${der}`} · ${pts}`;
 }
 function dessinerBandeauVoyage() {
-  const b = document.getElementById("bandeau-voyage"), v = etatVoyage();
+  const b = document.getElementById("bandeau-voyage"), v = etatVoyage(), badge = aOuvrir().find(estBadge);
+  if (badge) {  // un badge qui attend passe avant tout
+    const n = numBadge(badge), a = LIEUX.filter(l => l.arene)[n - 1].arene;
+    b.innerHTML = `<button class="bandeau-voyage or"><img class="ico g" src="${a.image ? IMG.badge(a.image) : IC.ligue}"><span>
+      <b>${a.image ? `Tu as gagné le ${a.badge} !` : "Tu as conquis la Ligue !"}</b><small>${CHAMPIONS[n].nom} t'attend pour te le remettre · touche ici</small></span><i></i></button>`;
+    b.querySelector("button").onclick = () => lancer(badge);
+    return;
+  }
   if (!v.attente) { b.innerHTML = ""; return; }
   b.innerHTML = `<button class="bandeau-voyage">${ico("carte", "g")}<span><b>Ton dresseur a avancé !</b>
     <small>${texteVoyage(v)} · voir le voyage</small></span><i></i></button>`;
@@ -1948,7 +2012,7 @@ function dessinerBandeauVoyage() {
 function lancerVoyage(immediat) {  // le toucher : la carte s'éclaire et le dresseur part
   const v = etatVoyage(); if (!v.attente) return;
   v.attente = false;
-  try { localStorage.setItem(`pkm_pos_vu_${R.partie}`, V.pos); } catch (e) {}
+  if (TEST) TEST.vu = V.pos; else try { localStorage.setItem(`pkm_pos_vu_${R.partie}`, V.pos); } catch (e) {}
   document.getElementById("bandeau-voyage").innerHTML = "";
   const el = document.getElementById("voyage"), att = el.querySelector(".carte-attente");
   if (att) { att.classList.add("part"); setTimeout(() => att.remove(), 450); }
@@ -1976,7 +2040,11 @@ function voyagerDepuis(el, p0, centrer, immediat) {
     if (k !== cle) { cle = k; ancre.innerHTML = heros(P); colorerDresseur(ancre); }
     else ancre.querySelectorAll(".suit").forEach(x => { x.style.left = P.x / LARG * 100 + "%"; x.style.top = P.y / HC * 100 + "%"; });
     if (suivre) centrer(P);
-    if (u < 1) requestAnimationFrame(pas);
+    if (u < 1) return requestAnimationFrame(pas);
+    // arrivé à une arène pendant ce voyage : le champion se présente et lance son défi
+    const d = V.defi;
+    if (d && d.arrive && p0 < LIEUX[d.lieu].dist) setTimeout(() => { const ch = el.querySelector(".chef");
+      if (ch && document.body.contains(ch)) { suivre && centrer(P); ch.click(); } }, 450);
   };
   requestAnimationFrame(pas);
 }
@@ -2044,7 +2112,7 @@ function dessinerVoyage() {
     const haut = (y / 100 * wrap.offsetHeight - vue.scrollTop) / vue.clientHeight * 100;
     const b = document.createElement("div"); b.className = "bulle-chef" + (haut < 38 ? " dessous" : "");
     b.style.left = Math.min(Math.max(x, g + l * .36), g + l * .64) + "%"; b.style.top = y + "%";
-    b.innerHTML = `<b>${ch.nom}</b> : ${d.arrive ? `« Montre-moi ce que tu vaux ! ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}. »`
+    b.innerHTML = `<b>${ch.nom}</b> : ${d.arrive ? `« ${ch.lignes[0]} Mon défi, sur 7 jours : ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}. »`
       : `« Je t'attends ! Encore ${fr(d.reste)} pts de route. Mon défi : ${a.texte}. »`}`;
     el.querySelector(".carte-wrap").appendChild(b); vibre(10); ton(1250, 0, .05, {type: "square", vol: .03});
     lieuVu = d.lieu === 18 ? 2 : d.lieu; choisir(lieuVu); el.querySelector(".infos-lieu").outerHTML = infosLieu(d.lieu); brancher();
@@ -2052,6 +2120,42 @@ function dessinerVoyage() {
   // toucher un badge gagné : revoir la scène de l'arène (sans rien changer)
   el.querySelectorAll(".boite-badges .oui").forEach(b => b.onclick = () => {
     const n = +b.dataset.n; sceneBadge(n, CAPTURES.find(c => c.id.endsWith(n === 9 ? "#ligue" : `#badge${n}`)), true); });
+}
+
+// ---------- Mode test des arènes (29/10, pour Kiki) : un faux état, en mémoire seulement ----------
+let TEST = null;  // {V: copie de l'état réel, vu: position du dernier voyage regardé pendant le test}
+function entrerTest() { if (!TEST) TEST = {V: JSON.parse(JSON.stringify(V)), vu: null}; }
+function redessinerTest() {
+  VOYAGE = null; lieuVu = null;
+  dessinerSpeciales(); dessinerRegles(); dessiner();
+  document.getElementById("bandeau-test").innerHTML = TEST ? `<div class="bandeau-test">MODE TEST · rien n'est enregistré
+    <button>Quitter le test</button></div>` : "";
+  const q = document.querySelector("#bandeau-test button"); if (q) q.onclick = quitterTest;
+  try { (window.frameElement || document.getElementById("app")).scrollIntoView({behavior: "smooth"}); } catch (e) {}
+}
+function testArrivee() {  // le dresseur vient d'arriver à Argenta : voyage à regarder, défi de Pierre en cours
+  entrerTest();
+  const i = LIEUX.findIndex(l => l.arene);
+  Object.assign(V, {pos: LIEUX[i].dist, ici: i, badges: {}, defi: {lieu: i, numero: 1, valeur: 21, unite: "étages", valeur_b: 4,
+    arrive: true, depuis: D.aujourdhui, reste: 0}});
+  TEST.vu = LIEUX[i - 1].dist;
+  redessinerTest();
+}
+function testBadge() {  // le défi est réussi : le Badge Roche attend d'être pris
+  entrerTest();
+  if (!V.defi || !V.defi.arrive) testArrivee();
+  V.defi.valeur = 35;
+  ouvertes.delete("test#badge1");
+  if (!CAPTURES.some(c => c.id === "test#badge1"))
+    CAPTURES.push({id: "test#badge1", jour: D.aujourdhui, num: 95, ball: "hyper", shiny: false, raison: "🏅 Badge Roche",
+      lieu: "Argenta", legendaire: false, quand: "aujourd'hui", nom: PAR_NUM[95].nom, types: PAR_NUM[95].types});
+  redessinerTest();
+}
+function quitterTest() {
+  if (!TEST) return;
+  Object.keys(V).forEach(k => delete V[k]); Object.assign(V, TEST.V);
+  for (let i = CAPTURES.length - 1; i >= 0; i--) if (CAPTURES[i].id.startsWith("test")) { ouvertes.delete(CAPTURES[i].id); CAPTURES.splice(i, 1); }
+  TEST = null; redessinerTest();
 }
 
 function dessinerRegles() {
@@ -2077,7 +2181,14 @@ function dessinerRegles() {
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
+    <li class="zone-test"><b>Tester les arènes</b> (rien n'est enregistré ni envoyé à la montre ; « Quitter le test » remet tout comme avant) :<br>
+      <button class="filtre t-arrivee">${ico("carte", "p")} 1. Arriver à l'arène de Pierre</button>
+      <button class="filtre t-badge">${ico(IMG.badge(1), "p")} 2. Gagner le Badge Roche</button>
+      ${TEST ? `<button class="filtre t-fin">Quitter le test</button>` : ""}</li>
 `;
+  const t = sel => document.querySelector(`#regles ${sel}`);
+  t(".t-arrivee").onclick = testArrivee; t(".t-badge").onclick = testBadge;
+  if (t(".t-fin")) t(".t-fin").onclick = quitterTest;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
   const r = document.querySelector("#regles .revoir");
@@ -2085,7 +2196,7 @@ function dessinerRegles() {
 }
 
 [["ic-spe", "hyper"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
-function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
+function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
