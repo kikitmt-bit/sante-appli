@@ -62,8 +62,8 @@ Strict rules: no text, no letters, no UI, no dialogue box, no frame, no other ch
 | Unys | Professor Juniper (woman, light brown hair in a bun, white lab coat, green skirt) | Professor Juniper's lab in Nuvema Town, modern and bright |
 | Kalos | Professor Sycamore (tall man, dark wavy hair, white lab coat over blue shirt) | Professor Sycamore's lab in Lumiose City, elegant French style |
 | Alola | Professor Kukui (tanned, white cap, open lab coat, green shorts, sunglasses on cap) | Professor Kukui's beach house lab in Iki Town area, tropical |
-| Galar | Professor Magnolia (old woman, white hair in a bun, red-orange coat, cane) | Professor Magnolia's house lab in Wedgehurst, British cottage |
-| Paldea | Professor Sada or Turo (choose one; Turo: white hair, glasses, high-tech lab coat) | Paldea research lab, futuristic |
+| Galar | Professor Magnolia (choisie le 29/10 plutôt que Sonya) (old woman, white hair in a bun, red-orange coat, cane) | Professor Magnolia's house lab in Wedgehurst, British cottage |
+| Paldea | Professor Sada (Olim en français ; choisie le 29/10 : wild long brown hair, tribal orange outfit with fur, open lab coat) | Paldea, wild and sunny (à revoir avec le prompt v2) |
 
 Placer ensuite dans `PROFESSEURS` (pokemon_ui.html) : nom de l'image, sa taille, la position des 3 balls et de la
 table en pixels (Claude les mesure sur l'image).
