@@ -119,7 +119,16 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     arrêt jusqu'au défi (7 derniers jours depuis l'arrivée) ou son **plan B** (6 jours sur 7 avec l'objectif : jamais
     bloquant) ; les points continuent de s'accumuler et on repart d'un coup. Badge = Hyper Ball `badgeN` du type du
     champion, espèce nouvelle ; Ligue = Master Ball `ligue` (légendaire). Rejoué chaque fois, rien d'enregistré ;
-    chaque capture a son `lieu`. Écran : **carte = image pixel art** `cartes/kanto.webp` (générée par Kiki avec ChatGPT,
+    chaque capture a son `lieu`. **Carte v2 (29/10)** : nouvelle Kanto de Kiki (Plateau Indigo, volcan de Cramois'Île,
+    Piste cyclable sur pilotis ; lieux et `VIA` replacés, mêmes lieux, mêmes points, donc rien de perdu) ; 2 bouts de
+    route peints par Claude avec des morceaux de la carte (Route 3 Argenta → village du Mont Sélénite avec pont ;
+    ponton Céladopole → Piste cyclable). Les 9 cartes des régions sont dans le cerveau (`projets/sante/cartes/`).
+    **Zoom** (`CARTE["zoom"]`, 2 pour Kanto, à régler par région) : `carte-vue` (fenêtre qui défile) sur `carte-wrap`
+    (zoom × plus large), centrée sur le dresseur ; coordonnées en `LARG` = 370 × zoom (`echelle(z)` recalcule
+    `LIEUX`/`TRACE`) donc traits et noms gardent leur taille (×1,25 quand zoomé) ; tailles en % divisées par `--z` ;
+    bouton « Toute la carte » / « Zoomer sur moi » (localStorage `pkm_carte_vue`) ; glisser à la souris sur PC.
+    Mode **`grotte`** (Mont Sélénite → Azuria) : à pied sous la montagne, tirets, dresseur un peu transparent.
+    Écran : **carte = image pixel art** `cartes/kanto.webp` (générée par Kiki avec ChatGPT,
     même style et même prompt pour toutes les régions : `cartes/PROMPT.md` ; servie par raw.githubusercontent.com de
     ce dépôt ; lieux en pixels de l'image dans `kanto.LIEUX`, ramenés à 370 de large dans l'écran ; pas une carte
     fidèle de Kanto, choix assumé : jolie et cohérente) avec par-dessus en SVG : chemin qui **suit les routes de

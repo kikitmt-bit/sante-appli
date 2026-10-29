@@ -79,12 +79,23 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 #voyage .entete .ou{font-size:12px;color:#C9D3EA;margin-left:auto}
 .avance{height:7px;background:#0D1322;border-radius:4px;margin:8px 0 10px;overflow:hidden}
 .avance div{height:100%;border-radius:4px;background:linear-gradient(90deg,#FFCB05,#FF8A3D);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
-.carte-kanto{width:100%;display:block;border-radius:14px 14px 0 0;background:#2B6E9E;touch-action:manipulation}
+.carte-kanto{width:100%;display:block;background:#2B6E9E;touch-action:manipulation}
 .carte-kanto .chemin-fait{stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:pk-trace 1.8s .3s cubic-bezier(.3,.7,.2,1) forwards}
 @keyframes pk-trace{to{stroke-dashoffset:0}}
-.carte-wrap{position:relative;margin-top:14px}
+/* la carte : une fenêtre (carte-vue) sur la carte zoomée (carte-wrap, --z fois plus large) ; les tailles en %
+   (dresseur, champion, bulle) sont divisées par --z pour garder la même taille à l'écran */
+.carte-cadre{position:relative;margin-top:14px}
+.carte-vue{overflow:auto;border-radius:14px 14px 0 0;background:#2B6E9E;scrollbar-width:none;overscroll-behavior:auto;
+  -webkit-overflow-scrolling:touch}
+.carte-vue::-webkit-scrollbar{display:none}
+.carte-vue.glisse{cursor:grabbing;user-select:none}
+.carte-zoom{position:absolute;left:8px;bottom:8px;z-index:6;display:flex;align-items:center;gap:4px;border:0;border-radius:999px;
+  padding:4px 10px 4px 6px;background:rgba(16,35,58,.82);color:#fff;font:800 12px Outfit,sans-serif;
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.75),0 2px 6px rgba(0,0,0,.4);cursor:pointer}
+.carte-wrap{position:relative;--z:1}
 .carte-wrap .heros,.ombre-heros{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
-.carte-wrap .heros{display:flex;flex-direction:column;align-items:center;width:20%}
+.carte-wrap .heros{display:flex;flex-direction:column;align-items:center;width:calc(20% / var(--z))}
+.carte-wrap .heros.grotte{opacity:.6}
 .carte-wrap .heros .sacha{width:23%!important}
 .carte-wrap .heros:not(.porte) .sacha[style*="red_bike"],.carte-wrap .heros:not(.porte) .sacha[style*="red_surf"]{width:46%!important}
 .sacha{background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
@@ -95,8 +106,8 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-wrap .heros.porte .bateau{width:60%;height:auto;margin-top:-30%;order:2}
 @keyframes pk-vole{50%{transform:translate(-50%,-108%)}}
 @keyframes pk-saute{0%,100%{transform:translate(-50%,-100%)}50%{transform:translate(-50%,-112%)}}
-.ombre-heros{width:4.5%;height:1.6%;border-radius:50%;background:rgba(0,0,0,.35);transform:translate(-50%,-50%)}
-.carte-wrap .chef{position:absolute;width:8.5%;aspect-ratio:1;transform:translate(-50%,-50%);cursor:pointer;z-index:3}
+.ombre-heros{width:calc(4.5% / var(--z));height:calc(1.6% / var(--z));border-radius:50%;background:rgba(0,0,0,.35);transform:translate(-50%,-50%)}
+.carte-wrap .chef{position:absolute;width:calc(8.5% / var(--z));aspect-ratio:1;transform:translate(-50%,-50%);cursor:pointer;z-index:3}
 .carte-wrap .chef .portrait{width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;
   background:radial-gradient(circle at 50% 30%,#fff 0%,var(--c) 80%);box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.45),0 2px 5px rgba(0,0,0,.5)}
 .carte-wrap .chef canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
@@ -108,7 +119,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-kanto .medaille.gagne{filter:drop-shadow(0 0 2.5px rgba(255,216,74,.95))}
 .carte-kanto .medaille .eclat{animation:pk-eclat 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes pk-eclat{0%,55%,100%{opacity:0;transform:scale(.2) rotate(0)}75%{opacity:1;transform:scale(1) rotate(45deg)}}
-.bulle-chef{position:absolute;transform:translate(-50%,calc(-100% - 22px));width:min(70%,240px);background:#F8F8F8;color:#383838;
+.bulle-chef{position:absolute;transform:translate(-50%,calc(-100% - 22px));width:min(calc(70% / var(--z)),240px);background:#F8F8F8;color:#383838;
   border:3px solid #50607E;border-radius:10px;padding:7px 9px;font:500 12.5px/1.35 'Pixelify Sans',Outfit,sans-serif;z-index:5;
   box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pkl-bulle .25s ease-out}
 .bulle-chef b{color:#C03028}
@@ -244,21 +255,30 @@ const IMG = {
 // Image animée absente (les tout derniers Pokémon) : la petite image à la place
 const repli = (n, s) => `onerror="this.onerror=null;this.src='${IMG.mini(n, s)}'"`;
 const V = D.voyage;
-// La carte : l'image (pixels) ramenée à 370 de large ; les lieux sont placés en pixels de l'image
-const KC = 370 / V.carte.largeur, HC = V.carte.hauteur * KC;
-const LIEUX = V.lieux.map(l => ({...l, x: l.x * KC, y: l.y * KC, via: (l.via || []).map(([x, y]) => [x * KC, y * KC])}));
-// Le tracé de chaque étape (depuis la précédente) en suivant les routes de la carte
-// (un vol : un arc, comme la CS Vol, pour ne pas repasser par une route déjà faite)
-const TRACE = LIEUX.map((l, k) => {
-  if (!k) return [[l.x, l.y]];
-  const a = [LIEUX[k - 1].x, LIEUX[k - 1].y], b = [l.x, l.y];
-  if (l.mode !== "vol") return [a, ...l.via, b];
-  const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1;
-  let nx = -dy / d, ny = dx / d; if (ny > 0 || (ny === 0 && nx < 0)) { nx = -nx; ny = -ny; }  // l'arc monte
-  const c = [(a[0] + b[0]) / 2 + nx * d * .3, (a[1] + b[1]) / 2 + ny * d * .3];
-  return Array.from({length: 17}, (_, i) => { const t = i / 16, u = 1 - t;
-    return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]; });
-});
+// La carte : l'image (pixels) ramenée à LARG de large = 370 × le zoom (≈ des pixels de l'écran : traits, points et
+// noms gardent leur taille quand on zoome) ; les lieux sont placés en pixels de l'image.
+// Zoom (29/10) : par défaut la carte est affichée V.carte.zoom fois l'écran, centrée sur le dresseur, et on la fait
+// glisser ; bouton « Toute la carte » = zoom 1 (ZC = le zoom en cours) (choix gardé sur le téléphone : pkm_carte_vue).
+let ZC = 1, LARG = 370, KC, HC, LIEUX, TRACE;
+function echelle(z) {
+  ZC = z; LARG = 370 * z; KC = LARG / V.carte.largeur; HC = V.carte.hauteur * KC;
+  LIEUX = V.lieux.map(l => ({...l, x: l.x * KC, y: l.y * KC, via: (l.via || []).map(([x, y]) => [x * KC, y * KC])}));
+  // Le tracé de chaque étape (depuis la précédente) en suivant les routes de la carte
+  // (un vol : un arc, comme la CS Vol, pour ne pas repasser par une route déjà faite)
+  TRACE = LIEUX.map((l, k) => {
+    if (!k) return [[l.x, l.y]];
+    const a = [LIEUX[k - 1].x, LIEUX[k - 1].y], b = [l.x, l.y];
+    if (l.mode !== "vol") return [a, ...l.via, b];
+    const dx = b[0] - a[0], dy = b[1] - a[1], d = Math.hypot(dx, dy) || 1;
+    let nx = -dy / d, ny = dx / d; if (ny > 0 || (ny === 0 && nx < 0)) { nx = -nx; ny = -ny; }  // l'arc monte
+    const c = [(a[0] + b[0]) / 2 + nx * d * .3, (a[1] + b[1]) / 2 + ny * d * .3];
+    return Array.from({length: 17}, (_, i) => { const t = i / 16, u = 1 - t;
+      return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]; });
+  });
+}
+const zoomCarte = () => { let v = null; try { v = localStorage.getItem("pkm_carte_vue"); } catch (e) {}
+  return v === "tout" ? 1 : (V.carte.zoom || 1); };
+echelle(zoomCarte());
 const longueur = pts => pts.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]), 0);
 function jusqua(pts, t) {  // le début d'un tracé, jusqu'à la fraction t de sa longueur
   let reste = longueur(pts) * t; const sortie = [pts[0]];
@@ -1435,17 +1455,18 @@ function morceaux() {  // chaque étape : la partie faite et la partie à faire,
   return m;
 }
 function svgKanto() {
+  const T = ZC > 1 ? 1.25 : 1;  // carte zoomée : traits, points et noms un peu plus grands (il y a la place)
   const L = LIEUX, M = morceaux(), faits = M.filter(x => x.fait);
   const enRoute = L.findIndex((l, k) => k && V.pos > L[k - 1].dist && V.pos < l.dist);  // l'étape en cours, ou -1
   const [mx, my] = faits.length ? faits[faits.length - 1].pts.slice(-1)[0] : [L[0].x, L[0].y];
   const pt = pts => pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
   // le chemin : à faire = petits points sombres ; fait = rouge bordé de blanc (tirets pour un vol ou en mer) ;
-  const traits = M.filter(x => !x.fait).map(x => `<polyline points="${pt(x.pts)}" fill="none" stroke="#1B2A4A" stroke-width="1.8"
-      stroke-dasharray="0.1 4.2" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>`).join("") +
+  const traits = M.filter(x => !x.fait).map(x => `<polyline points="${pt(x.pts)}" fill="none" stroke="#1B2A4A" stroke-width="${1.8 * T}"
+      stroke-dasharray="0.1 ${4.2 * T}" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>`).join("") +
     M.filter(x => x.fait).map(x => { const tiret = x.mode === "route" ? "" : `stroke-dasharray="5 3.5"`;
-      return `<polyline points="${pt(x.pts)}" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".9" ${tiret}/>
+      return `<polyline points="${pt(x.pts)}" fill="none" stroke="#fff" stroke-width="${5 * T}" stroke-linecap="round" stroke-linejoin="round" opacity=".9" ${tiret}/>
         <polyline ${x.mode === "route" ? `class="chemin-fait" style="--l:${Math.ceil(longueur(x.pts)) + 2}"` : tiret} points="${pt(x.pts)}" fill="none"
-          stroke="#E8382F" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`; }).join("");
+          stroke="#E8382F" stroke-width="${2.8 * T}" stroke-linecap="round" stroke-linejoin="round"/>`; }).join("");
   const col = collection();
   const noeuds = L.map((l, k) => {
     if (k === 18) return "";  // Jadielle (retour) : même endroit que Jadielle
@@ -1454,7 +1475,7 @@ function svgKanto() {
     const num = ar ? L.filter((x, j) => x.arene && j <= k2).length : 0, gagne = num && V.badges[num];
     const atteint = V.pos >= l.dist, vise = V.defi && V.defi.lieu === k2;
     const ville = !!ar || /Bourg|Jadielle|Lavanville|Céladopole|Safrania|Azuria|Carmin|Parmanie|Cramois|Argenta|Plateau/.test(l.nom);
-    const r = ville ? 5.2 : 3.6, bas = l.y > HC - 30 || l.nom === "Plateau Indigo";
+    const r = (ville ? 5.2 : 3.6) * T, bas = l.y > HC - 30 || l.nom === "Plateau Indigo";
     return `<g class="lieu" data-k="${k}">
       <circle class="choix" cx="${l.x}" cy="${l.y}" r="${r + 3.5}" fill="rgba(255,255,255,.25)" stroke="#fff" stroke-width="2"/>
       ${vise ? `<circle class="vise" cx="${l.x}" cy="${l.y}" r="${r + 2}" fill="none" stroke="#FFCB05" stroke-width="2"/>` : ""}
@@ -1462,17 +1483,17 @@ function svgKanto() {
       ${ville ? `<circle cx="${l.x}" cy="${l.y}" r="${r * .38}" fill="#fff"/>` : ""}
       ${ar && !vise ? medaille(l, ar, gagne, bas) : ""}
       ${complet ? `<text x="${l.x - 12}" y="${l.y - 4}" font-size="9" style="fill:#FFD84A">★</text>` : ""}
-      ${ville ? `<text class="nom" x="${l.nom === "Plateau Indigo" ? l.x + 8 : l.x}" y="${l.nom === "Plateau Indigo" ? l.y - 6 : l.y + (bas ? -9 : 14)}" font-size="8"
+      ${ville ? `<text class="nom" x="${l.nom === "Plateau Indigo" ? l.x + 8 : l.x}" y="${l.nom === "Plateau Indigo" ? l.y - 6 : l.y + (bas ? -9 : 14) * T}" font-size="${8 * T}"
         text-anchor="${l.nom === "Plateau Indigo" ? "start" : "middle"}">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
       <circle cx="${l.x}" cy="${l.y}" r="13" fill="transparent"/></g>`;
   }).join("");
   // le dresseur : posé par-dessus la carte en HTML (heros), à la position actuelle
   const tout = faits.flatMap(x => x.pts), arrete = V.defi && V.defi.arrive;
   POSE = {x: mx, y: my, dir: direction(tout), enRoute, arrete};
-  return `<svg class="carte-kanto" viewBox="0 0 370 ${HC.toFixed(1)}">
+  return `<svg class="carte-kanto" viewBox="0 0 ${LARG} ${HC.toFixed(1)}">
     <defs><radialGradient id="pk-or" cx=".45" cy=".35" r=".7"><stop offset="0" stop-color="#FFF7CF"/><stop offset=".55" stop-color="#FFD84A"/>
       <stop offset="1" stop-color="#C08A00"/></radialGradient></defs>
-    <image href="${D.carte}" x="0" y="0" width="370" height="${HC.toFixed(1)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>
+    <image href="${D.carte}" x="0" y="0" width="${LARG}" height="${HC.toFixed(1)}" preserveAspectRatio="none" style="image-rendering:pixelated"/>
     ${traits}
     ${noeuds}
   </svg>`;
@@ -1702,16 +1723,16 @@ function chefCarte() {
   // un halo blanc l'entoure jusqu'au premier toucher
   let vu = false; try { vu = !!localStorage.getItem(`pkm_chef_vu_${R.partie}_${d.numero}`); } catch (e) {}
   const x = l.nom === "Plateau Indigo" ? l.x : l.x + 32, y = l.nom === "Plateau Indigo" ? l.y - 22 : Math.max(l.y - 14, 23);
-  return `<div class="chef ${vu ? "" : "nouveau"}" data-n="${d.numero}" style="left:${x / 370 * 100}%;top:${y / HC * 100}%;--c:${a.type ? COUL[a.type] : "#B8860B"}">
+  return `<div class="chef ${vu ? "" : "nouveau"}" data-n="${d.numero}" style="left:${x / LARG * 100}%;top:${y / HC * 100}%;--c:${a.type ? COUL[a.type] : "#B8860B"}">
     <div class="portrait"><canvas data-sprite="${ch.sprite}" data-fixe="1" data-portrait="1"></canvas></div>
     <img class="bdg" src="${a.image ? IMG.badge(a.image) : IC.ligue}"></div>`;
 }
 function heros() {
   if (!POSE) return "";
   const {x, y, dir, enRoute, arrete} = POSE, L = LIEUX, mode = enRoute > 0 ? L[enRoute].mode : "route";
-  const pos = (px, py) => `left:${px / 370 * 100}%;top:${py / HC * 100}%`;
+  const pos = (px, py) => `left:${px / LARG * 100}%;top:${py / HC * 100}%`;
   const ombre = `<div class="ombre-heros" style="${pos(x, y)}"></div>`;
-  if (mode !== "route") {  // en vol ou en mer : sur le dos du Pokémon (ou à vélo, en bateau, sur un Lokhlass sauvage)
+  if (mode === "vol" || mode === "surf") {  // en vol ou en mer : sur le dos du Pokémon (ou à vélo, en bateau, sur un Lokhlass sauvage)
     const m = monture(mode);
     if (m) return `${ombre}<div class="heros porte" style="${pos(x, y)}">${sacha("red_normal", "bas", false)}
       <img src="${IMG.anim(m.num, m.shiny)}" ${repli(m.num, m.shiny)}></div>`;
@@ -1720,7 +1741,8 @@ function heros() {
     return `${ombre}<div class="heros" style="${pos(x, y)}">${sacha(mode === "vol" ? "red_bike" : "red_surf", dir, mode === "vol", 2)}</div>`;
   }
   // à pied : il marche (de dos, immobile, devant une arène dont il attend le badge)
-  return `${ombre}<div class="heros" style="${pos(x, y)};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
+  // (dans une grotte : un peu dans l'ombre, sous la montagne)
+  return `${ombre}<div class="heros${mode === "grotte" ? " grotte" : ""}" style="${pos(x, y)};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
 }
 // Les pas de Sacha : une image toutes les 170 ms
 setInterval(() => {
@@ -1738,6 +1760,7 @@ function infosLieu(k) {
   const depart = !ici || !suite ? "" : bloque ? "Tu repars après le badge de l'arène."
     : `Étape suivante : ${suite.nom}, dans ${fr(suite.dist - V.pos)} pts (≈ ${Math.max(1, Math.round((suite.dist - V.pos) / D.barre.taille))} barre${suite.dist - V.pos > 150 ? "s" : ""}).`
       + (() => { if (!suite || suite.mode === "route" || bloque) return "";
+        if (suite.mode === "grotte") return `<br>${ico(OBJ("escape-rope"), "p")} Par la grotte : tu traverses la montagne à pied jusqu'à ${suite.nom}.`;
         const m = monture(suite.mode);
         return suite.mode === "vol"
           ? (m ? `<br>${ico(IMG.mini(m.num, m.shiny), "rogne")} En vol : <b>${m.nom}</b> t'emmène jusqu'à ${suite.nom}.`
@@ -1773,6 +1796,15 @@ function blocArene() {
       <div class="petit gris">Compté sur les 7 derniers jours depuis ton arrivée (le ${V.defi.depuis ? V.defi.depuis.slice(8) + "/" + V.defi.depuis.slice(5, 7) : "—"}).</div></div></div>`;
 }
 
+// Faire glisser la carte zoomée à la souris (au doigt, c'est le défilement normal du navigateur)
+let GLISSE = null;
+addEventListener("pointermove", e => { const g = GLISSE; if (!g) return;
+  const dx = e.clientX - g.x, dy = e.clientY - g.y;
+  if (Math.hypot(dx, dy) > 4) g.bouge = true;
+  if (g.bouge) { g.vue.scrollLeft = g.l - dx; g.vue.scrollTop = g.t - dy; g.vue.classList.add("glisse"); } });
+addEventListener("pointerup", () => { const g = GLISSE; if (!g) return; g.vue.classList.remove("glisse");
+  if (g.bouge) setTimeout(() => { if (GLISSE === g) GLISSE = null; }, 0); else GLISSE = null; });
+
 function dessinerVoyage() {
   const el = document.getElementById("voyage"), k = lieuVu ?? V.ici;
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
@@ -1783,9 +1815,25 @@ function dessinerVoyage() {
   el.innerHTML = `<div class="entete"><span class="titre">${ico("carte")} Voyage dans Kanto</span>
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
-    ${blocArene()}<div class="carte-wrap">${svgKanto()}${chefCarte()}${heros()}</div>${infosLieu(k)}
+    ${blocArene()}<div class="carte-cadre"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
+      <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto()}${chefCarte()}${heros()}</div></div>
+      ${(V.carte.zoom || 1) > 1 ? `<button class="carte-zoom">${ico("carte", "pt")} ${ZC > 1 ? "Toute la carte" : "Zoomer sur moi"}</button>` : ""}</div>
+    ${infosLieu(k)}
     <div class="boite-badges">${badges}</div>`;
   requestAnimationFrame(() => setTimeout(() => el.querySelector(".avance div").style.width = V.pos / V.total * 100 + "%", 60));
+  // la carte zoomée : centrée sur le dresseur ; on la fait glisser au doigt (ou à la souris sur le PC)
+  const vue = el.querySelector(".carte-vue"), wrap = el.querySelector(".carte-wrap");
+  const centrer = () => { if (!POSE || ZC <= 1) return;
+    vue.scrollLeft = POSE.x / LARG * wrap.offsetWidth - vue.clientWidth / 2;
+    vue.scrollTop = POSE.y / HC * wrap.offsetHeight - vue.clientHeight * .55; };
+  centrer(); requestAnimationFrame(centrer);
+  vue.addEventListener("pointerdown", e => { if (e.pointerType === "mouse" && ZC > 1)
+    GLISSE = {vue, x: e.clientX, y: e.clientY, l: vue.scrollLeft, t: vue.scrollTop, bouge: false}; });
+  vue.addEventListener("click", e => { if (GLISSE && GLISSE.bouge) { e.stopPropagation(); e.preventDefault(); } }, true);
+  const bz = el.querySelector(".carte-zoom");
+  if (bz) bz.onclick = () => { const tout = ZC > 1;
+    try { localStorage.setItem("pkm_carte_vue", tout ? "tout" : "zoom"); } catch (e) {}
+    echelle(tout ? 1 : V.carte.zoom); dessinerVoyage(); vibre(10); };
   const brancher = () => { el.querySelectorAll(".coin img").forEach(i => i.onclick = () => fiche(PAR_NUM[i.dataset.n])); rognerImages(el); };
   // toucher un lieu : il s'allume sur la carte et ses Pokémon s'affichent juste dessous (sans redessiner la carte)
   const choisir = k => el.querySelectorAll(".lieu").forEach(g => g.classList.toggle("choisi", +g.dataset.k === (k === 18 ? 2 : k)));
@@ -1807,10 +1855,13 @@ function dessinerVoyage() {
     anims.get(chef.querySelector("canvas")).jouer();
     chef.classList.remove("nouveau"); try { localStorage.setItem(`pkm_chef_vu_${R.partie}_${n}`, "1"); } catch (e) {}
     el.querySelectorAll(".bulle-chef").forEach(b => b.remove());
-    // la bulle reste dans la carte : centrée sur le champion sans déborder, en dessous de lui s'il est tout en haut
+    // la bulle reste dans la partie visible de la carte : centrée sur le champion sans déborder, en dessous de lui
+    // s'il est tout en haut
     const x = parseFloat(chef.style.left), y = parseFloat(chef.style.top);
-    const b = document.createElement("div"); b.className = "bulle-chef" + (y < 38 ? " dessous" : "");
-    b.style.left = Math.min(Math.max(x, 36), 64) + "%"; b.style.top = y + "%";
+    const W = wrap.offsetWidth, g = vue.scrollLeft / W * 100, l = vue.clientWidth / W * 100;
+    const haut = (y / 100 * wrap.offsetHeight - vue.scrollTop) / vue.clientHeight * 100;
+    const b = document.createElement("div"); b.className = "bulle-chef" + (haut < 38 ? " dessous" : "");
+    b.style.left = Math.min(Math.max(x, g + l * .36), g + l * .64) + "%"; b.style.top = y + "%";
     b.innerHTML = `<b>${ch.nom}</b> : ${d.arrive ? `« Montre-moi ce que tu vaux ! ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}. »`
       : `« Je t'attends ! Encore ${fr(d.reste)} pts de route. Mon défi : ${a.texte}. »`}`;
     el.querySelector(".carte-wrap").appendChild(b); vibre(10); ton(1250, 0, .05, {type: "square", vol: .03});
