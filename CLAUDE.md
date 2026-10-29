@@ -143,7 +143,9 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     **Zoom** (`CARTE["zoom"]`, 2 pour Kanto, à régler par région) : `carte-vue` (fenêtre qui défile) sur `carte-wrap`
     (zoom × plus large), centrée sur le dresseur ; coordonnées en `LARG` = 370 × zoom (`echelle(z)` recalcule
     `LIEUX`/`TRACE`) donc traits et noms gardent leur taille (×1,25 quand zoomé) ; tailles en % divisées par `--z` ;
-    bouton « Toute la carte » / « Zoomer sur moi » (localStorage `pkm_carte_vue`) ; glisser à la souris sur PC.
+    **Plus de vue d'ensemble ni de défilement libre** (29/10, Kiki : la carte se découvre au fur et à mesure) : toujours
+    zoomée et centrée sur le dresseur (`overflow:hidden`). Bulle du champion posée dans `.carte-cadre` en pixels de
+    l'écran (au-dessus du médaillon, sinon dessous) : jamais coupée.
     Mode **`grotte`** (Mont Sélénite → Azuria ; idée de Kiki, 29/10) : tirets, et le dresseur est vu dans une **boule de
     cristal** (`.boule`, cadre doré) qui avance sur le trait : dedans, une grotte en pixel art dessinée par le code
     (`GROTTE`, bande de 192 px qui boucle : rochers, stalactites, sol, cristaux qui scintillent, lumière de torche,

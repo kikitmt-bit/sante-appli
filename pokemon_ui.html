@@ -109,7 +109,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 /* la carte : une fenêtre (carte-vue) sur la carte zoomée (carte-wrap, --z fois plus large) ; les tailles en %
    (dresseur, champion, bulle) sont divisées par --z pour garder la même taille à l'écran */
 .carte-cadre{position:relative;margin-top:14px}
-.carte-vue{overflow:auto;border-radius:14px 14px 0 0;background:#2B6E9E;scrollbar-width:none;overscroll-behavior:auto;
+.carte-vue{overflow:hidden;border-radius:14px 14px 0 0;background:#2B6E9E;scrollbar-width:none;overscroll-behavior:auto;
   -webkit-overflow-scrolling:touch}
 .carte-vue::-webkit-scrollbar{display:none}
 .carte-vue.glisse{cursor:grabbing;user-select:none}
@@ -180,7 +180,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-kanto .medaille.gagne{filter:drop-shadow(0 0 2.5px rgba(255,216,74,.95))}
 .carte-kanto .medaille .eclat{animation:pk-eclat 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes pk-eclat{0%,55%,100%{opacity:0;transform:scale(.2) rotate(0)}75%{opacity:1;transform:scale(1) rotate(45deg)}}
-.bulle-chef{position:absolute;transform:translate(-50%,calc(-100% - 22px));width:min(calc(70% / var(--z)),240px);background:#F8F8F8;color:#383838;
+.bulle-chef{position:absolute;box-sizing:border-box;background:#F8F8F8;color:#383838;
   border:3px solid #50607E;border-radius:10px;padding:7px 9px;font:500 12.5px/1.35 'Pixelify Sans',Outfit,sans-serif;z-index:5;
   box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pkl-bulle .25s ease-out}
 .bulle-chef b{color:#C03028}
@@ -340,8 +340,8 @@ function echelle(z) {
       return [u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]; });
   });
 }
-const zoomCarte = () => { let v = null; try { v = localStorage.getItem("pkm_carte_vue"); } catch (e) {}
-  return v === "tout" ? 1 : (V.carte.zoom || 1); };
+// (29/10, Kiki : la carte se découvre au fur et à mesure : toujours zoomée sur le dresseur, pas de vue d'ensemble)
+const zoomCarte = () => V.carte.zoom || 1;
 echelle(zoomCarte());
 const longueur = pts => pts.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - pts[i][0], q[1] - pts[i][1]), 0);
 function jusqua(pts, t) {  // le début d'un tracé, jusqu'à la fraction t de sa longueur
@@ -2379,7 +2379,7 @@ function dessinerVoyage() {
     ${blocArene()}<div class="carte-cadre" style="--ar:${V.carte.largeur}/${V.carte.hauteur}"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
       <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto(depuis)}${chefCarte()}<div class="heros-ancre">${heros()}</div></div></div>
       ${VY.attente ? `<button class="carte-attente"><span class="play"></span><b>Voir ton voyage</b><small>${texteVoyage(VY)}</small></button>` : ""}
-      ${(V.carte.zoom || 1) > 1 ? `<button class="carte-zoom">${ico("carte", "pt")} ${ZC > 1 ? "Toute la carte" : "Zoomer sur moi"}</button>` : ""}</div>
+</div>
     ${infosLieu(k)}
     <div class="boite-badges">${badges}</div>`;
   requestAnimationFrame(() => setTimeout(() => el.querySelector(".avance div").style.width = V.pos / V.total * 100 + "%", 60));
@@ -2393,8 +2393,6 @@ function dessinerVoyage() {
   const att = el.querySelector(".carte-attente");
   if (att) att.onclick = () => lancerVoyage(true);
   dessinerBandeauVoyage();
-  vue.addEventListener("pointerdown", e => { if (e.pointerType === "mouse" && ZC > 1)
-    GLISSE = {vue, x: e.clientX, y: e.clientY, l: vue.scrollLeft, t: vue.scrollTop, bouge: false}; });
   vue.addEventListener("click", e => { if (GLISSE && GLISSE.bouge) { e.stopPropagation(); e.preventDefault(); } }, true);
   const bz = el.querySelector(".carte-zoom");
   if (bz) bz.onclick = () => { const tout = ZC > 1;
@@ -2414,7 +2412,7 @@ function dessinerVoyage() {
   colorerDresseur(el);
   // toucher le champion sur la carte : il parle (bulle), et son arène s'affiche sous la carte
   // la bulle se ferme quand on touche ailleurs sur la carte (ou la bulle elle-même)
-  el.querySelector(".carte-wrap").addEventListener("click", e => {
+  el.querySelector(".carte-cadre").addEventListener("click", e => {
     if (!e.target.closest(".chef")) el.querySelectorAll(".bulle-chef").forEach(b => b.remove()); }, true);
   const chef = el.querySelector(".chef");
   if (chef) chef.onclick = () => {
@@ -2424,14 +2422,16 @@ function dessinerVoyage() {
     el.querySelectorAll(".bulle-chef").forEach(b => b.remove());
     // la bulle reste dans la partie visible de la carte : centrée sur le champion sans déborder, en dessous de lui
     // s'il est tout en haut
-    const x = parseFloat(chef.style.left), y = parseFloat(chef.style.top);
-    const W = wrap.offsetWidth, g = vue.scrollLeft / W * 100, l = vue.clientWidth / W * 100;
-    const haut = (y / 100 * wrap.offsetHeight - vue.scrollTop) / vue.clientHeight * 100;
-    const b = document.createElement("div"); b.className = "bulle-chef" + (haut < 38 ? " dessous" : "");
-    b.style.left = Math.min(Math.max(x, g + l * .36), g + l * .64) + "%"; b.style.top = y + "%";
+    const cadre = el.querySelector(".carte-cadre"), rc = vue.getBoundingClientRect(), rm = chef.getBoundingClientRect();
+    const b = document.createElement("div"); b.className = "bulle-chef";
     b.innerHTML = `<b>${ch.nom}</b> : « ${ch.indice} »${d.arrive ? `<small>Son défi est sous la carte.</small>`
       : `<small>Je t'attends : encore ${fr(d.reste)} pts de route.</small>`}`;
-    el.querySelector(".carte-wrap").appendChild(b); vibre(10); ton(1250, 0, .05, {type: "square", vol: .03});
+    cadre.appendChild(b);
+    const L = Math.min(rc.width * .78, 260), H = b.offsetHeight, cx = rm.left + rm.width / 2 - rc.left;
+    b.style.width = L + "px"; b.style.left = Math.min(Math.max(cx - L / 2, 8), rc.width - L - 8) + "px";
+    const H2 = b.offsetHeight, dessus = rm.top - rc.top - 10 - H2;
+    b.style.top = (dessus >= 6 ? dessus : Math.min(rm.bottom - rc.top + 10, rc.height - H2 - 6)) + "px";
+    vibre(10); ton(1250, 0, .05, {type: "square", vol: .03});
     lieuVu = d.lieu === 18 ? 2 : d.lieu; choisir(lieuVu); el.querySelector(".infos-lieu").outerHTML = infosLieu(d.lieu); brancher();
   };
   // toucher un badge gagné : revoir la scène de l'arène (sans rien changer)
