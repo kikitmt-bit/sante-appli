@@ -88,8 +88,9 @@ class ClaudeActivity : Activity() {
         vue.requestFocus()
         val enAttente = Claude.enAttente(this)
         if (intent.getBooleanExtra(VOIR_REPONSE, false) && vue.montrerDerniere()) return
+        if (essai()) return
         if (enAttente != null) vue.suivre(enAttente.first, enAttente.second, enAttente.third, Claude.compteAttente(this))  // une question partie avant
-        val manque = listOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS)
+        val manque = listOf(Manifest.permission.RECORD_AUDIO, Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_COARSE_LOCATION)
             .filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
         if (manque.isNotEmpty()) requestPermissions(manque.toTypedArray(), 2)
         else if (enAttente == null) dicter()  // on ouvre l'écran : le micro écoute tout de suite
@@ -100,6 +101,7 @@ class ClaudeActivity : Activity() {
         super.onNewIntent(intent)
         garderAllume()
         if (intent.getBooleanExtra(VOIR_REPONSE, false)) { vue.montrerDerniere(); return }
+        if (essai()) return
         if (Claude.enAttente(this) == null && checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             vue.nouvelle(); dicter()
         }
@@ -107,6 +109,21 @@ class ClaudeActivity : Activity() {
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED && Claude.enAttente(this) == null) dicter()
+    }
+
+    /** Essais par ADB sans parler : `run-as fr.kiki.pokemontre` écrit la question dans files/essai.txt, puis on ouvre
+     *  l'écran. Seul ADB (appli en debug) ou l'appli elle-même peuvent écrire là : aucune autre appli ne peut poser de question. */
+    private fun essai(): Boolean {
+        val f = File(filesDir, "essai.txt")
+        if (!f.exists()) return false
+        var q = f.readText().trim(); f.delete()
+        val compte = if (q.startsWith("A:")) "A" else "B"  // « A: … » : au compte A
+        q = q.removePrefix("A:").trim()
+        if (q.isEmpty()) return false
+        if (q.startsWith("continuer:")) vue.essaiContinuer(q.removePrefix("continuer:").trim(), compte)
+        else if (q == "annuler") vue.essaiAnnuler(compte)
+        else { vue.nouvelle(); vue.envoyerTexte(q, compte) }
+        return true
     }
 
     override fun onResume() { super.onResume(); visible = true }
@@ -257,9 +274,11 @@ object Claude {
         if (System.currentTimeMillis() - quand > 30 * 60_000) return null
         return Triple(id, p.getString("attente_q", "")!!, quand)
     }
-    fun attendre(ctx: Context, id: String, q: String, quand: Long, compte: String = "B") =
+    fun attendre(ctx: Context, id: String, q: String, quand: Long, compte: String = "B", fil: JSONArray? = null) =
         prefs(ctx).edit().putString("attente_id", id).putString("attente_q", q).putLong("attente_quand", quand)
-            .putString("attente_compte", compte).apply()
+            .putString("attente_compte", compte).putString("attente_fil", (fil ?: JSONArray()).toString()).apply()
+    /** Les échanges d'avant envoyés avec la question en cours (gardés avec sa réponse, pour « Continuer » encore). */
+    fun filAttente(ctx: Context) = try { JSONArray(prefs(ctx).getString("attente_fil", "[]")) } catch (e: Exception) { JSONArray() }
     fun compteAttente(ctx: Context) = prefs(ctx).getString("attente_compte", "B") ?: "B"
     fun finAttente(ctx: Context) = prefs(ctx).edit().remove("attente_id").apply()
 
@@ -308,6 +327,12 @@ object Claude {
         // Les images des questions sorties de l'historique
         val ids = h.map { it.optString("id") }.toSet()
         dossierImages(ctx).listFiles()?.forEach { if (it.nameWithoutExtension !in ids) it.delete() }
+    }
+
+    /** L'action `id` a été annulée (bouton « Annuler ») : le bouton disparaît de sa réponse. */
+    fun marquerAnnulee(ctx: Context, id: String) {
+        val h = historique(ctx).map { if (it.optString("id") == id) it.put("annule", true) else it }
+        prefs(ctx).edit().putString("historique", JSONArray(h).toString()).apply()
     }
 
     private fun dossierImages(ctx: Context) = File(ctx.filesDir, "claude_img").apply { mkdirs() }
@@ -361,6 +386,8 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     private var compte = "B"        // le compte Claude qui reçoit la question (A = compte de secours)
     private var personne = false    // aucune routine n'a pris la question : compte B à sa limite ?
     private var reponse: JSONObject? = null
+    private var fil = JSONArray()           // « Continuer » : les échanges précédents, envoyés avec la question (3 au plus)
+    private var enPlus: JSONObject? = null  // ce qui part avec la question (suite, annulation) ; le contexte s'y ajoute
     private var message = ""
     private var defile = 0f
     private var hauteurLong = 0f
@@ -392,11 +419,46 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
     fun partiel(t: String) { partielTexte = t; invalidate() }
     fun rienEntendu() { message = "Je n'ai rien entendu"; etat = Etat.ACCUEIL; invalidate() }
 
-    /** Fin de la dictée : la question part tout de suite (pas d'écran de vérification). */
-    fun envoyerTexte(q: String) { message = ""; texteQuestion = q; envoyer() }
+    /** Fin de la dictée : la question part tout de suite (pas d'écran de vérification). Les ordres simples (minuteur,
+     *  réveil, heure, pas du jour) sont faits par la montre elle-même, sans Claude. */
+    fun envoyerTexte(q: String, versCompte: String = "B") {
+        message = ""; texteQuestion = q
+        val local = Ordres.local(act, q)
+        if (local != null) {
+            Claude.garder(act, local); montrer(local); ClaudeActivity.vibre(act, longArrayOf(0, 25)); return
+        }
+        enPlus = if (fil.length() > 0) JSONObject().put("suite", fil) else null
+        envoyer(versCompte)
+    }
 
-    /** Repart de zéro pour une nouvelle question. */
-    fun nouvelle() { message = ""; texteQuestion = ""; reponse = null; image = null; defile = 0f }
+    /** Repart de zéro pour une nouvelle question (la conversation aussi). */
+    fun nouvelle() { message = ""; texteQuestion = ""; reponse = null; image = null; defile = 0f; fil = JSONArray() }
+
+    /** « Continuer » : la prochaine question part avec les échanges d'avant (les 3 derniers). */
+    private fun continuer(r: JSONObject, dicter: Boolean = true) {
+        val f = r.optJSONArray("fil") ?: JSONArray()
+        val liste = (0 until f.length()).map { f.getJSONObject(it) } +
+            JSONObject().put("q", r.optString("q").take(300)).put("r", r.optString("court").take(400))
+        fil = JSONArray(liste.takeLast(3))
+        message = ""; texteQuestion = ""; reponse = null; image = null; defile = 0f
+        if (dicter) act.dicter()
+    }
+
+    /** Essais par ADB : « Continuer » sur la dernière réponse avec cette question ; « Annuler » de la dernière action. */
+    fun essaiContinuer(q: String, compte: String) {
+        val r = Claude.historique(act).firstOrNull() ?: return
+        continuer(r, false); envoyerTexte(q, compte)
+    }
+    fun essaiAnnuler(compte: String) {
+        Claude.historique(act).firstOrNull { it.optString("type") == "action" && !it.optBoolean("annule") }?.let { annuler(it, compte) }
+    }
+
+    /** « Annuler l'action » : Opus annule ses commits (git revert, envoyé sur main). */
+    private fun annuler(r: JSONObject, compte: String = "B") {
+        fil = JSONArray(); texteQuestion = "Annule : " + r.optString("q")
+        enPlus = JSONObject().put("type", "annuler").put("cible", r.optString("id"))
+        envoyer(compte)
+    }
 
     private var image: Bitmap? = null
 
@@ -423,11 +485,17 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         act.garderAllume()  // 120 s d'écran allumé à partir de l'envoi
         id = null; compte = versCompte; personne = false
         envoi = System.currentTimeMillis(); etape = "Envoi de la question…"; debutReflexion = 0; etat = Etat.ATTENTE; invalidate()
+        val extra = JSONObject((enPlus ?: JSONObject()).toString())
         Thread {
-            val n = Donnees.claudePoser(q, "rapide", versCompte)  // Haiku trie
+            // Le contexte : Claude s'en sert seulement quand ça change la réponse (météo, temps avant un rendez-vous…)
+            try { extra.put("contexte", Ordres.contexte(act, q)) } catch (e: Exception) { }
+            val n = Donnees.claudePoser(q, "rapide", versCompte, extra)  // Haiku trie
             act.runOnUiThread {
                 if (n == null) erreur("La question n'est pas partie (réseau ?)")
-                else { Claude.attendre(act, n, q, envoi, versCompte); suivre(n, q, envoi, versCompte) }
+                else {
+                    Claude.attendre(act, n, q, envoi, versCompte, extra.optJSONArray("suite"))
+                    suivre(n, q, envoi, versCompte)
+                }
             }
         }.start()
     }
@@ -448,6 +516,10 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
                 val r = Donnees.claudeSuivre(n)
                 val statut = r?.optString("statut")
                 if (statut == "fini") {
+                    r.put("fil", Claude.filAttente(act))
+                    // L'ordre pour la montre (minuteur, alarme, rappel, agenda) : exécuté une seule fois, à l'arrivée
+                    r.optJSONObject("montre")?.let { m -> if (!r.has("fait")) r.put("fait", Ordres.executer(act, m)) }
+                    if (r.optString("type") == "annuler" && r.optBoolean("annule")) Claude.marquerAnnulee(act, r.optString("cible"))
                     act.runOnUiThread {
                         if (id != n) return@runOnUiThread
                         Claude.finAttente(act); Claude.garder(act, r); Claude.retenirSemaine(act, r)
@@ -474,7 +546,8 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
                         action -> if (faire.isNotEmpty()) "Claude y travaille : $faire" else "Claude y travaille…"
                         personne -> "Personne ne répond…"
                         else -> when (statut) { "en_cours" -> if (difficile) "Opus réfléchit…" else "Claude réfléchit…"
-                            "pour_opus" -> "Question difficile : Opus arrive…"; null -> "Réseau lent…"; else -> "Claude démarre…" }
+                            "pour_opus" -> if (r?.optString("type") == "annuler") "Annulation : Opus arrive…" else "Question difficile : Opus arrive…"
+                            null -> "Réseau lent…"; else -> "Claude démarre…" }
                     }
                 }
                 Thread.sleep(2000)
@@ -659,6 +732,10 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
             c.drawBitmap(b, null, rect, p); c.restore()
             y += h + S * 0.04f
         }
+        // Ce que la montre a fait (« ✓ Minuteur 12 min lancé »)
+        r.optString("fait").takeIf { it.isNotEmpty() && !r.optBoolean("local") }?.let {
+            y += texteCentre(c, it, y, S * 0.042f, if (it.startsWith("✓")) 0xFF7FD18B.toInt() else orange, S * 0.72f, true, 2) + S * 0.025f
+        }
         y += texteCentre(c, r.optString("court"), y, S * 0.05f, Color.WHITE, S * 0.76f, true, 8) + S * 0.035f
         val sources = (0 until (r.optJSONArray("sources")?.length() ?: 0)).joinToString(", ") { r.getJSONArray("sources").getString(it) }
         val suite = r.optString("long").trim()
@@ -672,8 +749,17 @@ class ClaudeView(private val act: ClaudeActivity) : View(act) {
         val pied = (if (sources.isNotEmpty()) "Sources : $sources · " else "") + r.optString("modele") +
             (if (r.optString("compte") == "A") " · compte A" else "")
         y += texteCentre(c, pied, y, S * 0.032f, gris, S * 0.7f, false, 3) + S * 0.08f
-        bouton(c, "Nouvelle question", cx, y, S * 0.66f, orange) { nouvelle(); act.dicter() }
+        if (!r.optBoolean("local")) {
+            bouton(c, "Continuer", cx, y, S * 0.66f, orange) { continuer(r) }
+            y += S * 0.16f
+        }
+        bouton(c, "Nouvelle question", cx, y, S * 0.66f, orange, r.optBoolean("local")) { nouvelle(); act.dicter() }
         y += S * 0.16f
+        // Une action de Claude (commits envoyés) : l'annuler en un toucher
+        if (r.optString("type") == "action" && (r.optJSONArray("annuler")?.length() ?: 0) > 0 && !r.optBoolean("annule")) {
+            bouton(c, "Annuler l'action", cx, y, S * 0.66f, orange, false) { annuler(r, r.optString("compte", "B")) }
+            y += S * 0.16f
+        }
         bouton(c, "Réponses précédentes", cx, y, S * 0.66f, orange, false) { defile = 0f; etat = Etat.HISTORIQUE; invalidate() }
         y += S * 0.22f
         hauteurLong = y + defile

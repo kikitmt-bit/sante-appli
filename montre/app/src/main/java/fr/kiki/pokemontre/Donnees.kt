@@ -126,8 +126,15 @@ object Donnees {
 
     /** Claude depuis la montre (script Google, ?quoi=claude) : poser une question, ou suivre sa réponse. */
     /** compte = "A" : au compte de secours (dépôt montre-claude-a, routines du compte A) ; sinon au compte B. */
-    fun claudePoser(question: String, modele: String, compte: String = "B"): String? =
-        appel("quoi=claude&modele=$modele&compte=$compte&q=" + URLEncoder.encode(question, "UTF-8"))?.optString("id")?.takeIf { it.isNotEmpty() }
+    /** enPlus (v16) : suite (échanges précédents), contexte (heure, lieu, rendez-vous, batterie), type « annuler » + cible. */
+    fun claudePoser(question: String, modele: String, compte: String = "B", enPlus: JSONObject? = null): String? =
+        appel("quoi=claude&modele=$modele&compte=$compte&q=" + URLEncoder.encode(question, "UTF-8") +
+              (enPlus?.let { "&x=" + URLEncoder.encode(it.toString(), "UTF-8") } ?: ""))?.optString("id")?.takeIf { it.isNotEmpty() }
+
+    /** Un événement dans l'agenda de Kiki (le script Google l'ajoute ; dates ISO avec décalage). */
+    fun agenda(titre: String, debut: String, fin: String): Boolean =
+        appel("quoi=agenda&titre=" + URLEncoder.encode(titre, "UTF-8") + "&debut=" + URLEncoder.encode(debut, "UTF-8") +
+              "&fin=" + URLEncoder.encode(fin, "UTF-8")) != null
 
     fun claudeSuivre(id: String): JSONObject? = appel("quoi=claude&id=" + URLEncoder.encode(id, "UTF-8"))
 

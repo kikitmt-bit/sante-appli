@@ -30,8 +30,8 @@ import java.time.ZoneId
  * Complication « case libre » du bas du cadran : une seule info à la fois, seulement des infos utiles (jamais de Pokémon),
  * dans l'ordre choisi par Kiki (28/10) :
  *  1. un rendez-vous de l'agenda qui commence dans les 3 h (toucher = agenda) ;
- *  2. les pronos NFL qui restent à faire, à partir de 48 h avant le premier coup d'envoi concerné (« 🏈 3 pronos avant
- *     dim. 19:00 », toucher = le site sur le téléphone) ;
+ *  2. les pronos NFL en retard : matchs pas pronostiqués qui commencent dans moins de 4 h (« 🏈 2 pronos avant
+ *     19:00 », toucher = le site sur le téléphone) ;
  *  3. le jour d'une réservation de padel : l'heure et le code (le script du padel les écrit dans l'agenda, « 🎾 Padel ✅
  *     réservé · 🔑 4821 » ; toucher = l'appli padel de la montre) ;
  *  4. le dernier message des 30 dernières minutes (notifications de la montre, et celles du téléphone envoyées par la
@@ -130,11 +130,11 @@ class BasComplication : SuspendingComplicationDataSourceService() {
             return liste
         }
 
-        /** « 🏈 3 pronos avant dim. 19:00 » : matchs pas encore pronostiqués, dès 48 h avant le premier ; sinon null. */
+        /** « 🏈 2 pronos avant 19:00 » : seulement en retard, les matchs pas encore pronostiqués qui commencent dans
+         *  moins de 4 h (choix de Kiki, 29/10) ; sinon null. */
         fun ligneProns(e: Donnees.Etat?, maintenant: Long): String? {
-            val restent = e?.pronos?.filter { it > maintenant }?.sorted() ?: return null
+            val restent = e?.pronos?.filter { it > maintenant && it - maintenant <= 4 * 3600_000 }?.sorted() ?: return null
             val premier = restent.firstOrNull() ?: return null
-            if (premier - maintenant > 48 * 3600_000) return null
             val d = Instant.ofEpochMilli(premier).atZone(ZoneId.systemDefault())
             val jour = when (d.toLocalDate()) {
                 LocalDate.now() -> ""

@@ -16,6 +16,10 @@
     <!-- Claude : notification quand la réponse arrive ; dictée et lecture à voix haute de la montre -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Claude v16 : la ville jointe aux questions (dernière position connue), minuteur / alarme / rappel exécutés par la montre -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="com.android.alarm.permission.SET_ALARM" />
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <!-- Écran Cœur : le cœur en direct -->
     <uses-permission android:name="android.permission.BODY_SENSORS" />
     <!-- Débogage via Wi-Fi rallumé avec le Wi-Fi (droit donné une fois par adb, voir DebogageWifi.kt) -->
@@ -170,6 +174,11 @@
 
         <receiver
             android:name=".WifiArrive"
+            android:exported="false" />
+
+        <!-- Rappel programmé par Claude (« rappelle-moi dans 5 minutes de… ») -->
+        <receiver
+            android:name=".Rappel"
             android:exported="false" />
 
         <receiver

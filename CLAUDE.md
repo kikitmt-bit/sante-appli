@@ -252,6 +252,25 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     par « … ») ; l'écran reste allumé **120 s** après le dernier geste ou l'envoi (`ClaudeActivity.ALLUME`), puis veille
     normale ; `SuiviClaude` (service au premier plan + verrou du processeur) empêche Android de geler l'appli écran
     éteint, la montre continue de suivre la réponse et **vibre** à l'arrivée (canal de notification `claude_reponse`).
-  - Pronos NFL et padel dans la case du bas : faits en v15 (voir `BasComplication` plus haut).
+  - Pronos NFL et padel dans la case du bas : faits en v15 (voir `BasComplication` plus haut). v16 : pronos seulement
+    en retard (matchs pas pronostiqués qui commencent dans moins de 4 h).
+  - **v16 de Claude (29/10, compte A, plan dans le cerveau `projets/montre/MAJ-V16.md`)** :
+    **Opus réveillé seulement si besoin** : seule la routine Haiku part à chaque question ; `outil.py confier` pousse
+    `reveil/<id>.json` dans `montre-claude-opus` (B) / `montre-claude-a-opus` (A), dont les push lancent la routine Opus
+    (`prendre reflechi` attend 40 s au plus). Compte A : déclencheurs **push** créés par l'API (`create_webhook_trigger`,
+    `hook_type: app`, `scope_id`), plus de tickets (`reveil.yml` retiré). **« Continuer »** : la question part avec les
+    3 derniers échanges (`suite` = [{q, r}], gardés dans `fil` de chaque réponse). **« Annuler l'action »** : `rendre`
+    note tout seul les commits envoyés (`annuler` = [{depot, commit, titre}]) ; le bouton envoie `type: annuler` + `cible`
+    → Haiku confie, Opus lance `outil.py annuler <id>` (git revert, push sur main, ligne au JOURNAL). **Ordres** :
+    `Ordres.kt` reconnaît sur la montre, sans Claude, minuteur / réveil / heure / date / pas du jour (réponse « la montre,
+    sans Claude ») ; une réponse de Claude peut porter `montre` = {type: minuteur|alarme|rappel|agenda} exécuté à
+    l'arrivée (`fait` = « ✓ Rappel 18:35 » ; minuteur et alarme = horloge de Wear OS, `AlarmClock` ; rappel = alarme
+    exacte + notification `Rappel` ; agenda = script Google `?quoi=agenda`, la montre ne peut pas écrire dans son agenda).
+    **Contexte** joint à chaque question (`contexte` : heure, fuseau, ville + coordonnées de la dernière position connue,
+    prochain rendez-vous, batterie ; pour une question de météo, la prévision Open-Meteo récupérée par la montre, car le
+    réseau des routines bloque api.open-meteo.com). **Données santé** : `outil.py sante [jours]` (chiffres.py, branche
+    data en lecture seule). Tout part dans `&x=` (JSON) de `?quoi=claude` (`enPlus` dans sante.gs). Essais sans parler :
+    `run-as fr.kiki.pokemontre` écrit `files/essai.txt` (« A: » = compte A ; « continuer: … » ; « annuler »), puis
+    ouvrir `ClaudeActivity`.
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
