@@ -126,9 +126,16 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     15 min ; fenêtre glissante, rien ne remet à zéro, on recompte après chaque Master Ball ; avant le 27/10 : 30 jours
     d'affilée avec joker) = légendaire. Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball ; plus de bonus masse grasse).
     Chaque ball spéciale affiche ce qu'il reste à faire. Pas de bouton « tout ouvrir » (choix de Kiki).
-    **Pesée de la semaine** (29/10, Kiki oublie de se peser) : `REGLAGES` `pesees` = 3, `pesee_avant` = 12 h (heure
-    locale de la balance, `pesees_du_jour` lit les points bruts `weight` / `body-fat` des résumés) ; du lundi au
-    dimanche, dès la 3e pesée du matin = Poké Ball `balance` (petite récompense voulue). Carte « Pesée de la semaine »
+    **Pesée** (29/10, Kiki oublie de se peser) : `REGLAGES` `pesee_avant` = 12 h (heure locale de la balance,
+    `pesees_du_jour` lit les points bruts `weight` / `body-fat` des résumés) ; chaque pesée du matin = **+10 points
+    d'effort** (`bonus_pesee`, une par jour ; plus de Poké Ball : « trop bien comme cadeau ») ; objectif affiché 3 / semaine.
+    **Mission du jour** (29/10, `missions.py`, 6e tuile `carteMission`) : une mission par jour (dès le 30/10) choisie sur
+    les lacunes des 14 derniers jours (la moins réussie, pas deux fois de suite si une autre est presque aussi faible) :
+    matinée active 2 000 pas avant 13 h (lun-ven), coucher avant 0 h 30 (soirs dim-jeu, vérifié le lendemain matin),
+    10 min en zone, séance de 10 min ; pas d'étages ni de pauses toutes les 2 h (appartement, télétravail : refusés
+    par Kiki). Choisie et gardée par le calcul de chaque heure (`montre.py` → `data/pokemon/missions.json`, avec les
+    pas d'avant 13 h lus dans les fichiers du jour) ; réussie = **+25 points d'effort**. Bonus (`bonus_du_jour`)
+    comptés le jour où on les sait (coucher : le lendemain), affichés en puces dorées sous la barre. Carte « Pesée de la semaine »
     (`cartePesee`, demi-largeur et compacte, la moins importante : 7 petits ronds L→D) dans les balls spéciales, avec la dernière pesée comparée à 2-4 Pokémon en icônes seules (×2, nom au survol) (`POIDS` de
     pokedex.py = poids officiels PokeAPI, `comparerPokemon`, graine = la date). Pour des stats fiables : ≥ 3 / semaine.
   - **Pokédex = une entrée par espèce, normal + shiny** (28/10 : plus les ~14 « versions » des différents jeux, carte

@@ -36,6 +36,7 @@ import pandas as pd
 
 import chiffres
 import kanto
+import missions
 from pokedex import LEGENDAIRES, POKEMON
 
 REGLAGES = {
@@ -55,9 +56,10 @@ REGLAGES = {
     "master_jours": 25, "master_fenetre": 30,  # jours avec l'objectif sur les 30 derniers pour un légendaire
     "objectif_pas": 5000, "objectif_zone": 15,
     "exploit_pas": 10000, "exploit_zone": 30, "exploit_seance": 45,
-    # Pesée de la semaine (29/10, demande de Kiki : il oublie de se peser) : 3 pesées du lundi au dimanche, le matin
-    # (avant midi : même poids qu'au réveil s'il n'a pas mangé) = une Poké Ball, dès la 3e. Petite récompense exprès.
-    "pesees": 3, "pesee_avant": 12,
+    # Pesée (29/10, demande de Kiki : il oublie de se peser) : chaque pesée du matin (avant midi : même poids qu'au
+    # réveil s'il n'a pas mangé) = +10 points d'effort, une par jour ; objectif affiché : 3 par semaine (stats fiables).
+    # Plus de Poké Ball pour la pesée (Kiki : « trop bien comme cadeau »).
+    "pesees": 3, "pesee_avant": 12, "bonus_pesee": 10,
 }
 
 BALLS = {  # shiny : multiplicateur ; nouvelle : chance d'une espèce jamais vue
@@ -205,7 +207,7 @@ def objectif_ok(m):
     return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= REGLAGES["objectif_zone"]
 
 
-def balls_du_jour(jour, m, avant, apres, master=None, badges=(), balance=False):
+def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
     """Les Poké Balls gagnées un jour : avant / apres = points d'effort cumulés depuis le début du jeu ; master = numéro
     de la Master Ball gagnée ce jour-là, ou None ; badges = [(numéro, lieu)] des arènes gagnées ce jour-là."""
     dues = []
@@ -230,9 +232,6 @@ def balls_du_jour(jour, m, avant, apres, master=None, badges=(), balance=False):
     if super_ok(m):
         dues.append({"cle": "super", "ball": "super", "raison": "🎯 Objectif double : pas et minutes en zone",
                      "types": None})
-    if balance:
-        dues.append({"cle": "balance", "ball": "poke", "types": None,
-                     "raison": f"⚖️ Pesée de la semaine ({REGLAGES['pesees']} pesées le matin)"})
     ic, nom, types = origine_barre(m)
     b = REGLAGES["barre"]
     for k in range(math.floor(avant / b) + 1, math.floor(apres / b) + 1):
@@ -266,15 +265,36 @@ def ident(jour, cle):
     return f"{jour}{'' if REGLAGES['partie'] == 1 else '-p' + str(REGLAGES['partie'])}#{cle}"
 
 
-def jouer(stats, resumes, aujourd, figees=()):
+def bonus_du_jour(jour, stats, resumes, mission_du):
+    """Les petits bonus de points d'effort d'un jour : [(icône, texte, points)]. Pesée du matin : +10 ; mission du
+    jour réussie : +25 (le coucher d'hier soir est compté ce matin, quand la nuit est connue). Comptés le jour où on
+    les sait : rien ne change après coup (sinon les Poké Balls déjà gagnées se décaleraient)."""
+    b = []
+    if pesee_matin(resumes.get(str(jour))):
+        b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
+    st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
+    pm = lambda j: (mission_du(j) or {}).get("pas_matin")  # noqa: E731
+    hier = jour - dt.timedelta(days=1)
+    for j, quand in ((hier, "coucher"), (jour, None)):
+        e = mission_du(j)
+        if not e or not e.get("cle") or (quand and e["cle"] != quand) or (not quand and e["cle"] == "coucher"):
+            continue
+        if missions.reussite(e["cle"], j, st, pm):
+            b.append(("🎯", f"Mission : {missions.MISSIONS[e['cle']]['titre']}", missions.BONUS))
+    return b
+
+
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}. Les captures figées sont reprises telles quelles ; les autres sont tirées. -> (captures, état)."""
     figees = {c["id"]: c for c in figees}
     captures, possedees, sans_nouvelle, cumul = [], set(), 0, 0.0
     jours_ok, masters, depuis_master = [], 0, REGLAGES["debut"]  # Master Ball : jours avec l'objectif dans la fenêtre
     voyage = kanto.Voyage()
-    jour, m, ok, bonus = REGLAGES["debut"], {}, False, 1
+    jour, m, ok, shiny_bonus = REGLAGES["debut"], {}, False, 1
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
+    mission_du = lambda j: (missions_jours or {}).get(str(j)) if j >= missions.DEPUIS else None  # noqa: E731
+    bonus = []
     while jour <= aujourd:
         s = stats.loc[jour].to_dict() if jour in stats.index else {}
         m = mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []], jour)
@@ -285,18 +305,17 @@ def jouer(stats, resumes, aujourd, figees=()):
         if len(jours_ok) >= REGLAGES["master_jours"]:  # 25 jours sur 30 : une Master Ball, et on recommence à compter
             masters += 1
             master, jours_ok, depuis_master = masters, [], jour + dt.timedelta(days=1)
-        bonus = REGLAGES["shiny_nuit"] if m["sommeil"] >= REGLAGES["nuit"] else 1
-        avant, cumul = cumul, cumul + sum(m["points"].values())
+        shiny_bonus = REGLAGES["shiny_nuit"] if m["sommeil"] >= REGLAGES["nuit"] else 1
+        bonus = bonus_du_jour(jour, stats, resumes, mission_du)
+        avant, cumul = cumul, cumul + sum(m["points"].values()) + sum(p for _, _, p in bonus)
         badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"],
                                        "force": m["nb_force"], "ok": ok, "super": super_ok(m)}, cumul)
         lieu, poids_lieux = kanto.LIEUX[voyage.ici()]["nom"], voyage.poids()
         if jour.weekday() == 0:
             pesees = set()
-        avant_pesees = len(pesees)
         if pesee_matin(resumes.get(str(jour))):
             pesees.add(jour)
-        balance = avant_pesees < REGLAGES["pesees"] <= len(pesees)
-        dues = balls_du_jour(jour, m, avant, cumul, master, badges, balance)
+        dues = balls_du_jour(jour, m, avant, cumul, master, badges)
         ids = {ident(jour, mi["cle"]) for mi in dues}
         dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(ident(jour, "")) and i not in ids]  # figées
         dues.sort(key=lambda mi: ident(jour, mi["cle"]) not in figees)  # figées d'abord : les nouvelles les évitent
@@ -305,7 +324,7 @@ def jouer(stats, resumes, aujourd, figees=()):
             c = figees.get(i)
             if c is None:
                 ball = BALLS[mi["ball"]]
-                p = min(REGLAGES["shiny"] * ball["shiny"] * bonus, REGLAGES["shiny_max"])
+                p = min(REGLAGES["shiny"] * ball["shiny"] * shiny_bonus, REGLAGES["shiny_max"])
                 c = tirer(i, possedees, sans_nouvelle, mi["types"], p, mi.get("nouvelle", ball["nouvelle"]),
                           mi.get("legendaire", False), poids_lieux, mi.get("seul_type"), mi.get("parmi"))
                 if c is None:
@@ -336,17 +355,38 @@ def jouer(stats, resumes, aujourd, figees=()):
             derniere = {"jour": str(j), "heure": round(h, 2), "kg": kg, "gras": gras}
             break
     return captures, {"pesees": {"semaine": semaine, "nb": len(pesees), "cible": REGLAGES["pesees"],
-                                 "avant": REGLAGES["pesee_avant"], "derniere": derniere},
+                                 "avant": REGLAGES["pesee_avant"], "derniere": derniere, "bonus": REGLAGES["bonus_pesee"]},
                       "serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
                       "possedees": possedees, "mesures": m, "sans_nouvelle": sans_nouvelle,
-                      "barre": cumul % b, "origine": origine_barre(m) if m else SOURCES["pas"], "shiny_bonus": bonus}
+                      "barre": cumul % b, "origine": origine_barre(m) if m else SOURCES["pas"], "shiny_bonus": shiny_bonus,
+                      "bonus": bonus, "mission": etat_mission(aujourd, stats, mission_du)}
+
+
+def etat_mission(aujourd, stats, mission_du):
+    """Ce que l'écran montre de la mission du jour (et du coucher d'hier soir)."""
+    st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
+    pm = lambda j: (mission_du(j) or {}).get("pas_matin")  # noqa: E731
+    e, hier = mission_du(aujourd), mission_du(aujourd - dt.timedelta(days=1))
+    sortie = None
+    if e and e.get("cle"):
+        m, s = missions.MISSIONS[e["cle"]], st(aujourd)
+        valeur = {"matinee": pm(aujourd), "zone": s.get("zone"), "seance": s.get("min_sport")}.get(e["cle"])
+        sortie = {"cle": e["cle"], "titre": m["titre"], "texte": m["texte"], "seuil": m["seuil"], "unite": m["unite"],
+                  "raison": e.get("raison", ""), "valeur": None if valeur is None or valeur != valeur else round(valeur),
+                  "ok": missions.reussite(e["cle"], aujourd, st, pm) if e["cle"] != "coucher" else None,
+                  "bonus": missions.BONUS}
+    if hier and hier.get("cle") == "coucher":
+        c = st(aujourd).get("coucher")
+        sortie = (sortie or {}) | {"hier_coucher": None if c is None or c != c else round(c),
+                                   "hier_ok": missions.reussite("coucher", aujourd - dt.timedelta(days=1), st, pm)}
+    return sortie
 
 
 def charger_jeu(lire, aujourd):
     """Statistiques depuis le début du jeu et captures figées, avec la fonction `lire` de l'appli."""
     debut = REGLAGES["debut"]
     annees = range(debut.year, aujourd.year + 1)
-    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES])
+    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, missions.FICHIER])
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
@@ -354,7 +394,7 @@ def charger_jeu(lire, aujourd):
     stats = pd.DataFrame({j: chiffres.stats_jour(resumes.get(str(j))) for j in jours}).T
     figees = [c for c in (f.get(FIGEES) or {}).get("captures", [])  # seulement celles de la partie en cours
               if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], ""))]
-    return jouer(stats, resumes, aujourd, figees)
+    return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"))
 
 
 def figer(dossier):

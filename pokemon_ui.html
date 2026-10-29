@@ -95,6 +95,9 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .badge-attente b{font-size:17px;font-weight:900}
 .badge-attente small{font-size:12.5px;color:#FFE27A;font-weight:700}
 .bandeau-voyage.or{box-shadow:0 0 0 2px #FFD84A inset,0 0 18px rgba(255,216,74,.5);background:linear-gradient(135deg,#5A4A12,#1C2740)}
+.speciale.mission .m-titre{font-size:13px;font-weight:800;color:#FFE27A;margin-top:2px}
+.speciale.mission .m-pourquoi{font-size:10.5px;color:#7C8AA8;margin-top:5px;line-height:1.3}
+.puce.bonus{background:rgba(255,203,5,.14);box-shadow:inset 0 0 0 1px rgba(255,203,5,.45)}
 .semaine-pesee{display:flex;gap:3px;margin:4px 0 0}
 .semaine-pesee i{flex:1;aspect-ratio:1;max-width:19px;border-radius:50%;display:grid;place-items:center;font:800 9px Outfit,sans-serif;
   font-style:normal;color:#7C8AA8;background:#0D1322;box-shadow:inset 0 0 0 1px #2A3654}
@@ -1717,7 +1720,8 @@ function dessinerBarre() {
       <div class="centre"><div class="v">${Math.floor(b.points)}</div><div class="s">/ ${b.taille} pts</div></div></div>
     <div class="droite"><div class="titre">Prochaine Poké Ball</div>
       <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min en zone</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
-      <div class="puces">${b.sources.length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
+      <div class="puces">${b.sources.length || (b.bonus || []).length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
+          + (b.bonus || []).map(([i, n, p]) => `<span class="puce bonus">${i} ${n} <b>+${p}</b></span>`).join("")
         : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
       ${ts.length ? `<div class="petit gris" style="margin-top:6px">Aujourd'hui : ${ic} ${nom} → ${typesHTML(ts)}</div>` : ""}</div>`;
   requestAnimationFrame(() => setTimeout(() => document.querySelector("#barre .arc").style.strokeDashoffset = circ * (1 - pct), 60));
@@ -1786,7 +1790,7 @@ function dessinerSpeciales() {
       <div class="tete">${ico("nuit")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
       <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
-      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + cartePesee();
+      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + carteMission() + cartePesee();
   rognerImages(document.getElementById("speciales"));
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
 }
@@ -1812,6 +1816,23 @@ function comparerPokemon(kg, graine) {
   }
   return meilleur ? meilleur.choix : null;
 }
+// La mission du jour (29/10) : choisie sur les lacunes des 14 derniers jours ; réussie = +25 points d'effort
+function carteMission() {
+  const m = D.mission;
+  const h = v => `${Math.floor(v / 60) % 24} h ${String(Math.round(v % 60)).padStart(2, "0")}`;
+  const hier = m && m.hier_coucher != null ? `<div class="pesee-der">Hier soir : couché à <b>${h(m.hier_coucher)}</b> ${m.hier_ok ? "✅ +" + (m.bonus || 25) : "· raté"}</div>` : "";
+  if (!m || !m.cle) return `<div class="speciale mission"><div class="tete">${ico("radar")}Mission du jour</div>
+    <div class="gain">${hier ? "Pas de nouvelle mission ce soir." : "Elle arrive dans l'heure : je regarde tes derniers jours."}</div>${hier}</div>`;
+  const ok = m.ok === true, coucher = m.cle === "coucher";
+  const val = m.valeur == null ? 0 : m.valeur, j = `<div class="jauge"><div class="${ok ? "ok" : ""}" style="width:${Math.min(val / m.seuil * 100, 100)}%"></div></div>`;
+  const ligne = coucher ? `<div class="reste">Vérifié demain matin avec ta nuit · <b>+${m.bonus}</b></div>`
+    : `<div class="ligne"><span>${m.unite === "pas" ? fr(val) : val} ${m.unite}</span><span>${m.unite === "pas" ? fr(m.seuil) : m.seuil}</span></div>${j}
+      <div class="reste">${ok ? `Réussie : <b>+${m.bonus} pts</b> !` : `Encore <b>${m.unite === "pas" ? fr(m.seuil - val) : Math.ceil(m.seuil - val)} ${m.unite}</b> · +${m.bonus} pts`}</div>`;
+  return `<div class="speciale mission ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
+    <div class="tete">${ico("radar")}Mission du jour</div>
+    <div class="m-titre">${m.titre}</div><div class="gain">${m.texte}</div>${ligne}
+    <div class="m-pourquoi">${m.raison}</div>${hier}</div>`;
+}
 function cartePesee() {  // une petite tuile (demi-largeur) : la moins importante des balls spéciales
   const p = D.pesees; if (!p) return "";
   const ok = p.nb >= p.cible, jours = ["L", "M", "M", "J", "V", "S", "D"], reste = Math.max(p.cible - p.nb, 0);
@@ -1825,9 +1846,9 @@ function cartePesee() {  // une petite tuile (demi-largeur) : la moins important
   }
   return `<div class="speciale pesee ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
     <div class="tete">${ico("poke")}Pesée</div>
-    <div class="gain">${p.cible} le matin (avant ${p.avant} h) / semaine</div>
+    <div class="gain">+${p.bonus || 10} pts par pesée du matin (avant ${p.avant} h) · vise ${p.cible} / semaine</div>
     <div class="semaine-pesee">${p.semaine.map((x, i) => `<i class="${x === 1 ? "on" : x === 0 ? "rate" : i === p.semaine.indexOf(null) ? "auj" : ""}">${jours[i]}</i>`).join("")}</div>
-    <div class="reste">${ok ? "Gagnée cette semaine !" : `Encore <b>${reste}</b> pesée${reste > 1 ? "s" : ""}`}</div>${comp}</div>`;
+    <div class="reste">${ok ? "Objectif de la semaine atteint !" : `Encore <b>${reste}</b> cette semaine`}</div>${comp}</div>`;
 }
 // 3. Le défi de l'arène où l'on est arrivé, avec les missions du jour (sur 7 jours, ou son plan B)
 function carteDefi() {
@@ -2548,8 +2569,10 @@ function dessinerRegles() {
       Plus rien de nouveau autour de toi : la ball pioche dans tout Kanto, donc aucune n'est perdue.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
       6 jours sur 7). Pendant ce temps, ton dresseur attend à l'arène : tes points comptent pour les Poké Balls, mais pas pour la carte. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
-    <li>${ico("poke", "p")} <b>Pesée de la semaine</b> : ${D.pesees ? D.pesees.cible : 3} pesées le matin (avant ${D.pesees ? D.pesees.avant : 12} h) entre lundi et dimanche = une Poké Ball, dès la ${D.pesees ? D.pesees.cible : 3}e.
-      Plusieurs pesées par semaine, toujours dans les mêmes conditions, rendent tes courbes de poids et de masse grasse fiables.</li>
+    <li>${ico("poke", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
+      Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
+    <li>${ico("radar", "p")} <b>Mission du jour</b> : une mission choisie sur tes points faibles des 14 derniers jours (matinée active, coucher à l'heure,
+      minutes en zone, petite séance). Réussie = +25 points d'effort. Pas de mission de coucher le week-end.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
