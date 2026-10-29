@@ -133,8 +133,12 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     `grotteAnimee` fait défiler toutes les `canvas.cave` dans le sens de la marche) et Sacha qui marche de profil.
     Vol au-dessus de la mer sans Pokémon Vol = l'**Océane** (S.S. Anne de Rouge Feu, `NAVIRE`, pret/pokefirered
     `pics/misc/ss_anne.png`, retournée vers la droite) ; avant : l'icône du Passe Bateau.
-    **Voyage depuis la dernière visite** (29/10) : à la 1re ouverture de l'onglet, le dresseur repart de la position vue
-    la dernière fois (localStorage `pkm_pos_vu_<partie>`, 0 la toute 1re fois) et parcourt le chemin gagné en 1,4 à 4,5 s
+    **Voyage depuis la dernière visite** (29/10) : si le dresseur a avancé d'au moins `SEUIL_VOYAGE` = 25 pts (ou
+    atteint un nouveau lieu) depuis le dernier voyage **regardé** (localStorage `pkm_pos_vu_<partie>`, 0 la toute 1re
+    fois, mis à jour seulement quand on le regarde : les petits bouts s'additionnent), bandeau en haut de l'onglet
+    (`#bandeau-voyage`, « Ton dresseur a avancé ! », le toucher descend à la carte) et carte assombrie avec un bouton ▶
+    (`.carte-attente`, « Voir ton voyage ») ; le dresseur attend à l'ancienne place. Au toucher (`lancerVoyage`), il
+    parcourt le chemin gagné en 1,4 à 4,5 s ; sous le seuil, il est déjà à sa place sans rien proposer
     (`voyagerDepuis` : `trajet(p0, p)` redessine le bout rouge dans `#chemin-anim`, `poseA(p)` = position, sens, mode ;
     le dresseur = `.heros-ancre`, ses éléments `.suit` suivent ; refait seulement quand le mode ou le sens change), la
     carte le suit (sauf si on la touche) ; attend que la carte soit à l'écran (cadre Streamlit : `frameElement`).

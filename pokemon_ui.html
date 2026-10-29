@@ -94,6 +94,28 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-wrap .heros,.ombre-heros{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
 .carte-wrap .heros{display:flex;flex-direction:column;align-items:center;width:calc(20% / var(--z))}
 .carte-wrap .heros-ancre{position:absolute;inset:0;pointer-events:none}
+/* le voyage depuis la dernière visite : carte assombrie + bouton ▶, et bandeau en haut de l'onglet */
+.carte-attente{position:absolute;left:0;right:0;top:0;aspect-ratio:var(--ar);z-index:7;border:0;border-radius:14px 14px 0 0;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff;font-family:Outfit,sans-serif;
+  background:radial-gradient(circle at 50% 50%,rgba(10,16,30,.35),rgba(10,16,30,.72));transition:opacity .45s}
+.carte-attente.part{opacity:0;pointer-events:none}
+.carte-attente .play{width:64px;height:64px;border-radius:50%;background:#E8382F;position:relative;
+  box-shadow:0 0 0 4px #fff,0 0 0 7px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.5);animation:pk-play 1.6s ease-in-out infinite}
+.carte-attente .play:after{content:"";position:absolute;left:25px;top:18px;border-left:22px solid #fff;border-top:14px solid transparent;
+  border-bottom:14px solid transparent}
+@keyframes pk-play{50%{transform:scale(1.08)}}
+.carte-attente b{font-size:18px;font-weight:900;margin-top:8px;text-shadow:0 2px 6px rgba(0,0,0,.7)}
+.carte-attente small{font-size:13px;font-weight:700;color:#FFE27A;text-shadow:0 1px 4px rgba(0,0,0,.8)}
+.bandeau-voyage{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 12px;padding:10px 12px;border:0;border-radius:14px;
+  background:linear-gradient(135deg,#1D4A5E,#1C2740);color:#fff;text-align:left;cursor:pointer;font-family:Outfit,sans-serif;
+  box-shadow:0 0 0 2px #FFCB05 inset,0 4px 14px rgba(0,0,0,.35);animation:pk-bandeau 2.2s ease-in-out infinite}
+.bandeau-voyage span{flex:1;display:flex;flex-direction:column;gap:2px}
+.bandeau-voyage b{font-size:15px;font-weight:900}
+.bandeau-voyage small{font-size:12.5px;color:#FFE27A;font-weight:700}
+.bandeau-voyage i{width:30px;height:30px;border-radius:50%;background:#E8382F;position:relative;flex:none;box-shadow:0 0 0 2px #fff}
+.bandeau-voyage i:after{content:"";position:absolute;left:11px;top:8px;border-left:11px solid #fff;border-top:7px solid transparent;
+  border-bottom:7px solid transparent}
+@keyframes pk-bandeau{50%{box-shadow:0 0 0 2px #FFCB05 inset,0 0 18px 2px rgba(255,203,5,.45)}}
 /* la boule de cristal (dans une grotte) : on y voit le dresseur marcher sous la montagne */
 .carte-wrap .boule{position:absolute;width:calc(24% / var(--z));aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
   overflow:hidden;z-index:4;box-shadow:0 0 0 2px #FFE7A0,0 0 0 4px #9C7426,0 0 0 5.5px rgba(40,25,5,.6),0 0 16px 5px rgba(255,214,120,.55),
@@ -231,6 +253,7 @@ details.regles li{margin:5px 0;line-height:1.4}
 </style>
 
 <div id="app" style="padding-bottom:56px">
+  <div id="bandeau-voyage"></div>
   <div class="carte" id="barre"></div>
   <div class="carte" id="aouvrir"></div>
   <div class="carte" id="voyage"></div>
@@ -1893,10 +1916,46 @@ addEventListener("pointermove", e => { const g = GLISSE; if (!g) return;
 addEventListener("pointerup", () => { const g = GLISSE; if (!g) return; g.vue.classList.remove("glisse");
   if (g.bouge) setTimeout(() => { if (GLISSE === g) GLISSE = null; }, 0); else GLISSE = null; });
 
-// Le voyage depuis la dernière visite : à l'ouverture de l'onglet, le dresseur repart de là où on l'avait vu et
-// parcourt le chemin gagné depuis (une seule fois par chargement ; position gardée sur le téléphone : pkm_pos_vu_<partie>)
-let VOYAGE_JOUE = false;
-function voyagerDepuis(el, p0, centrer) {
+// Le voyage depuis la dernière visite (29/10) : si le dresseur a avancé d'au moins SEUIL_VOYAGE points (ou atteint
+// un nouveau lieu) depuis le dernier voyage regardé, un bandeau en haut de l'onglet et un bouton ▶ sur la carte
+// assombrie le proposent ; le dresseur attend à l'ancienne place jusqu'au toucher, puis parcourt le chemin. En dessous du
+// seuil : il est déjà à sa place, sans rien proposer, et les petits bouts s'additionnent jusqu'au voyage suivant
+// (pkm_pos_vu_<partie> = la position du dernier voyage regardé, mise à jour seulement quand on le regarde).
+const SEUIL_VOYAGE = 25;
+let VOYAGE = null;
+function etatVoyage() {
+  if (VOYAGE) return VOYAGE;
+  let vu = NaN; try { vu = parseFloat(localStorage.getItem(`pkm_pos_vu_${R.partie}`)); } catch (e) {}
+  vu = Math.min(isNaN(vu) ? 0 : vu, V.pos);
+  const lieux = LIEUX.filter((l, k) => k && l.dist > vu && l.dist <= V.pos).map(l => l.nom.replace(" (retour)", ""));
+  const attente = V.pos - vu >= SEUIL_VOYAGE || lieux.length > 0;
+  return (VOYAGE = {vu, gain: Math.round(V.pos - vu), lieux, attente});
+}
+function texteVoyage(v) {
+  const der = v.lieux[v.lieux.length - 1], pts = `+${fr(v.gain)} pts`;
+  if (!der) return `${pts} depuis ta dernière visite`;
+  const ville = /Bourg|Jadielle|Lavanville|Céladopole|Safrania|Azuria|Carmin|Parmanie|Cramois|Argenta/.test(der);
+  return `${der === "Plateau Indigo" ? "Tu es arrivé au Plateau Indigo !" : ville ? `Tu es arrivé à ${der} !` : `Nouvelle étape : ${der}`} · ${pts}`;
+}
+function dessinerBandeauVoyage() {
+  const b = document.getElementById("bandeau-voyage"), v = etatVoyage();
+  if (!v.attente) { b.innerHTML = ""; return; }
+  b.innerHTML = `<button class="bandeau-voyage">${ico("carte", "g")}<span><b>Ton dresseur a avancé !</b>
+    <small>${texteVoyage(v)} · voir le voyage</small></span><i></i></button>`;
+  b.querySelector("button").onclick = () => { const cv = document.querySelector("#voyage .carte-cadre");
+    cv.scrollIntoView({behavior: "smooth", block: "center"}); lancerVoyage(false); };
+}
+function lancerVoyage(immediat) {  // le toucher : la carte s'éclaire et le dresseur part
+  const v = etatVoyage(); if (!v.attente) return;
+  v.attente = false;
+  try { localStorage.setItem(`pkm_pos_vu_${R.partie}`, V.pos); } catch (e) {}
+  document.getElementById("bandeau-voyage").innerHTML = "";
+  const el = document.getElementById("voyage"), att = el.querySelector(".carte-attente");
+  if (att) { att.classList.add("part"); setTimeout(() => att.remove(), 450); }
+  voyagerDepuis(el, v.vu, CENTRER, immediat); vibre(15);
+}
+let CENTRER = () => {};
+function voyagerDepuis(el, p0, centrer, immediat) {
   const vue = el.querySelector(".carte-vue"), g = el.querySelector("#chemin-anim"), ancre = el.querySelector(".heros-ancre");
   const T = ZC > 1 ? 1.25 : 1, duree = Math.min(4500, 1400 + (V.pos - p0) * 6);
   let suivre = true, cle = "", t0 = null;
@@ -1908,7 +1967,7 @@ function voyagerDepuis(el, p0, centrer) {
   } catch (e) { return true; } };
   const pas = now => {
     if (!document.body.contains(g)) return;  // la carte a été redessinée (zoom…) : rien à finir
-    if (t0 === null) { if (!visible()) return setTimeout(() => requestAnimationFrame(pas), 250); t0 = now + 500; }
+    if (t0 === null) { if (!immediat && !visible()) return setTimeout(() => requestAnimationFrame(pas), 250); t0 = now + (immediat ? 150 : 600); }
     const u = Math.max(0, Math.min(1, (now - t0) / duree)), e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
     const p = u >= 1 ? V.pos : p0 + (V.pos - p0) * e, P = poseA(p);
     g.innerHTML = trajet(p0, p).map(x => traitFait(x, T)).join("");
@@ -1924,13 +1983,7 @@ function voyagerDepuis(el, p0, centrer) {
 
 function dessinerVoyage() {
   const el = document.getElementById("voyage"), k = lieuVu ?? V.ici;
-  let depuis = V.pos;
-  if (!VOYAGE_JOUE) {
-    VOYAGE_JOUE = true;
-    let vu = NaN; try { vu = parseFloat(localStorage.getItem(`pkm_pos_vu_${R.partie}`)); } catch (e) {}
-    depuis = Math.min(isNaN(vu) ? 0 : vu, V.pos);
-    try { localStorage.setItem(`pkm_pos_vu_${R.partie}`, V.pos); } catch (e) {}
-  }
+  const VY = etatVoyage(), depuis = VY.attente ? VY.vu : V.pos;
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
     const n = i + 1, quand = V.badges[n];
     return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
@@ -1939,8 +1992,9 @@ function dessinerVoyage() {
   el.innerHTML = `<div class="entete"><span class="titre">${ico("carte")} Voyage dans Kanto</span>
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
-    ${blocArene()}<div class="carte-cadre"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
+    ${blocArene()}<div class="carte-cadre" style="--ar:${V.carte.largeur}/${V.carte.hauteur}"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
       <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto(depuis)}${chefCarte()}<div class="heros-ancre">${heros()}</div></div></div>
+      ${VY.attente ? `<button class="carte-attente"><span class="play"></span><b>Voir ton voyage</b><small>${texteVoyage(VY)}</small></button>` : ""}
       ${(V.carte.zoom || 1) > 1 ? `<button class="carte-zoom">${ico("carte", "pt")} ${ZC > 1 ? "Toute la carte" : "Zoomer sur moi"}</button>` : ""}</div>
     ${infosLieu(k)}
     <div class="boite-badges">${badges}</div>`;
@@ -1951,7 +2005,10 @@ function dessinerVoyage() {
     vue.scrollLeft = P.x / LARG * wrap.offsetWidth - vue.clientWidth / 2;
     vue.scrollTop = P.y / HC * wrap.offsetHeight - vue.clientHeight * .55; };
   centrer(); requestAnimationFrame(() => centrer());
-  if (depuis < V.pos) voyagerDepuis(el, depuis, centrer);
+  CENTRER = centrer;
+  const att = el.querySelector(".carte-attente");
+  if (att) att.onclick = () => lancerVoyage(true);
+  dessinerBandeauVoyage();
   vue.addEventListener("pointerdown", e => { if (e.pointerType === "mouse" && ZC > 1)
     GLISSE = {vue, x: e.clientX, y: e.clientY, l: vue.scrollLeft, t: vue.scrollTop, bouge: false}; });
   vue.addEventListener("click", e => { if (GLISSE && GLISSE.bouge) { e.stopPropagation(); e.preventDefault(); } }, true);
