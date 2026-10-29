@@ -107,3 +107,20 @@ Scène prévue (à construire avec la première image, Pierre) : fondu dans l'ar
 le défi réussi), le vrai badge (PokeAPI `badges/N.png`) en grand qui tourne et brille, « Touche le badge pour le
 prendre », il vole dans un étui à 8 cases (étincelles, petit air), puis la Hyper Ball du badge (zoom + flash → 3D,
 `ouvrir(c, rejouer, true)`). Rejouable en touchant un badge gagné. Sans image : même scène sur fond sombre.
+
+### Mises en scène des 9 labos (v2, 29/10 : à varier, demande de Kiki)
+Professeur = petit sprite de jeu (≈ 1/4 de la hauteur, proportions chibi) ; l'illustration Poképédia ne sert qu'aux
+vêtements et couleurs (sinon il sort en illustration d'anime, trop grand : essai Chen du 29/10). Support plat, vide,
+jamais deux fois le même ; bas de l'image libre.
+
+| Région | Lieu, lumière | Professeur | Support des 3 balls |
+|---|---|---|---|
+| Kanto | labo de Bourg Palette, matin | debout à droite, main tendue | long comptoir de labo blanc à tiroirs |
+| Johto | labo d'Orme à Bourg Geon, couveuses à œufs, machines | assis sur un tabouret à roulettes, à gauche | plateau d'un chariot de labo en métal |
+| Hoenn | lisière de forêt, Route 101, plein soleil | un genou à terre, sa sacoche à côté | grosse souche d'arbre plate |
+| Sinnoh | rive du Lac Vérité, brume du matin | debout au centre, mains dans le dos, sérieux | grand rocher plat, sa mallette posée à côté |
+| Unys | labo moderne et lumineux de Renouet | appuyée au comptoir, à gauche, fait coucou | comptoir blanc moderne |
+| Kalos | terrasse de café à Illumis, Tour Prismatique au fond, fin de journée | assis sur une chaise de café, à droite | petite table ronde de café |
+| Alola | plage devant sa maison-labo, midi tropical | à gauche, poing levé, plein d'énergie | table de pique-nique en bois flotté |
+| Galar | jardin du cottage de Brasswick, après-midi doré | debout avec sa canne, à droite | muret de pierre plat couvert de mousse |
+| Paldea | camp de recherche au bord du grand cratère, coucher de soleil | accroupie sur un rocher, à gauche | grande dalle de pierre ancienne |
