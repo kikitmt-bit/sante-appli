@@ -33,7 +33,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 
 /* ----- Poké Balls à ouvrir ----- */
 #aouvrir{background:radial-gradient(100% 120% at 50% 0%,#2A3F7A 0%,#1C2740 70%);text-align:center;padding:16px 12px}
-#aouvrir.vide{background:#1C2740}
+#aouvrir.vide{display:none}  /* rien à ouvrir : le bloc disparaît */
 #aouvrir .titre{font-size:19px;font-weight:900;letter-spacing:.2px}
 #aouvrir .rang{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:14px 0 6px}
 .bouton-ball{background:none;border:0;padding:0;cursor:pointer;position:relative;width:64px;height:64px;
@@ -298,11 +298,12 @@ details.regles li{margin:5px 0;line-height:1.4}
 <div id="app" style="padding-bottom:56px">
   <div id="bandeau-test"></div>
   <div id="bandeau-voyage"></div>
-  <div class="carte" id="barre"></div>
+  <!-- ordre (29/10) : ce qui t'attend, ton compteur du jour, tes objectifs du jour, ton aventure, ta collection -->
   <div class="carte" id="aouvrir"></div>
-  <div class="carte" id="voyage"></div>
-  <h2><img class="ico g" id="ic-spe" alt="">Balls spéciales du jour</h2>
+  <div class="carte" id="barre"></div>
+  <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
   <div class="grille2" id="speciales"></div>
+  <div class="carte" id="voyage"></div>
   <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
   <h2><img class="ico g" id="ic-dex" alt="">Pokédex <span class="n" id="dex-n"></span></h2>
   <div id="stats"></div>
@@ -1769,7 +1770,7 @@ function dessinerSpeciales() {
     : `Encore <b>${R.master_jours - J.serie} jour${R.master_jours - J.serie > 1 ? "s" : ""}</b> avec l'objectif. ` +
       (J.serie_ok ? "Aujourd'hui compte déjà ✅" : `Pour qu'aujourd'hui compte : <b>${mPas}</b> ou <b>${mZone}</b>.`);
   const fen = J.fenetre.concat(Array(Math.max(R.master_fenetre - J.fenetre.length, 0)).fill(undefined));
-  document.getElementById("speciales").innerHTML = carteDefi() + `
+  document.getElementById("speciales").innerHTML = carteDefi() + carteMission() + `
     <div class="speciale ${sup ? "ok" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}Super Ball</div><div class="gain">Objectif double · shiny ×2, 1 chance sur 2 d'un nouveau</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
@@ -1790,7 +1791,7 @@ function dessinerSpeciales() {
       <div class="tete">${ico("nuit")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
       <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
-      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + carteMission() + cartePesee();
+      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + cartePesee();
   rognerImages(document.getElementById("speciales"));
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
 }

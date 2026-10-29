@@ -200,7 +200,9 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     aujourd'hui compris (27/10 : avant, seulement les jours finis, et une ball ouverte changeait de Pokémon dans la
     journée car le tirage dépend des types de la barre et des balls gagnées plus tard) →
     `data/pokemon/captures_v2.json` (avant le 25/10 : la tâche du coach, `pokemon.py figer DATA`) (l'ancien `captures.json` du prototype n'est plus lu).
-  - Écran : barre d'effort (anneau), Poké Balls à ouvrir, voyage, balls spéciales du jour, dernières captures, Pokédex
+  - Écran (ordre du 29/10, logique « ce qui t'attend → ton compteur → quoi faire → ton aventure → ta collection ») :
+    bandeaux (badge, voyage), Poké Balls à ouvrir (masqué si vide), barre d'effort, « Tes objectifs du jour » (défi de
+    l'arène pleine largeur, mission, Super, Hyper, Master, Bonne nuit, Pesée), voyage, dernières captures, Pokédex
     (filtres dont « 📍 lieu actuel », types, recherche, fiche en feuille qui monte du bas : grande illustration,
     normal / shiny animés, lieux).
     Ouverture = calque plein écran dans la page parente : Poké Ball **3D** (three.js 0.160 UMD depuis jsDelivr, repli SVG
