@@ -124,3 +124,10 @@ jamais deux fois le même ; bas de l'image libre.
 | Alola | plage devant sa maison-labo, midi tropical | à gauche, poing levé, plein d'énergie | table de pique-nique en bois flotté |
 | Galar | jardin du cottage de Brasswick, après-midi doré | debout avec sa canne, à droite | muret de pierre plat couvert de mousse |
 | Paldea | camp de recherche au bord du grand cratère, coucher de soleil | accroupie sur un rocher, à gauche | grande dalle de pierre ancienne |
+
+### Prompts v2 des labos, gen 1 à 9 (29/10)
+Modèle commun : joindre la carte de la région (style + couleurs), une nouvelle conversation ChatGPT par région.
+`[CHARACTER]` = à compléter par Kiki. Décors, poses et supports : tableau « Mises en scène » ci-dessus.
+Texte complet des 9 prompts : conversation du 29/10 (compte B) ; même structure que celui de Kanto :
+STYLE (carte jointe) / SCENE / CHARACTER (petit sprite chibi, 1/4 de la hauteur) + Pose / SUPPORT vide / COMPOSITION
+(bas 30 % libre) / STRICT RULES (pas de texte, pas de ball, pas de créature).
