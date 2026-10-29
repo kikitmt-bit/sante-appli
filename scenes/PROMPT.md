@@ -21,14 +21,15 @@ Idée de Kiki : le décor sans les balls, et les balls à part. Les balls = l'im
 scènes, vraie transparence (ChatGPT ne sait pas faire un vrai PNG transparent), et Claude peut l'animer librement
 (halo, secousse, saut). Plus besoin de cacher une ball dessinée. Chaque région a sa propre mise en scène (pas toujours
 le professeur au milieu derrière une table) : il faut seulement un support plat, vide et bien visible, et le bas libre.
-Essai d'abord avec Chen (joindre `labo-chen.webp`) :
+Essai d'abord avec Chen. Joindre **2 images** : `labo-chen.webp` (style + taille du personnage ; pas la carte, vue de dessus, sans personnage) puis une illustration officielle du professeur (apparence). Un prompt par professeur (décor de sa ville, support, pose).
 
 ```
-The attached image is Professor Oak's lab that you made for my Pokémon-style fitness app. Make a NEW version of this scene, in the exact same art style, but with a different, more lively composition.
+First image = Professor Oak's lab that you made for my Pokémon-style fitness app: copy ONLY its art style and the size of the character. Second image = official artwork of Professor Oak: use it ONLY for his appearance (face, hair, clothes, colors).
+Make a NEW version of this scene, in the exact same art style as the first image, but with a different, more lively composition.
 
 STYLE (identical to the attached image): 16-bit pixel art like Pokémon FireRed/LeafGreen, same pixel size, same dark outlines, same soft shading, same colors, same camera (seen from the front with a slight top-down angle), portrait 9:16 format.
 
-SCENE: Professor Oak's laboratory in Pallet Town, warm morning light coming through the windows, tall bookshelves, a computer, a big research machine with small blinking lights, potted plants, a map of the region on the wall.
+SCENE: Professor Oak's laboratory in Pallet Town, warm morning light coming through the windows (through one window we can see the small peaceful village of Pallet Town with red roofs), tall bookshelves, a computer, a big research machine with small blinking lights, potted plants, a map of the region on the wall.
 
 CHARACTER: Professor Oak (grey hair, white lab coat, red shirt, brown trousers, kind smile), full body visible, standing on the right third of the image, turned towards us, one hand open in a welcoming gesture towards the table.
 
