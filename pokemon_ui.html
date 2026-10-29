@@ -95,6 +95,19 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .badge-attente b{font-size:17px;font-weight:900}
 .badge-attente small{font-size:12.5px;color:#FFE27A;font-weight:700}
 .bandeau-voyage.or{box-shadow:0 0 0 2px #FFD84A inset,0 0 18px rgba(255,216,74,.5);background:linear-gradient(135deg,#5A4A12,#1C2740)}
+.speciale.pesee{grid-column:1/-1}
+.semaine-pesee{display:flex;gap:6px;margin:6px 0 2px}
+.semaine-pesee i{flex:1;max-width:34px;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;font:800 11px Outfit,sans-serif;
+  font-style:normal;color:#7C8AA8;background:#0D1322;box-shadow:inset 0 0 0 1.5px #2A3654}
+.semaine-pesee i.on{background:#4CD3A0;color:#0D1322;box-shadow:none}
+.semaine-pesee i.rate{color:#55607A;background:#141B2E}
+.semaine-pesee i.auj{box-shadow:inset 0 0 0 2px #FFCB05;color:#FFCB05}
+.pesee-der{font-size:12px;color:#C9D3EA;margin-top:9px;line-height:1.4}
+.pesee-der .gris{color:#9AA7C2;font-size:11px}
+.pesee-comp{font-size:12px;color:#C9D3EA;margin-top:4px;line-height:2}
+.pk-poids{display:inline-flex;align-items:center;gap:3px;background:#0D1322;border-radius:999px;padding:1px 9px 1px 3px;white-space:nowrap}
+.pk-poids img{width:26px;height:26px;object-fit:contain;image-rendering:pixelated}
+.pk-poids b{color:#fff;font-weight:800}
 .speciale .reste{font-size:11px;color:#FFCB05;margin-top:7px;line-height:1.35}
 .speciale.ok .reste{color:#4CD3A0}
 
@@ -401,7 +414,7 @@ const icoType = t => TYPE_ID[t] ? `<img class="ty" src="${IMG.type(t)}" alt="">`
 function raisonHTML(c) {
   const [e, ...reste] = (c.raison || "").split(" "), txt = reste.join(" ");
   const badge = /#badge(\d)/.exec(c.id), a = badge && LIEUX.filter(l => l.arene)[badge[1] - 1];
-  const i = {"🎁": "poke", "🏆": "ligue", "👑": "master", "🎯": "super", "⚡": "effort"}[e];
+  const i = {"🎁": "poke", "🏆": "ligue", "👑": "master", "🎯": "super", "⚡": "effort", "⚖️": "poke"}[e];
   return a && a.arene.image ? `${ico(IMG.badge(a.arene.image), "p")} ${txt}` : i ? `${ico(i, "p")} ${txt}` : c.raison;
 }
 const N3 = n => String(n).padStart(3, "0");
@@ -1773,8 +1786,52 @@ function dessinerSpeciales() {
       <div class="tete">${ico("nuit")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
       <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
-      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
+      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + cartePesee();
+  rognerImages(document.getElementById("speciales"));
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
+}
+// La pesée de la semaine (29/10) : 3 pesées le matin du lundi au dimanche = une Poké Ball ; et la dernière pesée
+// comparée à des Pokémon (poids officiels du Pokédex), une combinaison différente chaque jour
+function comparerPokemon(kg, graine) {
+  let s = [...graine].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 2147483647, 7) || 7;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647;
+  const tous = Object.entries(D.poids).map(([n, w]) => [+n, w]).filter(([, w]) => w >= .5 && w <= kg);
+  let meilleur = null;
+  for (let essai = 0; essai < 600; essai++) {
+    let reste = kg; const choix = [];
+    for (let k = 0; k < 3 && reste > .3; k++) {
+      const ok = tous.filter(([n, w]) => w <= Math.min(reste * 1.02, k ? kg : kg * .6) && !choix.some(c => c[0] === n));
+      if (!ok.length) break;
+      const [n, w] = ok[Math.floor(rnd() * ok.length)], fois = Math.max(1, Math.floor(rnd() * Math.min(4, Math.floor(reste / w + .02))) + 1);
+      const f = Math.min(fois, Math.floor(reste / w + .02)) || 1; choix.push([n, f, w]); reste -= f * w;
+    }
+    const nb = choix.reduce((t, c) => t + c[1], 0), ecart = Math.abs(reste);
+    if (nb > 6) continue;
+    const note = ecart / kg + (nb < 2 ? .05 : nb > 4 ? .01 : 0) + rnd() * .012;  // 2 à 4 Pokémon : plus drôle
+    if (ecart / kg < .015 && (!meilleur || note < meilleur.note)) meilleur = {note, choix};
+  }
+  return meilleur ? meilleur.choix : null;
+}
+function cartePesee() {
+  const p = D.pesees; if (!p) return "";
+  const ok = p.nb >= p.cible, jours = ["L", "M", "M", "J", "V", "S", "D"];
+  const reste = Math.max(p.cible - p.nb, 0), dimanche = p.semaine.findIndex(x => x === null) < 0;
+  const d = p.derniere, kgFr = v => String(Math.round(v * 10) / 10).replace(".", ",");
+  let comp = "";
+  if (d) {
+    const choix = comparerPokemon(d.kg, d.jour), quand = d.jour === D.aujourdhui ? "Ce matin" : `Le ${d.jour.slice(8)}/${d.jour.slice(5, 7)}`;
+    const h = `${Math.floor(d.heure)} h ${String(Math.round(d.heure % 1 * 60)).padStart(2, "0")}`;
+    comp = `<div class="pesee-der">${quand} (${h}) : <b>${kgFr(d.kg)} kg</b>${d.gras ? ` · ${kgFr(d.gras)} % de graisse` : ""}
+      ${d.heure >= p.avant ? `<br><span class="gris">Après midi : elle ne compte pas pour la mission.</span>` : ""}</div>
+      ${choix ? `<div class="pesee-comp">${d.jour === D.aujourdhui ? "Tu pèses" : "Tu pesais"} autant que
+        ${choix.map(([n, f]) => `<span class="pk-poids"><img class="rogne" src="${IMG.mini(n, false)}" loading="lazy"><b>${f > 1 ? f + " × " : ""}${PAR_NUM[n].nom}</b></span>`).join(" + ")}</div>` : ""}`;
+  }
+  return `<div class="speciale pesee ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
+    <div class="tete">${ico("poke")}Pesée de la semaine</div>
+    <div class="gain">${p.cible} pesées le matin (avant ${p.avant} h), du lundi au dimanche = une Poké Ball</div>
+    <div class="semaine-pesee">${p.semaine.map((x, i) => `<i class="${x === 1 ? "on" : x === 0 ? "rate" : i === p.semaine.indexOf(null) ? "auj" : ""}">${jours[i]}</i>`).join("")}</div>
+    <div class="reste">${ok ? "Gagnée cette semaine ! Continue : plus de pesées, des stats plus fiables." :
+      `Encore <b>${reste} pesée${reste > 1 ? "s" : ""}</b> avant dimanche.`}</div>${comp}</div>`;
 }
 // 3. Le défi de l'arène où l'on est arrivé, avec les missions du jour (sur 7 jours, ou son plan B)
 function carteDefi() {
@@ -2495,6 +2552,8 @@ function dessinerRegles() {
       Plus rien de nouveau autour de toi : la ball pioche dans tout Kanto, donc aucune n'est perdue.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
       6 jours sur 7). Pendant ce temps, ton dresseur attend à l'arène : tes points comptent pour les Poké Balls, mais pas pour la carte. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
+    <li>${ico("poke", "p")} <b>Pesée de la semaine</b> : ${D.pesees ? D.pesees.cible : 3} pesées le matin (avant ${D.pesees ? D.pesees.avant : 12} h) entre lundi et dimanche = une Poké Ball, dès la ${D.pesees ? D.pesees.cible : 3}e.
+      Plusieurs pesées par semaine, toujours dans les mêmes conditions, rendent tes courbes de poids et de masse grasse fiables.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}

@@ -55,6 +55,9 @@ REGLAGES = {
     "master_jours": 25, "master_fenetre": 30,  # jours avec l'objectif sur les 30 derniers pour un légendaire
     "objectif_pas": 5000, "objectif_zone": 15,
     "exploit_pas": 10000, "exploit_zone": 30, "exploit_seance": 45,
+    # Pesée de la semaine (29/10, demande de Kiki : il oublie de se peser) : 3 pesées du lundi au dimanche, le matin
+    # (avant midi : même poids qu'au réveil s'il n'a pas mangé) = une Poké Ball, dès la 3e. Petite récompense exprès.
+    "pesees": 3, "pesee_avant": 12,
 }
 
 BALLS = {  # shiny : multiplicateur ; nouvelle : chance d'une espèce jamais vue
@@ -202,7 +205,7 @@ def objectif_ok(m):
     return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= REGLAGES["objectif_zone"]
 
 
-def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
+def balls_du_jour(jour, m, avant, apres, master=None, badges=(), balance=False):
     """Les Poké Balls gagnées un jour : avant / apres = points d'effort cumulés depuis le début du jeu ; master = numéro
     de la Master Ball gagnée ce jour-là, ou None ; badges = [(numéro, lieu)] des arènes gagnées ce jour-là."""
     dues = []
@@ -227,12 +230,35 @@ def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
     if super_ok(m):
         dues.append({"cle": "super", "ball": "super", "raison": "🎯 Objectif double : pas et minutes en zone",
                      "types": None})
+    if balance:
+        dues.append({"cle": "balance", "ball": "poke", "types": None,
+                     "raison": f"⚖️ Pesée de la semaine ({REGLAGES['pesees']} pesées le matin)"})
     ic, nom, types = origine_barre(m)
     b = REGLAGES["barre"]
     for k in range(math.floor(avant / b) + 1, math.floor(apres / b) + 1):
         dues.append({"cle": f"poke{k}", "ball": "poke", "raison": f"⚡ Barre d'effort n° {k} ({ic} {nom})",
                      "types": types})
     return dues
+
+
+def pesees_du_jour(resume):
+    """Les pesées d'un jour (résumé brut) : [(heure locale décimale, kg, % de graisse ou None)]."""
+    gras = {}
+    for p in (resume or {}).get("body-fat") or []:
+        b = p.get("bodyFat") or {}
+        gras[(b.get("sampleTime") or {}).get("physicalTime")] = b.get("percentage")
+    sortie = []
+    for p in (resume or {}).get("weight") or []:
+        w = p.get("weight") or {}
+        t = w.get("sampleTime") or {}
+        h = (t.get("civilTime") or {}).get("time") or {}
+        if w.get("weightGrams"):
+            sortie.append((h.get("hours", 0) + h.get("minutes", 0) / 60, w["weightGrams"] / 1000, gras.get(t.get("physicalTime"))))
+    return sorted(sortie)
+
+
+def pesee_matin(resume):
+    return any(h < REGLAGES["pesee_avant"] for h, _, _ in pesees_du_jour(resume))
 
 
 def ident(jour, cle):
@@ -248,6 +274,7 @@ def jouer(stats, resumes, aujourd, figees=()):
     jours_ok, masters, depuis_master = [], 0, REGLAGES["debut"]  # Master Ball : jours avec l'objectif dans la fenêtre
     voyage = kanto.Voyage()
     jour, m, ok, bonus = REGLAGES["debut"], {}, False, 1
+    pesees = set()  # les jours de la semaine en cours avec une pesée le matin
     while jour <= aujourd:
         s = stats.loc[jour].to_dict() if jour in stats.index else {}
         m = mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []], jour)
@@ -263,7 +290,13 @@ def jouer(stats, resumes, aujourd, figees=()):
         badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"],
                                        "force": m["nb_force"], "ok": ok, "super": super_ok(m)}, cumul)
         lieu, poids_lieux = kanto.LIEUX[voyage.ici()]["nom"], voyage.poids()
-        dues = balls_du_jour(jour, m, avant, cumul, master, badges)
+        if jour.weekday() == 0:
+            pesees = set()
+        avant_pesees = len(pesees)
+        if pesee_matin(resumes.get(str(jour))):
+            pesees.add(jour)
+        balance = avant_pesees < REGLAGES["pesees"] <= len(pesees)
+        dues = balls_du_jour(jour, m, avant, cumul, master, badges, balance)
         ids = {ident(jour, mi["cle"]) for mi in dues}
         dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(ident(jour, "")) and i not in ids]  # figées
         dues.sort(key=lambda mi: ident(jour, mi["cle"]) not in figees)  # figées d'abord : les nouvelles les évitent
@@ -290,7 +323,21 @@ def jouer(stats, resumes, aujourd, figees=()):
     debut_fenetre = max(depuis_master, aujourd - dt.timedelta(days=REGLAGES["master_fenetre"] - 1))
     fenetre = [1 if j in jours_ok else (None if j == aujourd else 0)
                for j in (debut_fenetre + dt.timedelta(days=i) for i in range((aujourd - debut_fenetre).days + 1))]
-    return captures, {"serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
+    lundi = aujourd - dt.timedelta(days=aujourd.weekday())
+    semaine = [1 if j in pesees else (None if j >= aujourd else 0) for j in (lundi + dt.timedelta(days=i) for i in range(7))]
+    if aujourd in pesees:
+        semaine[aujourd.weekday()] = 1
+    derniere = None
+    for k in range(120):  # la dernière pesée (pour la comparer à des Pokémon)
+        j = aujourd - dt.timedelta(days=k)
+        ps = pesees_du_jour(resumes.get(str(j)))
+        if ps:
+            h, kg, gras = ps[-1]
+            derniere = {"jour": str(j), "heure": round(h, 2), "kg": kg, "gras": gras}
+            break
+    return captures, {"pesees": {"semaine": semaine, "nb": len(pesees), "cible": REGLAGES["pesees"],
+                                 "avant": REGLAGES["pesee_avant"], "derniere": derniere},
+                      "serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
                       "possedees": possedees, "mesures": m, "sans_nouvelle": sans_nouvelle,
                       "barre": cumul % b, "origine": origine_barre(m) if m else SOURCES["pas"], "shiny_bonus": bonus}
 
