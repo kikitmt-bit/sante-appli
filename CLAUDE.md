@@ -129,7 +129,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     **Pesée de la semaine** (29/10, Kiki oublie de se peser) : `REGLAGES` `pesees` = 3, `pesee_avant` = 12 h (heure
     locale de la balance, `pesees_du_jour` lit les points bruts `weight` / `body-fat` des résumés) ; du lundi au
     dimanche, dès la 3e pesée du matin = Poké Ball `balance` (petite récompense voulue). Carte « Pesée de la semaine »
-    (`cartePesee` : 7 ronds L→D) dans les balls spéciales, avec la dernière pesée comparée à 2-4 Pokémon (`POIDS` de
+    (`cartePesee`, demi-largeur et compacte, la moins importante : 7 petits ronds L→D) dans les balls spéciales, avec la dernière pesée comparée à 2-4 Pokémon en icônes seules (×2, nom au survol) (`POIDS` de
     pokedex.py = poids officiels PokeAPI, `comparerPokemon`, graine = la date). Pour des stats fiables : ≥ 3 / semaine.
   - **Pokédex = une entrée par espèce, normal + shiny** (28/10 : plus les ~14 « versions » des différents jeux, carte
     blanche de Kiki). Jamais de doublon : `tirer` prend une espèce pas encore attrapée (ou son shiny ; quand toutes les
