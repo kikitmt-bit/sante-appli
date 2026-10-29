@@ -15,6 +15,30 @@ Composition for a phone screen: portrait format 9:16. Professor and table in the
 Strict rules: no text, no letters, no UI, no dialogue box, no frame, no other characters.
 ```
 
+### Version 2 (29/10) : table VIDE, Claude pose les 3 Poké Balls lui-même
+Idée de Kiki : le décor sans les balls, et les balls à part. Les balls = l'image officielle du jeu (PokeAPI
+`items/poke-ball.png`, déjà utilisée dans l'onglet), agrandie au même pas de pixel que la scène : identique dans les 9
+scènes, vraie transparence (ChatGPT ne sait pas faire un vrai PNG transparent), et Claude peut l'animer librement
+(halo, secousse, saut). Plus besoin de cacher une ball dessinée. Chaque région a sa propre mise en scène (pas toujours
+le professeur au milieu derrière une table) : il faut seulement un support plat, vide et bien visible, et le bas libre.
+Essai d'abord avec Chen (joindre `labo-chen.webp`) :
+
+```
+The attached image is Professor Oak's lab that you made for my Pokémon-style fitness app. Make a NEW version of this scene, in the exact same art style, but with a different, more lively composition.
+
+STYLE (identical to the attached image): 16-bit pixel art like Pokémon FireRed/LeafGreen, same pixel size, same dark outlines, same soft shading, same colors, same camera (seen from the front with a slight top-down angle), portrait 9:16 format.
+
+SCENE: Professor Oak's laboratory in Pallet Town, warm morning light coming through the windows, tall bookshelves, a computer, a big research machine with small blinking lights, potted plants, a map of the region on the wall.
+
+CHARACTER: Professor Oak (grey hair, white lab coat, red shirt, brown trousers, kind smile), full body visible, standing on the right third of the image, turned towards us, one hand open in a welcoming gesture towards the table.
+
+THE TABLE (very important): a wide wooden table in the left-center of the image, next to the professor, seen clearly from slightly above. Its top must be COMPLETELY EMPTY, flat and uncluttered, with enough free space for three Poké Balls side by side (I will add them myself later). Nothing on the table: no Poké Ball, no object, no paper.
+
+COMPOSITION: the professor and the table in the upper two thirds of the image. The bottom 30% of the image must be plain floor with nothing on it, because a dialogue box will be placed there.
+
+STRICT RULES: NO Poké Ball anywhere in the image. No text, no letters, no numbers, no UI, no dialogue box, no frame or border, no other characters, no Pokémon.
+```
+
 ### Labos des régions suivantes (une image par région, quand on construira la région)
 
 Joindre **2 images** : `labo-chen.webp` (modèle de style, obligatoire) + une illustration officielle du professeur
