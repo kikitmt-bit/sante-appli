@@ -69,6 +69,16 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   éclats + petit air (`SON_BADGE`), puis Hyper Ball / Master Ball (flash → `ouvrir(c, rejouer, true)`). Lancée par
   `lancer` pour `badgeN` / `ligue` pas encore ouverts ; rejouée en touchant un badge gagné dans la boîte à badges. Tant qu'il n'y a aucun badge : bouton « 🎬 Aperçu de la
   scène du badge » (Pierre, sans récompense) dans « Comment ça marche ? ».
+  **Scène du badge v2 (29/10, Kiki : « tout fait amateur »)** : noir → titre de l'arène au centre (trait lumineux) qui
+  monte → décor = la ville sur la carte de la région, floue et sombre, en travelling ; particules selon le type (`AIRS` :
+  poussière Roche, bulles Eau, étincelles Électrik, pétales Plante…, `airAnime`) ; champion en silhouette puis projecteur ;
+  dialogue ; révélation : roulement de timbales + énergie qui converge, éclair, onde de choc, secousse, le badge arrive en
+  tournant ; nom du badge en lettres d'or ; on le touche → **étui en cuir** (couvercle qui s'ouvre, velours bleu, 8
+  alvéoles) où il vole ; fanfare. **Badge propre** (`badgePropre` : liseré blanc effacé par remplissage depuis les bords
+  jusqu'au contour noir, agrandi ×4 en EPX, tranche dorée) et **en relief** (`badge3D` : face + 22 couches de tranche +
+  dos, en 3D CSS ; jamais de `mix-blend-mode`/`filter` sur un parent : ça aplatit la 3D). Sons (`EPIQUE`, `salle()` =
+  réverbération) : cuivres, timbales, cymbales, tintements, fanfare originale. Sur la carte, le champion ne s'anime
+  **jamais** (il sortirait du médaillon) et sa bulle donne un **indice** (`CHAMPIONS[n].indice`), pas le défi.
   **Badges (29/10)** : un badge gagné qui attend (`badgeN` / `ligue` pas ouvert, `estBadge`) s'affiche en haut de
   « à ouvrir » comme le **badge doré qui tourne** (`.badge-attente`, pas une Hyper Ball) + **bandeau doré** en haut de
   l'onglet (passe avant celui du voyage) ; toucher = `sceneBadge`. Arrivé à une arène : carte **« Défi de l'arène »**

@@ -88,9 +88,9 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .badge-attente .disque{width:64px;height:64px;flex:none;border-radius:50%;display:grid;place-items:center;
   background:radial-gradient(circle at 40% 30%,#FFF7CF,#FFD84A 55%,#C08A00);box-shadow:0 0 0 2px #FFF3B0,0 0 20px 4px rgba(255,216,74,.6);
   animation:pk-badge-att 2.4s ease-in-out infinite}
-.badge-attente .disque img{width:66%;height:66%;object-fit:contain;animation:pk-badge-tourne 3s linear infinite}
+.badge-attente .disque img{width:70%;height:70%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45));animation:pk-badge-tourne 3.4s ease-in-out infinite}
 @keyframes pk-badge-att{50%{transform:translateY(-4px) scale(1.05);box-shadow:0 0 0 2px #FFF3B0,0 0 30px 8px rgba(255,216,74,.8)}}
-@keyframes pk-badge-tourne{to{transform:rotateY(360deg)}}
+@keyframes pk-badge-tourne{50%{transform:rotate(-8deg) scale(1.06)}}
 .badge-attente .txt{display:flex;flex-direction:column;gap:3px}
 .badge-attente b{font-size:17px;font-weight:900}
 .badge-attente small{font-size:12.5px;color:#FFE27A;font-weight:700}
@@ -184,6 +184,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
   border:3px solid #50607E;border-radius:10px;padding:7px 9px;font:500 12.5px/1.35 'Pixelify Sans',Outfit,sans-serif;z-index:5;
   box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pkl-bulle .25s ease-out}
 .bulle-chef b{color:#C03028}
+.bulle-chef small{display:block;margin-top:4px;font-size:11px;color:#6A6A6A}
 @keyframes pkl-bulle{from{opacity:0}}
 .bulle-chef.dessous{transform:translate(-50%,calc(10px + 6vw))}
 .carte-kanto .vise{animation:pk-vise 1.6s ease-out infinite;transform-box:fill-box;transform-origin:center}
@@ -1101,81 +1102,162 @@ function intro(c, p, rejouer = false) {
 // Les champions : images animées du jeu PokéRogue (projet public pagefaultgames/pokerogue-assets, version figée)
 const ROGUE = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/trainer/";
 const CHAMPIONS = {
-  1: {nom: "Pierre", sprite: "brock", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
+  1: {nom: "Pierre", sprite: "brock", indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
       "Une semaine entière d'efforts… Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
-  2: {nom: "Ondine", sprite: "misty", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
+  2: {nom: "Ondine", sprite: "misty", indice: "Dans mon arène, tout se passe dans l'eau ! Tu as du souffle ? Montre-moi comment tu rames !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
       "Hmpf… Tu as plus de souffle que je ne le pensais. Bien joué !"]},
-  3: {nom: "Major Bob", sprite: "lt_surge", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
+  3: {nom: "Major Bob", sprite: "lt_surge", indice: "Hé, soldat ! Ici, il faut que ça chauffe sous le capot. Fais monter ton cœur, et pas qu'une fois !", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
       "Wahou ! Tu as une énergie de 100 000 volts, soldat !"]},
-  4: {nom: "Erika", sprite: "erika", lignes: ["Bienvenue… Je suis Erika, la Championne de Céladopole. J'aime les fleurs et les longues promenades.",
+  4: {nom: "Erika", sprite: "erika", indice: "Les plus belles fleurs se trouvent au bout des longues promenades… Tu aimes marcher, n'est-ce pas ?", lignes: ["Bienvenue… Je suis Erika, la Championne de Céladopole. J'aime les fleurs et les longues promenades.",
       "Tant de pas… Tu as la patience d'une graine qui devient un grand arbre."]},
-  5: {nom: "Koga", sprite: "koga", lignes: ["Fwahahaha ! Je suis Koga, le Champion de Parmanie. La discipline du ninja n'a aucun secret pour moi !",
+  5: {nom: "Koga", sprite: "koga", indice: "Le ninja s'entraîne chaque jour, qu'il pleuve ou qu'il vente. Ta régularité sera ton arme.", lignes: ["Fwahahaha ! Je suis Koga, le Champion de Parmanie. La discipline du ninja n'a aucun secret pour moi !",
       "Jour après jour, sans faiblir… Tu as l'endurance d'un vrai ninja !"]},
-  6: {nom: "Morgane", sprite: "sabrina", lignes: ["Je suis Morgane, la Championne de Safrania. Je savais que tu viendrais : je l'avais vu…",
+  6: {nom: "Morgane", sprite: "sabrina", indice: "Mon esprit est fort. Ton corps l'est-il autant ? Je veux voir tes muscles travailler.", lignes: ["Je suis Morgane, la Championne de Safrania. Je savais que tu viendrais : je l'avais vu…",
       "Ta force ne vient pas que de tes muscles. Ton esprit est solide."]},
-  7: {nom: "Auguste", sprite: "blaine", lignes: ["Hah ! Je suis Auguste, le Champion brûlant de Cramois'Île !",
+  7: {nom: "Auguste", sprite: "blaine", indice: "Hah ! Ici, ça brûle ! Fais flamber ton cœur, longtemps, très longtemps !", lignes: ["Hah ! Je suis Auguste, le Champion brûlant de Cramois'Île !",
       "Ton cœur brûle d'une flamme ardente ! Quelle endurance !"]},
-  8: {nom: "Giovanni", sprite: "giovanni", lignes: ["Alors c'est toi qui as battu tous les Champions… Je suis Giovanni, le Champion de Jadielle.",
+  8: {nom: "Giovanni", sprite: "giovanni", indice: "Tu as traversé tout Kanto… mais pour m'atteindre, il faudra marcher encore. Beaucoup.", lignes: ["Alors c'est toi qui as battu tous les Champions… Je suis Giovanni, le Champion de Jadielle.",
       "Impressionnant. Une telle persévérance mérite le respect."]},
-  9: {nom: "Régis", sprite: "blue", lignes: ["Te voilà enfin ! Moi, Régis, je suis le Champion de la Ligue Pokémon !",
+  9: {nom: "Régis", sprite: "blue", indice: "Le dernier défi est le plus dur : tout donner, plusieurs jours, comme un vrai champion !", lignes: ["Te voilà enfin ! Moi, Régis, je suis le Champion de la Ligue Pokémon !",
       "Quoi ?! Tout ce chemin… Tu es vraiment devenu le plus fort !"]},
 };
 const STYLE_BADGE = `
-#pkm-badge,#pkm-labo{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#0B0F1C;touch-action:manipulation;user-select:none;
-  -webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace;color:#fff}
-.pkm-scene .fond{position:absolute;inset:0;background:radial-gradient(circle at 50% 38%,var(--c) 0%,color-mix(in srgb,var(--c) 45%,#0B0F1C) 45%,#0B0F1C 100%)}
-.pkm-scene .lignes{position:absolute;inset:0;opacity:.18;background:repeating-linear-gradient(-28deg,transparent 0 22px,rgba(255,255,255,.5) 22px 26px);
-  animation:pkb-defile 9s linear infinite}
-@keyframes pkb-defile{to{background-position:300px 0}}
-.pkm-scene .rayons{position:absolute;left:50%;top:34%;width:220vmax;height:220vmax;margin:-110vmax 0 0 -110vmax;opacity:0;transition:opacity .8s;
-  background:repeating-conic-gradient(rgba(255,240,180,.22) 0 7deg,transparent 7deg 20deg);animation:pkb-rayons 18s linear infinite;
-  -webkit-mask:radial-gradient(circle,#000 0,transparent 42%);mask:radial-gradient(circle,#000 0,transparent 42%)}
-.pkm-scene.badge-la .rayons{opacity:1}
-.pkm-scene .bande{position:absolute;left:0;right:0;height:16.7%;background:#000;z-index:25}
-.pkm-scene .bande.g{animation:pkb-gauche .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
-.pkm-scene .bande.d{animation:pkb-droite .7s .2s cubic-bezier(.6,0,.8,.4) forwards}
-@keyframes pkb-rayons{to{transform:rotate(360deg)}}
-@keyframes pkb-gauche{to{transform:translateX(-102%)}}@keyframes pkb-droite{to{transform:translateX(102%)}}
-.pkm-scene .bandeau{position:absolute;left:0;top:max(16px,env(safe-area-inset-top));padding:8px 18px 8px 16px;font-weight:700;font-size:18px;
-  background:linear-gradient(90deg,rgba(0,0,0,.65),rgba(0,0,0,.25));border-radius:0 14px 14px 0;transform:translateX(-105%);
-  transition:transform .5s cubic-bezier(.2,1.2,.4,1);text-shadow:2px 2px 0 rgba(0,0,0,.5);letter-spacing:.5px}
-.pkm-scene .bandeau small{display:block;font-size:12px;font-weight:500;opacity:.8;letter-spacing:0}
-.pkm-scene.entre .bandeau{transform:none}
-.pkm-scene .scene{position:absolute;left:50%;top:13%;width:min(66vw,290px);transform:translateX(-50%)}
-.pkm-scene .estrade{position:absolute;left:8%;right:8%;bottom:-6%;height:17%;border-radius:50%;
-  background:radial-gradient(ellipse at 50% 35%,rgba(255,255,255,.35),rgba(255,255,255,.08) 60%,transparent 72%);
-  box-shadow:0 0 0 3px rgba(255,255,255,.18) inset;opacity:0;transition:opacity .6s .3s}
-.pkm-scene .champion{display:block;width:100%;image-rendering:pixelated;transform:translateX(70vw);opacity:0;
-  transition:transform .75s cubic-bezier(.2,1,.3,1),opacity .4s,filter .6s;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
-.pkm-scene.entre .champion{transform:none;opacity:1}.pkm-scene.entre .estrade{opacity:1}
-.pkm-scene.badge-la .champion{filter:brightness(.55) drop-shadow(0 6px 10px rgba(0,0,0,.45))}
-.pkm-scene .badge{position:absolute;left:50%;top:34%;width:min(46vw,190px);aspect-ratio:1;transform:translate(-50%,-50%) translateY(-75vh);
-  z-index:10;cursor:pointer;transition:transform .9s cubic-bezier(.3,1.5,.5,1)}
-.pkm-scene.badge-la .badge{transform:translate(-50%,-50%)}
-.pkm-scene .badge .tourne{width:100%;height:100%;animation:pkb-tourne 3.2s ease-in-out infinite;display:flex;align-items:center;justify-content:center}
-.pkm-scene .badge img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(255,240,170,.9))}
-.pkm-scene .badge .trophee{width:min(36vw,150px);height:auto;image-rendering:pixelated;filter:drop-shadow(0 0 18px rgba(255,220,120,.9))}
-@keyframes pkb-tourne{0%,100%{transform:rotateY(0)}50%{transform:rotateY(180deg)}}
-.pkm-scene .badge.vole{transition:transform .85s cubic-bezier(.5,0,.3,1)}
-.pkm-scene .badge.vole .tourne{animation:none}
-.pkm-scene .aide{position:absolute;left:0;right:0;top:calc(34% + min(23vw,95px) + 22px);text-align:center;font-size:17px;font-weight:700;
-  opacity:0;transition:opacity .4s;text-shadow:2px 2px 0 rgba(0,0,0,.6);z-index:10}
-.pkm-scene .aide.vu{opacity:1;animation:pk-clign 1.6s ease-in-out infinite}
+#pkm-badge{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#05070D;touch-action:manipulation;user-select:none;
+  -webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace;color:#fff;--c:#B8A038}
+/* le décor : la ville sur la carte de la région, floutée et sombre, qui avance doucement (travelling) */
+#pkm-badge .decor{position:absolute;inset:-6%;background-repeat:no-repeat;filter:blur(5px) brightness(.32) saturate(1.25);
+  transform:scale(1.04);animation:pkb-travelling 26s ease-out forwards;opacity:0;transition:opacity 1.4s}
+#pkm-badge.allume .decor{opacity:1}
+@keyframes pkb-travelling{to{transform:scale(1.16)}}
+#pkm-badge .teinte{position:absolute;inset:0;background:radial-gradient(120% 80% at 50% 30%,color-mix(in srgb,var(--c) 38%,transparent),transparent 65%),
+  radial-gradient(140% 100% at 50% 50%,transparent 45%,rgba(0,0,0,.85) 100%);mix-blend-mode:normal;opacity:0;transition:opacity 1.2s}
+#pkm-badge.allume .teinte{opacity:1}
+#pkm-badge canvas.air{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:3}
+/* bandes de cinéma */
+#pkm-badge .cine{position:absolute;left:0;right:0;height:9vh;background:#000;z-index:19;transition:transform .9s cubic-bezier(.7,0,.3,1)}
+#pkm-badge .cine.h{top:0}#pkm-badge .cine.b{bottom:0}
+#pkm-badge.revele .cine.h{transform:translateY(-101%)}#pkm-badge.revele .cine.b{transform:translateY(101%)}
+/* le titre de l'arène : au centre, puis en haut */
+#pkm-badge .titre-arene{position:absolute;left:0;right:0;top:44%;text-align:center;z-index:26;transform:translateY(-50%);
+  transition:top .9s cubic-bezier(.6,0,.2,1),transform .9s cubic-bezier(.6,0,.2,1),opacity .6s}
+#pkm-badge .titre-arene .ligne{height:2px;width:0;margin:0 auto 12px;background:linear-gradient(90deg,transparent,var(--c),#fff,var(--c),transparent);
+  box-shadow:0 0 12px var(--c);transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+#pkm-badge .titre-arene b{display:block;font-size:30px;letter-spacing:4px;opacity:0;transform:translateY(8px);transition:opacity .7s .35s,transform .7s .35s;
+  text-shadow:0 0 18px color-mix(in srgb,var(--c) 70%,transparent),0 3px 0 rgba(0,0,0,.6)}
+#pkm-badge .titre-arene small{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;font-size:14px;color:#E8E2CC;
+  opacity:0;transition:opacity .7s .8s;font-family:Outfit,sans-serif;font-weight:700;letter-spacing:.5px}
+#pkm-badge .titre-arene small img{width:20px;height:20px;image-rendering:pixelated}
+#pkm-badge.titre .titre-arene .ligne{width:min(80vw,340px)}
+#pkm-badge.titre .titre-arene b,#pkm-badge.titre .titre-arene small{opacity:1;transform:none}
+#pkm-badge.haut .titre-arene{top:calc(max(14px,env(safe-area-inset-top)) + 9vh + 4px);transform:scale(.62);transform-origin:50% 0}
+#pkm-badge.revele .titre-arene{opacity:0}
+/* le champion : une silhouette, puis le projecteur s'allume */
+#pkm-badge .spot{position:absolute;left:50%;top:0;width:min(110vw,520px);height:62%;transform:translateX(-50%);z-index:4;opacity:0;
+  background:linear-gradient(180deg,rgba(255,250,225,.42),rgba(255,250,225,.08) 75%,transparent);filter:blur(10px);
+  clip-path:polygon(43% 0,57% 0,88% 100%,12% 100%);transition:opacity .25s}
+#pkm-badge.spot-on .spot{opacity:1;animation:pkb-spot 4s ease-in-out infinite}
+@keyframes pkb-spot{50%{opacity:.82}}
+#pkm-badge .champ{position:absolute;left:50%;top:15%;width:min(64vw,280px);transform:translateX(-50%);z-index:5;
+  transition:transform 1s cubic-bezier(.5,0,.2,1),opacity 1s,filter 1s}
+#pkm-badge .champ canvas{display:block;width:100%;image-rendering:pixelated;filter:brightness(0) drop-shadow(0 0 1px rgba(255,255,255,.35));
+  transition:filter .5s}
+#pkm-badge.spot-on .champ canvas{filter:brightness(1) drop-shadow(0 8px 14px rgba(0,0,0,.55))}
+#pkm-badge .ombre{position:absolute;left:12%;right:12%;bottom:2%;height:9%;border-radius:50%;background:radial-gradient(closest-side,rgba(0,0,0,.65),transparent);
+  z-index:-1;filter:blur(2px)}
+#pkm-badge.revele .champ{transform:translateX(-50%) translateY(-6%) scale(.86);opacity:.28;filter:blur(2px)}
+/* la révélation */
+#pkm-badge .charge{position:absolute;left:50%;top:38%;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;z-index:8;opacity:0;
+  background:radial-gradient(circle,#fff 0,#FFF3C4 30%,color-mix(in srgb,var(--c) 70%,#FFD84A) 60%,transparent 72%);transition:transform 1.5s ease-in,opacity .4s}
+#pkm-badge.charge-on .charge{opacity:1;transform:scale(4)}
+#pkm-badge .charge{transition:transform 1.5s ease-in,opacity .25s}
+#pkm-badge .onde{position:absolute;left:50%;top:38%;width:120px;height:120px;margin:-60px 0 0 -60px;border-radius:50%;z-index:9;opacity:0;
+  border:5px solid #fff;box-shadow:0 0 22px #FFE9A0,inset 0 0 22px #FFE9A0;pointer-events:none}
+#pkm-badge.boom .onde{animation:pkb-onde .95s cubic-bezier(.1,.7,.3,1) forwards}
+#pkm-badge.boom .onde.o2{animation-delay:.12s;border-width:3px}
+@keyframes pkb-onde{0%{opacity:1;transform:scale(.2)}100%{opacity:0;transform:scale(6.5)}}
+#pkm-badge .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:40}
+#pkm-badge.boom .flash{animation:pkb-flash .7s ease-out}
+@keyframes pkb-flash{0%{opacity:.95}100%{opacity:0}}
+#pkm-badge.secoue{animation:pkb-secoue .45s linear}
+@keyframes pkb-secoue{10%{transform:translate(-6px,3px)}25%{transform:translate(5px,-4px)}40%{transform:translate(-4px,-2px)}
+  55%{transform:translate(4px,3px)}70%{transform:translate(-2px,2px)}85%{transform:translate(1px,-1px)}}
+#pkm-badge .halo{position:absolute;left:50%;top:38%;width:min(92vw,400px);aspect-ratio:1;transform:translate(-50%,-50%) scale(.3);z-index:6;opacity:0;
+  background:radial-gradient(closest-side,rgba(255,244,200,.55),color-mix(in srgb,var(--c) 35%,transparent) 45%,transparent 72%);
+  transition:opacity .6s,transform 1.2s cubic-bezier(.2,.8,.2,1)}
+#pkm-badge.boom .halo{opacity:1;transform:translate(-50%,-50%) scale(1);animation:pkb-respire 3s 1.2s ease-in-out infinite}
+@keyframes pkb-respire{50%{transform:translate(-50%,-50%) scale(.9);opacity:.75}}
+/* le badge en 3D : la face, une tranche de métal (couches) et le dos */
+#pkm-badge .badge{position:absolute;left:50%;top:38%;width:min(48vw,200px);aspect-ratio:1;margin:calc(min(48vw,200px) / -2) 0 0 calc(min(48vw,200px) / -2);
+  z-index:10;cursor:pointer;perspective:800px;opacity:0;pointer-events:none}
+#pkm-badge.boom .badge{opacity:1;pointer-events:auto}
+#pkm-badge .badge .flotte{width:100%;height:100%;transform-style:preserve-3d}
+#pkm-badge .badge.calme .flotte{animation:pkb-flotte 3.4s ease-in-out infinite}
+@keyframes pkb-flotte{50%{transform:translateY(-9px)}}
+#pkm-badge .badge .tour{position:relative;width:100%;height:100%;transform-style:preserve-3d}
+#pkm-badge .badge.calme .tour{animation:pkb-balance 4.2s ease-in-out infinite}
+@keyframes pkb-balance{0%,100%{transform:rotateY(-34deg) rotateX(8deg)}50%{transform:rotateY(34deg) rotateX(-5deg)}}
+#pkm-badge .badge .tour img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+#pkm-badge .badge .tour .face{backface-visibility:hidden;-webkit-backface-visibility:hidden}
+#pkm-badge .badge .reflet{position:absolute;inset:0;transform:translateZ(.6px);backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  -webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.75) 45%,rgba(255,255,255,.1) 52%,transparent 60%) no-repeat;
+  background-size:300% 100%;background-position:150% 0;animation:pkb-reflet 3.6s 1.4s ease-in-out infinite}
+@keyframes pkb-reflet{0%{background-position:150% 0}45%,100%{background-position:-50% 0}}
+#pkm-badge .badge.vole{transition:transform 1s cubic-bezier(.55,-0.15,.3,1)}
+#pkm-badge .badge.vole .flotte,#pkm-badge .badge.vole .tour{animation:none}
+#pkm-badge .nom-badge{position:absolute;left:0;right:0;top:calc(38% + min(24vw,100px) + 26px);text-align:center;z-index:11;pointer-events:none;
+  transition:opacity .4s}
+#pkm-badge .nom-badge b{font-size:34px;letter-spacing:3px;display:inline-block}
+#pkm-badge .nom-badge b span{display:inline-block;opacity:0;transform:translateY(-22px) scale(1.6);
+  background:linear-gradient(180deg,#FFF9DA 0%,#FFE07A 40%,#D49A1E 62%,#FFE9A8 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 2px 0 #5A3A06) drop-shadow(0 0 10px rgba(255,214,110,.6))}
+#pkm-badge .nom-badge.vu b span{animation:pkb-lettre .5s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes pkb-lettre{to{opacity:1;transform:none}}
+#pkm-badge .nom-badge small{display:block;margin-top:8px;font-size:16px;color:#FFF5D6;opacity:0;transition:opacity .4s;text-shadow:0 2px 0 rgba(0,0,0,.6)}
+#pkm-badge .nom-badge.aide small{opacity:1;animation:pk-clign 1.6s ease-in-out infinite}
 @keyframes pk-clign{50%{opacity:.45}}
-.pkm-scene .etui{position:absolute;left:50%;bottom:calc(190px + env(safe-area-inset-bottom));width:min(92vw,420px);transform:translate(-50%,calc(100% + 260px));
-  transition:transform .5s cubic-bezier(.2,1.2,.4,1);background:linear-gradient(180deg,#B3392F,#7E1F1A);border-radius:14px;padding:10px 10px 12px;
-  box-shadow:0 0 0 3px #4A0F0C,0 10px 24px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.25);z-index:9}
-.pkm-scene .etui.vu{transform:translate(-50%,0)}
-.pkm-scene .etui .titre{font-size:12px;font-weight:700;text-align:center;margin-bottom:7px;color:#FFE9C7;letter-spacing:1px}
-.pkm-scene .etui .cases{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
-.pkm-scene .etui .case{aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 40%,#3A0D0A,#250705);
-  box-shadow:inset 0 2px 4px rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;position:relative}
-.pkm-scene .etui .case img{width:84%;height:84%;object-fit:contain;image-rendering:pixelated}
-.pkm-scene .etui .case.ici{box-shadow:inset 0 2px 4px rgba(0,0,0,.7),0 0 0 2px #FFD84A,0 0 12px #FFD84A;animation:pk-clign 1s ease-in-out infinite}
-.pkm-scene .eclat{position:absolute;width:8px;height:8px;margin:-4px 0 0 -4px;background:#FFE27A;border-radius:2px;z-index:12;pointer-events:none;
-  animation:pkb-eclat .8s ease-out forwards;transform:rotate(45deg)}
-@keyframes pkb-eclat{to{transform:translate(var(--dx),var(--dy)) rotate(225deg) scale(.2);opacity:0}}
-.pkm-scene .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .4s;pointer-events:none;z-index:40}
+#pkm-badge .etoile{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;z-index:11;pointer-events:none;background:#fff;
+  clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:pkb-etoile 1.1s ease-in-out forwards;
+  filter:drop-shadow(0 0 4px #FFE9A0)}
+@keyframes pkb-etoile{0%{transform:scale(0) rotate(0)}40%{transform:scale(1) rotate(45deg)}100%{transform:scale(0) rotate(90deg)}}
+/* l'étui à badges : cuir rouge sombre, surpiqûres, fermoir doré ; il s'ouvre sur un velours bleu nuit à 8 alvéoles */
+#pkm-badge .etui{position:absolute;left:50%;bottom:calc(178px + env(safe-area-inset-bottom));width:min(88vw,360px);z-index:9;perspective:900px;
+  transform:translate(-50%,calc(100% + 260px));opacity:0;transition:transform .7s cubic-bezier(.2,1.1,.3,1),opacity .3s}
+#pkm-badge .etui.vu{transform:translate(-50%,0);opacity:1}
+#pkm-badge .etui .boite{position:relative;border-radius:16px;padding:12px;transform-style:preserve-3d;
+  background:linear-gradient(180deg,#5A120F,#3A0A08);box-shadow:0 18px 30px rgba(0,0,0,.6),0 0 0 2px #240504,inset 0 1px 0 rgba(255,255,255,.12)}
+#pkm-badge .etui .velours{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px;border-radius:10px;
+  background:radial-gradient(120% 140% at 50% 0%,#2C3A7A,#141B44 60%,#0B1030);box-shadow:inset 0 3px 10px rgba(0,0,0,.75),0 0 0 2px #B98B2E}
+#pkm-badge .etui .case{position:relative;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 38%,#0E1438,#1E2860 70%);box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 1px 0 rgba(255,255,255,.12)}
+#pkm-badge .etui .case img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
+#pkm-badge .etui .case.ici{box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 0 0 2px #FFD84A,0 0 16px 3px rgba(255,216,74,.7);animation:pkb-attend 1.1s ease-in-out infinite}
+@keyframes pkb-attend{50%{box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 0 0 2px #FFD84A,0 0 6px 1px rgba(255,216,74,.4)}}
+#pkm-badge .etui .case.pose{animation:none;box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 0 0 2px #FFE9A0,0 0 26px 8px rgba(255,216,74,.9)}
+#pkm-badge .etui .case.pose img{animation:pkb-pose .5s cubic-bezier(.2,1.8,.4,1)}
+@keyframes pkb-pose{from{transform:scale(1.7)}}
+#pkm-badge .etui .couvercle{position:absolute;inset:0;border-radius:16px;transform-origin:50% 0;transform-style:preserve-3d;z-index:2;
+  background:linear-gradient(160deg,#9E2A22,#6E1712 55%,#561210);box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -3px 0 rgba(0,0,0,.35);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  transition:transform .85s cubic-bezier(.5,0,.25,1),opacity .3s .55s;backface-visibility:hidden}
+#pkm-badge .etui .couvercle:before{content:"";position:absolute;inset:7px;border-radius:11px;border:2px dashed rgba(240,200,140,.45)}
+#pkm-badge .etui .couvercle .embleme{width:46px;height:46px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,#6E1712 0 18%,#E8C060 19% 27%,transparent 28%),linear-gradient(180deg,transparent 46%,#E8C060 46% 54%,transparent 54%),
+    radial-gradient(circle,#B8862A 0 60%,transparent 61%);box-shadow:0 0 0 3px #E8C060,0 2px 4px rgba(0,0,0,.5)}
+#pkm-badge .etui .couvercle span{font:700 12px Outfit,sans-serif;letter-spacing:3px;color:#F2D79A;text-shadow:0 -1px 0 rgba(0,0,0,.5),0 1px 0 rgba(255,230,180,.25)}
+#pkm-badge .etui .fermoir{position:absolute;left:50%;bottom:-7px;width:34px;height:14px;margin-left:-17px;border-radius:0 0 6px 6px;z-index:3;
+  background:linear-gradient(180deg,#FFE08A,#B8862A);box-shadow:0 2px 4px rgba(0,0,0,.6);transition:opacity .2s}
+#pkm-badge .etui.ouvert .couvercle{transform:rotateX(-112deg);opacity:0}
+#pkm-badge .etui.ouvert .fermoir{opacity:0}
+#pkm-badge .eclat{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;z-index:12;pointer-events:none;
+  clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:pkb-eclat .9s ease-out forwards}
+@keyframes pkb-eclat{to{transform:translate(var(--dx),var(--dy)) rotate(180deg) scale(.15);opacity:0}}
+#pkm-badge .confetti{position:absolute;top:-20px;width:9px;height:14px;z-index:13;pointer-events:none;animation:pkb-tombe var(--d) linear forwards}
+@keyframes pkb-tombe{to{transform:translate(var(--x),110vh) rotate(var(--r))}}
+#pkm-badge .pkm-passer{z-index:45}
+#pkm-badge .noir{position:absolute;inset:0;background:#000;z-index:42;opacity:1;transition:opacity .9s;pointer-events:none}
+#pkm-badge.allume .noir{opacity:0}
+#pkm-badge .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .45s;pointer-events:none;z-index:44}
 `;
 // Le champion animé : les images de son animation (planche + liste) dessinées sur un canvas, 14 images par seconde
 // Le champion animé : les images de son animation (planche + liste) dessinées sur un canvas, 14 images par seconde ;
@@ -1219,65 +1301,299 @@ function championAnime(canvas, sprite = canvas.dataset.sprite, fixe = false, por
   }, 1000 / 14);
   return {stop: () => { arret = true; }, jouer: () => { joue = true; k = 0; }};
 }
-const SON_BADGE = () => {  // le petit air du badge obtenu
-  [[67, 0, .12], [72, .12, .12], [76, .24, .12], [79, .36, .12], [84, .5, .55]].forEach(([n, t, d]) => {
-    ton(NOTE(n), t, d, {type: "square", vol: .06}); ton(NOTE(n - 12), t, d, {type: "triangle", vol: .1}); });
-  [76, 79, 84].forEach(n => ton(NOTE(n), .5, .9, {type: "triangle", vol: .05}));
+// ---------- Les badges : bien détourés, agrandis sans gros pixels, en relief ----------
+// Les images de PokeAPI ont un liseré blanc autour du contour noir : on l'efface (remplissage depuis les bords à
+// travers les pixels clairs, arrêté par le contour sombre), puis on agrandit ×4 avec EPX (les diagonales restent nettes,
+// sans escaliers) ; on fabrique aussi la tranche dorée (la même forme, en métal) pour l'épaisseur.
+const BADGES_PROPRES = new Map();
+function badgePropre(src, nettoyer = true) {
+  if (BADGES_PROPRES.has(src)) return BADGES_PROPRES.get(src);
+  const p = new Promise(ok => {
+    const im = new Image(); im.crossOrigin = "anonymous";
+    im.onerror = () => ok({face: src, tranche: src});
+    im.onload = () => { try {
+      const w = im.naturalWidth, h = im.naturalHeight, c = document.createElement("canvas"); c.width = w; c.height = h;
+      const g = c.getContext("2d"); g.drawImage(im, 0, 0);
+      const d = g.getImageData(0, 0, w, h), a = d.data;
+      if (nettoyer) {
+        const vu = new Uint8Array(w * h), file = [];
+        const passe = i => a[i * 4 + 3] < 25 || (a[i * 4] + a[i * 4 + 1] + a[i * 4 + 2]) / 3 > 75;
+        for (let x = 0; x < w; x++) file.push(x, (h - 1) * w + x);
+        for (let y = 0; y < h; y++) file.push(y * w, y * w + w - 1);
+        while (file.length) {
+          const i = file.pop(); if (vu[i] || !passe(i)) continue; vu[i] = 1;
+          const x = i % w, y = (i / w) | 0;
+          if (x > 0) file.push(i - 1); if (x < w - 1) file.push(i + 1); if (y > 0) file.push(i - w); if (y < h - 1) file.push(i + w);
+        }
+        for (let i = 0; i < w * h; i++) if (vu[i]) a[i * 4 + 3] = 0;
+        for (let i = 0; i < w * h; i++) if (a[i * 4 + 3] < 128) a[i * 4 + 3] = 0; else a[i * 4 + 3] = 255;
+      }
+      // EPX ×2, deux fois
+      const epx = (src32, W, H) => {
+        const o = new Uint32Array(W * H * 4), W2 = W * 2;
+        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+          const P0 = src32[y * W + x], A = y ? src32[(y - 1) * W + x] : P0, B = x < W - 1 ? src32[y * W + x + 1] : P0,
+                C = x ? src32[y * W + x - 1] : P0, D2 = y < H - 1 ? src32[(y + 1) * W + x] : P0;
+          let p1 = P0, p2 = P0, p3 = P0, p4 = P0;
+          if (C === A && C !== D2 && A !== B) p1 = A; if (A === B && A !== C && B !== D2) p2 = B;
+          if (D2 === C && D2 !== B && C !== A) p3 = C; if (B === D2 && B !== A && D2 !== C) p4 = D2;
+          const i = (y * 2) * W2 + x * 2; o[i] = p1; o[i + 1] = p2; o[i + W2] = p3; o[i + W2 + 1] = p4;
+        }
+        return o;
+      };
+      let px = new Uint32Array(a.buffer.slice(0)), W = w, H = h;
+      for (let k = 0; k < 2; k++) { px = epx(px, W, H); W *= 2; H *= 2; }
+      const grand = document.createElement("canvas"); grand.width = W; grand.height = H;
+      grand.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(px.buffer), W, H), 0, 0);
+      // la tranche : la même forme en or (bandes claires et sombres, comme du métal poli)
+      const t = document.createElement("canvas"); t.width = W; t.height = H;
+      const tg = t.getContext("2d"), gr = tg.createLinearGradient(0, 0, W * .3, H);
+      [["#FFF0B8", 0], ["#E0B24A", .22], ["#8A5E12", .45], ["#F2CC6A", .62], ["#A0701A", .82], ["#5E3E08", 1]].forEach(([col, s]) => gr.addColorStop(s, col));
+      tg.fillStyle = gr; tg.fillRect(0, 0, W, H); tg.globalCompositeOperation = "destination-in"; tg.drawImage(grand, 0, 0);
+      ok({face: grand.toDataURL(), tranche: t.toDataURL()});
+    } catch (e) { ok({face: src, tranche: src}); } };
+    im.src = src;
+  });
+  BADGES_PROPRES.set(src, p); return p;
+}
+// Remplace les images de badges d'un bloc (data-badge = adresse d'origine) par leur version propre
+function badgesPropres(racine) {
+  racine.querySelectorAll("img[data-badge]").forEach(i => badgePropre(i.dataset.badge).then(b => { i.src = b.face; }));
+}
+// Le badge en 3D : face, ~16 couches de tranche dorée (l'épaisseur) et le dos ; le reflet passe sur la face
+function badge3D(b, epaisseur = 11, couches = 16) {
+  const e = epaisseur / couches;
+  return `<div class="flotte"><div class="tour">
+    <img class="dos" src="${b.tranche}" style="transform:translateZ(${-epaisseur - e}px) scale(.99);filter:brightness(.7)">
+    ${Array.from({length: couches}, (_, i) => `<img src="${b.tranche}" style="transform:translateZ(${-(i + 1) * e}px);filter:brightness(${(1.05 - .5 * i / couches).toFixed(2)})">`).join("")}
+    <img class="face" src="${b.face}" style="transform:translateZ(0)">
+    <div class="reflet" style="-webkit-mask-image:url('${b.face}');mask-image:url('${b.face}')"></div></div></div>`;
+}
+
+// ---------- L'air de chaque arène : des particules selon le type (poussière, bulles, étincelles, pétales…) ----------
+const AIRS = {
+  Roche: {n: 46, coul: ["#D8C9A8", "#B8A27A", "#8C7A5A"], forme: "point", vy: [-.05, .12], vx: [-.15, .15], taille: [1, 3]},
+  Sol: {n: 46, coul: ["#D9B77A", "#B08A4E"], forme: "point", vy: [-.05, .05], vx: [.15, .5], taille: [1, 3]},
+  Eau: {n: 34, coul: ["#A8E4FF", "#E2F6FF"], forme: "bulle", vy: [-.7, -.25], vx: [-.1, .1], taille: [2, 6]},
+  Électrik: {n: 30, coul: ["#FFF27A", "#FFFFFF", "#FFD000"], forme: "eclair", vy: [-.3, .3], vx: [-.3, .3], taille: [1, 2.5]},
+  Plante: {n: 30, coul: ["#FF9EC4", "#FFD1E3", "#9BE07A"], forme: "petale", vy: [.25, .7], vx: [-.4, .4], taille: [3, 6]},
+  Poison: {n: 30, coul: ["#C77DFF", "#9B4DDB", "#E2B8FF"], forme: "bulle", vy: [-.5, -.15], vx: [-.1, .1], taille: [2, 7]},
+  Psy: {n: 26, coul: ["#FF8AD8", "#FFC4EE", "#B8A8FF"], forme: "orbe", vy: [-.2, .2], vx: [-.2, .2], taille: [2, 6]},
+  Feu: {n: 44, coul: ["#FFB040", "#FF6A20", "#FFE08A"], forme: "braise", vy: [-1.1, -.4], vx: [-.2, .2], taille: [1, 3]},
+  Ligue: {n: 50, coul: ["#FFE9A0", "#FFFFFF", "#FFD24A"], forme: "orbe", vy: [-.5, -.15], vx: [-.1, .1], taille: [1, 3.5]},
 };
+function airAnime(canvas, type) {
+  const cfg = AIRS[type] || AIRS.Ligue, dpr = Math.min(PW.devicePixelRatio || 1, 2), g = canvas.getContext("2d");
+  let W = 0, H = 0, fin = false, attire = null;
+  const al = ([a, b]) => a + Math.random() * (b - a), choisir = l => l[Math.floor(Math.random() * l.length)];
+  const naitre = (p = {}) => Object.assign(p, {x: Math.random() * W, y: Math.random() * H, vx: al(cfg.vx), vy: al(cfg.vy),
+    t: al(cfg.taille), c: choisir(cfg.coul), ph: Math.random() * 6.28, vie: 1, energie: false});
+  const taille = () => { W = canvas.clientWidth; H = canvas.clientHeight; canvas.width = W * dpr; canvas.height = H * dpr; g.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  taille();
+  const parts = Array.from({length: cfg.n}, () => naitre());
+  const energie = [];
+  const boucle = t => {
+    if (fin || !canvas.isConnected) return;
+    g.clearRect(0, 0, W, H);
+    for (const p of parts) {
+      p.x += p.vx + Math.sin(t / 900 + p.ph) * (cfg.forme === "petale" ? .5 : .12); p.y += p.vy;
+      if (p.y < -12 || p.y > H + 12 || p.x < -12 || p.x > W + 12) { naitre(p); p.y = p.vy < 0 ? H + 10 : p.vy > .2 ? -10 : p.y; }
+      const a = .45 + .4 * Math.sin(t / 500 + p.ph);
+      g.globalAlpha = cfg.forme === "eclair" ? (Math.sin(t / 60 + p.ph * 9) > .6 ? 1 : 0) : a; g.fillStyle = g.strokeStyle = p.c;
+      if (cfg.forme === "bulle") { g.lineWidth = 1; g.beginPath(); g.arc(p.x, p.y, p.t, 0, 6.28); g.stroke(); g.globalAlpha *= .5; g.fillRect(p.x - p.t * .4, p.y - p.t * .5, 1.5, 1.5); }
+      else if (cfg.forme === "petale") { g.save(); g.translate(p.x, p.y); g.rotate(t / 700 + p.ph); g.beginPath(); g.ellipse(0, 0, p.t, p.t * .45, 0, 0, 6.28); g.fill(); g.restore(); }
+      else if (cfg.forme === "eclair") { g.lineWidth = 1.5; g.beginPath(); g.moveTo(p.x, p.y); g.lineTo(p.x + 4, p.y + 3); g.lineTo(p.x + 1, p.y + 6); g.lineTo(p.x + 6, p.y + 10); g.stroke(); }
+      else { if (cfg.forme === "orbe" || cfg.forme === "braise") { g.shadowColor = p.c; g.shadowBlur = 8; }
+        g.beginPath(); g.arc(p.x, p.y, p.t, 0, 6.28); g.fill(); g.shadowBlur = 0; }
+    }
+    // l'énergie qui converge vers le badge (pendant le roulement de tambour)
+    if (attire) for (let k = 0; k < 4; k++) { const ang = Math.random() * 6.28, r = Math.max(W, H) * .55;
+      energie.push({x: attire.x + Math.cos(ang) * r, y: attire.y + Math.sin(ang) * r, px: 0, py: 0, c: choisir(["#FFFFFF", "#FFE9A0", cfg.coul[0]])}); }
+    g.globalAlpha = 1; g.lineCap = "round";
+    for (let i = energie.length - 1; i >= 0; i--) {
+      const e = energie[i], dx = attire ? attire.x - e.x : 0, dy = attire ? attire.y - e.y : 0, d = Math.hypot(dx, dy);
+      e.px = e.x; e.py = e.y; e.x += dx * .075; e.y += dy * .075;
+      g.strokeStyle = e.c; g.lineWidth = 2.2; g.shadowColor = e.c; g.shadowBlur = 10;
+      g.beginPath(); g.moveTo(e.px - (e.x - e.px) * 2, e.py - (e.y - e.py) * 2); g.lineTo(e.x, e.y); g.stroke();
+      if (d < 10 || !attire) energie.splice(i, 1);
+    }
+    g.shadowBlur = 0;
+    PW.requestAnimationFrame(boucle);
+  };
+  PW.requestAnimationFrame(boucle);
+  PW.addEventListener("resize", taille);
+  return {attirer: pt => { attire = pt; }, stop: () => { fin = true; PW.removeEventListener("resize", taille); }};
+}
+
+// ---------- Les sons de l'arène : cuivres, timbales, cymbales, réverbération (tout synthétisé) ----------
+let SALLE = null;  // la « salle » : une réverbération partagée, pour que tout sonne grand
+function salle() {
+  const a = audio(); if (!a) return null;
+  if (SALLE && SALLE.a === a) return SALLE;
+  const entree = a.createGain(), comp = a.createDynamicsCompressor(), rev = a.createConvolver(), humide = a.createGain();
+  const n = Math.floor(a.sampleRate * 2.6), ir = a.createBuffer(2, n, a.sampleRate);
+  for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 3.2); }
+  rev.buffer = ir; humide.gain.value = .32; comp.threshold.value = -14; comp.ratio.value = 3;
+  entree.connect(comp); entree.connect(rev).connect(humide).connect(comp); comp.connect(a.destination);
+  return (SALLE = {a, entree});
+}
+const EPIQUE = (() => {
+  const ok = () => son && salle();
+  const env = (g, t, vol, att, dur, rel = .2) => { g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + att);
+    g.gain.setValueAtTime(vol, t + Math.max(att, dur - rel)); g.gain.exponentialRampToValueAtTime(.0001, t + dur); };
+  const cuivre = (n, t0, dur, vol = .07) => { const s = ok(); if (!s) return; const a = s.a, t = a.currentTime + t0, f = NOTE(n);
+    const fl = a.createBiquadFilter(), g = a.createGain(); fl.type = "lowpass"; fl.Q.value = 1.2;
+    fl.frequency.setValueAtTime(320, t); fl.frequency.linearRampToValueAtTime(Math.min(5200, f * 7), t + .07); fl.frequency.exponentialRampToValueAtTime(Math.min(2600, f * 4), t + .35);
+    env(g, t, vol, .035, dur, .18); fl.connect(g).connect(s.entree);
+    [-8, 0, 7].forEach(cents => { const o = a.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.detune.value = cents;
+      const vib = a.createOscillator(), vg = a.createGain(); vib.frequency.value = 5.2; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * .006, t + .35);
+      vib.connect(vg).connect(o.frequency); o.connect(fl); o.start(t); o.stop(t + dur + .05); vib.start(t); vib.stop(t + dur + .05); }); };
+  const nappe = (n, t0, dur, vol = .035) => { const s = ok(); if (!s) return; const a = s.a, t = a.currentTime + t0;
+    const fl = a.createBiquadFilter(), g = a.createGain(); fl.type = "lowpass"; fl.frequency.value = 1400; env(g, t, vol, .4, dur, .6);
+    fl.connect(g).connect(s.entree); ["triangle", "sawtooth"].forEach((ty, i) => { const o = a.createOscillator(); o.type = ty;
+      o.frequency.value = NOTE(n); o.detune.value = i ? 5 : -5; o.connect(fl); o.start(t); o.stop(t + dur + .05); }); };
+  const bruitage = (t0, dur, {vol = .2, f = 2000, type = "bandpass", f2 = null, att = .002, q = 1} = {}) => { const s = ok(); if (!s) return;
+    const a = s.a, t = a.currentTime + t0, n = Math.floor(a.sampleRate * dur), b = a.createBuffer(1, n, a.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+    const src = a.createBufferSource(), fl = a.createBiquadFilter(), g = a.createGain(); src.buffer = b; fl.type = type; fl.Q.value = q;
+    fl.frequency.setValueAtTime(f, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + att); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    src.connect(fl).connect(g).connect(s.entree); src.start(t); };
+  const timbale = (t0, n = 36, vol = .5) => { const s = ok(); if (!s) return; const a = s.a, t = a.currentTime + t0;
+    const o = a.createOscillator(), g = a.createGain(); o.frequency.setValueAtTime(NOTE(n) * 1.5, t); o.frequency.exponentialRampToValueAtTime(NOTE(n), t + .12);
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.0001, t + 1.4); o.connect(g).connect(s.entree); o.start(t); o.stop(t + 1.5);
+    bruitage(t0, .18, {vol: vol * .5, f: 260, type: "lowpass"}); };
+  const tinter = (t0, base = 1320, vol = .05, dur = 1.8) => { const s = ok(); if (!s) return; const a = s.a, t = a.currentTime + t0;
+    [1, 2.76, 5.4, 8.93].forEach((m, i) => { const o = a.createOscillator(), g = a.createGain(); o.frequency.value = base * m;
+      g.gain.setValueAtTime(vol / (i + 1), t); g.gain.exponentialRampToValueAtTime(.0001, t + dur / (1 + i * .5)); o.connect(g).connect(s.entree); o.start(t); o.stop(t + dur); }); };
+  return {
+    apparition() { bruitage(0, 1.6, {vol: .12, f: 200, f2: 1600, type: "bandpass", att: 1.2}); timbale(.0, 31, .35); nappe(43, .1, 3.2, .03); nappe(50, .1, 3.2, .025); },
+    projecteur() { timbale(0, 31, .55); bruitage(0, .35, {vol: .28, f: 900, type: "lowpass"}); tinter(.02, 220, .03, 1.2); },
+    roulement(dur) { for (let t = 0, k = 0; t < dur; k++) { const u = t / dur; timbale(t, 31, .08 + .32 * u * u); t += .11 - .07 * u; }
+      bruitage(0, dur + .05, {vol: .16, f: 5000, type: "highpass", att: dur}); nappe(55, 0, dur + .2, .03); nappe(62, 0, dur + .2, .02); },
+    revelation() {
+      const s = ok(); if (s) { const a = s.a, t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+        o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(32, t + 1.4); g.gain.setValueAtTime(.7, t); g.gain.exponentialRampToValueAtTime(.0001, t + 1.6);
+        o.connect(g).connect(s.entree); o.start(t); o.stop(t + 1.7); }
+      bruitage(0, 2.4, {vol: .3, f: 7000, type: "highpass"}); bruitage(0, .5, {vol: .4, f: 400, type: "lowpass"});
+      [48, 55, 60, 64, 67].forEach(n => cuivre(n, 0, 1.5, .05)); tinter(.05, 1568, .07, 2.4); tinter(.25, 2093, .04, 2);
+    },
+    vol() { bruitage(0, .7, {vol: .2, f: 500, f2: 4200, type: "bandpass", q: 2}); },
+    clic() { tinter(0, 2637, .09, .5); tinter(.06, 3520, .05, .4); bruitage(0, .06, {vol: .2, f: 6000, type: "highpass"}); },
+    fanfare() {  // un air de victoire original (do majeur) : appel, montée, accord final
+      const B = .17;
+      [[67, 0, B * .8], [72, B, B * .8], [76, 2 * B, B * .8], [79, 3 * B, B * 3.4], [76, 7 * B, B * .9], [79, 8 * B, B * .9], [81, 9 * B, B * 1.8],
+       [79, 11 * B, B * .9], [84, 12 * B, B * 9]].forEach(([n, t, d]) => { cuivre(n, t, d, .075); cuivre(n - 12, t, d, .045); });
+      [[[60, 64, 67], 3 * B, B * 4], [[65, 69, 72], 7 * B, B * 4], [[48, 55, 60, 64, 67, 72], 12 * B, B * 9]].forEach(([ns, t, d]) => ns.forEach(n => cuivre(n - 12, t, d, .035)));
+      timbale(3 * B, 36, .5); timbale(7 * B, 41, .4); for (let k = 0; k < 8; k++) timbale(9 * B + k * B * 3 / 8, 43, .12 + k * .03);
+      timbale(12 * B, 36, .7); bruitage(12 * B, 3, {vol: .26, f: 6500, type: "highpass"});
+      for (let k = 0; k < 10; k++) tinter(12 * B + .1 + k * .09, 2093 * Math.pow(2, (k % 5) / 12), .025, .9);
+    },
+  };
+})();
+
+// ---------- La scène du badge ----------
 function sceneBadge(n, c, rejouer = false) {
-  installerStyle("pkm2-badge-style", STYLE_BADGE); preparerScene();
-  const lieu = LIEUX.filter(l => l.arene)[n - 1], a = lieu.arene, ch = CHAMPIONS[n], ligue = !a.type;
-  const couleur = ligue ? "#B8860B" : COUL[a.type];
-  const v = P.createElement("div"); v.id = "pkm-badge"; v.className = "pkm-scene"; v.style.setProperty("--c", couleur);
-  const ville = lieu.nom.replace(" (retour)", "").replace(" et Parc Safari", "");
-  v.innerHTML = `<div class="fond"></div><div class="lignes"></div><div class="rayons"></div>
-    <div class="bandeau">${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}
-      <small>${ligue ? "Plateau Indigo" : `Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small></div>
-    <div class="scene"><div class="estrade"></div><canvas class="champion"></canvas></div>
-    <div class="badge">${ligue ? `<div class="tourne"><img class="trophee" src="${IC.ligue}"></div>` : `<div class="tourne"><img src="${IMG.badge(a.image)}"></div>`}</div>
-    <div class="aide">Touche ${ligue ? "le trophée" : "le badge"} pour le prendre !</div>
-    ${ligue ? "" : `<div class="etui"><div class="titre">ÉTUI À BADGES</div><div class="cases">${LIEUX.filter(l => l.arene && l.arene.image).map((l, i) =>
-      `<div class="case ${i + 1 === n ? "ici" : ""}">${i + 1 < n && V.badges[i + 1] ? `<img src="${IMG.badge(l.arene.image)}">` : ""}</div>`).join("")}</div></div>`}
-    ${[0, 1, 2, 3, 4, 5].map(i => `<div class="bande ${i % 2 ? "d" : "g"}" style="top:${i * 16.66}%"></div>`).join("")}
-    <div class="blanc"></div><button class="pkm-passer">✕</button>`;
-  P.body.appendChild(v);
-  const {dire, cacher} = dialogue(v, ".pkm-passer, .badge");
-  const {stop} = championAnime(v.querySelector(".champion"), ch.sprite);
   const pause = ms => new Promise(r => setTimeout(r, ms));
+  installerStyle("pkm2-badge-style", STYLE_BADGE); preparerScene(); salle();
+  const lieu = LIEUX.filter(l => l.arene)[n - 1], a = lieu.arene, ch = CHAMPIONS[n], ligue = !a.type;
+  const couleur = ligue ? "#E0B040" : COUL[a.type], src = ligue ? IC.ligue : IMG.badge(a.image);
+  const ville = lieu.nom.replace(" (retour)", "").replace(" et Parc Safari", "");
+  const v = P.createElement("div"); v.id = "pkm-badge"; v.style.setProperty("--c", couleur);
+  const lettres = t => [...t].map((l, i) => `<span style="animation-delay:${i * .045}s">${l === " " ? "&nbsp;" : l}</span>`).join("");
+  const nomBadge = ligue ? "MAÎTRE DE LA LIGUE" : a.badge.toUpperCase();
+  const deja = LIEUX.filter(l => l.arene && l.arene.image);
+  v.innerHTML = `<div class="decor"></div><div class="teinte"></div><canvas class="air"></canvas><div class="spot"></div>
+    <div class="champ"><div class="ombre"></div><canvas></canvas></div>
+    <div class="halo"></div><div class="charge"></div><div class="onde"></div><div class="onde o2"></div>
+    <div class="badge"></div>
+    <div class="nom-badge"><b>${lettres(nomBadge)}</b><small>Touche ${ligue ? "le trophée" : "le badge"} pour le prendre</small></div>
+    ${ligue ? "" : `<div class="etui"><div class="boite"><div class="velours">${deja.map((l, i) =>
+      `<div class="case ${i + 1 === n ? "ici" : ""}">${i + 1 < n && (V.badges[i + 1] || rejouer) ? `<img data-badge="${IMG.badge(l.arene.image)}" src="${IMG.badge(l.arene.image)}">` : ""}</div>`).join("")}</div>
+      <div class="couvercle"><div class="embleme"></div><span>ÉTUI À BADGES</span></div><div class="fermoir"></div></div></div>`}
+    <div class="cine h"></div><div class="cine b"></div>
+    <div class="titre-arene"><div class="ligne"></div><b>${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}</b>
+      <small>${ligue ? "Plateau Indigo · le Maître" : `${icoType(a.type)} Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small></div>
+    <div class="flash"></div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
+  P.body.appendChild(v);
+  // le décor : la ville sur la carte, en grand
+  const ox = lieu.x / KC, oy = lieu.y / KC, f = Math.max(PW.innerWidth, PW.innerHeight) * 2.4 / V.carte.largeur, deco = v.querySelector(".decor");
+  deco.style.backgroundImage = `url('${D.carte}')`; deco.style.backgroundSize = `${V.carte.largeur * f}px auto`;
+  deco.style.backgroundPosition = `${PW.innerWidth * .56 - ox * f}px ${PW.innerHeight * .4 - oy * f}px`;
+  const air = airAnime(v.querySelector("canvas.air"), ligue ? "Ligue" : a.type);
+  const cv = v.querySelector(".champ canvas"), anim = championAnime(cv, ch.sprite);
+  badgesPropres(v);
+  const bp = badgePropre(src, !ligue);
+  const {dire, cacher} = dialogue(v, ".pkm-passer, .badge");
   let fini = false;
+  const stop = () => { anim.stop(); air.stop(); };
   const fin = suite => { if (fini) return; fini = true; stop();
-    if (!suite || !c) { v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); return; }
+    if (!suite || !c) { v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); return; }
     SONS.montee(.7); v.querySelector(".blanc").style.opacity = 1;
-    setTimeout(() => { ouvrir(c, rejouer, true); v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 600); };
+    setTimeout(() => { ouvrir(c, rejouer, true); v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 650); };
   v.querySelector(".pkm-passer").onclick = () => fin(false);
-  const eclats = (x, y, nb) => { for (let i = 0; i < nb; i++) { const e = P.createElement("div"); e.className = "eclat";
-    const ang = i / nb * Math.PI * 2, d = 50 + Math.random() * 60;
-    e.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(ang) * d}px;--dy:${Math.sin(ang) * d}px;background:${["#FFE27A", "#fff", couleur][i % 3]}`;
-    v.appendChild(e); setTimeout(() => e.remove(), 900); } };
+  const eclats = (x, y, nb, cols = ["#FFE27A", "#fff", couleur]) => { for (let i = 0; i < nb; i++) { const e = P.createElement("div"); e.className = "eclat";
+    const ang = i / nb * Math.PI * 2 + Math.random() * .3, d = 50 + Math.random() * 80;
+    e.style.cssText = `left:${x}px;top:${y}px;--dx:${Math.cos(ang) * d}px;--dy:${Math.sin(ang) * d}px;background:${cols[i % cols.length]}`;
+    v.appendChild(e); setTimeout(() => e.remove(), 950); } };
+  const scintille = () => {  // de petites étoiles s'allument autour du badge
+    if (fini || !v.isConnected || !v.classList.contains("boom")) return;
+    const r = v.querySelector(".badge").getBoundingClientRect(), s = P.createElement("div"); s.className = "etoile";
+    const ang = Math.random() * 6.28, d = r.width * (.45 + Math.random() * .3);
+    s.style.left = r.left + r.width / 2 + Math.cos(ang) * d + "px"; s.style.top = r.top + r.height / 2 + Math.sin(ang) * d + "px";
+    v.appendChild(s); setTimeout(() => s.remove(), 1150); setTimeout(scintille, 260 + Math.random() * 380);
+  };
 
   (async () => {
-    SONS.chute();
-    await pause(900); v.classList.add("entre"); SONS.rebond(); vibre(20);
-    await pause(800);
+    // 1. Le noir, le titre de l'arène, le décor qui s'allume
+    await pause(250); EPIQUE.apparition(); v.classList.add("allume");
+    await pause(350); v.classList.add("titre");
+    await pause(1700); v.classList.add("haut");
+    // 2. Le champion : une silhouette, puis le projecteur
+    await pause(700); EPIQUE.projecteur(); v.classList.add("spot-on"); vibre(25);
+    await pause(900);
     for (const l of ch.lignes) await dire(l, ch.nom);
     await dire(ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom);
-    // le badge (ou le trophée) tombe, tourne, brille : on le touche pour le prendre
-    cacher(); v.classList.add("badge-la"); SONS.chute(); setTimeout(() => { SONS.materialise(); vibre(25); }, 650);
-    const badge = v.querySelector(".badge");
-    await pause(900); v.querySelector(".aide").classList.add("vu");
+    cacher();
+    // 3. La révélation : roulement de tambour, l'énergie converge, éclair, onde de choc, le badge apparaît en tournant
+    const b = await bp, badge = v.querySelector(".badge"); badge.innerHTML = badge3D(b, ligue ? 8 : 16, 22);
+    v.classList.add("revele"); await pause(500);
+    const rb = badge.getBoundingClientRect(), centre = {x: rb.left + rb.width / 2, y: rb.top + rb.height / 2};
+    v.classList.add("charge-on"); air.attirer(centre); EPIQUE.roulement(1.6); vibre([20, 60, 20, 60, 20]);
+    await pause(1600); air.attirer(null);
+    v.classList.remove("charge-on"); v.classList.add("boom", "secoue"); EPIQUE.revelation(); vibre([60, 40, 120]);
+    eclats(centre.x, centre.y, 26);
+    badge.querySelector(".tour").animate([{transform: "rotateY(-1440deg) scale(.15)"}, {transform: "rotateY(0deg) scale(1)"}],
+      {duration: 1700, easing: "cubic-bezier(.12,.9,.25,1)"});
+    setTimeout(() => v.classList.remove("secoue"), 500);
+    await pause(1500); badge.classList.add("calme"); scintille();
+    v.querySelector(".nom-badge").classList.add("vu"); EPIQUE.clic();
+    await pause(900); v.querySelector(".nom-badge").classList.add("aide");
+    // 4. On touche le badge : l'étui s'ouvre, le badge vole dans son alvéole
     await new Promise(ok => { badge.onclick = ok; });
-    badge.onclick = null; v.querySelector(".aide").classList.remove("vu"); SONS.clic(); vibre(15);
+    badge.onclick = null; vibre(15); EPIQUE.clic();
+    v.querySelector(".nom-badge").style.opacity = 0;
     const etui = v.querySelector(".etui");
-    if (etui) {  // il file dans l'étui à badges
-      etui.classList.add("vu"); await pause(520);
-      const cible = etui.querySelector(".case.ici").getBoundingClientRect(), r = badge.getBoundingClientRect();
+    if (etui) {
+      etui.classList.add("vu"); await pause(650); etui.classList.add("ouvert"); EPIQUE.vol(); await pause(700);
+      const ici = etui.querySelector(".case.ici"), cible = ici.getBoundingClientRect(), r = badge.getBoundingClientRect();
       const dx = cible.left + cible.width / 2 - (r.left + r.width / 2), dy = cible.top + cible.height / 2 - (r.top + r.height / 2);
-      badge.classList.add("vole"); badge.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(${cible.width * .84 / r.width})`;
-      await pause(870);
-      const ici = etui.querySelector(".case.ici"); ici.classList.remove("ici"); ici.innerHTML = `<img src="${IMG.badge(a.image)}">`; badge.style.opacity = 0;
-      eclats(cible.left + cible.width / 2, cible.top + cible.height / 2, 16);
-    } else { eclats(PW.innerWidth / 2, PW.innerHeight * .34, 24); }
-    SON_BADGE(); vibre([40, 60, 80]);
+      badge.classList.remove("calme"); badge.classList.add("vole"); EPIQUE.vol();
+      badge.style.transform = `translate(${dx}px, ${dy}px) scale(${cible.width * .78 / r.width})`;
+      badge.querySelector(".tour").animate([{transform: "rotateY(0) rotateX(0)"}, {transform: "rotateY(720deg) rotateX(20deg)"}, {transform: "rotateY(720deg) rotateX(0)"}],
+        {duration: 1000, easing: "ease-in-out"});
+      await pause(1000);
+      ici.classList.remove("ici"); ici.classList.add("pose"); ici.innerHTML = `<img src="${b.face}">`; badge.style.opacity = 0;
+      v.classList.remove("boom"); EPIQUE.clic(); vibre([40, 50, 90]);
+      eclats(cible.left + cible.width / 2, cible.top + cible.height / 2, 18);
+    } else {  // la Ligue : une pluie d'or
+      badge.classList.remove("calme");
+      for (let i = 0; i < 70; i++) { const k = P.createElement("div"); k.className = "confetti";
+        k.style.cssText = `left:${Math.random() * 100}%;background:${["#FFE27A", "#FFFFFF", "#E0B040", "#FFF3C4"][i % 4]};--d:${2 + Math.random() * 2}s;
+          --x:${(Math.random() - .5) * 120}px;--r:${Math.random() * 900}deg;animation-delay:${Math.random() * .8}s`; v.appendChild(k); }
+    }
+    await pause(250); EPIQUE.fanfare();
+    await pause(400);
     await dire(ligue ? `${nomDresseur()} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomDresseur()} obtient le <b>${a.badge}</b> !`);
     if (!c) return fin(false);
     await dire(ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
@@ -1401,10 +1717,10 @@ function dessinerAOuvrir() {
   // un badge gagné (la plus grosse récompense) : il attend, doré, qui tourne ; le toucher lance la scène de l'arène
   const blocBadges = badges.map(c => { const n = numBadge(c), a = LIEUX.filter(l => l.arene)[n - 1].arene;
     return `<button class="badge-attente" data-i="${CAPTURES.indexOf(c)}" style="--c:${a.type ? COUL[a.type] : "#B8860B"}">
-      <span class="disque"><img src="${a.image ? IMG.badge(a.image) : IC.ligue}"></span>
+      <span class="disque"><img ${a.image ? `data-badge="${IMG.badge(a.image)}"` : ""} src="${a.image ? IMG.badge(a.image) : IC.ligue}"></span>
       <span class="txt"><b>${a.image ? `${a.badge} gagné !` : "La Ligue est à toi !"}</b><small>${CHAMPIONS[n].nom} t'attend pour te le remettre · touche-le</small></span></button>`; }).join("");
   if (!liste.length && badges.length) {
-    el.innerHTML = blocBadges; el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
+    el.innerHTML = blocBadges; badgesPropres(el); el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
     return;
   }
   if (!liste.length) {
@@ -1418,7 +1734,7 @@ function dessinerAOuvrir() {
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
   el.querySelectorAll(".bouton-ball").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
   el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir().filter(c => !estBadge(c))[0]);
-  el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
+  el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i])); badgesPropres(el);
 }
 
 function dessinerSpeciales() {
@@ -1998,9 +2314,9 @@ function dessinerBandeauVoyage() {
   const b = document.getElementById("bandeau-voyage"), v = etatVoyage(), badge = aOuvrir().find(estBadge);
   if (badge) {  // un badge qui attend passe avant tout
     const n = numBadge(badge), a = LIEUX.filter(l => l.arene)[n - 1].arene;
-    b.innerHTML = `<button class="bandeau-voyage or"><img class="ico g" src="${a.image ? IMG.badge(a.image) : IC.ligue}"><span>
+    b.innerHTML = `<button class="bandeau-voyage or"><img class="ico g" ${a.image ? `data-badge="${IMG.badge(a.image)}"` : ""} src="${a.image ? IMG.badge(a.image) : IC.ligue}"><span>
       <b>${a.image ? `Tu as gagné le ${a.badge} !` : "Tu as conquis la Ligue !"}</b><small>${CHAMPIONS[n].nom} t'attend pour te le remettre · touche ici</small></span><i></i></button>`;
-    b.querySelector("button").onclick = () => lancer(badge);
+    b.querySelector("button").onclick = () => lancer(badge); badgesPropres(b);
     return;
   }
   if (!v.attente) { b.innerHTML = ""; return; }
@@ -2054,7 +2370,7 @@ function dessinerVoyage() {
   const VY = etatVoyage(), depuis = VY.attente ? VY.vu : V.pos;
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
     const n = i + 1, quand = V.badges[n];
-    return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
+    return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img data-badge="${IMG.badge(l.arene.image)}" src="${IMG.badge(l.arene.image)}"></div>`
       : `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="Ligue"><img src="${IC.ligue}" style="image-rendering:pixelated"></div>`;
   }).join("");
   el.innerHTML = `<div class="entete"><span class="titre">${ico("carte")} Voyage dans Kanto</span>
@@ -2084,6 +2400,7 @@ function dessinerVoyage() {
   if (bz) bz.onclick = () => { const tout = ZC > 1;
     try { localStorage.setItem("pkm_carte_vue", tout ? "tout" : "zoom"); } catch (e) {}
     echelle(tout ? 1 : V.carte.zoom); dessinerVoyage(); vibre(10); };
+  badgesPropres(el.querySelector(".boite-badges"));
   const brancher = () => { el.querySelectorAll(".coin img").forEach(i => i.onclick = () => fiche(PAR_NUM[i.dataset.n])); rognerImages(el); };
   // toucher un lieu : il s'allume sur la carte et ses Pokémon s'affichent juste dessous (sans redessiner la carte)
   const choisir = k => el.querySelectorAll(".lieu").forEach(g => g.classList.toggle("choisi", +g.dataset.k === (k === 18 ? 2 : k)));
@@ -2102,7 +2419,7 @@ function dessinerVoyage() {
   const chef = el.querySelector(".chef");
   if (chef) chef.onclick = () => {
     const n = +chef.dataset.n, d = V.defi, a = LIEUX[d.lieu].arene, ch = CHAMPIONS[n];
-    anims.get(chef.querySelector("canvas")).jouer();
+    // (pas d'animation sur la carte : il sortirait du médaillon ; elle est réservée à la scène du badge)
     chef.classList.remove("nouveau"); try { localStorage.setItem(`pkm_chef_vu_${R.partie}_${n}`, "1"); } catch (e) {}
     el.querySelectorAll(".bulle-chef").forEach(b => b.remove());
     // la bulle reste dans la partie visible de la carte : centrée sur le champion sans déborder, en dessous de lui
@@ -2112,8 +2429,8 @@ function dessinerVoyage() {
     const haut = (y / 100 * wrap.offsetHeight - vue.scrollTop) / vue.clientHeight * 100;
     const b = document.createElement("div"); b.className = "bulle-chef" + (haut < 38 ? " dessous" : "");
     b.style.left = Math.min(Math.max(x, g + l * .36), g + l * .64) + "%"; b.style.top = y + "%";
-    b.innerHTML = `<b>${ch.nom}</b> : ${d.arrive ? `« ${ch.lignes[0]} Mon défi, sur 7 jours : ${a.texte}${a.b ? `, ou ${a.b.texte}` : ""}. »`
-      : `« Je t'attends ! Encore ${fr(d.reste)} pts de route. Mon défi : ${a.texte}. »`}`;
+    b.innerHTML = `<b>${ch.nom}</b> : « ${ch.indice} »${d.arrive ? `<small>Son défi est sous la carte.</small>`
+      : `<small>Je t'attends : encore ${fr(d.reste)} pts de route.</small>`}`;
     el.querySelector(".carte-wrap").appendChild(b); vibre(10); ton(1250, 0, .05, {type: "square", vol: .03});
     lieuVu = d.lieu === 18 ? 2 : d.lieu; choisir(lieuVu); el.querySelector(".infos-lieu").outerHTML = infosLieu(d.lieu); brancher();
   };
