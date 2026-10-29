@@ -80,8 +80,6 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .avance{height:7px;background:#0D1322;border-radius:4px;margin:8px 0 10px;overflow:hidden}
 .avance div{height:100%;border-radius:4px;background:linear-gradient(90deg,#FFCB05,#FF8A3D);transition:width 1.4s cubic-bezier(.2,.8,.2,1)}
 .carte-kanto{width:100%;display:block;background:#2B6E9E;touch-action:manipulation}
-.carte-kanto .chemin-fait{stroke-dasharray:var(--l);stroke-dashoffset:var(--l);animation:pk-trace 1.8s .3s cubic-bezier(.3,.7,.2,1) forwards}
-@keyframes pk-trace{to{stroke-dashoffset:0}}
 /* la carte : une fenêtre (carte-vue) sur la carte zoomée (carte-wrap, --z fois plus large) ; les tailles en %
    (dresseur, champion, bulle) sont divisées par --z pour garder la même taille à l'écran */
 .carte-cadre{position:relative;margin-top:14px}
@@ -95,7 +93,22 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-wrap{position:relative;--z:1}
 .carte-wrap .heros,.ombre-heros{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
 .carte-wrap .heros{display:flex;flex-direction:column;align-items:center;width:calc(20% / var(--z))}
-.carte-wrap .heros.grotte{opacity:.6}
+.carte-wrap .heros-ancre{position:absolute;inset:0;pointer-events:none}
+/* la boule de cristal (dans une grotte) : on y voit le dresseur marcher sous la montagne */
+.carte-wrap .boule{position:absolute;width:calc(24% / var(--z));aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+  overflow:hidden;z-index:4;box-shadow:0 0 0 2px #FFE7A0,0 0 0 4px #9C7426,0 0 0 5.5px rgba(40,25,5,.6),0 0 16px 5px rgba(255,214,120,.55),
+  0 6px 12px rgba(0,0,0,.55);animation:pk-boule 2.4s ease-in-out infinite}
+.carte-wrap .boule canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.carte-wrap .boule .sacha{position:absolute;left:50%;bottom:17%;transform:translateX(-50%);width:20%!important;z-index:1}
+.carte-wrap .boule .sacha.miroir{transform:translateX(-50%) scaleX(-1)}
+.carte-wrap .boule:after{content:"";position:absolute;inset:0;border-radius:50%;z-index:2;
+  background:radial-gradient(circle at 32% 24%,rgba(255,255,255,.5) 0,rgba(255,255,255,.12) 18%,transparent 34%),
+    radial-gradient(circle at 50% 50%,transparent 58%,rgba(20,10,40,.45) 100%)}
+@keyframes pk-boule{50%{box-shadow:0 0 0 2px #FFE7A0,0 0 0 4px #9C7426,0 0 0 5.5px rgba(40,25,5,.6),0 0 22px 8px rgba(255,214,120,.7),
+  0 6px 12px rgba(0,0,0,.55)}}
+.carte-wrap .heros.navire{width:calc(15% / var(--z));animation:pk-vole 2s ease-in-out infinite}
+.carte-wrap .heros.navire img{width:100%;image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(0,0,0,.3))}
+.carte-wrap .heros.navire img.miroir{transform:scaleX(-1)}
 .carte-wrap .heros .sacha{width:23%!important}
 .carte-wrap .heros:not(.porte) .sacha[style*="red_bike"],.carte-wrap .heros:not(.porte) .sacha[style*="red_surf"]{width:46%!important}
 .sacha{background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
@@ -1442,31 +1455,50 @@ function dessinerDex() {
 
 // ---------- Le voyage dans Kanto ----------
 let lieuVu = null;  // le lieu touché sur la carte (sinon : là où l'on est)
-function morceaux() {  // chaque étape : la partie faite et la partie à faire, avec sa façon de voyager
-  const L = LIEUX, m = [];
-  for (let k = 1; k < L.length; k++) {
-    const tr = TRACE[k], mode = L[k].mode;
-    if (V.pos >= L[k].dist) m.push({pts: tr, fait: true, mode});
-    else if (V.pos > L[k - 1].dist) {
-      const f = jusqua(tr, (V.pos - L[k - 1].dist) / (L[k].dist - L[k - 1].dist));
-      m.push({pts: f, fait: true, mode, ici: true}, {pts: [f[f.length - 1], ...tr.slice(f.length - 1)], fait: false, mode});
-    } else m.push({pts: tr, fait: false, mode});
+// Le chemin parcouru entre deux positions (en points) : des bouts de tracé, chacun avec sa façon de voyager
+function morceau(pts, a, b) {  // la partie d'un tracé entre les fractions a et b de sa longueur
+  const L = longueur(pts), da = L * a, db = L * b, out = [];
+  let s = 0;
+  for (let i = 1; i < pts.length; i++) {
+    const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], l = Math.hypot(x1 - x0, y1 - y0), s1 = s + l;
+    const at = d => { const t = l ? (d - s) / l : 0; return [x0 + (x1 - x0) * t, y0 + (y1 - y0) * t]; };
+    if (s1 >= da && s <= db) {
+      if (!out.length) out.push(at(Math.max(da, s)));
+      if (s1 <= db) out.push([x1, y1]); else { out.push(at(db)); break; }
+    }
+    s = s1;
   }
-  return m;
+  return out.length ? out : [pts[0]];
 }
-function svgKanto() {
+function trajet(p0, p1) {
+  const L = LIEUX, r = [];
+  for (let k = 1; k < L.length; k++) {
+    const d0 = L[k - 1].dist, d1 = L[k].dist, a = Math.max(p0, d0), b = Math.min(p1, d1);
+    if (b > a) r.push({pts: morceau(TRACE[k], (a - d0) / (d1 - d0), (b - d0) / (d1 - d0)), mode: L[k].mode, k});
+  }
+  return r;
+}
+function poseA(p) {  // où est le dresseur quand il en est à p points, et comment il voyage
+  const L = LIEUX, k = L.findIndex((l, j) => j && p > L[j - 1].dist && p < l.dist);
+  const t = trajet(0, p), der = t.length ? t[t.length - 1].pts : [[L[0].x, L[0].y]], [x, y] = der[der.length - 1];
+  return {x, y, dir: direction(t.flatMap(m => m.pts)), enRoute: k, mode: k > 0 ? L[k].mode : "route",
+          arrete: !!(V.defi && V.defi.arrive) && p >= V.pos};
+}
+const pt = pts => pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+function traitFait(m, T) {  // un bout de chemin parcouru : rouge bordé de blanc (tirets en vol, en mer, sous terre)
+  const tiret = m.mode === "route" ? "" : `stroke-dasharray="5 3.5"`;
+  return `<polyline points="${pt(m.pts)}" fill="none" stroke="#fff" stroke-width="${5 * T}" stroke-linecap="round" stroke-linejoin="round" opacity=".9" ${tiret}/>
+    <polyline points="${pt(m.pts)}" fill="none" stroke="#E8382F" stroke-width="${2.8 * T}" stroke-linecap="round" stroke-linejoin="round" ${tiret}/>`;
+}
+// La carte ; depuis = la position (en points) d'où le dresseur repart en marchant jusqu'à aujourd'hui (voyagerDepuis)
+function svgKanto(depuis = V.pos) {
   const T = ZC > 1 ? 1.25 : 1;  // carte zoomée : traits, points et noms un peu plus grands (il y a la place)
-  const L = LIEUX, M = morceaux(), faits = M.filter(x => x.fait);
-  const enRoute = L.findIndex((l, k) => k && V.pos > L[k - 1].dist && V.pos < l.dist);  // l'étape en cours, ou -1
-  const [mx, my] = faits.length ? faits[faits.length - 1].pts.slice(-1)[0] : [L[0].x, L[0].y];
-  const pt = pts => pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
-  // le chemin : à faire = petits points sombres ; fait = rouge bordé de blanc (tirets pour un vol ou en mer) ;
-  const traits = M.filter(x => !x.fait).map(x => `<polyline points="${pt(x.pts)}" fill="none" stroke="#1B2A4A" stroke-width="${1.8 * T}"
+  const L = LIEUX;
+  // le chemin : à faire = petits points sombres ; fait = rouge bordé de blanc ; le bout gagné depuis la dernière
+  // visite se dessine pendant que le dresseur avance (#chemin-anim)
+  const traits = trajet(depuis, Infinity).map(x => `<polyline points="${pt(x.pts)}" fill="none" stroke="#1B2A4A" stroke-width="${1.8 * T}"
       stroke-dasharray="0.1 ${4.2 * T}" stroke-linecap="round" stroke-linejoin="round" opacity=".75"/>`).join("") +
-    M.filter(x => x.fait).map(x => { const tiret = x.mode === "route" ? "" : `stroke-dasharray="5 3.5"`;
-      return `<polyline points="${pt(x.pts)}" fill="none" stroke="#fff" stroke-width="${5 * T}" stroke-linecap="round" stroke-linejoin="round" opacity=".9" ${tiret}/>
-        <polyline ${x.mode === "route" ? `class="chemin-fait" style="--l:${Math.ceil(longueur(x.pts)) + 2}"` : tiret} points="${pt(x.pts)}" fill="none"
-          stroke="#E8382F" stroke-width="${2.8 * T}" stroke-linecap="round" stroke-linejoin="round"/>`; }).join("");
+    trajet(0, depuis).map(x => traitFait(x, T)).join("") + `<g id="chemin-anim"></g>`;
   const col = collection();
   const noeuds = L.map((l, k) => {
     if (k === 18) return "";  // Jadielle (retour) : même endroit que Jadielle
@@ -1487,9 +1519,8 @@ function svgKanto() {
         text-anchor="${l.nom === "Plateau Indigo" ? "start" : "middle"}">${l.nom.replace(" et Parc Safari", "").replace("-sur-Mer", "")}</text>` : ""}
       <circle cx="${l.x}" cy="${l.y}" r="13" fill="transparent"/></g>`;
   }).join("");
-  // le dresseur : posé par-dessus la carte en HTML (heros), à la position actuelle
-  const tout = faits.flatMap(x => x.pts), arrete = V.defi && V.defi.arrive;
-  POSE = {x: mx, y: my, dir: direction(tout), enRoute, arrete};
+  // le dresseur : posé par-dessus la carte en HTML (heros)
+  POSE = poseA(depuis);
   return `<svg class="carte-kanto" viewBox="0 0 ${LARG} ${HC.toFixed(1)}">
     <defs><radialGradient id="pk-or" cx=".45" cy=".35" r=".7"><stop offset="0" stop-color="#FFF7CF"/><stop offset=".55" stop-color="#FFD84A"/>
       <stop offset="1" stop-color="#C08A00"/></radialGradient></defs>
@@ -1727,23 +1758,80 @@ function chefCarte() {
     <div class="portrait"><canvas data-sprite="${ch.sprite}" data-fixe="1" data-portrait="1"></canvas></div>
     <img class="bdg" src="${a.image ? IMG.badge(a.image) : IC.ligue}"></div>`;
 }
-function heros() {
-  if (!POSE) return "";
-  const {x, y, dir, enRoute, arrete} = POSE, L = LIEUX, mode = enRoute > 0 ? L[enRoute].mode : "route";
-  const pos = (px, py) => `left:${px / LARG * 100}%;top:${py / HC * 100}%`;
-  const ombre = `<div class="ombre-heros" style="${pos(x, y)}"></div>`;
+function heros(P = POSE) {  // le dresseur à la pose P (poseA) ; .suit = ce qui se déplace avec lui
+  if (!P) return "";
+  const {x, y, dir, enRoute, arrete, mode} = P;
+  const pos = `left:${x / LARG * 100}%;top:${y / HC * 100}%`;
+  const ombre = `<div class="ombre-heros suit" style="${pos}"></div>`;
+  if (mode === "grotte") {  // sous la montagne : on le voit marcher dans une boule de cristal qui avance sur le trait
+    const d = dir === "gauche" ? "gauche" : "droite";
+    return `<div class="boule suit" style="${pos}"><canvas class="cave" width="64" height="64" data-dir="${d}"></canvas>
+      ${sacha("red_normal", d, true)}</div>`;
+  }
   if (mode === "vol" || mode === "surf") {  // en vol ou en mer : sur le dos du Pokémon (ou à vélo, en bateau, sur un Lokhlass sauvage)
     const m = monture(mode);
-    if (m) return `${ombre}<div class="heros porte" style="${pos(x, y)}">${sacha("red_normal", "bas", false)}
+    if (m) return `${ombre}<div class="heros porte suit" style="${pos}">${sacha("red_normal", "bas", false)}
       <img src="${IMG.anim(m.num, m.shiny)}" ${repli(m.num, m.shiny)}></div>`;
-    if (mode === "vol" && enMer(enRoute)) return `${ombre}<div class="heros porte" style="${pos(x, y)}">${sacha("red_normal", "bas", false)}
-      ${ico("bateau", "bateau")}</div>`;
-    return `${ombre}<div class="heros" style="${pos(x, y)}">${sacha(mode === "vol" ? "red_bike" : "red_surf", dir, mode === "vol", 2)}</div>`;
+    if (mode === "vol" && enMer(enRoute))  // le bateau (l'Océane de Rouge Feu ; image tournée vers la gauche)
+      return `<div class="heros navire suit" style="${pos}"><img class="${dir === "droite" ? "miroir" : ""}" src="${NAVIRE}"></div>`;
+    return `${ombre}<div class="heros suit" style="${pos}">${sacha(mode === "vol" ? "red_bike" : "red_surf", dir, mode === "vol", 2)}</div>`;
   }
   // à pied : il marche (de dos, immobile, devant une arène dont il attend le badge)
-  // (dans une grotte : un peu dans l'ombre, sous la montagne)
-  return `${ombre}<div class="heros${mode === "grotte" ? " grotte" : ""}" style="${pos(x, y)};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
+  return `${ombre}<div class="heros suit" style="${pos};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
 }
+const NAVIRE = SACHA.replace("/people/", "/misc/") + "ss_anne.png";
+
+// L'intérieur de la grotte (dans la boule de cristal) : une bande de pixel art dessinée une fois, qui défile
+const GROTTE = (() => {
+  const W = 192, H = 64, c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d"); let s = 11;
+  const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647, px = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
+  // un rocher : ovale à contour sombre, éclairé en haut à gauche (répété de l'autre côté du bord pour boucler)
+  const rocher = (cx, cy, rx, ry, [fonce, base, clair]) => [cx, cx - W, cx + W].forEach(X => {
+    for (let y = -ry; y <= ry; y++) {
+      const w = Math.round(rx * Math.sqrt(1 - (y / (ry + .5)) ** 2));
+      px(X - w - 1, cy + y, 2 * w + 2, 1, "#24180F");
+      px(X - w, cy + y, 2 * w, 1, y < -ry / 3 ? clair : y > ry / 2 ? fonce : base);
+    }
+    px(X - Math.round(rx / 2), cy - ry + 1, 2, 1, "#B39575");
+  });
+  px(0, 0, W, H, "#2A1E15");
+  const tons = [["#4A3626", "#6B4F3A", "#86684D"], ["#43311F", "#5E4632", "#7A5E45"], ["#523C2B", "#755A43", "#937457"]];
+  for (let y = 12; y < 46; y += 7) for (let x = (y % 14 ? 0 : 8); x < W; x += 14 + Math.floor(rnd() * 6))  // la paroi
+    rocher(x + Math.floor(rnd() * 4), y + Math.floor(rnd() * 3), 6 + Math.floor(rnd() * 3), 4, tons[Math.floor(rnd() * 3)]);
+  px(0, 0, W, 9, "#1A110B");  // le plafond et ses stalactites
+  for (let x = 3; x < W - 8; x += 9 + Math.floor(rnd() * 9)) {
+    const h = 6 + Math.floor(rnd() * 10);
+    for (let i = 0; i < h; i++) { const w = Math.max(1, Math.round(4 * (1 - i / h))); px(x - w, 8 + i, 2 * w, 1, "#5C4433"); px(x - w, 8 + i, 1, 1, "#8E7054"); }
+  }
+  px(0, 46, W, 18, "#7E6347"); px(0, 46, W, 1, "#3B2A1C"); px(0, 47, W, 1, "#9A7C5B");  // le sol, avec un chemin plus clair
+  px(0, 51, W, 8, "#937455");
+  for (let x = 0; x < W; x += 2) if (rnd() < .35) px(x, 48 + Math.floor(rnd() * 15), 1 + Math.floor(rnd() * 2), 1, rnd() < .5 ? "#6B5239" : "#AC8D69");
+  for (let x = 6; x < W - 10; x += 28 + Math.floor(rnd() * 22)) rocher(x, 60, 5, 2, tons[1]);  // cailloux devant
+  const cristaux = Array.from({length: 6}, () => [Math.floor(rnd() * (W - 8)), 16 + Math.floor(rnd() * 22),
+    rnd() < .5 ? ["#5FC8FF", "#C9F1FF"] : ["#B07CFF", "#EBD9FF"], rnd() * 6.28]);
+  return {c, W, H, cristaux};
+})();
+// toutes les boules de cristal visibles : la grotte défile dans le sens de la marche, les cristaux scintillent
+(function grotteAnimee(t) {
+  document.querySelectorAll("canvas.cave").forEach(cv => {
+    const g = cv.getContext("2d"), {c, W, cristaux} = GROTTE, sens = cv.dataset.dir === "gauche" ? -1 : 1;
+    const off = (((t / 45) * sens) % W + W) % W;  // ~22 px par seconde
+    g.imageSmoothingEnabled = false;
+    g.drawImage(c, -Math.floor(off), 0); g.drawImage(c, W - Math.floor(off), 0);
+    cristaux.forEach(([x, y, [col, clair], ph]) => {  // un petit groupe de cristaux qui brille
+      const X = ((x - off) % W + W) % W, a = .6 + .4 * Math.sin(t / 380 + ph);
+      if (X > 70) return;
+      g.globalAlpha = a * .3; g.fillStyle = col; g.fillRect(X - 3, y - 3, 10, 10);
+      g.globalAlpha = 1; g.fillRect(X, y, 2, 5); g.fillRect(X + 2, y + 2, 2, 3); g.fillRect(X - 2, y + 2, 2, 3);
+      g.fillStyle = clair; g.globalAlpha = a; g.fillRect(X, y, 1, 2); g.globalAlpha = 1;
+    });
+    const lum = g.createRadialGradient(32, 44, 4, 32, 38, 42);  // la lumière de la torche
+    lum.addColorStop(0, "rgba(255,190,110,.22)"); lum.addColorStop(.55, "rgba(0,0,0,0)"); lum.addColorStop(1, "rgba(10,5,20,.45)");
+    g.fillStyle = lum; g.fillRect(0, 0, 64, 64);
+  });
+  requestAnimationFrame(grotteAnimee);
+})(0);
 // Les pas de Sacha : une image toutes les 170 ms
 setInterval(() => {
   const t = Math.floor(Date.now() / 170);
@@ -1805,8 +1893,44 @@ addEventListener("pointermove", e => { const g = GLISSE; if (!g) return;
 addEventListener("pointerup", () => { const g = GLISSE; if (!g) return; g.vue.classList.remove("glisse");
   if (g.bouge) setTimeout(() => { if (GLISSE === g) GLISSE = null; }, 0); else GLISSE = null; });
 
+// Le voyage depuis la dernière visite : à l'ouverture de l'onglet, le dresseur repart de là où on l'avait vu et
+// parcourt le chemin gagné depuis (une seule fois par chargement ; position gardée sur le téléphone : pkm_pos_vu_<partie>)
+let VOYAGE_JOUE = false;
+function voyagerDepuis(el, p0, centrer) {
+  const vue = el.querySelector(".carte-vue"), g = el.querySelector("#chemin-anim"), ancre = el.querySelector(".heros-ancre");
+  const T = ZC > 1 ? 1.25 : 1, duree = Math.min(4500, 1400 + (V.pos - p0) * 6);
+  let suivre = true, cle = "", t0 = null;
+  ["pointerdown", "wheel", "touchstart"].forEach(ev => vue.addEventListener(ev, () => (suivre = false), {once: true, passive: true}));
+  // la carte doit être à l'écran (l'onglet est long, et la page Streamlit est dans un cadre) : on attend qu'elle y soit
+  const visible = () => { try {
+    const f = window.frameElement, r = vue.getBoundingClientRect(), haut = (f ? f.getBoundingClientRect().top : 0) + r.top;
+    const H = f ? parent.innerHeight : innerHeight; return haut < H * .75 && haut + r.height > H * .25;
+  } catch (e) { return true; } };
+  const pas = now => {
+    if (!document.body.contains(g)) return;  // la carte a été redessinée (zoom…) : rien à finir
+    if (t0 === null) { if (!visible()) return setTimeout(() => requestAnimationFrame(pas), 250); t0 = now + 500; }
+    const u = Math.max(0, Math.min(1, (now - t0) / duree)), e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+    const p = u >= 1 ? V.pos : p0 + (V.pos - p0) * e, P = poseA(p);
+    g.innerHTML = trajet(p0, p).map(x => traitFait(x, T)).join("");
+    POSE = P;
+    const k = [P.mode, P.dir, P.enRoute, P.arrete].join();
+    if (k !== cle) { cle = k; ancre.innerHTML = heros(P); colorerDresseur(ancre); }
+    else ancre.querySelectorAll(".suit").forEach(x => { x.style.left = P.x / LARG * 100 + "%"; x.style.top = P.y / HC * 100 + "%"; });
+    if (suivre) centrer(P);
+    if (u < 1) requestAnimationFrame(pas);
+  };
+  requestAnimationFrame(pas);
+}
+
 function dessinerVoyage() {
   const el = document.getElementById("voyage"), k = lieuVu ?? V.ici;
+  let depuis = V.pos;
+  if (!VOYAGE_JOUE) {
+    VOYAGE_JOUE = true;
+    let vu = NaN; try { vu = parseFloat(localStorage.getItem(`pkm_pos_vu_${R.partie}`)); } catch (e) {}
+    depuis = Math.min(isNaN(vu) ? 0 : vu, V.pos);
+    try { localStorage.setItem(`pkm_pos_vu_${R.partie}`, V.pos); } catch (e) {}
+  }
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
     const n = i + 1, quand = V.badges[n];
     return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img src="${IMG.badge(l.arene.image)}"></div>`
@@ -1816,17 +1940,18 @@ function dessinerVoyage() {
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
     ${blocArene()}<div class="carte-cadre"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
-      <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto()}${chefCarte()}${heros()}</div></div>
+      <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto(depuis)}${chefCarte()}<div class="heros-ancre">${heros()}</div></div></div>
       ${(V.carte.zoom || 1) > 1 ? `<button class="carte-zoom">${ico("carte", "pt")} ${ZC > 1 ? "Toute la carte" : "Zoomer sur moi"}</button>` : ""}</div>
     ${infosLieu(k)}
     <div class="boite-badges">${badges}</div>`;
   requestAnimationFrame(() => setTimeout(() => el.querySelector(".avance div").style.width = V.pos / V.total * 100 + "%", 60));
   // la carte zoomée : centrée sur le dresseur ; on la fait glisser au doigt (ou à la souris sur le PC)
   const vue = el.querySelector(".carte-vue"), wrap = el.querySelector(".carte-wrap");
-  const centrer = () => { if (!POSE || ZC <= 1) return;
-    vue.scrollLeft = POSE.x / LARG * wrap.offsetWidth - vue.clientWidth / 2;
-    vue.scrollTop = POSE.y / HC * wrap.offsetHeight - vue.clientHeight * .55; };
-  centrer(); requestAnimationFrame(centrer);
+  const centrer = (P = POSE) => { if (!P || ZC <= 1) return;
+    vue.scrollLeft = P.x / LARG * wrap.offsetWidth - vue.clientWidth / 2;
+    vue.scrollTop = P.y / HC * wrap.offsetHeight - vue.clientHeight * .55; };
+  centrer(); requestAnimationFrame(() => centrer());
+  if (depuis < V.pos) voyagerDepuis(el, depuis, centrer);
   vue.addEventListener("pointerdown", e => { if (e.pointerType === "mouse" && ZC > 1)
     GLISSE = {vue, x: e.clientX, y: e.clientY, l: vue.scrollLeft, t: vue.scrollTop, bouge: false}; });
   vue.addEventListener("click", e => { if (GLISSE && GLISSE.bouge) { e.stopPropagation(); e.preventDefault(); } }, true);

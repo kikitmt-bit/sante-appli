@@ -127,7 +127,18 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     (zoom × plus large), centrée sur le dresseur ; coordonnées en `LARG` = 370 × zoom (`echelle(z)` recalcule
     `LIEUX`/`TRACE`) donc traits et noms gardent leur taille (×1,25 quand zoomé) ; tailles en % divisées par `--z` ;
     bouton « Toute la carte » / « Zoomer sur moi » (localStorage `pkm_carte_vue`) ; glisser à la souris sur PC.
-    Mode **`grotte`** (Mont Sélénite → Azuria) : à pied sous la montagne, tirets, dresseur un peu transparent.
+    Mode **`grotte`** (Mont Sélénite → Azuria ; idée de Kiki, 29/10) : tirets, et le dresseur est vu dans une **boule de
+    cristal** (`.boule`, cadre doré) qui avance sur le trait : dedans, une grotte en pixel art dessinée par le code
+    (`GROTTE`, bande de 192 px qui boucle : rochers, stalactites, sol, cristaux qui scintillent, lumière de torche,
+    `grotteAnimee` fait défiler toutes les `canvas.cave` dans le sens de la marche) et Sacha qui marche de profil.
+    Vol au-dessus de la mer sans Pokémon Vol = l'**Océane** (S.S. Anne de Rouge Feu, `NAVIRE`, pret/pokefirered
+    `pics/misc/ss_anne.png`, retournée vers la droite) ; avant : l'icône du Passe Bateau.
+    **Voyage depuis la dernière visite** (29/10) : à la 1re ouverture de l'onglet, le dresseur repart de la position vue
+    la dernière fois (localStorage `pkm_pos_vu_<partie>`, 0 la toute 1re fois) et parcourt le chemin gagné en 1,4 à 4,5 s
+    (`voyagerDepuis` : `trajet(p0, p)` redessine le bout rouge dans `#chemin-anim`, `poseA(p)` = position, sens, mode ;
+    le dresseur = `.heros-ancre`, ses éléments `.suit` suivent ; refait seulement quand le mode ou le sens change), la
+    carte le suit (sauf si on la touche) ; attend que la carte soit à l'écran (cadre Streamlit : `frameElement`).
+    Plus de dessin du trait rouge depuis Bourg Palette à chaque ouverture (`pk-trace` retiré).
     Écran : **carte = image pixel art** `cartes/kanto.webp` (générée par Kiki avec ChatGPT,
     même style et même prompt pour toutes les régions : `cartes/PROMPT.md` ; servie par raw.githubusercontent.com de
     ce dépôt ; lieux en pixels de l'image dans `kanto.LIEUX`, ramenés à 370 de large dans l'écran ; pas une carte
