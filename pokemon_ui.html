@@ -394,6 +394,7 @@ const ROGUE_UI = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-ass
 const IC = {poke: OBJ("poke-ball"), super: OBJ("great-ball"), hyper: OBJ("ultra-ball"), master: OBJ("master-ball"),
   honneur: OBJ("premier-ball"), shiny: ROGUE_UI + "ui/shiny.png", carte: ROGUE_UI + "items/map.png", rare: OBJ("star-piece"),
   velo: OBJ("bicycle"), bateau: OBJ("ss-ticket"), tele: OBJ("teachy-tv"), radar: OBJ("poke-radar"),
+  carnet: OBJ("journal"), masse: OBJ("heavy-ball"),
   ligue: `${D.images}/ribbons/generation-iii/champion-ribbon.png`, effort: `${D.images}/ribbons/generation-iii/effort-ribbon.png`,
   nuit: `${D.images}/pokemon/versions/generation-vii/icons/143.png`};
 // (styles des icônes : aussi dans la page parente, pour l'ouverture et la fiche)
@@ -407,7 +408,7 @@ img.ty{width:18px;height:18px;vertical-align:-4px;margin:0 4px 0 -6px;border-rad
 document.head.insertAdjacentHTML("beforeend", `<style>${STYLE_ICO}</style>`); installerStyle("pkm2-ico-style", STYLE_ICO);
 // (la classe « p » des cartes du Pokédex est prise : la petite taille s'appelle « pt »)
 const ZOOM = {poke: 1.4, super: 1.4, hyper: 1.4, master: 1.4, honneur: 1.4, rare: 1.45, effort: 1.23, ligue: 1.15,
-  bateau: 1.15, radar: 1.1, velo: 1.1, tele: .88, shiny: .92};
+  bateau: 1.15, radar: 1.1, carnet: 1.1, masse: 1.3, velo: 1.1, tele: .88, shiny: .92};
 const ico = (cle, cls = "") => { const k = ZOOM[cle] || (/\/badges\//.test(cle) ? .85 : 1);
   return `<img class="ico ${cls.replace(/\bp\b/, "pt")}" src="${IC[cle] || cle}" alt=""${k !== 1 ? ` style="--k:${k}"` : ""}>`; };
 const TYPE_ID = {Normal: 1, Combat: 2, Vol: 3, Poison: 4, Sol: 5, Roche: 6, Insecte: 7, Spectre: 8, Acier: 9, Feu: 10, Eau: 11,
@@ -418,7 +419,7 @@ const icoType = t => TYPE_ID[t] ? `<img class="ty" src="${IMG.type(t)}" alt="">`
 function raisonHTML(c) {
   const [e, ...reste] = (c.raison || "").split(" "), txt = reste.join(" ");
   const badge = /#badge(\d)/.exec(c.id), a = badge && LIEUX.filter(l => l.arene)[badge[1] - 1];
-  const i = {"🎁": "poke", "🏆": "ligue", "👑": "master", "🎯": "super", "⚡": "effort", "⚖️": "poke"}[e];
+  const i = {"🎁": "poke", "🏆": "ligue", "👑": "master", "🎯": "super", "⚡": "effort", "⚖️": "masse"}[e];
   return a && a.arene.image ? `${ico(IMG.badge(a.arene.image), "p")} ${txt}` : i ? `${ico(i, "p")} ${txt}` : c.raison;
 }
 const N3 = n => String(n).padStart(3, "0");
@@ -1846,7 +1847,7 @@ function cartePesee() {  // une petite tuile (demi-largeur) : la moins important
       ${choix ? `<div class="pesee-comp">= ${choix.map(([n, f]) => `<span title="${f > 1 ? f + " × " : ""}${PAR_NUM[n].nom}"><img class="rogne" src="${IMG.mini(n, false)}" loading="lazy">${f > 1 ? `<i>×${f}</i>` : ""}</span>`).join("+")}</div>` : ""}`;
   }
   return `<div class="speciale pesee ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
-    <div class="tete">${ico("poke")}Pesée</div>
+    <div class="tete">${ico("masse")}Pesée</div>
     <div class="gain">+${p.bonus || 10} pts par pesée du matin (avant ${p.avant} h) · vise ${p.cible} / semaine</div>
     <div class="semaine-pesee">${p.semaine.map((x, i) => `<i class="${x === 1 ? "on" : x === 0 ? "rate" : i === p.semaine.indexOf(null) ? "auj" : ""}">${jours[i]}</i>`).join("")}</div>
     <div class="reste">${ok ? "Objectif de la semaine atteint !" : `Encore <b>${reste}</b> cette semaine`}</div>${comp}</div>`;
@@ -2570,7 +2571,7 @@ function dessinerRegles() {
       Plus rien de nouveau autour de toi : la ball pioche dans tout Kanto, donc aucune n'est perdue.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
       6 jours sur 7). Pendant ce temps, ton dresseur attend à l'arène : tes points comptent pour les Poké Balls, mais pas pour la carte. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
-    <li>${ico("poke", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
+    <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
     <li>${ico("radar", "p")} <b>Mission du jour</b> : une mission choisie sur tes points faibles des 14 derniers jours (matinée active, coucher à l'heure,
       minutes en zone, petite séance). Réussie = +25 points d'effort. Pas de mission de coucher le week-end.</li>
@@ -2591,7 +2592,7 @@ function dessinerRegles() {
   if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
 }
 
-[["ic-spe", "hyper"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
+[["ic-spe", "carnet"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
 function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
