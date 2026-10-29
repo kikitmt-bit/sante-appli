@@ -126,6 +126,11 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     15 min ; fenêtre glissante, rien ne remet à zéro, on recompte après chaque Master Ball ; avant le 27/10 : 30 jours
     d'affilée avec joker) = légendaire. Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball ; plus de bonus masse grasse).
     Chaque ball spéciale affiche ce qu'il reste à faire. Pas de bouton « tout ouvrir » (choix de Kiki).
+    **Pesée de la semaine** (29/10, Kiki oublie de se peser) : `REGLAGES` `pesees` = 3, `pesee_avant` = 12 h (heure
+    locale de la balance, `pesees_du_jour` lit les points bruts `weight` / `body-fat` des résumés) ; du lundi au
+    dimanche, dès la 3e pesée du matin = Poké Ball `balance` (petite récompense voulue). Carte « Pesée de la semaine »
+    (`cartePesee` : 7 ronds L→D) dans les balls spéciales, avec la dernière pesée comparée à 2-4 Pokémon (`POIDS` de
+    pokedex.py = poids officiels PokeAPI, `comparerPokemon`, graine = la date). Pour des stats fiables : ≥ 3 / semaine.
   - **Pokédex = une entrée par espèce, normal + shiny** (28/10 : plus les ~14 « versions » des différents jeux, carte
     blanche de Kiki). Jamais de doublon : `tirer` prend une espèce pas encore attrapée (ou son shiny ; quand toutes les
     espèces sont là, il ne sort plus que des shiny). Les anciennes captures gardent leur `fichier` (plus lu).
