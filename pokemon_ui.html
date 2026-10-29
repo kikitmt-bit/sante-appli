@@ -2275,7 +2275,7 @@ function blocArene() {
       <div><b>${a.texte}</b></div>${j(d.valeur, a.cible)}<div class="petit">${val(d.valeur)} / ${val(a.cible)} ${nomU}</div>
       ${a.b ? `<div class="ou-b">ou plan B</div><div>${a.b.texte}</div>${j(d.valeur_b, a.b.cible)}<div class="petit">${d.valeur_b} / ${a.b.cible} jours</div>` : ""}
       <div class="reste">${manque ? `Encore ${val(manque)} ${nomU}${a.b ? ` (ou ${Math.max(a.b.cible - d.valeur_b, 0)} jour${a.b.cible - d.valeur_b > 1 ? "s" : ""} d'objectif)` : ""}.
-        Tes points continuent de compter : tu repartiras d'un coup.` : "Défi réussi !"}</div>
+        Tes points comptent toujours pour les Poké Balls ; le voyage reprend après le badge.` : "Défi réussi !"}</div>
       <div class="petit gris">Compté sur les 7 derniers jours depuis ton arrivée (le ${V.defi.depuis ? V.defi.depuis.slice(8) + "/" + V.defi.depuis.slice(5, 7) : "—"}).</div></div></div>`;
 }
 
@@ -2494,7 +2494,7 @@ function dessinerRegles() {
       suivante, et plus souvent ceux des types de ta journée. Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.
       Plus rien de nouveau autour de toi : la ball pioche dans tout Kanto, donc aucune n'est perdue.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
-      6 jours sur 7). Tes points continuent de compter pendant ce temps. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
+      6 jours sur 7). Pendant ce temps, ton dresseur attend à l'arène : tes points comptent pour les Poké Balls, mais pas pour la carte. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}

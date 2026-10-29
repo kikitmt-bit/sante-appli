@@ -134,7 +134,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     lieu a ses Pokémon (les 146 non légendaires répartis, chacun dans un seul lieu) : poids 6 ici, 2 lieux traversés,
     1 étape suivante, ×3 si type de la barre ; plus rien de nouveau dans le coin → tout Kanto. Arènes (9 = la Ligue) :
     arrêt jusqu'au défi (7 derniers jours depuis l'arrivée) ou son **plan B** (6 jours sur 7 avec l'objectif : jamais
-    bloquant) ; les points continuent de s'accumuler et on repart d'un coup. Badge = Hyper Ball `badgeN` du type du
+    bloquant) ; **pendant le défi la carte ne bouge plus** (29/10, choix de Kiki) : les points du défi et ceux qui dépassaient l'arène à l'arrivée sont perdus pour le voyage (pas pour les balls) ; après le badge on repart de l'arène (`Voyage.cumul` : seul le gain du jour s'ajoute). Badge = Hyper Ball `badgeN` du type du
     champion, espèce nouvelle ; Ligue = Master Ball `ligue` (légendaire). Rejoué chaque fois, rien d'enregistré ;
     chaque capture a son `lieu`. **Carte v2 (29/10)** : nouvelle Kanto de Kiki (Plateau Indigo, volcan de Cramois'Île,
     Piste cyclable sur pilotis ; lieux et `VIA` replacés, mêmes lieux, mêmes points, donc rien de perdu) ; 2 bouts de

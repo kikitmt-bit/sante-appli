@@ -2,8 +2,9 @@
 (environ 3 mois). Chaque lieu a ses Pokémon : les Poké Balls donnent surtout ceux de l'endroit où l'on est, un peu ceux
 des lieux déjà traversés et de l'étape suivante. Dans une ville à arène, on s'arrête jusqu'à réussir le défi du champion
 (sur les 7 derniers jours, depuis l'arrivée), ou son plan B qui se fait en marchant (6 jours sur 7 avec l'objectif du
-jour) : un défi n'est jamais bloquant. Rien ne se perd : les points gagnés pendant ce temps font avancer d'un coup
-après le badge. Un badge = une Hyper Ball du type du champion (espèce nouvelle) ; la Ligue = une Master Ball (légendaire).
+jour) : un défi n'est jamais bloquant. Pendant le défi, le dresseur reste à l'arène : les points gagnés (et ceux qui
+dépassaient l'arène en arrivant) ne font pas avancer la carte, mais comptent toujours pour les Poké Balls (choix de Kiki,
+29/10 : sinon on sauterait des étapes d'un coup après le badge). Après le badge, il repart de l'arène. Un badge = une Hyper Ball du type du champion (espèce nouvelle) ; la Ligue = une Master Ball (légendaire).
 
 Tout est rejoué depuis le premier jour du jeu avec les vraies données (comme les balls) : rien n'est enregistré."""
 import datetime as dt
@@ -132,6 +133,7 @@ class Voyage:
         self.arrivee = None   # date d'arrivée à l'arène en cours
         self.histo = []       # (date, chiffres du jour) : pour les défis
         self.pos = 0.0
+        self.cumul = 0.0      # les points d'effort vus jusqu'ici (pour n'ajouter que ceux du jour)
 
     def arene_suivante(self):
         """Index (dans LIEUX) de la prochaine arène à gagner, ou None (Ligue gagnée)."""
@@ -149,14 +151,15 @@ class Voyage:
         """Un jour de plus : j = chiffres du jour, cumul = points d'effort depuis le début. -> [(numéro, arène)] des
         badges gagnés ce jour-là."""
         self.histo = [(d, x) for d, x in self.histo if d > jour - dt.timedelta(days=7)] + [(jour, j)]
-        gagnes = []
+        gagnes, gain, self.cumul = [], max(cumul - self.cumul, 0), cumul
         while True:
             i = self.arene_suivante()
             if i is None:
-                self.pos = min(cumul, DIST[-1])
+                self.pos = min(self.pos + gain, DIST[-1])
                 break
-            self.pos = min(cumul, DIST[i])
-            if cumul < DIST[i]:
+            # on avance, mais jamais au-delà de l'arène tant que son badge n'est pas gagné (le reste est perdu pour la carte)
+            self.pos, gain = min(self.pos + gain, DIST[i]), 0
+            if self.pos < DIST[i]:
                 break
             self.arrivee = self.arrivee or jour
             if all(valeur < cible for valeur, cible in self.defi(jour)):
