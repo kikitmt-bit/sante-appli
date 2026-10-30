@@ -111,20 +111,17 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   pas de petite ligne « Champion … · type … » sous le titre (il le dit lui-même) ; à la révélation tout s'assombrit. Sans
   `arene` : l'ancien sprite PokéRogue. À faire pour chaque arène : image ChatGPT → détourer le champion (contour sombre,
   remplissage depuis les bords, comparé au rendu) → mesurer torches / tête.
-  **Décors de capture (30/10, 1er : hautes herbes)** : `FONDS` (image `scenes/fond-*.webp`, centre du rond de sol
-  `ovale`, `rayon`, `vent`) et `LIEU_FOND` (lieu de la capture → fond ; légendaires exclus pour l'instant). Dans
-  `ouvrir` : classe `habitat`, décor pleine hauteur centré (+ copie floue sur les côtés) qui apparaît en **mosaïque**
-  (`mosaique` : gros pixels qui s'affinent, transition GBA, valable pour tous les fonds), zoom arrière, oiseau au loin,
-  feuilles et pollen au vent (`ventAnime`). **Ball** : la ball 3D habituelle (toute son animation) rendue en **gros pixels** (`Ball3D(…, pixel)` :
-  `setPixelRatio(.2)`, sans antialiasing, plus petite (≈ 120 px, Kiki 30/10 : « ça se verra moins »), posée au
-  centre du rond, tombe de plus haut, `image-rendering: pixelated`, moins brillante) ; Kiki 30/10 : la ball 2D en
-  sprite était « horrible », la 3D lisse jurait avec le décor. Repli sans three.js : `BallPixel` (sprite du jeu `IC[c.ball]` agrandi : quarts de tour pendant
-  la chute, écrasement à l'atterrissage (`ecrase`), secousses autour du point d'appui, bouton qui s'allume, couvercle
-  (moitié haute du sprite) qui s'ouvre sur une lumière + faisceau, puis flash et silhouette du Pokémon ; Kiki 30/10 : la ball 3D lisse jurait avec le décor) qui tombe
-  sur le rond (ombre `ombre-ball`), le Pokémon se pose sur le rond (`--py`) avec ombre et lueur au sol ; **pas de rayons
-  qui tournent** dans un décor (« ringard »). Refusé par Kiki : les hautes herbes qui s'écartent (« bas de gamme », pas
-  déclinable). Aperçu : « Comment ça marche ? » → « Tester les captures » (`apercuCapture`, `apercu: true`, jamais gardé).
-  Les 10 autres fonds et les 5 des légendaires sont dans le cerveau (`projets/sante/captures/`).
+  **Décors de capture (30/10, 1er : hautes herbes ; idée de Kiki)** : `FONDS` (image `scenes/fond-*.webp`, centre du
+  rond de sol `ovale`, `rayon`, `vent`) et `LIEU_FOND` (lieu de la capture → fond ; légendaires exclus pour l'instant).
+  **Deux mondes** : jusqu'à l'ouverture, on est « dans l'appli » = l'animation habituelle (fond sombre, **ball 3D lisse**,
+  chute, secousses, clic, lueur) ; quand la ball s'ouvre, sa lumière envahit l'écran (`blanc-jeu`) et nous transporte
+  « dans le jeu » : classe `dehors`, le décor pixel art apparaît en **mosaïque** depuis le blanc (`mosaique(…, "#fff")`),
+  la caméra recule (`ouvert`), oiseau, feuilles et pollen au vent (`ventAnime`), et le Pokémon se matérialise sur le
+  rond (`--py`) avec ombre et lueur au sol, sans rayons qui tournent. Essais refusés par Kiki le 30/10 : herbes qui
+  s'écartent (« bas de gamme »), ball 2D en sprite (« horrible »), ball 3D pixelisée (« décevant ») ; `BallPixel` et
+  `Ball3D(…, pixel)` restent dans le code, inutilisés. Aperçu : « Comment ça marche ? » → « Tester les captures »
+  (`apercuCapture`, `apercu: true`, jamais gardé). Les 10 autres fonds et les 5 des légendaires sont dans le cerveau
+  (`projets/sante/captures/`).
   **Champion sur la carte** : **pose fixe** (première image), il ne bouge qu'au toucher (`championAnime(…, fixe)` →
   `jouer()`). **Tuile de l'arène** seulement **une fois arrivé** (avant : le
   champion sur la carte suffit), avec le badge, le défi et les jauges.

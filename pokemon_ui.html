@@ -658,7 +658,10 @@ const STYLE_VOILE = `
 .pkm-type{display:inline-block;padding:2px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#fff;margin:6px 2px 0;
   text-shadow:0 1px 1px rgba(0,0,0,.35)}
 /* ---- le décor du lieu de capture (fonds ChatGPT, dossier scenes/fond-*.webp) ---- */
-#pkm-voile.habitat .fond{opacity:0}
+/* avant l'ouverture : l'appli (fond sombre, ball 3D) ; à l'ouverture, classe dehors : on entre dans le jeu (décor pixel art) */
+#pkm-voile:not(.dehors) :is(.decor,.decor-flou,.vent,.vignette,.ombre-sol,.lueur-sol,.ombre-ball){visibility:hidden}
+#pkm-voile.dehors .fond{opacity:0}
+#pkm-voile .blanc-jeu{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:23;transition:opacity .22s}
 #pkm-voile .decor-flou{position:absolute;inset:-6%;background-size:cover;background-position:center;filter:blur(16px) brightness(.5) saturate(1.2)}
 #pkm-voile .decor{position:absolute;top:0;height:100%;transform:scale(1.14);transform-origin:50% 42%;
   transition:transform 3.2s cubic-bezier(.15,.75,.2,1),filter .9s}
@@ -679,21 +682,14 @@ const STYLE_VOILE = `
   background:radial-gradient(closest-side,rgba(255,250,220,.75),rgba(255,240,180,.25) 45%,transparent 70%);transition:opacity .4s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele .lueur-sol{opacity:.7;transform:translate(-50%,-50%) scale(1);transition:opacity 2.5s 1s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele.calme .lueur-sol{opacity:.25}
-#pkm-voile.habitat .scene{height:68%}
-#pkm-voile.habitat .poke{top:var(--py)}
-#pkm-voile.habitat .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
-#pkm-voile.habitat.r-shiny .poke.couleur{filter:drop-shadow(0 0 18px rgba(255,215,90,.95))}
-#pkm-voile.habitat .aide{top:calc(var(--oy) + 9vh);left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:86vw;
-  padding:9px 18px 10px;border-radius:14px;background:rgba(12,22,36,.72);box-shadow:0 0 0 2px rgba(255,255,255,.85),0 6px 18px rgba(0,0,0,.35);
-  font-family:'Pixelify Sans',Outfit,monospace;font-size:19px;letter-spacing:.5px}
-#pkm-voile.habitat .aide.vu{opacity:1;animation:pkh-respire 1.6s ease-in-out infinite}
-@keyframes pkh-respire{50%{box-shadow:0 0 0 2px rgba(255,255,255,.4),0 6px 18px rgba(0,0,0,.35)}}
-#pkm-voile.habitat .aide small{color:#C9D3EA;font-family:Outfit,sans-serif;font-size:12px;letter-spacing:0}
+#pkm-voile.dehors .poke{top:var(--py)}
+#pkm-voile.dehors .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
+#pkm-voile.dehors.r-shiny .poke.couleur{filter:drop-shadow(0 0 18px rgba(255,215,90,.95))}
 #pkm-voile.habitat .haut{z-index:30}
 #pkm-voile.habitat .rond{background:rgba(10,20,30,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #pkm-voile.habitat .nom-ball{text-shadow:0 2px 0 rgba(0,0,0,.5)}
 /* l'arrivée dans le lieu : le décor apparaît en mosaïque (gros pixels qui s'affinent, comme les transitions de la GBA) */
-#pkm-voile canvas.mosaique{position:absolute;inset:0;width:100%;height:100%;z-index:24;pointer-events:none;image-rendering:pixelated}
+#pkm-voile canvas.mosaique{position:absolute;inset:0;width:100%;height:100%;z-index:24;display:none;pointer-events:none;image-rendering:pixelated}
 /* la ball en pixel art (sprite du jeu agrandi), pour aller avec le décor */
 #pkm-voile .ball2d.pixel .corps{position:absolute;inset:0;transform-origin:50% 76%}
 #pkm-voile .ball2d.pixel img{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;object-fit:contain}
@@ -711,7 +707,7 @@ const STYLE_VOILE = `
   transform:translate(-50%,-50%) scale(0);border-radius:50%;background:rgba(20,40,10,.4);pointer-events:none;transition:transform .25s,opacity .3s}
 #pkm-voile.pose .ombre-ball{transform:translate(-50%,-50%) scale(1)}
 #pkm-voile.revele .ombre-ball{opacity:0}
-#pkm-voile.habitat .rayons{display:none}
+#pkm-voile.dehors .rayons{display:none}
 #pkm-voile.b3d .ombre-ball{display:none}
 `;
 
@@ -724,7 +720,7 @@ const FONDS = {
 const LIEU_FOND = {"Route 1": "prairie", "Route 3": "prairie", "Piste cyclable": "prairie"};
 
 // L'apparition du décor en mosaïque : l'image redessinée en gros blocs de plus en plus fins, puis nette
-async function mosaique(canvas, img, rect, duree = 900) {
+async function mosaique(canvas, img, rect, duree = 900, fond = "#000") {
   try { await img.decode(); } catch (e) { return; }
   const W = canvas.width = canvas.clientWidth, H = canvas.height = canvas.clientHeight, g = canvas.getContext("2d");
   const petit = document.createElement("canvas"), pg = petit.getContext("2d");
@@ -732,7 +728,7 @@ async function mosaique(canvas, img, rect, duree = 900) {
   for (let i = 0; i < etapes.length; i++) {
     const n = etapes[i], w = n, h = Math.round(n * rect.h / rect.w);
     petit.width = w; petit.height = h; pg.drawImage(img, 0, 0, w, h);
-    g.imageSmoothingEnabled = false; g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    g.imageSmoothingEnabled = false; g.fillStyle = fond; g.fillRect(0, 0, W, H);
     g.globalAlpha = Math.min(1, .35 + i * .18); g.drawImage(petit, rect.x, rect.y, rect.w, rect.h); g.globalAlpha = 1;
     await new Promise(ok => setTimeout(ok, Math.max(0, t0 + duree * (i + 1) / etapes.length - performance.now())));
   }
@@ -982,16 +978,14 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${BALLS[c.ball] || "Poké Ball"}</div>
       <button class="rond x">✕</button></div>
     <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
-    <div class="carte"></div>${F ? `<div class="ombre-ball"></div><canvas class="mosaique"></canvas>` : ""}`;
+    <div class="carte"></div>${F ? `<canvas class="mosaique"></canvas><div class="blanc-jeu"></div>` : ""}`;
   if (F) v.classList.add("habitat");
   P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
   const fx = Particules($(".fx"));
   let B;
-  // dans un décor : la même ball 3D (toute son animation), rendue en gros pixels pour aller avec le pixel art ;
-  // sans three.js : la ball en sprite du jeu
-  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball, !!F); v.classList.add("b3d"); }
-  catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = F ? BallPixel($(".ball2d"), IC[c.ball] || IC.poke) : Ball2D($(".ball2d"), c.ball); }
+  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
+  catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), c.ball); }
 
   // Boucle d'affichage (dans la fenêtre parente : jamais ralentie)
   let fini = false, dernier = maintenant(), anims = [], brille = false;
@@ -1012,8 +1006,6 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const ox = W / 2 + (F.ovale[0] - F.largeur / 2) * f, oy = F.ovale[1] * f;
     v.style.setProperty("--ox", ox + "px"); v.style.setProperty("--oy", oy + "px");
     v.style.setProperty("--py", oy - H * .13 + "px"); v.style.setProperty("--ow", Math.min(F.rayon * f * .62, W * .5) + "px");
-    $(".scene").style.top = oy - H * .34 - Math.min(W * .15, 60) * .7 + "px";  // la ball posée au centre du rond
-    $(".ball2d").style.top = oy - H * .045 + "px";
     tailleVent();
   };
   if (F) { placer(); if (F.vent) tailleVent = ventAnime($(".vent"), F.vent, () => fini); placer();
@@ -1034,26 +1026,13 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   poke.src = IMG.hd(c.num, c.shiny);
 
   const centre = () => B.ecran();
-  if (F) B.taille();
   (async () => {
-    // 0. Le lieu de capture : le décor apparaît en mosaïque (gros pixels qui s'affinent), la caméra recule doucement
-    if (F) {
-      B.y = 9;  // la ball attend hors de l'écran
-      const d = $(".decor"), r = d.getBoundingClientRect(), m = $(".mosaique");
-      bruit(0, .9, {vol: .12, f: 1600, type: "bandpass"});
-      await mosaique(m, d.querySelector("img"), {x: r.left, y: r.top, w: r.width, h: r.height}, 850);
-      m.remove(); v.classList.add("ouvert");
-      ton(2200, .25, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .4, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
-      await pause(450);
-    }
-    // 1. Elle tombe du ciel et rebondit (de plus haut quand la ball est plus petite, dans un décor)
-    const h0 = F ? 8 : 5;
+    // 1. Elle tombe du ciel et rebondit
+    const h0 = 5;
     B.y = h0; B.rotY = -Math.PI * 3;
     SONS.chute();
     await tween(950, (e, t) => { B.y = h0 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
     SONS.rebond(); vibre(20);
-    if (F) { v.classList.add("pose"); B.ecrase && B.ecrase(); const [x, y] = centre();  // un petit nuage de terre et de brins d'herbe à l'atterrissage
-      fx.jet(x, y + 30, 14, {couleurs: ["#C9A46A", "#E2C58A", "#5CC25A", "#3FA34D"], vitesse: 3.2, taille: 4, vie: .7, gravite: .22}); }
     if (rejouer && !direct) return devoiler(true);
     // 2. Elle attend qu'on la touche (sauf en arrivant du labo : elle a déjà été choisie)
     if (!direct) {
@@ -1093,15 +1072,35 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     if (!vite) { SONS.ouverture(); vibre(60); }
     B.interieur(teinte, 1);
     await tween(vite ? 200 : 360, e => { B.ouverture = e * 1.95; B.faisceau(e * .85, teinte); }, ease.back);
+    if (F) {
+      // 7. La lumière de la ball envahit l'écran et nous transporte dans le jeu : le lieu de capture apparaît en
+      //    mosaïque (gros pixels qui s'affinent), la caméra recule, le Pokémon se matérialise sur le rond
+      const bj = $(".blanc-jeu");
+      await tween(vite ? 120 : 260, e => { B.faisceau(.85 + e * .15, teinte); B.zoom = 1 + (r.leg || r.shiny || r.nouveau ? 4 : 3) * .045 + .08 + e * .25; });
+      bj.style.opacity = 1; SONS.montee(.5); await pause(240);
+      $(".scene").style.visibility = "hidden"; $(".ball2d").style.visibility = "hidden";
+      v.classList.add("dehors"); placer(); tailleVent();
+      const d = $(".decor"), m = $(".mosaique"), rd = d.getBoundingClientRect();
+      m.style.display = "block"; bj.style.transition = "opacity .5s"; bj.style.opacity = 0;
+      bruit(0, .7, {vol: .1, f: 1600, type: "bandpass"});
+      await mosaique(m, d.querySelector("img"), {x: rd.left, y: rd.top, w: rd.width, h: rd.height}, vite ? 380 : 700, "#fff");
+      m.remove(); v.classList.add("ouvert");
+      ton(2200, .2, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .35, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
+      const ox = parseFloat(v.style.getPropertyValue("--ox")), oy = parseFloat(v.style.getPropertyValue("--oy"));
+      flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
+      fx.jet(ox, oy - 40, vite ? 20 : 46, {couleurs: couleursFx, vitesse: 9, taille: 9, vie: 1.3, gravite: .04, cercle: true});
+      fx.jet(ox, oy, 26, {couleurs: ["#5CC25A", "#A6D84B", "#2E8B3A", "#FFF6C8"], vitesse: 6, taille: 5, vie: 1.2, gravite: .12});
+      poke.classList.add("sort"); SONS.materialise(); v.classList.add("revele");
+      setTimeout(() => v.classList.add("calme"), 2600);
+      await pause(400);
+    } else {
     flash.classList.add("go");
     const [x, y] = centre();
     fx.jet(x, y, vite ? 20 : 46, {couleurs: couleursFx, vitesse: 9, taille: 9, vie: 1.3, gravite: .04, cercle: true});
     poke.classList.add("sort"); SONS.materialise();
     v.classList.add("revele");
-    if (F) { const ox = parseFloat(v.style.getPropertyValue("--ox")), oy = parseFloat(v.style.getPropertyValue("--oy"));
-      fx.jet(ox, oy, 26, {couleurs: ["#5CC25A", "#A6D84B", "#2E8B3A", "#FFF6C8"], vitesse: 6, taille: 5, vie: 1.2, gravite: .12});
-      setTimeout(() => v.classList.add("calme"), 2600); }
     await tween(500, e => { B.echelle = 1 - e; B.y = -e * .6; B.faisceau(.85 * (1 - e), teinte); }, ease.inout);
+    }
     await pause(vite ? 150 : 550);
     poke.classList.add("couleur"); vibre(r.nouveau || r.shiny ? [40, 60, 80] : 30);
     const pr = poke.getBoundingClientRect(), px = pr.left + pr.width / 2, py = pr.top + pr.height / 2;
