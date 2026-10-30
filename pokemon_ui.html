@@ -695,8 +695,18 @@ const STYLE_VOILE = `
 /* l'arrivée dans le lieu : le décor apparaît en mosaïque (gros pixels qui s'affinent, comme les transitions de la GBA) */
 #pkm-voile canvas.mosaique{position:absolute;inset:0;width:100%;height:100%;z-index:24;pointer-events:none;image-rendering:pixelated}
 /* la ball en pixel art (sprite du jeu agrandi), pour aller avec le décor */
-#pkm-voile .ball2d.pixel img{width:100%;height:100%;display:block;image-rendering:pixelated;object-fit:contain}
-#pkm-voile .ball2d.pixel{transition:filter .15s}
+#pkm-voile .ball2d.pixel .corps{position:absolute;inset:0;transform-origin:50% 76%}
+#pkm-voile .ball2d.pixel img{position:absolute;inset:0;width:100%;height:100%;display:block;image-rendering:pixelated;object-fit:contain}
+#pkm-voile .ball2d.pixel img.haut{clip-path:inset(0 0 49% 0);transform-origin:22% 51%}
+#pkm-voile .ball2d.pixel img.bas{clip-path:inset(51% 0 0 0)}
+#pkm-voile .ball2d.pixel .bouton{position:absolute;left:50%;top:50%;width:14%;aspect-ratio:1;transform:translate(-50%,-50%);opacity:0;
+  background:var(--c,#fff);box-shadow:0 0 6px 3px var(--c,#fff),0 0 18px 8px var(--c,#fff);image-rendering:pixelated}
+#pkm-voile .ball2d.pixel .dedans{position:absolute;left:22%;right:22%;top:44%;height:12%;opacity:0;border-radius:2px;
+  background:#fff;box-shadow:0 0 10px 6px var(--c,#fff),0 0 30px 14px var(--c,#fff)}
+#pkm-voile .ball2d.pixel .faisceau{position:absolute;left:50%;bottom:48%;width:62%;height:340%;transform:translateX(-50%);opacity:0;
+  pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(0deg,#fff 0,var(--c,#fff) 25%,transparent 100%);
+  -webkit-mask:linear-gradient(90deg,transparent 0,#000 30%,#000 70%,transparent 100%);mask:linear-gradient(90deg,transparent 0,#000 30%,#000 70%,transparent 100%)}
 #pkm-voile .ombre-ball{position:absolute;left:var(--ox);top:calc(var(--oy) + 1.2vh);width:calc(var(--ow) * .32);height:calc(var(--ow) * .08);
   transform:translate(-50%,-50%) scale(0);border-radius:50%;background:rgba(20,40,10,.4);pointer-events:none;transition:transform .25s,opacity .3s}
 #pkm-voile.pose .ombre-ball{transform:translate(-50%,-50%) scale(1)}
@@ -726,23 +736,34 @@ async function mosaique(canvas, img, rect, duree = 900) {
     await new Promise(ok => setTimeout(ok, Math.max(0, t0 + duree * (i + 1) / etapes.length - performance.now())));
   }
 }
-// La ball en pixel art (le sprite du jeu de chaque ball), animée en 2D comme Ball2D ; les tours de la chute se font
-// par quarts de tour (un pixel art tourné de travers devient flou)
+// La ball en pixel art (le sprite du jeu de chaque ball, agrandi sans lissage), animée comme la ball 3D : elle tourne
+// par quarts de tour en tombant, s'écrase au sol, gigote autour de son point d'appui, son bouton s'allume, puis le
+// couvercle (moitié haute du sprite) s'ouvre sur un faisceau de lumière d'où sort le Pokémon
 function BallPixel(el, src) {
-  el.classList.add("pixel"); el.innerHTML = `<img src="${src}" alt="">`;
-  const s = {y: 0, rotY: 0, rotZ: 0, x: 0, echelle: 1, ouverture: 0, zoom: 1, lueur: 0, coul: "#fff"};
+  el.classList.add("pixel");
+  el.innerHTML = `<div class="corps"><div class="faisceau"></div><div class="dedans"></div>
+    <img class="bas" src="${src}" alt=""><img class="haut" src="${src}" alt=""><div class="bouton"></div></div>`;
+  const corps = el.querySelector(".corps"), haut = el.querySelector(".haut"), bouton = el.querySelector(".bouton"),
+        faisceau = el.querySelector(".faisceau"), dedans = el.querySelector(".dedans");
+  const s = {y: 0, rotY: 0, rotZ: 0, x: 0, echelle: 1, ouverture: 0, zoom: 1};
   const maj = () => { const q = Math.round(s.rotY / (Math.PI / 2)) * 90;
-    el.style.transform = `translate(${s.x * 60}px,${-s.y * 60}px) rotate(${q + s.rotZ * 57.3 * .55}deg) scale(${s.echelle * s.zoom})`;
-    const o = s.ouverture;
-    el.style.filter = `brightness(${1 + o * 1.4}) drop-shadow(0 0 ${2 + s.lueur * 9}px ${s.coul}) drop-shadow(0 0 ${s.lueur * 14}px ${s.coul})`;
-    el.style.opacity = o > 1.6 ? 0 : 1; };
+    el.style.transform = `translate(${s.x * 60}px,${-s.y * 60}px) scale(${s.echelle * s.zoom})`;
+    corps.style.transform = `rotate(${q + s.rotZ * 57.3 * .6}deg)`;
+    const o = Math.min(s.ouverture / 1.95, 1);
+    haut.style.transform = `translate(${-o * 6}%,${-o * 22}%) rotate(${-o * 32}deg)`; };
   const proxy = new Proxy(s, {set(o, k, v) { o[k] = v; maj(); return true; }});
   const hex = c => "#" + c.toString(16).padStart(6, "0");
   return Object.assign(proxy, {
-    lueurBouton(i, c = 0xffffff) { s.lueur = Math.min(i, 3) / 3; s.coul = hex(c); maj(); },
-    interieur() {}, faisceau() {}, rendre() {}, taille() {}, fin() {},
+    lueurBouton(i, c = 0xffffff) { const k = Math.min(i, 3) / 3; bouton.style.opacity = k; bouton.style.setProperty("--c", hex(c));
+      el.style.filter = k > .5 ? `drop-shadow(0 0 ${k * 10}px ${hex(c)})` : ""; },
+    interieur(c, i) { dedans.style.setProperty("--c", hex(c)); dedans.style.opacity = i; },
+    faisceau(op, c = 0xffffff) { faisceau.style.opacity = op; faisceau.style.setProperty("--c", hex(c)); },
+    ecrase() { corps.animate([{transform: corps.style.transform}, {transform: corps.style.transform + " scale(1.18,.78)"},
+      {transform: corps.style.transform + " scale(.94,1.08)"}, {transform: corps.style.transform}], {duration: 320, easing: "ease-out"}); },
+    rendre() {}, taille() {}, fin() {},
     ecran() { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }});
 }
+
 // Le vent du lieu : feuilles et pollen en pixels qui traversent l'écran, par rafales
 function ventAnime(canvas, cfg, estFini) {
   const k = 3, g = canvas.getContext("2d"); let W = 0, H = 0;
@@ -1027,7 +1048,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     SONS.chute();
     await tween(950, (e, t) => { B.y = 5 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
     SONS.rebond(); vibre(20);
-    if (F) { v.classList.add("pose"); const [x, y] = centre();  // un petit nuage de terre et de brins d'herbe à l'atterrissage
+    if (F) { v.classList.add("pose"); B.ecrase && B.ecrase(); const [x, y] = centre();  // un petit nuage de terre et de brins d'herbe à l'atterrissage
       fx.jet(x, y + 30, 14, {couleurs: ["#C9A46A", "#E2C58A", "#5CC25A", "#3FA34D"], vitesse: 3.2, taille: 4, vie: .7, gravite: .22}); }
     if (rejouer && !direct) return devoiler(true);
     // 2. Elle attend qu'on la touche (sauf en arrivant du labo : elle a déjà été choisie)
