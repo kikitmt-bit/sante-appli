@@ -661,7 +661,7 @@ const STYLE_VOILE = `
 /* avant l'ouverture : l'appli (fond sombre, ball 3D) ; à l'ouverture, classe dehors : on entre dans le jeu (décor pixel art) */
 #pkm-voile:not(.dehors) :is(.decor,.decor-flou,.vent,.vignette,.ombre-sol,.lueur-sol,.ombre-ball){visibility:hidden}
 #pkm-voile.dehors .fond{opacity:0}
-#pkm-voile .blanc-jeu{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:23;transition:opacity .22s}
+#pkm-voile .blanc-jeu{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:25;transition:opacity .6s cubic-bezier(.4,0,.6,1)}
 #pkm-voile .decor-flou{position:absolute;inset:-6%;background-size:cover;background-position:center;filter:blur(16px) brightness(.5) saturate(1.2)}
 #pkm-voile .decor{position:absolute;top:0;height:100%;transform:scale(1.14);transform-origin:50% 42%;
   transition:transform 3.2s cubic-bezier(.15,.75,.2,1),filter .9s}
@@ -724,12 +724,12 @@ async function mosaique(canvas, img, rect, duree = 900, fond = "#000") {
   try { await img.decode(); } catch (e) { return; }
   const W = canvas.width = canvas.clientWidth, H = canvas.height = canvas.clientHeight, g = canvas.getContext("2d");
   const petit = document.createElement("canvas"), pg = petit.getContext("2d");
-  const etapes = [4, 7, 12, 20, 34, 60, 110], t0 = performance.now();
+  const etapes = [3, 5, 8, 12, 18, 26, 38, 56, 80, 120], t0 = performance.now();
   for (let i = 0; i < etapes.length; i++) {
     const n = etapes[i], w = n, h = Math.round(n * rect.h / rect.w);
     petit.width = w; petit.height = h; pg.drawImage(img, 0, 0, w, h);
     g.imageSmoothingEnabled = false; g.fillStyle = fond; g.fillRect(0, 0, W, H);
-    g.globalAlpha = Math.min(1, .35 + i * .18); g.drawImage(petit, rect.x, rect.y, rect.w, rect.h); g.globalAlpha = 1;
+    g.globalAlpha = Math.min(1, .5 + i * .07); g.drawImage(petit, rect.x, rect.y, rect.w, rect.h); g.globalAlpha = 1;
     await new Promise(ok => setTimeout(ok, Math.max(0, t0 + duree * (i + 1) / etapes.length - performance.now())));
   }
 }
@@ -1076,19 +1076,21 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
       // 7. La lumière de la ball envahit l'écran et nous transporte dans le jeu : le lieu de capture apparaît en
       //    mosaïque (gros pixels qui s'affinent), la caméra recule, le Pokémon se matérialise sur le rond
       const bj = $(".blanc-jeu");
-      await tween(vite ? 120 : 260, e => { B.faisceau(.85 + e * .15, teinte); B.zoom = 1 + (r.leg || r.shiny || r.nouveau ? 4 : 3) * .045 + .08 + e * .25; });
-      bj.style.opacity = 1; SONS.montee(.5); await pause(240);
+      // la lumière monte doucement jusqu'au blanc, pendant que la ball grossit vers nous
+      SONS.montee(.9); bj.style.opacity = 1;
+      await tween(vite ? 300 : 650, e => { B.faisceau(.85 + e * .15, teinte); B.zoom = 1 + (r.leg || r.shiny || r.nouveau ? 4 : 3) * .045 + .08 + e * .35; }, ease.inout);
+      await pause(vite ? 100 : 250);
       $(".scene").style.visibility = "hidden"; $(".ball2d").style.visibility = "hidden";
       v.classList.add("dehors"); placer(); tailleVent();
       const d = $(".decor"), m = $(".mosaique"), rd = d.getBoundingClientRect();
-      m.style.display = "block"; bj.style.transition = "opacity .5s"; bj.style.opacity = 0;
-      bruit(0, .7, {vol: .1, f: 1600, type: "bandpass"});
-      await mosaique(m, d.querySelector("img"), {x: rd.left, y: rd.top, w: rd.width, h: rd.height}, vite ? 380 : 700, "#fff");
-      m.remove(); v.classList.add("ouvert");
+      m.style.display = "block"; m.style.transition = "opacity .45s";
+      bj.style.transition = "opacity 1s cubic-bezier(.3,0,.3,1)"; bj.style.opacity = 0;  // le blanc s'efface pendant la mosaïque
+      bruit(0, 1.1, {vol: .08, f: 1600, type: "bandpass"});
+      await mosaique(m, d.querySelector("img"), {x: rd.left, y: rd.top, w: rd.width, h: rd.height}, vite ? 500 : 1100, "#fff");
+      v.classList.add("ouvert"); m.style.opacity = 0; setTimeout(() => m.remove(), 500);  // l'image nette se fond dans le décor
       ton(2200, .2, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .35, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
       const ox = parseFloat(v.style.getPropertyValue("--ox")), oy = parseFloat(v.style.getPropertyValue("--oy"));
-      flash.classList.remove("go"); void flash.offsetWidth; flash.classList.add("go");
-      fx.jet(ox, oy - 40, vite ? 20 : 46, {couleurs: couleursFx, vitesse: 9, taille: 9, vie: 1.3, gravite: .04, cercle: true});
+      fx.jet(ox, oy - 40, vite ? 14 : 30, {couleurs: couleursFx, vitesse: 7, taille: 8, vie: 1.3, gravite: .04, cercle: true});
       fx.jet(ox, oy, 26, {couleurs: ["#5CC25A", "#A6D84B", "#2E8B3A", "#FFF6C8"], vitesse: 6, taille: 5, vie: 1.2, gravite: .12});
       poke.classList.add("sort"); SONS.materialise(); v.classList.add("revele");
       setTimeout(() => v.classList.add("calme"), 2600);
