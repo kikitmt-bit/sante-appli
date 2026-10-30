@@ -1300,8 +1300,7 @@ const STYLE_BADGE = `
 #pkm-badge .salle .perso{position:absolute;transition:opacity .8s}
 #pkm-badge .salle .perso img{display:block;width:100%;height:100%;image-rendering:pixelated;transform-origin:50% 100%;
   filter:brightness(0) drop-shadow(0 0 2px rgba(255,255,255,.45));transition:filter .6s}
-#pkm-badge.spot-on .salle .perso img{filter:none;animation:pkb-souffle 2.8s ease-in-out infinite}
-@keyframes pkb-souffle{50%{transform:scale(1.01,1.022)}}
+#pkm-badge.spot-on .salle .perso img{filter:none}
 #pkm-badge.revele .salle .perso{opacity:.45}
 #pkm-badge.salle-mode .teinte{background:radial-gradient(140% 100% at 50% 45%,transparent 50%,rgba(0,0,0,.75) 100%)}
 #pkm-badge .salle .lueur{position:absolute;left:50%;top:34%;width:46%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;opacity:0;
@@ -1574,7 +1573,7 @@ function sceneBadge(n, c, rejouer = false) {
       <div class="couvercle"><div class="embleme"></div><span>ÉTUI À BADGES</span></div><div class="fermoir"></div></div></div>`}
     <div class="cine h"></div><div class="cine b"></div>
     <div class="titre-arene"><div class="ligne"></div><b>${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}</b>
-      <small>${ligue ? "Plateau Indigo · le Maître" : `${icoType(a.type)} Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small></div>
+      ${sc ? "" : `<small>${ligue ? "Plateau Indigo · le Maître" : `${icoType(a.type)} Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small>`}</div>
     <div class="flash"></div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
   P.body.appendChild(v);
   // le décor : l'arène dessinée (toute la hauteur de l'écran, centrée), sinon la ville sur la carte, en grand
@@ -1586,9 +1585,6 @@ function sceneBadge(n, c, rejouer = false) {
     deco.style.backgroundPosition = `${PW.innerWidth * .56 - ox * f}px ${PW.innerHeight * .4 - oy * f}px`; }
   const air = airAnime(v.querySelector("canvas.air"), ligue ? "Ligue" : a.type);
   const cv = v.querySelector(".champ canvas"), anim = cv ? championAnime(cv, ch.sprite) : {stop() {}};
-  const perso = v.querySelector(".salle .perso");
-  const sautille = () => perso && perso.animate([{transform: "translateY(0)"}, {transform: "translateY(-2.2%)"}, {transform: "translateY(0)"},
-    {transform: "translateY(-1%)"}, {transform: "translateY(0)"}], {duration: 520, easing: "ease-out"});
   const camera = z => { if (salleEl) salleEl.style.transform = `translateX(-50%) scale(${z})`; };
   badgesPropres(v);
   const bp = badgePropre(src, !ligue);
@@ -1618,11 +1614,12 @@ function sceneBadge(n, c, rejouer = false) {
     await pause(350); v.classList.add("titre");
     await pause(1700); v.classList.add("haut");
     // 2. Le champion : une silhouette, puis le projecteur (dans l'arène dessinée : les torches s'allument une à une,
-    // la salle s'éclaire, la caméra s'approche doucement de lui ; il sautille à chaque réplique)
+    // la salle s'éclaire, la caméra s'approche doucement de lui ; lui reste immobile : le bouger ferait voir le dessin
+    // d'origine dessous)
     if (sc) { await pause(500); v.querySelectorAll(".torche").forEach((t, i) => setTimeout(() => { t.classList.add("on"); EPIQUE.torche(); vibre(12); }, i * 380)); await pause(800); }
     await pause(700); EPIQUE.projecteur(); v.classList.add("spot-on"); vibre(25); camera(1.12);
     await pause(900);
-    for (const l of ch.lignes) { sautille(); await dire(l, ch.nom); }
+    for (const l of ch.lignes) await dire(l, ch.nom);
     await dire(ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom);
     cacher();
     // 3. La révélation : roulement de tambour, l'énergie converge, éclair, onde de choc, le badge apparaît en tournant

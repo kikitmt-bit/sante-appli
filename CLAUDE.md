@@ -106,8 +106,9 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   salle avec le champion (`scenes/arene-argenta.webp`) + le champion seul détouré par Claude (`arene-argenta-pierre.webp`,
   posé pile par-dessus : x, y, pw, ph en pixels de l'image), `tete` = carré de la tête (médaillon de la carte et carte du
   défi, `portraitChamp`), `torches`. Scène du badge en mode `salle-mode` : salle sombre et champion en silhouette, torches
-  qui s'allument une à une (`EPIQUE.torche`), la salle s'éclaire, caméra qui s'approche (`camera(1.12)`), le champion
-  respire (`pkb-souffle`) et sautille à chaque réplique, poussière du type ; à la révélation tout s'assombrit. Sans
+  qui s'allument une à une (`EPIQUE.torche`), la salle s'éclaire, caméra qui s'approche (`camera(1.12)`), poussière du
+  type ; le champion reste **immobile** (Kiki, 30/10 : la respiration faisait voir les pixels du dessin d'origine) et
+  pas de petite ligne « Champion … · type … » sous le titre (il le dit lui-même) ; à la révélation tout s'assombrit. Sans
   `arene` : l'ancien sprite PokéRogue. À faire pour chaque arène : image ChatGPT → détourer le champion (contour sombre,
   remplissage depuis les bords, comparé au rendu) → mesurer torches / tête.
   **Champion sur la carte** : **pose fixe** (première image), il ne bouge qu'au toucher (`championAnime(…, fixe)` →
