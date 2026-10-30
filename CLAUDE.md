@@ -102,6 +102,14 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   dans le localStorage `pkm_dresseur` (à passer côté serveur avec le multijoueur) ; `feuilleColoree` recolore les
   images de Red (peau 3 tons ; rouge 3 tons : 7 premières lignes = casquette, le reste = veste ; jean = pantalon).
   Couleur des yeux : non (1-2 pixels, invisible). « Kiki obtient le Badge Roche ! ».
+  **Champions dessinés dans leur arène (30/10, essai validé sur Pierre)** : `CHAMPIONS[n].arene` = image ChatGPT de la
+  salle avec le champion (`scenes/arene-argenta.webp`) + le champion seul détouré par Claude (`arene-argenta-pierre.webp`,
+  posé pile par-dessus : x, y, pw, ph en pixels de l'image), `tete` = carré de la tête (médaillon de la carte et carte du
+  défi, `portraitChamp`), `torches`. Scène du badge en mode `salle-mode` : salle sombre et champion en silhouette, torches
+  qui s'allument une à une (`EPIQUE.torche`), la salle s'éclaire, caméra qui s'approche (`camera(1.12)`), le champion
+  respire (`pkb-souffle`) et sautille à chaque réplique, poussière du type ; à la révélation tout s'assombrit. Sans
+  `arene` : l'ancien sprite PokéRogue. À faire pour chaque arène : image ChatGPT → détourer le champion (contour sombre,
+  remplissage depuis les bords, comparé au rendu) → mesurer torches / tête.
   **Champion sur la carte** : **pose fixe** (première image), il ne bouge qu'au toucher (`championAnime(…, fixe)` →
   `jouer()`). **Tuile de l'arène** seulement **une fois arrivé** (avant : le
   champion sur la carte suffit), avec le badge, le défi et les jauges.
