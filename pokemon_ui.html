@@ -923,7 +923,7 @@ function Ball3D(canvas, type, pixel = false) {  // pixel : rendu en basse résol
 
   const taille = () => {
     const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / h;
-    const cible = Math.min(w * .48, h * .42, 230);           // diamètre de la ball à l'écran, en pixels
+    const cible = pixel ? Math.min(w * .3, 120) : Math.min(w * .48, h * .42, 230);  // diamètre de la ball à l'écran, en pixels
     const hv = 2 * R * h / cible, d = hv / (2 * Math.tan(cam.fov * Math.PI / 360));
     cam.position.set(0, d * .12, d); cam.lookAt(0, 0, 0); cam.updateProjectionMatrix(); base = cam.position.clone();
   };
@@ -1012,7 +1012,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const ox = W / 2 + (F.ovale[0] - F.largeur / 2) * f, oy = F.ovale[1] * f;
     v.style.setProperty("--ox", ox + "px"); v.style.setProperty("--oy", oy + "px");
     v.style.setProperty("--py", oy - H * .13 + "px"); v.style.setProperty("--ow", Math.min(F.rayon * f * .62, W * .5) + "px");
-    $(".scene").style.top = oy - H * .34 - H * .045 + "px";  // le centre de la ball juste au-dessus du sol
+    $(".scene").style.top = oy - H * .34 - Math.min(W * .15, 60) * .7 + "px";  // la ball posée au centre du rond
     $(".ball2d").style.top = oy - H * .045 + "px";
     tailleVent();
   };
@@ -1046,10 +1046,11 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
       ton(2200, .25, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .4, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
       await pause(450);
     }
-    // 1. Elle tombe du ciel et rebondit
-    B.y = 5; B.rotY = -Math.PI * 3;
+    // 1. Elle tombe du ciel et rebondit (de plus haut quand la ball est plus petite, dans un décor)
+    const h0 = F ? 8 : 5;
+    B.y = h0; B.rotY = -Math.PI * 3;
     SONS.chute();
-    await tween(950, (e, t) => { B.y = 5 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
+    await tween(950, (e, t) => { B.y = h0 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
     SONS.rebond(); vibre(20);
     if (F) { v.classList.add("pose"); B.ecrase && B.ecrase(); const [x, y] = centre();  // un petit nuage de terre et de brins d'herbe à l'atterrissage
       fx.jet(x, y + 30, 14, {couleurs: ["#C9A46A", "#E2C58A", "#5CC25A", "#3FA34D"], vitesse: 3.2, taille: 4, vie: .7, gravite: .22}); }
