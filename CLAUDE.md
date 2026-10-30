@@ -111,6 +111,14 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   pas de petite ligne « Champion … · type … » sous le titre (il le dit lui-même) ; à la révélation tout s'assombrit. Sans
   `arene` : l'ancien sprite PokéRogue. À faire pour chaque arène : image ChatGPT → détourer le champion (contour sombre,
   remplissage depuis les bords, comparé au rendu) → mesurer torches / tête.
+  **Décors de capture (30/10, 1er : hautes herbes)** : `FONDS` (image `scenes/fond-*.webp`, centre du rond de sol
+  `ovale`, `rayon`, `herbes`, `vent`) et `LIEU_FOND` (lieu de la capture → fond ; légendaires exclus pour l'instant). Dans
+  `ouvrir` : classe `habitat`, décor pleine hauteur centré (+ copie floue sur les côtés), mur de hautes herbes en pixel
+  art (`dessinerHerbes`) qui frémit (bruissement) puis s'écarte, zoom arrière, oiseau au loin, feuilles et pollen au vent
+  (`ventAnime`), la ball tombe sur le rond (canvas décalé : `ecran()` renvoie maintenant des coordonnées de page), nuage
+  de terre, le Pokémon se pose sur le rond (`--py`) avec ombre et lueur au sol. Aperçu : « Comment ça marche ? » →
+  « Tester les captures » (`apercuCapture`, capture `apercu: true`, jamais gardée). Les 10 autres fonds et les 5 des
+  légendaires sont dans le cerveau (`projets/sante/captures/`).
   **Champion sur la carte** : **pose fixe** (première image), il ne bouge qu'au toucher (`championAnime(…, fixe)` →
   `jouer()`). **Tuile de l'arène** seulement **une fois arrivé** (avant : le
   champion sur la carte suffit), avec le badge, le défi et les jauges.

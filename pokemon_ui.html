@@ -657,7 +657,116 @@ const STYLE_VOILE = `
 #pkm-voile .b2{background:rgba(255,255,255,.12)}
 .pkm-type{display:inline-block;padding:2px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#fff;margin:6px 2px 0;
   text-shadow:0 1px 1px rgba(0,0,0,.35)}
+/* ---- le décor du lieu de capture (fonds ChatGPT, dossier scenes/fond-*.webp) ---- */
+#pkm-voile.habitat .fond{opacity:0}
+#pkm-voile .decor-flou{position:absolute;inset:-6%;background-size:cover;background-position:center;filter:blur(16px) brightness(.5) saturate(1.2)}
+#pkm-voile .decor{position:absolute;top:0;height:100%;transform:scale(1.14);transform-origin:50% 42%;
+  transition:transform 3.2s cubic-bezier(.15,.75,.2,1),filter .9s}
+#pkm-voile .decor img{display:block;height:100%;image-rendering:pixelated}
+#pkm-voile.revele .decor{filter:brightness(.82) saturate(1.05)}
+#pkm-voile.habitat.ouvert .decor{transform:scale(1)}
+#pkm-voile.habitat.revele .decor{transform:scale(1.06);transition:transform 1.4s cubic-bezier(.2,.8,.2,1),filter .9s}
+#pkm-voile .vignette{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(130% 75% at 50% 42%,transparent 55%,rgba(5,10,20,.55) 100%),
+    linear-gradient(180deg,rgba(5,10,20,.35) 0,transparent 14%,transparent 66%,rgba(5,10,20,.55) 100%)}
+#pkm-voile canvas.vent{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated}
+#pkm-voile .ombre-sol{position:absolute;width:var(--ow);height:calc(var(--ow) * .22);left:var(--ox);top:var(--oy);
+  transform:translate(-50%,-50%) scale(.3);border-radius:50%;opacity:0;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(20,40,10,.55),rgba(20,40,10,.25) 60%,transparent);transition:opacity .5s,transform .7s cubic-bezier(.2,1.4,.4,1)}
+#pkm-voile.revele .ombre-sol{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#pkm-voile .lueur-sol{position:absolute;width:calc(var(--ow) * 1.3);aspect-ratio:1;left:var(--ox);top:calc(var(--py));
+  transform:translate(-50%,-50%) scale(.2);border-radius:50%;opacity:0;pointer-events:none;mix-blend-mode:screen;
+  background:radial-gradient(closest-side,rgba(255,250,220,.75),rgba(255,240,180,.25) 45%,transparent 70%);transition:opacity .4s,transform .9s cubic-bezier(.2,.9,.2,1)}
+#pkm-voile.revele .lueur-sol{opacity:.7;transform:translate(-50%,-50%) scale(1);transition:opacity 2.5s 1s,transform .9s cubic-bezier(.2,.9,.2,1)}
+#pkm-voile.revele.calme .lueur-sol{opacity:.25}
+#pkm-voile.habitat .rayons{top:var(--py);opacity:0}
+#pkm-voile.habitat.revele .rayons{opacity:.55}
+#pkm-voile.habitat .scene{height:68%}
+#pkm-voile.habitat .poke{top:var(--py)}
+#pkm-voile.habitat .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
+#pkm-voile.habitat.r-shiny .poke.couleur{filter:drop-shadow(0 0 18px rgba(255,215,90,.95))}
+#pkm-voile.habitat .aide{top:calc(var(--oy) + 9vh);left:50%;right:auto;transform:translateX(-50%);width:max-content;max-width:86vw;
+  padding:9px 18px 10px;border-radius:14px;background:rgba(12,22,36,.72);box-shadow:0 0 0 2px rgba(255,255,255,.85),0 6px 18px rgba(0,0,0,.35);
+  font-family:'Pixelify Sans',Outfit,monospace;font-size:19px;letter-spacing:.5px}
+#pkm-voile.habitat .aide.vu{opacity:1;animation:pkh-respire 1.6s ease-in-out infinite}
+@keyframes pkh-respire{50%{box-shadow:0 0 0 2px rgba(255,255,255,.4),0 6px 18px rgba(0,0,0,.35)}}
+#pkm-voile.habitat .aide small{color:#C9D3EA;font-family:Outfit,sans-serif;font-size:12px;letter-spacing:0}
+#pkm-voile.habitat .haut{z-index:30}
+#pkm-voile.habitat .rond{background:rgba(10,20,30,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+#pkm-voile.habitat .nom-ball{text-shadow:0 2px 0 rgba(0,0,0,.5)}
+/* les hautes herbes qui couvrent l'écran, frémissent, puis s'écartent */
+#pkm-voile .herbes{position:absolute;top:-2%;bottom:-2%;width:58%;z-index:25;pointer-events:none;
+  transition:transform 1.15s cubic-bezier(.65,0,.25,1)}
+#pkm-voile .herbes canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
+#pkm-voile .herbes.g{left:-4%;transform-origin:30% 100%}#pkm-voile .herbes.d{right:-4%;transform-origin:70% 100%}
+#pkm-voile .herbes.bouge{animation:pkh-bouge .16s ease-in-out 4 alternate}
+#pkm-voile .herbes.d.bouge{animation-delay:.05s}
+@keyframes pkh-bouge{from{transform:skewX(-2.5deg)}to{transform:skewX(2.5deg) translateX(4px)}}
+#pkm-voile.ouvert .herbes.g{transform:translateX(-108%) rotate(-9deg)}
+#pkm-voile.ouvert .herbes.d{transform:translateX(108%) rotate(9deg)}
 `;
+
+// Les décors de capture : un fond par type de lieu (images ChatGPT du 30/10, même style que les arènes) ;
+// ovale = centre du rond de sol où se pose la ball puis le Pokémon (pixels de l'image). Les autres fonds arriveront ici.
+const FONDS = {
+  prairie: {image: "fond-prairie.webp", largeur: 941, hauteur: 1672, ovale: [470, 700], rayon: 360, herbes: true,
+            vent: {feuilles: ["#2E8B3A", "#5CC25A", "#A6D84B"], pollen: "#FFF6C8"}},
+};
+const LIEU_FOND = {"Route 1": "prairie", "Route 3": "prairie", "Piste cyclable": "prairie"};
+
+// Les hautes herbes en pixel art : un mur de touffes (comme si on était caché dedans), dessiné une fois sur un petit
+// canvas agrandi sans lissage ; rangées du fond (sombres) vers l'avant (claires), chaque touffe = 5 à 7 brins en éventail
+function dessinerHerbes(canvas, graine) {
+  const k = 6, W = Math.ceil(canvas.clientWidth / k) || 40, H = Math.ceil(canvas.clientHeight / k) || 140;
+  canvas.width = W; canvas.height = H;
+  const g = canvas.getContext("2d");
+  let s = graine; const al = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  g.fillStyle = "#123F1C"; g.fillRect(0, 0, W, H);
+  const brin = (x0, y0, ang, long, larg, fond, clair) => {
+    const pts = []; for (let i = 0; i <= 6; i++) { const t = i / 6, a = ang * (1 + t * .6);
+      pts.push([x0 + Math.sin(a) * long * t, y0 - Math.cos(a) * long * t, larg * (1 - t) + .35]); }
+    const trace = (dx, c) => { g.fillStyle = c; g.beginPath();
+      pts.forEach(([px, py, w], i) => i ? g.lineTo(px - w - dx, py) : g.moveTo(px - w - dx, py));
+      [...pts].reverse().forEach(([px, py, w]) => g.lineTo(px + w + dx, py)); g.closePath(); g.fill(); };
+    trace(1, "#0E3317"); trace(0, fond);
+    g.fillStyle = clair; const [hx, hy] = pts[2]; g.fillRect(Math.round(hx - 1), Math.round(hy), 1, 2);
+  };
+  const tons = [["#1F6B2E", "#2E8B3A"], ["#2A7F36", "#3FA34D"], ["#3FA34D", "#5CC25A"], ["#4FB352", "#7ED26A"], ["#5CC25A", "#A6D84B"]];
+  const rangs = 9;
+  for (let r = 0; r < rangs; r++) {
+    const y = H * (r + .9) / (rangs - 1.4), [fond, clair] = tons[Math.min(Math.floor(r / rangs * tons.length), tons.length - 1)];
+    for (let x = -4 + al() * 6; x < W + 6; x += 7 + al() * 5) {
+      const n = 5 + Math.floor(al() * 3), long = 12 + al() * 9;
+      for (let j = 0; j < n; j++) { const ang = (j / (n - 1) - .5) * 1.25 + (al() - .5) * .25;
+        brin(x + (al() - .5) * 2, y + al() * 2, ang, long * (1 - Math.abs(ang) * .35), 1.6 + al(), fond, clair); }
+    }
+  }
+  const d = g.getImageData(0, 0, W, H); for (let i = 3; i < d.data.length; i += 4) d.data[i] = 255;  // net : aucun pixel transparent
+  g.putImageData(d, 0, 0);
+}
+// Le vent du lieu : feuilles et pollen en pixels qui traversent l'écran, par rafales
+function ventAnime(canvas, cfg, estFini) {
+  const k = 3, g = canvas.getContext("2d"); let W = 0, H = 0;
+  const taille = () => { W = Math.ceil(canvas.clientWidth / k); H = Math.ceil(canvas.clientHeight / k); canvas.width = W; canvas.height = H; };
+  taille();
+  const parts = Array.from({length: 34}, (_, i) => ({x: Math.random() * W, y: Math.random() * H * .8, f: i % 3 !== 0,
+    v: .25 + Math.random() * .5, ph: Math.random() * 6.3, c: cfg.feuilles[i % cfg.feuilles.length]}));
+  const boucle = t => {
+    if (estFini() || !canvas.isConnected) return;
+    g.clearRect(0, 0, W, H);
+    const rafale = 1 + Math.max(0, Math.sin(t / 2300)) * 1.6;
+    for (const p of parts) {
+      p.x += p.v * rafale * (p.f ? 1 : .55); p.y += Math.sin(t / 600 + p.ph) * .18 + (p.f ? .05 : -.02);
+      if (p.x > W + 3) { p.x = -3; p.y = Math.random() * H * .8; }
+      if (p.f) { g.fillStyle = p.c; const r = Math.sin(t / 250 + p.ph) > 0;  // une petite feuille qui tourne
+        g.fillRect(Math.round(p.x), Math.round(p.y), r ? 2 : 1, r ? 1 : 2); }
+      else { g.globalAlpha = .45 + .45 * Math.sin(t / 300 + p.ph); g.fillStyle = cfg.pollen; g.fillRect(Math.round(p.x), Math.round(p.y), 1, 1); g.globalAlpha = 1; }
+    }
+    PW.requestAnimationFrame(boucle);
+  };
+  PW.requestAnimationFrame(boucle);
+  return taille;
+}
 
 function installerStyle(id, css) {
   let s = P.getElementById(id);
@@ -813,7 +922,8 @@ function Ball3D(canvas, type) {
     faisceau(op, c = 0xffffff) { fxMat.opacity = op; fxMat.color = coul(c); lumiere.color = coul(c); lumiere.intensity = op * 30; },
     rendre() { renderer.render(scene, cam); },
     ecran() { const v = new THREE.Vector3(); ball.getWorldPosition(v); v.project(cam);  // centre de la ball, en pixels
-              return [(v.x + 1) / 2 * canvas.clientWidth, (1 - v.y) / 2 * canvas.clientHeight]; },
+              const r = canvas.getBoundingClientRect();
+              return [r.left + (v.x + 1) / 2 * canvas.clientWidth, r.top + (1 - v.y) / 2 * canvas.clientHeight]; },
     fin() { renderer.dispose(); renderer.forceContextLoss && renderer.forceContextLoss(); },
   };
 }
@@ -842,12 +952,16 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
                      r.nouveau ? ["#7FE8FF", "#fff", "#4CD3A0"] : ["#fff", "#C9D3EA"];
 
   const v = P.createElement("div"); v.id = "pkm-voile";
-  v.innerHTML = `<div class="fond"></div><div class="rayons"></div><canvas class="scene"></canvas><div class="ball2d" hidden></div>
+  const F = !c.legendaire && FONDS[LIEU_FOND[(c.lieu || "").replace(" (retour)", "")]];  // le décor du lieu de capture
+  v.innerHTML = `<div class="fond"></div>${F ? `<div class="decor-flou" style="background-image:url('${D.scenes}${F.image}')"></div>
+    <div class="decor"><img src="${D.scenes}${F.image}" alt=""></div><canvas class="vent"></canvas><div class="vignette"></div>
+    <div class="ombre-sol"></div><div class="lueur-sol"></div>` : ""}<div class="rayons"></div><canvas class="scene"></canvas><div class="ball2d" hidden></div>
     <img class="poke" alt=""><canvas class="fx"></canvas><div class="flash"></div>
     <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${BALLS[c.ball] || "Poké Ball"}</div>
       <button class="rond x">✕</button></div>
     <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
-    <div class="carte"></div>`;
+    <div class="carte"></div>${F && F.herbes ? `<div class="herbes g"><canvas></canvas></div><div class="herbes d"><canvas></canvas></div>` : ""}`;
+  if (F) v.classList.add("habitat");
   P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
   const fx = Particules($(".fx"));
@@ -866,7 +980,21 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     fx.dessiner(dt); B.rendre(); PW.requestAnimationFrame(boucle);
   };
   PW.requestAnimationFrame(boucle);
-  const redim = () => { B.taille(); fx.taille(); }; PW.addEventListener("resize", redim);
+  // le décor : toute la hauteur de l'écran, centré sur le rond de sol ; la ball et le Pokémon se posent sur ce rond
+  let tailleVent = () => {};
+  const placer = () => { if (!F) return;
+    const H = PW.innerHeight, W = PW.innerWidth, f = H / F.hauteur, w = F.largeur * f, d = $(".decor");
+    d.style.width = w + "px"; d.style.left = (W - w) / 2 + "px";
+    const ox = W / 2 + (F.ovale[0] - F.largeur / 2) * f, oy = F.ovale[1] * f;
+    v.style.setProperty("--ox", ox + "px"); v.style.setProperty("--oy", oy + "px");
+    v.style.setProperty("--py", oy - H * .13 + "px"); v.style.setProperty("--ow", Math.min(F.rayon * f * .62, W * .5) + "px");
+    $(".scene").style.top = oy - H * .34 - H * .045 + "px";  // le centre de la ball juste au-dessus du sol
+    $(".ball2d").style.top = oy - H * .045 + "px";
+    tailleVent();
+  };
+  if (F) { placer(); if (F.vent) tailleVent = ventAnime($(".vent"), F.vent, () => fini); placer();
+    if (F.herbes) v.querySelectorAll(".herbes canvas").forEach((cv, i) => dessinerHerbes(cv, 7 + i * 131)); }
+  const redim = () => { placer(); B.taille(); fx.taille(); }; PW.addEventListener("resize", redim);
   const tween = (ms, f, e = ease.inout) => new Promise((ok, ko) => { const t0 = maintenant();
     anims.push(now => { if (fini) { ko("fermé"); return false; } const t = Math.min((now - t0) / ms, 1); f(e(t), t); if (t >= 1) { ok(); return false; } }); });
   const pause = ms => new Promise((ok, ko) => setTimeout(() => fini ? ko("fermé") : ok(), ms));
@@ -882,12 +1010,27 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   poke.src = IMG.hd(c.num, c.shiny);
 
   const centre = () => B.ecran();
+  if (F) B.taille();
   (async () => {
+    // 0. Le lieu de capture : les hautes herbes frémissent (bruissement), puis s'écartent sur le décor
+    if (F) {
+      B.y = 9;  // la ball attend hors de l'écran
+      await pause(300);
+      if (F.herbes) { v.querySelectorAll(".herbes").forEach(h => h.classList.add("bouge"));
+        for (let i = 0; i < 4; i++) bruit(i * .16, .14, {vol: .22, f: 3200 + i * 300, type: "bandpass"}); vibre([12, 40, 12]);
+        await pause(800); }
+      v.classList.add("ouvert"); bruit(0, .9, {vol: .16, f: 1800, type: "bandpass"}); bruit(.1, .7, {vol: .1, f: 5000, type: "highpass"});
+      ton(2200, .5, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .65, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
+      await pause(F.herbes ? 1150 : 500);
+      v.querySelectorAll(".herbes").forEach(h => h.remove());
+    }
     // 1. Elle tombe du ciel et rebondit
     B.y = 5; B.rotY = -Math.PI * 3;
     SONS.chute();
     await tween(950, (e, t) => { B.y = 5 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
     SONS.rebond(); vibre(20);
+    if (F) { const [x, y] = centre();  // un petit nuage de terre et de brins d'herbe à l'atterrissage
+      fx.jet(x, y + 30, 14, {couleurs: ["#C9A46A", "#E2C58A", "#5CC25A", "#3FA34D"], vitesse: 3.2, taille: 4, vie: .7, gravite: .22}); }
     if (rejouer && !direct) return devoiler(true);
     // 2. Elle attend qu'on la touche (sauf en arrivant du labo : elle a déjà été choisie)
     if (!direct) {
@@ -932,6 +1075,9 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     fx.jet(x, y, vite ? 20 : 46, {couleurs: couleursFx, vitesse: 9, taille: 9, vie: 1.3, gravite: .04, cercle: true});
     poke.classList.add("sort"); SONS.materialise();
     v.classList.add("revele");
+    if (F) { const ox = parseFloat(v.style.getPropertyValue("--ox")), oy = parseFloat(v.style.getPropertyValue("--oy"));
+      fx.jet(ox, oy, 26, {couleurs: ["#5CC25A", "#A6D84B", "#2E8B3A", "#FFF6C8"], vitesse: 6, taille: 5, vie: 1.2, gravite: .12});
+      setTimeout(() => v.classList.add("calme"), 2600); }
     await tween(500, e => { B.echelle = 1 - e; B.y = -e * .6; B.faisceau(.85 * (1 - e), teinte); }, ease.inout);
     await pause(vite ? 150 : 550);
     poke.classList.add("couleur"); vibre(r.nouveau || r.shiny ? [40, 60, 80] : 30);
@@ -943,7 +1089,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
       forme: "confetti", vitesse: 11, taille: 10, vie: 2.6, gravite: .16});
     brille = r.shiny || r.leg;
     setTimeout(() => poke.classList.add("danse"), 700);
-    if (!rejouer) memoriser(c.id);
+    if (!rejouer && !c.apercu) memoriser(c.id);
     montrerCarte();
   }
 
@@ -958,8 +1104,8 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
       <div class="rs">${BALLS[c.ball] || "Poké Ball"} · ${raisonHTML(c)} · ${c.quand}</div>
       <div class="compteur"><div><div class="l">Pokédex</div><div class="v">${especes} / 151</div><div class="j"><div style="width:${(especes - (r.nouveau && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div>
         <div><div class="l">Shiny ${ico("shiny", "p brille")}</div><div class="v">${shinys} / 151</div><div class="j"><div style="width:${(shinys - (c.shiny && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div></div>
-      <div class="boutons">${reste.length && !rejouer ? `<button class="b1 suite">Ouvrir la suivante (${reste.length})</button>` : ""}
-        <button class="${reste.length && !rejouer ? "b2" : "b1"} ok">${r.nouveau || r.shiny ? "Génial !" : "Super !"}</button></div>`;
+      <div class="boutons">${reste.length && !rejouer && !c.apercu ? `<button class="b1 suite">Ouvrir la suivante (${reste.length})</button>` : ""}
+        <button class="${reste.length && !rejouer && !c.apercu ? "b2" : "b1"} ok">${r.nouveau || r.shiny ? "Génial !" : "Super !"}</button></div>`;
     carte.querySelectorAll(".badge").forEach((b, i) => b.style.animationDelay = `${.15 + i * .18}s${b.classList.contains("b-nouveau") ? ",0s" : ""}`);
     setTimeout(() => { carte.classList.add("vu");
       setTimeout(() => { const j = carte.querySelectorAll(".compteur .j div");
@@ -2631,14 +2777,24 @@ function dessinerRegles() {
       <button class="filtre t-arrivee">${ico("carte", "p")} 1. Arriver à l'arène de Pierre</button>
       <button class="filtre t-badge">${ico(IMG.badge(1), "p")} 2. Gagner le Badge Roche</button>
       ${TEST ? `<button class="filtre t-fin">Quitter le test</button>` : ""}</li>
+    <li class="zone-test"><b>Tester les captures</b> (aperçu, rien n'est enregistré) :<br>
+      <button class="filtre t-herbes">${ico("poke", "p")} Une capture dans les hautes herbes</button></li>
 `;
   const t = sel => document.querySelector(`#regles ${sel}`);
   t(".t-arrivee").onclick = testArrivee; t(".t-badge").onclick = testBadge;
   if (t(".t-fin")) t(".t-fin").onclick = quitterTest;
+  t(".t-herbes").onclick = apercuCapture;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
   const r = document.querySelector("#regles .revoir");
   if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
+}
+
+// Aperçu d'une capture dans les hautes herbes (Route 1) : un Pokémon de la route au hasard, parfois shiny ; rien n'est gardé
+function apercuCapture() {
+  const nums = [16, 19, 21, 23, 27, 39], num = nums[Math.floor(Math.random() * nums.length)], p = PAR_NUM[num];
+  ouvrir({...p, num, id: `test#herbes-${Date.now()}`, apercu: true, ball: "poke", shiny: Math.random() < .2, legendaire: false,
+    lieu: "Route 1", raison: "⚡ Aperçu : capture dans les hautes herbes", quand: "aujourd'hui", jour: D.aujourdhui});
 }
 
 [["ic-spe", "carnet"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
