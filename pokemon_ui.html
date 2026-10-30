@@ -712,6 +712,7 @@ const STYLE_VOILE = `
 #pkm-voile.pose .ombre-ball{transform:translate(-50%,-50%) scale(1)}
 #pkm-voile.revele .ombre-ball{opacity:0}
 #pkm-voile.habitat .rayons{display:none}
+#pkm-voile.b3d .ombre-ball{display:none}
 `;
 
 // Les décors de capture : un fond par type de lieu (images ChatGPT du 30/10, même style que les arènes) ;
@@ -869,16 +870,17 @@ function texture(type, haut) {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
-function Ball3D(canvas, type) {
-  const renderer = new THREE.WebGLRenderer({canvas, antialias: true, alpha: true});
-  renderer.setPixelRatio(Math.min(PW.devicePixelRatio || 1, 2));
+function Ball3D(canvas, type, pixel = false) {  // pixel : rendu en basse résolution agrandi sans lissage (style pixel art)
+  const renderer = new THREE.WebGLRenderer({canvas, antialias: !pixel, alpha: true});
+  renderer.setPixelRatio(pixel ? .2 : Math.min(PW.devicePixelRatio || 1, 2));
+  if (pixel) canvas.style.imageRendering = "pixelated";
   renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, .1, 100);
   scene.add(new THREE.HemisphereLight(0xCFDCFF, 0x1A1A2A, 1.4));
   const cle = new THREE.DirectionalLight(0xffffff, 2.6); cle.position.set(3, 5, 6); scene.add(cle);
   const contre = new THREE.DirectionalLight(0x8FB0FF, 2.2); contre.position.set(-5, 2, -4); scene.add(contre);
-  const R = 1, mat = (map, opts = {}) => new THREE.MeshPhysicalMaterial({map, roughness: .32, metalness: .05, clearcoat: 1,
-    clearcoatRoughness: .12, ...opts});
+  const R = 1, mat = (map, opts = {}) => new THREE.MeshPhysicalMaterial({map, roughness: pixel ? .55 : .32, metalness: .05,
+    clearcoat: pixel ? .3 : 1, clearcoatRoughness: .12, ...opts});
   const ball = new THREE.Group(), pivot = new THREE.Group(); scene.add(ball);
   // Moitié du bas + intérieur lumineux
   const bas = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat(texture(type, false)));
@@ -986,9 +988,10 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
   const fx = Particules($(".fx"));
   let B;
-  if (F) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = BallPixel($(".ball2d"), IC[c.ball] || IC.poke); }
-  else try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
-  catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), c.ball); }
+  // dans un décor : la même ball 3D (toute son animation), rendue en gros pixels pour aller avec le pixel art ;
+  // sans three.js : la ball en sprite du jeu
+  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball, !!F); v.classList.add("b3d"); }
+  catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = F ? BallPixel($(".ball2d"), IC[c.ball] || IC.poke) : Ball2D($(".ball2d"), c.ball); }
 
   // Boucle d'affichage (dans la fenêtre parente : jamais ralentie)
   let fini = false, dernier = maintenant(), anims = [], brille = false;

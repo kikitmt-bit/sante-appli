@@ -115,7 +115,9 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `ovale`, `rayon`, `vent`) et `LIEU_FOND` (lieu de la capture → fond ; légendaires exclus pour l'instant). Dans
   `ouvrir` : classe `habitat`, décor pleine hauteur centré (+ copie floue sur les côtés) qui apparaît en **mosaïque**
   (`mosaique` : gros pixels qui s'affinent, transition GBA, valable pour tous les fonds), zoom arrière, oiseau au loin,
-  feuilles et pollen au vent (`ventAnime`). **Ball en pixel art** (`BallPixel` = sprite du jeu `IC[c.ball]` agrandi : quarts de tour pendant
+  feuilles et pollen au vent (`ventAnime`). **Ball** : la ball 3D habituelle (toute son animation) rendue en **gros pixels** (`Ball3D(…, pixel)` :
+  `setPixelRatio(.2)`, sans antialiasing, `image-rendering: pixelated`, moins brillante) ; Kiki 30/10 : la ball 2D en
+  sprite était « horrible », la 3D lisse jurait avec le décor. Repli sans three.js : `BallPixel` (sprite du jeu `IC[c.ball]` agrandi : quarts de tour pendant
   la chute, écrasement à l'atterrissage (`ecrase`), secousses autour du point d'appui, bouton qui s'allume, couvercle
   (moitié haute du sprite) qui s'ouvre sur une lumière + faisceau, puis flash et silhouette du Pokémon ; Kiki 30/10 : la ball 3D lisse jurait avec le décor) qui tombe
   sur le rond (ombre `ombre-ball`), le Pokémon se pose sur le rond (`--py`) avec ombre et lueur au sol ; **pas de rayons
