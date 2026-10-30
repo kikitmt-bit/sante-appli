@@ -112,13 +112,15 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   `arene` : l'ancien sprite PokéRogue. À faire pour chaque arène : image ChatGPT → détourer le champion (contour sombre,
   remplissage depuis les bords, comparé au rendu) → mesurer torches / tête.
   **Décors de capture (30/10, 1er : hautes herbes)** : `FONDS` (image `scenes/fond-*.webp`, centre du rond de sol
-  `ovale`, `rayon`, `herbes`, `vent`) et `LIEU_FOND` (lieu de la capture → fond ; légendaires exclus pour l'instant). Dans
-  `ouvrir` : classe `habitat`, décor pleine hauteur centré (+ copie floue sur les côtés), mur de hautes herbes en pixel
-  art (`dessinerHerbes`) qui frémit (bruissement) puis s'écarte, zoom arrière, oiseau au loin, feuilles et pollen au vent
-  (`ventAnime`), la ball tombe sur le rond (canvas décalé : `ecran()` renvoie maintenant des coordonnées de page), nuage
-  de terre, le Pokémon se pose sur le rond (`--py`) avec ombre et lueur au sol. Aperçu : « Comment ça marche ? » →
-  « Tester les captures » (`apercuCapture`, capture `apercu: true`, jamais gardée). Les 10 autres fonds et les 5 des
-  légendaires sont dans le cerveau (`projets/sante/captures/`).
+  `ovale`, `rayon`, `vent`) et `LIEU_FOND` (lieu de la capture → fond ; légendaires exclus pour l'instant). Dans
+  `ouvrir` : classe `habitat`, décor pleine hauteur centré (+ copie floue sur les côtés) qui apparaît en **mosaïque**
+  (`mosaique` : gros pixels qui s'affinent, transition GBA, valable pour tous les fonds), zoom arrière, oiseau au loin,
+  feuilles et pollen au vent (`ventAnime`). **Ball en pixel art** (`BallPixel` = sprite du jeu `IC[c.ball]` agrandi,
+  quarts de tour pendant la chute, lueur en drop-shadow ; Kiki 30/10 : la ball 3D lisse jurait avec le décor) qui tombe
+  sur le rond (ombre `ombre-ball`), le Pokémon se pose sur le rond (`--py`) avec ombre et lueur au sol ; **pas de rayons
+  qui tournent** dans un décor (« ringard »). Refusé par Kiki : les hautes herbes qui s'écartent (« bas de gamme », pas
+  déclinable). Aperçu : « Comment ça marche ? » → « Tester les captures » (`apercuCapture`, `apercu: true`, jamais gardé).
+  Les 10 autres fonds et les 5 des légendaires sont dans le cerveau (`projets/sante/captures/`).
   **Champion sur la carte** : **pose fixe** (première image), il ne bouge qu'au toucher (`championAnime(…, fixe)` →
   `jouer()`). **Tuile de l'arène** seulement **une fois arrivé** (avant : le
   champion sur la carte suffit), avec le badge, le défi et les jauges.

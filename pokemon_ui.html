@@ -679,8 +679,6 @@ const STYLE_VOILE = `
   background:radial-gradient(closest-side,rgba(255,250,220,.75),rgba(255,240,180,.25) 45%,transparent 70%);transition:opacity .4s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele .lueur-sol{opacity:.7;transform:translate(-50%,-50%) scale(1);transition:opacity 2.5s 1s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele.calme .lueur-sol{opacity:.25}
-#pkm-voile.habitat .rayons{top:var(--py);opacity:0}
-#pkm-voile.habitat.revele .rayons{opacity:.55}
 #pkm-voile.habitat .scene{height:68%}
 #pkm-voile.habitat .poke{top:var(--py)}
 #pkm-voile.habitat .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
@@ -694,55 +692,56 @@ const STYLE_VOILE = `
 #pkm-voile.habitat .haut{z-index:30}
 #pkm-voile.habitat .rond{background:rgba(10,20,30,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #pkm-voile.habitat .nom-ball{text-shadow:0 2px 0 rgba(0,0,0,.5)}
-/* les hautes herbes qui couvrent l'écran, frémissent, puis s'écartent */
-#pkm-voile .herbes{position:absolute;top:-2%;bottom:-2%;width:58%;z-index:25;pointer-events:none;
-  transition:transform 1.15s cubic-bezier(.65,0,.25,1)}
-#pkm-voile .herbes canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
-#pkm-voile .herbes.g{left:-4%;transform-origin:30% 100%}#pkm-voile .herbes.d{right:-4%;transform-origin:70% 100%}
-#pkm-voile .herbes.bouge{animation:pkh-bouge .16s ease-in-out 4 alternate}
-#pkm-voile .herbes.d.bouge{animation-delay:.05s}
-@keyframes pkh-bouge{from{transform:skewX(-2.5deg)}to{transform:skewX(2.5deg) translateX(4px)}}
-#pkm-voile.ouvert .herbes.g{transform:translateX(-108%) rotate(-9deg)}
-#pkm-voile.ouvert .herbes.d{transform:translateX(108%) rotate(9deg)}
+/* l'arrivée dans le lieu : le décor apparaît en mosaïque (gros pixels qui s'affinent, comme les transitions de la GBA) */
+#pkm-voile canvas.mosaique{position:absolute;inset:0;width:100%;height:100%;z-index:24;pointer-events:none;image-rendering:pixelated}
+/* la ball en pixel art (sprite du jeu agrandi), pour aller avec le décor */
+#pkm-voile .ball2d.pixel img{width:100%;height:100%;display:block;image-rendering:pixelated;object-fit:contain}
+#pkm-voile .ball2d.pixel{transition:filter .15s}
+#pkm-voile .ombre-ball{position:absolute;left:var(--ox);top:calc(var(--oy) + 1.2vh);width:calc(var(--ow) * .32);height:calc(var(--ow) * .08);
+  transform:translate(-50%,-50%) scale(0);border-radius:50%;background:rgba(20,40,10,.4);pointer-events:none;transition:transform .25s,opacity .3s}
+#pkm-voile.pose .ombre-ball{transform:translate(-50%,-50%) scale(1)}
+#pkm-voile.revele .ombre-ball{opacity:0}
+#pkm-voile.habitat .rayons{display:none}
 `;
 
 // Les décors de capture : un fond par type de lieu (images ChatGPT du 30/10, même style que les arènes) ;
 // ovale = centre du rond de sol où se pose la ball puis le Pokémon (pixels de l'image). Les autres fonds arriveront ici.
 const FONDS = {
-  prairie: {image: "fond-prairie.webp", largeur: 941, hauteur: 1672, ovale: [470, 700], rayon: 360, herbes: true,
+  prairie: {image: "fond-prairie.webp", largeur: 941, hauteur: 1672, ovale: [470, 700], rayon: 360,
             vent: {feuilles: ["#2E8B3A", "#5CC25A", "#A6D84B"], pollen: "#FFF6C8"}},
 };
 const LIEU_FOND = {"Route 1": "prairie", "Route 3": "prairie", "Piste cyclable": "prairie"};
 
-// Les hautes herbes en pixel art : un mur de touffes (comme si on était caché dedans), dessiné une fois sur un petit
-// canvas agrandi sans lissage ; rangées du fond (sombres) vers l'avant (claires), chaque touffe = 5 à 7 brins en éventail
-function dessinerHerbes(canvas, graine) {
-  const k = 6, W = Math.ceil(canvas.clientWidth / k) || 40, H = Math.ceil(canvas.clientHeight / k) || 140;
-  canvas.width = W; canvas.height = H;
-  const g = canvas.getContext("2d");
-  let s = graine; const al = () => (s = (s * 9301 + 49297) % 233280) / 233280;
-  g.fillStyle = "#123F1C"; g.fillRect(0, 0, W, H);
-  const brin = (x0, y0, ang, long, larg, fond, clair) => {
-    const pts = []; for (let i = 0; i <= 6; i++) { const t = i / 6, a = ang * (1 + t * .6);
-      pts.push([x0 + Math.sin(a) * long * t, y0 - Math.cos(a) * long * t, larg * (1 - t) + .35]); }
-    const trace = (dx, c) => { g.fillStyle = c; g.beginPath();
-      pts.forEach(([px, py, w], i) => i ? g.lineTo(px - w - dx, py) : g.moveTo(px - w - dx, py));
-      [...pts].reverse().forEach(([px, py, w]) => g.lineTo(px + w + dx, py)); g.closePath(); g.fill(); };
-    trace(1, "#0E3317"); trace(0, fond);
-    g.fillStyle = clair; const [hx, hy] = pts[2]; g.fillRect(Math.round(hx - 1), Math.round(hy), 1, 2);
-  };
-  const tons = [["#1F6B2E", "#2E8B3A"], ["#2A7F36", "#3FA34D"], ["#3FA34D", "#5CC25A"], ["#4FB352", "#7ED26A"], ["#5CC25A", "#A6D84B"]];
-  const rangs = 9;
-  for (let r = 0; r < rangs; r++) {
-    const y = H * (r + .9) / (rangs - 1.4), [fond, clair] = tons[Math.min(Math.floor(r / rangs * tons.length), tons.length - 1)];
-    for (let x = -4 + al() * 6; x < W + 6; x += 7 + al() * 5) {
-      const n = 5 + Math.floor(al() * 3), long = 12 + al() * 9;
-      for (let j = 0; j < n; j++) { const ang = (j / (n - 1) - .5) * 1.25 + (al() - .5) * .25;
-        brin(x + (al() - .5) * 2, y + al() * 2, ang, long * (1 - Math.abs(ang) * .35), 1.6 + al(), fond, clair); }
-    }
+// L'apparition du décor en mosaïque : l'image redessinée en gros blocs de plus en plus fins, puis nette
+async function mosaique(canvas, img, rect, duree = 900) {
+  try { await img.decode(); } catch (e) { return; }
+  const W = canvas.width = canvas.clientWidth, H = canvas.height = canvas.clientHeight, g = canvas.getContext("2d");
+  const petit = document.createElement("canvas"), pg = petit.getContext("2d");
+  const etapes = [4, 7, 12, 20, 34, 60, 110], t0 = performance.now();
+  for (let i = 0; i < etapes.length; i++) {
+    const n = etapes[i], w = n, h = Math.round(n * rect.h / rect.w);
+    petit.width = w; petit.height = h; pg.drawImage(img, 0, 0, w, h);
+    g.imageSmoothingEnabled = false; g.fillStyle = "#000"; g.fillRect(0, 0, W, H);
+    g.globalAlpha = Math.min(1, .35 + i * .18); g.drawImage(petit, rect.x, rect.y, rect.w, rect.h); g.globalAlpha = 1;
+    await new Promise(ok => setTimeout(ok, Math.max(0, t0 + duree * (i + 1) / etapes.length - performance.now())));
   }
-  const d = g.getImageData(0, 0, W, H); for (let i = 3; i < d.data.length; i += 4) d.data[i] = 255;  // net : aucun pixel transparent
-  g.putImageData(d, 0, 0);
+}
+// La ball en pixel art (le sprite du jeu de chaque ball), animée en 2D comme Ball2D ; les tours de la chute se font
+// par quarts de tour (un pixel art tourné de travers devient flou)
+function BallPixel(el, src) {
+  el.classList.add("pixel"); el.innerHTML = `<img src="${src}" alt="">`;
+  const s = {y: 0, rotY: 0, rotZ: 0, x: 0, echelle: 1, ouverture: 0, zoom: 1, lueur: 0, coul: "#fff"};
+  const maj = () => { const q = Math.round(s.rotY / (Math.PI / 2)) * 90;
+    el.style.transform = `translate(${s.x * 60}px,${-s.y * 60}px) rotate(${q + s.rotZ * 57.3 * .55}deg) scale(${s.echelle * s.zoom})`;
+    const o = s.ouverture;
+    el.style.filter = `brightness(${1 + o * 1.4}) drop-shadow(0 0 ${2 + s.lueur * 9}px ${s.coul}) drop-shadow(0 0 ${s.lueur * 14}px ${s.coul})`;
+    el.style.opacity = o > 1.6 ? 0 : 1; };
+  const proxy = new Proxy(s, {set(o, k, v) { o[k] = v; maj(); return true; }});
+  const hex = c => "#" + c.toString(16).padStart(6, "0");
+  return Object.assign(proxy, {
+    lueurBouton(i, c = 0xffffff) { s.lueur = Math.min(i, 3) / 3; s.coul = hex(c); maj(); },
+    interieur() {}, faisceau() {}, rendre() {}, taille() {}, fin() {},
+    ecran() { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; }});
 }
 // Le vent du lieu : feuilles et pollen en pixels qui traversent l'écran, par rafales
 function ventAnime(canvas, cfg, estFini) {
@@ -960,13 +959,14 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${BALLS[c.ball] || "Poké Ball"}</div>
       <button class="rond x">✕</button></div>
     <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
-    <div class="carte"></div>${F && F.herbes ? `<div class="herbes g"><canvas></canvas></div><div class="herbes d"><canvas></canvas></div>` : ""}`;
+    <div class="carte"></div>${F ? `<div class="ombre-ball"></div><canvas class="mosaique"></canvas>` : ""}`;
   if (F) v.classList.add("habitat");
   P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
   const fx = Particules($(".fx"));
   let B;
-  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
+  if (F) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = BallPixel($(".ball2d"), IC[c.ball] || IC.poke); }
+  else try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
   catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), c.ball); }
 
   // Boucle d'affichage (dans la fenêtre parente : jamais ralentie)
@@ -993,7 +993,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     tailleVent();
   };
   if (F) { placer(); if (F.vent) tailleVent = ventAnime($(".vent"), F.vent, () => fini); placer();
-    if (F.herbes) v.querySelectorAll(".herbes canvas").forEach((cv, i) => dessinerHerbes(cv, 7 + i * 131)); }
+  }
   const redim = () => { placer(); B.taille(); fx.taille(); }; PW.addEventListener("resize", redim);
   const tween = (ms, f, e = ease.inout) => new Promise((ok, ko) => { const t0 = maintenant();
     anims.push(now => { if (fini) { ko("fermé"); return false; } const t = Math.min((now - t0) / ms, 1); f(e(t), t); if (t >= 1) { ok(); return false; } }); });
@@ -1012,24 +1012,22 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   const centre = () => B.ecran();
   if (F) B.taille();
   (async () => {
-    // 0. Le lieu de capture : les hautes herbes frémissent (bruissement), puis s'écartent sur le décor
+    // 0. Le lieu de capture : le décor apparaît en mosaïque (gros pixels qui s'affinent), la caméra recule doucement
     if (F) {
       B.y = 9;  // la ball attend hors de l'écran
-      await pause(300);
-      if (F.herbes) { v.querySelectorAll(".herbes").forEach(h => h.classList.add("bouge"));
-        for (let i = 0; i < 4; i++) bruit(i * .16, .14, {vol: .22, f: 3200 + i * 300, type: "bandpass"}); vibre([12, 40, 12]);
-        await pause(800); }
-      v.classList.add("ouvert"); bruit(0, .9, {vol: .16, f: 1800, type: "bandpass"}); bruit(.1, .7, {vol: .1, f: 5000, type: "highpass"});
-      ton(2200, .5, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .65, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
-      await pause(F.herbes ? 1150 : 500);
-      v.querySelectorAll(".herbes").forEach(h => h.remove());
+      const d = $(".decor"), r = d.getBoundingClientRect(), m = $(".mosaique");
+      bruit(0, .9, {vol: .12, f: 1600, type: "bandpass"});
+      await mosaique(m, d.querySelector("img"), {x: r.left, y: r.top, w: r.width, h: r.height}, 850);
+      m.remove(); v.classList.add("ouvert");
+      ton(2200, .25, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .4, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
+      await pause(450);
     }
     // 1. Elle tombe du ciel et rebondit
     B.y = 5; B.rotY = -Math.PI * 3;
     SONS.chute();
     await tween(950, (e, t) => { B.y = 5 * (1 - e); B.rotY = -Math.PI * 3 * (1 - ease.out(t)); }, ease.rebond);
     SONS.rebond(); vibre(20);
-    if (F) { const [x, y] = centre();  // un petit nuage de terre et de brins d'herbe à l'atterrissage
+    if (F) { v.classList.add("pose"); const [x, y] = centre();  // un petit nuage de terre et de brins d'herbe à l'atterrissage
       fx.jet(x, y + 30, 14, {couleurs: ["#C9A46A", "#E2C58A", "#5CC25A", "#3FA34D"], vitesse: 3.2, taille: 4, vie: .7, gravite: .22}); }
     if (rejouer && !direct) return devoiler(true);
     // 2. Elle attend qu'on la touche (sauf en arrivant du labo : elle a déjà été choisie)
