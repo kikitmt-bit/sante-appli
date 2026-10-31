@@ -349,5 +349,10 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     data en lecture seule). Tout part dans `&x=` (JSON) de `?quoi=claude` (`enPlus` dans sante.gs). Essais sans parler :
     `run-as fr.kiki.pokemontre` écrit `files/essai.txt` (« A: » = compte A ; « continuer: … » ; « annuler »), puis
     ouvrir `ClaudeActivity`.
+  - **v17 (31/10, choix de Kiki) : bascule de compte automatique**, plus de bouton « Demander au compte A » : les questions
+    partent au **dernier compte qui a répondu** (`compte_defaut`, B au départ) ; si aucune routine ne prend la question en
+    50 s (presque toujours la limite d'utilisation), la montre la renvoie toute seule à l'autre compte (une seule fois),
+    avec `contexte.remplace` = l'ancien id : `outil.py` marque l'ancienne question `abandonne` (pas de réponse en double).
+    Le compte qui répond devient le compte par défaut. Accueil : « 12 questions cette semaine · compte A ».
 - Test local : remplacer `requests.get` par la lecture d'un dossier de faux fichiers, puis `runpy.run_path("app.py")`
   avec des secrets factices dans `.streamlit/secrets.toml` du dossier de test ; captures Playwright (`/opt/pw-browsers`).
