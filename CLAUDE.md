@@ -141,6 +141,33 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   Garde-fou choisi par Kiki (aléatoire, « ça reste un jeu Pokémon ») : chaque ball a **25 % de chances** de donner un
   Pokémon manquant des régions précédentes, tant qu'il en reste, et **après 8 balls de suite sans, la suivante en donne
   un à coup sûr** ; les Master Balls donnent d'abord les légendaires manquants des régions précédentes. Pas d'obligation de choisir entre finir le Pokédex et avancer.
+  - **Kanto branché en entier (01/11, carte blanche de Kiki : « que le jeu soit fini et propre jusqu'à la fin de Kanto »)** :
+    les 32 images ChatGPT du 30/10 (cerveau `projets/sante/arenes/v2/`, `captures/`, `ecrans/`) sont dans `scenes/` en webp.
+    **Décors de capture** (`FONDS`, `fondDe(c)`) : 11 fonds de lieu (`LIEU_FOND`, un par lieu de `kanto.LIEUX`), 5 sanctuaires
+    des légendaires (`LEG_FOND`, Master Balls et Ligue), le labo sans les balls pour le starter (`labo`), et pour chaque badge
+    l'**arène vidée de son champion** (`arene1`…`arene8` = `arene-<ville>-vide.webp`, Pokémon posé là où était le champion ;
+    champion effacé par Claude : recopie décalée du décor + recalage de la lumière ligne par ligne, tatami de Koga recopié en
+    motif, plateau de Morgane lissé ; la Ligue n'a pas de version vide, l'emblème doré au sol est trop complexe). Chaque fond a
+    `ovale` (centre du rond de sol, pixels), `rayon`, `ombre` (r,g,b), `jet` (éclats) et `air` = couches de particules de
+    `ambiance()` (vent, lucioles, poussière, reflets, embruns, pétales, étincelles, brume, orbes, braises, neige, bulles, oiseaux).
+    **Arènes v2** : les 9 champions dessinés dans leur salle (`CHAMPIONS[n].arene`, détourés par GrabCut d'OpenCV), `tete` =
+    carré de la tête (carte, défi), `torches` = lumières qui s'allument une à une (`feu` = couleur r,g,b, `taille` en %).
+    **Ligue** (`sceneBadge(9)`) : les 4 salles du **Conseil 4** (`CONSEIL` : Olga, Aldo, Agatha, Peter, 2 répliques chacun,
+    fondu au noir entre les salles), puis Régis, puis le **Panthéon** (`scenePantheon` : 6 socles `SOCLES`, l'équipe =
+    starter + Pokémon des badges + plus belles captures, `equipePantheon`), puis la Master Ball.
+    **Centre Pokémon de nuit** (`sceneCentre`) : Infirmière Joëlle, la machine s'allume emplacement par emplacement
+    (`ALVEOLES`), petit air de soin original ; tout seul une fois par jour après une nuit ≥ `R.nuit` (localStorage
+    `pkm_centre_vu`), et en touchant la carte « Bonne nuit ».
+    **Accueil** (`demarrerAventure`) : **écran titre** (`ecranTitre`, `titre-kanto.webp`, « POKÉMON SPORT · Édition Kanto »,
+    oiseaux, « Touche l'écran ») -> carte du nouveau dresseur posée dessus (`editerDresseur(true, {surTitre})`) -> labo.
+    **Labo v3** : `labo-chen.webp` = scène des professeurs du 30/10 avec les 3 balls posées par Claude (ball validée par
+    Kiki), `labo-chen-vide.webp` sous la ball qui saute ; la caméra s'approche de Chen et de la table pendant le choix
+    (`ZOOM_LABO`, idée de Kiki).
+    **Bulle de dialogue de hauteur fixe** (demande de Kiki) : `dialogue(v).prevoir([[texte, qui], …])` mesure toutes les
+    répliques de la scène et la boîte prend la hauteur de la plus longue (jamais elle ne rapetisse).
+    **🧪 Tester Kanto** (tout en bas de l'onglet, `dessinerTests`) : accueil complet, labo, les 9 scènes de badge (+ la
+    capture dans l'arène), tous les décors, Centre Pokémon, Panthéon, test de la carte (aperçus `apercu: true`, rien
+    d'enregistré ; pendant l'aperçu de l'accueil, le pseudo n'est pas gardé, `DRESSEUR_ESSAI`).
   - **Replay de la journée sur la carte** (01/11, demande de Kiki) : la carte est **toujours en haut** de l'onglet (puis
     à ouvrir, barre, objectifs…) ; plus de tuile d'arène au-dessus de la carte (doublon de « Défi de l'arène ») ni de
     bandeau « Ton dresseur a avancé » (sauf badge). Chaque capture a `c` = points cumulés au moment où elle a été gagnée

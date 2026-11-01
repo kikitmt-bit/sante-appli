@@ -82,6 +82,12 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .bandeau-test button{border:0;border-radius:999px;padding:5px 10px;background:#FFCB05;color:#1C2740;font:800 12px Outfit,sans-serif;cursor:pointer}
 .zone-test{border-top:1px dashed rgba(255,255,255,.2);padding-top:8px;margin-top:6px}
 .zone-test .filtre{margin:6px 6px 0 0}
+#tests{padding:4px 2px 6px}
+#tests .groupe{margin:10px 0 2px;font:800 13px Outfit,sans-serif;color:#C9D3EA}
+#tests .groupe small{display:block;font-weight:500;font-size:11.5px;color:#9AA7C2;margin-top:2px}
+#tests .boutons-t{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+#tests .filtre{display:inline-flex;align-items:center;gap:6px}
+#tests .filtre .tete-champ{width:22px;height:22px;border-radius:50%;background-color:#2A3756}
 .badge-attente{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 12px;padding:12px;border:0;border-radius:14px;cursor:pointer;
   text-align:left;color:#fff;font-family:Outfit,sans-serif;background:radial-gradient(120% 140% at 0% 50%,color-mix(in srgb,var(--c) 55%,#1C2740),#1C2740 70%);
   box-shadow:0 0 0 2px #FFD84A inset,0 0 18px rgba(255,216,74,.35)}
@@ -342,6 +348,7 @@ details.regles li{margin:5px 0;line-height:1.4}
   <h2>Mon dresseur</h2>
   <div id="mon-dresseur"></div>
   <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
+  <details class="regles tests" open><summary>🧪 Tester Kanto (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
 </div>
 
 <script>
@@ -705,7 +712,7 @@ const STYLE_VOILE = `
 #pkm-voile canvas.vent{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated}
 #pkm-voile .ombre-sol{position:absolute;width:var(--ow);height:calc(var(--ow) * .22);left:var(--ox);top:var(--oy);
   transform:translate(-50%,-50%) scale(.3);border-radius:50%;opacity:0;pointer-events:none;
-  background:radial-gradient(closest-side,rgba(20,40,10,.55),rgba(20,40,10,.25) 60%,transparent);transition:opacity .5s,transform .7s cubic-bezier(.2,1.4,.4,1)}
+  background:radial-gradient(closest-side,rgba(var(--ombre,20,40,10),.55),rgba(var(--ombre,20,40,10),.25) 60%,transparent);transition:opacity .5s,transform .7s cubic-bezier(.2,1.4,.4,1)}
 #pkm-voile.revele .ombre-sol{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #pkm-voile .lueur-sol{position:absolute;width:calc(var(--ow) * 1.3);aspect-ratio:1;left:var(--ox);top:calc(var(--py));
   transform:translate(-50%,-50%) scale(.2);border-radius:50%;opacity:0;pointer-events:none;mix-blend-mode:screen;
@@ -743,11 +750,72 @@ const STYLE_VOILE = `
 
 // Les décors de capture : un fond par type de lieu (images ChatGPT du 30/10, même style que les arènes) ;
 // ovale = centre du rond de sol où se pose la ball puis le Pokémon (pixels de l'image). Les autres fonds arriveront ici.
+// largeur × hauteur des images (pixels) ; ovale = centre du rond de sol (ou des pieds du champion), rayon = sa demi-largeur ;
+// air = l'ambiance animée (couches de particules, voir ambiance()) ; ombre = couleur de l'ombre au sol ; jet = éclats
+// quand le Pokémon se matérialise. Fonds extérieurs et légendaires : 30/10 (Kanto) ; arènes vidées par Claude le 01/11.
+const VERTS = {type: "vent", coul: ["#2E8B3A", "#5CC25A", "#A6D84B"], pollen: "#FFF6C8"};
 const FONDS = {
-  prairie: {image: "fond-prairie.webp", largeur: 941, hauteur: 1672, ovale: [470, 700], rayon: 360,
-            vent: {feuilles: ["#2E8B3A", "#5CC25A", "#A6D84B"], pollen: "#FFF6C8"}},
+  prairie: {image: "fond-prairie.webp", ovale: [466, 682], rayon: 360, air: [VERTS]},
+  foret: {image: "fond-foret.webp", ovale: [466, 724], rayon: 355, air: [{...VERTS, n: 22}, {type: "lucioles", coul: ["#F4FF9A", "#FFF6C8"], n: 14}]},
+  grotte: {image: "fond-grotte.webp", ovale: [470, 710], rayon: 370, ombre: "10,8,6", jet: ["#9ED8FF", "#E2F4FF", "#B8A27A"],
+    air: [{type: "poussiere", coul: ["#D8C9A8", "#9ED8FF"], n: 26}]},
+  riviere: {image: "fond-riviere.webp", ovale: [475, 730], rayon: 355, air: [{...VERTS, n: 18}, {type: "reflets", coul: ["#FFFFFF", "#CFF2FF"], n: 12, haut: [.02, .26]}]},
+  mer: {image: "fond-mer.webp", ovale: [470, 840], rayon: 370, ombre: "60,40,10", jet: ["#FFFFFF", "#A8E4FF", "#F2D8A0"],
+    air: [{type: "reflets", coul: ["#FFFFFF", "#CFF2FF"], n: 18, haut: [.12, .36]}, {type: "embruns", coul: ["#FFFFFF"], n: 10}]},
+  ville: {image: "fond-ville.webp", ovale: [475, 765], rayon: 375, air: [{...VERTS, n: 20}, {type: "petales", coul: ["#FFB7D0", "#FFFFFF"], n: 8}]},
+  montagne: {image: "fond-montagne.webp", ovale: [475, 770], rayon: 385, ombre: "40,30,10", jet: ["#D8C9A8", "#B8A27A", "#FFFFFF"],
+    air: [{type: "poussiere", coul: ["#E8DCC0", "#C8B48A"], n: 22, vent: .5}]},
+  centrale: {image: "fond-centrale.webp", ovale: [470, 785], rayon: 360, ombre: "5,5,10", jet: ["#FFF27A", "#FFFFFF", "#7FD4FF"],
+    air: [{type: "etincelles", coul: ["#FFF27A", "#FFFFFF", "#7FD4FF"], n: 6}]},
+  tour: {image: "fond-tour.webp", ovale: [475, 790], rayon: 365, ombre: "10,0,20", jet: ["#C9A8FF", "#FFFFFF", "#7A5CC0"],
+    air: [{type: "brume", coul: ["#B89CFF"], n: 7}, {type: "orbes", coul: ["#D8C8FF", "#FFE8A8"], n: 10}]},
+  safari: {image: "fond-safari.webp", ovale: [470, 775], rayon: 360, ombre: "50,40,10", jet: ["#E8C860", "#A6D84B", "#FFF6C8"],
+    air: [{type: "vent", coul: ["#C8A040", "#E8C860", "#8CB040"], pollen: "#FFF0B8"}]},
+  volcan: {image: "fond-volcan.webp", ovale: [470, 750], rayon: 380, ombre: "10,0,0", jet: ["#FFB040", "#FF6A20", "#FFE08A"],
+    air: [{type: "braises", coul: ["#FFB040", "#FF6A20", "#FFE08A"], n: 30}, {type: "brume", coul: ["#6A5A5A"], n: 4}]},
+  // les légendaires : leur sanctuaire
+  artikodin: {image: "fond-artikodin.webp", ovale: [475, 840], rayon: 365, ombre: "0,20,50", jet: ["#FFFFFF", "#BFE8FF", "#7FC8FF"],
+    air: [{type: "neige", coul: ["#FFFFFF", "#DDF2FF"], n: 46}]},
+  electhor: {image: "fond-electhor.webp", ovale: [465, 780], rayon: 375, ombre: "10,10,0", jet: ["#FFF27A", "#FFFFFF", "#FFD000"],
+    air: [{type: "etincelles", coul: ["#FFF27A", "#FFFFFF", "#FFD000"], n: 10}, {type: "orbes", coul: ["#FFF6B0"], n: 8}]},
+  sulfura: {image: "fond-sulfura.webp", ovale: [480, 780], rayon: 345, ombre: "20,0,0", jet: ["#FFB040", "#FF6A20", "#FFE08A"],
+    air: [{type: "braises", coul: ["#FFB040", "#FF6A20", "#FFE08A"], n: 44}]},
+  mewtwo: {image: "fond-mewtwo.webp", ovale: [470, 780], rayon: 345, ombre: "15,0,30", jet: ["#E2B8FF", "#B57BFF", "#FFFFFF"],
+    air: [{type: "orbes", coul: ["#E2B8FF", "#B57BFF", "#FFFFFF"], n: 18}, {type: "etincelles", coul: ["#E2B8FF", "#FFFFFF"], n: 3}]},
+  mew: {image: "fond-mew.webp", ovale: [485, 780], rayon: 355, ombre: "40,10,30", jet: ["#FFB7D0", "#FFFFFF", "#A6D84B"],
+    air: [{type: "petales", coul: ["#FFB7D0", "#FFD8E8"], n: 16}, {type: "lucioles", coul: ["#F4FF9A", "#FFFFFF"], n: 12}]},
+  // le starter : le labo du Professeur, sans les Poké Balls ; le Pokémon apparaît devant la table
+  labo: {image: "labo-chen-vide.webp", largeur: 940, ovale: [400, 1075], rayon: 300, ombre: "30,40,70", jet: ["#FFFFFF", "#9ED8FF", "#FFE27A"],
+    air: [{type: "poussiere", coul: ["#FFFFFF"], n: 12}]},
 };
-const LIEU_FOND = {"Route 1": "prairie", "Route 3": "prairie", "Piste cyclable": "prairie"};
+// Les Hyper Balls des badges s'ouvrent dans l'arène du champion, sans lui (rempli par Claude) : là où il se tenait
+const AIR_TYPE = {Roche: {type: "poussiere", coul: ["#D8C9A8", "#B8A27A"], n: 24}, Eau: {type: "bulles", coul: ["#A8E4FF", "#E2F6FF"], n: 18},
+  Électrik: {type: "etincelles", coul: ["#FFF27A", "#FFFFFF", "#7FD4FF"], n: 6}, Plante: {type: "petales", coul: ["#FF9EC4", "#FFD1E3", "#9BE07A"], n: 16},
+  Poison: {type: "bulles", coul: ["#C77DFF", "#E2B8FF"], n: 14}, Psy: {type: "orbes", coul: ["#FF8AD8", "#FFC4EE", "#B8A8FF"], n: 16},
+  Feu: {type: "braises", coul: ["#FFB040", "#FF6A20", "#FFE08A"], n: 30}, Sol: {type: "poussiere", coul: ["#D9B77A", "#B08A4E"], n: 26, vent: .4}};
+[["argenta", "Roche", 469, 815], ["azuria", "Eau", 468, 786], ["carmin", "Électrik", 469, 763], ["celadopole", "Plante", 470, 791],
+ ["parmanie", "Poison", 471, 777], ["safrania", "Psy", 463, 801], ["cramoisile", "Feu", 471, 798], ["jadielle", "Sol", 469, 804]]
+  .forEach(([v, t, x, y], i) => FONDS["arene" + (i + 1)] = {image: `arene-${v}-vide.webp`, ovale: [x, y], rayon: 300, ombre: "0,0,0",
+    jet: AIRS_COUL(t), air: [AIR_TYPE[t]]});
+function AIRS_COUL(t) { return {Roche: ["#D8C9A8", "#B8A27A", "#FFFFFF"], Eau: ["#A8E4FF", "#FFFFFF", "#4FA8E8"], Électrik: ["#FFF27A", "#FFFFFF", "#FFD000"],
+  Plante: ["#9BE07A", "#FF9EC4", "#FFFFFF"], Poison: ["#C77DFF", "#E2B8FF", "#FFFFFF"], Psy: ["#FF8AD8", "#FFC4EE", "#FFFFFF"],
+  Feu: ["#FFB040", "#FF6A20", "#FFE08A"], Sol: ["#D9B77A", "#B08A4E", "#FFFFFF"]}[t]; }
+Object.values(FONDS).forEach(f => { f.largeur = f.largeur || 941; f.hauteur = f.hauteur || 1672; });
+// Le décor de chaque lieu du voyage (kanto.LIEUX) ; Bourg Palette n'a pas de sauvage (prairie par défaut)
+const LIEU_FOND = {"Bourg Palette": "prairie", "Route 1": "prairie", "Jadielle": "ville", "Forêt de Jade": "foret", "Argenta": "montagne",
+  "Route 3": "prairie", "Mont Sélénite": "grotte", "Azuria": "riviere", "Route 5 et Cave Taupiqueur": "grotte", "Carmin-sur-Mer": "mer",
+  "Grotte et Centrale": "centrale", "Lavanville": "tour", "Céladopole": "ville", "Piste cyclable": "prairie",
+  "Parmanie et Parc Safari": "safari", "Safrania": "ville", "Îles Écume": "mer", "Cramois'Île": "volcan", "Route Victoire": "grotte",
+  "Plateau Indigo": "montagne"};
+const LEG_FOND = {144: "artikodin", 145: "electhor", 146: "sulfura", 150: "mewtwo", 151: "mew"};
+// Le décor d'une capture : le cadeau du Professeur = le labo ; un badge = l'arène ; un légendaire (Master Ball, Ligue) = son
+// sanctuaire ; sinon le lieu où l'on était sur la carte. c.fond force un décor (aperçus).
+function fondDe(c) {
+  const cle = (c.id || "").split("#")[1] || "";
+  const k = c.fond || (cle === "chen" ? "labo" : /^badge\d$/.test(cle) ? "arene" + cle.slice(5) : LEG_FOND[c.num]
+    || LIEU_FOND[(c.lieu || "").replace(" (retour)", "")]);
+  return FONDS[k] || null;
+}
 
 // L'apparition du décor en mosaïque : l'image redessinée en gros blocs de plus en plus fins, puis nette
 async function mosaique(canvas, img, rect, duree = 900, fond = "#000") {
@@ -792,23 +860,87 @@ function BallPixel(el, src) {
 }
 
 // Le vent du lieu : feuilles et pollen en pixels qui traversent l'écran, par rafales
-function ventAnime(canvas, cfg, estFini) {
+// L'ambiance du décor : des couches de particules en gros pixels (×3), selon le lieu. Types : vent (feuilles + pollen),
+// lucioles, poussiere, reflets (éclats sur l'eau, entre haut[0] et haut[1] de la hauteur), embruns, petales, etincelles,
+// brume, orbes, braises, neige, bulles. -> une fonction qui recale la taille
+function ambiance(canvas, couches, estFini) {
   const k = 3, g = canvas.getContext("2d"); let W = 0, H = 0;
-  const taille = () => { W = Math.ceil(canvas.clientWidth / k); H = Math.ceil(canvas.clientHeight / k); canvas.width = W; canvas.height = H; };
+  const taille = () => { W = Math.ceil(canvas.clientWidth / k) || 1; H = Math.ceil(canvas.clientHeight / k) || 1; canvas.width = W; canvas.height = H; };
   taille();
-  const parts = Array.from({length: 34}, (_, i) => ({x: Math.random() * W, y: Math.random() * H * .8, f: i % 3 !== 0,
-    v: .25 + Math.random() * .5, ph: Math.random() * 6.3, c: cfg.feuilles[i % cfg.feuilles.length]}));
+  const R = (a, b) => a + Math.random() * (b - a);
+  const neuf = (c, p = {}) => {
+    const t = c.type, col = c.coul[Math.floor(Math.random() * c.coul.length)];
+    const o = {x: R(0, W), y: R(0, H), ph: R(0, 6.3), c: col, v: R(.25, .75), vie: 1, age: R(0, 1)};
+    if (t === "braises") Object.assign(o, {y: H + R(0, H * .5), v: R(.3, .9)});
+    if (t === "neige") Object.assign(o, {y: R(-H, H), v: R(.15, .45), s: Math.random() < .25 ? 2 : 1});
+    if (t === "petales") Object.assign(o, {y: R(-H * .6, H * .7), v: R(.12, .35)});
+    if (t === "bulles") Object.assign(o, {y: H + R(0, H), v: R(.2, .5), s: Math.random() < .4 ? 2 : 1});
+    if (t === "orbes") Object.assign(o, {y: R(H * .2, H), v: R(.05, .18)});
+    if (t === "brume") Object.assign(o, {y: R(H * .45, H * .95), v: R(.05, .15), s: R(20, 45)});
+    if (t === "reflets") Object.assign(o, {y: R(H * (c.haut || [0, .3])[0], H * (c.haut || [0, .3])[1])});
+    if (t === "etincelles" || t === "embruns") Object.assign(o, {age: R(-3, 0), vie: R(.25, .6)});
+    if (t === "vent") Object.assign(o, {y: R(0, H * .8), f: Math.random() < .66});
+    if (t === "oiseaux") Object.assign(o, {y: R(H * (c.haut || [0, .25])[0], H * (c.haut || [0, .25])[1])});
+    return Object.assign(o, p);
+  };
+  const parts = couches.map(c => ({c, l: Array.from({length: c.n || 34}, () => neuf(c))}));
+  let t0 = null;
   const boucle = t => {
     if (estFini() || !canvas.isConnected) return;
+    const dt = t0 === null ? 16 : Math.min(t - t0, 50); t0 = t; const f = dt / 16;
     g.clearRect(0, 0, W, H);
-    const rafale = 1 + Math.max(0, Math.sin(t / 2300)) * 1.6;
-    for (const p of parts) {
-      p.x += p.v * rafale * (p.f ? 1 : .55); p.y += Math.sin(t / 600 + p.ph) * .18 + (p.f ? .05 : -.02);
-      if (p.x > W + 3) { p.x = -3; p.y = Math.random() * H * .8; }
-      if (p.f) { g.fillStyle = p.c; const r = Math.sin(t / 250 + p.ph) > 0;  // une petite feuille qui tourne
-        g.fillRect(Math.round(p.x), Math.round(p.y), r ? 2 : 1, r ? 1 : 2); }
-      else { g.globalAlpha = .45 + .45 * Math.sin(t / 300 + p.ph); g.fillStyle = cfg.pollen; g.fillRect(Math.round(p.x), Math.round(p.y), 1, 1); g.globalAlpha = 1; }
+    for (const {c, l} of parts) for (let i = 0; i < l.length; i++) {
+      const p = l[i], ty = c.type; let a = 1, w = 1, h = 1;
+      if (ty === "vent") {
+        const rafale = 1 + Math.max(0, Math.sin(t / 2300)) * 1.6;
+        p.x += p.v * rafale * (p.f ? 1 : .55) * f; p.y += (Math.sin(t / 600 + p.ph) * .18 + (p.f ? .05 : -.02)) * f;
+        if (p.x > W + 3) { p.x = -3; p.y = R(0, H * .8); }
+        if (p.f) { const r = Math.sin(t / 250 + p.ph) > 0; w = r ? 2 : 1; h = r ? 1 : 2; }
+        else { a = .45 + .45 * Math.sin(t / 300 + p.ph); p.c = c.pollen; }
+      } else if (ty === "oiseaux") {  // petits V sombres qui traversent le ciel en battant des ailes
+        p.x += p.v * .5 * f; if (p.x > W + 6) Object.assign(p, {x: -6, y: R(H * (c.haut || [0, .25])[0], H * (c.haut || [0, .25])[1])});
+        const b = Math.sin(t / 160 + p.ph) > 0 ? 1 : 0, x = Math.round(p.x), y = Math.round(p.y + Math.sin(t / 900 + p.ph) * 2);
+        g.globalAlpha = .8; g.fillStyle = p.c; g.fillRect(x - 2, y - b, 1, 1); g.fillRect(x - 1, y + 1 - b, 1, 1); g.fillRect(x, y + 1, 1, 1);
+        g.fillRect(x + 1, y + 1 - b, 1, 1); g.fillRect(x + 2, y - b, 1, 1); continue;
+      } else if (ty === "lucioles") {
+        p.x += Math.sin(t / 1400 + p.ph) * .15 * f; p.y += Math.cos(t / 1700 + p.ph * 2) * .1 * f; a = Math.max(0, Math.sin(t / 700 + p.ph)) ** 2;
+      } else if (ty === "poussiere") {
+        p.x += (Math.sin(t / 3000 + p.ph) * .06 + (c.vent || 0) * .15) * f; p.y += Math.cos(t / 2600 + p.ph) * .04 * f;
+        if (p.x > W + 2) p.x = -2; a = .25 + .3 * Math.sin(t / 900 + p.ph);
+      } else if (ty === "reflets") {
+        a = Math.max(0, Math.sin(t / 380 + p.ph * 3)) ** 6; w = 2; if (a < .02 && Math.random() < .01) Object.assign(p, neuf(c));
+      } else if (ty === "embruns" || ty === "etincelles") {
+        p.age += dt / 1000; if (p.age > p.vie) Object.assign(p, neuf(c, {age: R(-2.5, 0)}));
+        if (p.age < 0) continue; a = 1 - p.age / p.vie;
+        if (ty === "etincelles") { g.globalAlpha = a; g.fillStyle = p.c; const x = Math.round(p.x), y = Math.round(p.y);
+          g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3); if (Math.random() < .3) g.fillRect(x + R(-4, 4) | 0, y + R(-4, 4) | 0, 1, 1); continue; }
+        p.y -= .25 * f;
+      } else if (ty === "petales") {
+        p.y += p.v * f; p.x += Math.sin(t / 700 + p.ph) * .35 * f + .1 * f; const r = Math.sin(t / 300 + p.ph) > 0; w = r ? 2 : 1;
+        if (p.y > H + 2) Object.assign(p, neuf(c, {y: -2}));
+      } else if (ty === "brume") {
+        p.x += p.v * f; if (p.x - p.s > W) p.x = -p.s;
+        g.globalAlpha = .07 + .04 * Math.sin(t / 2000 + p.ph); g.fillStyle = p.c;
+        g.beginPath(); g.ellipse(p.x, p.y, p.s, p.s * .3, 0, 0, 6.3); g.fill(); continue;
+      } else if (ty === "orbes") {
+        p.y -= p.v * f; p.x += Math.sin(t / 1200 + p.ph) * .12 * f; a = .35 + .4 * Math.sin(t / 500 + p.ph);
+        if (p.y < -2) Object.assign(p, neuf(c, {y: H + 2}));
+        g.globalAlpha = a * .35; g.fillStyle = p.c; g.fillRect(Math.round(p.x) - 1, Math.round(p.y) - 1, 3, 3);
+      } else if (ty === "braises") {
+        p.y -= p.v * f; p.x += Math.sin(t / 500 + p.ph) * .25 * f; a = Math.min(1, p.y / (H * .35)) * (.6 + .4 * Math.sin(t / 120 + p.ph));
+        if (p.y < -2) Object.assign(p, neuf(c, {y: H + 2}));
+      } else if (ty === "neige") {
+        p.y += p.v * f; p.x += Math.sin(t / 900 + p.ph) * .2 * f; w = h = p.s; a = .85;
+        if (p.y > H + 2) Object.assign(p, neuf(c, {y: -2}));
+      } else if (ty === "bulles") {
+        p.y -= p.v * f; p.x += Math.sin(t / 600 + p.ph) * .2 * f; a = .55; if (p.y < -3) Object.assign(p, neuf(c, {y: H + 3}));
+        if (p.s === 2) { g.globalAlpha = a; g.fillStyle = p.c; const x = Math.round(p.x), y = Math.round(p.y);
+          g.fillRect(x, y - 1, 2, 1); g.fillRect(x, y + 2, 2, 1); g.fillRect(x - 1, y, 1, 2); g.fillRect(x + 2, y, 1, 2); continue; }
+      }
+      if (a <= 0) continue;
+      g.globalAlpha = Math.min(1, a); g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), w, h);
     }
+    g.globalAlpha = 1;
     PW.requestAnimationFrame(boucle);
   };
   PW.requestAnimationFrame(boucle);
@@ -1000,7 +1132,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
                      r.nouveau ? ["#7FE8FF", "#fff", "#4CD3A0"] : ["#fff", "#C9D3EA"];
 
   const v = P.createElement("div"); v.id = "pkm-voile";
-  const F = !c.legendaire && FONDS[LIEU_FOND[(c.lieu || "").replace(" (retour)", "")]];  // le décor du lieu de capture
+  const F = fondDe(c);  // le décor du lieu de capture (labo, arène, sanctuaire du légendaire, lieu de la carte)
   v.innerHTML = `<div class="fond"></div>${F ? `<div class="decor-flou" style="background-image:url('${D.scenes}${F.image}')"></div>
     <div class="decor"><img src="${D.scenes}${F.image}" alt=""></div><canvas class="vent"></canvas><div class="vignette"></div>
     <div class="ombre-sol"></div><div class="lueur-sol"></div>` : ""}<div class="rayons"></div><canvas class="scene"></canvas><div class="ball2d" hidden></div>
@@ -1038,7 +1170,8 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     v.style.setProperty("--py", oy - H * .13 + "px"); v.style.setProperty("--ow", Math.min(F.rayon * f * .62, W * .5) + "px");
     tailleVent();
   };
-  if (F) { placer(); if (F.vent) tailleVent = ventAnime($(".vent"), F.vent, () => fini); placer();
+  if (F) { placer(); if (F.air) tailleVent = ambiance($(".vent"), F.air, () => fini); placer();
+    if (F.ombre) v.style.setProperty("--ombre", F.ombre);
   }
   const redim = () => { placer(); B.taille(); fx.taille(); }; PW.addEventListener("resize", redim);
   const tween = (ms, f, e = ease.inout) => new Promise((ok, ko) => { const t0 = maintenant();
@@ -1121,7 +1254,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
       ton(2200, .2, .09, {type: "sine", vol: .03, f2: 2900}); ton(2500, .35, .08, {type: "sine", vol: .025, f2: 3300});  // un oiseau au loin
       const ox = parseFloat(v.style.getPropertyValue("--ox")), oy = parseFloat(v.style.getPropertyValue("--oy"));
       fx.jet(ox, oy - 40, vite ? 14 : 30, {couleurs: couleursFx, vitesse: 7, taille: 8, vie: 1.3, gravite: .04, cercle: true});
-      fx.jet(ox, oy, 26, {couleurs: ["#5CC25A", "#A6D84B", "#2E8B3A", "#FFF6C8"], vitesse: 6, taille: 5, vie: 1.2, gravite: .12});
+      fx.jet(ox, oy, 26, {couleurs: F.jet || ["#5CC25A", "#A6D84B", "#2E8B3A", "#FFF6C8"], vitesse: 6, taille: 5, vie: 1.2, gravite: .12});
       poke.classList.add("sort"); SONS.materialise(); v.classList.add("revele");
       setTimeout(() => v.classList.add("calme"), 2600);
       await pause(400);
@@ -1175,9 +1308,11 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 // ================================================================================================
 // Le laboratoire : image pixel art générée par Kiki avec ChatGPT (même style que la carte, dossier scenes/), position des
 // 3 Poké Balls dessinées sur la table (pixels de l'image). Plus tard : orme (Johto), seko (Hoenn)…
-const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen.webp", largeur: 941, hauteur: 1672,
-  balls: [[362, 785], [470, 785], [575, 785]], rayon: 36, table: [290, 785], starters: [1, 4, 7]}};
-// table : un endroit de la table sans ball, à la même hauteur (pour cacher la ball dessinée quand elle saute)
+const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen.webp", vide: "labo-chen-vide.webp", largeur: 940, hauteur: 1672,
+  balls: [[207, 712], [337, 712], [467, 712]], rayon: 40, zoom: [337, 700], starters: [1, 4, 7]}};
+const ZOOM_LABO = 1.3;
+// image = le labo de la v3 (30/10) avec les 3 Poké Balls posées par Claude ; vide = le même sans les balls (sous la ball qui
+// saute) ; zoom = le point vers lequel la caméra s'approche pendant le choix (idée de Kiki : le professeur et la table)
 const STYLE_INTRO = `
 #pkm-intro{position:fixed;inset:0;z-index:999999;background:#C2965F;overflow:hidden;touch-action:manipulation;
   user-select:none;-webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace}
@@ -1196,6 +1331,7 @@ const STYLE_INTRO = `
 #pkm-intro .ballc.bouge{animation:pki-saute-ball .5s ease-out 2}
 @keyframes pki-saute-ball{0%,100%{transform:translate(-50%,-50%)}40%{transform:translate(-50%,-85%)}}
 #pkm-intro .labo{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
+#pkm-intro.choix .labo{transition:transform 1.6s cubic-bezier(.3,0,.2,1)}
 @keyframes pki-tremble{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-12deg)}
   75%{transform:translate(-50%,-50%) rotate(12deg)}}
 `;
@@ -1226,17 +1362,34 @@ function preparerScene() {  // styles communs + police « pixel » des boîtes d
 }
 // Une boîte de dialogue dans la scène v : dire(texte, qui) écrit le texte lettre par lettre (petit « bip »), toucher =
 // tout afficher, puis passer à la suite ; cacher() la range. Les touchers sur ignorer (sélecteur) ne la font pas avancer.
+// Hauteur FIXE pendant toute la scène (demande de Kiki, 01/11) : prevoir([[texte, qui], …]) mesure toutes les répliques
+// à l'avance et la boîte prend la hauteur de la plus longue ; une réplique imprévue plus longue l'agrandit (jamais
+// elle ne rapetisse).
+const sansVeuve = html => html.replace(/ ([!?:;»])/g, "\u00A0$1").replace(/« /g, "«\u00A0");  // espace insécable avant ! ? : ;
 function dialogue(v, ignorer = ".pkm-passer") {
   const dial = P.createElement("div"); dial.className = "pkm-dial";
   dial.innerHTML = `<span class="qui"></span> <span class="txt"></span><i class="suite"></i>`;
   v.appendChild(dial);
   const qui = dial.querySelector(".qui"), txt = dial.querySelector(".txt");
-  let tape = null, attendre = null;
+  let tape = null, attendre = null, prevues = [], haut = 0;
+  const entete = nom => nom ? nom.toUpperCase() + " :" : "";
+  const mesurer = liste => {  // hauteur de la boîte pour chaque réplique (une copie invisible, même largeur)
+    const m = dial.cloneNode(true); m.classList.add("vu"); m.style.cssText = "visibility:hidden;min-height:0;transition:none";
+    v.appendChild(m); let h = 0;
+    for (const [html, nom] of liste) { m.querySelector(".qui").textContent = entete(nom); m.querySelector(".txt").innerHTML = sansVeuve(html);
+      h = Math.max(h, m.offsetHeight); }
+    m.remove(); return h;
+  };
+  const fixer = h => { if (h > haut) { haut = h; dial.style.minHeight = h + "px"; } };
+  const prevoir = liste => { prevues = prevues.concat(liste.filter(l => l && l[0])); haut = 0; dial.style.minHeight = ""; fixer(mesurer(prevues)); };
+  const recaler = () => { if (!prevues.length) return; haut = 0; dial.style.minHeight = ""; fixer(mesurer(prevues)); };
+  PW.addEventListener("resize", recaler);
+  try { P.fonts.ready.then(recaler); P.fonts.load("19px 'Pixelify Sans'").then(recaler); } catch (e) {}  // la police pixel arrive après
   const dire = (html, nom = "", attendSuite = true) => new Promise(ok => {
     clearInterval(tape); dial.classList.add("vu"); dial.classList.remove("attend");
-    qui.textContent = nom ? nom.toUpperCase() + " :" : "";
-    // espace insécable avant ! ? : ; et après « (jamais une ponctuation seule au début d'une ligne)
-    const plein = html.replace(/ ([!?:;»])/g, "\u00A0$1").replace(/« /g, "«\u00A0"), brut = plein.replace(/<[^>]+>/g, "");
+    fixer(mesurer([[html, nom]]));
+    qui.textContent = entete(nom);
+    const plein = sansVeuve(html), brut = plein.replace(/<[^>]+>/g, "");
     let n = 0; txt.textContent = "";
     const finir = () => { clearInterval(tape); tape = null; txt.innerHTML = plein;
       if (attendSuite) { dial.classList.add("attend"); attendre = () => { attendre = null; ok(); }; } else { attendre = null; ok(); } };
@@ -1245,7 +1398,8 @@ function dialogue(v, ignorer = ".pkm-passer") {
     attendre = () => finir();
   });
   v.addEventListener("pointerdown", e => { if (e.target.closest(ignorer)) return; if (attendre) attendre(); });
-  return {dire, cacher: () => { dial.classList.remove("vu"); attendre = null; }};
+  return {dire, prevoir, cacher: () => { dial.classList.remove("vu"); attendre = null; },
+    fin: () => PW.removeEventListener("resize", recaler)};
 }
 function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur et les badges passent d'abord par leur scène
   const cle = c.id.split("#")[1], p = PROFESSEURS[cle];
@@ -1265,8 +1419,14 @@ function intro(c, p, rejouer = false) {
         <div class="zone" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;width:${p.rayon * 3 / p.largeur * 100}%;aspect-ratio:1"></div>`).join("")}
     </div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
   P.body.appendChild(v);
-  const labo = v.querySelector(".labo"), {dire: parler} = dialogue(v, ".pkm-passer, .zone");
-  const dire = (html, attendSuite = true) => parler(html, p.prof, attendSuite);
+  const labo = v.querySelector(".labo"), D1 = dialogue(v, ".pkm-passer, .zone");
+  const dire = (html, attendSuite = true) => D1.dire(html, p.prof, attendSuite);
+  // le début reprend celui de Pokémon Rouge / Bleu
+  const L = ["Bienvenue dans le monde magique des Pokémon !", `Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`,
+    `Enchanté, ${nomDresseur()} ! Ton aventure Pokémon commence aujourd'hui !`, "Ici, à " + p.region + ", chaque pas que tu fais te rapproche de nouveaux Pokémon !",
+    `Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`,
+    "Choisis-en une. Le Pokémon qu'elle contient sera le tien !", "Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !"];
+  D1.prevoir(L.map(l => [l, p.prof]));
   const taille = () => { const w = Math.min(PW.innerWidth, PW.innerHeight * p.largeur / p.hauteur);  // l'image en entier, en haut
     labo.style.width = w + "px"; labo.style.height = w * p.hauteur / p.largeur + "px"; };
   taille(); PW.addEventListener("resize", taille);
@@ -1274,10 +1434,14 @@ function intro(c, p, rejouer = false) {
   let fini = false, choisie = null;
   // La sortie : vers l'ouverture en 3D, on plonge dans la Poké Ball choisie (zoom + flash blanc), puis elle tombe,
   // gigote et s'ouvre ; ✕ : simple fondu
-  const fin = suite => { if (fini) return; fini = true; PW.removeEventListener("resize", taille); v.style.transition = "opacity .45s";
+  const fin = suite => { if (fini) return; fini = true; D1.fin(); PW.removeEventListener("resize", taille); v.style.transition = "opacity .45s";
     if (!suite) { v.style.opacity = 0; setTimeout(() => v.remove(), 450); return; }
-    if (choisie !== null) { const [x, y] = p.balls[choisie];
-      labo.style.transformOrigin = `${x / p.largeur * 100}% ${y / p.hauteur * 100}%`; labo.style.transform = "translateX(-50%) scale(4)"; }
+    if (choisie !== null) { const [x, y] = p.balls[choisie], k = ZOOM_LABO, e = labo.offsetWidth / p.largeur;
+      // on était approché du point zoom (échelle k) : même image vue depuis la ball choisie, puis on plonge dedans
+      const [ox, oy] = p.zoom || [x, y], tx = (ox - x) * e * (1 - k), ty = (oy - y) * e * (1 - k);
+      labo.style.transition = "none"; labo.style.transformOrigin = `${x / p.largeur * 100}% ${y / p.hauteur * 100}%`;
+      labo.style.transform = `translateX(-50%) translate(${tx}px, ${ty}px) scale(${k})`; void labo.offsetWidth;
+      labo.style.transition = "transform .75s cubic-bezier(.6,0,.9,.4)"; labo.style.transform = "translateX(-50%) scale(4)"; }
     SONS.montee(.7);
     setTimeout(() => { v.querySelector(".blanc").style.opacity = 1; }, 380);
     setTimeout(() => { ouvrir(c, rejouer, true); v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 850); };
@@ -1285,13 +1449,10 @@ function intro(c, p, rejouer = false) {
 
   (async () => {
     await new Promise(r => setTimeout(r, 1100));
-    // le début reprend celui de Pokémon Rouge / Bleu
-    await dire("Bienvenue dans le monde magique des Pokémon !");
-    await dire(`Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`);
-    await dire(`Enchanté, ${nomDresseur()} ! Ton aventure Pokémon commence aujourd'hui !`);
-    await dire("Ici, à " + p.region + ", chaque pas que tu fais te rapproche de nouveaux Pokémon !");
-    await dire(`Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`);
-    await dire("Choisis-en une. Le Pokémon qu'elle contient sera le tien !", false);
+    for (const l of L.slice(0, 5)) await dire(l);
+    await dire(L[5], false);
+    if (p.zoom) { labo.style.transformOrigin = `${p.zoom[0] / p.largeur * 100}% ${p.zoom[1] / p.hauteur * 100}%`;
+      labo.style.transform = `translateX(-50%) scale(${ZOOM_LABO})`; }
     v.classList.add("choix");
     const i = await new Promise(ok => v.querySelectorAll(".zone").forEach(z => z.onclick = () => ok(+z.dataset.i)));
     v.querySelectorAll(".zone").forEach(z => z.onclick = null);
@@ -1299,17 +1460,17 @@ function intro(c, p, rejouer = false) {
     SONS.clic(); vibre([15, 40, 15]);
     // la ball choisie saute : c'est le morceau de l'image où elle est dessinée qui bouge, et un morceau de table vide
     // la remplace dessous
-    const [x, y] = p.balls[i], r = p.rayon, morceau = (cx, cy, rr) => `width:${rr * 2 / p.largeur * 100}%;aspect-ratio:1;
-      background-image:url('${D.scenes}${p.image}');background-size:${p.largeur / (2 * rr) * 100}% ${p.hauteur / (2 * rr) * 100}%;
+    const [x, y] = p.balls[i], r = p.rayon, morceau = (cx, cy, rr, img = p.image) => `width:${rr * 2 / p.largeur * 100}%;aspect-ratio:1;
+      background-image:url('${D.scenes}${img}');background-size:${p.largeur / (2 * rr) * 100}% ${p.hauteur / (2 * rr) * 100}%;
       background-position:${(cx - rr) / (p.largeur - 2 * rr) * 100}% ${(cy - rr) / (p.hauteur - 2 * rr) * 100}%;`;
     const trou = P.createElement("div"), b = P.createElement("div");
     trou.style.cssText = `position:absolute;transform:translate(-50%,-50%);left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
-      image-rendering:pixelated;${morceau(p.table[0], p.table[1], r + 2)}`;
+      image-rendering:pixelated;${p.vide ? morceau(x, y, r + 2, p.vide) : morceau(p.table[0], p.table[1], r + 2)}`;
     b.className = "ballc bouge";
     b.style.cssText = `left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;${morceau(x, y, r)}`;
     labo.append(trou, b);
     choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
-    await dire("Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !");
+    await dire(L[6]);
     fin(true);
   })().catch(() => {});
 }
@@ -1321,30 +1482,58 @@ function intro(c, p, rejouer = false) {
 // Les champions : images animées du jeu PokéRogue (projet public pagefaultgames/pokerogue-assets, version figée)
 const ROGUE = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/trainer/";
 const CHAMPIONS = {
-  1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", largeur: 941, hauteur: 1672,
-        perso: "arene-argenta-pierre.webp", x: 395, y: 421, pw: 154, ph: 291, tete: {x: 0, y: 4, c: 154},
-        torches: [[118, 128], [822, 130]]}, indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
+  1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", perso: "arene-argenta-pierre.webp", x: 400, y: 557, pw: 141, ph: 265, tete: {x: 11, y: 0, c: 117}, torches: [[220, 235], [721, 235]]},
+      indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
       "Une semaine entière d'efforts… Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
-  2: {nom: "Ondine", sprite: "misty", indice: "Dans mon arène, tout se passe dans l'eau ! Tu as du souffle ? Montre-moi comment tu rames !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
+  2: {nom: "Ondine", sprite: "misty", arene: {image: "arene-azuria.webp", perso: "arene-azuria-ondine.webp", x: 395, y: 516, pw: 184, ph: 277, tete: {x: 30, y: 0, c: 122}, torches: [[56, 94], [878, 94]], feu: "255,240,190", taille: 22},
+      indice: "Dans mon arène, tout se passe dans l'eau ! Tu as du souffle ? Montre-moi comment tu rames !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
       "Hmpf… Tu as plus de souffle que je ne le pensais. Bien joué !"]},
-  3: {nom: "Major Bob", sprite: "lt_surge", indice: "Hé, soldat ! Ici, il faut que ça chauffe sous le capot. Fais monter ton cœur, et pas qu'une fois !", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
+  3: {nom: "Major Bob", sprite: "lt_surge", arene: {image: "arene-carmin.webp", largeur: 940, perso: "arene-carmin-major-bob.webp", x: 395, y: 518, pw: 151, ph: 252, tete: {x: 19, y: 0, c: 111}, torches: [[163, 78], [771, 78], [16, 560], [918, 560]], feu: "255,225,80", taille: 22},
+      indice: "Hé, soldat ! Ici, il faut que ça chauffe sous le capot. Fais monter ton cœur, et pas qu'une fois !", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
       "Wahou ! Tu as une énergie de 100 000 volts, soldat !"]},
-  4: {nom: "Erika", sprite: "erika", indice: "Les plus belles fleurs se trouvent au bout des longues promenades… Tu aimes marcher, n'est-ce pas ?", lignes: ["Bienvenue… Je suis Erika, la Championne de Céladopole. J'aime les fleurs et les longues promenades.",
+  4: {nom: "Erika", sprite: "erika", arene: {image: "arene-celadopole.webp", perso: "arene-celadopole-erika.webp", x: 414, y: 527, pw: 115, ph: 271, tete: {x: 0, y: 0, c: 119}, torches: [[300, 170], [640, 170]], feu: "255,250,200", taille: 40},
+      indice: "Les plus belles fleurs se trouvent au bout des longues promenades… Tu aimes marcher, n'est-ce pas ?", lignes: ["Bienvenue… Je suis Erika, la Championne de Céladopole. J'aime les fleurs et les longues promenades.",
       "Tant de pas… Tu as la patience d'une graine qui devient un grand arbre."]},
-  5: {nom: "Koga", sprite: "koga", indice: "Le ninja s'entraîne chaque jour, qu'il pleuve ou qu'il vente. Ta régularité sera ton arme.", lignes: ["Fwahahaha ! Je suis Koga, le Champion de Parmanie. La discipline du ninja n'a aucun secret pour moi !",
+  5: {nom: "Koga", sprite: "koga", arene: {image: "arene-parmanie.webp", perso: "arene-parmanie-koga.webp", x: 404, y: 512, pw: 209, ph: 272, tete: {x: 7, y: 0, c: 120}, torches: [[82, 172], [856, 172]], feu: "235,140,255", taille: 26},
+      indice: "Le ninja s'entraîne chaque jour, qu'il pleuve ou qu'il vente. Ta régularité sera ton arme.", lignes: ["Fwahahaha ! Je suis Koga, le Champion de Parmanie. La discipline du ninja n'a aucun secret pour moi !",
       "Jour après jour, sans faiblir… Tu as l'endurance d'un vrai ninja !"]},
-  6: {nom: "Morgane", sprite: "sabrina", indice: "Mon esprit est fort. Ton corps l'est-il autant ? Je veux voir tes muscles travailler.", lignes: ["Je suis Morgane, la Championne de Safrania. Je savais que tu viendrais : je l'avais vu…",
+  6: {nom: "Morgane", sprite: "sabrina", arene: {image: "arene-safrania.webp", largeur: 940, perso: "arene-safrania-morgane.webp", x: 404, y: 554, pw: 121, ph: 254, tete: {x: 4, y: 0, c: 112}, torches: [[125, 314], [809, 314], [69, 618], [862, 618]], feu: "255,120,230", taille: 22},
+      indice: "Mon esprit est fort. Ton corps l'est-il autant ? Je veux voir tes muscles travailler.", lignes: ["Je suis Morgane, la Championne de Safrania. Je savais que tu viendrais : je l'avais vu…",
       "Ta force ne vient pas que de tes muscles. Ton esprit est solide."]},
-  7: {nom: "Auguste", sprite: "blaine", indice: "Hah ! Ici, ça brûle ! Fais flamber ton cœur, longtemps, très longtemps !", lignes: ["Hah ! Je suis Auguste, le Champion brûlant de Cramois'Île !",
+  7: {nom: "Auguste", sprite: "blaine", arene: {image: "arene-cramoisile.webp", perso: "arene-cramoisile-auguste.webp", x: 413, y: 553, pw: 117, ph: 252, tete: {x: 1, y: 0, c: 111}, torches: [[229, 235], [721, 235]], feu: "255,150,50", taille: 34},
+      indice: "Hah ! Ici, ça brûle ! Fais flamber ton cœur, longtemps, très longtemps !", lignes: ["Hah ! Je suis Auguste, le Champion brûlant de Cramois'Île !",
       "Ton cœur brûle d'une flamme ardente ! Quelle endurance !"]},
-  8: {nom: "Giovanni", sprite: "giovanni", indice: "Tu as traversé tout Kanto… mais pour m'atteindre, il faudra marcher encore. Beaucoup.", lignes: ["Alors c'est toi qui as battu tous les Champions… Je suis Giovanni, le Champion de Jadielle.",
+  8: {nom: "Giovanni", sprite: "giovanni", arene: {image: "arene-jadielle.webp", perso: "arene-jadielle-giovanni.webp", x: 406, y: 553, pw: 124, ph: 258, tete: {x: 6, y: 0, c: 114}, torches: [[110, 141], [831, 141]], taille: 24},
+      indice: "Tu as traversé tout Kanto… mais pour m'atteindre, il faudra marcher encore. Beaucoup.", lignes: ["Alors c'est toi qui as battu tous les Champions… Je suis Giovanni, le Champion de Jadielle.",
       "Impressionnant. Une telle persévérance mérite le respect."]},
-  9: {nom: "Régis", sprite: "blue", indice: "Le dernier défi est le plus dur : tout donner, plusieurs jours, comme un vrai champion !", lignes: ["Te voilà enfin ! Moi, Régis, je suis le Champion de la Ligue Pokémon !",
+  9: {nom: "Régis", sprite: "blue", arene: {image: "arene-ligue.webp", perso: "arene-ligue-regis.webp", x: 406, y: 533, pw: 134, ph: 268, tete: {x: 4, y: 0, c: 118}, torches: [[110, 141], [831, 141]], taille: 24},
+      indice: "Le dernier défi est le plus dur : tout donner, plusieurs jours, comme un vrai champion !", lignes: ["Te voilà enfin ! Moi, Régis, je suis le Champion de la Ligue Pokémon !",
       "Quoi ?! Tout ce chemin… Tu es vraiment devenu le plus fort !"]},
 };
+// Le Conseil 4 : les 4 salles qu'on traverse à la Ligue avant Régis (ChatGPT, 30/10), une réplique d'accueil et une de défaite
+const CONSEIL = [
+  {nom: "Olga", type: "Glace", arene: {image: "arene-conseil-olga.webp", perso: "arene-conseil-olga-olga.webp", x: 399, y: 522, pw: 131, ph: 261,
+    torches: [[300, 250], [640, 250]], feu: "170,220,255", taille: 40},
+   lignes: ["Bienvenue à la Ligue Pokémon ! Je suis Olga du Conseil 4. Personne ne passe sans affronter le grand froid !",
+     "Brrr… Ton cœur est plus chaud que ma glace. Tu peux passer !"]},
+  {nom: "Aldo", type: "Combat", arene: {image: "arene-conseil-aldo.webp", perso: "arene-conseil-aldo-aldo.webp", x: 393, y: 492, pw: 156, ph: 214,
+    torches: [[226, 276], [715, 276], [31, 643], [909, 643]], taille: 24},
+   lignes: ["Je suis Aldo du Conseil 4 ! L'entraînement, c'est toute ma vie. Montre-moi ce que valent tes muscles !",
+     "Ouah ! Une telle régularité… Tu t'es entraîné aussi dur que moi !"]},
+  {nom: "Agatha", type: "Spectre", arene: {image: "arene-conseil-agatha.webp", perso: "arene-conseil-agatha-agatha.webp", x: 408, y: 515, pw: 120, ph: 209,
+    torches: [[31, 298], [245, 329], [696, 329], [909, 298]], feu: "255,190,110", taille: 18},
+   lignes: ["Hé hé… Je suis Agatha du Conseil 4. C'est le vieux Chen qui t'envoie ? Voyons ce que tu vaux…",
+     "Hmpf ! Tu as de l'endurance, gamin. File, Peter t'attend."]},
+  {nom: "Peter", type: "Dragon", arene: {image: "arene-conseil-peter.webp", perso: "arene-conseil-peter-peter.webp", x: 385, y: 491, pw: 170, ph: 257,
+    torches: [[251, 298], [696, 298], [31, 643], [909, 643]], feu: "90,160,255", taille: 26},
+   lignes: ["Je suis Peter, le dernier du Conseil 4. Les Dragons sont des créatures légendaires… comme ta persévérance ?",
+     "Incroyable… Tu as tenu jusqu'au bout. Le Maître de la Ligue t'attend, là-haut."]},
+];
+[...Object.values(CHAMPIONS), ...CONSEIL].forEach(ch => { if (ch.arene) { ch.arene.largeur = ch.arene.largeur || 941; ch.arene.hauteur = 1672; } });
 // Champion dessiné dans son arène (ChatGPT, 30/10) : arene = image de la salle (champion compris, dossier scenes/),
 // perso = le champion seul, détouré (posé exactement par-dessus : x, y = son coin en pixels de l'image, pw × ph) ;
-// tete = carré de la tête dans perso (médaillon de la carte et carte du défi) ; torches = lueurs qui vacillent.
+// tete = carré de la tête dans perso (médaillon de la carte et carte du défi) ; torches = lueurs qui vacillent (feu = leur
+// couleur r,g,b, taille = leur diamètre en % de la largeur).
 // Sans arene : l'ancien sprite PokéRogue animé.
 function portraitChamp(ch, attrs = "") {
   const s = ch.arene; if (!s) return `<canvas data-sprite="${ch.sprite}" ${attrs}></canvas>`;
@@ -1492,9 +1681,9 @@ const STYLE_BADGE = `
 #pkm-badge.spot-on .salle .fond{filter:none}
 #pkm-badge.revele .salle .fond{filter:brightness(.38) saturate(.8)}
 #pkm-badge .salle .torche{position:absolute;width:30%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;opacity:0;pointer-events:none;
-  background:radial-gradient(closest-side,rgba(255,200,90,.55),rgba(255,140,40,.22) 45%,transparent 75%);mix-blend-mode:screen;transition:opacity .5s}
+  background:radial-gradient(closest-side,rgba(var(--tc),.55),rgba(var(--tc),.2) 45%,transparent 75%);mix-blend-mode:screen;transition:opacity .5s}
 #pkm-badge .salle .torche.on{opacity:1;animation:pkb-torche 1.9s ease-in-out infinite}
-#pkm-badge .salle .torche.t1.on{animation-duration:2.3s;animation-delay:-.7s}
+#pkm-badge .salle .torche.t1.on{animation-duration:2.3s}
 @keyframes pkb-torche{0%,100%{transform:translate(-50%,-50%) scale(1)}20%{transform:translate(-50%,-50%) scale(1.07);opacity:.82}
   45%{transform:translate(-50%,-50%) scale(.95);opacity:1}70%{transform:translate(-50%,-50%) scale(1.04);opacity:.88}}
 #pkm-badge .salle .perso{position:absolute;transition:opacity .8s}
@@ -1759,10 +1948,14 @@ function sceneBadge(n, c, rejouer = false) {
   const deja = LIEUX.filter(l => l.arene && l.arene.image);
   const sc = ch.arene, pc = (v1, tot) => v1 / tot * 100 + "%";
   if (sc) v.classList.add("salle-mode");
-  v.innerHTML = `${sc ? `<div class="salle"><img class="fond" src="${D.scenes}${sc.image}" alt=""><div class="lueur" style="left:${pc(sc.x + sc.pw / 2, sc.largeur)};top:${pc(sc.y + sc.ph * .45, sc.hauteur)}"></div>
-      ${sc.torches.map(([x, y], i) => `<div class="torche t${i}" style="left:${pc(x, sc.largeur)};top:${pc(y, sc.hauteur)}"></div>`).join("")}
+  // la salle dessinée : fond, lueur derrière le champion, lumières (torches, lampes, orbes…), le champion détouré par-dessus
+  const htmlSalle = sc => `<img class="fond" src="${D.scenes}${sc.image}" alt=""><div class="lueur" style="left:${pc(sc.x + sc.pw / 2, sc.largeur)};top:${pc(sc.y + sc.ph * .45, sc.hauteur)}"></div>
+      ${sc.torches.map(([x, y], i) => `<div class="torche t${i % 2}" style="left:${pc(x, sc.largeur)};top:${pc(y, sc.hauteur)};width:${sc.taille || 30}%;
+        animation-delay:${-i * .37}s"></div>`).join("")}
       <div class="perso" style="left:${pc(sc.x, sc.largeur)};top:${pc(sc.y, sc.hauteur)};width:${pc(sc.pw, sc.largeur)};height:${pc(sc.ph, sc.hauteur)}">
-        <img src="${D.scenes}${sc.perso}" alt=""></div></div>`
+        <img src="${D.scenes}${sc.perso}" alt=""></div>`;
+  const sc0 = ligue && sc ? CONSEIL[0].arene : sc;
+  v.innerHTML = `${sc ? `<div class="salle" style="--tc:${sc0.feu || "255,190,80"}">${htmlSalle(sc0)}</div>`
     : `<div class="decor"></div>`}<div class="teinte"></div><canvas class="air"></canvas>${sc ? "" : `<div class="spot"></div>
     <div class="champ"><div class="ombre"></div><canvas></canvas></div>`}
     <div class="halo"></div><div class="charge"></div><div class="onde"></div><div class="onde o2"></div>
@@ -1788,13 +1981,20 @@ function sceneBadge(n, c, rejouer = false) {
   const camera = z => { if (salleEl) salleEl.style.transform = `translateX(-50%) scale(${z})`; };
   badgesPropres(v);
   const bp = badgePropre(src, !ligue);
-  const {dire, cacher} = dialogue(v, ".pkm-passer, .badge");
+  const DB = dialogue(v, ".pkm-passer, .badge"), {dire, cacher} = DB;
+  const nomJ = nomDresseur(), conseil = ligue && sc ? CONSEIL : [];
+  DB.prevoir([...conseil.flatMap(m => m.lignes.map(l => [l, m.nom])), ...ch.lignes.map(l => [l, ch.nom]),
+    [ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom],
+    [ligue ? `${nomJ} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomJ} obtient le <b>${a.badge}</b> !`],
+    [ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
+      : `Et prends aussi ceci : une <b>Hyper Ball</b> ! Un Pokémon de type ${a.type} t'attend à l'intérieur.`, ch.nom]]);
   let fini = false;
-  const stop = () => { anim.stop(); air.stop(); PW.removeEventListener("resize", tailleSalle); };
+  const stop = () => { anim.stop(); air.stop(); DB.fin(); PW.removeEventListener("resize", tailleSalle); };
   const fin = suite => { if (fini) return; fini = true; stop();
     if (!suite || !c) { v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); return; }
     SONS.montee(.7); v.querySelector(".blanc").style.opacity = 1;
-    setTimeout(() => { ouvrir(c, rejouer, true); v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 650); };
+    setTimeout(() => { if (ligue) scenePantheon(() => ouvrir(c, rejouer, true)); else ouvrir(c, rejouer, true);
+      v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 650); };
   v.querySelector(".pkm-passer").onclick = () => fin(false);
   const eclats = (x, y, nb, cols = ["#FFE27A", "#fff", couleur]) => { for (let i = 0; i < nb; i++) { const e = P.createElement("div"); e.className = "eclat";
     const ang = i / nb * Math.PI * 2 + Math.random() * .3, d = 50 + Math.random() * 80;
@@ -1816,9 +2016,26 @@ function sceneBadge(n, c, rejouer = false) {
     // 2. Le champion : une silhouette, puis le projecteur (dans l'arène dessinée : les torches s'allument une à une,
     // la salle s'éclaire, la caméra s'approche doucement de lui ; lui reste immobile : le bouger ferait voir le dessin
     // d'origine dessous)
-    if (sc) { await pause(500); v.querySelectorAll(".torche").forEach((t, i) => setTimeout(() => { t.classList.add("on"); EPIQUE.torche(); vibre(12); }, i * 380)); await pause(800); }
-    await pause(700); EPIQUE.projecteur(); v.classList.add("spot-on"); vibre(25); camera(1.12);
-    await pause(900);
+    const allumer = async () => {  // les lumières s'allument une à une, puis le projecteur sur le champion
+      if (sc) { await pause(500); v.querySelectorAll(".torche").forEach((t, i) => setTimeout(() => { t.classList.add("on"); EPIQUE.torche(); vibre(12); }, i * 380));
+        await pause(500 + 300 * v.querySelectorAll(".torche").length); }
+      await pause(700); EPIQUE.projecteur(); v.classList.add("spot-on"); vibre(25); camera(1.12);
+      await pause(900);
+    };
+    const changerSalle = async s2 => {  // fondu au noir, la salle suivante (Conseil 4 -> Régis)
+      cacher(); v.classList.remove("allume"); await pause(950);
+      v.classList.remove("spot-on"); salleEl.style.transition = "none"; camera(1); void salleEl.offsetWidth; salleEl.style.transition = "";
+      salleEl.style.setProperty("--tc", s2.feu || "255,190,80"); salleEl.innerHTML = htmlSalle(s2);
+      await pause(150); EPIQUE.apparition(); v.classList.add("allume"); await pause(400);
+    };
+    // la Ligue : on traverse d'abord les 4 salles du Conseil 4, puis celle de Régis
+    for (const [i, m] of conseil.entries()) {
+      if (i > 0) await changerSalle(m.arene);
+      await allumer();
+      for (const l of m.lignes) await dire(l, m.nom);
+      if (i === conseil.length - 1) await changerSalle(sc);
+    }
+    await allumer();
     for (const l of ch.lignes) await dire(l, ch.nom);
     await dire(ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom);
     cacher();
@@ -1869,6 +2086,205 @@ function sceneBadge(n, c, rejouer = false) {
   })().catch(() => {});
 }
 
+
+// ================================================================================================
+// LES ÉCRANS DE KANTO (images ChatGPT du 30/10, branchées le 01/11) : Panthéon (après la Ligue) et Centre Pokémon de nuit
+// (« Bonne nuit »). Même mise en page que les arènes : l'image sur toute la hauteur, centrée, et ce qu'on pose dessus en %.
+// ================================================================================================
+const STYLE_ECRAN = `
+.pkm-ecran{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#05070D;touch-action:manipulation;user-select:none;
+  -webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace;color:#fff}
+.pkm-ecran .salle{position:absolute;top:0;left:50%;transform:translateX(-50%);transform-origin:50% 45%;transition:transform 8s cubic-bezier(.3,0,.2,1)}
+.pkm-ecran .salle>img{width:100%;height:100%;display:block;image-rendering:pixelated}
+.pkm-ecran canvas.air{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.pkm-ecran .voile{position:absolute;inset:0;pointer-events:none;transition:opacity 1.2s}
+.pkm-ecran .blanc{position:absolute;inset:0;background:#fff;pointer-events:none;transition:opacity 1.2s;z-index:40}
+.pkm-ecran .noir{position:absolute;inset:0;background:#000;pointer-events:none;transition:opacity 1s;z-index:40}
+.pkm-ecran .pkm-passer{z-index:45}
+/* le Panthéon : un Pokémon sur chaque socle, son nom sur la plaque */
+.pkm-ecran .socle{position:absolute;transform:translate(-50%,-100%) scale(.2);opacity:0;transform-origin:50% 100%;
+  transition:transform .7s cubic-bezier(.2,1.6,.4,1),opacity .3s;pointer-events:none}
+.pkm-ecran .socle.vu{transform:translate(-50%,-100%) scale(1);opacity:1}
+.pkm-ecran .socle img{display:block;width:100%;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(90,60,0,.35)) drop-shadow(0 0 10px rgba(255,230,140,.7))}
+.pkm-ecran .socle.shiny img{filter:drop-shadow(0 0 12px rgba(255,215,90,1))}
+.pkm-ecran .plaque{position:absolute;transform:translate(-50%,-50%);color:#5A3A08;font-weight:700;white-space:nowrap;opacity:0;transition:opacity .6s .3s;
+  text-shadow:0 1px 0 rgba(255,240,190,.8);pointer-events:none}
+.pkm-ecran .plaque.vu{opacity:1}
+.pkm-ecran .eclair{position:absolute;width:30%;aspect-ratio:1;transform:translate(-50%,-50%) scale(.2);border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(closest-side,#fff,rgba(255,230,140,.8) 40%,transparent 72%);mix-blend-mode:screen}
+.pkm-ecran .eclair.go{animation:pke-eclair .8s ease-out forwards}
+@keyframes pke-eclair{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
+.pkm-ecran .titre-p{position:absolute;left:0;right:0;top:max(18px,env(safe-area-inset-top));text-align:center;z-index:20;opacity:0;
+  transition:opacity 1.2s,transform 1.2s;transform:translateY(-10px);font:700 26px/1.1 'Pixelify Sans',monospace;color:#FFE27A;letter-spacing:2px;
+  text-shadow:3px 3px 0 #7A4A08,0 0 18px rgba(255,200,80,.8)}
+.pkm-ecran .titre-p small{display:block;font-size:14px;color:#FFF3C4;letter-spacing:1px;margin-top:6px;text-shadow:2px 2px 0 #7A4A08}
+.pkm-ecran .titre-p.vu{opacity:1;transform:none}
+/* le Centre Pokémon : la machine de soin s'allume emplacement par emplacement */
+.pkm-ecran .alveole{position:absolute;width:6.6%;aspect-ratio:2.4;transform:translate(-50%,-50%);border-radius:50%;opacity:0;pointer-events:none;
+  background:radial-gradient(closest-side,#fff,rgba(255,150,200,.95) 45%,rgba(255,120,180,.0) 100%);mix-blend-mode:screen;transition:opacity .25s}
+.pkm-ecran .alveole.on{opacity:1;animation:pke-alv .9s ease-in-out infinite alternate}
+@keyframes pke-alv{to{filter:brightness(1.4)}}
+.pkm-ecran .lampe{position:absolute;width:22%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;opacity:.55;
+  background:radial-gradient(closest-side,rgba(255,220,140,.6),transparent 70%);mix-blend-mode:screen;animation:pke-lampe 3s ease-in-out infinite}
+@keyframes pke-lampe{50%{opacity:.8}}
+.pkm-ecran.soin .voile-rose{opacity:1}
+.pkm-ecran .voile-rose{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .6s;
+  background:radial-gradient(60% 40% at 50% 32%,rgba(255,170,210,.28),transparent 70%)}
+`;
+// Une scène plein écran sur une image (largeur × hauteur) : -> {v, salle, pc, fin}
+function ecran(id, image, largeur, hauteur, extra = "") {
+  installerStyle("pkm2-ecran-style", STYLE_ECRAN); preparerScene();
+  const v = P.createElement("div"); v.className = "pkm-ecran"; v.id = id;
+  v.innerHTML = `<div class="salle"><img src="${D.scenes}${image}" alt="">${extra}</div><canvas class="air"></canvas>
+    <div class="noir"></div><div class="blanc" style="opacity:0"></div><button class="pkm-passer">✕</button>`;
+  P.body.appendChild(v);
+  const salle = v.querySelector(".salle"), taille = () => { const h = PW.innerHeight; salle.style.width = h * largeur / hauteur + "px"; salle.style.height = h + "px"; };
+  taille(); PW.addEventListener("resize", taille);
+  return {v, salle, fin: () => PW.removeEventListener("resize", taille)};
+}
+const pcI = (x, tot) => x / tot * 100 + "%";
+
+
+// --- L'écran titre (premier lancement d'une partie) : Kanto au lever du soleil, le titre dans le ciel, « Touche l'écran » ---
+const STYLE_TITRE = `
+#pkm-titre .salle{transform:translateX(-50%) scale(1.12) translateY(2%);transition:transform 9s cubic-bezier(.25,0,.2,1)}
+#pkm-titre.parti .salle{transform:translateX(-50%) scale(1) translateY(0)}
+#pkm-titre .logo{position:absolute;left:0;right:0;top:calc(max(20px,env(safe-area-inset-top)) + 5vh);text-align:center;z-index:20;pointer-events:none;
+  opacity:0;transform:translateY(-14px) scale(.96);transition:opacity 1.4s .6s,transform 1.4s .6s cubic-bezier(.2,1.3,.4,1)}
+#pkm-titre.parti .logo{opacity:1;transform:none}
+#pkm-titre .logo b{display:block;font:700 clamp(40px,13vw,64px)/1 'Pixelify Sans',monospace;color:#FFCB05;letter-spacing:3px;
+  text-shadow:4px 4px 0 #2A5BB0,-2px -2px 0 #2A5BB0,2px -2px 0 #2A5BB0,-2px 2px 0 #2A5BB0,0 0 26px rgba(255,203,5,.45)}
+#pkm-titre .logo i{display:inline-block;margin-top:8px;font:700 clamp(20px,6vw,28px)/1 'Pixelify Sans',monospace;font-style:normal;color:#fff;
+  letter-spacing:8px;padding:4px 14px;background:#E8382F;border-radius:6px;box-shadow:0 3px 0 #7A1712;text-shadow:2px 2px 0 #7A1712}
+#pkm-titre .logo small{display:block;margin-top:10px;font:500 14px 'Pixelify Sans',monospace;color:#FFF3C4;letter-spacing:2px;text-shadow:2px 2px 0 rgba(40,30,80,.6)}
+#pkm-titre .touche{position:absolute;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));text-align:center;z-index:20;pointer-events:none;
+  font:700 19px 'Pixelify Sans',monospace;color:#fff;letter-spacing:2px;text-shadow:2px 2px 0 #284018,0 0 10px rgba(0,0,0,.5);opacity:0;transition:opacity .8s}
+#pkm-titre.pret .touche{opacity:1;animation:pkt-clign 1.2s steps(2,start) 1s infinite}
+@keyframes pkt-clign{50%{opacity:0}}
+#pkm-titre .touche small{display:block;font-size:12px;font-weight:500;letter-spacing:1px;margin-top:6px;opacity:.85}
+#pkm-dresseur.accueil.sur-titre .ombre{background:rgba(5,8,16,.38)}
+#pkm-dresseur.sur-titre .titre-jeu{display:none}
+#pkm-dresseur.accueil.sur-titre{justify-content:flex-end;padding-top:calc(max(20px,env(safe-area-inset-top)) + 5vh + 150px)}
+`;
+function ecranTitre(essai = false) {
+  installerStyle("pkm2-titre-style", STYLE_TITRE);
+  const E = ecran("pkm-titre", "titre-kanto.webp", 941, 1672), v = E.v;
+  v.insertAdjacentHTML("beforeend", `<div class="logo"><b>POKÉMON</b><i>SPORT</i><small>ÉDITION KANTO</small></div>
+    <div class="touche">TOUCHE L'ÉCRAN${essai ? "<small>Aperçu : rien n'est enregistré</small>" : ""}</div>`);
+  ambiance(v.querySelector("canvas.air"), [{type: "oiseaux", coul: ["#3A3050"], n: 5, haut: [.08, .26]}, {...VERTS, n: 20}], () => !v.isConnected);
+  setTimeout(() => { v.querySelector(".noir").style.opacity = 0; v.classList.add("parti"); }, 80);
+  setTimeout(() => v.classList.add("pret"), 2200);
+  const fermer = () => { E.fin(); v.style.transition = "opacity .6s"; v.style.opacity = 0; setTimeout(() => v.remove(), 600); };
+  const touche = new Promise(ok => {
+    const go = e => { if (e.target.closest(".pkm-passer")) return; v.removeEventListener("pointerdown", go);
+      audio(); SONS.version(); vibre(25); v.classList.remove("pret"); ok(true); };
+    v.addEventListener("pointerdown", go);
+    v.querySelector(".pkm-passer").onclick = () => { v.removeEventListener("pointerdown", go); fermer(); ok(false); };
+  });
+  return {touche, fermer};
+}
+// Le premier lancement : écran titre -> carte du nouveau dresseur -> labo du Professeur Chen -> le starter s'ouvre
+// essai = l'aperçu du mode test (rien n'est enregistré : ni le pseudo, ni la Poké Ball)
+async function demarrerAventure(chen, essai = false) {
+  const t = ecranTitre(essai);
+  if (!await t.touche) { if (!essai && chen) lancer(chen); return; }
+  const ok = await editerDresseur(true, {surTitre: true, essai});
+  t.fermer();
+  if (!ok) return;
+  if (essai) {
+    const p = PROFESSEURS.chen, n = p.starters[Math.floor(Math.random() * 3)];
+    intro({...PAR_NUM[n], num: n, id: `test#chen`, apercu: true, ball: "poke", shiny: false, legendaire: false, lieu: "Bourg Palette",
+      raison: "🎁 Cadeau du Professeur Chen", quand: "aujourd'hui", jour: D.aujourdhui}, p);
+    DRESSEUR_ESSAI = null;  // le labo a déjà écrit son texte avec le pseudo de l'aperçu
+  } else lancer(chen);
+}
+// --- Le Panthéon : après la Ligue, ton équipe entre dans la légende (6 socles), puis la Master Ball s'ouvre ---
+const SOCLES = [[127, 722], [200, 830], [350, 905], [588, 905], [740, 830], [812, 722]];  // dessus de chaque socle (pixels)
+function equipePantheon() {  // le starter, les Pokémon des badges (du plus récent), puis les plus belles captures récentes
+  const vus = new Set(), equipe = [], ouv = CAPTURES.filter(c => estOuverte(c) || c.id.startsWith("test"));
+  const prendre = c => { if (c && !vus.has(c.num) && equipe.length < 6) { vus.add(c.num); equipe.push({num: c.num, shiny: c.shiny}); } };
+  prendre(ouv.find(c => c.id.endsWith("#chen")));
+  for (let k = 8; k >= 1; k--) prendre(ouv.find(c => c.id.endsWith("#badge" + k)));
+  [...ouv].reverse().filter(c => c.shiny || c.ball === "hyper").forEach(prendre);
+  [...ouv].reverse().forEach(prendre);
+  [25, 1, 4, 7, 133, 143].forEach(n => prendre({num: n, shiny: false}));
+  return equipe;
+}
+function scenePantheon(suite = null) {
+  const L = 941, H = 1672, eq = equipePantheon(), ordre = [0, 5, 1, 4, 2, 3];  // du fond vers l'avant
+  const {v, salle, fin: finE} = ecran("pkm-pantheon", "pantheon-kanto.webp", L, H,
+    SOCLES.map(([x, y], i) => `<div class="eclair" style="left:${pcI(x, L)};top:${pcI(y - 60, H)}"></div>
+      <div class="socle ${eq[i].shiny ? "shiny" : ""}" style="left:${pcI(x, L)};top:${pcI(y + 6, H)};width:${pcI(i === 2 || i === 3 ? 200 : 175, L)}">
+        <img src="${IMG.anim(eq[i].num, eq[i].shiny)}" ${repli(eq[i].num, eq[i].shiny)} alt=""></div>
+      <div class="plaque" style="left:${pcI(x, L)};top:${pcI(y + 60, H)};font-size:calc(var(--h) * .0105)">${PAR_NUM[eq[i].num].nom}</div>`).join(""));
+  v.insertAdjacentHTML("beforeend", `<div class="titre-p">PANTHÉON<small>LIGUE POKÉMON · KANTO</small></div>`);
+  const maj = () => v.style.setProperty("--h", PW.innerHeight + "px"); maj(); PW.addEventListener("resize", maj);
+  const air = airAnime(v.querySelector("canvas.air"), "Ligue");
+  const DP = dialogue(v), nb = Object.keys(collection()).length, nom = nomDresseur();
+  const lignes = ["Félicitations ! Tu as vaincu la Ligue Pokémon de Kanto !", `${nom} et ses Pokémon entrent au <b>Panthéon</b> !`,
+    `${nb} Pokémon attrapés, 8 badges, des milliers de pas… Ce voyage restera gravé ici pour toujours.`,
+    suite ? "Et maintenant… ouvre ta Master Ball : un Pokémon légendaire t'attend !" : "Une nouvelle région t'attend déjà au-delà des montagnes…"];
+  DP.prevoir(lignes.map(l => [l]));
+  let fini = false;
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  const fermer = go => { if (fini) return; fini = true; air.stop(); DP.fin(); finE(); PW.removeEventListener("resize", maj);
+    if (go && suite) { SONS.montee(.7); v.querySelector(".blanc").style.opacity = 1;
+      setTimeout(() => { suite(); v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 650); }
+    else { v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); } };
+  v.querySelector(".pkm-passer").onclick = () => fermer(!!suite);
+  (async () => {
+    await pause(200); v.querySelector(".noir").style.opacity = 0; EPIQUE.apparition();
+    setTimeout(() => salle.style.transform = "translateX(-50%) scale(1.06)", 100);
+    await pause(900); v.querySelector(".titre-p").classList.add("vu"); EPIQUE.fanfare();
+    await pause(1600);
+    for (const i of ordre) {  // chaque Pokémon apparaît sur son socle dans un éclair doré
+      if (fini) return;
+      v.querySelectorAll(".eclair")[i].classList.add("go"); v.querySelectorAll(".socle")[i].classList.add("vu");
+      v.querySelectorAll(".plaque")[i].classList.add("vu"); EPIQUE.clic(); vibre(20); await pause(650);
+    }
+    await pause(400);
+    for (const l of lignes) await DP.dire(l);
+    fermer(true);
+  })().catch(() => {});
+}
+
+// --- Le Centre Pokémon de nuit : une bonne nuit (Bonne nuit validée) = l'Infirmière Joëlle soigne tes Pokémon ---
+const ALVEOLES = [[410, 518], [472, 518], [535, 518], [410, 553], [472, 553], [535, 553]];
+function sceneCentre(apercu = false) {
+  const L = 941, H = 1672, h = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}`;
+  const {v, salle, fin: finE} = ecran("pkm-centre", "centre-nuit-kanto.webp", L, H,
+    `<div class="lampe" style="left:${pcI(325, L)};top:${pcI(490, H)}"></div><div class="lampe" style="left:${pcI(620, L)};top:${pcI(490, H)}"></div>
+     <div class="lampe" style="left:${pcI(75, L)};top:${pcI(40, H)}"></div><div class="lampe" style="left:${pcI(716, L)};top:${pcI(40, H)}"></div>` +
+    ALVEOLES.map(([x, y]) => `<div class="alveole" style="left:${pcI(x, L)};top:${pcI(y, H)}"></div>`).join("") + `<div class="voile-rose"></div>`);
+  const air = ambiance(v.querySelector("canvas.air"), [{type: "reflets", coul: ["#FFFFFF", "#FFF3C4"], n: 22, haut: [0, .2]}], () => !v.isConnected);
+  const DC = dialogue(v), dormi = J.sommeil || R.nuit, bonus = String(Math.round((J.shiny_bonus > 1 ? J.shiny_bonus : 1.5) * 100) / 100).replace(".", ",");
+  const lignes = ["Bonjour ! Bienvenue au Centre Pokémon.", `Tu as dormi ${h(dormi)} cette nuit : tes Pokémon aussi se sont bien reposés !`,
+    "Je vais les soigner pour bien commencer la journée. Un instant…",
+    `Tes Pokémon sont en pleine forme ! Aujourd'hui, les Pokémon shiny sont <b>${bonus} fois</b> plus fréquents. Bonne journée !`];
+  DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
+  let fini = false;
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  const fermer = () => { if (fini) return; fini = true; DC.fin(); finE(); v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); };
+  v.querySelector(".pkm-passer").onclick = fermer;
+  if (!apercu) try { localStorage.setItem("pkm_centre_vu", D.aujourdhui); } catch (e) {}
+  (async () => {
+    await pause(200); v.querySelector(".noir").style.opacity = 0;
+    setTimeout(() => salle.style.transform = "translateX(-50%) scale(1.08)", 100);
+    await pause(1000);
+    for (const l of lignes.slice(0, 3)) await DC.dire(l, "Infirmière Joëlle");
+    DC.cacher(); v.classList.add("soin"); salle.style.transform = "translateX(-50%) scale(1.25)";
+    await pause(500);
+    const al = v.querySelectorAll(".alveole");
+    for (let i = 0; i < al.length; i++) { al[i].classList.add("on"); ton(NOTE(76 + [0, 4, 7, 12, 7, 12][i]), 0, .16, {type: "square", vol: .05}); vibre(10); await pause(260); }
+    // un petit air de soin (original)
+    [[72, 0], [76, .14], [79, .28], [84, .42], [83, .62], [79, .76], [84, .9]].forEach(([n, t]) => ton(NOTE(n), t, .2, {type: "triangle", vol: .09}));
+    await pause(1400);
+    al.forEach(a => a.classList.remove("on")); v.classList.remove("soin"); salle.style.transform = "translateX(-50%) scale(1.08)";
+    await pause(400);
+    await DC.dire(lignes[3], "Infirmière Joëlle");
+    fermer();
+  })().catch(() => {});
+}
 // ================================================================================================
 // LA FICHE D'UN POKÉMON (feuille qui monte du bas, dans la page parente)
 // ================================================================================================
@@ -2045,12 +2461,13 @@ function dessinerSpeciales() {
       <div class="ligne"><span>${ico("master", "p")} ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
       <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
       <div class="reste">${resteMaster}</div></div>
-    <div class="speciale ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
+    <div class="speciale nuit-carte ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("nuit")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
       <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
-      ${nuit ? "" : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + cartePesee();
+      ${nuit ? `<div class="reste">Touche pour passer au Centre Pokémon.</div>` : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + cartePesee();
   rognerImages(document.getElementById("speciales"));
+  if (nuit) { const nc = document.querySelector("#speciales .nuit-carte"); nc.style.cursor = "pointer"; nc.onclick = () => sceneCentre(); }
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
 }
 // La pesée de la semaine (29/10) : 3 pesées le matin du lundi au dimanche = une Poké Ball ; et la dernière pesée
@@ -2297,7 +2714,8 @@ const COULEURS_PANTALON = {  // 2 tons : ombre, couleur
 const PEAU_SACHA = COULEURS_PEAU["Claire"], TISSU_SACHA = COULEURS_TISSU["Rouge"], JEAN_SACHA = COULEURS_PANTALON["Jean"];
 let DRESSEUR = {nom: "", peau: "Claire", casquette: "Rouge", veste: "Rouge", pantalon: "Jean"};
 try { DRESSEUR = {...DRESSEUR, ...JSON.parse(localStorage.getItem("pkm_dresseur") || "{}")}; } catch (e) {}
-const nomDresseur = () => DRESSEUR.nom || "Sacha";
+let DRESSEUR_ESSAI = null;  // le pseudo tapé pendant l'aperçu de l'accueil (jamais gardé)
+const nomDresseur = () => DRESSEUR_ESSAI || DRESSEUR.nom || "Sacha";
 const IMAGES_DRESSEUR = new Map();  // feuille + couleurs -> image recoloriée (data URL)
 function feuilleColoree(feuille, d = DRESSEUR) {
   const cle = [feuille, d.peau, d.casquette, d.veste, d.pantalon].join("|");
@@ -2400,7 +2818,7 @@ function apercuDresseur(cv, d = DRESSEUR, marche = true) {
 // La carte dresseur : nom, peau, casquette, veste, pantalon (flèches ◀ ▶) ; -> une promesse résolue à la fermeture
 // accueil = premier lancement d'une partie (bientôt : premier passage d'un compte) : plein écran, pseudo obligatoire,
 // un seul bouton « Commencer l'aventure »
-function editerDresseur(accueil = false) {
+function editerDresseur(accueil = false, {surTitre = false, essai = false} = {}) {
   installerStyle("pkm2-dresseur-style", STYLE_DRESSEUR);
   if (!P.getElementById("pkm-police-pixel")) {
     const l = P.createElement("link"); l.id = "pkm-police-pixel"; l.rel = "stylesheet";
@@ -2409,7 +2827,8 @@ function editerDresseur(accueil = false) {
   const d = {...DRESSEUR}, rgb = c => `rgb(${c.join(",")})`;
   if (accueil && d.partie !== R.partie) d.nom = "";  // nouvelle partie : comme un nouveau compte, on choisit son pseudo
   const nb = Object.keys(collection()).length, badges = Object.keys(V.badges).filter(k => k <= 8).length;
-  const f = P.createElement("div"); f.id = "pkm-dresseur"; f.className = accueil ? "accueil" : "";
+  const f = P.createElement("div"); f.id = "pkm-dresseur"; f.className = (accueil ? "accueil" : "") + (surTitre ? " sur-titre" : "");
+  if (essai) d.nom = "";
   f.innerHTML = `<div class="ombre"></div>${accueil ? `<div class="titre-jeu">POKÉMON SPORT<small>Crée ton dresseur pour commencer</small></div>` : ""}
     <div class="carte-dresseur">
     <div class="entete"><span>${accueil ? "NOUVEAU DRESSEUR" : "CARTE DRESSEUR"}</span><small class="id">N° ID ${idDresseur(d.nom)}</small></div>
@@ -2436,6 +2855,7 @@ function editerDresseur(accueil = false) {
   champ.oninput = () => { f.querySelector(".id").textContent = "N° ID " + idDresseur(champ.value.trim()); };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
+      if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
       if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); d.partie = R.partie; DRESSEUR = d;
         try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur(); }
       f.remove(); ok(enregistrer); };
@@ -2840,7 +3260,7 @@ let TEST = null;  // {V: copie de l'état réel, vu: position du dernier voyage 
 function entrerTest() { if (!TEST) TEST = {V: JSON.parse(JSON.stringify(V)), vu: null}; }
 function redessinerTest() {
   VOYAGE = null; lieuVu = null; EN_ROUTE.clear();
-  dessinerSpeciales(); dessinerRegles(); dessiner();
+  dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner();
   document.getElementById("bandeau-test").innerHTML = TEST ? `<div class="bandeau-test">MODE TEST · rien n'est enregistré
     <button>Quitter le test</button></div>` : "";
   const q = document.querySelector("#bandeau-test button"); if (q) q.onclick = quitterTest;
@@ -2898,36 +3318,76 @@ function dessinerRegles() {
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
-    <li class="zone-test"><b>Tester les arènes</b> (rien n'est enregistré ni envoyé à la montre ; « Quitter le test » remet tout comme avant) :<br>
-      <button class="filtre t-arrivee">${ico("carte", "p")} 1. Arriver à l'arène de Pierre</button>
-      <button class="filtre t-badge">${ico(IMG.badge(1), "p")} 2. Gagner le Badge Roche</button>
-      ${TEST ? `<button class="filtre t-fin">Quitter le test</button>` : ""}</li>
-    <li class="zone-test"><b>Tester les captures</b> (aperçu, rien n'est enregistré) :<br>
-      <button class="filtre t-herbes">${ico("poke", "p")} Une capture dans les hautes herbes</button></li>
 `;
-  const t = sel => document.querySelector(`#regles ${sel}`);
-  t(".t-arrivee").onclick = testArrivee; t(".t-badge").onclick = testBadge;
-  if (t(".t-fin")) t(".t-fin").onclick = quitterTest;
-  t(".t-herbes").onclick = apercuCapture;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
   const r = document.querySelector("#regles .revoir");
   if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
 }
 
-// Aperçu d'une capture dans les hautes herbes (Route 1) : un Pokémon de la route au hasard, parfois shiny ; rien n'est gardé
-function apercuCapture() {
-  const nums = [16, 19, 21, 23, 27, 39], num = nums[Math.floor(Math.random() * nums.length)], p = PAR_NUM[num];
-  ouvrir({...p, num, id: `test#herbes-${Date.now()}`, apercu: true, ball: "poke", shiny: Math.random() < .2, legendaire: false,
-    lieu: "Route 1", raison: "⚡ Aperçu : capture dans les hautes herbes", quand: "aujourd'hui", jour: D.aujourdhui});
+// ---------- 🧪 Tester Kanto : chaque scène et chaque décor, sans rien enregistrer (demande de Kiki, 01/11) ----------
+const POKE_FOND = {prairie: [16, 19, 21, 39], foret: [10, 13, 25, 12], grotte: [41, 74, 46, 35], riviere: [54, 60, 118, 43],
+  mer: [72, 98, 129, 90], ville: [133, 52, 137, 122], montagne: [74, 95, 66, 27], centrale: [81, 100, 125, 26], tour: [92, 93, 104, 105],
+  safari: [111, 115, 128, 123], volcan: [58, 77, 126, 37], artikodin: [144], electhor: [145], sulfura: [146], mewtwo: [150], mew: [151], labo: [1, 4, 7]};
+const NOM_FOND = {prairie: "Hautes herbes", foret: "Forêt", grotte: "Grotte", riviere: "Rivière", mer: "Plage", ville: "Ville", montagne: "Montagne",
+  centrale: "Centrale", tour: "Tour Pokémon", safari: "Parc Safari", volcan: "Volcan", artikodin: "Artikodin", electhor: "Électhor",
+  sulfura: "Sulfura", mewtwo: "Mewtwo", mew: "Mew", labo: "Labo de Chen"};
+const auHasard = l => l[Math.floor(Math.random() * l.length)];
+function pokeDuType(type) { const l = DEX.filter(p => p.types.includes(type) && !D.legendaires.includes(p.num)); return auHasard(l).num; }
+function captureEssai(num, extra = {}) {
+  const p = PAR_NUM[num];
+  return {...p, num, id: `test#essai-${Date.now()}`, apercu: true, ball: "poke", shiny: Math.random() < .2, legendaire: D.legendaires.includes(num),
+    lieu: "", raison: "⚡ Aperçu", quand: "aujourd'hui", jour: D.aujourdhui, ...extra};
+}
+function apercuCapture(fond = "prairie") {
+  const k = fond.startsWith("arene") ? +fond.slice(5) : 0, type = k ? LIEUX.filter(l => l.arene)[k - 1].arene.type : null;
+  const num = type ? pokeDuType(type) : auHasard(POKE_FOND[fond]);
+  ouvrir(captureEssai(num, {fond, ball: k ? "hyper" : POKE_FOND[fond].length === 1 ? "master" : fond === "labo" ? "poke" : "poke",
+    raison: `⚡ Aperçu : ${k ? "arène de " + CHAMPIONS[k].nom : NOM_FOND[fond]}`}));
+}
+function testScene(n) {  // la scène du badge (ou de la Ligue : Conseil 4, Régis, Panthéon), puis la ball qui s'ouvre dans l'arène
+  const ar = LIEUX.filter(l => l.arene)[n - 1].arene;
+  const c = n === 9 ? captureEssai(auHasard([144, 145, 146, 150, 151]), {ball: "master", shiny: false, raison: "🏆 Ligue Pokémon"})
+    : captureEssai(pokeDuType(ar.type), {ball: "hyper", fond: "arene" + n, raison: `🏅 ${ar.badge} (${CHAMPIONS[n].nom})`});
+  sceneBadge(n, c);
+}
+function dessinerTests() {
+  const b = (cls, html) => `<button class="filtre ${cls}">${html}</button>`;
+  const ext = ["prairie", "foret", "grotte", "riviere", "mer", "ville", "montagne", "centrale", "tour", "safari", "volcan"];
+  document.getElementById("tests").innerHTML = `
+    <div class="groupe">Le début de l'aventure<small>Écran titre, carte du nouveau dresseur, labo du Professeur Chen, puis le starter s'ouvre dans le labo.</small></div>
+    <div class="boutons-t">${b("t-debut", "🎬 Écran titre → dresseur → labo")}${b("t-labo", `${ico("poke", "p")} Labo seul`)}</div>
+    <div class="groupe">Les arènes<small>La scène du badge avec le champion dans son arène, puis l'Hyper Ball qui s'ouvre dans l'arène vide. La Ligue : les 4 salles du Conseil 4, Régis, le Panthéon et la Master Ball.</small></div>
+    <div class="boutons-t">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => b(`t-arene" data-n="${n}`, `${portraitChamp(CHAMPIONS[n])}${n === 9 ? "Ligue" : n + ". " + CHAMPIONS[n].nom}`)).join("")}</div>
+    <div class="groupe">Les décors de capture<small>Un Pokémon du coin s'ouvre dans le décor (1 chance sur 5 d'être shiny).</small></div>
+    <div class="boutons-t">${ext.map(f => b(`t-fond" data-f="${f}`, NOM_FOND[f])).join("")}</div>
+    <div class="boutons-t">${["artikodin", "electhor", "sulfura", "mewtwo", "mew"].map(f => b(`t-fond" data-f="${f}`, `${ico("master", "p")} ${NOM_FOND[f]}`)).join("")}</div>
+    <div class="boutons-t">${b(`t-fond" data-f="labo`, "Labo (starter)")}${[1, 2, 3, 4, 5, 6, 7, 8].map(n => b(`t-fond" data-f="arene${n}`, `${ico(IMG.badge(n), "p")} ${CHAMPIONS[n].nom}`)).join("")}</div>
+    <div class="groupe">Les écrans<small>Le Centre Pokémon s'ouvre tout seul le matin après une nuit de ${R.nuit / 60} h (et en touchant « Bonne nuit ») ; le Panthéon après la Ligue.</small></div>
+    <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Centre Pokémon de nuit`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
+    <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
+    <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 2. Gagner le Badge Roche`)}
+      ${TEST ? b("t-fin", "Quitter le test") : ""}</div>`;
+  const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
+  on(".t-debut", () => demarrerAventure(null, true));
+  on(".t-labo", () => { const p = PROFESSEURS.chen; intro(captureEssai(auHasard(p.starters), {id: "test#chen", shiny: false, lieu: "Bourg Palette",
+    raison: "🎁 Cadeau du Professeur Chen"}), p); });
+  on(".t-arene", x => testScene(+x.dataset.n));
+  on(".t-fond", x => apercuCapture(x.dataset.f));
+  on(".t-centre", () => sceneCentre(true));
+  on(".t-pantheon", () => scenePantheon());
+  on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest);
 }
 
 [["ic-spe", "carnet"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
 function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
-dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
+dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
-  if (chen && !estOuverte(chen)) setTimeout(async () => { await editerDresseur(true); lancer(chen); }, 400);
+  if (chen && !estOuverte(chen)) setTimeout(() => demarrerAventure(chen), 400);
+  // une bonne nuit : l'Infirmière Joëlle soigne tes Pokémon (une fois par jour, à la première visite)
+  else if (J.sommeil >= R.nuit && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui; } catch (e) { return false; } })())
+    setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneCentre(); }, 1200);
 }
 { // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie
   const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);
