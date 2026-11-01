@@ -41,7 +41,7 @@ LIEUX = [
      _arene("Ondine", "Eau", "Badge Cascade", 2, "eau", 45, "45 min de rameur ou de natation en 7 jours")),
     ("Route 5 et Cave Taupiqueur", 400, 985, 340, "Miaouss, Taupiqueur, Triopikeur, Mimitoss, Reptincel", None),
     ("Carmin-sur-Mer", 450, 850, 815, "Magicarpe, Tentacool, Kokiyas, Krabby, Poissirène, Carapuce",
-     _arene("Major Bob", "Électrik", "Badge Foudre", 3, "zone20", 3, "3 jours avec 20 min en zone")),
+     _arene("Major Bob", "Électrik", "Badge Foudre", 3, "zone10", 3, "3 jours avec 10 min de sport")),
     ("Grotte et Centrale", 500, 1266, 300, "Voltorbe, Électrode, Magnéti, Magnéton, Élektek, Machoc, Raichu", None),
     ("Lavanville", 400, 1325, 352, "Fantominus, Spectrum, Osselait, Ossatueur", None),
     ("Céladopole", 450, 755, 537,
@@ -60,7 +60,7 @@ LIEUX = [
     ("Cramois'Île", 500, 150, 975,
      "Ponyta, Galopa, Goupix, Feunard, Caninos, Arcanin, Magmar, Tadmorv, Grotadmorv, Smogo, Smogogo, Métamorph, "
      "Ptéra, Amonistar, Kabutops",
-     _arene("Auguste", "Feu", "Badge Volcan", 7, "zone", 120, "120 min en zone en 7 jours")),
+     _arene("Auguste", "Feu", "Badge Volcan", 7, "zone", 60, "60 min de sport en 7 jours")),
     ("Jadielle (retour)", 700, 240, 652, "Rhinoféros, Nidoqueen, Nidoking, Sablaireau, Persian, Colossinge",
      _arene("Giovanni", "Sol", "Badge Terre", 8, "pas", 60000, "60 000 pas en 7 jours")),
     ("Route Victoire", 500, 161, 232, "Machopeur, Mackogneur, Gravalanch, Grolem, Nosferalto, Arbok, Tartard, Alakazam",
@@ -116,7 +116,7 @@ RARES = set(_n("Pikachu, Évoli, Porygon, Minidraco, Draco, Dracolosse, Lokhlass
 DEFIS = {  # défi -> (valeur d'une journée, unité)
     "etages": (lambda j: j["etages"], "étages"),
     "eau": (lambda j: j["eau"], "min"),
-    "zone20": (lambda j: j["zone"] >= 20, "jours"),
+    "zone10": (lambda j: j["zone"] >= 10, "jours"),  # minutes de sport (jaune / rouge) depuis le 01/11
     "pas": (lambda j: j["pas"], "pas"),
     "objectif": (lambda j: j["ok"], "jours"),
     "force": (lambda j: j["force"], "séances"),

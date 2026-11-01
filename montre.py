@@ -68,7 +68,7 @@ def contenu(lire, maintenant):
                       "super": gagnee("super"), "hyper": gagnee("hyper"), "shiny": round(etat["shiny_bonus"], 2),
                       # serie = jours avec l'objectif sur les 30 derniers ; la montre affiche « série 18/25 »
                       "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone",
-                                                   "exploit_seance", "nuit", "pas_offerts")}
+                                                   "exploit_seance", "nuit", "pas_offerts", "zone_points")}
                                 | {"serie_legendaire": R["master_jours"]}},
         "nuit": {"duree": round(m["sommeil"]), "coucher": hm(s.get("coucher")), "lever": hm(s.get("lever")),
                  "phases": {k: nombre(s.get(k)) for k in ("profond", "leger", "paradoxal", "eveil")}}

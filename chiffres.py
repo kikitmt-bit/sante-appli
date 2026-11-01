@@ -127,18 +127,24 @@ def stats_jour(r, j=None):
         par = {x.get("activityLevel"): num(x.get("activeMinutesSum")) or 0 for x in am}
         s["actives"] = par.get("MODERATE", 0) + par.get("VIGOROUS", 0)
         s["legeres"] = par.get("LIGHT")
-    # Minutes en zone : brûle-graisses ×1, cardio et pic ×2 (comme Fitbit). Calculées depuis le temps passé dans
-    # chaque zone (l'Inspire HR ne donne pas le total « officiel », seule la Pixel Watch le donnait).
+    # Minutes en zone : brûle-graisses ×1, cardio et pic ×2 (comme Fitbit). La Pixel Watch donne le total « officiel » :
+    # ses minutes cardio et pic sont DÉJÀ comptées double (76 = 38 min en zone intense le 31/10) : on ne les double
+    # plus (bug corrigé le 01/11). Sinon (Inspire HR), calculées depuis le temps passé dans chaque zone.
+    # zone_sport = vraies minutes de sport : zone intense (jaune) + maximum (rouge), une fois chacune ; c'est ce que
+    # compte le jeu Pokémon depuis le 01/11 (la zone modérée se déclenche dès la marche, ou assis le cœur un peu haut).
+    # zone_cardio_x2 = minutes cardio + pic telles que Google les donne (sert à rejouer l'ancien calcul du jeu).
     azm = premier(r.get("active-zone-minutes:jour"), "sumInFatBurnHeartZone")
     if azm is not None:
         z = contenu(r["active-zone-minutes:jour"][0])
-        s["zone"] = num(z.get("sumInFatBurnHeartZone")) + 2 * ((num(z.get("sumInCardioHeartZone")) or 0)
-                                                               + (num(z.get("sumInPeakHeartZone")) or 0))
+        fort = (num(z.get("sumInCardioHeartZone")) or 0) + (num(z.get("sumInPeakHeartZone")) or 0)
+        s["zone"] = (num(z.get("sumInFatBurnHeartZone")) or 0) + fort
+        s["zone_sport"], s["zone_cardio_x2"] = fort / 2, fort
     else:
         zones = premier(r.get("time-in-heart-rate-zone:jour"), "timeInHeartRateZones")
         if zones:
             m = {x["heartRateZone"]: duree(x.get("duration")) / 60 for x in zones}
             s["zone"] = m.get("MODERATE", 0) + 2 * (m.get("VIGOROUS", 0) + m.get("PEAK", 0))
+            s["zone_sport"], s["zone_cardio_x2"] = m.get("VIGOROUS", 0) + m.get("PEAK", 0), 0
     s["etages"] = num(premier(r.get("floors:jour"), "countSum"))
     alt = num(premier(r.get("altitude:jour"), "gainMillimetersSum"))
     s["denivele"] = alt / 1000 if alt is not None else None

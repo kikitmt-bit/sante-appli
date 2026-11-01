@@ -18,7 +18,10 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   le dossier du coach sans l'afficher ; puis Activité, Séances, Sommeil, Cœur, Poids. Les chiffres viennent des **résumés annuels** (`data/resume/AAAA.json`,
   `stats_jour`), donc l'année entière se charge vite ; les fichiers du jour servent aux courbes de la vue Jour.
   Comparaison : 7 jours d'avant (vue Jour) ou période précédente de même longueur. Minutes en zone = officielles de la
-  Pixel Watch (portée depuis le 19/10), sinon zone modérée ×1 + intense/pic ×2 (Inspire HR). Pixel Watch en plus :
+  Pixel Watch (portée depuis le 19/10 ; ses minutes cardio / pic sont DÉJÀ doublées par Google : ne pas les redoubler,
+  bug corrigé le 01/11), sinon zone modérée ×1 + intense/pic ×2 (Inspire HR). `zone_sport` = minutes en zone intense
+  ou maximum (jaune / rouge, dès 132 bpm chez Kiki = 60 % de la réserve cardiaque), une fois chacune : c'est ce que
+  compte le jeu depuis le 01/11. Pixel Watch en plus :
   étages, dénivelé, SpO2 de la nuit (moyenne, plus basse, courbe).
   Objectifs dans `OBJECTIFS` (5 000 pas, 15 min en zone, 7 h de sommeil). Fichiers gardés 2 min (récents) ou 1 h.
   🔄 (Santé et Pokémon) = `actualiser()` : appelle le script Google (secrets `SCRIPT_URL`, `SCRIPT_CLE`, Application Web
@@ -138,12 +141,18 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   Garde-fou choisi par Kiki (aléatoire, « ça reste un jeu Pokémon ») : chaque ball a **25 % de chances** de donner un
   Pokémon manquant des régions précédentes, tant qu'il en reste, et **après 8 balls de suite sans, la suivante en donne
   un à coup sûr** ; les Master Balls donnent d'abord les légendaires manquants des régions précédentes. Pas d'obligation de choisir entre finir le Pokédex et avancer.
-  - Barre d'effort (100 points, ne se vide jamais) : 1 pt / 100 pas au-delà de 2 000, 2 pts / min en zone, 1 / étage,
+  - **Minutes de sport** (01/11, Kiki) : le jeu ne compte plus les minutes en zone (la zone modérée, verte, se déclenche
+    en marchant ou assis en soirée : 323 min le 31/10, 13 balls en deux jours) mais `zone_sport` (jaune / rouge) :
+    `zone_points` = 5 pts / min, objectif 10 min, exploit 25 min ; Major Bob = 3 jours avec 10 min, Auguste = 60 min
+    en 7 jours, mission « zone » = 10 min de sport. Avant `zone_depuis` (01/11) : l'ancien calcul à l'identique
+    (`ancien_zone`, cardio comptée 4 fois) pour que captures et carte ne bougent pas. Les balls gagnées les 31/10 et
+    01/11 avec l'ancien calcul sont gardées (Kiki : reset prévu quand Kanto sera calibré).
+  - Barre d'effort (100 points, ne se vide jamais) : 1 pt / 100 pas au-delà de 2 000, 5 pts / min de sport, 1 / étage,
     1 / min de séance (≥ 10 min), 2 / min de musculation ou de rameur
     (`est_force` : type ou nom de la séance, depuis le 28/10). Barre pleine = Poké Ball ; ses types = ce qui a le plus rempli la barre du jour hors
-    pas (`origine_barre`), sinon tous. Super Ball = 5 000 pas ET 15 min en zone ; Hyper Ball = 10 000 pas, 30 min en
-    zone ou séance de 45 min ; Master Ball = 25 jours sur les 30 derniers (5 000 pas ou
-    15 min ; fenêtre glissante, rien ne remet à zéro, on recompte après chaque Master Ball ; avant le 27/10 : 30 jours
+    pas (`origine_barre`), sinon tous. Super Ball = 5 000 pas ET 10 min de sport ; Hyper Ball = 10 000 pas, 25 min de
+    sport ou séance de 45 min ; Master Ball = 25 jours sur les 30 derniers (5 000 pas ou
+    10 min de sport ; fenêtre glissante, rien ne remet à zéro, on recompte après chaque Master Ball ; avant le 27/10 : 30 jours
     d'affilée avec joker) = légendaire. Nuit de 7 h = shiny ×1,5 ce jour-là (pas de ball ; plus de bonus masse grasse).
     Chaque ball spéciale affiche ce qu'il reste à faire. Pas de bouton « tout ouvrir » (choix de Kiki).
     **Pesée** (29/10, Kiki oublie de se peser) : `REGLAGES` `pesee_avant` = 12 h (heure locale de la balance,
@@ -152,7 +161,7 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     **Mission du jour** (29/10, `missions.py`, 6e tuile `carteMission`) : une mission par jour (dès le 30/10) choisie sur
     les lacunes des 14 derniers jours (la moins réussie, pas deux fois de suite si une autre est presque aussi faible) :
     matinée active 2 000 pas avant 13 h (lun-ven), coucher avant 0 h 30 (soirs dim-jeu, vérifié le lendemain matin),
-    10 min en zone, séance de 10 min ; pas d'étages ni de pauses toutes les 2 h (appartement, télétravail : refusés
+    10 min de sport (jaune, depuis le 01/11), séance de 10 min ; pas d'étages ni de pauses toutes les 2 h (appartement, télétravail : refusés
     par Kiki). Choisie et gardée par le calcul de chaque heure (`montre.py` → `data/pokemon/missions.json`, avec les
     pas d'avant 13 h lus dans les fichiers du jour) ; réussie = **+25 points d'effort**. Bonus (`bonus_du_jour`)
     comptés le jour où on les sait (coucher : le lendemain), affichés en puces dorées sous la barre. Carte « Pesée de la semaine »

@@ -22,11 +22,19 @@ MISSIONS = {
                 "unite": "pas", "lacune": "matinées actives"},
     "coucher": {"titre": "Coucher à l'heure", "texte": "Ce soir, au lit avant 0 h 30", "seuil": 24 * 60 + 30,
                 "jours": {6, 0, 1, 2, 3}, "unite": "heure", "lacune": "couchers avant 0 h 30"},
-    "zone": {"titre": "Fais monter ton cœur", "texte": "10 min en zone", "seuil": 10, "jours": set(range(7)),
-             "unite": "min", "lacune": "jours avec 10 min en zone"},
+    "zone": {"titre": "Fais monter ton cœur", "texte": "10 min de sport (zone jaune)", "seuil": 10,
+             "jours": set(range(7)), "unite": "min", "lacune": "jours avec 10 min de sport"},
     "seance": {"titre": "Petite séance", "texte": "10 min de sport (rameur, pompes…)", "seuil": 10,
                "jours": set(range(7)), "unite": "min", "lacune": "jours avec une séance"},
 }
+
+
+ZONE_SPORT = dt.date(2026, 11, 1)  # depuis : minutes de sport (zone jaune / rouge) au lieu des minutes en zone
+
+
+def cle_zone(jour):
+    """Le chiffre de la mission « zone » : minutes de sport depuis le 01/11 (avant : minutes en zone, inchangé)."""
+    return "zone_sport" if jour >= ZONE_SPORT else "zone"
 
 
 def pas_matin(jour_fichier, avant=13):
@@ -50,7 +58,7 @@ def reussite(cle, jour, stats, pas_du_matin):
         c = stats(jour + dt.timedelta(days=1)).get("coucher")
         return None if c is None or c != c else c <= m["seuil"]
     if cle == "zone":
-        v = stats(jour).get("zone")
+        v = stats(jour).get(cle_zone(jour))
         return None if v is None or v != v else v >= m["seuil"]
     if cle == "seance":
         v = stats(jour).get("min_sport")

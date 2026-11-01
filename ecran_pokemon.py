@@ -39,7 +39,7 @@ def afficher(lire, aujourd):
     m, R = etat["mesures"], pokemon.REGLAGES
     ic, nom, types = etat["origine"]
     sport_ic, sport_nom, _ = pokemon.sport_principal(m)
-    sources = [("👟", "Pas", m["points"]["pas"]), ("🔥", "Minutes en zone", m["points"]["zone"]),
+    sources = [("👟", "Pas", m["points"]["pas"]), ("🔥", "Minutes de sport", m["points"]["zone"]),
                ("🪜", "Étages", m["points"]["etages"]), (sport_ic, f"Séances ({sport_nom})", m["points"]["sport"])]
     donnees = {
         "aujourdhui": str(aujourd),
@@ -70,7 +70,7 @@ def afficher(lire, aujourd):
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
-        "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance",
+        "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
                                      "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie")},
     }
     components.html(UI.read_text(encoding="utf-8").replace("__DONNEES__", _js(donnees)), height=900)

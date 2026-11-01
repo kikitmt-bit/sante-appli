@@ -1,13 +1,14 @@
 """Le jeu Pokémon : on gagne des Poké Balls en faisant du sport, jamais en ne faisant rien.
 
-- La **barre d'effort** se remplit avec les pas (au-delà des 2 000 de la vie de tous les jours), les minutes en zone,
-  les étages et les séances de sport (musculation, pompes, tractions, rameur : 2 points par minute) ; elle ne se vide
+- La **barre d'effort** se remplit avec les pas (au-delà des 2 000 de la vie de tous les jours), les minutes de sport
+  (zone cardio intense ou maximum, jaune et rouge sur la montre : 5 points la minute depuis le 01/11 ; avant : toutes
+  les minutes en zone, 2 points), les étages et les séances de sport (musculation, pompes, tractions, rameur : 2 points par minute) ; elle ne se vide
   pas le soir. Barre pleine (100 points) = une Poké Ball, dont les
   types favoris dépendent de ce qui a le plus rempli la barre ce jour-là (rameur -> Eau / Glace…).
-- **Super Ball** : journée « objectif double » (5 000 pas ET 15 min en zone). Shiny ×2, une chance sur deux d'une
+- **Super Ball** : journée « objectif double » (5 000 pas ET 10 min de sport). Shiny ×2, une chance sur deux d'une
   espèce jamais vue.
-- **Hyper Ball** : exploit du jour (10 000 pas, 30 min en zone ou une séance de 45 min). Shiny ×4, espèce nouvelle.
-- **Master Ball** : 25 jours avec l'objectif (5 000 pas ou 15 min en zone) sur les 30 derniers = un légendaire. Une
+- **Hyper Ball** : exploit du jour (10 000 pas, 25 min de sport ou une séance de 45 min). Shiny ×4, espèce nouvelle.
+- **Master Ball** : 25 jours avec l'objectif (5 000 pas ou 10 min de sport) sur les 30 derniers = un légendaire. Une
   journée ratée ne remet rien à zéro : elle sort de la fenêtre 30 jours plus tard.
 - Une nuit de 7 h ne donne pas de Poké Ball mais rend les shiny plus fréquents toute la journée (×1,5).
 - **Voyage dans Kanto** (kanto.py) : les mêmes points font avancer sur la carte ; les Poké Balls donnent surtout les
@@ -54,8 +55,16 @@ REGLAGES = {
     "seance_min": 10,                # une séance compte à partir de 10 min
     "force": 2, "force_depuis": dt.date(2026, 10, 27),  # points par minute de musculation / rameur (avant : 1)
     "master_jours": 25, "master_fenetre": 30,  # jours avec l'objectif sur les 30 derniers pour un légendaire
-    "objectif_pas": 5000, "objectif_zone": 15,
-    "exploit_pas": 10000, "exploit_zone": 30, "exploit_seance": 45,
+    "objectif_pas": 5000, "objectif_zone": 10,
+    "exploit_pas": 10000, "exploit_zone": 25, "exploit_seance": 45,
+    # 01/11 (Kiki) : les « minutes en zone » de Google comptent la zone modérée (verte, dès 108 bpm), atteinte en marchant
+    # ou assis le cœur un peu haut (soirée) : 323 min le 31/10 pour une journée de marche. Le jeu ne compte plus que les
+    # minutes de vrai sport, zone intense ou maximum (jaune / rouge, dès 132 bpm : 60 % de la réserve cardiaque, seuil
+    # de Google qui suit l'âge et le cœur au repos), 5 points la minute (20 min = une Poké Ball). Avant cette date :
+    # l'ancien calcul (toutes les minutes en zone, cardio comptée 4 fois par erreur, 2 points, 15 / 30 min) pour que
+    # rien ne bouge dans le passé (captures, carte).
+    "zone_depuis": dt.date(2026, 11, 1), "zone_points": 5,
+    "ancien_zone": {"points": 2, "objectif": 15, "exploit": 30},
     # Pesée (29/10, demande de Kiki : il oublie de se peser) : chaque pesée du matin (avant midi : même poids qu'au
     # réveil s'il n'a pas mangé) = +10 points d'effort, une par jour ; objectif affiché : 3 par semaine (stats fiables).
     # Plus de Poké Ball pour la pesée (Kiki : « trop bien comme cadeau »).
@@ -72,7 +81,7 @@ BALLS = {  # shiny : multiplicateur ; nouvelle : chance d'une espèce jamais vue
 # Ce qui remplit la barre : (icône, libellé, types favoris quand c'est ce qui a le plus rempli la barre du jour)
 SOURCES = {
     "pas": ("👟", "Pas", None),
-    "zone": ("🔥", "Minutes en zone", ["Feu", "Électrik", "Combat", "Dragon"]),
+    "zone": ("🔥", "Minutes de sport", ["Feu", "Électrik", "Combat", "Dragon"]),
     "etages": ("🪜", "Étages", ["Roche", "Sol", "Acier"]),
 }
 SPORTS = {  # séances : type Google -> (icône, nom, types favoris)
@@ -105,10 +114,24 @@ FIGEES = "data/pokemon/captures_v2.json"
 OUVERTES = "data/pokemon/ouvertes.json"  # Poké Balls ouvertes, partagées par la montre et le téléphone (script Google)
 
 
-def points_par_source(pas, zone, etages, sport, force=0.0):
-    """Points d'effort d'une journée, par source (sport = minutes des séances d'au moins 10 min, dont force = minutes
-    de musculation / rameur, qui comptent double)."""
-    return {"pas": max(pas - REGLAGES["pas_offerts"], 0) / 100, "zone": 2 * zone, "etages": etages,
+def nouveau(jour):
+    """Le jour suit-il les règles des minutes de sport (zone jaune / rouge) ? (jour inconnu : oui)"""
+    return jour is None or jour >= REGLAGES["zone_depuis"]
+
+
+def seuils_zone(m):
+    """(points par minute, objectif, exploit) des minutes en zone selon le jour des mesures m."""
+    if m.get("nouveau", True):
+        return REGLAGES["zone_points"], REGLAGES["objectif_zone"], REGLAGES["exploit_zone"]
+    a = REGLAGES["ancien_zone"]
+    return a["points"], a["objectif"], a["exploit"]
+
+
+def points_par_source(pas, zone, etages, sport, force=0.0, par_min=None):
+    """Points d'effort d'une journée, par source (zone = minutes de sport jaune / rouge ; sport = minutes des séances
+    d'au moins 10 min, dont force = minutes de musculation / rameur, qui comptent double)."""
+    par_min = REGLAGES["zone_points"] if par_min is None else par_min
+    return {"pas": max(pas - REGLAGES["pas_offerts"], 0) / 100, "zone": par_min * zone, "etages": etages,
             "sport": sport + (REGLAGES["force"] - 1) * force}
 
 
@@ -121,6 +144,11 @@ def est_force(c):
 def mesures(s, exercices, jour=None):
     """Les chiffres du jour utilisés par le jeu : pas, zone, étages, sommeil, minutes de sport par type de séance."""
     m = {k: s[k] if pd.notna(s.get(k)) else 0 for k in ("pas", "zone", "etages", "sommeil")}
+    m["nouveau"] = nouveau(jour)
+    if m["nouveau"]:  # minutes de sport (jaune / rouge)
+        m["zone"] = s["zone_sport"] if pd.notna(s.get("zone_sport")) else 0
+    elif pd.notna(s.get("zone_cardio_x2")):  # l'ancien calcul, à l'identique (cardio et pic comptés 4 fois)
+        m["zone"] += s["zone_cardio_x2"]
     m["sports"], m["seance_max"], m["force"], m["nb_force"], m["eau"] = {}, 0, 0, 0, 0
     for c in exercices:
         minutes = chiffres.duree(c.get("activeDuration")) / 60
@@ -136,7 +164,7 @@ def mesures(s, exercices, jour=None):
             m["seance_max"] = max(m["seance_max"], minutes)
     m["sport"] = sum(m["sports"].values())
     force = m["force"] if jour is None or jour >= REGLAGES["force_depuis"] else 0
-    m["points"] = points_par_source(m["pas"], m["zone"], m["etages"], m["sport"], force)
+    m["points"] = points_par_source(m["pas"], m["zone"], m["etages"], m["sport"], force, seuils_zone(m)[0])
     return m
 
 
@@ -160,8 +188,8 @@ def exploit(m):
     if m["seance_max"] >= REGLAGES["exploit_seance"]:
         ic, nom, types = sport_principal(m)
         return ic, f"Séance de {m['seance_max']:.0f} min ({nom})", types
-    if m["zone"] >= REGLAGES["exploit_zone"]:
-        return "🔥", f"{m['zone']:.0f} min en zone", SOURCES["zone"][2]
+    if m["zone"] >= seuils_zone(m)[2]:
+        return "🔥", f"{m['zone']:.0f} min {'de sport' if m.get('nouveau', True) else 'en zone'}", SOURCES["zone"][2]
     if m["pas"] >= REGLAGES["exploit_pas"]:
         return "👟", f"{chiffres.nombre(m['pas'])} pas", None
     return None
@@ -199,12 +227,12 @@ def tirer(graine, possedees, sans_nouvelle, types=None, shiny=0.03, p_nouvelle=0
 
 def super_ok(m):
     """Journée « objectif double » (Super Ball)."""
-    return m["pas"] >= REGLAGES["objectif_pas"] and m["zone"] >= REGLAGES["objectif_zone"]
+    return m["pas"] >= REGLAGES["objectif_pas"] and m["zone"] >= seuils_zone(m)[1]
 
 
 def objectif_ok(m):
-    """Le jour compte pour la Master Ball (5 000 pas ou 15 min en zone)."""
-    return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= REGLAGES["objectif_zone"]
+    """Le jour compte pour la Master Ball (5 000 pas ou 10 min de sport)."""
+    return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= seuils_zone(m)[1]
 
 
 def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
@@ -230,7 +258,7 @@ def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
     if e:
         dues.append({"cle": "hyper", "ball": "hyper", "raison": f"{e[0]} Exploit : {e[1]}", "types": e[2]})
     if super_ok(m):
-        dues.append({"cle": "super", "ball": "super", "raison": "🎯 Objectif double : pas et minutes en zone",
+        dues.append({"cle": "super", "ball": "super", "raison": "🎯 Objectif double : pas et minutes de sport",
                      "types": None})
     ic, nom, types = origine_barre(m)
     b = REGLAGES["barre"]
@@ -370,7 +398,8 @@ def etat_mission(aujourd, stats, mission_du):
     sortie = None
     if e and e.get("cle"):
         m, s = missions.MISSIONS[e["cle"]], st(aujourd)
-        valeur = {"matinee": pm(aujourd), "zone": s.get("zone"), "seance": s.get("min_sport")}.get(e["cle"])
+        valeur = {"matinee": pm(aujourd), "zone": s.get(missions.cle_zone(aujourd)),
+                  "seance": s.get("min_sport")}.get(e["cle"])
         sortie = {"cle": e["cle"], "titre": m["titre"], "texte": m["texte"], "seuil": m["seuil"], "unite": m["unite"],
                   "raison": e.get("raison", ""), "valeur": None if valeur is None or valeur != valeur else round(valeur),
                   "ok": missions.reussite(e["cle"], aujourd, st, pm) if e["cle"] != "coucher" else None,

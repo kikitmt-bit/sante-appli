@@ -1932,7 +1932,7 @@ let filtre = "tous", filtreTypes = new Set(), texte = "";
 function dessinerBarre() {
   const b = D.barre, pct = b.points / b.taille, circ = 2 * Math.PI * 50, reste = b.taille - b.points;
   const [ic, nom, ts] = b.origine;
-  const pas = Math.ceil(reste) * 100, zone = Math.ceil(reste / 2), sport = Math.ceil(reste), muscu = Math.ceil(reste / R.force);
+  const pas = Math.ceil(reste) * 100, zone = Math.ceil(reste / (R.zone_points || 5)), sport = Math.ceil(reste), muscu = Math.ceil(reste / R.force);
   document.getElementById("barre").innerHTML = `<div class="filigrane">${ballSVG("poke")}</div>
     <div class="anneau"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#0D1322" stroke-width="12"/>
       <circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="url(#gb)" stroke-width="12" stroke-linecap="round"
@@ -1940,7 +1940,7 @@ function dessinerBarre() {
       <defs><linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFCB05"/><stop offset="1" stop-color="#FF4B4B"/></linearGradient></defs></svg>
       <div class="centre"><div class="v">${Math.floor(b.points)}</div><div class="s">/ ${b.taille} pts</div></div></div>
     <div class="droite"><div class="titre">Prochaine Poké Ball</div>
-      <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min en zone</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
+      <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min de sport</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
       <div class="puces">${b.sources.length || (b.bonus || []).length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
           + (b.bonus || []).map(([i, n, p]) => `<span class="puce bonus">${i} ${n} <b>+${p}</b></span>`).join("")
         : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
@@ -1982,9 +1982,9 @@ function dessinerSpeciales() {
   const nuit = J.sommeil >= R.nuit, h = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}`;
   // Ce qui reste à faire pour chaque ball
   const manque = (v, s, u) => v < s ? (u ? `${Math.ceil(s - v)} ${u}` : `${fr(Math.ceil((s - v) / 10) * 10)} pas`) : null;
-  const mPas = manque(J.pas, R.objectif_pas), mZone = manque(J.zone, R.objectif_zone, "min en zone");
+  const mPas = manque(J.pas, R.objectif_pas), mZone = manque(J.zone, R.objectif_zone, "min de sport");
   const resteSuper = sup ? "Gagnée aujourd'hui !" : `Il te manque <b>${[mPas, mZone].filter(Boolean).join("</b> et <b>")}</b>.`;
-  const resteHyper = hyp ? "Gagnée aujourd'hui !" : `Au choix, encore <b>${manque(J.pas, R.exploit_pas)}</b>, ou <b>${manque(J.zone, R.exploit_zone, "min en zone")}</b>,
+  const resteHyper = hyp ? "Gagnée aujourd'hui !" : `Au choix, encore <b>${manque(J.pas, R.exploit_pas)}</b>, ou <b>${manque(J.zone, R.exploit_zone, "min de sport")}</b>,
     ou une séance de <b>${R.exploit_seance} min</b>${J.seance ? ` (ta plus longue : ${Math.round(J.seance)} min)` : ""}.`;
   const resteMaster = mas ? "Gagnée aujourd'hui ! Un nouveau compte commence demain."
     : `Encore <b>${R.master_jours - J.serie} jour${R.master_jours - J.serie > 1 ? "s" : ""}</b> avec l'objectif. ` +
@@ -2003,7 +2003,7 @@ function dessinerSpeciales() {
       <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}
       <div class="reste">${resteHyper}</div></div>
     <div class="speciale ${mas ? "ok" : ""}">${mas ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ico("master")}Master Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire</div>
+      <div class="tete">${ico("master")}Master Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un légendaire</div>
       <div class="ligne"><span>${ico("master", "p")} ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
       <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
       <div class="reste">${resteMaster}</div></div>
@@ -2773,14 +2773,14 @@ function quitterTest() {
 function dessinerRegles() {
   document.getElementById("regles").innerHTML = `
     <li>${ico("effort", "p")} <b>Barre d'effort</b> (${D.barre.taille} points = une Poké Ball, elle ne se vide jamais) : 1 point par 100 pas au-delà de
-      ${fr(D.barre.pas_offerts)} (la vie de tous les jours ne compte pas), 2 points par minute en zone, 1 par étage, 1 par minute de séance de sport
+      ${fr(D.barre.pas_offerts)} (la vie de tous les jours ne compte pas), ${R.zone_points || 5} points par minute de sport (zone cardio intense ou maximum, jaune ou rouge sur la montre ; la zone modérée, atteinte en marchant, ne compte pas), 1 par étage, 1 par minute de séance de sport
       (au moins ${R.seance_min} min), ${R.force} par minute de musculation, pompes, tractions ou rameur.</li>
-    <li>${ico("radar", "p")} Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes en zone → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
+    <li>${ico("radar", "p")} Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes de sport → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
       🪜 étages → Roche, Sol, Acier ; 🌳 marche → Plante, Insecte, Poison ; 🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 👟 pas → tous les types.</li>
-    <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min en zone dans la journée.</li>
-    <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min en zone ou une séance de ${R.exploit_seance} min.</li>
-    <li>${ico("master", "p")} <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone = un légendaire.
+    <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min de sport dans la journée.</li>
+    <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>
+    <li>${ico("master", "p")} <b>Master Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un légendaire.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
     <li>${ico("nuit", "p")} Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
     <li>${ico("carte", "p")} <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
@@ -2788,12 +2788,12 @@ function dessinerRegles() {
     <li>${ico("poke", "p")} Les Poké Balls donnent surtout les Pokémon de l'endroit où tu es, parfois ceux que tu as ratés plus tôt ou ceux de l'étape
       suivante, et plus souvent ceux des types de ta journée. Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.
       Plus rien de nouveau autour de toi : la ball pioche dans tout Kanto, donc aucune n'est perdue.</li>
-    <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min en zone
+    <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : dans chaque ville à arène, un défi sur 7 jours (ou son plan B : ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport
       6 jours sur 7). Pendant ce temps, ton dresseur attend à l'arène : tes points comptent pour les Poké Balls, mais pas pour la carte. Badge = une Hyper Ball du type du champion ; la Ligue = une Master Ball.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
     <li>${ico("radar", "p")} <b>Mission du jour</b> : une mission choisie sur tes points faibles des 14 derniers jours (matinée active, coucher à l'heure,
-      minutes en zone, petite séance). Réussie = +25 points d'effort. Pas de mission de coucher le week-end.</li>
+      minutes de sport, petite séance). Réussie = +25 points d'effort. Pas de mission de coucher le week-end.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
