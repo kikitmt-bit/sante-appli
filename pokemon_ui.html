@@ -220,7 +220,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-wrap .chef .portrait{width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;
   background:radial-gradient(circle at 50% 30%,#fff 0%,var(--c) 80%);box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(0,0,0,.45),0 2px 5px rgba(0,0,0,.5)}
 .carte-wrap .chef canvas,.carte-wrap .chef .tete-champ{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
-.tete-champ{background-repeat:no-repeat;image-rendering:pixelated}
+.tete-champ{position:relative;overflow:hidden;image-rendering:pixelated}
 .carte-wrap .chef .bdg{position:absolute;right:-20%;top:-20%;width:52%;height:52%;object-fit:contain;padding:7%;border-radius:50%;
   background:#16213A;box-shadow:0 0 0 1.5px #fff,0 1px 3px rgba(0,0,0,.6)}
 .carte-wrap .chef.nouveau:before{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 2.5px #fff;
@@ -451,6 +451,19 @@ const TYPE_ID = {Normal: 1, Combat: 2, Vol: 3, Poison: 4, Sol: 5, Roche: 6, Inse
 IMG.type = t => `${D.images}/types/generation-ix/scarlet-violet/small/${TYPE_ID[t]}.png`;
 const icoType = t => TYPE_ID[t] ? `<img class="ty" src="${IMG.type(t)}" alt="">` : "";
 // La raison d'une ball (écrite avec un émoji pour la montre) : l'icône du jeu à la place de l'émoji du début
+// Le titre en haut de l'ouverture : d'où vient la ball (Kiki, 01/11 : « Hyper Ball » seul ne dit rien, on la voit)
+function titreBall(c) {
+  const cle = (c.id || "").split("#")[1] || "", nom = BALLS[c.ball] || "Poké Ball", lieu = (c.lieu || "").replace(" (retour)", "");
+  if (cle === "chen") return "Cadeau du Professeur Chen";
+  const b = /^badge(\d)$/.exec(cle); if (b) return `${nom} de ${CHAMPIONS[b[1]].nom}`;
+  if (c.fond && c.fond.startsWith("arene")) return `${nom} de ${CHAMPIONS[c.fond.slice(5)].nom}`;
+  if (cle === "ligue" || /Ligue/.test(c.raison || "")) return `${nom} de la Ligue`;
+  if (c.ball === "master") return `${nom} · ${R.master_jours} jours sur ${R.master_fenetre}`;
+  if (c.ball === "hyper") return `${nom} · exploit du jour`;
+  if (c.ball === "super") return `${nom} · objectif double`;
+  const ici = lieu || (c.fond && NOM_FOND[c.fond]);
+  return ici ? `${nom} · ${ici}` : nom;
+}
 function raisonHTML(c) {
   const [e, ...reste] = (c.raison || "").split(" "), txt = reste.join(" ");
   const badge = /#badge(\d)/.exec(c.id), a = badge && LIEUX.filter(l => l.arene)[badge[1] - 1];
@@ -657,7 +670,7 @@ const STYLE_VOILE = `
   padding:max(12px,env(safe-area-inset-top)) 14px 0}
 #pkm-voile .rond{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.1);border:0;color:#fff;font-size:18px;
   display:flex;align-items:center;justify-content:center;cursor:pointer}
-#pkm-voile .nom-ball{font-weight:800;font-size:15px;letter-spacing:.3px;opacity:.9}
+#pkm-voile .nom-ball{font-weight:800;font-size:15px;letter-spacing:.3px;opacity:.9;max-width:calc(100% - 110px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #pkm-voile .aide{position:absolute;left:0;right:0;top:calc(68% - 30px);text-align:center;font-size:15px;font-weight:700;
   opacity:0;transition:opacity .4s;pointer-events:none}
 #pkm-voile .aide.vu{opacity:.9;animation:pk-clign 1.6s ease-in-out infinite}
@@ -719,7 +732,7 @@ const STYLE_VOILE = `
   background:radial-gradient(closest-side,rgba(255,250,220,.75),rgba(255,240,180,.25) 45%,transparent 70%);transition:opacity .4s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele .lueur-sol{opacity:.7;transform:translate(-50%,-50%) scale(1);transition:opacity 2.5s 1s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele.calme .lueur-sol{opacity:.25}
-#pkm-voile.dehors .poke{top:var(--py)}
+#pkm-voile.dehors .poke{top:var(--py);width:var(--pw)}
 #pkm-voile.dehors .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
 #pkm-voile.dehors.r-shiny .poke.couleur{filter:drop-shadow(0 0 18px rgba(255,215,90,.95))}
 #pkm-voile.habitat .haut{z-index:30}
@@ -746,6 +759,28 @@ const STYLE_VOILE = `
 #pkm-voile.revele .ombre-ball{opacity:0}
 #pkm-voile.dehors .rayons{display:none}
 #pkm-voile.b3d .ombre-ball{display:none}
+/* le résultat : boîte de dialogue façon Game Boy Advance (comme le Professeur), boutons pixel */
+#pkm-voile .carte.jeu{left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));max-width:470px;border-radius:10px;
+  background:#F8F8F8;border:4px solid #50607E;box-shadow:0 0 0 3px #F8F8F8,0 0 0 6px #283048,0 8px 22px rgba(0,0,0,.45);
+  backdrop-filter:none;-webkit-backdrop-filter:none;padding:10px 14px 12px;text-align:left;color:#383838;
+  font-family:'Pixelify Sans',Outfit,monospace;transform:translateY(24px);opacity:0;transition:transform .35s,opacity .35s}
+#pkm-voile .carte.jeu.vu{transform:none;opacity:1}
+#pkm-voile .carte.jeu .l1{display:flex;align-items:center;gap:6px;min-height:20px}
+#pkm-voile .carte.jeu .et{font-size:13px;letter-spacing:1px;padding:1px 7px;border-radius:4px;color:#fff;display:inline-flex;align-items:center;gap:3px}
+#pkm-voile .carte.jeu .et-nouveau{background:#E8382F;box-shadow:0 2px 0 #7A1712}
+#pkm-voile .carte.jeu .et-shiny{background:#D9A400;box-shadow:0 2px 0 #7A5A00}
+#pkm-voile .carte.jeu .et-leg{background:#8A4FD8;box-shadow:0 2px 0 #4A2280}
+#pkm-voile .carte.jeu .no{margin-left:auto;font-size:13px;color:#7A8095}
+#pkm-voile .carte.jeu .phrase{font-size:20px;line-height:1.3;margin:4px 0 2px;text-shadow:2px 2px 0 #D2D2CA;text-wrap:pretty}
+#pkm-voile .carte.jeu .phrase b{color:#C03028}
+#pkm-voile .carte.jeu .l2{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
+#pkm-voile .carte.jeu .l2 .pkm-type{margin:0;font-family:Outfit,sans-serif}
+#pkm-voile .carte.jeu .cpt{font-size:13px;color:#5A6585;margin-left:auto}
+#pkm-voile .carte.jeu .boutons{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+#pkm-voile .carte.jeu .boutons button{flex:0 0 auto;min-width:96px;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;
+  font:700 16px 'Pixelify Sans',monospace;background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
+#pkm-voile .carte.jeu .boutons button:before{content:"▶ ";color:#E04040}
+#pkm-voile .carte.jeu .boutons button:active{transform:translateY(2px);box-shadow:0 0 0 2px #283048}
 `;
 
 // Les décors de capture : un fond par type de lieu (images ChatGPT du 30/10, même style que les arènes) ;
@@ -785,7 +820,7 @@ const FONDS = {
   mew: {image: "fond-mew.webp", ovale: [485, 780], rayon: 355, ombre: "40,10,30", jet: ["#FFB7D0", "#FFFFFF", "#A6D84B"],
     air: [{type: "petales", coul: ["#FFB7D0", "#FFD8E8"], n: 16}, {type: "lucioles", coul: ["#F4FF9A", "#FFFFFF"], n: 12}]},
   // le starter : le labo du Professeur, sans les Poké Balls ; le Pokémon apparaît devant la table
-  labo: {image: "labo-chen-vide.webp", largeur: 940, ovale: [400, 1075], rayon: 300, ombre: "30,40,70", jet: ["#FFFFFF", "#9ED8FF", "#FFE27A"],
+  labo: {image: "labo-chen-vide.webp", largeur: 940, ovale: [337, 738], rayon: 210, taille: 1, ombre: "30,40,70", jet: ["#FFFFFF", "#9ED8FF", "#FFE27A"],
     air: [{type: "poussiere", coul: ["#FFFFFF"], n: 12}]},
 };
 // Les Hyper Balls des badges s'ouvrent dans l'arène du champion, sans lui (rempli par Claude) : là où il se tenait
@@ -1004,7 +1039,7 @@ function Particules(canvas) {
 const TEINTES = {poke: 0xE3262E, super: 0x2F6FD6, hyper: 0x2A2A2E, master: 0x6A3FB0};
 function texture(type, haut) {
   // Texture dessinée point par point : (u, v) -> point de la sphère -> couleur (bandes, cercles, « M »…)
-  const L = 512, H = 256, cv = P.createElement("canvas"); cv.width = L; cv.height = H;
+  const L = type === "master" ? 2048 : 512, H = L / 2, cv = P.createElement("canvas"); cv.width = L; cv.height = H;  // le « M » demande plus de finesse
   const ctx = cv.getContext("2d"), img = ctx.createImageData(L, H), d = img.data;
   const hex = h => [h >> 16 & 255, h >> 8 & 255, h & 255];
   const blanc = [242, 242, 242], base = hex(TEINTES[type]), rouge = hex(0xE3262E), jaune = hex(0xFFCB05), rose = hex(0xE04BA0);
@@ -1017,10 +1052,13 @@ function texture(type, haut) {
     if (haut && type === "super" && Math.abs(x) > .44 && Math.abs(x) < .7 && z > -.25) col = rouge;
     if (haut && type === "hyper" && Math.abs(x) > .26 && Math.abs(x) < .46 && z > -.55 && y > .12) col = jaune;
     if (haut && type === "master") {
-      if (Math.hypot(Math.abs(x) - .62, y - .5, z - .58) < .27) col = rose;
-      if (z > .5) { const mx = x / .3, my = (y - .45) / .3;
-        const dm = Math.min(seg(mx, my, -.8, -.7, -.8, .7), seg(mx, my, .8, -.7, .8, .7), seg(mx, my, -.8, .7, 0, -.1), seg(mx, my, .8, .7, 0, -.1));
-        if (dm < .2) col = blanc; }
+      // les deux bosses roses sur les côtés (bord plus foncé, reflet clair), le « M » blanc bordé de violet foncé
+      const db = Math.hypot(Math.abs(x) - .7, y - .45, z - .52);
+      if (db < .3) col = db > .265 ? hex(0xB0307E) : rose;
+      if (z > .6) { const mx = x / .17, my = (y - .52) / .17;
+        const dm = Math.min(seg(mx, my, -.75, -.8, -.75, .8), seg(mx, my, .75, -.8, .75, .8), seg(mx, my, -.75, .8, 0, -.05), seg(mx, my, .75, .8, 0, -.05));
+        if (dm < .27) col = dm < .2 ? blanc : hex(0x3A1A6A); }
+      if (y < .1) col = col === base ? hex(0x4E2A8A) : col;  // un liseré plus sombre au ras de la bande
     }
     const i = (r * L + c) * 4; d[i] = col[0]; d[i + 1] = col[1]; d[i + 2] = col[2]; d[i + 3] = 255;
   }
@@ -1121,7 +1159,7 @@ function Ball2D(el, type) {
 // ----- La séquence complète -----
 function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de la scène du labo (la ball a déjà été choisie)
   ouverture = true;
-  installerStyle("pkm2-style", STYLE_VOILE);
+  installerStyle("pkm2-style", STYLE_VOILE); preparerScene();  // preparerScene : police pixel de la boîte de résultat
   audio();  // le toucher qui ouvre autorise le son
   // Nouveau Pokémon = première capture ouverte de cette espèce
   const nouveau = rejouer ? CAPTURES.find(x => x.num === c.num && estOuverte(x)).id === c.id : !collection()[c.num];
@@ -1137,7 +1175,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     <div class="decor"><img src="${D.scenes}${F.image}" alt=""></div><canvas class="vent"></canvas><div class="vignette"></div>
     <div class="ombre-sol"></div><div class="lueur-sol"></div>` : ""}<div class="rayons"></div><canvas class="scene"></canvas><div class="ball2d" hidden></div>
     <img class="poke" alt=""><canvas class="fx"></canvas><div class="flash"></div>
-    <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${BALLS[c.ball] || "Poké Ball"}</div>
+    <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${titreBall(c)}</div>
       <button class="rond x">✕</button></div>
     <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
     <div class="carte"></div>${F ? `<canvas class="mosaique"></canvas><div class="blanc-jeu"></div>` : ""}`;
@@ -1167,7 +1205,10 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     d.style.width = w + "px"; d.style.left = (W - w) / 2 + "px";
     const ox = W / 2 + (F.ovale[0] - F.largeur / 2) * f, oy = F.ovale[1] * f;
     v.style.setProperty("--ox", ox + "px"); v.style.setProperty("--oy", oy + "px");
-    v.style.setProperty("--py", oy - H * .13 + "px"); v.style.setProperty("--ow", Math.min(F.rayon * f * .62, W * .5) + "px");
+    // le Pokémon : sa taille suit le rond de sol (taille = réglage du fond), ses pieds posés au milieu du rond
+    const pw = Math.min(F.rayon * f * 1.1 * (F.taille || 1), W * .62);
+    v.style.setProperty("--pw", pw + "px"); v.style.setProperty("--py", oy - pw * .4 + "px");
+    v.style.setProperty("--ow", Math.min(F.rayon * f * .62 * (F.taille || 1), W * .5) + "px");
     tailleVent();
   };
   if (F) { placer(); if (F.air) tailleVent = ambiance($(".vent"), F.air, () => fini); placer();
@@ -1280,26 +1321,21 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     montrerCarte();
   }
 
-  function montrerCarte() {
+  function montrerCarte() {  // le résultat : une boîte de dialogue façon jeu en bas (le décor reste visible), Kiki 01/11
     const col = collection(), especes = Object.keys(col).length, reste = aOuvrir();
     const shinys = Object.values(col).filter(l => l.some(x => x.shiny)).length;
-    const badges = [r.nouveau ? `<span class="badge b-nouveau">NOUVEAU POKÉMON !</span>` : r.shiny ? "" : `<span class="badge b-version">CAPTURÉ !</span>`,
-                    r.shiny ? `<span class="badge b-shiny">${ico("shiny", "p brille")} SHINY</span>` : "", r.leg ? `<span class="badge b-leg">${ico("master", "p")} LÉGENDAIRE</span>` : ""];
-    carte.innerHTML = `<div class="badges">${badges.join("")}</div>
-      <div class="no">N° ${N3(c.num)}</div><div class="nm">${c.nom}</div><div>${typesHTML(c.types, "pkm-type")}</div>
-      <div class="ver">${c.shiny ? `${ico("shiny", "p brille")} Shiny · ` : ""}${c.lieu ? `${ico("carte", "p")} ${c.lieu}` : ""}</div>
-      <div class="rs">${BALLS[c.ball] || "Poké Ball"} · ${raisonHTML(c)} · ${c.quand}</div>
-      <div class="compteur"><div><div class="l">Pokédex</div><div class="v">${especes} / 151</div><div class="j"><div style="width:${(especes - (r.nouveau && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div>
-        <div><div class="l">Shiny ${ico("shiny", "p brille")}</div><div class="v">${shinys} / 151</div><div class="j"><div style="width:${(shinys - (c.shiny && !rejouer ? 1 : 0)) / 1.51}%"></div></div></div></div>
-      <div class="boutons">${reste.length && !rejouer && !c.apercu ? `<button class="b1 suite">Ouvrir la suivante (${reste.length})</button>` : ""}
-        <button class="${reste.length && !rejouer && !c.apercu ? "b2" : "b1"} ok">${r.nouveau || r.shiny ? "Génial !" : "Super !"}</button></div>`;
-    carte.querySelectorAll(".badge").forEach((b, i) => b.style.animationDelay = `${.15 + i * .18}s${b.classList.contains("b-nouveau") ? ",0s" : ""}`);
-    setTimeout(() => { carte.classList.add("vu");
-      setTimeout(() => { const j = carte.querySelectorAll(".compteur .j div");
-        if (j[0]) j[0].style.width = especes / 1.51 + "%"; if (j[1]) j[1].style.width = shinys / 1.51 + "%"; }, 500); }, 350);
+    const etiq = [r.nouveau ? `<b class="et et-nouveau">NOUVEAU !</b>` : "", r.shiny ? `<b class="et et-shiny">${ico("shiny", "p brille")} SHINY</b>` : "",
+                  r.leg ? `<b class="et et-leg">LÉGENDAIRE</b>` : ""].join("");
+    const suite = reste.length && !rejouer && !c.apercu;
+    carte.className = "carte jeu";
+    carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
+      <div class="phrase">${r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes}/151 · Shiny ${shinys}/151</span></div>
+      <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
+    setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
-    const s = carte.querySelector(".suite");
-    if (s) s.onclick = () => { fermer(); setTimeout(() => lancer(aOuvrir()[0]), 340); };
+    const sb = carte.querySelector(".suite");
+    if (sb) sb.onclick = () => { fermer(); setTimeout(() => lancer(aOuvrir()[0]), 340); };
   }
 }
 
@@ -1308,16 +1344,16 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 // ================================================================================================
 // Le laboratoire : image pixel art générée par Kiki avec ChatGPT (même style que la carte, dossier scenes/), position des
 // 3 Poké Balls dessinées sur la table (pixels de l'image). Plus tard : orme (Johto), seko (Hoenn)…
-const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen.webp", vide: "labo-chen-vide.webp", largeur: 940, hauteur: 1672,
-  balls: [[207, 712], [337, 712], [467, 712]], rayon: 40, zoom: [337, 700], starters: [1, 4, 7]}};
-const ZOOM_LABO = 1.3;
-// image = le labo de la v3 (30/10) avec les 3 Poké Balls posées par Claude ; vide = le même sans les balls (sous la ball qui
-// saute) ; zoom = le point vers lequel la caméra s'approche pendant le choix (idée de Kiki : le professeur et la table)
+const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen-vide.webp", ball: "pokeball-labo.png", largeur: 940, hauteur: 1672,
+  balls: [[207, 745], [337, 745], [467, 745]], rayon: 39, starters: [1, 4, 7]}};
+// image = le labo v3 (30/10) avec la table vide ; les 3 Poké Balls (ball validée par Kiki le 30/10, contour rouge sombre /
+// ardoise) sont de vraies images transparentes posées par-dessus : balls = milieu du bas de chaque ball (pixels de l'image),
+// rayon = demi-largeur. Plus de morceau d'image qui saute (on voyait le carré autour de la ball, Kiki 01/11).
 const STYLE_INTRO = `
 #pkm-intro{position:fixed;inset:0;z-index:999999;background:#C2965F;overflow:hidden;touch-action:manipulation;
   user-select:none;-webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace}
 #pkm-intro .labo{position:absolute;left:50%;top:0;transform:translateX(-50%)}
-#pkm-intro .labo img{width:100%;height:100%;display:block;image-rendering:pixelated}
+#pkm-intro .labo>img:first-child{width:100%;height:100%;display:block;image-rendering:pixelated}
 #pkm-intro .noir{position:absolute;inset:0;background:#000;transition:opacity 1.2s;pointer-events:none}
 #pkm-intro .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .45s;pointer-events:none}
 #pkm-intro .halo{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .4s;
@@ -1326,12 +1362,15 @@ const STYLE_INTRO = `
 #pkm-intro .halo.loin{opacity:0!important}
 @keyframes pki-halo{50%{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 28px 12px rgba(255,230,120,.95)}}
 #pkm-intro .zone{position:absolute;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer}
-#pkm-intro .ballc{position:absolute;transform:translate(-50%,-50%);pointer-events:none}
-#pkm-intro .ballc{border-radius:50%;background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 0 8px rgba(255,240,170,.95))}
-#pkm-intro .ballc.bouge{animation:pki-saute-ball .5s ease-out 2}
-@keyframes pki-saute-ball{0%,100%{transform:translate(-50%,-50%)}40%{transform:translate(-50%,-85%)}}
+#pkm-intro .ballc{position:absolute;transform:translate(-50%,-100%);pointer-events:none;display:block;height:auto}
+#pkm-intro.choix .ballc{animation:pki-ball 1.6s ease-in-out infinite}
+#pkm-intro .ballc.loin{animation:none}
+#pkm-intro .ballc.bouge{animation:pki-saute-ball .5s ease-out 2;filter:drop-shadow(0 0 6px rgba(255,240,170,.95)) drop-shadow(0 0 14px rgba(255,220,120,.7))}
+@keyframes pki-ball{50%{filter:drop-shadow(0 0 5px rgba(255,240,170,.9))}}
+@keyframes pki-saute-ball{0%,100%{transform:translate(-50%,-100%)}40%{transform:translate(-50%,-150%)}}
+#pkm-intro .ombre-b{position:absolute;transform:translate(-50%,-50%);aspect-ratio:3.4;border-radius:50%;pointer-events:none;
+  background:radial-gradient(closest-side,rgba(25,25,45,.42),rgba(25,25,45,.18) 60%,transparent)}
 #pkm-intro .labo{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
-#pkm-intro.choix .labo{transition:transform 1.6s cubic-bezier(.3,0,.2,1)}
 @keyframes pki-tremble{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-12deg)}
   75%{transform:translate(-50%,-50%) rotate(12deg)}}
 `;
@@ -1413,10 +1452,12 @@ function intro(c, p, rejouer = false) {
   installerStyle("pkm2-intro-style", STYLE_INTRO); preparerScene();
   const noms = p.starters.map(n => PAR_NUM[n].nom);
   const v = P.createElement("div"); v.id = "pkm-intro";
+  const pc = (a, t) => a / t * 100 + "%", r0 = p.rayon;
   v.innerHTML = `<div class="labo"><img src="${D.scenes}${p.image}" alt="">
-      ${p.balls.map(([x, y], i) => `<div class="halo" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
-        width:${p.rayon * 2 / p.largeur * 100}%;aspect-ratio:1"></div>
-        <div class="zone" data-i="${i}" style="left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;width:${p.rayon * 3 / p.largeur * 100}%;aspect-ratio:1"></div>`).join("")}
+      ${p.balls.map(([x, y], i) => `<div class="ombre-b" style="left:${pc(x, p.largeur)};top:${pc(y - 3, p.hauteur)};width:${pc(r0 * 2.2, p.largeur)}"></div>
+        <div class="halo" data-i="${i}" style="left:${pc(x, p.largeur)};top:${pc(y - r0, p.hauteur)};width:${pc(r0 * 2.3, p.largeur)};aspect-ratio:1"></div>
+        <img class="ballc" data-i="${i}" src="${D.scenes}${p.ball}" alt="" style="left:${pc(x, p.largeur)};top:${pc(y + 3, p.hauteur)};width:${pc(r0 * 2, p.largeur)}">
+        <div class="zone" data-i="${i}" style="left:${pc(x, p.largeur)};top:${pc(y - r0, p.hauteur)};width:${pc(r0 * 3, p.largeur)};aspect-ratio:1"></div>`).join("")}
     </div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
   P.body.appendChild(v);
   const labo = v.querySelector(".labo"), D1 = dialogue(v, ".pkm-passer, .zone");
@@ -1427,7 +1468,8 @@ function intro(c, p, rejouer = false) {
     `Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`,
     "Choisis-en une. Le Pokémon qu'elle contient sera le tien !", "Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !"];
   D1.prevoir(L.map(l => [l, p.prof]));
-  const taille = () => { const w = Math.min(PW.innerWidth, PW.innerHeight * p.largeur / p.hauteur);  // l'image en entier, en haut
+  const taille = () => {  // l'image remplit tout l'écran (toute la hauteur ; sur un écran plus large, toute la largeur)
+    const w = Math.max(PW.innerWidth, PW.innerHeight * p.largeur / p.hauteur);
     labo.style.width = w + "px"; labo.style.height = w * p.hauteur / p.largeur + "px"; };
   taille(); PW.addEventListener("resize", taille);
   requestAnimationFrame(() => setTimeout(() => v.querySelector(".noir").style.opacity = 0, 80));
@@ -1436,12 +1478,8 @@ function intro(c, p, rejouer = false) {
   // gigote et s'ouvre ; ✕ : simple fondu
   const fin = suite => { if (fini) return; fini = true; D1.fin(); PW.removeEventListener("resize", taille); v.style.transition = "opacity .45s";
     if (!suite) { v.style.opacity = 0; setTimeout(() => v.remove(), 450); return; }
-    if (choisie !== null) { const [x, y] = p.balls[choisie], k = ZOOM_LABO, e = labo.offsetWidth / p.largeur;
-      // on était approché du point zoom (échelle k) : même image vue depuis la ball choisie, puis on plonge dedans
-      const [ox, oy] = p.zoom || [x, y], tx = (ox - x) * e * (1 - k), ty = (oy - y) * e * (1 - k);
-      labo.style.transition = "none"; labo.style.transformOrigin = `${x / p.largeur * 100}% ${y / p.hauteur * 100}%`;
-      labo.style.transform = `translateX(-50%) translate(${tx}px, ${ty}px) scale(${k})`; void labo.offsetWidth;
-      labo.style.transition = "transform .75s cubic-bezier(.6,0,.9,.4)"; labo.style.transform = "translateX(-50%) scale(4)"; }
+    if (choisie !== null) { const [x, y] = p.balls[choisie];  // on plonge dans la ball choisie
+      labo.style.transformOrigin = `${x / p.largeur * 100}% ${(y - p.rayon) / p.hauteur * 100}%`; labo.style.transform = "translateX(-50%) scale(4)"; }
     SONS.montee(.7);
     setTimeout(() => { v.querySelector(".blanc").style.opacity = 1; }, 380);
     setTimeout(() => { ouvrir(c, rejouer, true); v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 850); };
@@ -1451,24 +1489,13 @@ function intro(c, p, rejouer = false) {
     await new Promise(r => setTimeout(r, 1100));
     for (const l of L.slice(0, 5)) await dire(l);
     await dire(L[5], false);
-    if (p.zoom) { labo.style.transformOrigin = `${p.zoom[0] / p.largeur * 100}% ${p.zoom[1] / p.hauteur * 100}%`;
-      labo.style.transform = `translateX(-50%) scale(${ZOOM_LABO})`; }
     v.classList.add("choix");
     const i = await new Promise(ok => v.querySelectorAll(".zone").forEach(z => z.onclick = () => ok(+z.dataset.i)));
     v.querySelectorAll(".zone").forEach(z => z.onclick = null);
     v.querySelectorAll(".halo").forEach(h => h.classList.toggle("loin", +h.dataset.i !== i));
     SONS.clic(); vibre([15, 40, 15]);
-    // la ball choisie saute : c'est le morceau de l'image où elle est dessinée qui bouge, et un morceau de table vide
-    // la remplace dessous
-    const [x, y] = p.balls[i], r = p.rayon, morceau = (cx, cy, rr, img = p.image) => `width:${rr * 2 / p.largeur * 100}%;aspect-ratio:1;
-      background-image:url('${D.scenes}${img}');background-size:${p.largeur / (2 * rr) * 100}% ${p.hauteur / (2 * rr) * 100}%;
-      background-position:${(cx - rr) / (p.largeur - 2 * rr) * 100}% ${(cy - rr) / (p.hauteur - 2 * rr) * 100}%;`;
-    const trou = P.createElement("div"), b = P.createElement("div");
-    trou.style.cssText = `position:absolute;transform:translate(-50%,-50%);left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;
-      image-rendering:pixelated;${p.vide ? morceau(x, y, r + 2, p.vide) : morceau(p.table[0], p.table[1], r + 2)}`;
-    b.className = "ballc bouge";
-    b.style.cssText = `left:${x / p.largeur * 100}%;top:${y / p.hauteur * 100}%;${morceau(x, y, r)}`;
-    labo.append(trou, b);
+    // la ball choisie saute (une vraie image transparente : rien autour d'elle), les autres s'éteignent
+    v.querySelectorAll(".ballc").forEach(b => b.classList.toggle(+b.dataset.i === i ? "bouge" : "loin", true));
     choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
     await dire(L[6]);
     fin(true);
@@ -1482,31 +1509,31 @@ function intro(c, p, rejouer = false) {
 // Les champions : images animées du jeu PokéRogue (projet public pagefaultgames/pokerogue-assets, version figée)
 const ROGUE = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/trainer/";
 const CHAMPIONS = {
-  1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", perso: "arene-argenta-pierre.webp", x: 400, y: 557, pw: 141, ph: 265, tete: {x: 11, y: 0, c: 117}, torches: [[220, 235], [721, 235]]},
+  1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", perso: "arene-argenta-pierre.webp", x: 400, y: 557, pw: 141, ph: 265, tete: {x: 5, y: 12, c: 130}, torches: [[220, 235], [721, 235]]},
       indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
       "Une semaine entière d'efforts… Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
-  2: {nom: "Ondine", sprite: "misty", arene: {image: "arene-azuria.webp", perso: "arene-azuria-ondine.webp", x: 395, y: 516, pw: 184, ph: 277, tete: {x: 30, y: 0, c: 122}, torches: [[56, 94], [878, 94]], feu: "255,240,190", taille: 22},
+  2: {nom: "Ondine", sprite: "misty", arene: {image: "arene-azuria.webp", perso: "arene-azuria-ondine.webp", x: 395, y: 516, pw: 184, ph: 277, tete: {x: 6, y: 8, c: 130}, torches: [[56, 94], [878, 94]], feu: "255,240,190", taille: 22},
       indice: "Dans mon arène, tout se passe dans l'eau ! Tu as du souffle ? Montre-moi comment tu rames !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
       "Hmpf… Tu as plus de souffle que je ne le pensais. Bien joué !"]},
-  3: {nom: "Major Bob", sprite: "lt_surge", arene: {image: "arene-carmin.webp", largeur: 940, perso: "arene-carmin-major-bob.webp", x: 395, y: 518, pw: 151, ph: 252, tete: {x: 19, y: 0, c: 111}, torches: [[163, 78], [771, 78], [16, 560], [918, 560]], feu: "255,225,80", taille: 22},
+  3: {nom: "Major Bob", sprite: "lt_surge", arene: {image: "arene-carmin.webp", largeur: 940, perso: "arene-carmin-major-bob.webp", x: 395, y: 518, pw: 151, ph: 252, tete: {x: 10, y: 0, c: 130}, torches: [[163, 78], [771, 78], [16, 560], [918, 560]], feu: "255,225,80", taille: 22},
       indice: "Hé, soldat ! Ici, il faut que ça chauffe sous le capot. Fais monter ton cœur, et pas qu'une fois !", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
       "Wahou ! Tu as une énergie de 100 000 volts, soldat !"]},
-  4: {nom: "Erika", sprite: "erika", arene: {image: "arene-celadopole.webp", perso: "arene-celadopole-erika.webp", x: 414, y: 527, pw: 115, ph: 271, tete: {x: 0, y: 0, c: 119}, torches: [[300, 170], [640, 170]], feu: "255,250,200", taille: 40},
+  4: {nom: "Erika", sprite: "erika", arene: {image: "arene-celadopole.webp", perso: "arene-celadopole-erika.webp", x: 414, y: 527, pw: 115, ph: 271, tete: {x: -8, y: 2, c: 130}, torches: [[300, 170], [640, 170]], feu: "255,250,200", taille: 40},
       indice: "Les plus belles fleurs se trouvent au bout des longues promenades… Tu aimes marcher, n'est-ce pas ?", lignes: ["Bienvenue… Je suis Erika, la Championne de Céladopole. J'aime les fleurs et les longues promenades.",
       "Tant de pas… Tu as la patience d'une graine qui devient un grand arbre."]},
-  5: {nom: "Koga", sprite: "koga", arene: {image: "arene-parmanie.webp", perso: "arene-parmanie-koga.webp", x: 404, y: 512, pw: 209, ph: 272, tete: {x: 7, y: 0, c: 120}, torches: [[82, 172], [856, 172]], feu: "235,140,255", taille: 26},
+  5: {nom: "Koga", sprite: "koga", arene: {image: "arene-parmanie.webp", perso: "arene-parmanie-koga.webp", x: 404, y: 512, pw: 209, ph: 272, tete: {x: 2, y: 12, c: 130}, torches: [[82, 172], [856, 172]], feu: "235,140,255", taille: 26},
       indice: "Le ninja s'entraîne chaque jour, qu'il pleuve ou qu'il vente. Ta régularité sera ton arme.", lignes: ["Fwahahaha ! Je suis Koga, le Champion de Parmanie. La discipline du ninja n'a aucun secret pour moi !",
       "Jour après jour, sans faiblir… Tu as l'endurance d'un vrai ninja !"]},
-  6: {nom: "Morgane", sprite: "sabrina", arene: {image: "arene-safrania.webp", largeur: 940, perso: "arene-safrania-morgane.webp", x: 404, y: 554, pw: 121, ph: 254, tete: {x: 4, y: 0, c: 112}, torches: [[125, 314], [809, 314], [69, 618], [862, 618]], feu: "255,120,230", taille: 22},
+  6: {nom: "Morgane", sprite: "sabrina", arene: {image: "arene-safrania.webp", largeur: 940, perso: "arene-safrania-morgane.webp", x: 404, y: 554, pw: 121, ph: 254, tete: {x: -5, y: 0, c: 130}, torches: [[125, 314], [809, 314], [69, 618], [862, 618]], feu: "255,120,230", taille: 22},
       indice: "Mon esprit est fort. Ton corps l'est-il autant ? Je veux voir tes muscles travailler.", lignes: ["Je suis Morgane, la Championne de Safrania. Je savais que tu viendrais : je l'avais vu…",
       "Ta force ne vient pas que de tes muscles. Ton esprit est solide."]},
-  7: {nom: "Auguste", sprite: "blaine", arene: {image: "arene-cramoisile.webp", perso: "arene-cramoisile-auguste.webp", x: 413, y: 553, pw: 117, ph: 252, tete: {x: 1, y: 0, c: 111}, torches: [[229, 235], [721, 235]], feu: "255,150,50", taille: 34},
+  7: {nom: "Auguste", sprite: "blaine", arene: {image: "arene-cramoisile.webp", perso: "arene-cramoisile-auguste.webp", x: 413, y: 553, pw: 117, ph: 252, tete: {x: -8, y: 0, c: 130}, torches: [[229, 235], [721, 235]], feu: "255,150,50", taille: 34},
       indice: "Hah ! Ici, ça brûle ! Fais flamber ton cœur, longtemps, très longtemps !", lignes: ["Hah ! Je suis Auguste, le Champion brûlant de Cramois'Île !",
       "Ton cœur brûle d'une flamme ardente ! Quelle endurance !"]},
-  8: {nom: "Giovanni", sprite: "giovanni", arene: {image: "arene-jadielle.webp", perso: "arene-jadielle-giovanni.webp", x: 406, y: 553, pw: 124, ph: 258, tete: {x: 6, y: 0, c: 114}, torches: [[110, 141], [831, 141]], taille: 24},
+  8: {nom: "Giovanni", sprite: "giovanni", arene: {image: "arene-jadielle.webp", perso: "arene-jadielle-giovanni.webp", x: 406, y: 553, pw: 124, ph: 258, tete: {x: -2, y: 0, c: 130}, torches: [[110, 141], [831, 141]], taille: 24},
       indice: "Tu as traversé tout Kanto… mais pour m'atteindre, il faudra marcher encore. Beaucoup.", lignes: ["Alors c'est toi qui as battu tous les Champions… Je suis Giovanni, le Champion de Jadielle.",
       "Impressionnant. Une telle persévérance mérite le respect."]},
-  9: {nom: "Régis", sprite: "blue", arene: {image: "arene-ligue.webp", perso: "arene-ligue-regis.webp", x: 406, y: 533, pw: 134, ph: 268, tete: {x: 4, y: 0, c: 118}, torches: [[110, 141], [831, 141]], taille: 24},
+  9: {nom: "Régis", sprite: "blue", arene: {image: "arene-ligue.webp", perso: "arene-ligue-regis.webp", x: 406, y: 533, pw: 134, ph: 268, tete: {x: -2, y: 10, c: 130}, torches: [[110, 141], [831, 141]], taille: 24},
       indice: "Le dernier défi est le plus dur : tout donner, plusieurs jours, comme un vrai champion !", lignes: ["Te voilà enfin ! Moi, Régis, je suis le Champion de la Ligue Pokémon !",
       "Quoi ?! Tout ce chemin… Tu es vraiment devenu le plus fort !"]},
 };
@@ -1535,11 +1562,11 @@ const CONSEIL = [
 // tete = carré de la tête dans perso (médaillon de la carte et carte du défi) ; torches = lueurs qui vacillent (feu = leur
 // couleur r,g,b, taille = leur diamètre en % de la largeur).
 // Sans arene : l'ancien sprite PokéRogue animé.
-function portraitChamp(ch, attrs = "") {
+function portraitChamp(ch, attrs = "") {  // tête, cou et haut du torse, même cadrage pour tous (carré tete, 01/11)
   const s = ch.arene; if (!s) return `<canvas data-sprite="${ch.sprite}" ${attrs}></canvas>`;
   const t = s.tete;
-  return `<div class="tete-champ" style="background-image:url('${D.scenes}${s.perso}');background-size:${s.pw / t.c * 100}% ${s.ph / t.c * 100}%;
-    background-position:${s.pw > t.c ? t.x / (s.pw - t.c) * 100 : 0}% ${t.y / (s.ph - t.c) * 100}%"></div>`;
+  return `<div class="tete-champ"><img src="${D.scenes}${s.perso}" alt="" style="position:absolute;left:${-t.x / t.c * 100}%;top:${-t.y / t.c * 100}%;
+    width:${s.pw / t.c * 100}%;height:auto;max-width:none;image-rendering:pixelated"></div>`;
 }
 const STYLE_BADGE = `
 #pkm-badge{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#05070D;touch-action:manipulation;user-select:none;
@@ -1785,8 +1812,18 @@ function badgePropre(src, nettoyer = true) {
       };
       let px = new Uint32Array(a.buffer.slice(0)), W = w, H = h;
       for (let k = 0; k < 2; k++) { px = epx(px, W, H); W *= 2; H *= 2; }
-      const grand = document.createElement("canvas"); grand.width = W; grand.height = H;
+      let grand = document.createElement("canvas"); grand.width = W; grand.height = H;
       grand.getContext("2d").putImageData(new ImageData(new Uint8ClampedArray(px.buffer), W, H), 0, 0);
+      // puis deux agrandissements ×2 lissés, en gardant un contour net (seuil sur la transparence) : les escaliers des
+      // pixels deviennent des courbes, les couleurs se fondent (Kiki, 01/11 : badges « sacrément pixelisés »)
+      for (let k = 0; k < 2; k++) {
+        const g2 = document.createElement("canvas"); g2.width = W * 2; g2.height = H * 2;
+        const x2 = g2.getContext("2d"); x2.imageSmoothingEnabled = true; x2.imageSmoothingQuality = "high";
+        x2.drawImage(grand, 0, 0, W * 2, H * 2); W *= 2; H *= 2;
+        const dd = x2.getImageData(0, 0, W, H), aa = dd.data;
+        for (let i = 3; i < aa.length; i += 4) aa[i] = aa[i] > 110 ? 255 : 0;
+        x2.putImageData(dd, 0, 0); grand = g2;
+      }
       // la tranche : la même forme en or (bandes claires et sombres, comme du métal poli)
       const t = document.createElement("canvas"); t.width = W; t.height = H;
       const tg = t.getContext("2d"), gr = tg.createLinearGradient(0, 0, W * .3, H);
@@ -2169,7 +2206,7 @@ const STYLE_TITRE = `
 function ecranTitre(essai = false) {
   installerStyle("pkm2-titre-style", STYLE_TITRE);
   const E = ecran("pkm-titre", "titre-kanto.webp", 941, 1672), v = E.v;
-  v.insertAdjacentHTML("beforeend", `<div class="logo"><b>POKÉMON</b><i>SPORT</i><small>ÉDITION KANTO</small></div>
+  v.insertAdjacentHTML("beforeend", `<div class="logo"><b>POKÉMON</b><i>SPORT</i></div>
     <div class="touche">TOUCHE L'ÉCRAN${essai ? "<small>Aperçu : rien n'est enregistré</small>" : ""}</div>`);
   ambiance(v.querySelector("canvas.air"), [{type: "oiseaux", coul: ["#3A3050"], n: 5, haut: [.08, .26]}, {...VERTS, n: 20}], () => !v.isConnected);
   setTimeout(() => { v.querySelector(".noir").style.opacity = 0; v.classList.add("parti"); }, 80);
@@ -2768,9 +2805,9 @@ const STYLE_DRESSEUR = `
   background:#1F4E9A;color:#fff;font-weight:700;font-size:17px;letter-spacing:1px;text-shadow:2px 2px 0 #102850}
 .carte-dresseur .entete small{font-size:13px;font-weight:500;opacity:.9}
 .carte-dresseur .corps{display:flex;gap:12px;align-items:stretch}
-.carte-dresseur .photo{width:96px;flex:0 0 96px;border:3px solid #F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;position:relative;
+.carte-dresseur .photo{width:96px;flex:0 0 96px;border:3px solid #F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;position:relative;overflow:hidden;
   background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/16px 16px}
-.carte-dresseur .photo canvas{position:absolute;left:50%;bottom:6px;width:56px;height:112px;transform:translateX(-50%);image-rendering:pixelated}
+.carte-dresseur .photo canvas{position:absolute;left:50%;top:50%;width:80px;height:160px;margin-top:-104px;transform:translateX(-50%);image-rendering:pixelated}
 .carte-dresseur .infos{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 .carte-dresseur .boite{background:#F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;padding:6px 10px;font-size:15px;display:flex;justify-content:space-between}
 .carte-dresseur .boite b{color:#283048}

@@ -168,6 +168,19 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     **🧪 Tester Kanto** (tout en bas de l'onglet, `dessinerTests`) : accueil complet, labo, les 9 scènes de badge (+ la
     capture dans l'arène), tous les décors, Centre Pokémon, Panthéon, test de la carte (aperçus `apercu: true`, rien
     d'enregistré ; pendant l'aperçu de l'accueil, le pseudo n'est pas gardé, `DRESSEUR_ESSAI`).
+    **Retours de Kiki du 01/11 (soir), faits** : labo = image VIDE (`labo-chen-vide.webp`) + 3 vraies balls transparentes
+    (`scenes/pokeball-labo.png`, la ball validée ×3 lissée) posées par le code, ombre sous chacune ; la ball choisie saute
+    sans « carré » (avant : un morceau d'image découpé), plus de zoom pendant le choix, image qui remplit tout l'écran (plus
+    de bande marron en bas) ; le starter apparaît SUR la table (fond `labo` : ovale = dessus de la table, taille 1).
+    Taille du Pokémon à l'ouverture = `rayon` du rond × 1,1 × `taille` du fond (`--pw`), pieds au milieu du rond (avant :
+    250 px fixes, trop gros). **Résultat = boîte de dialogue GBA** en bas (`montrerCarte`, classe `carte jeu` : NOUVEAU /
+    SHINY / LÉGENDAIRE, « Tu as attrapé X ! », types, Pokédex et shiny, boutons pixel ▶ OK / ▶ SUIVANTE) à la place de la
+    grande fiche et du bouton « Génial ! » (Kiki : « fait IA »). Titre en haut = provenance (`titreBall` : « Hyper Ball de
+    Pierre », « Poké Ball · Forêt de Jade », « Cadeau du Professeur Chen »…). Têtes des champions : même cadrage pour tous
+    (carré de 130 px calé sur le haut de la tête et centré sur le visage : tête, cou, haut du torse ; `portraitChamp` =
+    `<img>` dans un cadre qui coupe). Badges : EPX ×4 puis 2 agrandissements lissés avec contour net (plus d'escaliers).
+    Master Ball 3D : texture 2048 px, « M » plus petit et bordé, bosses roses sans cible. Écran titre sans « Édition Kanto »
+    (à remettre si un jour chaque région a son écran titre). Carte dresseur : le dresseur remplit sa case.
   - **Replay de la journée sur la carte** (01/11, demande de Kiki) : la carte est **toujours en haut** de l'onglet (puis
     à ouvrir, barre, objectifs…) ; plus de tuile d'arène au-dessus de la carte (doublon de « Défi de l'arène ») ni de
     bandeau « Ton dresseur a avancé » (sauf badge). Chaque capture a `c` = points cumulés au moment où elle a été gagnée
