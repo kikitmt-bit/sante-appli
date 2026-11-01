@@ -830,7 +830,7 @@ const AIR_TYPE = {Roche: {type: "poussiere", coul: ["#D8C9A8", "#B8A27A"], n: 24
   Feu: {type: "braises", coul: ["#FFB040", "#FF6A20", "#FFE08A"], n: 30}, Sol: {type: "poussiere", coul: ["#D9B77A", "#B08A4E"], n: 26, vent: .4}};
 [["argenta", "Roche", 469, 815], ["azuria", "Eau", 468, 786], ["carmin", "Électrik", 469, 763], ["celadopole", "Plante", 470, 791],
  ["parmanie", "Poison", 471, 777], ["safrania", "Psy", 463, 801], ["cramoisile", "Feu", 471, 798], ["jadielle", "Sol", 469, 804]]
-  .forEach(([v, t, x, y], i) => FONDS["arene" + (i + 1)] = {image: `arene-${v}-vide.webp`, ovale: [x, y], rayon: 300, ombre: "0,0,0",
+  .forEach(([v, t, x, y], i) => FONDS["arene" + (i + 1)] = {image: `arene-${v}-vide.webp`, ovale: [x, y], rayon: 300, taille: 1.3, ombre: "0,0,0",
     jet: AIRS_COUL(t), air: [AIR_TYPE[t]]});
 function AIRS_COUL(t) { return {Roche: ["#D8C9A8", "#B8A27A", "#FFFFFF"], Eau: ["#A8E4FF", "#FFFFFF", "#4FA8E8"], Électrik: ["#FFF27A", "#FFFFFF", "#FFD000"],
   Plante: ["#9BE07A", "#FF9EC4", "#FFFFFF"], Poison: ["#C77DFF", "#E2B8FF", "#FFFFFF"], Psy: ["#FF8AD8", "#FFC4EE", "#FFFFFF"],
@@ -1202,8 +1202,10 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   let tailleVent = () => {};
   const placer = () => { if (!F) return;
     const H = PW.innerHeight, W = PW.innerWidth, f = H / F.hauteur, w = F.largeur * f, d = $(".decor");
-    d.style.width = w + "px"; d.style.left = (W - w) / 2 + "px";
-    const ox = W / 2 + (F.ovale[0] - F.largeur / 2) * f, oy = F.ovale[1] * f;
+    // le décor glisse (sans laisser de vide sur les côtés) pour amener le rond de sol au plus près du milieu de l'écran
+    const gauche = Math.min(0, Math.max(W - w, W / 2 - F.ovale[0] * f));
+    d.style.width = w + "px"; d.style.left = gauche + "px";
+    const ox = gauche + F.ovale[0] * f, oy = F.ovale[1] * f;
     v.style.setProperty("--ox", ox + "px"); v.style.setProperty("--oy", oy + "px");
     // le Pokémon : sa taille suit le rond de sol (taille = réglage du fond), ses pieds posés au milieu du rond
     const pw = Math.min(F.rayon * f * 1.1 * (F.taille || 1), W * .62);
@@ -1509,31 +1511,31 @@ function intro(c, p, rejouer = false) {
 // Les champions : images animées du jeu PokéRogue (projet public pagefaultgames/pokerogue-assets, version figée)
 const ROGUE = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/trainer/";
 const CHAMPIONS = {
-  1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", perso: "arene-argenta-pierre.webp", x: 400, y: 557, pw: 141, ph: 265, tete: {x: 5, y: 12, c: 130}, torches: [[220, 235], [721, 235]]},
+  1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", perso: "arene-argenta-pierre.webp", x: 400, y: 557, pw: 141, ph: 265, torches: [[220, 235], [721, 235]]},
       indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
       "Une semaine entière d'efforts… Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
-  2: {nom: "Ondine", sprite: "misty", arene: {image: "arene-azuria.webp", perso: "arene-azuria-ondine.webp", x: 395, y: 516, pw: 184, ph: 277, tete: {x: 6, y: 8, c: 130}, torches: [[56, 94], [878, 94]], feu: "255,240,190", taille: 22},
+  2: {nom: "Ondine", sprite: "misty", arene: {image: "arene-azuria.webp", perso: "arene-azuria-ondine.webp", x: 395, y: 516, pw: 184, ph: 277, torches: [[56, 94], [878, 94]], feu: "255,240,190", taille: 22},
       indice: "Dans mon arène, tout se passe dans l'eau ! Tu as du souffle ? Montre-moi comment tu rames !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
       "Hmpf… Tu as plus de souffle que je ne le pensais. Bien joué !"]},
-  3: {nom: "Major Bob", sprite: "lt_surge", arene: {image: "arene-carmin.webp", largeur: 940, perso: "arene-carmin-major-bob.webp", x: 395, y: 518, pw: 151, ph: 252, tete: {x: 10, y: 0, c: 130}, torches: [[163, 78], [771, 78], [16, 560], [918, 560]], feu: "255,225,80", taille: 22},
+  3: {nom: "Major Bob", sprite: "lt_surge", arene: {image: "arene-carmin.webp", largeur: 940, perso: "arene-carmin-major-bob.webp", x: 395, y: 518, pw: 151, ph: 252, torches: [[163, 78], [771, 78], [16, 560], [918, 560]], feu: "255,225,80", taille: 22},
       indice: "Hé, soldat ! Ici, il faut que ça chauffe sous le capot. Fais monter ton cœur, et pas qu'une fois !", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
       "Wahou ! Tu as une énergie de 100 000 volts, soldat !"]},
-  4: {nom: "Erika", sprite: "erika", arene: {image: "arene-celadopole.webp", perso: "arene-celadopole-erika.webp", x: 414, y: 527, pw: 115, ph: 271, tete: {x: -8, y: 2, c: 130}, torches: [[300, 170], [640, 170]], feu: "255,250,200", taille: 40},
+  4: {nom: "Erika", sprite: "erika", arene: {image: "arene-celadopole.webp", perso: "arene-celadopole-erika.webp", x: 414, y: 527, pw: 115, ph: 271, torches: [[300, 170], [640, 170]], feu: "255,250,200", taille: 40},
       indice: "Les plus belles fleurs se trouvent au bout des longues promenades… Tu aimes marcher, n'est-ce pas ?", lignes: ["Bienvenue… Je suis Erika, la Championne de Céladopole. J'aime les fleurs et les longues promenades.",
       "Tant de pas… Tu as la patience d'une graine qui devient un grand arbre."]},
-  5: {nom: "Koga", sprite: "koga", arene: {image: "arene-parmanie.webp", perso: "arene-parmanie-koga.webp", x: 404, y: 512, pw: 209, ph: 272, tete: {x: 2, y: 12, c: 130}, torches: [[82, 172], [856, 172]], feu: "235,140,255", taille: 26},
+  5: {nom: "Koga", sprite: "koga", arene: {image: "arene-parmanie.webp", perso: "arene-parmanie-koga.webp", x: 404, y: 512, pw: 209, ph: 272, torches: [[82, 172], [856, 172]], feu: "235,140,255", taille: 26},
       indice: "Le ninja s'entraîne chaque jour, qu'il pleuve ou qu'il vente. Ta régularité sera ton arme.", lignes: ["Fwahahaha ! Je suis Koga, le Champion de Parmanie. La discipline du ninja n'a aucun secret pour moi !",
       "Jour après jour, sans faiblir… Tu as l'endurance d'un vrai ninja !"]},
-  6: {nom: "Morgane", sprite: "sabrina", arene: {image: "arene-safrania.webp", largeur: 940, perso: "arene-safrania-morgane.webp", x: 404, y: 554, pw: 121, ph: 254, tete: {x: -5, y: 0, c: 130}, torches: [[125, 314], [809, 314], [69, 618], [862, 618]], feu: "255,120,230", taille: 22},
+  6: {nom: "Morgane", sprite: "sabrina", arene: {image: "arene-safrania.webp", largeur: 940, perso: "arene-safrania-morgane.webp", x: 404, y: 554, pw: 121, ph: 254, torches: [[125, 314], [809, 314], [69, 618], [862, 618]], feu: "255,120,230", taille: 22},
       indice: "Mon esprit est fort. Ton corps l'est-il autant ? Je veux voir tes muscles travailler.", lignes: ["Je suis Morgane, la Championne de Safrania. Je savais que tu viendrais : je l'avais vu…",
       "Ta force ne vient pas que de tes muscles. Ton esprit est solide."]},
-  7: {nom: "Auguste", sprite: "blaine", arene: {image: "arene-cramoisile.webp", perso: "arene-cramoisile-auguste.webp", x: 413, y: 553, pw: 117, ph: 252, tete: {x: -8, y: 0, c: 130}, torches: [[229, 235], [721, 235]], feu: "255,150,50", taille: 34},
+  7: {nom: "Auguste", sprite: "blaine", arene: {image: "arene-cramoisile.webp", perso: "arene-cramoisile-auguste.webp", x: 413, y: 553, pw: 117, ph: 252, torches: [[229, 235], [721, 235]], feu: "255,150,50", taille: 34},
       indice: "Hah ! Ici, ça brûle ! Fais flamber ton cœur, longtemps, très longtemps !", lignes: ["Hah ! Je suis Auguste, le Champion brûlant de Cramois'Île !",
       "Ton cœur brûle d'une flamme ardente ! Quelle endurance !"]},
-  8: {nom: "Giovanni", sprite: "giovanni", arene: {image: "arene-jadielle.webp", perso: "arene-jadielle-giovanni.webp", x: 406, y: 553, pw: 124, ph: 258, tete: {x: -2, y: 0, c: 130}, torches: [[110, 141], [831, 141]], taille: 24},
+  8: {nom: "Giovanni", sprite: "giovanni", arene: {image: "arene-jadielle.webp", perso: "arene-jadielle-giovanni.webp", x: 406, y: 553, pw: 124, ph: 258, torches: [[110, 141], [831, 141]], taille: 24},
       indice: "Tu as traversé tout Kanto… mais pour m'atteindre, il faudra marcher encore. Beaucoup.", lignes: ["Alors c'est toi qui as battu tous les Champions… Je suis Giovanni, le Champion de Jadielle.",
       "Impressionnant. Une telle persévérance mérite le respect."]},
-  9: {nom: "Régis", sprite: "blue", arene: {image: "arene-ligue.webp", perso: "arene-ligue-regis.webp", x: 406, y: 533, pw: 134, ph: 268, tete: {x: -2, y: 10, c: 130}, torches: [[110, 141], [831, 141]], taille: 24},
+  9: {nom: "Régis", sprite: "blue", arene: {image: "arene-ligue.webp", perso: "arene-ligue-regis.webp", x: 406, y: 533, pw: 134, ph: 268, torches: [[110, 141], [831, 141]], taille: 24},
       indice: "Le dernier défi est le plus dur : tout donner, plusieurs jours, comme un vrai champion !", lignes: ["Te voilà enfin ! Moi, Régis, je suis le Champion de la Ligue Pokémon !",
       "Quoi ?! Tout ce chemin… Tu es vraiment devenu le plus fort !"]},
 };
@@ -1562,11 +1564,40 @@ const CONSEIL = [
 // tete = carré de la tête dans perso (médaillon de la carte et carte du défi) ; torches = lueurs qui vacillent (feu = leur
 // couleur r,g,b, taille = leur diamètre en % de la largeur).
 // Sans arene : l'ancien sprite PokéRogue animé.
-function portraitChamp(ch, attrs = "") {  // tête, cou et haut du torse, même cadrage pour tous (carré tete, 01/11)
+// Le portrait d'un champion (carte, défi, boutons de test) : tête, cou et haut du torse, CADRÉ TOUT SEUL depuis son image
+// détourée (01/11, pour toutes les régions à venir, sans réglage à la main) : on mesure la silhouette (hauteur H, centre
+// du haut du corps), puis la largeur de la tête à 20 % de la hauteur (le bloc plein qui passe par le centre) ; le carré
+// fait 1,45 × cette largeur, borné entre 50 % et 57 % de H, collé au sommet du crâne (petite marge). Calcul fait une fois
+// par image (TETES), l'image est posée en % dans un cadre qui coupe.
+const TETES = new Map();
+function cadreTete(img) {
+  const src = img.currentSrc || img.src;
+  if (!TETES.has(src)) TETES.set(src, (() => { try {
+    const w = img.naturalWidth, h = img.naturalHeight, c = document.createElement("canvas"); c.width = w; c.height = h;
+    const g = c.getContext("2d"); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, w, h).data;
+    const plein = (x, y) => d[(y * w + x) * 4 + 3] > 128;
+    let haut = -1, bas = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (plein(x, y)) { if (haut < 0) haut = y; bas = y; break; }
+    const H = bas - haut + 1, med = l => { const t = l.slice().sort((a, b) => a - b); return t[t.length >> 1]; };
+    const centres = [];
+    for (let y = haut + Math.floor(H * .03); y < haut + H * .28; y++) { let a = -1, b = -1;
+      for (let x = 0; x < w; x++) if (plein(x, y)) { if (a < 0) a = x; b = x; } if (a >= 0) centres.push((a + b) / 2); }
+    const cx = Math.round(med(centres)), larg = [], mil = [];
+    for (let y = haut + Math.floor(H * .16); y < haut + H * .24; y++) { if (!plein(cx, y)) continue; let l = cx, r = cx;
+      while (l > 0 && plein(l - 1, y)) l--; while (r < w - 1 && plein(r + 1, y)) r++; larg.push(r - l + 1); mil.push((l + r) / 2); }
+    const lt = larg.length ? med(larg) : H * .4, hc = mil.length ? med(mil) : cx;
+    const k = Math.max(Math.min(lt * 1.45, H * .57), H * .5);
+    return {x: hc - k / 2, y: haut - k * .04, c: k, w};
+  } catch (e) { return null; } })());
+  let t = TETES.get(src);
+  if (!t) { const k = img.naturalHeight * .52; t = {x: (img.naturalWidth - k) / 2, y: 0, c: k, w: img.naturalWidth}; }  // mesure impossible : cadrage simple
+  Object.assign(img.style, {left: -t.x / t.c * 100 + "%", top: -t.y / t.c * 100 + "%", width: t.w / t.c * 100 + "%", visibility: "visible"});
+}
+PW.cadreTete = cadreTete; window.cadreTete = cadreTete;
+function portraitChamp(ch, attrs = "") {
   const s = ch.arene; if (!s) return `<canvas data-sprite="${ch.sprite}" ${attrs}></canvas>`;
-  const t = s.tete;
-  return `<div class="tete-champ"><img src="${D.scenes}${s.perso}" alt="" style="position:absolute;left:${-t.x / t.c * 100}%;top:${-t.y / t.c * 100}%;
-    width:${s.pw / t.c * 100}%;height:auto;max-width:none;image-rendering:pixelated"></div>`;
+  return `<div class="tete-champ"><img src="${D.scenes}${s.perso}" alt="" crossorigin="anonymous" onload="cadreTete(this)" onerror="this.onerror=null;this.removeAttribute('crossorigin');this.src=this.src+'#'"
+    style="position:absolute;height:auto;max-width:none;visibility:hidden;image-rendering:pixelated"></div>`;
 }
 const STYLE_BADGE = `
 #pkm-badge{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#05070D;touch-action:manipulation;user-select:none;
@@ -1667,34 +1698,65 @@ const STYLE_BADGE = `
   clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:pkb-etoile 1.1s ease-in-out forwards;
   filter:drop-shadow(0 0 4px #FFE9A0)}
 @keyframes pkb-etoile{0%{transform:scale(0) rotate(0)}40%{transform:scale(1) rotate(45deg)}100%{transform:scale(0) rotate(90deg)}}
-/* l'étui à badges : cuir rouge sombre, surpiqûres, fermoir doré ; il s'ouvre sur un velours bleu nuit à 8 alvéoles */
-#pkm-badge .etui{position:absolute;left:50%;bottom:calc(178px + env(safe-area-inset-bottom));width:min(88vw,360px);z-index:9;perspective:900px;
-  transform:translate(-50%,calc(100% + 260px));opacity:0;transition:transform .7s cubic-bezier(.2,1.1,.3,1),opacity .3s}
+/* l'étui à badges (refait le 01/11, carte blanche de Kiki) : coffret de cuir bordeaux grainé, coins et fermoir en or,
+   Poké Ball gaufrée dorée sur le couvercle ; il bascule en arrière et montre sa doublure de satin (« LIGUE POKÉMON ·
+   KANTO ») ; dedans, un velours bleu nuit et 8 logements cerclés d'or : la silhouette du badge à gagner, son nom dessous */
+#pkm-badge .etui{position:absolute;left:50%;bottom:calc(196px + env(safe-area-inset-bottom));width:min(90vw,368px);z-index:9;perspective:1000px;
+  transform:translate(-50%,calc(100% + 260px));opacity:0;transition:transform .75s cubic-bezier(.2,1.1,.3,1),opacity .3s}
 #pkm-badge .etui.vu{transform:translate(-50%,0);opacity:1}
-#pkm-badge .etui .boite{position:relative;border-radius:16px;padding:12px;transform-style:preserve-3d;
-  background:linear-gradient(180deg,#5A120F,#3A0A08);box-shadow:0 18px 30px rgba(0,0,0,.6),0 0 0 2px #240504,inset 0 1px 0 rgba(255,255,255,.12)}
-#pkm-badge .etui .velours{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px;border-radius:10px;
-  background:radial-gradient(120% 140% at 50% 0%,#2C3A7A,#141B44 60%,#0B1030);box-shadow:inset 0 3px 10px rgba(0,0,0,.75),0 0 0 2px #B98B2E}
-#pkm-badge .etui .case{position:relative;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;
-  background:radial-gradient(circle at 50% 38%,#0E1438,#1E2860 70%);box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 1px 0 rgba(255,255,255,.12)}
-#pkm-badge .etui .case img{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6))}
-#pkm-badge .etui .case.ici{box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 0 0 2px #FFD84A,0 0 16px 3px rgba(255,216,74,.7);animation:pkb-attend 1.1s ease-in-out infinite}
-@keyframes pkb-attend{50%{box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 0 0 2px #FFD84A,0 0 6px 1px rgba(255,216,74,.4)}}
-#pkm-badge .etui .case.pose{animation:none;box-shadow:inset 0 3px 6px rgba(0,0,0,.85),0 0 0 2px #FFE9A0,0 0 26px 8px rgba(255,216,74,.9)}
+#pkm-badge .etui .boite{position:relative;border-radius:14px;padding:11px;transform-style:preserve-3d;
+  background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.07) 0 1px,transparent 1.5px) 0 0/5px 5px,
+    radial-gradient(circle at 70% 60%,rgba(0,0,0,.18) 0 1px,transparent 1.5px) 0 0/7px 7px,linear-gradient(180deg,#6E1A16,#3E0B09);
+  box-shadow:0 22px 34px rgba(0,0,0,.65),0 0 0 2px #1E0403,inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.4)}
+#pkm-badge .etui .boite:before{content:"";position:absolute;inset:5px;border-radius:10px;border:1.5px dashed rgba(236,190,120,.4);pointer-events:none}
+#pkm-badge .etui .coin{position:absolute;width:18px;height:18px;z-index:4;pointer-events:none;
+  background:linear-gradient(135deg,#FFF0B0,#D9A93A 45%,#8A5E12);clip-path:polygon(0 0,100% 0,100% 28%,28% 28%,28% 100%,0 100%)}
+#pkm-badge .etui .coin.c2{right:0;top:0;transform:scaleX(-1)}#pkm-badge .etui .coin.c3{left:0;bottom:0;transform:scaleY(-1)}
+#pkm-badge .etui .coin.c4{right:0;bottom:0;transform:scale(-1)}#pkm-badge .etui .coin.c1{left:0;top:0}
+#pkm-badge .etui .velours{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:8px 10px;padding:14px 12px 10px;border-radius:9px;overflow:hidden;
+  background:repeating-linear-gradient(45deg,rgba(255,255,255,.025) 0 2px,transparent 2px 4px),radial-gradient(130% 120% at 50% 0%,#2E3C86,#161E4E 55%,#0A0E2C);
+  box-shadow:inset 0 4px 12px rgba(0,0,0,.8),0 0 0 2px #C9973A,0 0 0 3px #5E3E08}
+#pkm-badge .etui .velours:after{content:"";position:absolute;inset:-40% auto -40% -60%;width:40%;transform:skewX(-20deg);pointer-events:none;opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(255,240,190,.35),transparent)}
+#pkm-badge .etui.brille .velours:after{animation:pkb-reflet 1.1s ease-out}
+@keyframes pkb-reflet{0%{left:-60%;opacity:1}100%{left:130%;opacity:1}}
+#pkm-badge .etui .loge{display:flex;flex-direction:column;align-items:center;gap:4px}
+#pkm-badge .etui .case{position:relative;width:100%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 35%,#070A22,#1A2358 75%);
+  box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #B98B2E,0 0 0 4px #FFE6A0,0 0 0 5.5px #6E4A0C,0 3px 4px 5px rgba(0,0,0,.35)}
+#pkm-badge .etui .case .fantome{width:66%;height:66%;object-fit:contain;filter:brightness(0) invert(.75) sepia(.4) hue-rotate(190deg);opacity:.16}
+#pkm-badge .etui .case img.vrai{position:absolute;width:76%;height:76%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
+#pkm-badge .etui .loge small{font:700 9.5px 'Pixelify Sans',monospace;letter-spacing:1px;color:#E9C774;text-shadow:0 1px 0 #000;white-space:nowrap;opacity:.85}
+#pkm-badge .etui .loge.vide small{color:#7C86B8;opacity:.7}
+#pkm-badge .etui .case.ici{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 18px 6px rgba(255,216,74,.75);animation:pkb-attend 1.1s ease-in-out infinite}
+@keyframes pkb-attend{50%{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 6px 1px rgba(255,216,74,.4)}}
+#pkm-badge .etui .case.pose{animation:none;box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFE9A0,0 0 0 4px #fff,0 0 28px 10px rgba(255,216,74,.9)}
 #pkm-badge .etui .case.pose img{animation:pkb-pose .5s cubic-bezier(.2,1.8,.4,1)}
 @keyframes pkb-pose{from{transform:scale(1.7)}}
-#pkm-badge .etui .couvercle{position:absolute;inset:0;border-radius:16px;transform-origin:50% 0;transform-style:preserve-3d;z-index:2;
-  background:linear-gradient(160deg,#9E2A22,#6E1712 55%,#561210);box-shadow:inset 0 2px 0 rgba(255,255,255,.18),inset 0 -3px 0 rgba(0,0,0,.35);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
-  transition:transform .85s cubic-bezier(.5,0,.25,1),opacity .3s .55s;backface-visibility:hidden}
-#pkm-badge .etui .couvercle:before{content:"";position:absolute;inset:7px;border-radius:11px;border:2px dashed rgba(240,200,140,.45)}
-#pkm-badge .etui .couvercle .embleme{width:46px;height:46px;border-radius:50%;
-  background:radial-gradient(circle at 50% 50%,#6E1712 0 18%,#E8C060 19% 27%,transparent 28%),linear-gradient(180deg,transparent 46%,#E8C060 46% 54%,transparent 54%),
-    radial-gradient(circle,#B8862A 0 60%,transparent 61%);box-shadow:0 0 0 3px #E8C060,0 2px 4px rgba(0,0,0,.5)}
-#pkm-badge .etui .couvercle span{font:700 12px Outfit,sans-serif;letter-spacing:3px;color:#F2D79A;text-shadow:0 -1px 0 rgba(0,0,0,.5),0 1px 0 rgba(255,230,180,.25)}
-#pkm-badge .etui .fermoir{position:absolute;left:50%;bottom:-7px;width:34px;height:14px;margin-left:-17px;border-radius:0 0 6px 6px;z-index:3;
-  background:linear-gradient(180deg,#FFE08A,#B8862A);box-shadow:0 2px 4px rgba(0,0,0,.6);transition:opacity .2s}
-#pkm-badge .etui.ouvert .couvercle{transform:rotateX(-112deg);opacity:0}
+/* le couvercle : face cuir (Poké Ball gaufrée, titre en lettres d'or) et revers de satin, qui bascule en arrière */
+#pkm-badge .etui .couvercle{position:absolute;inset:0;border-radius:14px;transform-origin:50% 0;transform-style:preserve-3d;z-index:3;
+  transition:transform .95s cubic-bezier(.5,0,.25,1)}
+#pkm-badge .etui .couvercle .face,#pkm-badge .etui .couvercle .revers{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
+#pkm-badge .etui .couvercle .face{background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.08) 0 1px,transparent 1.5px) 0 0/5px 5px,
+    linear-gradient(160deg,#A8302A,#701A15 55%,#4E100D);box-shadow:inset 0 2px 0 rgba(255,255,255,.2),inset 0 -3px 0 rgba(0,0,0,.4),0 6px 14px rgba(0,0,0,.4)}
+#pkm-badge .etui .couvercle .face:before{content:"";position:absolute;inset:6px;border-radius:10px;border:1.5px dashed rgba(240,200,140,.5)}
+#pkm-badge .etui .couvercle .revers{transform:rotateX(180deg);
+  background:repeating-linear-gradient(100deg,rgba(255,255,255,.06) 0 6px,rgba(0,0,0,.06) 6px 12px),linear-gradient(180deg,#24306E,#141A44);
+  box-shadow:inset 0 0 0 2px #C9973A,inset 0 0 18px rgba(0,0,0,.6)}
+#pkm-badge .etui .couvercle .revers span{font:700 13px 'Pixelify Sans',monospace;letter-spacing:4px;color:#F2D58A;text-shadow:0 1px 0 #000}
+#pkm-badge .etui .embleme{width:52px;height:52px;border-radius:50%;position:relative;
+  background:radial-gradient(circle,#FFF2C0 0 13%,#8A5E12 14% 21%,transparent 22%),
+    linear-gradient(180deg,transparent 45%,#7A520E 45% 55%,transparent 55%),
+    linear-gradient(180deg,#F6D57A 0 50%,#C99A3A 50% 100%);
+  box-shadow:0 0 0 3px #8A5E12,0 0 0 5px #F2D07A,0 3px 6px rgba(0,0,0,.55),inset 0 3px 4px rgba(255,255,255,.4)}
+#pkm-badge .etui .couvercle .face span{font:700 13px 'Pixelify Sans',monospace;letter-spacing:4px;
+  background:linear-gradient(180deg,#FFF0B0,#D9A93A 60%,#9A6A18);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 1px 0 rgba(0,0,0,.7))}
+#pkm-badge .etui .fermoir{position:absolute;left:50%;bottom:-9px;width:40px;height:18px;margin-left:-20px;border-radius:4px 4px 8px 8px;z-index:5;
+  background:linear-gradient(180deg,#FFF0B0,#D9A93A 50%,#8A5E12);box-shadow:0 3px 5px rgba(0,0,0,.6),inset 0 0 0 2px rgba(110,74,12,.6);transition:opacity .25s}
+#pkm-badge .etui .fermoir:after{content:"";position:absolute;left:50%;top:5px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#6E4A0C}
+#pkm-badge .etui.ouvert .couvercle{transform:rotateX(-104deg)}
 #pkm-badge .etui.ouvert .fermoir{opacity:0}
 #pkm-badge .eclat{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;z-index:12;pointer-events:none;
   clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:pkb-eclat .9s ease-out forwards}
@@ -1998,9 +2060,14 @@ function sceneBadge(n, c, rejouer = false) {
     <div class="halo"></div><div class="charge"></div><div class="onde"></div><div class="onde o2"></div>
     <div class="badge"></div>
     <div class="nom-badge"><b>${lettres(nomBadge)}</b><small>Touche ${ligue ? "le trophée" : "le badge"} pour le prendre</small></div>
-    ${ligue ? "" : `<div class="etui"><div class="boite"><div class="velours">${deja.map((l, i) =>
-      `<div class="case ${i + 1 === n ? "ici" : ""}">${i + 1 < n && (V.badges[i + 1] || rejouer) ? `<img data-badge="${IMG.badge(l.arene.image)}" src="${IMG.badge(l.arene.image)}">` : ""}</div>`).join("")}</div>
-      <div class="couvercle"><div class="embleme"></div><span>ÉTUI À BADGES</span></div><div class="fermoir"></div></div></div>`}
+    ${ligue ? "" : `<div class="etui"><div class="boite"><i class="coin c1"></i><i class="coin c2"></i><i class="coin c3"></i><i class="coin c4"></i>
+      <div class="velours">${deja.map((l, i) => { const gagne = i + 1 < n && (V.badges[i + 1] || rejouer);
+        return `<div class="loge ${gagne || i + 1 === n ? "" : "vide"}"><div class="case ${i + 1 === n ? "ici" : ""}"><img class="fantome" src="${IMG.badge(l.arene.image)}" alt="">
+        ${gagne ? `<img class="vrai" data-badge="${IMG.badge(l.arene.image)}" src="${IMG.badge(l.arene.image)}">` : ""}</div>
+        <small>${l.arene.badge.replace("Badge ", "").toUpperCase()}</small></div>`; }).join("")}</div>
+      <div class="couvercle"><div class="face"><div class="embleme"></div><span>ÉTUI À BADGES</span></div>
+        <div class="revers"><span>LIGUE POKÉMON</span><span style="font-size:10px;letter-spacing:6px;opacity:.8">KANTO</span></div></div>
+      <div class="fermoir"></div></div></div>`}
     <div class="cine h"></div><div class="cine b"></div>
     <div class="titre-arene"><div class="ligne"></div><b>${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}</b>
       ${sc ? "" : `<small>${ligue ? "Plateau Indigo · le Maître" : `${icoType(a.type)} Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small>`}</div>
@@ -2104,7 +2171,8 @@ function sceneBadge(n, c, rejouer = false) {
       badge.querySelector(".tour").animate([{transform: "rotateY(0) rotateX(0)"}, {transform: "rotateY(720deg) rotateX(20deg)"}, {transform: "rotateY(720deg) rotateX(0)"}],
         {duration: 1000, easing: "ease-in-out"});
       await pause(1000);
-      ici.classList.remove("ici"); ici.classList.add("pose"); ici.innerHTML = `<img src="${b.face}">`; badge.style.opacity = 0;
+      ici.classList.remove("ici"); ici.classList.add("pose"); ici.innerHTML = `<img class="vrai" src="${b.face}">`; badge.style.opacity = 0;
+      etui.classList.add("brille");
       v.classList.remove("boom"); EPIQUE.clic(); vibre([40, 50, 90]);
       eclats(cible.left + cible.width / 2, cible.top + cible.height / 2, 18);
     } else {  // la Ligue : une pluie d'or
@@ -2138,7 +2206,7 @@ const STYLE_ECRAN = `
 .pkm-ecran .blanc{position:absolute;inset:0;background:#fff;pointer-events:none;transition:opacity 1.2s;z-index:40}
 .pkm-ecran .noir{position:absolute;inset:0;background:#000;pointer-events:none;transition:opacity 1s;z-index:40}
 .pkm-ecran .pkm-passer{z-index:45}
-/* le Panthéon : un Pokémon sur chaque socle, son nom sur la plaque */
+/* le Panthéon : un Pokémon sur chaque socle (le plus proche passe devant : z-index = hauteur du socle) */
 .pkm-ecran .socle{position:absolute;transform:translate(-50%,-100%) scale(.2);opacity:0;transform-origin:50% 100%;
   transition:transform .7s cubic-bezier(.2,1.6,.4,1),opacity .3s;pointer-events:none}
 .pkm-ecran .socle.vu{transform:translate(-50%,-100%) scale(1);opacity:1}
@@ -2251,14 +2319,15 @@ function scenePantheon(suite = null) {
   const L = 941, H = 1672, eq = equipePantheon(), ordre = [0, 5, 1, 4, 2, 3];  // du fond vers l'avant
   const {v, salle, fin: finE} = ecran("pkm-pantheon", "pantheon-kanto.webp", L, H,
     SOCLES.map(([x, y], i) => `<div class="eclair" style="left:${pcI(x, L)};top:${pcI(y - 60, H)}"></div>
-      <div class="socle ${eq[i].shiny ? "shiny" : ""}" style="left:${pcI(x, L)};top:${pcI(y + 6, H)};width:${pcI(i === 2 || i === 3 ? 200 : 175, L)}">
-        <img src="${IMG.anim(eq[i].num, eq[i].shiny)}" ${repli(eq[i].num, eq[i].shiny)} alt=""></div>
-      <div class="plaque" style="left:${pcI(x, L)};top:${pcI(y + 60, H)};font-size:calc(var(--h) * .0105)">${PAR_NUM[eq[i].num].nom}</div>`).join(""));
+      <div class="socle ${eq[i].shiny ? "shiny" : ""}" style="left:${pcI(x, L)};top:${pcI(y + 6, H)};z-index:${y};
+        width:${pcI(i === 2 || i === 3 ? 200 : i === 1 || i === 4 ? 170 : 145, L)}">
+        <img src="${IMG.anim(eq[i].num, eq[i].shiny)}" ${repli(eq[i].num, eq[i].shiny)} alt=""></div>`).join(""));
   v.insertAdjacentHTML("beforeend", `<div class="titre-p">PANTHÉON<small>LIGUE POKÉMON · KANTO</small></div>`);
   const maj = () => v.style.setProperty("--h", PW.innerHeight + "px"); maj(); PW.addEventListener("resize", maj);
   const air = airAnime(v.querySelector("canvas.air"), "Ligue");
   const DP = dialogue(v), nb = Object.keys(collection()).length, nom = nomDresseur();
   const lignes = ["Félicitations ! Tu as vaincu la Ligue Pokémon de Kanto !", `${nom} et ses Pokémon entrent au <b>Panthéon</b> !`,
+    `Ton équipe : ${eq.map(e => `<b>${PAR_NUM[e.num].nom}</b>`).join(", ")}.`,
     `${nb} Pokémon attrapés, 8 badges, des milliers de pas… Ce voyage restera gravé ici pour toujours.`,
     suite ? "Et maintenant… ouvre ta Master Ball : un Pokémon légendaire t'attend !" : "Une nouvelle région t'attend déjà au-delà des montagnes…"];
   DP.prevoir(lignes.map(l => [l]));
@@ -2277,7 +2346,7 @@ function scenePantheon(suite = null) {
     for (const i of ordre) {  // chaque Pokémon apparaît sur son socle dans un éclair doré
       if (fini) return;
       v.querySelectorAll(".eclair")[i].classList.add("go"); v.querySelectorAll(".socle")[i].classList.add("vu");
-      v.querySelectorAll(".plaque")[i].classList.add("vu"); EPIQUE.clic(); vibre(20); await pause(650);
+      EPIQUE.clic(); vibre(20); await pause(650);
     }
     await pause(400);
     for (const l of lignes) await DP.dire(l);

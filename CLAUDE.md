@@ -181,6 +181,16 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
     `<img>` dans un cadre qui coupe). Badges : EPX ×4 puis 2 agrandissements lissés avec contour net (plus d'escaliers).
     Master Ball 3D : texture 2048 px, « M » plus petit et bordé, bosses roses sans cible. Écran titre sans « Édition Kanto »
     (à remettre si un jour chaque région a son écran titre). Carte dresseur : le dresseur remplit sa case.
+    **Retours du 01/11 (nuit), faits** : **portraits des champions cadrés TOUT SEULS** (`cadreTete`, au chargement de
+    l'image détourée, pour toutes les régions à venir : silhouette mesurée, largeur de la tête à 20 % de la hauteur × 1,45,
+    bornée entre 50 et 57 % de la hauteur, collée au sommet du crâne ; plus de `tete` à la main ; il faut que l'image
+    soit servie avec CORS, ce que fait raw.githubusercontent.com ; sinon cadrage simple). Le Pokémon se pose sur le rond
+    (`left: var(--ox)`) et le décor glisse pour amener le rond au milieu de l'écran sans laisser de vide (starter centré
+    sur la table). Pokémon des arènes ×1,3 (`taille`). Panthéon : le socle le plus proche passe devant (`z-index` = y),
+    plus de noms sur les plaques (trop petites) : l'équipe est dite dans la boîte de dialogue. **Étui à badges refait**
+    (cuir grainé, coins et fermoir en or, Poké Ball gaufrée, revers de satin « LIGUE POKÉMON · KANTO », velours et
+    8 logements cerclés d'or avec la silhouette du badge à gagner et son nom, reflet qui passe quand le badge est posé),
+    remonté au-dessus de la boîte de dialogue.
   - **Replay de la journée sur la carte** (01/11, demande de Kiki) : la carte est **toujours en haut** de l'onglet (puis
     à ouvrir, barre, objectifs…) ; plus de tuile d'arène au-dessus de la carte (doublon de « Défi de l'arène ») ni de
     bandeau « Ton dresseur a avancé » (sauf badge). Chaque capture a `c` = points cumulés au moment où elle a été gagnée
