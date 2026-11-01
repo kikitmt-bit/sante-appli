@@ -225,6 +225,82 @@ def tirer(graine, possedees, sans_nouvelle, types=None, shiny=0.03, p_nouvelle=0
     return {"num": num, "shiny": est_shiny, "nouvelle": num not in especes}
 
 
+def _minute(h):
+    """« 18:05:00 » -> minute de la journée (0 à 1439)."""
+    try:
+        return int(str(h)[:2]) * 60 + int(str(h)[3:5])
+    except ValueError:
+        return None
+
+
+def chronologie(fichier, resume, jour):
+    """La journée minute par minute (fichier du jour : pas, minutes en zone, étages ; séances du résumé), pour savoir à
+    quel moment une Super / Hyper Ball a été gagnée (replay de la carte, 01/11). -> liste de 1 440 tuples cumulés
+    (pas, minutes de sport, points d'effort calculés, séance la plus longue finie), ou None sans fichier."""
+    t = (fichier or {}).get("types") or {}
+    if not t.get("steps"):
+        return None
+    neuf = nouveau(jour)
+    pas, zone, etages, sport, fin_seance = [0.0] * 1440, [0.0] * 1440, [0.0] * 1440, [0.0] * 1440, [0.0] * 1440
+    for h, _, n in (t["steps"].get("lignes") or []):
+        i = _minute(h)
+        if i is not None and n:
+            pas[i] += float(n)
+    for h, _, z, v in ((t.get("active-zone-minutes") or {}).get("lignes") or []):
+        i = _minute(h)
+        if i is None or not v:
+            continue
+        if neuf:  # minutes de sport : zone intense ou maximum, une fois chacune
+            zone[i] += 1 if z in ("CARDIO", "PEAK") else 0
+        else:  # l'ancien calcul : toutes les minutes en zone, cardio et pic comptés 4 fois
+            zone[i] += float(v) * (2 if z in ("CARDIO", "PEAK") else 1)
+    for h, _, n in ((t.get("floors") or {}).get("lignes") or []):
+        i = _minute(h)
+        if i is not None and n:
+            etages[i] += float(n)
+    par_min = seuils_zone({"nouveau": neuf})[0]
+    for p in (resume or {}).get("exercise") or []:
+        c = chiffres.contenu(p)
+        minutes = chiffres.duree(c.get("activeDuration")) / 60
+        iv = c.get("interval") or {}
+        try:
+            debut = dt.datetime.fromisoformat(iv["startTime"].replace("Z", "+00:00")).astimezone(chiffres.TZ)
+            fin = dt.datetime.fromisoformat(iv["endTime"].replace("Z", "+00:00")).astimezone(chiffres.TZ)
+        except (KeyError, ValueError):
+            continue
+        if minutes < REGLAGES["seance_min"] or debut.date() != jour:
+            continue
+        a = debut.hour * 60 + debut.minute
+        b = min(fin.hour * 60 + fin.minute if fin.date() == jour else 1439, 1439)
+        pts = minutes * (REGLAGES["force"] if est_force(c) and jour >= REGLAGES["force_depuis"] else 1)
+        for i in range(a, b + 1):
+            sport[i] += pts / (b - a + 1)
+        fin_seance[b] = max(fin_seance[b], minutes)
+    sortie, cp, cz, ce, cs, sm = [], 0.0, 0.0, 0.0, 0.0, 0.0
+    for i in range(1440):
+        cp, cz, ce, cs, sm = cp + pas[i], cz + zone[i], ce + etages[i], cs + sport[i], max(sm, fin_seance[i])
+        sortie.append((cp, cz, max(cp - REGLAGES["pas_offerts"], 0) / 100 + par_min * cz + ce + cs, sm))
+    return sortie
+
+
+def moment(cle, chrono, m, avant, apres):
+    """Les points cumulés (depuis le début du jeu) au moment où la ball spéciale `cle` a été gagnée ce jour-là, d'après
+    la chronologie (ramenée au vrai total du jour) ; sans chronologie : la fin de la journée."""
+    if not chrono or cle not in ("super", "hyper"):
+        return apres
+    _, obj, exp = seuils_zone(m)
+    if cle == "super":
+        ok = lambda x: x[0] >= REGLAGES["objectif_pas"] and x[1] >= obj  # noqa: E731
+    else:
+        ok = lambda x: (x[3] >= REGLAGES["exploit_seance"] or x[1] >= exp  # noqa: E731
+                        or x[0] >= REGLAGES["exploit_pas"])
+    i = next((k for k, x in enumerate(chrono) if ok(x)), None)
+    total = chrono[-1][2]
+    if i is None or total <= 0:
+        return apres
+    return round(min(avant + chrono[i][2] / total * (apres - avant), apres), 1)
+
+
 def super_ok(m):
     """Journée « objectif double » (Super Ball)."""
     return m["pas"] >= REGLAGES["objectif_pas"] and m["zone"] >= seuils_zone(m)[1]
@@ -312,9 +388,12 @@ def bonus_du_jour(jour, stats, resumes, mission_du):
     return b
 
 
-def jouer(stats, resumes, aujourd, figees=(), missions_jours=None):
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
-    résumé}. Les captures figées sont reprises telles quelles ; les autres sont tirées. -> (captures, état)."""
+    résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
+    figées sont reprises telles quelles ; les autres sont tirées. Chaque capture a « c » = les points cumulés au moment
+    où elle a été gagnée, et l'état a la « frise » (points et position sur la carte au début et à la fin de chaque
+    jour) : c'est ce que rejoue la carte (01/11). -> (captures, état)."""
     figees = {c["id"]: c for c in figees}
     captures, possedees, sans_nouvelle, cumul = [], set(), 0, 0.0
     jours_ok, masters, depuis_master = [], 0, REGLAGES["debut"]  # Master Ball : jours avec l'objectif dans la fenêtre
@@ -322,7 +401,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None):
     jour, m, ok, shiny_bonus = REGLAGES["debut"], {}, False, 1
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
     mission_du = lambda j: (missions_jours or {}).get(str(j)) if j >= missions.DEPUIS else None  # noqa: E731
-    bonus = []
+    bonus, frise = [], []
     while jour <= aujourd:
         s = stats.loc[jour].to_dict() if jour in stats.index else {}
         m = mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []], jour)
@@ -336,9 +415,13 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None):
         shiny_bonus = REGLAGES["shiny_nuit"] if m["sommeil"] >= REGLAGES["nuit"] else 1
         bonus = bonus_du_jour(jour, stats, resumes, mission_du)
         avant, cumul = cumul, cumul + sum(m["points"].values()) + sum(p for _, _, p in bonus)
+        p0 = voyage.pos
         badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"],
                                        "force": m["nb_force"], "ok": ok, "super": super_ok(m)}, cumul)
         lieu, poids_lieux = kanto.LIEUX[voyage.ici()]["nom"], voyage.poids()
+        frise.append({"jour": str(jour), "c0": round(avant, 1), "c1": round(cumul, 1), "p0": round(p0, 1),
+                      "p1": round(voyage.pos, 1)})
+        chrono = None
         if jour.weekday() == 0:
             pesees = set()
         if pesee_matin(resumes.get(str(jour))):
@@ -360,6 +443,19 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None):
                 c |= {"id": i, "jour": str(jour), "ball": mi["ball"], "raison": mi["raison"], "lieu": lieu}
             else:
                 c.setdefault("lieu", lieu)  # captures figées d'avant le voyage
+            if "c" not in c:  # le moment où elle a été gagnée (en points cumulés) : gardé avec la capture figée
+                cle = i.split("#")[1]
+                if cle.startswith("poke") and cle[4:].isdigit():
+                    c["c"] = int(cle[4:]) * REGLAGES["barre"]
+                elif cle == "chen":
+                    c["c"] = round(avant, 1)
+                elif cle in ("super", "hyper"):
+                    if chrono is None:
+                        chrono = chronologie((fichiers_jour or {}).get(jour), resumes.get(str(jour)), jour) or []
+                    c["c"] = moment(cle, chrono, m, avant, cumul)
+                else:
+                    c["c"] = cumul
+                c["c"] = round(min(max(c["c"], avant), cumul), 1)  # dans la journée (balls d'avance de l'ancien calcul)
             captures.append(c)
             possedees.add((c["num"], c["shiny"]))
             sans_nouvelle = 0 if c["nouvelle"] else sans_nouvelle + 1
@@ -387,7 +483,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None):
                       "serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
                       "possedees": possedees, "mesures": m, "sans_nouvelle": sans_nouvelle,
                       "barre": cumul % b, "origine": origine_barre(m) if m else SOURCES["pas"], "shiny_bonus": shiny_bonus,
-                      "bonus": bonus, "mission": etat_mission(aujourd, stats, mission_du)}
+                      "bonus": bonus, "mission": etat_mission(aujourd, stats, mission_du), "cumul": round(cumul, 1),
+                      "frise": frise[-30:]}
 
 
 def etat_mission(aujourd, stats, mission_du):
@@ -415,7 +512,9 @@ def charger_jeu(lire, aujourd):
     """Statistiques depuis le début du jeu et captures figées, avec la fonction `lire` de l'appli."""
     debut = REGLAGES["debut"]
     annees = range(debut.year, aujourd.year + 1)
-    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, missions.FICHIER])
+    # les fichiers d'aujourd'hui et d'hier : le moment des Super / Hyper Balls pas encore figées avec leur moment
+    recents = {j: f"data/jour/{j.year}/{j}.json" for j in (aujourd - dt.timedelta(days=1), aujourd) if j >= debut}
+    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, missions.FICHIER] + list(recents.values()))
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
@@ -423,7 +522,8 @@ def charger_jeu(lire, aujourd):
     stats = pd.DataFrame({j: chiffres.stats_jour(resumes.get(str(j))) for j in jours}).T
     figees = [c for c in (f.get(FIGEES) or {}).get("captures", [])  # seulement celles de la partie en cours
               if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], ""))]
-    return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"))
+    return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"),
+                 {j: f.get(c) for j, c in recents.items()})
 
 
 def figer(dossier):

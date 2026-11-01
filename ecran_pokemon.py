@@ -49,12 +49,13 @@ def afficher(lire, aujourd):
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
             "shiny": c["shiny"], "raison": c["raison"], "lieu": c.get("lieu", ""), "legendaire": c["num"] in LEGENDAIRES,
+            "c": c.get("c"),
             "quand": "aujourd'hui" if c["jour"] == str(aujourd) else
                      f"{chiffres.JOURS[dt.date.fromisoformat(c['jour']).weekday()]} {c['jour'][8:]}/{c['jour'][5:7]}",
         } for c in captures],
         "images": pokemon.IMAGES,
         "dex": [[n, p["nom"], p["types"]] for n, p in POKEMON.items()],
-        "voyage": etat["voyage"],
+        "voyage": etat["voyage"] | {"frise": etat["frise"], "cumul": etat["cumul"]},
         "pesees": etat["pesees"],
         "poids": POIDS,
         "carte": f"https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/{etat['voyage']['carte']['image']}",

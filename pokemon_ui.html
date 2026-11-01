@@ -141,6 +141,32 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff;font-family:Outfit,sans-serif;
   background:radial-gradient(circle at 50% 50%,rgba(10,16,30,.35),rgba(10,16,30,.72));transition:opacity .45s}
 .carte-attente.part{opacity:0;pointer-events:none}
+.puce-replay{position:absolute;left:10px;top:10px;z-index:8;padding:5px 10px;border-radius:999px;background:rgba(10,16,30,.82);
+  color:#fff;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:opacity .8s;pointer-events:none}
+.puce-replay b{color:#FFE27A}
+.puce-replay.fin{opacity:0}
+.ball-route{position:absolute;z-index:9;width:30px;height:30px;margin:-34px 0 0 -15px;pointer-events:none;
+  animation:ball-sort .55s cubic-bezier(.2,1.6,.4,1) both;transition:transform .6s cubic-bezier(.5,0,.8,.4),opacity .6s;
+  filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
+.ball-route svg{width:100%;height:100%}
+.ball-route.spe{width:42px;height:42px;margin:-46px 0 0 -21px}
+.ball-route.spe:before{content:"";position:absolute;inset:-14px;border-radius:50%;background:radial-gradient(circle,rgba(255,226,122,.9),transparent 65%);
+  animation:ball-halo 1.2s ease-out both;z-index:-1}
+.ball-route span{position:absolute;left:50%;top:-22px;transform:translateX(-50%);white-space:nowrap;font-size:12px;font-weight:900;
+  color:#FFE27A;text-shadow:0 1px 3px #000,0 0 6px #000}
+.ball-route.file{opacity:.2}
+@keyframes ball-sort{0%{transform:translateY(16px) scale(0)}100%{transform:translateY(0) scale(1)}}
+@keyframes ball-halo{0%{transform:scale(.2);opacity:1}100%{transform:scale(1.6);opacity:0}}
+#aouvrir.recu{animation:recu .45s ease-out}
+@keyframes recu{0%{box-shadow:0 0 0 0 rgba(255,216,74,.9)}100%{box-shadow:0 0 0 14px rgba(255,216,74,0)}}
+.en-route{display:flex;align-items:center;gap:10px;width:100%;margin:0 0 10px;padding:10px 12px;border:0;border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,#2A3D66,#1C2740);color:#fff;text-align:left;font:inherit;box-shadow:0 0 0 1.5px rgba(255,226,122,.6) inset}
+.en-route span{flex:1;display:flex;flex-direction:column;gap:2px}
+.en-route b{font-size:14.5px;font-weight:900}
+.en-route small{font-size:12.5px;color:#FFE27A;font-weight:700}
+.en-route i{width:28px;height:28px;border-radius:50%;background:#E8382F;position:relative;flex:none;box-shadow:0 0 0 2px #fff}
+.en-route i:after{content:"";position:absolute;left:10px;top:7px;border-left:10px solid #fff;border-top:7px solid transparent;
+  border-bottom:7px solid transparent}
 .carte-attente .play{width:64px;height:64px;border-radius:50%;background:#E8382F;position:relative;
   box-shadow:0 0 0 4px #fff,0 0 0 7px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.5);animation:pk-play 1.6s ease-in-out infinite}
 .carte-attente .play:after{content:"";position:absolute;left:25px;top:18px;border-left:22px solid #fff;border-top:14px solid transparent;
@@ -299,12 +325,13 @@ details.regles li{margin:5px 0;line-height:1.4}
 <div id="app" style="padding-bottom:56px">
   <div id="bandeau-test"></div>
   <div id="bandeau-voyage"></div>
-  <!-- ordre (29/10) : ce qui t'attend, ton compteur du jour, tes objectifs du jour, ton aventure, ta collection -->
+  <!-- ordre (01/11, Kiki : la carte toujours en haut) : ton aventure (et le replay de ta journée), ce qui t'attend, ton
+       compteur du jour, tes objectifs du jour, ta collection -->
+  <div class="carte" id="voyage"></div>
   <div class="carte" id="aouvrir"></div>
   <div class="carte" id="barre"></div>
   <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
   <div class="grille2" id="speciales"></div>
-  <div class="carte" id="voyage"></div>
   <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
   <h2><img class="ico g" id="ic-dex" alt="">Pokédex <span class="n" id="dex-n"></span></h2>
   <div id="stats"></div>
@@ -450,7 +477,10 @@ function partager(ids) {
 serveur.forEach(id => ouvertes.add(id)); garder();
 const memoriser = id => { ouvertes.add(id); if (id.startsWith("test")) return; garder(); partager([id]); };  // test : rien de gardé
 const CAPTURES = D.captures.map(c => ({...c, nom: PAR_NUM[c.num].nom, types: PAR_NUM[c.num].types}));
-const aOuvrir = () => CAPTURES.filter(c => !estOuverte(c));
+// Balls gagnées depuis la dernière visite : elles apparaissent sur la carte pendant le replay du voyage (01/11), au
+// moment où elles ont été gagnées, puis rejoignent « à ouvrir » (EN_ROUTE = leurs identifiants, vidé par le replay)
+const EN_ROUTE = new Set();
+const aOuvrir = () => CAPTURES.filter(c => !estOuverte(c) && !EN_ROUTE.has(c.id));
 const estBadge = c => /#(badge\d|ligue)$/.test(c.id);
 const numBadge = c => c.id.endsWith("#ligue") ? 9 : +c.id.slice(-1);
 function collection() {  // ce que le Pokédex montre : seulement les Poké Balls ouvertes
@@ -1961,17 +1991,25 @@ function dessinerAOuvrir() {
     el.innerHTML = blocBadges; badgesPropres(el); el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
     return;
   }
+  const route = CAPTURES.filter(c => EN_ROUTE.has(c.id) && !estOuverte(c)).length;
+  const rappel = route ? `<button class="en-route">${ico("carte")}<span><b>${route === 1 ? "Une Poké Ball t'attend" : `${route} Poké Balls t'attendent`}
+    sur ta route</b><small>Regarde ton voyage pour les récupérer</small></span><i></i></button>` : "";
+  const brancherRappel = () => { const b = el.querySelector(".en-route"); if (b) b.onclick = () => {
+    document.getElementById("voyage").scrollIntoView({behavior: "smooth", block: "start"}); setTimeout(() => lancerVoyage(false), 350); }; };
+  if (!liste.length && route) { el.classList.remove("vide"); el.innerHTML = blocBadges + rappel; brancherRappel(); badgesPropres(el);
+    el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i])); return; }
   if (!liste.length) {
     el.innerHTML = `<div class="titre" style="font-size:16px">Aucune Poké Ball à ouvrir</div>
       <div class="petit gris" style="margin-top:4px">Remplis ta barre d'effort, ou décroche une Super / Hyper Ball !</div>`;
     return;
   }
-  el.innerHTML = blocBadges + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
+  el.innerHTML = blocBadges + rappel + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
     <div class="rang">${liste.slice(0, 12).map((c, i) => `<button class="bouton-ball" data-i="${CAPTURES.indexOf(c)}"
       style="animation-delay:${i * .25}s">${ballSVG(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
   el.querySelectorAll(".bouton-ball").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
   el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir().filter(c => !estBadge(c))[0]);
+  brancherRappel();
   el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i])); badgesPropres(el);
 }
 
@@ -2561,7 +2599,8 @@ function blocArene() {
   const l = LIEUX[d.lieu], a = l.arene, j = (v, c) => `<div class="jauge"><div class="${v >= c ? "ok" : ""}" style="width:${Math.min(v / c * 100, 100)}%"></div></div>`;
   const nomU = d.unite === "pas" ? "pas" : d.unite;
   const val = v => d.unite === "pas" ? fr(v) : Math.round(v * 10) / 10;
-  if (!d.arrive) return "";  // pas encore arrivé : le champion attend sur la carte (le toucher = son défi)
+  return "";  // 01/11 : le défi est dans « Tes objectifs du jour » (carteDefi) ; le champion attend sur la carte
+  if (!d.arrive) return "";
   const image = a.image ? `<img class="bdg" src="${IMG.badge(a.image)}">` : `<div class="bdg ligue">${ico("ligue", "g")}</div>`;
   const qui = a.type ? `Arène ${/^[AEIOUÉ]/.test(a.champion) ? "d'" : "de "}${a.champion} · type ${a.type}` : "Ligue Pokémon · Champion Régis";
   const style = `style="--c:${a.type ? COUL[a.type] : "#B8860B"}"`;
@@ -2590,17 +2629,46 @@ addEventListener("pointerup", () => { const g = GLISSE; if (!g) return; g.vue.cl
 // (pkm_pos_vu_<partie> = la position du dernier voyage regardé, mise à jour seulement quand on le regarde).
 const SEUIL_VOYAGE = 25;
 let VOYAGE = null;
+// Le replay suit les points d'effort cumulés (01/11) : la carte rejoue la journée et les balls sortent au moment où
+// elles ont été gagnées. frise = pour chaque jour, points (c0 → c1) et position sur la carte (p0 → p1) : pendant un
+// défi d'arène les points montent mais le dresseur reste à l'arène. En mode test : points = position.
+const cumulV = () => TEST ? V.pos : (V.cumul ?? V.pos);
+function posDeC(c) {
+  if (TEST || !V.frise || !V.frise.length) return Math.min(c, V.pos);
+  const f = V.frise;
+  if (c <= f[0].c0) return f[0].p0;
+  for (let i = f.length - 1; i >= 0; i--) if (c >= f[i].c0) return Math.min(f[i].p0 + Math.max(c - f[i].c0, 0), f[i].p1);
+  return V.pos;
+}
+function jourDeC(c) {
+  const f = V.frise || [];
+  for (let i = f.length - 1; i >= 0; i--) if (c > f[i].c0 || i === 0) return f[i].jour;
+  return D.aujourdhui;
+}
 function etatVoyage() {
   if (VOYAGE) return VOYAGE;
-  let vu = NaN; try { vu = parseFloat(localStorage.getItem(`pkm_pos_vu_${R.partie}`)); } catch (e) {}
+  let vu = NaN;
+  try {
+    vu = parseFloat(localStorage.getItem(`pkm_c_vu_${R.partie}`));
+    if (isNaN(vu)) {  // avant le 01/11 : la position (sur la carte) du dernier voyage regardé
+      const p = parseFloat(localStorage.getItem(`pkm_pos_vu_${R.partie}`));
+      if (!isNaN(p)) { const f = (V.frise || []).find(x => x.p1 >= p); vu = f ? f.c0 + Math.max(p - f.p0, 0) : p; }
+    }
+  } catch (e) {}
   if (TEST && TEST.vu != null) vu = TEST.vu;
-  vu = Math.min(isNaN(vu) ? 0 : vu, V.pos);
-  const lieux = LIEUX.filter((l, k) => k && l.dist > vu && l.dist <= V.pos).map(l => l.nom.replace(" (retour)", ""));
-  const attente = V.pos - vu >= SEUIL_VOYAGE || lieux.length > 0;
-  return (VOYAGE = {vu, gain: Math.round(V.pos - vu), lieux, attente});
+  const fin = cumulV();
+  vu = Math.min(isNaN(vu) ? 0 : vu, fin);
+  const p0 = posDeC(vu);
+  const lieux = LIEUX.filter((l, k) => k && l.dist > p0 && l.dist <= V.pos).map(l => l.nom.replace(" (retour)", ""));
+  const balls = TEST ? [] : CAPTURES.filter(c => c.c != null && c.c > vu + 1e-6 && c.c <= fin + 1e-6 && !c.id.endsWith("#chen"))
+    .sort((a, b) => a.c - b.c);
+  const attente = fin - vu >= SEUIL_VOYAGE || lieux.length > 0 || balls.length > 0;
+  if (attente) balls.forEach(c => EN_ROUTE.add(c.id));
+  return (VOYAGE = {vu, p0, fin, gain: Math.round(fin - vu), lieux, balls, attente});
 }
 function texteVoyage(v) {
-  const der = v.lieux[v.lieux.length - 1], pts = `+${fr(v.gain)} pts`;
+  const n = v.balls.filter(c => !estOuverte(c)).length;
+  const der = v.lieux[v.lieux.length - 1], pts = `+${fr(v.gain)} pts` + (n ? ` · ${n} ball${n > 1 ? "s" : ""} à récupérer` : "");
   if (!der) return `${pts} depuis ta dernière visite`;
   const ville = /Bourg|Jadielle|Lavanville|Céladopole|Safrania|Azuria|Carmin|Parmanie|Cramois|Argenta/.test(der);
   return `${der === "Plateau Indigo" ? "Tu es arrivé au Plateau Indigo !" : ville ? `Tu es arrivé à ${der} !` : `Nouvelle étape : ${der}`} · ${pts}`;
@@ -2614,7 +2682,7 @@ function dessinerBandeauVoyage() {
     b.querySelector("button").onclick = () => lancer(badge); badgesPropres(b);
     return;
   }
-  if (!v.attente) { b.innerHTML = ""; return; }
+  b.innerHTML = ""; return;  // 01/11 : la carte est en haut de l'onglet, son bouton ▶ suffit
   b.innerHTML = `<button class="bandeau-voyage">${ico("carte", "g")}<span><b>Ton dresseur a avancé !</b>
     <small>${texteVoyage(v)} · voir le voyage</small></span><i></i></button>`;
   b.querySelector("button").onclick = () => { const cv = document.querySelector("#voyage .carte-cadre");
@@ -2623,46 +2691,79 @@ function dessinerBandeauVoyage() {
 function lancerVoyage(immediat) {  // le toucher : la carte s'éclaire et le dresseur part
   const v = etatVoyage(); if (!v.attente) return;
   v.attente = false;
-  if (TEST) TEST.vu = V.pos; else try { localStorage.setItem(`pkm_pos_vu_${R.partie}`, V.pos); } catch (e) {}
-  document.getElementById("bandeau-voyage").innerHTML = "";
+  if (TEST) TEST.vu = cumulV(); else try { localStorage.setItem(`pkm_c_vu_${R.partie}`, cumulV()); localStorage.setItem(`pkm_pos_vu_${R.partie}`, V.pos); } catch (e) {}
   const el = document.getElementById("voyage"), att = el.querySelector(".carte-attente");
   if (att) { att.classList.add("part"); setTimeout(() => att.remove(), 450); }
-  voyagerDepuis(el, v.vu, CENTRER, immediat); vibre(15);
+  voyagerDepuis(el, v, CENTRER, immediat); vibre(15);
+}
+// Une ball gagnée pendant le replay : elle sort au-dessus du dresseur, puis file vers « à ouvrir » (juste sous la carte)
+function sortirBall(el, c) {
+  const h = el.querySelector(".heros-ancre .suit"), cadre = el.querySelector(".carte-cadre");
+  if (!h || !cadre) { EN_ROUTE.delete(c.id); return; }
+  const rh = h.getBoundingClientRect(), rc = cadre.getBoundingClientRect(), spe = c.ball !== "poke";
+  const b = document.createElement("div"); b.className = "ball-route" + (spe ? " spe" : "");
+  b.innerHTML = `${ballSVG(c.ball)}${spe ? `<span>${BALLS[c.ball]} !</span>` : ""}`;
+  b.style.left = rh.left + rh.width / 2 - rc.left + "px"; b.style.top = rh.top - rc.top + "px";
+  cadre.appendChild(b);
+  vibre(spe ? [20, 40, 20] : 12);
+  try { if (spe) { ton(988, 0, .09, {type: "square", vol: .05}); ton(1319, .1, .16, {type: "square", vol: .05}); }
+        else ton(1175, 0, .07, {type: "square", vol: .04}); } catch (e) {}
+  setTimeout(() => {  // vers « à ouvrir »
+    const cible = document.getElementById("aouvrir").getBoundingClientRect(), rb = b.getBoundingClientRect();
+    b.classList.add("file");
+    b.style.transform = `translate(${cible.left + cible.width / 2 - rb.left - rb.width / 2}px,${Math.min(cible.top + 40 - rb.top, 600)}px) scale(.45)`;
+    setTimeout(() => { b.remove(); EN_ROUTE.delete(c.id); if (!ouverture) dessinerAOuvrir();
+      const a = document.getElementById("aouvrir"); a.classList.remove("recu"); void a.offsetWidth; a.classList.add("recu"); }, 650);
+  }, spe ? 1300 : 800);
 }
 let CENTRER = () => {};
-function voyagerDepuis(el, p0, centrer, immediat) {
+function voyagerDepuis(el, v, centrer, immediat) {
   const vue = el.querySelector(".carte-vue"), g = el.querySelector("#chemin-anim"), ancre = el.querySelector(".heros-ancre");
-  const T = ZC > 1 ? 1.25 : 1, duree = Math.min(4500, 1400 + (V.pos - p0) * 6);
-  let suivre = true, cle = "", t0 = null;
+  const cadre = el.querySelector(".carte-cadre"), c0 = v.vu, c1 = v.fin, p0 = v.p0;
+  // durée : selon ce qui a été fait (entre 3 et 9 s), un peu plus quand il y a des balls à voir sortir
+  const T = ZC > 1 ? 1.25 : 1, duree = Math.min(9000, 2800 + (c1 - c0) * 7 + v.balls.length * 250);
+  const balls = v.balls.slice(), jours = new Set((V.frise || []).filter(f => f.c1 > c0 && f.c0 < c1).map(f => f.jour));
+  let suivre = true, cle = "", u = 0, avant = null, vite = false, attendu = false;
   ["pointerdown", "wheel", "touchstart"].forEach(ev => vue.addEventListener(ev, () => (suivre = false), {once: true, passive: true}));
+  vue.addEventListener("click", () => { if (u < 1) vite = true; }, {once: true});  // toucher la carte : la fin tout de suite
+  const puce = document.createElement("div"); puce.className = "puce-replay"; cadre.appendChild(puce);
+  const JS = ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."];
+  const date = j => { if (j === D.aujourdhui) return "Aujourd'hui"; const d = new Date(j + "T12:00");
+    return `${JS[d.getDay()]} ${j.slice(8)}/${j.slice(5, 7)}`; };
   // la carte doit être à l'écran (l'onglet est long, et la page Streamlit est dans un cadre) : on attend qu'elle y soit
   const visible = () => { try {
     const f = window.frameElement, r = vue.getBoundingClientRect(), haut = (f ? f.getBoundingClientRect().top : 0) + r.top;
     const H = f ? parent.innerHeight : innerHeight; return haut < H * .75 && haut + r.height > H * .25;
   } catch (e) { return true; } };
   const pas = now => {
-    if (!document.body.contains(g)) return;  // la carte a été redessinée (zoom…) : rien à finir
-    if (t0 === null) { if (!immediat && !visible()) return setTimeout(() => requestAnimationFrame(pas), 250); t0 = now + (immediat ? 150 : 600); }
-    const u = Math.max(0, Math.min(1, (now - t0) / duree)), e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
-    const p = u >= 1 ? V.pos : p0 + (V.pos - p0) * e, P = poseA(p);
+    if (!document.body.contains(g)) { balls.forEach(c => EN_ROUTE.delete(c.id)); puce.remove(); dessinerAOuvrir(); return; }
+    if (!attendu) { if (!immediat && !visible()) return setTimeout(() => requestAnimationFrame(pas), 250);
+      attendu = true; avant = now + (immediat ? 150 : 600); }
+    if (now < avant) return requestAnimationFrame(pas);
+    u = Math.min(1, u + (now - avant) / (vite ? 450 : duree)); avant = now;
+    const e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
+    const c = u >= 1 ? c1 : c0 + (c1 - c0) * e, p = u >= 1 ? V.pos : posDeC(c), P = poseA(p);
     g.innerHTML = trajet(p0, p).map(x => traitFait(x, T)).join("");
     POSE = P;
     const k = [P.mode, P.dir, P.enRoute, P.arrete].join();
     if (k !== cle) { cle = k; ancre.innerHTML = heros(P); colorerDresseur(ancre); }
     else ancre.querySelectorAll(".suit").forEach(x => { x.style.left = P.x / LARG * 100 + "%"; x.style.top = P.y / HC * 100 + "%"; });
     if (suivre) centrer(P);
+    puce.innerHTML = `${jours.size > 1 || jourDeC(c) !== D.aujourdhui ? `<b>${date(jourDeC(c))}</b> · ` : ""}+${fr(Math.round(c - c0))} pts`;
+    while (balls.length && balls[0].c <= c + 1e-6) sortirBall(el, balls.shift());
     if (u < 1) return requestAnimationFrame(pas);
+    setTimeout(() => { puce.classList.add("fin"); setTimeout(() => puce.remove(), 900); }, 1600);
     // arrivé à une arène pendant ce voyage : le champion se présente et lance son défi
     const d = V.defi;
     if (d && d.arrive && p0 < LIEUX[d.lieu].dist) setTimeout(() => { const ch = el.querySelector(".chef");
-      if (ch && document.body.contains(ch)) { suivre && centrer(P); ch.click(); } }, 450);
+      if (ch && document.body.contains(ch)) { suivre && centrer(P); ch.click(); } }, 1200);
   };
   requestAnimationFrame(pas);
 }
 
 function dessinerVoyage() {
   const el = document.getElementById("voyage"), k = lieuVu ?? V.ici;
-  const VY = etatVoyage(), depuis = VY.attente ? VY.vu : V.pos;
+  const VY = etatVoyage(), depuis = VY.attente ? VY.p0 : V.pos;
   const badges = LIEUX.filter(l => l.arene).map((l, i) => {
     const n = i + 1, quand = V.badges[n];
     return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img data-badge="${IMG.badge(l.arene.image)}" src="${IMG.badge(l.arene.image)}"></div>`
@@ -2719,7 +2820,7 @@ function dessinerVoyage() {
     // s'il est tout en haut
     const cadre = el.querySelector(".carte-cadre"), rc = vue.getBoundingClientRect(), rm = chef.getBoundingClientRect();
     const b = document.createElement("div"); b.className = "bulle-chef";
-    b.innerHTML = `<b>${ch.nom}</b> : « ${ch.indice} »${d.arrive ? `<small>Son défi est sous la carte.</small>`
+    b.innerHTML = `<b>${ch.nom}</b> : « ${ch.indice} »${d.arrive ? `<small>Son défi est dans tes objectifs du jour.</small>`
       : `<small>Je t'attends : encore ${fr(d.reste)} pts de route.</small>`}`;
     cadre.appendChild(b);
     const L = Math.min(rc.width * .78, 260), H = b.offsetHeight, cx = rm.left + rm.width / 2 - rc.left;
@@ -2738,7 +2839,7 @@ function dessinerVoyage() {
 let TEST = null;  // {V: copie de l'état réel, vu: position du dernier voyage regardé pendant le test}
 function entrerTest() { if (!TEST) TEST = {V: JSON.parse(JSON.stringify(V)), vu: null}; }
 function redessinerTest() {
-  VOYAGE = null; lieuVu = null;
+  VOYAGE = null; lieuVu = null; EN_ROUTE.clear();
   dessinerSpeciales(); dessinerRegles(); dessiner();
   document.getElementById("bandeau-test").innerHTML = TEST ? `<div class="bandeau-test">MODE TEST · rien n'est enregistré
     <button>Quitter le test</button></div>` : "";
@@ -2822,7 +2923,7 @@ function apercuCapture() {
 }
 
 [["ic-spe", "carnet"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
-function dessiner() { dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessiner();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#chen"));

@@ -141,6 +141,16 @@ les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur 
   Garde-fou choisi par Kiki (aléatoire, « ça reste un jeu Pokémon ») : chaque ball a **25 % de chances** de donner un
   Pokémon manquant des régions précédentes, tant qu'il en reste, et **après 8 balls de suite sans, la suivante en donne
   un à coup sûr** ; les Master Balls donnent d'abord les légendaires manquants des régions précédentes. Pas d'obligation de choisir entre finir le Pokédex et avancer.
+  - **Replay de la journée sur la carte** (01/11, demande de Kiki) : la carte est **toujours en haut** de l'onglet (puis
+    à ouvrir, barre, objectifs…) ; plus de tuile d'arène au-dessus de la carte (doublon de « Défi de l'arène ») ni de
+    bandeau « Ton dresseur a avancé » (sauf badge). Chaque capture a `c` = points cumulés au moment où elle a été gagnée
+    (poke k = k × 100 ; Super / Hyper = vrai moment, `pokemon.chronologie` minute par minute dans les fichiers du jour
+    d'aujourd'hui et d'hier, ramené au total du jour, `moment` ; badges et Master = fin du jour ; figé avec la capture) ;
+    `etat["frise"]` = par jour c0→c1 (points) et p0→p1 (carte ; pendant un défi la carte ne bouge pas). Le bouton ▶
+    rejoue depuis `pkm_c_vu_<partie>` (points ; repli : ancienne `pkm_pos_vu_` convertie) : 3 à 9 s selon les points,
+    puce « sam. 31/10 · +340 pts », chaque ball sort au-dessus du dresseur à son moment (Super / Hyper plus grosses avec
+    leur nom) puis file vers « à ouvrir » (`sortirBall`) ; d'ici là elles sont `EN_ROUTE` (pas dans « à ouvrir », qui
+    montre « N Poké Balls t'attendent sur ta route » → lance le replay). Toucher la carte pendant le replay = la fin.
   - **Minutes de sport** (01/11, Kiki) : le jeu ne compte plus les minutes en zone (la zone modérée, verte, se déclenche
     en marchant ou assis en soirée : 323 min le 31/10, 13 balls en deux jours) mais `zone_sport` (jaune / rouge) :
     `zone_points` = 5 pts / min, objectif 10 min, exploit 25 min ; Major Bob = 3 jours avec 10 min, Auguste = 60 min
