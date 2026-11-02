@@ -2892,7 +2892,7 @@ const STYLE_FICHE = `
 #pkm-fiche .onglets-f{display:flex;gap:6px;margin:10px 0 0}
 #pkm-fiche .onglets-f button{flex:1;border:2px solid #484838;border-radius:8px 4px 8px 4px;background:#F8F8E8;color:#383828;padding:6px;font-size:16px;cursor:pointer}
 #pkm-fiche .onglets-f button.on{background:#D83830;color:#fff;text-shadow:2px 2px 0 #7A1712}
-#pkm-fiche .desc{margin-top:10px;background:#fff;border:2px solid #484838;border-radius:10px 4px 10px 4px;padding:9px 12px;font-size:16px;line-height:1.25;color:#484838}
+#pkm-fiche .desc{margin-top:10px;background:#fff;border:2px solid #484838;border-radius:10px 4px 10px 4px;padding:9px 12px;font-size:16px;line-height:1.25;color:#484838;text-wrap:pretty}
 #pkm-fiche .desc:empty{display:none}
 #pkm-fiche .ident{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;margin-top:10px;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px 12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.3);padding:10px 12px}
 #pkm-fiche .ident div{min-width:0}
@@ -2917,15 +2917,6 @@ const STYLE_FICHE = `
 #pkm-voile .nom-ball,#pkm-voile .aide,#pkm-voile .aide small{font-family:'Jersey 15',Outfit,sans-serif !important;font-size-adjust:.53;font-weight:400 !important}
 `;
 
-// La catégorie et la description d'une espèce : lues sur PokeAPI à la demande, jamais copiées ici (sexe, taille et poids sont dans pokedex.py)
-const INFOS = new Map();
-function infosPokemon(n) {
-  if (!INFOS.has(n)) INFOS.set(n, fetch(`https://pokeapi.co/api/v2/pokemon-species/${n}`).then(x => { if (!x.ok) throw 0; return x.json(); }).then(e => {
-    const fr = l => l.filter(x => x.language.name === "fr"), d = fr(e.flavor_text_entries).pop(), g = fr(e.genera)[0];
-    return {genre: g ? g.genus : "", texte: d ? d.flavor_text.replace(/[\s\u00AD]+/g, " ") : ""};
-  }).catch(() => { INFOS.delete(n); return null; }));
-  return INFOS.get(n);
-}
 // Chaque Pokémon attrapé est un individu : son sexe, sa nature et sa taille sont tirés de l'identifiant de sa capture (toujours les mêmes pour lui)
 const NATURES = ["Hardi", "Solo", "Rigide", "Mauvais", "Brave", "Assuré", "Docile", "Malin", "Lâche", "Relax", "Modeste", "Doux", "Pudique", "Foufou", "Discret", "Calme", "Gentil", "Prudent", "Bizarre", "Malpoli", "Timide", "Pressé", "Jovial", "Naïf", "Sérieux"];
 const nombreFr = x => (x < 10 ? Math.round(x * 10) / 10 : Math.round(x)).toString().replace(".", ",");
@@ -2937,7 +2928,7 @@ function fiche(p) {
   const col = collection(), mes = col[p.num] || [], a = mes.length > 0, leg = LEG.has(p.num);
   const normal = mes.find(c => !c.shiny), shiny = mes.find(c => c.shiny);
   const lieux = LIEUX_DE[p.num] || [];
-  let vue = normal ? false : !!shiny, inf = null;  // la forme montrée : le normal d'abord ; le shiny se choisit seulement si on a les deux
+  let vue = normal ? false : !!shiny;  // la forme montrée : le normal d'abord ; le shiny se choisit seulement si on a les deux
   const f = P.createElement("div"); f.id = "pkm-fiche";
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
     <div class="tete">
@@ -2955,19 +2946,18 @@ function fiche(p) {
     const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
     const note = t < .9 ? "Un tout petit spécimen !" : t > 1.1 ? "Un spécimen impressionnant !" : "";
     f.querySelector(".sx").innerHTML = signeSexe(sexeDe(c));
-    f.querySelector(".sous").textContent = inf ? inf.genre : "";
+    f.querySelector(".sous").textContent = D.categories[p.num] || "";
     f.querySelector(".corps").innerHTML = `<div class="ident">
       <div><small>Attrapé</small><b>${c.quand}</b></div><div><small>Avec</small><b>${origine[0]}${origine[1]}</b></div>
       ${c.lieu ? `<div><small>Lieu</small><b>${c.lieu}</b></div>` : ""}
       <div><small>Nature</small><b>${NATURES[Math.floor(hasard(c, "nature") * 25)]}</b></div>
       <div><small>Taille</small><b>${nombreFr(D.tailles[c.num] * t)} m</b></div><div><small>Poids</small><b>${nombreFr(D.poids[c.num] * t * t)} kg</b></div>
       ${note ? `<div class="note">${note}</div>` : ""}</div>`;
-    f.querySelector(".desc").textContent = inf ? inf.texte : "";
+    f.querySelector(".desc").textContent = sansVeuve(D.descriptions[p.num] || "");
     grande.src = IMG.grand(p.num, vue);
     f.querySelectorAll(".onglets-f button").forEach(b => b.classList.toggle("on", +b.dataset.s === +vue));
   };
   peindre();
-  if (a) infosPokemon(p.num).then(x => { if (x && f.isConnected) { inf = x; peindre(); } });
   f.querySelectorAll(".onglets-f button").forEach(b => b.onclick = () => { vue = b.dataset.s === "1"; peindre(); });
   const fermer = () => { f.classList.remove("vu"); setTimeout(() => f.remove(), 350); };
   f.querySelector(".ombre").onclick = fermer; f.querySelector(".fermer").onclick = fermer;
