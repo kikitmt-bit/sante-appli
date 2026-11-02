@@ -31,8 +31,14 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
   +3 % par raté ; raté = capture `rate` : le Pokémon s'enfuit, hors Pokédex et hors montre).
 - **Arène** : dès le lendemain de l'arrivée (`defi_grise`), Super / Hyper / mission retenues et grisées, Poké Balls sans rien
   de nouveau en attente sans chasse ; victoire = tout se débloque dans la journée, le champion rend `rend` = 3 derniers jours,
-  le reste est perdu. Défi et plan B **cumulés depuis l'arrivée**, plan B 4, 4, 5, 5, (Koga 5), 6, 6, 7, 7 jours, jour
-  d'exploit = 2. Ligue : 1 jour de Super Ball = 1 membre du Conseil 4 battu (`conseil4`).
+  le reste est perdu. **Défis refaits le 02/11 (Kiki)** : un exploit par champion, à son thème, faisable vite, cumulé ou meilleure journée depuis
+  l'arrivée (`kanto.DEFIS`) ; **jamais de sommeil ni d'heure de coucher** (amis infirmiers de nuit) ; une autre voie (pompes, tractions) quand il
+  faut du matériel ou un escalier (`_o`, `voies`) : Pierre 35 étages / 30 pompes, Ondine 20 min de rameur / 40 pompes / 10 tractions, Major Bob 15 min de sport
+  en un jour, Erika 8 000 pas en un jour, Koga 2 000 pas après 20 h (`pas_soir` de missions.json) / 60 pompes, Morgane une séance de 20 min, Auguste 30 min de sport en
+  un jour, Giovanni 20 min de muscu / 80 pompes / 25 tractions ; **Ligue = 5 épreuves dans l'ordre qu'on veut** (`epreuves` : Olga, Aldo, Agatha, Peter, Régis). Plan B plus
+  long pour tous (6, 6, 7, 7, 7, 8, 8, 9, 10 jours), jour d'exploit = 2.
+- **Pompes et tractions** (02/11, Kiki) : la montre ne les compte pas. Boutons (`blocGestes`, petite tuile « Pompes », carte du défi) : déclaratif. Chaque toucher = une trace `…#geste-pompes_10_<heure>` dans la liste partagée,
+  recopiée par montre.py dans `data/pokemon/gestes.json` (`pokemon.gestes_du`) ; donnent aussi des points (`bonus_pompe`, `bonus_traction`, `bonus_gestes_max` = 25 / jour). Points et défi serveur à la prochaine actualisation.
 - **Légendaires** : `kanto.SANCTUAIRES` (Électhor, Artikodin, Sulfura : 5 jours d'exploit depuis qu'on l'a atteint, jamais
   bloquant, marque sur la carte), Mewtwo = Ligue, Mew = diplôme (146 autres), toute petite chance d'un oiseau par ball
   (`legende_chance` 0,1 / 0,25 / 0,5 %, tirée une fois par ball, une par région : environ 3 parties sur 10). Sanctuaire dont on a

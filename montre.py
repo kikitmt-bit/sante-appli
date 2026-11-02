@@ -278,6 +278,12 @@ def calculer_missions(lire, aujourd):
     return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour)
 
 
+def calculer_gestes(lire, aujourd, ami=None):
+    """Les pompes et tractions de chaque jour : la liste partagée ne garde que 20 jours, ce fichier garde tout (pokemon.gestes_du)."""
+    f = lire([pokemon.GESTES, pokemon.OUVERTES])
+    return {"jours": pokemon.gestes_du(f.get(pokemon.GESTES), (f.get(pokemon.OUVERTES) or {}).get("ouvertes", {}), ami, aujourd)}
+
+
 def calculer_amis(session, aujourd):
     """Pour chaque ami : sa mission du jour et ses captures figées, dans son dossier. Dépôt public : ni identifiant ni
     message d'erreur dans le journal ; un ami en panne ne gêne pas les autres."""
@@ -289,6 +295,7 @@ def calculer_amis(session, aujourd):
             lire = chiffres.chez(lecteur_github(session), prefixe)
             texte = json.dumps(calculer_missions(lire, aujourd), ensure_ascii=False, indent=0)
             ecrire_github(session, texte, prefixe + missions.FICHIER, pareil)
+            ecrire_github(session, json.dumps(calculer_gestes(lire, aujourd, ami), ensure_ascii=False, indent=0), prefixe + pokemon.GESTES, pareil)
             lire = chiffres.chez(lecteur_github(session), prefixe)  # relire (la mission vient d'être écrite)
             joueur = {"id": ami, "debut": dt.date.fromisoformat(info["debut"])}
             captures, _ = pokemon.charger_jeu(lire, aujourd, joueur)
@@ -308,6 +315,8 @@ def main(args):
         # La mission du jour d'abord : le jeu (montre.json, captures figées) en tient compte (bonus de points)
         texte_m = json.dumps(calculer_missions(lire, maintenant.date()), ensure_ascii=False, indent=0)
         print("missions :", ecrire_github(session, texte_m, missions.FICHIER, lambda a, b: json.loads(a) == json.loads(b)))
+        texte_g = json.dumps(calculer_gestes(lire, maintenant.date()), ensure_ascii=False, indent=0)
+        print("pompes et tractions :", ecrire_github(session, texte_g, pokemon.GESTES, lambda a, b: json.loads(a) == json.loads(b)))
         lire = lecteur_github(session)  # relire (la mission vient d'être écrite)
         d = contenu(lire, maintenant)
         # Les pronos NFL (autre dépôt privé : il faut que le jeton SANTE_TOKEN y ait accès en lecture)

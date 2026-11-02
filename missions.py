@@ -15,6 +15,7 @@ FICHIER = "data/pokemon/missions.json"
 DEPUIS = dt.date(2026, 10, 30)  # premier jour avec une mission
 BONUS = 25                       # points d'effort d'une mission réussie
 HISTOIRE = 14                    # jours regardés pour trouver les lacunes
+SOIR = 20                        # les pas à partir de cette heure : le défi de Koga (gardés avec ceux du matin)
 
 # cle -> titre, texte, seuil, jours possibles (0 = lundi), unité
 MISSIONS = {
@@ -37,14 +38,15 @@ def cle_zone(jour):
     return "zone_sport" if jour >= ZONE_SPORT else "zone"
 
 
-def pas_matin(jour_fichier, avant=13):
-    """Les pas d'avant 13 h (heure locale) d'un fichier du jour, ou None s'il n'y en a pas."""
+def pas_matin(jour_fichier, avant=13, apres=None):
+    """Les pas d'avant 13 h (ou d'après une heure : apres) (heure locale) d'un fichier du jour, ou None s'il n'y en a pas."""
     t = chiffres.table((jour_fichier or {}).get("types", {}).get("steps"))
     if "countSum" not in t or "heure" not in t:
         return None
     h = t["heure"].astype(str).str[:2]
     import pandas as pd
-    return float(pd.to_numeric(t.loc[h < f"{avant:02d}", "countSum"], errors="coerce").sum())
+    garde = h >= f"{apres:02d}" if apres is not None else h < f"{avant:02d}"
+    return float(pd.to_numeric(t.loc[garde, "countSum"], errors="coerce").sum())
 
 
 def reussite(cle, jour, stats, pas_du_matin):
@@ -92,10 +94,11 @@ def calculer(ancien, aujourd, stats, lire_jour):
     jours = dict((ancien or {}).get("jours", {}))
     debut = DEPUIS - dt.timedelta(days=HISTOIRE)
     a_lire = [debut + dt.timedelta(days=k) for k in range((aujourd - debut).days + 1)]
-    a_lire = [j for j in a_lire if str(j) not in jours or "pas_matin" not in jours[str(j)] or j >= aujourd - dt.timedelta(days=1)]
+    a_lire = [j for j in a_lire if str(j) not in jours or "pas_soir" not in jours[str(j)] or j >= aujourd - dt.timedelta(days=1)]
     fichiers = lire_jour(a_lire)
     for j in a_lire:
         jours.setdefault(str(j), {})["pas_matin"] = pas_matin(fichiers.get(j))
+        jours[str(j)]["pas_soir"] = pas_matin(fichiers.get(j), apres=SOIR)
     pm = lambda j: (jours.get(str(j)) or {}).get("pas_matin")  # noqa: E731
     j = DEPUIS
     while j <= aujourd:

@@ -37,6 +37,7 @@ import datetime as dt
 import json
 import math
 import random
+import re
 import sys
 from pathlib import Path
 
@@ -59,6 +60,7 @@ REGLAGES = {
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
     "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
+    "bonus_pompe": .5, "bonus_traction": 1, "bonus_gestes_max": 25,  # points d'effort par pompe, par traction, et au plus par jour
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
     "barre": 100,                    # points d'effort pour une Poké Ball
@@ -404,13 +406,38 @@ def ident(jour, cle, ami=None):
     return f"{jour}{'' if REGLAGES['partie'] == 1 else '-p' + str(REGLAGES['partie'])}{'-' + ami if ami else ''}#{cle}"
 
 
-def bonus_du_jour(jour, stats, resumes, mission_du):
+GESTES = "data/pokemon/gestes.json"  # pompes et tractions, jour par jour (la montre ne sait pas les compter)
+_GESTE = re.compile(r"#geste-(pompes|tractions)_(-?\d+)_\d+$")
+
+
+def gestes_du(ancien, ouvertes, ami, aujourd):
+    """Les pompes et tractions de chaque jour : {jour: {"pompes", "tractions"}}. Le téléphone laisse chaque toucher sur le bouton dans
+    la liste partagée (« …#geste-pompes_10_1234 »), qui ne garde que 20 jours : le calcul de chaque heure (montre.py) les recopie dans
+    gestes.json ; aujourd'hui et les jours récents viennent de la liste, les plus vieux du fichier."""
+    jours, traces = {j: dict(v) for j, v in ((ancien or {}).get("jours") or {}).items()}, {}
+    for i in ouvertes or ():
+        m = _GESTE.search(i)
+        if m and i.startswith(ident(i[:10], "geste", ami).split("geste")[0]):
+            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0})
+            t[m[1]] += int(m[2])
+    limite = str(aujourd - dt.timedelta(days=18))
+    for j, t in traces.items():
+        if j >= limite:
+            jours[j] = {k: max(v, 0) for k, v in t.items()}
+    return jours
+
+
+def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
     """Les petits bonus de points d'effort d'un jour : [(icône, texte, points)]. Pesée du matin : +10 ; mission du
     jour réussie : +25 (le coucher d'hier soir est compté ce matin, quand la nuit est connue). Comptés le jour où on
     les sait : rien ne change après coup (sinon les Poké Balls déjà gagnées se décaleraient)."""
     b = []
     if pesee_matin(resumes.get(str(jour))):
         b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
+    g = (gestes or {}).get(str(jour)) or {}
+    pts = min(g.get("pompes", 0) * REGLAGES["bonus_pompe"] + g.get("tractions", 0) * REGLAGES["bonus_traction"], REGLAGES["bonus_gestes_max"])
+    if pts:
+        b.append(("💪", "Pompes et tractions", pts))
     st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
     pm = lambda j: (mission_du(j) or {}).get("pas_matin")  # noqa: E731
     hier = jour - dt.timedelta(days=1)
@@ -423,13 +450,13 @@ def bonus_du_jour(jour, stats, resumes, mission_du):
     return b
 
 
-def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=()):
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
     figées sont reprises telles quelles ; les autres sont tirées. Chaque capture a « c » = les points cumulés au moment
     où elle a été tirée, et l'état a la « frise » (points et position sur la carte au début et à la fin de chaque
     jour) : c'est ce que rejoue la carte. joueur = {"id", "debut"} pour un ami (None : Kiki) ; anniversaires = les jours où
-    une Shiny Ball d'anniversaire est due. -> (captures, état)."""
+    une Shiny Ball d'anniversaire est due ; gestes = les pompes et tractions de chaque jour (gestes_du). -> (captures, état)."""
     R = REGLAGES
     figees = {c["id"]: c for c in figees}
     captures, possedees, cumul = [], set(), 0.0
@@ -519,7 +546,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             shiny_balls += 1
             shiny_ball, jours_ok, depuis_master = shiny_balls, [], jour + dt.timedelta(days=1)
         shiny_bonus = R["shiny_nuit"] if m["sommeil"] >= R["nuit"] else 1
-        tous_bonus = bonus_du_jour(jour, stats, resumes, mission_du)
+        tous_bonus = bonus_du_jour(jour, stats, resumes, mission_du, gestes)
         mission_jour = [b for b in tous_bonus if b[0] == "🎯"]
         bonus = [b for b in tous_bonus if b[0] != "🎯"]
         # dès le lendemain de l'arrivée, la mission attend la victoire (les points du jour ne bougent plus la carte)
@@ -528,9 +555,11 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             bonus += mission_jour
         avant, cumul = cumul, cumul + sum(m["points"].values()) + sum(p for _, _, p in bonus)
         p0 = voyage.pos
-        badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"],
-                                       "force": m["nb_force"], "ok": ok, "super": super_ok(m),
-                                       "hyper": exploit(m) is not None}, cumul)
+        g = (gestes or {}).get(str(jour)) or {}
+        soir = ((missions_jours or {}).get(str(jour)) or {}).get("pas_soir") or 0
+        badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"], "force_min": m["force"],
+                                       "seance": m["seance_max"], "soir": soir, "pompes": g.get("pompes", 0), "tractions": g.get("tractions", 0),
+                                       "ok": ok, "double": double_ok(m), "hyper": exploit(m) is not None}, cumul)
         en_defi = voyage.arrivee is not None and voyage.arrivee < jour and not badges
         limite = jour - dt.timedelta(days=R["rend"] - 1)
         if etait_en_defi:
@@ -659,7 +688,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "fini": 9 in voyage.badges, "hier": hier,
+                      "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0},
                       "starter": starter and {"ligne": LIGNES[starter], "niveau": niv, "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1),
                                               "evolue_a": prochaine, "reste": round((prochaine - R["niveau_depart"]) * R["pts_niveau"] - cumul) if prochaine else None}}
 
@@ -716,7 +745,7 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     annees = range(debut.year, aujourd.year + 1)
     # les fichiers d'aujourd'hui et d'hier : le moment des Super / Hyper Balls pas encore figées avec leur moment
     recents = {j: f"data/jour/{j.year}/{j}.json" for j in (aujourd - dt.timedelta(days=1), aujourd) if j >= debut}
-    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, OUVERTES, missions.FICHIER] + list(recents.values()))
+    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, OUVERTES, GESTES, missions.FICHIER] + list(recents.values()))
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
@@ -725,8 +754,9 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     figees = [c for c in (f.get(FIGEES) or {}).get("captures", [])  # seulement celles de la partie en cours
               if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], "", ami))]
     anniv = jours_anniversaire((f.get(OUVERTES) or {}).get("ouvertes", {}), figees, ami, debut, aujourd, anniversaire)
+    gestes = gestes_du(f.get(GESTES), (f.get(OUVERTES) or {}).get("ouvertes", {}), ami, aujourd)
     return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"),
-                 {j: f.get(c) for j, c in recents.items()}, joueur, anniv)
+                 {j: f.get(c) for j, c in recents.items()}, joueur, anniv, gestes)
 
 
 def figer(dossier):

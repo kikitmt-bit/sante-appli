@@ -61,6 +61,8 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False):
     donnees = {
         "aujourdhui": str(aujourd),
         "ouvertes": list((f[pokemon.OUVERTES] or {}).get("ouvertes", {})),
+        "prefixe": pokemon.ident(aujourd, "", joueur["id"] if joueur else None),
+        "gestes_jour": etat["gestes_jour"],
         "jeu": _acces_jeu(joueur),
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
@@ -94,7 +96,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False):
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
-                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts")},
+                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_gestes_max")},
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"
