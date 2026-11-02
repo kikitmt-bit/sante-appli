@@ -40,7 +40,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
   animation:flotte 2.6s ease-in-out infinite}
 .bouton-ball svg{width:64px;height:64px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
 img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
-.bouton-ball img.ball-pix{width:64px;height:64px;filter:drop-shadow(0 4px 0 rgba(40,40,30,.25))}.mini-ball img.ball-pix{image-rendering:auto}
+.bouton-ball img.ball-pix{width:64px;height:64px;filter:drop-shadow(0 4px 0 rgba(40,40,30,.25))}
 .bouton-ball:after{content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;
   background:radial-gradient(circle,rgba(255,255,255,.28),transparent 65%);animation:halo 2.6s ease-in-out infinite}
 .bouton-ball .q{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:10px;color:#9AA7C2;
@@ -138,7 +138,7 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
 .mini-ball svg{width:100%;height:100%;display:block}
 .speciale .tete .mini-ball{width:28px;height:28px;flex:0 0 28px;margin:2px}
 .sac{display:flex;gap:10px;align-items:center;background:#1C2740;border-radius:12px;padding:10px 12px;margin-bottom:10px}
-.sac .boules{display:flex;flex:0 0 auto}.sac .boules .mini-ball{margin-left:-6px}.sac .boules .mini-ball:first-child{margin-left:0}
+.sac .boules{display:flex;flex:0 0 auto;gap:1px}.sac .boules .ico{flex:0 0 22px;width:22px;height:22px;margin:0 2px}
 .sac b{display:block;font-size:13px}.sac small{display:block;color:#9AA7C2;font-size:11px;line-height:1.3;margin-top:2px}
 .marque-sanct{opacity:.55}.marque-sanct.ouvert{opacity:1;filter:drop-shadow(0 0 3px #B57BFF)}.marque-sanct.fait{opacity:.3}
 .speciale.ok .reste{color:#4CD3A0}
@@ -1305,10 +1305,9 @@ function texture(type, haut) {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
-// La ball, dessinée comme un sprite (validée par Kiki le 02/11) : un vrai volume, en aplats de couleur, contour sombre et reflet peint,
+// La ball, dessinée comme un sprite (validée par Kiki le 02/11) : un vrai volume, en aplats de couleur, contour sombre, sans reflet,
 // ~ `diametre` points agrandis sans lissage.
 const PIXEL_BALL = 84;
-const REFLETS = {poke: 0xFFC4BC, super: 0xC4DCFF, hyper: 0x8E8E98, master: 0xDCC8FF, shiny: 0xFFF8C8};
 function Ball3D(canvas, type, diametre = PIXEL_BALL) {
   const renderer = new THREE.WebGLRenderer({canvas, antialias: false, alpha: true});
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, .1, 100);
@@ -1342,14 +1341,10 @@ function Ball3D(canvas, type, diametre = PIXEL_BALL) {
   const btnMat = new THREE.MeshToonMaterial({color: 0xF8F8E8, gradientMap: aplats, emissive: 0xffffff, emissiveIntensity: 0});
   const btn = new THREE.Mesh(new THREE.CylinderGeometry(R * .19, R * .2, R * .1, 48), btnMat);
   btn.rotation.x = Math.PI / 2; btn.position.z = R * .07; bouton.add(btn);
-  // le contour (la ball un peu plus grande, vue de l'intérieur) et le reflet peint : une virgule qui épouse la courbe de la ball, dans un ton
-  // clair de sa couleur (jamais un rond blanc), qui suit le couvercle
+  // le contour : la ball un peu plus grande, vue de l'intérieur
   const trait = new THREE.MeshBasicMaterial({color: 0x282820, side: THREE.BackSide});
   ball.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), trait));
   haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), trait));
-  const refletMat = new THREE.MeshBasicMaterial({color: REFLETS[type] || 0xffffff});
-  haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.006, 12, 4, .5, .62, .68, .11), refletMat));
-  haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.006, 6, 3, 1.24, .1, .68, .11), refletMat));
   // Faisceau de lumière (à l'ouverture)
   const gc = P.createElement("canvas"); gc.width = 4; gc.height = 128; const g2 = gc.getContext("2d");
   const grd = g2.createLinearGradient(0, 0, 0, 128); grd.addColorStop(0, "rgba(255,255,255,0)"); grd.addColorStop(1, "rgba(255,255,255,1)");
@@ -1510,6 +1505,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 
   // La grande illustration officielle (chargée pendant que la ball tombe) ; sinon l'image animée
   poke.onerror = () => { poke.onerror = null; poke.src = IMG.anim(c.num, c.shiny); };
+  infosPokemon(c.num);  // pour afficher son sexe dans le résultat
   rogne(IMG.grand(c.num, c.shiny)).then(([src, w, h]) => { spr = [w, h]; poke.src = src; placer(); });
 
   const centre = () => B.ecran();
@@ -1681,7 +1677,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
-      <div class="phrase">${r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
+      <div class="phrase">${(sx => r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c, INFOS_LUES.get(c.num))))}</div>
       <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes} · Shiny ${shinys}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
@@ -2889,24 +2885,21 @@ const STYLE_FICHE = `
 #pkm-fiche.vu .feuille{transform:none}
 #pkm-fiche .poignee{width:42px;height:5px;border-radius:3px;background:#2A3756;margin:4px auto 10px}
 #pkm-fiche .tete{display:flex;gap:12px;align-items:center;border-radius:18px;padding:10px 12px}
-#pkm-fiche .tete .grande{width:128px;height:128px;flex:0 0 128px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 6px 12px rgba(0,0,0,.45));
-  transition:opacity .25s}
+#pkm-fiche .tete .grande{width:128px;height:128px;flex:0 0 128px;object-fit:contain;image-rendering:pixelated}
 #pkm-fiche .tete .grande.non{filter:brightness(0);opacity:.35;image-rendering:pixelated}
 #pkm-fiche .no{font-size:12px;color:#C9D3EA}#pkm-fiche h3{margin:0;font-size:26px;font-weight:900}
 #pkm-fiche .sous{font-size:12.5px;color:#C9D3EA;margin-top:4px}
-#pkm-fiche h4{font-size:14px;margin:16px 2px 8px;display:flex;justify-content:space-between}
-#pkm-fiche h4 span{color:#9AA7C2;font-weight:600;font-size:12px}
-#pkm-fiche .formes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-#pkm-fiche .f{background:#1C2740;border-radius:14px;padding:8px;text-align:center;font-size:11px;color:#9AA7C2;line-height:1.35;cursor:pointer}
-#pkm-fiche .f.on{box-shadow:inset 0 0 0 2px #6B8CFF}
-#pkm-fiche .f.sh{background:linear-gradient(160deg,#3A3010,#1C2740 60%)}#pkm-fiche .f.sh.on{box-shadow:inset 0 0 0 2px #C9A227}
-#pkm-fiche .f b{display:block;color:#fff;font-size:12.5px}
-#pkm-fiche .f img{height:84px;max-width:100%;object-fit:contain;image-rendering:pixelated;display:block;margin:4px auto}
-#pkm-fiche .f .trou{height:84px;margin:4px auto;display:flex;align-items:center;justify-content:center;font-size:30px;color:#2A3756}
-#pkm-fiche .ou{background:#1C2740;border-radius:14px;padding:10px 12px;font-size:13px;line-height:1.5;color:#C9D3EA}
-#pkm-fiche .ou b{color:#fff}
-#pkm-fiche .rien{display:block;width:100%;margin-top:10px;border:0;border-radius:14px;padding:11px;cursor:pointer;color:#fff;
-  font:800 14px Outfit,sans-serif;background:linear-gradient(180deg,#4CD3A0,#2E9E76);box-shadow:0 3px 0 #1E6B50}
+#pkm-fiche .sexe{margin-left:6px}#pkm-fiche .sexe.m{color:#3068D0}#pkm-fiche .sexe.f{color:#D83850}
+#pkm-fiche .onglets-f{display:flex;gap:6px;margin:10px 0 0}
+#pkm-fiche .onglets-f button{flex:1;border:2px solid #484838;border-radius:8px 4px 8px 4px;background:#F8F8E8;color:#383828;padding:6px;font-size:16px;cursor:pointer}
+#pkm-fiche .onglets-f button.on{background:#D83830;color:#fff;text-shadow:2px 2px 0 #7A1712}
+#pkm-fiche .desc{margin-top:10px;background:#fff;border:2px solid #484838;border-radius:10px 4px 10px 4px;padding:9px 12px;font-size:16px;line-height:1.25;color:#484838}
+#pkm-fiche .desc:empty{display:none}
+#pkm-fiche .ident{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;margin-top:10px;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px 12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.3);padding:10px 12px}
+#pkm-fiche .ident div{min-width:0}
+#pkm-fiche .ident small{display:block;font-size:13.5px;line-height:1.1;color:#686850}
+#pkm-fiche .ident b{display:flex;align-items:center;gap:4px;font-size:19px;line-height:1.15;color:#383828}
+#pkm-fiche .note{grid-column:1/-1;font-size:15px;color:#B05010;padding-top:6px;border-top:2px dashed #D8D8B8}
 #pkm-fiche .fermer{display:block;width:100%;margin-top:14px;border:0;border-radius:14px;padding:12px;background:#1C2740;color:#fff;
   font:700 15px Outfit,sans-serif;cursor:pointer}
 .pkm-type{display:inline-block;padding:2px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#fff;margin:6px 2px 0;
@@ -2918,53 +2911,67 @@ const STYLE_FICHE = `
 #pkm-fiche .feuille{background:#E8E8D0;border-radius:16px 16px 0 0;border:3px solid #484838;border-bottom:0}
 #pkm-fiche .poignee{background:#A8A890}
 #pkm-fiche .tete{border:3px solid #484838;background:#F8F8E8 !important;border-radius:12px 5px 12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.3)}
-#pkm-fiche .no,#pkm-fiche .sous,#pkm-fiche h4 span{color:#686850}#pkm-fiche h3{font-size:30px}
-#pkm-fiche .f,#pkm-fiche .ou{background:#F8F8E8;border:2px solid #484838;border-radius:10px 4px 10px 4px;color:#585840;font-size:13.5px}
-#pkm-fiche .f.sh{background:#FBF2C8}#pkm-fiche .f.on{box-shadow:inset 0 0 0 2px #D83830}#pkm-fiche .f.sh.on{box-shadow:inset 0 0 0 2px #C89010}
-#pkm-fiche .f b,#pkm-fiche .ou b{color:#383828;font-size:15px}#pkm-fiche .ou{color:#484838;line-height:1.3}
-#pkm-fiche .f .trou{color:#A8A890}
+#pkm-fiche .no,#pkm-fiche .sous{color:#686850}#pkm-fiche h3{font-size:30px}
 #pkm-fiche .fermer{background:#D83830;border:3px solid #484838;border-radius:10px 5px 10px 5px;color:#fff;box-shadow:3px 3px 0 rgba(10,15,35,.3);font-size:18px;text-shadow:2px 2px 0 #7A1712}
 #pkm-fiche .fermer:before{content:"▶ "}
+.sexe.m{color:#3068D0}.sexe.f{color:#D83850}.sexe{margin-left:5px}
 #pkm-voile .nom-ball,#pkm-voile .aide,#pkm-voile .aide small{font-family:'Jersey 15',Outfit,sans-serif !important;font-size-adjust:.53;font-weight:400 !important}
 `;
 
+// Ce que le Pokédex sait d'une espèce (taille, poids, chance d'être une femelle, catégorie, description) : lu sur PokeAPI à la demande, jamais copié ici
+const INFOS = new Map(), INFOS_LUES = new Map();
+function infosPokemon(n) {
+  if (!INFOS.has(n)) INFOS.set(n, (async () => { try {
+    const [e, q] = await Promise.all([`pokemon-species/${n}`, `pokemon/${n}`].map(u => fetch(`https://pokeapi.co/api/v2/${u}`).then(x => { if (!x.ok) throw 0; return x.json(); })));
+    const fr = l => l.filter(x => x.language.name === "fr"), d = fr(e.flavor_text_entries).pop(), g = fr(e.genera)[0];
+    const res = {taux: e.gender_rate, genre: g ? g.genus : "", texte: d ? d.flavor_text.replace(/[\s\u00AD]+/g, " ") : "", h: q.height / 10, p: q.weight / 10};
+    INFOS_LUES.set(n, res); return res;
+  } catch (e) { INFOS.delete(n); return null; } })());
+  return INFOS.get(n);
+}
+// Chaque Pokémon attrapé est un individu : son sexe, sa nature et sa taille sont tirés de l'identifiant de sa capture (toujours les mêmes pour lui)
+const NATURES = ["Hardi", "Solo", "Rigide", "Mauvais", "Brave", "Assuré", "Docile", "Malin", "Lâche", "Relax", "Modeste", "Doux", "Pudique", "Foufou", "Discret", "Calme", "Gentil", "Prudent", "Bizarre", "Malpoli", "Timide", "Pressé", "Jovial", "Naïf", "Sérieux"];
+const nombreFr = x => (x < 10 ? Math.round(x * 10) / 10 : Math.round(x)).toString().replace(".", ",");
+const hasard = (c, k) => hachage(`${k}|${c.id}|${k}`) / 4294967296;
+const sexeDe = (c, inf) => !inf || inf.taux < 0 ? "" : hasard(c, "sexe") * 8 < inf.taux ? "f" : "m";
+const signeSexe = x => x ? `<span class="sexe ${x}">${x === "f" ? "♀" : "♂"}</span>` : "";
 function fiche(p) {
   installerStyle("pkm2-fiche-style", STYLE_FICHE);
   const col = collection(), mes = col[p.num] || [], a = mes.length > 0, leg = LEG.has(p.num);
   const normal = mes.find(c => !c.shiny), shiny = mes.find(c => c.shiny);
-  const c0 = COUL[p.types[0]];
   const lieux = LIEUX_DE[p.num] || [];
-  const sanct = (V.sanctuaires || []).find(s => s.num === p.num);
-  const ou = leg ? `${ico("master", "p")} <b>Légendaire</b> : ${sanct ? `son sanctuaire t'attend sur la route (${sanct.nom.replace(" et Centrale", "")}), et une toute petite chance existe de le croiser avant, dans n'importe quelle ball.`
-      : p.num === 150 ? "le trophée de la victoire à la Ligue Pokémon." : "le diplôme du Professeur Chen, quand tu as les 146 autres Pokémon."}`
-    : `${ico("carte", "p")} <b>${lieux.join(", ")}</b> : les Poké Balls donnent surtout les Pokémon de l'endroit où tu es.
-       <br>Plus de chances avec : <b>${[...new Set(p.types.flatMap(t => D.conseils[t] || []))].join(", ") || "toutes les activités"}</b>.
-       <br>${ico(IMG.badge(1), "p")} Les badges d'arène donnent un Pokémon du type du champion.`;
-  const forme = (c, sh) => c
-    ? `<div class="f ${sh ? "sh" : ""}" data-s="${sh ? 1 : 0}"><b>${sh ? `${ico("shiny", "p brille")} Shiny` : "Normal"}</b>
-        <img src="${IMG.anim(p.num, sh)}" ${repli(p.num, sh)}>${c.quand}<br>${c.lieu ? `${ico("carte", "p")} ${c.lieu}` : ""}</div>`
-    : `<div class="f ${sh ? "sh" : ""}"><b>${sh ? `${ico("shiny", "p brille")} Shiny` : "Normal"}</b><div class="trou">${sh ? ico("shiny", "g brille") : "?"}</div>
-        ${sh ? "Pas encore : c'est rare (1 chance sur 33 environ)" : "Pas encore attrapé"}</div>`;
-  const vue = normal ? false : !!shiny;  // la grande image : la forme attrapée (le normal d'abord)
+  let vue = normal ? false : !!shiny, inf = null;  // la forme montrée : le normal d'abord ; le shiny se choisit seulement si on a les deux
   const f = P.createElement("div"); f.id = "pkm-fiche";
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
     <div class="tete">
       <img class="grande ${a ? "" : "non"}" src="${IMG.grand(p.num, a ? vue : false)}">
-      <div><div class="no">N° ${N3(p.num)}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
-        <div>${typesHTML(p.types, "pkm-type")}</div>
-        <div class="sous">${a ? `Attrapé ${mes[0].quand}${mes[0].lieu ? ` · ${mes[0].lieu}` : ""}` : "Pas encore attrapé"}</div></div></div>
-    <h4>Ses deux formes <span>${(normal ? 1 : 0) + (shiny ? 1 : 0)} / 2</span></h4>
-    <div class="formes">${forme(normal, false)}${forme(shiny, true)}</div>
-    <h4>Où le trouver ?</h4><div class="ou">${RARES.has(p.num) ? `${ico("rare", "p")} <b>Rare</b>`+" : 3 fois moins de chances que les autres Pokémon de son lieu.<br>" : ""}${ou}</div>
+      <div><div class="no">N° ${N3(p.num)}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}<span class="sx"></span></h3>
+        <div>${typesHTML(p.types, "pkm-type")}</div><div class="sous"></div></div></div>
+    ${normal && shiny ? `<div class="onglets-f"><button data-s="0">Normal</button><button data-s="1">${ico("shiny", "p brille")} Shiny</button></div>` : ""}
+    ${a ? `<div class="corps"></div><div class="desc"></div>`
+      : `<div class="desc">Pas encore attrapé.${lieux.length ? ` On le croise par ici : ${lieux.join(", ")}.` : ""}</div>`}
     <button class="fermer">Fermer</button></div>`;
   P.body.appendChild(f); requestAnimationFrame(() => f.classList.add("vu"));
   const grande = f.querySelector(".grande");
-  f.querySelectorAll(".f[data-s]").forEach(e => {
-    if (+e.dataset.s === +vue) e.classList.add("on");
-    e.onclick = () => { f.querySelectorAll(".f").forEach(x => x.classList.remove("on")); e.classList.add("on");
-      const sh = e.dataset.s === "1";
-      grande.style.opacity = 0; setTimeout(() => { grande.src = IMG.grand(p.num, sh); grande.style.opacity = 1; }, 200); };
-  });
+  const peindre = () => { if (!a) return;
+    const c = vue ? shiny : normal, k = c.id.split("#")[1] || "", t = .85 + hasard(c, "taille") * .3;  // ±15 % autour de la taille du Pokédex
+    const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
+    const note = !inf ? "" : t < .9 ? "Un tout petit spécimen !" : t > 1.1 ? "Un spécimen impressionnant !" : "";
+    f.querySelector(".sx").innerHTML = signeSexe(sexeDe(c, inf));
+    f.querySelector(".sous").textContent = inf ? inf.genre : "";
+    f.querySelector(".corps").innerHTML = `<div class="ident">
+      <div><small>Attrapé</small><b>${c.quand}</b></div><div><small>Avec</small><b>${origine[0]}${origine[1]}</b></div>
+      ${c.lieu ? `<div><small>Lieu</small><b>${c.lieu}</b></div>` : ""}
+      <div><small>Nature</small><b>${NATURES[Math.floor(hasard(c, "nature") * 25)]}</b></div>
+      ${inf ? `<div><small>Taille</small><b>${nombreFr(inf.h * t)} m</b></div><div><small>Poids</small><b>${nombreFr(inf.p * t * t)} kg</b></div>` : ""}
+      ${note ? `<div class="note">${note}</div>` : ""}</div>`;
+    f.querySelector(".desc").textContent = inf ? inf.texte : "";
+    grande.src = IMG.grand(p.num, vue);
+    f.querySelectorAll(".onglets-f button").forEach(b => b.classList.toggle("on", +b.dataset.s === +vue));
+  };
+  peindre();
+  if (a) infosPokemon(p.num).then(x => { if (x && f.isConnected) { inf = x; peindre(); } });
+  f.querySelectorAll(".onglets-f button").forEach(b => b.onclick = () => { vue = b.dataset.s === "1"; peindre(); });
   const fermer = () => { f.classList.remove("vu"); setTimeout(() => f.remove(), 350); };
   f.querySelector(".ombre").onclick = fermer; f.querySelector(".fermer").onclick = fermer;
   // glisser la feuille vers le bas pour la fermer
@@ -3051,7 +3058,7 @@ function dessinerBarre() {
 function blocSac() {
   const sac = G.sac || [], d = V.defi, ch = d && d.arrive ? CHAMPIONS[d.numero] : null;
   if (!sac.length) return "";
-  const n = sac.length, boules = sac.slice(0, 8).map(b => `<span class="mini-ball">${ballSVG(b)}</span>`).join("");
+  const n = sac.length, boules = sac.slice(0, 8).map(b => ico(b === "shiny" ? "sball" : b)).join("");
   return `<div class="sac"><div class="boules">${boules}</div><div><b>${n} ball${n > 1 ? "s" : ""} dans ton sac</b><small>${G.defi_grise && ch
     ? `Plus rien de nouveau par ici : bats ${ch.nom} pour repartir. Il garde les 3 derniers jours.` : "Plus rien de nouveau par ici : elles s'ouvriront au prochain lieu."}</small></div></div>`;
 }
