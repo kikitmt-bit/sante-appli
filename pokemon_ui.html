@@ -39,6 +39,8 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .bouton-ball{background:none;border:0;padding:0;cursor:pointer;position:relative;width:64px;height:64px;
   animation:flotte 2.6s ease-in-out infinite}
 .bouton-ball svg{width:64px;height:64px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rendering:pixelated}
+.bouton-ball img.ball-pix{width:64px;height:64px;filter:drop-shadow(0 4px 0 rgba(40,40,30,.25))}.mini-ball img.ball-pix{image-rendering:auto}
 .bouton-ball:after{content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;
   background:radial-gradient(circle,rgba(255,255,255,.28),transparent 65%);animation:halo 2.6s ease-in-out infinite}
 .bouton-ball .q{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:10px;color:#9AA7C2;
@@ -754,7 +756,27 @@ function rognerImages(racine) {
 
 // ---------- Dessin d'une Poké Ball (SVG) ----------
 let idSvg = 0;
+// Les petites balls de l'écran (à ouvrir, sac, route) : une image de la vraie ball, faite une fois par type ; le dessin SVG seulement sans three.js
+const IMG_BALL = {};
+function imageBall(type) {
+  if (type in IMG_BALL) return IMG_BALL[type];
+  IMG_BALL[type] = null;
+  try {
+    if (!window.THREE || !(type in TEINTES)) return null;
+    const cv = document.createElement("canvas"); cv.style.cssText = "position:fixed;left:-999px;top:0;width:200px;height:200px"; document.body.appendChild(cv);
+    const B = Ball3D(cv, type, 46); B.sansOmbre(); B.rendre();
+    const c2 = document.createElement("canvas"); c2.width = cv.width; c2.height = cv.height;
+    const g = c2.getContext("2d"); g.drawImage(cv, 0, 0); const d = g.getImageData(0, 0, c2.width, c2.height).data;
+    let x0 = c2.width, y0 = c2.height, x1 = 0, y1 = 0;
+    for (let y = 0; y < c2.height; y++) for (let x = 0; x < c2.width; x++) if (d[(y * c2.width + x) * 4 + 3] > 40) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    const c3 = document.createElement("canvas"); c3.width = x1 - x0 + 1; c3.height = y1 - y0 + 1; c3.getContext("2d").drawImage(c2, -x0, -y0);
+    IMG_BALL[type] = c3.toDataURL(); B.fin(); cv.remove();
+  } catch (e) {}
+  return IMG_BALL[type];
+}
 function ballSVG(type) {
+  const im = imageBall(type);
+  if (im) return `<img class="ball-pix" src="${im}" alt="">`;
   const i = ++idSvg, haut = {poke: "#E3262E", super: "#2F6FD6", hyper: "#2A2A2E", master: "#6A3FB0", shiny: "#E8B923"}[type];
   const deco = {
     poke: "",
@@ -1249,7 +1271,7 @@ function Particules(canvas) {
 const TEINTES = {poke: 0xE3262E, super: 0x2F6FD6, hyper: 0x2A2A2E, master: 0x6A3FB0, shiny: 0xE8B923};
 function texture(type, haut) {
   // Texture dessinée point par point : (u, v) -> point de la sphère -> couleur (bandes, cercles, « M »…)
-  const L = type === "master" || type === "shiny" ? 2048 : 512, H = L / 2, cv = P.createElement("canvas"); cv.width = L; cv.height = H;  // le « M » demande plus de finesse
+  const L = type === "master" || type === "shiny" ? 1024 : 512, H = L / 2, cv = P.createElement("canvas"); cv.width = L; cv.height = H;  // le « M » demande plus de finesse
   const ctx = cv.getContext("2d"), img = ctx.createImageData(L, H), d = img.data;
   const hex = h => [h >> 16 & 255, h >> 8 & 255, h & 255];
   const blanc = [242, 242, 242], base = hex(TEINTES[type]), rouge = hex(0xE3262E), jaune = hex(0xFFCB05), rose = hex(0xE04BA0);
@@ -1281,28 +1303,19 @@ function texture(type, haut) {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
-// pixel (essai du 02/11, seulement dans « Tester Kanto » : `styleBall`) : la même ball et les mêmes mouvements, dessinée comme un sprite :
-// aplats de couleur, contour sombre, reflet peint, ~ PIXEL_BALL points de diamètre agrandis sans lissage.
+// La ball, dessinée comme un sprite (validée par Kiki le 02/11) : un vrai volume, en aplats de couleur, contour sombre et reflet peint,
+// ~ `diametre` points agrandis sans lissage.
 const PIXEL_BALL = 84;
-function Ball3D(canvas, type, pixel = false) {
-  const renderer = new THREE.WebGLRenderer({canvas, antialias: !pixel, alpha: true});
-  renderer.setPixelRatio(Math.min(PW.devicePixelRatio || 1, 2));
+const REFLETS = {poke: 0xFFC4BC, super: 0xC4DCFF, hyper: 0x8E8E98, master: 0xDCC8FF, shiny: 0xFFF8C8};
+function Ball3D(canvas, type, diametre = PIXEL_BALL) {
+  const renderer = new THREE.WebGLRenderer({canvas, antialias: false, alpha: true});
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, .1, 100);
-  let aplats = null;
-  if (pixel) {
-    canvas.style.imageRendering = "pixelated";
-    const tons = new Uint8Array(32).map((_, i) => i < 17 ? 95 : i < 24 ? 170 : 255);  // trois aplats, selon l'angle de la lumière
-    aplats = new THREE.DataTexture(tons, 32, 1, THREE.RedFormat); aplats.minFilter = aplats.magFilter = THREE.NearestFilter; aplats.needsUpdate = true;
-    scene.add(new THREE.AmbientLight(0xD8DCFF, 1.05));
-    const cle = new THREE.DirectionalLight(0xffffff, 2.3); cle.position.set(-3, 5, 6); scene.add(cle);
-  } else {
-    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
-    scene.add(new THREE.HemisphereLight(0xCFDCFF, 0x1A1A2A, 1.4));
-    const cle = new THREE.DirectionalLight(0xffffff, 2.6); cle.position.set(3, 5, 6); scene.add(cle);
-    const contre = new THREE.DirectionalLight(0x8FB0FF, 2.2); contre.position.set(-5, 2, -4); scene.add(contre);
-  }
-  const R = 1, mat = (map, opts = {}) => pixel ? new THREE.MeshToonMaterial({map, gradientMap: aplats, ...opts})
-    : new THREE.MeshPhysicalMaterial({map, roughness: .32, metalness: .05, clearcoat: 1, clearcoatRoughness: .12, ...opts});
+  canvas.style.imageRendering = "pixelated";
+  const tons = new Uint8Array(32).map((_, i) => i < 17 ? 95 : i < 24 ? 170 : 255);  // trois aplats, selon l'angle de la lumière
+  const aplats = new THREE.DataTexture(tons, 32, 1, THREE.RedFormat); aplats.minFilter = aplats.magFilter = THREE.NearestFilter; aplats.needsUpdate = true;
+  scene.add(new THREE.AmbientLight(0xD8DCFF, 1.05));
+  const cle = new THREE.DirectionalLight(0xffffff, 2.3); cle.position.set(-3, 5, 6); scene.add(cle);
+  const R = 1, mat = map => new THREE.MeshToonMaterial({map, gradientMap: aplats});
   const ball = new THREE.Group(), pivot = new THREE.Group(); scene.add(ball);
   // Moitié du bas + intérieur lumineux
   const bas = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat(texture(type, false)));
@@ -1315,7 +1328,7 @@ function Ball3D(canvas, type, pixel = false) {
   haut.add(new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), mat(texture(type, true))));
   haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * .985, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2),
     new THREE.MeshStandardMaterial({color: 0x1B1B1F, side: THREE.BackSide, roughness: .8})));
-  const bandeMat = pixel ? new THREE.MeshBasicMaterial({color: 0x282820}) : new THREE.MeshStandardMaterial({color: 0x141414, roughness: .5});
+  const bandeMat = new THREE.MeshBasicMaterial({color: 0x282820});
   const bandeH = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
   bandeH.position.y = R * .035; haut.add(bandeH);
   const bandeB = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
@@ -1324,18 +1337,17 @@ function Ball3D(canvas, type, pixel = false) {
   const bouton = new THREE.Group(); bouton.position.set(0, 0, R * .96); ball.add(bouton);
   const anneau = new THREE.Mesh(new THREE.CylinderGeometry(R * .3, R * .3, R * .14, 48), bandeMat);
   anneau.rotation.x = Math.PI / 2; bouton.add(anneau);
-  const btnMat = pixel ? new THREE.MeshToonMaterial({color: 0xF8F8E8, gradientMap: aplats, emissive: 0xffffff, emissiveIntensity: 0})
-    : new THREE.MeshPhysicalMaterial({color: 0xF4F4F4, roughness: .25, clearcoat: 1, emissive: 0xffffff, emissiveIntensity: 0});
+  const btnMat = new THREE.MeshToonMaterial({color: 0xF8F8E8, gradientMap: aplats, emissive: 0xffffff, emissiveIntensity: 0});
   const btn = new THREE.Mesh(new THREE.CylinderGeometry(R * .19, R * .2, R * .1, 48), btnMat);
   btn.rotation.x = Math.PI / 2; btn.position.z = R * .07; bouton.add(btn);
-  if (pixel) {  // le contour (la ball un peu plus grande, vue de l'intérieur) et le reflet peint, qui suit le couvercle
-    const trait = new THREE.MeshBasicMaterial({color: 0x282820, side: THREE.BackSide});
-    ball.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), trait));
-    haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), trait));
-    const reflet = new THREE.Mesh(new THREE.CircleGeometry(R * .17, 24), new THREE.MeshBasicMaterial({color: 0xffffff}));
-    const point = new THREE.Vector3(-.5, .62, .6).normalize().multiplyScalar(R * 1.008);
-    reflet.position.copy(point); reflet.lookAt(point.clone().multiplyScalar(2)); reflet.scale.set(1.35, .85, 1); haut.add(reflet);
-  }
+  // le contour (la ball un peu plus grande, vue de l'intérieur) et le reflet peint : une virgule qui épouse la courbe de la ball, dans un ton
+  // clair de sa couleur (jamais un rond blanc), qui suit le couvercle
+  const trait = new THREE.MeshBasicMaterial({color: 0x282820, side: THREE.BackSide});
+  ball.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), trait));
+  haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), trait));
+  const refletMat = new THREE.MeshBasicMaterial({color: REFLETS[type] || 0xffffff});
+  haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.006, 12, 4, .5, .62, .68, .11), refletMat));
+  haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.006, 6, 3, 1.24, .1, .68, .11), refletMat));
   // Faisceau de lumière (à l'ouverture)
   const gc = P.createElement("canvas"); gc.width = 4; gc.height = 128; const g2 = gc.getContext("2d");
   const grd = g2.createLinearGradient(0, 0, 0, 128); grd.addColorStop(0, "rgba(255,255,255,0)"); grd.addColorStop(1, "rgba(255,255,255,1)");
@@ -1353,16 +1365,16 @@ function Ball3D(canvas, type, pixel = false) {
   ombre.rotation.x = -Math.PI / 2; ombre.position.y = -1.05; scene.add(ombre);
 
   const taille = () => {
-    const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / h;
+    const w = canvas.clientWidth, h = canvas.clientHeight; cam.aspect = w / h;
     const cible = Math.min(w * .48, h * .42, 230);  // diamètre de la ball à l'écran, en pixels
-    if (pixel) { renderer.setPixelRatio(PIXEL_BALL / cible); renderer.setSize(w, h, false); }
+    renderer.setPixelRatio(diametre / cible); renderer.setSize(w, h, false);
     const hv = 2 * R * h / cible, d = hv / (2 * Math.tan(cam.fov * Math.PI / 360));
     cam.position.set(0, d * .12, d); cam.lookAt(0, 0, 0); cam.updateProjectionMatrix(); base = cam.position.clone();
   };
   let base; taille();
   const coul = c => new THREE.Color(c);
   return {
-    ball, taille,
+    ball, taille, sansOmbre() { ombre.visible = false; },
     get y() { return ball.position.y; },
     set y(v) { ball.position.y = v; ombre.material.opacity = Math.max(0, 1 - v / 3); ombre.scale.setScalar(1 - Math.min(Math.max(v, 0), 3) * .15); },
     get rotY() { return ball.rotation.y; }, set rotY(v) { ball.rotation.y = v; },
@@ -1449,7 +1461,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
   const fx = Particules($(".fx"));
   let B;
-  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball, c.styleBall === "pixel"); }
+  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
   catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), c.ball); }
 
   // Boucle d'affichage (dans la fenêtre parente : jamais ralentie)
@@ -1782,52 +1794,145 @@ function dialogue(v, ignorer = ".pkm-passer") {
   return {dire, prevoir, cacher: () => { dial.classList.remove("vu"); attendre = null; },
     fin: () => PW.removeEventListener("resize", recaler)};
 }
-// L'évolution du starter : le grand moment de son aventure, à la façon des jeux (pas une ball)
+// L'évolution du starter : le grand moment de son aventure (refaite le 02/11, Kiki : « un moment rare, fort », plus de rayons qui tournent).
+// Le noir ; les lumières de tout l'écran convergent vers lui et il s'illumine ; sa forme et la suivante s'échangent en silhouette blanche, de
+// plus en plus vite, à chaque fois une onde et une note plus haute ; un silence ; il se contracte, l'éclair ; le blanc se retire lentement sur
+// sa nouvelle forme, dans un ciel à sa couleur, fanfare et pluie d'étoiles. Tout en pixels : sprites du jeu, lumières dessinées en gros points.
 const STYLE_EVO = `
-#pkm-evo{position:fixed;inset:0;z-index:999999;overflow:hidden;background:radial-gradient(circle at 50% 42%,#26386A,#070B16 72%);font-family:'Jersey 15',Outfit,monospace;
-  touch-action:manipulation;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .5s}
+#pkm-evo{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#04060C;font-family:'Jersey 15',Outfit,monospace;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .9s}
 #pkm-evo.vu{opacity:1}
-#pkm-evo img.forme{position:absolute;left:50%;top:40%;width:min(68vw,330px);transform:translate(-50%,-50%);transition:filter .5s,opacity .12s}
-#pkm-evo.lumiere img.forme{filter:brightness(0) invert(1) drop-shadow(0 0 22px #fff)}
-#pkm-evo img.apres{opacity:0}
-#pkm-evo .rayons{position:absolute;left:50%;top:40%;width:150vmax;height:150vmax;transform:translate(-50%,-50%);opacity:0;transition:opacity .6s;
-  background:repeating-conic-gradient(rgba(255,255,255,.14) 0 9deg,transparent 9deg 18deg);animation:pke-tourne 16s linear infinite}
-@keyframes pke-tourne{to{transform:translate(-50%,-50%) rotate(360deg)}}
-#pkm-evo.fin .rayons{opacity:1}
-#pkm-evo .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+#pkm-evo .ciel,#pkm-evo .lueur,#pkm-evo .flash,#pkm-evo canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#pkm-evo .ciel{opacity:0;transition:opacity 1.3s}
+#pkm-evo.revele .ciel{opacity:1}
+#pkm-evo .lueur{opacity:0;background:radial-gradient(circle at 50% 42%,var(--c) 0,transparent 62%);transition:opacity .3s}
+#pkm-evo canvas{image-rendering:pixelated}
+#pkm-evo .sol{position:absolute;left:50%;top:calc(42% + min(31vw,118px));width:min(62vw,240px);height:26px;transform:translate(-50%,-50%);border-radius:50%;background:rgba(0,0,0,.28);opacity:0;transition:opacity 1.2s}
+#pkm-evo.revele .sol{opacity:1}
+#pkm-evo .pile{position:absolute;left:50%;top:42%;width:min(72vw,272px);aspect-ratio:1;transform:translate(-50%,-50%)}
+#pkm-evo .pile img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated;opacity:0}
+#pkm-evo .pile img.avant{opacity:1;transition:filter 2.6s ease-in}
+#pkm-evo.charge .pile img.avant{filter:brightness(2.4) saturate(.5)}
+#pkm-evo .pile img.blanc{filter:brightness(0) invert(1) drop-shadow(0 0 10px #fff)}
+#pkm-evo .pile img.apres-blanc.part{transition:opacity 1.7s ease-out}
+#pkm-evo .nom{position:absolute;left:0;right:0;top:calc(env(safe-area-inset-top) + 9%);text-align:center;font-size:clamp(34px,11vw,48px);line-height:1;letter-spacing:2px;color:#F8C838;text-shadow:3px 3px 0 #5A3A06}
+#pkm-evo .nom span{display:inline-block;opacity:0;transform:translateY(-14px)}
+#pkm-evo .nom.vu span{animation:pke-lettre .32s steps(4) forwards}
+@keyframes pke-lettre{to{opacity:1;transform:none}}
+#pkm-evo .flash{background:#fff;opacity:0;z-index:15}
+#pkm-evo.secoue{animation:pke-secoue .1s linear infinite}
+@keyframes pke-secoue{25%{transform:translate(3px,-2px)}50%{transform:translate(-3px,2px)}75%{transform:translate(2px,3px)}}
 `;
+// Les lumières de la scène : un petit canevas (1 point = 3 pixels de l'écran) agrandi sans lissage
+function lumieresEvo(canvas, fini) {
+  const g = canvas.getContext("2d"), parts = [], ondes = [];
+  let W = 0, H = 0, mode = "", dernier = 0, attente = 0, debit = 0;
+  const taille = () => { W = canvas.width = Math.ceil(PW.innerWidth / 3); H = canvas.height = Math.ceil(PW.innerHeight / 3); };
+  taille();
+  const cx = () => W / 2, cy = () => H * .42;
+  const naitre = () => {
+    if (mode === "attire") { const a = Math.random() * 6.283, d = Math.max(W, H) * (.55 + Math.random() * .3); parts.push({a, d, v: .16 + Math.random() * .12, c: Math.random() < .25 ? "#FFE88A" : "#FFFFFF", t: Math.random() < .3 ? 2 : 1}); }
+    else if (mode === "pluie") parts.push({x: Math.random() * W, y: -4, vy: .22 + Math.random() * .3, vx: (Math.random() - .5) * .1, c: ["#FFF3B0", "#F8C838", "#FFFFFF"][parts.length % 3], etoile: Math.random() < .5, age: Math.random() * 6});
+    else if (mode === "attente") parts.push({x: Math.random() * W, y: H + 2, vy: -.12 - Math.random() * .16, vx: 0, c: "#7C8CC8", etoile: false, age: Math.random() * 6});
+  };
+  const boucle = now => {
+    if (fini()) return;
+    const k = Math.min((now - dernier) / 16.7, 3); dernier = now;
+    g.clearRect(0, 0, W, H);
+    attente += debit * k; while (attente >= 1) { attente -= 1; naitre(); }
+    for (let i = parts.length - 1; i >= 0; i--) { const p = parts[i];
+      if (p.d !== undefined) {  // elle tourne en se rapprochant du Pokémon
+        p.d -= (p.v + (1 - p.d / Math.max(W, H)) * .9) * 2.4 * k; p.a += .018 * k * (1 + 26 / Math.max(p.d, 10));
+        if (p.d < 6) { parts.splice(i, 1); continue; }
+        g.fillStyle = p.c; g.fillRect(Math.round(cx() + Math.cos(p.a) * p.d), Math.round(cy() + Math.sin(p.a) * p.d), p.t, p.t);
+      } else {
+        p.x += p.vx * k; p.y += p.vy * k; p.age += .06 * k;
+        if (p.y > H + 4 || p.y < -6) { parts.splice(i, 1); continue; }
+        if (Math.sin(p.age * 2) < -.4) continue;  // elle scintille
+        g.fillStyle = p.c; const x = Math.round(p.x), y = Math.round(p.y);
+        g.fillRect(x, y, 1, 1); if (p.etoile) { g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3); }
+      } }
+    for (let i = ondes.length - 1; i >= 0; i--) { const o = ondes[i]; o.r += o.v * k; o.a -= o.perte * k;
+      if (o.a <= 0) { ondes.splice(i, 1); continue; }
+      g.strokeStyle = `rgba(255,255,255,${o.a})`; g.lineWidth = 1; g.beginPath(); g.arc(cx(), cy(), o.r, 0, 6.283); g.stroke(); }
+    PW.requestAnimationFrame(boucle);
+  };
+  PW.requestAnimationFrame(t => { dernier = t; boucle(t); });
+  PW.addEventListener("resize", taille);
+  return {
+    mode(m, d) { mode = m; debit = d; },
+    vider() { parts.length = 0; },
+    onde(v = 2.6, a = .9, perte = .03) { ondes.push({r: 26, v, a, perte}); },
+    fin() { PW.removeEventListener("resize", taille); },
+  };
+}
 function sceneEvolution(c, rejouer = false) {
   ouverture = true;
-  installerStyle("pkm2-evo", STYLE_EVO); preparerScene(); audio();
+  installerStyle("pkm2-evo", STYLE_EVO); preparerScene(); audio(); salle();
   const ligne = (G.starter || {}).ligne || [c.num - 1, c.num], avantN = ligne[ligne.indexOf(c.num) - 1] || c.num - 1;
   const nomA = PAR_NUM[avantN].nom, nomB = PAR_NUM[c.num].nom;
-  const v = P.createElement("div"); v.id = "pkm-evo";
-  v.innerHTML = `<div class="rayons"></div><img class="forme avant" src="${IMG.hd(avantN, false)}" alt=""><img class="forme apres" src="${IMG.hd(c.num, false)}" alt="">
+  const coul = COUL[PAR_NUM[c.num].types[0]] || "#6B8CFF";
+  const melange = (h, k) => { const n = parseInt(h.slice(1), 16), m = x => Math.round(x * k + 8 * (1 - k)); return `rgb(${m(n >> 16 & 255)},${m(n >> 8 & 255)},${m(n & 255)})`; };
+  const bandes = [.16, .2, .25, .31, .38, .46, .55, .46, .36].map((k, i, l) => `${melange(coul, k)} ${i / l.length * 100}% ${(i + 1) / l.length * 100}%`).join(",");
+  const spr = n => `${D.images}/pokemon/versions/generation-iii/emerald/${n}.png`;
+  const repli = n => `onerror="this.onerror=null;this.src='${IMG.hd(n, false)}'"`;
+  const v = P.createElement("div"); v.id = "pkm-evo"; v.style.setProperty("--c", melange(coul, .9));
+  v.innerHTML = `<div class="ciel" style="background:linear-gradient(180deg,${bandes})"></div><div class="lueur"></div><div class="sol"></div>
+    <canvas></canvas>
+    <div class="pile"><img class="avant" src="${spr(avantN)}" ${repli(avantN)} alt=""><img class="apres" src="${spr(c.num)}" ${repli(c.num)} alt="">
+      <img class="blanc avant-blanc" src="${spr(avantN)}" ${repli(avantN)} alt=""><img class="blanc apres-blanc" src="${spr(c.num)}" ${repli(c.num)} alt=""></div>
+    <div class="nom">${[...nomB.toUpperCase()].map((l, i) => `<span style="animation-delay:${i * .05}s">${l === " " ? "&nbsp;" : l}</span>`).join("")}</div>
     <div class="flash"></div><button class="pkm-passer">✕</button>`;
   P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
-  const $ = q => v.querySelector(q), a = $(".avant"), b = $(".apres"), DE = dialogue(v);
+  const $ = q => v.querySelector(q), lueur = $(".lueur"), flash = $(".flash"), pile = $(".pile"), DE = dialogue(v);
+  const A = $(".avant"), B = $(".apres"), AB = $(".avant-blanc"), BB = $(".apres-blanc");
   const lignes = [`Quoi ? <b>${nomA}</b> évolue !`, `Félicitations ! Ton ${nomA} a évolué en <b>${nomB}</b> !`];
   DE.prevoir(lignes.map(l => [l]));
   let fini = false;
+  const L = lumieresEvo($("canvas"), () => fini);
   const pause = ms => new Promise(ok => setTimeout(ok, ms));
-  const fermer = () => { if (fini) return; fini = true; DE.fin(); if (!rejouer && !c.apercu) memoriser(c.id); ouverture = false;
-    v.style.opacity = 0; setTimeout(() => { v.remove(); dessiner(); }, 500); };
+  const fermer = () => { if (fini) return; fini = true; DE.fin(); L.fin(); if (!rejouer && !c.apercu) memoriser(c.id); ouverture = false;
+    v.style.opacity = 0; setTimeout(() => { v.remove(); dessiner(); }, 900); };
   $(".pkm-passer").onclick = fermer;
+  const bat = k => pile.animate([{transform: "translate(-50%,-50%) scale(1)"}, {transform: `translate(-50%,-50%) scale(${k})`}, {transform: "translate(-50%,-50%) scale(1)"}], {duration: 170, easing: "ease-out"});
   (async () => {
-    await pause(600); crier(avantN);
+    L.mode("attente", .05);
+    await pause(1100); crier(avantN);
     await DE.dire(lignes[0]); DE.cacher();
-    v.classList.add("lumiere"); SONS.montee(2.2); vibre([30, 60, 30]);
-    await pause(700);
-    // les deux formes s'échangent de plus en plus vite, en silhouette blanche
-    for (const ms of [420, 340, 270, 210, 160, 120, 90, 70, 55, 45]) {
-      if (fini) return; const inv = a.style.opacity === "0";
-      a.style.opacity = inv ? 1 : 0; b.style.opacity = inv ? 0 : 1; ton(inv ? 620 : 880, 0, .05, {type: "square", vol: .03}); await pause(ms);
+    // Les lumières convergent, il s'illumine
+    await pause(500); if (fini) return;
+    L.mode("attire", 2.2); v.classList.add("charge"); EPIQUE.apparition(); EPIQUE.roulement(2.8); vibre([20, 60, 20, 60, 20, 60]);
+    lueur.style.transition = "opacity 2.8s"; lueur.style.opacity = .35;
+    await pause(1500); L.mode("attire", 4.5);
+    await pause(1300); if (fini) return;
+    // Les deux formes s'échangent, en silhouette : chaque échange = une onde et une note plus haute
+    A.style.opacity = 0; AB.style.opacity = 1; flash.style.transition = "none"; flash.style.opacity = .5; await pause(40); flash.style.transition = "opacity .3s"; flash.style.opacity = 0;
+    lueur.style.transition = "opacity .2s";
+    const temps = [620, 520, 440, 370, 310, 260, 215, 175, 145, 120, 100, 84, 70, 58, 48, 42, 42, 42];
+    for (const [i, ms] of temps.entries()) {
+      if (fini) return; const suivant = i % 2 === 0;
+      AB.style.opacity = suivant ? 0 : 1; BB.style.opacity = suivant ? 1 : 0;
+      ton(NOTE(55 + i), 0, Math.max(ms / 1000, .06), {type: "square", vol: .03}); ton(NOTE(67 + i), 0, Math.max(ms / 1000, .06), {type: "sine", vol: .05});
+      L.onde(2 + i * .16, .85, .035); bat(1 + .03 + i * .006); lueur.style.opacity = .35 + i * .035; if (i === 11) v.classList.add("secoue");
+      await pause(ms);
     }
-    a.style.opacity = 0; b.style.opacity = 1;
-    $(".flash").style.opacity = 1; vibre([60, 40, 120]); await pause(420);
-    v.classList.remove("lumiere"); v.classList.add("fin"); $(".flash").style.opacity = 0;
-    crier(c.num); SONS.nouveau();
-    await pause(700);
+    AB.style.opacity = 0; BB.style.opacity = 1;
+    // Le silence : il garde sa nouvelle silhouette, tout s'arrête…
+    v.classList.remove("secoue"); L.mode("", 0); L.vider(); lueur.style.transition = "opacity .5s"; lueur.style.opacity = 0;
+    await pause(620); if (fini) return;
+    // …il se contracte, et l'éclair
+    await pile.animate([{transform: "translate(-50%,-50%) scale(1)"}, {transform: "translate(-50%,-50%) scale(.72)"}], {duration: 240, easing: "ease-in", fill: "forwards"}).finished;
+    flash.style.transition = "none"; flash.style.opacity = 1; EPIQUE.revelation(); vibre([70, 40, 150]);
+    for (let i = 0; i < 4; i++) setTimeout(() => L.onde(3.4 + i, 1, .018), i * 90);
+    pile.getAnimations().forEach(x => x.cancel());
+    await pause(520); if (fini) return;
+    // Le blanc se retire lentement : la nouvelle forme, dans son ciel
+    v.classList.add("revele"); B.style.opacity = 1; flash.style.transition = "opacity 1.3s ease-out"; flash.style.opacity = 0;
+    BB.classList.add("part"); void BB.offsetWidth; BB.style.opacity = 0;
+    L.mode("pluie", .22); crier(c.num); EPIQUE.fanfare();
+    await pause(900); $(".nom").classList.add("vu");
+    pile.animate([{transform: "translate(-50%,-50%)"}, {transform: "translate(-50%,calc(-50% - 16px))"}, {transform: "translate(-50%,-50%)"}, {transform: "translate(-50%,calc(-50% - 9px))"}, {transform: "translate(-50%,-50%)"}], {duration: 620, easing: "ease-out"});
+    await pause(1500); if (fini) return;
     await DE.dire(lignes[1]);
     fermer();
   })().catch(() => {});
@@ -1954,11 +2059,10 @@ const CONSEIL = [
 // tete = carré de la tête dans perso (médaillon de la carte et carte du défi) ; torches = lueurs qui vacillent (feu = leur
 // couleur r,g,b, taille = leur diamètre en % de la largeur).
 // Sans arene : l'ancien sprite PokéRogue animé.
-// Le portrait d'un champion (carte, défi, boutons de test) : tête, cou et haut du torse, CADRÉ TOUT SEUL depuis son image
-// détourée (01/11, pour toutes les régions à venir, sans réglage à la main) : on mesure la silhouette (hauteur H, centre
-// du haut du corps), puis la largeur de la tête à 20 % de la hauteur (le bloc plein qui passe par le centre) ; le carré
-// fait 1,45 × cette largeur, borné entre 50 % et 57 % de H, collé au sommet du crâne (petite marge). Calcul fait une fois
-// par image (TETES), l'image est posée en % dans un cadre qui coupe.
+// Le portrait d'un champion (carte, défi, boutons de test) : CADRÉ TOUT SEUL depuis son image détourée, pour toutes les régions à venir :
+// le nez au centre (Kiki, 02/11 : une couette ne doit pas décaler le visage). On cherche la peau dans le haut de la silhouette (le milieu des
+// points de peau = le nez, à peu près ; les cheveux orange, roses… n'en sont pas) ; le carré fait 2,1 × la largeur du visage. Sans peau
+// trouvée (masque, armure) : l'ancienne mesure, par la largeur de la tête. Calcul fait une fois par image (TETES), posée en % dans un cadre qui coupe.
 const TETES = new Map();
 function cadreTete(img) {
   const src = img.currentSrc || img.src;
@@ -1975,6 +2079,12 @@ function cadreTete(img) {
     const cx = Math.round(med(centres)), larg = [], mil = [];
     for (let y = haut + Math.floor(H * .16); y < haut + H * .24; y++) { if (!plein(cx, y)) continue; let l = cx, r = cx;
       while (l > 0 && plein(l - 1, y)) l--; while (r < w - 1 && plein(r + 1, y)) r++; larg.push(r - l + 1); mil.push((l + r) / 2); }
+    const xp = [], yp = [];
+    for (let y = haut; y < haut + H * .34; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, a = d[i], b = d[i + 1], e = d[i + 2];
+      if (d[i + 3] > 128 && a > 110 && a - b >= 12 && a - b <= 85 && b - e >= 8 && b - e <= 80) { xp.push(x); yp.push(y); } }
+    if (xp.length >= 20) { const tx = xp.slice().sort((a, b) => a - b), n = tx.length, large = tx[n * 9 / 10 | 0] - tx[n / 10 | 0];
+      const k = Math.min(Math.max(large * 2.1, H * .3), H * .55);
+      return {x: med(xp) - k / 2, y: med(yp) - k / 2, c: k, w}; }
     const lt = larg.length ? med(larg) : H * .4, hc = mil.length ? med(mil) : cx;
     const k = Math.max(Math.min(lt * 1.45, H * .57), H * .5);
     return {x: hc - k / 2, y: haut - k * .04, c: k, w};
@@ -2071,7 +2181,7 @@ const STYLE_BADGE = `
   background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.75) 45%,rgba(255,255,255,.1) 52%,transparent 60%) no-repeat;
   background-size:300% 100%;background-position:150% 0;animation:pkb-reflet 3.6s 1.4s ease-in-out infinite}
 @keyframes pkb-reflet{0%{background-position:150% 0}45%,100%{background-position:-50% 0}}
-#pkm-badge .badge.vole{transition:transform 1s cubic-bezier(.55,-0.15,.3,1)}
+#pkm-badge .badge.vole{transition:transform .72s cubic-bezier(.5,-.12,.3,1);z-index:12}
 #pkm-badge .badge.vole .flotte,#pkm-badge .badge.vole .tour{animation:none}
 #pkm-badge .nom-badge{position:absolute;left:0;right:0;top:calc(38% + min(24vw,100px) + 26px);text-align:center;z-index:11;pointer-events:none;
   transition:opacity .4s}
@@ -2088,66 +2198,30 @@ const STYLE_BADGE = `
   clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:pkb-etoile 1.1s ease-in-out forwards;
   filter:drop-shadow(0 0 4px #FFE9A0)}
 @keyframes pkb-etoile{0%{transform:scale(0) rotate(0)}40%{transform:scale(1) rotate(45deg)}100%{transform:scale(0) rotate(90deg)}}
-/* l'étui à badges (refait le 01/11, carte blanche de Kiki) : coffret de cuir bordeaux grainé, coins et fermoir en or,
-   Poké Ball gaufrée dorée sur le couvercle ; il bascule en arrière et montre sa doublure de satin (« LIGUE POKÉMON ·
-   KANTO ») ; dedans, un velours bleu nuit et 8 logements cerclés d'or : la silhouette du badge à gagner, son nom dessous */
-#pkm-badge .etui{position:absolute;left:50%;bottom:calc(196px + env(safe-area-inset-bottom));width:min(90vw,368px);z-index:9;perspective:1000px;
-  transform:translate(-50%,calc(100% + 260px));opacity:0;transition:transform .75s cubic-bezier(.2,1.1,.3,1),opacity .3s}
+/* l'étui à badges (refait le 02/11, Kiki : plus de 3D ni de cuir, et plus de champion collé à la bulle) : on quitte l'arène pour un fond uni,
+   l'étui est vu de dessus, à plat, dans les couleurs de l'appli ; sa place est calculée entre le haut de l'écran et la boîte de dialogue */
+#pkm-badge .voile-etui{position:absolute;inset:0;z-index:8;opacity:0;pointer-events:none;transition:opacity .45s;
+  background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 2px,transparent 2px 6px),#22315A}
+#pkm-badge.range .voile-etui{opacity:1}
+#pkm-badge.range .titre-arene{opacity:0;transition:opacity .3s}
+#pkm-badge .etui{position:absolute;left:50%;top:var(--etui-top,18%);width:min(92vw,372px);z-index:9;transform:translate(-50%,-22px);opacity:0;transition:transform .35s steps(5),opacity .2s}
 #pkm-badge .etui.vu{transform:translate(-50%,0);opacity:1}
-#pkm-badge .etui .boite{position:relative;border-radius:14px;padding:11px;transform-style:preserve-3d;
-  background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.07) 0 1px,transparent 1.5px) 0 0/5px 5px,
-    radial-gradient(circle at 70% 60%,rgba(0,0,0,.18) 0 1px,transparent 1.5px) 0 0/7px 7px,linear-gradient(180deg,#6E1A16,#3E0B09);
-  box-shadow:0 22px 34px rgba(0,0,0,.65),0 0 0 2px #1E0403,inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.4)}
-#pkm-badge .etui .boite:before{content:"";position:absolute;inset:5px;border-radius:10px;border:1.5px dashed rgba(236,190,120,.4);pointer-events:none}
-#pkm-badge .etui .coin{position:absolute;width:18px;height:18px;z-index:4;pointer-events:none;
-  background:linear-gradient(135deg,#FFF0B0,#D9A93A 45%,#8A5E12);clip-path:polygon(0 0,100% 0,100% 28%,28% 28%,28% 100%,0 100%)}
-#pkm-badge .etui .coin.c2{right:0;top:0;transform:scaleX(-1)}#pkm-badge .etui .coin.c3{left:0;bottom:0;transform:scaleY(-1)}
-#pkm-badge .etui .coin.c4{right:0;bottom:0;transform:scale(-1)}#pkm-badge .etui .coin.c1{left:0;top:0}
-#pkm-badge .etui .velours{position:relative;display:grid;grid-template-columns:repeat(4,1fr);gap:8px 10px;padding:14px 12px 10px;border-radius:9px;overflow:hidden;
-  background:repeating-linear-gradient(45deg,rgba(255,255,255,.025) 0 2px,transparent 2px 4px),radial-gradient(130% 120% at 50% 0%,#2E3C86,#161E4E 55%,#0A0E2C);
-  box-shadow:inset 0 4px 12px rgba(0,0,0,.8),0 0 0 2px #C9973A,0 0 0 3px #5E3E08}
-#pkm-badge .etui .velours:after{content:"";position:absolute;inset:-40% auto -40% -60%;width:40%;transform:skewX(-20deg);pointer-events:none;opacity:0;
-  background:linear-gradient(90deg,transparent,rgba(255,240,190,.35),transparent)}
-#pkm-badge .etui.brille .velours:after{animation:pkb-reflet 1.1s ease-out}
+#pkm-badge .etui .boite{background:#C03028;border:3px solid #484838;border-radius:12px 5px 12px 5px;box-shadow:4px 4px 0 rgba(10,15,35,.55);padding:8px}
+#pkm-badge .etui .tete-e{display:flex;align-items:center;gap:7px;padding:0 3px 7px;font-size:21px;line-height:1;color:#fff;text-shadow:2px 2px 0 #7A1712}
+#pkm-badge .etui .tete-e img{width:22px;height:22px;object-fit:contain;image-rendering:pixelated}
+#pkm-badge .etui .tete-e span{margin-left:auto}
+#pkm-badge .etui .grille-e{display:grid;grid-template-columns:repeat(4,1fr);gap:9px 7px;padding:10px 8px;background:#F8F8E8;border:3px solid #484838;border-radius:8px 3px 8px 3px}
+#pkm-badge .etui .loge{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+#pkm-badge .etui .case{position:relative;width:100%;aspect-ratio:1;display:grid;place-items:center;background:#E0E0C8;border-radius:7px 3px 7px 3px;box-shadow:inset 2px 2px 0 #B8B8A0}
+#pkm-badge .etui .case .fantome{width:64%;height:64%;object-fit:contain;filter:brightness(0);opacity:.13;image-rendering:pixelated}
+#pkm-badge .etui .case img.vrai{position:absolute;width:80%;height:80%;object-fit:contain}
+#pkm-badge .etui .loge small{font-size:14px;line-height:1;color:#686850;white-space:nowrap}
+#pkm-badge .etui .case.ici{box-shadow:0 0 0 3px #F8C838;animation:pkb-attend .7s steps(2) infinite}
+@keyframes pkb-attend{50%{box-shadow:0 0 0 3px #C03028}}
+#pkm-badge .etui .case.pose{animation:pkb-pose .42s steps(5);box-shadow:0 0 0 3px #F8C838}
+#pkm-badge .etui .loge:has(.pose) small{color:#C03028}
+@keyframes pkb-pose{0%{transform:scale(1.4)}60%{transform:scale(.92)}100%{transform:none}}
 @keyframes pkb-reflet{0%{left:-60%;opacity:1}100%{left:130%;opacity:1}}
-#pkm-badge .etui .loge{display:flex;flex-direction:column;align-items:center;gap:4px}
-#pkm-badge .etui .case{position:relative;width:100%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;
-  background:radial-gradient(circle at 50% 35%,#070A22,#1A2358 75%);
-  box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #B98B2E,0 0 0 4px #FFE6A0,0 0 0 5.5px #6E4A0C,0 3px 4px 5px rgba(0,0,0,.35)}
-#pkm-badge .etui .case .fantome{width:66%;height:66%;object-fit:contain;filter:brightness(0) invert(.75) sepia(.4) hue-rotate(190deg);opacity:.16}
-#pkm-badge .etui .case img.vrai{position:absolute;width:76%;height:76%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
-#pkm-badge .etui .loge small{font:700 11.4px 'Jersey 15',monospace;letter-spacing:1px;color:#E9C774;text-shadow:0 1px 0 #000;white-space:nowrap;opacity:.85}
-#pkm-badge .etui .loge.vide small{color:#7C86B8;opacity:.7}
-#pkm-badge .etui .case.ici{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 18px 6px rgba(255,216,74,.75);animation:pkb-attend 1.1s ease-in-out infinite}
-@keyframes pkb-attend{50%{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 6px 1px rgba(255,216,74,.4)}}
-#pkm-badge .etui .case.pose{animation:none;box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFE9A0,0 0 0 4px #fff,0 0 28px 10px rgba(255,216,74,.9)}
-#pkm-badge .etui .case.pose img{animation:pkb-pose .5s cubic-bezier(.2,1.8,.4,1)}
-@keyframes pkb-pose{from{transform:scale(1.7)}}
-/* le couvercle : face cuir (Poké Ball gaufrée, titre en lettres d'or) et revers de satin, qui bascule en arrière */
-#pkm-badge .etui .couvercle{position:absolute;inset:0;border-radius:14px;transform-origin:50% 0;transform-style:preserve-3d;z-index:3;
-  transition:transform .95s cubic-bezier(.5,0,.25,1)}
-#pkm-badge .etui .couvercle .face,#pkm-badge .etui .couvercle .revers{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px}
-#pkm-badge .etui .couvercle .face{background:radial-gradient(circle at 20% 10%,rgba(255,255,255,.08) 0 1px,transparent 1.5px) 0 0/5px 5px,
-    linear-gradient(160deg,#A8302A,#701A15 55%,#4E100D);box-shadow:inset 0 2px 0 rgba(255,255,255,.2),inset 0 -3px 0 rgba(0,0,0,.4),0 6px 14px rgba(0,0,0,.4)}
-#pkm-badge .etui .couvercle .face:before{content:"";position:absolute;inset:6px;border-radius:10px;border:1.5px dashed rgba(240,200,140,.5)}
-#pkm-badge .etui .couvercle .revers{transform:rotateX(180deg);
-  background:repeating-linear-gradient(100deg,rgba(255,255,255,.06) 0 6px,rgba(0,0,0,.06) 6px 12px),linear-gradient(180deg,#24306E,#141A44);
-  box-shadow:inset 0 0 0 2px #C9973A,inset 0 0 18px rgba(0,0,0,.6)}
-#pkm-badge .etui .couvercle .revers span{font:700 15.6px 'Jersey 15',monospace;letter-spacing:4px;color:#F2D58A;text-shadow:0 1px 0 #000}
-#pkm-badge .etui .embleme{width:52px;height:52px;border-radius:50%;position:relative;
-  background:radial-gradient(circle,#FFF2C0 0 13%,#8A5E12 14% 21%,transparent 22%),
-    linear-gradient(180deg,transparent 45%,#7A520E 45% 55%,transparent 55%),
-    linear-gradient(180deg,#F6D57A 0 50%,#C99A3A 50% 100%);
-  box-shadow:0 0 0 3px #8A5E12,0 0 0 5px #F2D07A,0 3px 6px rgba(0,0,0,.55),inset 0 3px 4px rgba(255,255,255,.4)}
-#pkm-badge .etui .couvercle .face span{font:700 15.6px 'Jersey 15',monospace;letter-spacing:4px;
-  background:linear-gradient(180deg,#FFF0B0,#D9A93A 60%,#9A6A18);-webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 1px 0 rgba(0,0,0,.7))}
-#pkm-badge .etui .fermoir{position:absolute;left:50%;bottom:-9px;width:40px;height:18px;margin-left:-20px;border-radius:4px 4px 8px 8px;z-index:5;
-  background:linear-gradient(180deg,#FFF0B0,#D9A93A 50%,#8A5E12);box-shadow:0 3px 5px rgba(0,0,0,.6),inset 0 0 0 2px rgba(110,74,12,.6);transition:opacity .25s}
-#pkm-badge .etui .fermoir:after{content:"";position:absolute;left:50%;top:5px;width:8px;height:8px;margin-left:-4px;border-radius:50%;background:#6E4A0C}
-#pkm-badge .etui.ouvert .couvercle{transform:rotateX(-104deg)}
-#pkm-badge .etui.ouvert .fermoir{opacity:0}
 #pkm-badge .eclat{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;z-index:12;pointer-events:none;
   clip-path:polygon(50% 0,62% 38%,100% 50%,62% 62%,50% 100%,38% 62%,0 50%,38% 38%);animation:pkb-eclat .9s ease-out forwards}
 @keyframes pkb-eclat{to{transform:translate(var(--dx),var(--dy)) rotate(180deg) scale(.15);opacity:0}}
@@ -2450,14 +2524,11 @@ function sceneBadge(n, c, rejouer = false) {
     <div class="halo"></div><div class="charge"></div><div class="onde"></div><div class="onde o2"></div>
     <div class="badge"></div>
     <div class="nom-badge"><b>${lettres(nomBadge)}</b><small>Touche ${ligue ? "le trophée" : "le badge"} pour le prendre</small></div>
-    ${ligue ? "" : `<div class="etui"><div class="boite"><i class="coin c1"></i><i class="coin c2"></i><i class="coin c3"></i><i class="coin c4"></i>
-      <div class="velours">${deja.map((l, i) => { const gagne = i + 1 < n && (V.badges[i + 1] || rejouer);
-        return `<div class="loge ${gagne || i + 1 === n ? "" : "vide"}"><div class="case ${i + 1 === n ? "ici" : ""}"><img class="fantome" src="${IMG.badge(l.arene.image)}" alt="">
+    ${ligue ? "" : `<div class="voile-etui"></div><div class="etui"><div class="boite"><div class="tete-e"><img src="${IC.poke}" alt="">ÉTUI À BADGES<span>${deja.filter((l, i) => i + 1 === n || (i + 1 < n && (V.badges[i + 1] || rejouer))).length} / ${deja.length}</span></div>
+      <div class="grille-e">${deja.map((l, i) => { const gagne = i + 1 < n && (V.badges[i + 1] || rejouer);
+        return `<div class="loge"><div class="case ${i + 1 === n ? "ici" : ""}"><img class="fantome" src="${IMG.badge(l.arene.image)}" alt="">
         ${gagne ? `<img class="vrai" data-badge="${IMG.badge(l.arene.image)}" src="${IMG.badge(l.arene.image)}">` : ""}</div>
-        <small>${l.arene.badge.replace("Badge ", "").toUpperCase()}</small></div>`; }).join("")}</div>
-      <div class="couvercle"><div class="face"><div class="embleme"></div><span>ÉTUI À BADGES</span></div>
-        <div class="revers"><span>LIGUE POKÉMON</span><span style="font-size:10px;letter-spacing:6px;opacity:.8">KANTO</span></div></div>
-      <div class="fermoir"></div></div></div>`}
+        <small>${l.arene.badge.replace("Badge ", "")}</small></div>`; }).join("")}</div></div></div>`}
     <div class="cine h"></div><div class="cine b"></div>
     <div class="titre-arene"><div class="ligne"></div><b>${ligue ? "LIGUE POKÉMON" : `ARÈNE ${/^[AEIOUÉ]/.test(ville) ? "D'" : "DE "}${ville.toUpperCase()}`}</b>
       ${sc ? "" : `<small>${ligue ? "Plateau Indigo · le Maître" : `${icoType(a.type)} Champion${/^(Ondine|Erika|Morgane)$/.test(ch.nom) ? "ne" : ""} ${ch.nom} · type ${a.type}`}</small>`}</div>
@@ -2553,18 +2624,19 @@ function sceneBadge(n, c, rejouer = false) {
     v.querySelector(".nom-badge").style.opacity = 0;
     const etui = v.querySelector(".etui");
     if (etui) {
-      etui.classList.add("vu"); await pause(650); etui.classList.add("ouvert"); EPIQUE.vol(); await pause(700);
+      // l'arène s'efface (rien derrière l'étui ni contre la bulle), l'étui se pose, le badge y vole sans tourner, le logement s'illumine
+      const dial = v.querySelector(".pkm-dial"), libre = dial.getBoundingClientRect().top;
+      v.style.setProperty("--etui-top", Math.max(16, (libre - etui.offsetHeight) / 2) + "px");
+      v.classList.add("range"); await pause(320);
+      etui.classList.add("vu"); EPIQUE.clic(); await pause(480);
       const ici = etui.querySelector(".case.ici"), cible = ici.getBoundingClientRect(), r = badge.getBoundingClientRect();
       const dx = cible.left + cible.width / 2 - (r.left + r.width / 2), dy = cible.top + cible.height / 2 - (r.top + r.height / 2);
       badge.classList.remove("calme"); badge.classList.add("vole"); EPIQUE.vol();
-      badge.style.transform = `translate(${dx}px, ${dy}px) scale(${cible.width * .78 / r.width})`;
-      badge.querySelector(".tour").animate([{transform: "rotateY(0) rotateX(0)"}, {transform: "rotateY(720deg) rotateX(20deg)"}, {transform: "rotateY(720deg) rotateX(0)"}],
-        {duration: 1000, easing: "ease-in-out"});
-      await pause(1000);
+      badge.style.transform = `translate(${dx}px, ${dy}px) scale(${cible.width * .8 / r.width})`;
+      await pause(720);
       ici.classList.remove("ici"); ici.classList.add("pose"); ici.innerHTML = `<img class="vrai" src="${b.face}">`; badge.style.opacity = 0;
-      etui.classList.add("brille");
       v.classList.remove("boom"); EPIQUE.clic(); vibre([40, 50, 90]);
-      eclats(cible.left + cible.width / 2, cible.top + cible.height / 2, 18);
+      eclats(cible.left + cible.width / 2, cible.top + cible.height / 2, 14, ["#F8C838", "#FFFFFF", "#C03028"]);
     } else {  // la Ligue : une pluie d'or
       badge.classList.remove("calme");
       for (let i = 0; i < 70; i++) { const k = P.createElement("div"); k.className = "confetti";
@@ -4072,10 +4144,7 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
     <div class="groupe">Les ouvertures<small>Les nouveautés : une scène à part pour les légendaires, la Shiny Ball, le raté de la chasse.</small></div>
-    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>
-    <div class="groupe">Essai : la ball en pixels<small>Rien n'est remplacé : c'est seulement ici. Les mêmes mouvements, dessinés comme un sprite du jeu. À comparer avec la ball lisse actuelle, juste après.</small></div>
-    <div class="boutons-t">${[["poke", "Poké Ball"], ["super", "Super Ball"], ["hyper", "Hyper Ball"], ["master", "Master Ball"], ["shiny", "Shiny Ball"]].map(([k, n]) => b(`t-pix" data-b="${k}`, `${ico(k === "shiny" ? "sball" : k, "p")} ${n}`)).join("")}</div>
-    <div class="boutons-t">${b(`t-pix" data-b="poke" data-s="lisse`, `${ico("poke", "p")} La ball lisse actuelle, pour comparer`)}</div>`;
+    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
   on(".t-labo", () => { const p = PROFESSEURS.chen; intro(captureEssai(auHasard(p.starters), {id: "test#chen", shiny: false, lieu: "Bourg Palette",
@@ -4089,7 +4158,6 @@ function dessinerTests() {
   on(".t-sball", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "shiny", shiny: true, fond: "prairie", raison: "👑 Aperçu : Shiny Ball"})));
   on(".t-evo", () => { const l = (G.starter || {ligne: [4, 5, 6]}).ligne, k = formeStarter() ? Math.min(l.indexOf(formeStarter()) + 1, 2) : 1; sceneEvolution(captureEssai(l[k], {ball: "evo", shiny: false, raison: "Aperçu"})); });
   on(".t-rate", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "poke", shiny: false, rate: true, chasse: true, raison: "⚡ Aperçu : chasse aux shiny"})));
-  on(".t-pix", x => ouvrir(captureEssai(pokeDuType("Normal"), {ball: x.dataset.b, shiny: x.dataset.b === "shiny", fond: "prairie", styleBall: x.dataset.s === "lisse" ? "" : "pixel", raison: "⚡ Aperçu : essai de la ball en pixels"})));
 }
 
 [["ic-spe", "carnet"], ["ic-der", "poke"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
