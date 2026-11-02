@@ -56,7 +56,9 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
 (HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (Pikachu ; carte, à ouvrir,
 4 dernières captures, barre, objectifs ; pastille = balls à ouvrir), **Pokédex** (icône dessinée), **Dresseur** (son visage, à ses
 couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; anneaux pas / zone /
-sommeil, rubriques colorées, coach, graphiques), + 🔄 et ⚙️ en petit. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
+sommeil, rubriques colorées, coach, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
+Ronflex sommeil, Machoc activité, Rondoudou sommeil, Leveinard cœur, Grolem poids, Alakazam coach ; `fermerBulles` : les bulles de graphique se
+ferment en défilant, en touchant ailleurs et en changeant d'onglet), + 🔄 et ⚙️ en petit. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
 par `body.page-sante` (height 0 et pas display:none : largeur des graphiques, jeu qui tourne). Page de démarrage : Aventure.
 **Objectifs** : défi, mission, Super et Hyper en grand ; Shiny, Nuit, Pesée, Sanctuaire, Chasse en petites tuiles (`petits`), toucher = détail.
 **Carte** : loupe en bas à droite (`carte-zoom`, toute la carte / retour au dresseur, à la demande).

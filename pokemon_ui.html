@@ -361,7 +361,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 #mon-dresseur canvas{position:absolute;left:50%;bottom:2px;width:49px;height:66px;transform:translateX(-50%);image-rendering:pixelated}
 #mon-dresseur .txt{flex:1;min-width:0;color:#fff;text-shadow:2px 2px 0 #1F4E9A}
 #mon-dresseur .nom{font-size:25px;font-weight:400}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:16px;opacity:.95}
-#mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 18pxNone 'Jersey 15',Outfit,monospace;background:#F8F8F8;color:#283048;
+#mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 18px 'Jersey 15',Outfit,monospace;background:#F8F8F8;color:#283048;
   box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048;cursor:pointer}
 .onglets:empty{display:none}
 .onglets{display:flex;gap:4px;background:#0D1322;border-radius:14px;padding:4px;margin-bottom:12px}
@@ -863,7 +863,7 @@ const STYLE_VOILE = `
 #pkm-voile .carte.jeu .cpt{font-size:16px;color:#5A6585;margin-left:auto}
 #pkm-voile .carte.jeu .boutons{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
 #pkm-voile .carte.jeu .boutons button{flex:0 0 auto;min-width:96px;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;
-  font:700 19.2pxNone 'Jersey 15',monospace;background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
+  font:700 19.2px 'Jersey 15',monospace;background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
 #pkm-voile .carte.jeu .boutons button:before{content:"▶ ";color:#E04040}
 #pkm-voile .carte.jeu .boutons button:active{transform:translateY(2px);box-shadow:0 0 0 2px #283048}
 `;
@@ -1919,7 +1919,7 @@ const STYLE_BADGE = `
   box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #B98B2E,0 0 0 4px #FFE6A0,0 0 0 5.5px #6E4A0C,0 3px 4px 5px rgba(0,0,0,.35)}
 #pkm-badge .etui .case .fantome{width:66%;height:66%;object-fit:contain;filter:brightness(0) invert(.75) sepia(.4) hue-rotate(190deg);opacity:.16}
 #pkm-badge .etui .case img.vrai{position:absolute;width:76%;height:76%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
-#pkm-badge .etui .loge small{font:700 11.4pxNone 'Jersey 15',monospace;letter-spacing:1px;color:#E9C774;text-shadow:0 1px 0 #000;white-space:nowrap;opacity:.85}
+#pkm-badge .etui .loge small{font:700 11.4px 'Jersey 15',monospace;letter-spacing:1px;color:#E9C774;text-shadow:0 1px 0 #000;white-space:nowrap;opacity:.85}
 #pkm-badge .etui .loge.vide small{color:#7C86B8;opacity:.7}
 #pkm-badge .etui .case.ici{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 18px 6px rgba(255,216,74,.75);animation:pkb-attend 1.1s ease-in-out infinite}
 @keyframes pkb-attend{50%{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 6px 1px rgba(255,216,74,.4)}}
@@ -1937,13 +1937,13 @@ const STYLE_BADGE = `
 #pkm-badge .etui .couvercle .revers{transform:rotateX(180deg);
   background:repeating-linear-gradient(100deg,rgba(255,255,255,.06) 0 6px,rgba(0,0,0,.06) 6px 12px),linear-gradient(180deg,#24306E,#141A44);
   box-shadow:inset 0 0 0 2px #C9973A,inset 0 0 18px rgba(0,0,0,.6)}
-#pkm-badge .etui .couvercle .revers span{font:700 15.6pxNone 'Jersey 15',monospace;letter-spacing:4px;color:#F2D58A;text-shadow:0 1px 0 #000}
+#pkm-badge .etui .couvercle .revers span{font:700 15.6px 'Jersey 15',monospace;letter-spacing:4px;color:#F2D58A;text-shadow:0 1px 0 #000}
 #pkm-badge .etui .embleme{width:52px;height:52px;border-radius:50%;position:relative;
   background:radial-gradient(circle,#FFF2C0 0 13%,#8A5E12 14% 21%,transparent 22%),
     linear-gradient(180deg,transparent 45%,#7A520E 45% 55%,transparent 55%),
     linear-gradient(180deg,#F6D57A 0 50%,#C99A3A 50% 100%);
   box-shadow:0 0 0 3px #8A5E12,0 0 0 5px #F2D07A,0 3px 6px rgba(0,0,0,.55),inset 0 3px 4px rgba(255,255,255,.4)}
-#pkm-badge .etui .couvercle .face span{font:700 15.6pxNone 'Jersey 15',monospace;letter-spacing:4px;
+#pkm-badge .etui .couvercle .face span{font:700 15.6px 'Jersey 15',monospace;letter-spacing:4px;
   background:linear-gradient(180deg,#FFF0B0,#D9A93A 60%,#9A6A18);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 1px 0 rgba(0,0,0,.7))}
 #pkm-badge .etui .fermoir{position:absolute;left:50%;bottom:-9px;width:40px;height:18px;margin-left:-20px;border-radius:4px 4px 8px 8px;z-index:5;
@@ -2456,7 +2456,7 @@ const STYLE_TITRE = `
   letter-spacing:8px;padding:4px 14px;background:#E8382F;border-radius:6px;box-shadow:0 3px 0 #7A1712;text-shadow:2px 2px 0 #7A1712}
 #pkm-titre .logo small{display:block;margin-top:10px;font:500 14px 'Pixelify Sans',monospace;color:#FFF3C4;letter-spacing:2px;text-shadow:2px 2px 0 rgba(40,30,80,.6)}
 #pkm-titre .touche{position:absolute;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));text-align:center;z-index:20;pointer-events:none;
-  font:700 22.8pxNone 'Jersey 15',monospace;color:#fff;letter-spacing:2px;text-shadow:2px 2px 0 #284018,0 0 10px rgba(0,0,0,.5);opacity:0;transition:opacity .8s}
+  font:700 22.8px 'Jersey 15',monospace;color:#fff;letter-spacing:2px;text-shadow:2px 2px 0 #284018,0 0 10px rgba(0,0,0,.5);opacity:0;transition:opacity .8s}
 #pkm-titre.pret .touche{opacity:1;animation:pkt-clign 1.2s steps(2,start) 1s infinite}
 @keyframes pkt-clign{50%{opacity:0}}
 #pkm-titre .touche small{display:block;font-size:12px;font-weight:500;letter-spacing:1px;margin-top:6px;opacity:.85}
@@ -3132,42 +3132,43 @@ function colorerDresseur(racine) {  // remplace les images de Sacha d'un bloc pa
 }
 // La carte dresseur (comme dans Rouge Feu) : on y règle son nom et ses couleurs
 const STYLE_DRESSEUR = `
-#pkm-dresseur{position:fixed;inset:0;z-index:1000001;display:flex;align-items:center;justify-content:center;padding:16px 12px 70px;
+#pkm-dresseur{position:fixed;inset:0;z-index:1000001;display:flex;align-items:center;justify-content:center;padding:10px 12px 46px;
   font-family:'Jersey 15',Outfit,monospace;color:#283048}
 #pkm-dresseur .ombre{position:absolute;inset:0;background:rgba(5,8,16,.78)}
 .carte-dresseur{position:relative;width:min(100%,430px);max-height:100%;overflow-y:auto;border-radius:14px;
   background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,transparent 2px 6px),linear-gradient(180deg,#5AA8E6,#3577C6);
   border:4px solid #F8F8F8;box-shadow:0 0 0 4px #283048,0 14px 34px rgba(0,0,0,.55);padding:0 12px 12px;animation:pkd-entre .3s ease-out}
 @keyframes pkd-entre{from{transform:scale(.92);opacity:0}}
-.carte-dresseur .entete{display:flex;justify-content:space-between;align-items:center;margin:0 -12px 12px;padding:9px 14px;
+.carte-dresseur .entete{display:flex;justify-content:space-between;align-items:center;margin:0 -12px 8px;padding:6px 14px;
   background:#1F4E9A;color:#fff;font-weight:700;font-size:17px;letter-spacing:1px;text-shadow:2px 2px 0 #102850}
 .carte-dresseur .entete small{font-size:13px;font-weight:500;opacity:.9}
 .carte-dresseur .corps{display:flex;gap:12px;align-items:stretch}
 .carte-dresseur .photo{width:96px;flex:0 0 96px;border:3px solid #F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;position:relative;overflow:hidden;
   background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/16px 16px}
-.carte-dresseur .photo canvas{position:absolute;left:50%;top:50%;width:80px;height:160px;margin-top:-104px;transform:translateX(-50%);image-rendering:pixelated}
-.carte-dresseur .infos{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
-.carte-dresseur .boite{background:#F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;padding:6px 10px;font-size:15px;display:flex;justify-content:space-between}
-.carte-dresseur .boite b{color:#283048}
+.carte-dresseur .photo canvas{position:absolute;left:50%;bottom:3px;height:calc(100% - 8px);aspect-ratio:14/19;max-width:calc(100% - 8px);transform:translateX(-50%);image-rendering:pixelated}
+.carte-dresseur .infos{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.carte-dresseur .boite{background:#F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;padding:2px 10px;font-size:18px;line-height:1.2;display:flex;justify-content:space-between;align-items:center}
+.carte-dresseur .boite b{color:#283048;font-weight:400}
 .carte-dresseur .boite span{color:#5A6585}
-.carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 20.4pxNone 'Jersey 15',Outfit,monospace;color:#283048;outline:none;
+.carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 20.4px 'Jersey 15',Outfit,monospace;color:#283048;outline:none;
   text-align:right;padding:0}
-.carte-dresseur .reglages{margin-top:12px;background:#F8F8F8;border-radius:10px;box-shadow:0 0 0 2px #283048;padding:4px 10px}
-.carte-dresseur .choix{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:2px dashed #D4D8E4;font-size:16px}
+.carte-dresseur .reglages{margin-top:9px;background:#F8F8F8;border-radius:10px;box-shadow:0 0 0 2px #283048;padding:1px 8px}
+.carte-dresseur .choix{display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:2px dashed #D4D8E4;font-size:19px;line-height:1.1}
 .carte-dresseur .choix:last-child{border-bottom:0}
-.carte-dresseur .choix .lib{width:92px;color:#5A6585;font-size:14px}
-.carte-dresseur .choix .val{flex:1;display:flex;align-items:center;gap:8px;justify-content:center;font-weight:700}
-.carte-dresseur .choix .val i{width:18px;height:18px;border-radius:3px;box-shadow:0 0 0 2px #283048;display:inline-block}
-.carte-dresseur .fl{width:30px;height:30px;border:0;background:none;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+.carte-dresseur .choix .lib{flex:0 0 76px;color:#5A6585;font-size:17px}
+.carte-dresseur .choix .val{flex:1;min-width:0;display:flex;align-items:center;gap:9px;justify-content:flex-start;white-space:nowrap}
+.carte-dresseur .choix .val i{flex:0 0 18px;width:18px;height:18px;border-radius:3px;box-shadow:0 0 0 2px #283048;display:block}
+.carte-dresseur .fl{flex:0 0 32px;width:32px;height:32px;border:0;background:none;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
 .carte-dresseur .fl:before{content:"";border-top:8px solid transparent;border-bottom:8px solid transparent}
 .carte-dresseur .fl.g:before{border-right:11px solid #E04040}.carte-dresseur .fl.d:before{border-left:11px solid #E04040}
 .carte-dresseur .fl:active{transform:scale(.85)}
-.carte-dresseur .boutons{display:flex;gap:8px;margin-top:12px}
-.carte-dresseur .boutons button{flex:1;border:0;border-radius:8px;padding:10px;font:700 20.4pxNone 'Jersey 15',Outfit,monospace;cursor:pointer;
+.carte-dresseur .boutons{display:flex;gap:8px;margin-top:9px;padding-bottom:3px}
+.carte-dresseur .boutons button{flex:1;border:0;border-radius:8px;padding:6px 10px;font:700 20.4px 'Jersey 15',Outfit,monospace;cursor:pointer;
   background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
 .carte-dresseur .boutons .ok:before{content:"▶ ";color:#E04040}
 .carte-dresseur .boutons button:active{transform:translateY(2px);box-shadow:0 0 0 2px #283048}
-#pkm-dresseur.accueil{flex-direction:column;gap:14px}
+#pkm-dresseur.accueil{flex-direction:column;gap:10px}
+@media (max-height:640px){#pkm-dresseur .titre-jeu small{display:none}#pkm-dresseur .titre-jeu{font-size:24px}.carte-dresseur .boite.region{display:none}}
 #pkm-dresseur.accueil .ombre{background:radial-gradient(circle at 50% 28%,#26386A 0%,#101830 55%,#070B16 100%)}
 #pkm-dresseur .titre-jeu{position:relative;text-align:center;color:#FFCB05;font:700 30px/1 'Pixelify Sans',monospace;letter-spacing:2px;
   text-shadow:3px 3px 0 #2A5BB0,-1px -1px 0 #2A5BB0,1px -1px 0 #2A5BB0,-1px 1px 0 #2A5BB0;animation:pkd-entre .5s ease-out}
@@ -3209,16 +3210,16 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   f.innerHTML = `<div class="ombre"></div>${accueil ? `<div class="titre-jeu">POKÉMON SPORT<small>Crée ton dresseur pour commencer</small></div>` : ""}
     <div class="carte-dresseur">
     <div class="entete"><span>${accueil ? "NOUVEAU DRESSEUR" : "CARTE DRESSEUR"}</span><small class="id">N° ID ${idDresseur(d.nom)}</small></div>
-    <div class="corps"><div class="photo"><canvas width="16" height="32"></canvas></div>
-      <div class="infos"><div class="boite"><span>NOM</span><input maxlength="12" placeholder="${accueil ? "Ton pseudo" : "Sacha"}" value="${d.nom.replace(/"/g, "")}" autocomplete="off"></div>
+    <div class="corps"><div class="photo"><canvas width="14" height="19"></canvas></div>
+      <div class="infos"><div class="boite"><span>NOM</span><input maxlength="12" placeholder="${accueil ? "Ton pseudo" : "Sacha"}" value="${d.nom.replace(/"/g, "")}" autocomplete="off" enterkeyhint="done"></div>
         <div class="boite"><span>POKÉDEX</span><b>${nb}</b></div><div class="boite"><span>BADGES</span><b>${badges}</b></div>
-        <div class="boite"><span>RÉGION</span><b>Kanto</b></div></div></div>
+        <div class="boite region"><span>RÉGION</span><b>Kanto</b></div></div></div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
     <div class="boutons">${accueil ? `<button class="ok go">COMMENCER L'AVENTURE</button>`
       : `<button class="non">RETOUR</button><button class="ok">OK</button>`}</div></div>`;
   P.body.appendChild(f);
-  const ap = apercuDresseur(f.querySelector("canvas"), d);
+  const ap = apercuDresseur(f.querySelector("canvas"), d, true, CADRE_DRESSEUR);
   const maj = cle => { const [, , liste, ton] = CHOIX_DRESSEUR.find(c => c[0] === cle);
     f.querySelector(`[data-cle="${cle}"] .val`).innerHTML = `<i style="background:${rgb(liste[d[cle]][ton])}"></i>${d[cle]}`; };
   CHOIX_DRESSEUR.forEach(([cle, , liste]) => {
@@ -3230,6 +3231,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   });
   const champ = f.querySelector("input");
   champ.oninput = () => { f.querySelector(".id").textContent = "N° ID " + idDresseur(champ.value.trim()); };
+  champ.onkeydown = e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); champ.blur(); } };  // Entrée du clavier : le nom est validé, le clavier se ferme
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
       if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
@@ -3780,7 +3782,7 @@ function dessinerTests() {
   on(".t-rate", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "poke", shiny: false, rate: true, chasse: true, raison: "⚡ Aperçu : chasse aux shiny"})));
 }
 
-[["ic-spe", "carnet"], ["ic-der", "honneur"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
+[["ic-spe", "carnet"], ["ic-der", "poke"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
 // Les onglets : la barre est dans la page de l'appli (.nav-jeu, écrite par app.py) : Aventure, Pokédex, Dresseur (ici) et
 // Santé (les chiffres classiques, écrits par Streamlit : body.page-sante cache le jeu). Hors de l'appli (pages d'essai) : barre ici.
 let ONGLET = "aventure";
@@ -3797,6 +3799,7 @@ function dessinerOnglets() {
 function montrerOnglet(k, defiler = true) {
   const change = k !== ONGLET; ONGLET = k;
   try { PW.__ongletJeu = k; } catch (e) {}
+  fermerBulles();
   const nav = navP();
   if (nav) nav.querySelectorAll("[data-o]").forEach(b => b.classList.toggle("on", b.dataset.o === k));
   P.body.classList.toggle("page-sante", k === "sante");
@@ -3807,8 +3810,15 @@ function montrerOnglet(k, defiler = true) {
   if (change && defiler) { const m = P.querySelector('[data-testid="stMain"]') || P.scrollingElement; if (m) m.scrollTo(0, 0); else scrollTo(0, 0); vibre(8); }
   if (k === "sante") PW.dispatchEvent(new Event("resize"));
 }
+function fermerBulles() { P.querySelectorAll("#vg-tooltip-element").forEach(b => b.classList.remove("visible")); }
+function relierBulles() {
+  if (PW.__bullesJeu) { P.removeEventListener("scroll", PW.__bullesJeu.defile, true); P.removeEventListener("pointerdown", PW.__bullesJeu.touche, true); }
+  PW.__bullesJeu = {defile: () => fermerBulles(), touche: e => { if (!(e.target.closest && e.target.closest(".vega-embed"))) fermerBulles(); }};
+  P.addEventListener("scroll", PW.__bullesJeu.defile, true); P.addEventListener("pointerdown", PW.__bullesJeu.touche, true);
+}
 function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut être recréé par Streamlit)
   const nav = navP(); if (!nav) return;
+  relierBulles();
   if (PW.__navJeu) P.removeEventListener("click", PW.__navJeu);
   PW.__navJeu = e => { const b = e.target.closest && e.target.closest(".nav-jeu [data-o]"); if (b) montrerOnglet(b.dataset.o); };
   P.addEventListener("click", PW.__navJeu);
@@ -3830,6 +3840,7 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   partager([...ouvertes].filter(id => !serveur.has(id) && id.slice(0, 10) >= depuis));
 }
 document.getElementById("recherche").addEventListener("input", e => { texte = e.target.value; dessinerDex(); });
+document.getElementById("recherche").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); e.target.blur(); } });
 
 // La hauteur du cadre suit le contenu
 const ajuster = () => { const h = document.getElementById("app").offsetHeight + 16;

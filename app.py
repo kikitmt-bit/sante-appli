@@ -67,13 +67,16 @@ header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecorat
 .sport .s{color:#9AA7C2;font-size:.78rem}
 h3{margin-top:1.4rem !important}
 .rubrique{display:flex;align-items:center;gap:9px;margin:1.5rem 0 .5rem;font-size:1.2rem;font-weight:800;color:#EEF2FA}
-.rubrique i{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--c);font-style:normal;font-size:1.1rem;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.rubrique i{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:13px;background:var(--c);box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.rubrique img{max-width:40px;max-height:40px;image-rendering:pixelated}
+.st-key-bloc_coach summary p::before{content:"";display:inline-block;width:26px;height:26px;margin:-6px 6px -6px 0;vertical-align:-3px;
+  background:url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/65.gif) center/contain no-repeat;image-rendering:pixelated}
 .anneaux{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 14px;background:#1C2740;border-radius:18px;padding:14px 8px}
 .anneau-s{text-align:center;min-width:0}
 .anneau-s .rond{--t:clamp(74px,24vw,104px);width:var(--t);height:var(--t);margin:0 auto 6px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   background:conic-gradient(var(--c) calc(var(--p) * 1%),#0D1322 0)}
 .anneau-s .rond div{width:calc(var(--t) - 16px);height:calc(var(--t) - 16px);border-radius:50%;background:#1C2740;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
-.anneau-s .rond span{font-size:1.15rem}.anneau-s .rond b{font-size:.92rem;font-weight:800;color:#EEF2FA;white-space:nowrap}
+.anneau-s .rond img{height:calc(var(--t) * .4);max-width:calc(var(--t) * .62);object-fit:contain;image-rendering:pixelated}.anneau-s .rond b{font-size:.92rem;font-weight:800;color:#EEF2FA;white-space:nowrap}
 .anneau-s .n{font-size:.82rem;font-weight:700;color:#EEF2FA}.anneau-s .o{font-size:.7rem;color:#9AA7C2}
 [data-testid="stExpander"] h4{font-size:1.05rem !important;padding:.6rem 0 .2rem !important}
 [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;gap:.5rem}
@@ -89,7 +92,8 @@ PIKACHU = base64.b64encode(Path(__file__).with_name("pikachu.png").read_bytes())
 POKEDEX = base64.b64encode(b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="3" y="1.5" width="18" height="21" rx="3" fill="#E8382F" stroke="#7A1712" stroke-width="1.5"/>
 <circle cx="8" cy="6.5" r="2.8" fill="#6FD0FF" stroke="#fff" stroke-width="1.2"/><circle cx="13" cy="5" r="1" fill="#FFD84A"/><circle cx="16.3" cy="5" r="1" fill="#5BE07A"/>
 <rect x="6" y="11" width="12" height="8.5" rx="1" fill="#BDEB9B" stroke="#7A1712"/></svg>""").decode()
-LEVEINARD = f"{pokemon.IMAGES}/pokemon/versions/generation-vii/icons/113.png"  # Leveinard, l'infirmier des Pokémon : la santé
+LEVEINARD = f"{pokemon.IMAGES}/pokemon/versions/generation-iii/emerald/113.png"  # Leveinard, l'infirmier des Pokémon : la santé
+ANIME = pokemon.IMAGES + "/pokemon/other/showdown/{}.gif"  # les Pokémon qui illustrent la page Santé (de Kanto : rien ne dévoile la suite)
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
 .st-key-outils{{gap:4px !important}}
@@ -101,8 +105,8 @@ st.markdown(f"""<style>
 .nav-jeu button{{flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:11px;padding:4px 0 3px;
   background:none;color:#9AA7C2;font:700 11.5px Outfit,sans-serif;cursor:pointer}}
 .nav-jeu button.on{{background:#1C2740;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}}
-.nav-jeu img{{width:26px;height:26px;object-fit:contain;image-rendering:pixelated;display:block}}
-.nav-jeu img.leveinard{{transform:scale(1.75)}}
+.nav-jeu img{{width:27px;height:27px;object-fit:contain;image-rendering:pixelated;display:block}}
+.nav-jeu img.leveinard{{transform:scale(1.25)}}
 .nav-jeu .nb{{position:absolute;top:1px;right:calc(50% - 22px);min-width:15px;padding:0 3px;border-radius:8px;background:#E8382F;color:#fff;font-size:10px;line-height:15px}}
 .nav-jeu .nb[hidden]{{display:none}}
 body:not(.page-sante) [data-testid="stLayoutWrapper"]:has(> .st-key-page_sante),body.page-sante [data-testid="stLayoutWrapper"]:has(> .st-key-page_jeu){{height:0 !important;min-height:0;overflow:hidden;visibility:hidden;margin:0;flex:0 0 0 !important}}
@@ -180,19 +184,22 @@ def lire_depot(paths, recents=()):
     return {p: c[p][1] for p in paths}
 
 
-def rubrique(icone, titre, couleur):
-    st.markdown(f'<div class="rubrique" style="--c:{couleur}"><i>{icone}</i>{titre}</div>', unsafe_allow_html=True)
+def rubrique(num, titre, couleur):
+    """Le titre d'une rubrique, illustré par un Pokémon (num)."""
+    st.markdown(f'<div class="rubrique" style="--c:{couleur}"><i><img src="{ANIME.format(num)}" alt=""></i>{titre}</div>',
+                unsafe_allow_html=True)
 
 
 def anneaux(df, un_jour):
     """Les 3 anneaux du haut de la page, façon montre : pas, minutes en zone, sommeil par rapport à l'objectif (par jour)."""
     html = []
-    for cle, icone, nom, couleur in (("pas", "👟", "Pas", BLEU), ("zone", "🔥", "En zone", "#FF9E80"), ("sommeil", "😴", "Sommeil", "#B39DFF")):
+    # Doduo court sur ses deux pattes, Ponyta est un cheval de feu, Ronflex dort
+    for cle, num, nom, couleur in (("pas", 84, "Pas", BLEU), ("zone", 77, "En zone", "#FF9E80"), ("sommeil", 143, "Sommeil", "#B39DFF")):
         v, obj = par_jour(df, cle), OBJECTIFS.get(cle)
         if v is None or v != v or not obj:
             v = 0
         pct = min(v / obj * 100, 100) if obj else 0
-        html.append(f'<div class="anneau-s"><div class="rond" style="--c:{couleur};--p:{pct:.0f}"><div><span>{icone}</span><b>{joli(cle, v) if v else "–"}</b></div></div>'
+        html.append(f'<div class="anneau-s"><div class="rond" style="--c:{couleur};--p:{pct:.0f}"><div><img src="{ANIME.format(num)}" alt=""><b>{joli(cle, v) if v else "–"}</b></div></div>'
                     f'<div class="n">{nom}</div><div class="o">{"objectif" if un_jour else "moy. / jour · objectif"} {joli(cle, obj)}</div></div>')
     st.markdown(f'<div class="anneaux">{"".join(html)}</div>', unsafe_allow_html=True)
 
@@ -300,7 +307,7 @@ def coach(d, lire_vite, aujourd):
     chemin = chemin_analyse(*cle)
     a = lire_vite([chemin])[chemin]
     c1, c2 = st.columns([5, 1])
-    with c1, st.expander(f"🧠 {titre}"):
+    with c1, st.container(key="bloc_coach"), st.expander(titre):
         if a:
             st.markdown(a["texte"])
         else:
@@ -538,7 +545,7 @@ with page_sante:
         coach(donnees, lire_vite, aujourd)
 
     # ----- Activité -----
-    rubrique("🏃", "Activité", BLEU)
+    rubrique(66, "Activité", BLEU)  # Machoc, le sportif
     tuiles(["pas", "zone", "km", "etages", "denivele", "actives", "min_sport", "seances", "kcal", "kcal_act", "assis"],
            df, avant, un_jour, legende_avant, BLEU)
     if un_jour:
@@ -576,7 +583,7 @@ with page_sante:
             st.markdown(liste, unsafe_allow_html=True)
 
     # ----- Sommeil -----
-    rubrique("😴", "Sommeil", "#7E5BD8")
+    rubrique(39, "Sommeil", "#7E5BD8")  # Rondoudou et sa berceuse
     if not tuiles(["sommeil", "profond", "paradoxal", "leger", "eveil", "coucher", "lever"], df, avant, un_jour,
                   legende_avant, "#B39DFF"):
         st.caption("Pas de sommeil enregistré pour cette période.")
@@ -584,7 +591,7 @@ with page_sante:
     graphique_sommeil(regroupe(nuits, ["profond", "leger", "paradoxal", "eveil"], mensuel))
 
     # ----- Cœur -----
-    rubrique("❤️", "Cœur et respiration", "#E0526B")
+    rubrique(113, "Cœur et respiration", "#E0526B")  # Leveinard, l'infirmier
     tuiles(["fc_repos", "vfc", "fc_max", "resp", "spo2", "spo2_min"], df, avant, un_jour, legende_avant, "#FF7C93")
     if un_jour:
         hr = table(j_ref.get("heart-rate"))
@@ -608,7 +615,7 @@ with page_sante:
                   couleur="#B39DFF", hauteur=140)
 
     # ----- Poids -----
-    rubrique("⚖️", "Poids et masse grasse", "#2FA88A")
+    rubrique(76, "Poids et masse grasse", "#2FA88A")  # Grolem, 300 kg
     pesees = donnees["pesees"]
     if pesees.empty:
         st.caption("Aucune pesée ces 3 derniers mois.")
