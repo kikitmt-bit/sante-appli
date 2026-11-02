@@ -73,10 +73,13 @@ données : observations par thème (sommeil, coucher, récup, pas, sport, assis,
 comparées aux repères et à la moyenne du joueur ; 3 cartes au plus (4 pour une période), un thème chacune, ce qui vient d'être dit
 s'efface (`_choisir`) sauf l'important, habitudes un jour sur 4, un conseil qui pousse saute si le cœur dit le contraire ; un
 Pokémon par thème. Affiché dans Santé (`carte_bilan`), l'ancien coach Claude reste en plus pour Kiki seul. À affiner ici, pas dans une IA.
-**Profil du joueur (date de naissance, taille, carte du dresseur, facultatifs)** : **gardés sur le téléphone seulement** (localStorage
+**Profil du joueur (date de naissance, taille, sexe, carte du dresseur, facultatifs)** : **gardés sur le téléphone seulement** (localStorage
 `pkm_dresseur`), relus à l'ouverture par `streamlit_js_eval` (`bilan.lire_profil`), jamais écrits sur un serveur (autre téléphone = à ressaisir).
-Servent au bilan : IMC (repère neutre, alerte seulement si perte de poids sous 18,5), maximum cardiaque théorique (Tanaka, 208 - 0,7 × âge),
-équilibre à 65 ans, tuile IMC, mot d'anniversaire de Joëlle. Le sexe n'est pas demandé. Ils ne changent pas les objectifs du jeu.
+Servent au bilan : IMC (repère neutre, alerte seulement si perte de poids sous 18,5), maximum cardiaque théorique (Tanaka, ou Gulati pour
+les femmes), repères de masse grasse (Gallagher 2000), équilibre à 65 ans, tuile IMC. Ils ne changent pas les objectifs du jeu.
+**Shiny Ball d'anniversaire** (voulue par Kiki : 2e exception au « jamais de Pokémon offert », une par an, `pokemon.jours_anniversaire`) : l'appli voit
+que c'est le bon jour (profil du téléphone), la ball existe aussitôt, et le téléphone laisse `<jour>…#demande-anniv` dans la liste partagée
+(`ouvertes.json`, sans changer le script) pour que montre.py la fige. La date exacte n'est donc connue du dépôt que par ce jour-là.
 **Récap du matin** (`sceneCentre`, `D.matin`) : première visite du jour, 3 bulles au plus de l'Infirmière Joëlle : la nuit, hier
 (`etat["hier"]`), puis le défi du champion ou `bilan.conseil_du_jour` ; la machine de soin seulement après une bonne nuit ;
 coupable dans Dresseur (`pkm_recap_non`).

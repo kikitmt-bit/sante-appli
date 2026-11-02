@@ -539,6 +539,7 @@ function titreBall(c) {
   const b = /^badge(\d)$/.exec(cle); if (b) return `${nom} de ${CHAMPIONS[b[1]].nom}`;
   if (c.fond && c.fond.startsWith("arene")) return `${nom} de ${CHAMPIONS[c.fond.slice(5)].nom}`;
   if (cle === "ligue" || /Ligue/.test(c.raison || "")) return `${nom} de la Ligue`;
+  if (cle.startsWith("anniv")) return `${nom} · Joyeux anniversaire !`;
   if (cle.startsWith("sanct")) return `${nom} · Sanctuaire`;
   if (cle === "diplome") return `${nom} · Diplôme du Professeur Chen`;
   if (cle.startsWith("shinyball")) return `${nom} · ${R.master_jours} jours sur ${R.master_fenetre}`;
@@ -551,7 +552,7 @@ function titreBall(c) {
 function raisonHTML(c) {
   const [e, ...reste] = (c.raison || "").split(" "), txt = reste.join(" ");
   const badge = /#badge(\d)/.exec(c.id), a = badge && LIEUX.filter(l => l.arene)[badge[1] - 1];
-  const i = {"🎁": "poke", "🏆": "ligue", "👑": "shiny", "🏛️": "master", "🎓": "master", "🎯": "super", "⚡": "effort", "⚖️": "masse"}[e];
+  const i = {"🎁": "poke", "🎂": "shiny", "🏆": "ligue", "👑": "shiny", "🏛️": "master", "🎓": "master", "🎯": "super", "⚡": "effort", "⚖️": "masse"}[e];
   return a && a.arene.image ? `${ico(IMG.badge(a.arene.image), "p")} ${txt}` : i ? `${ico(i, "p")} ${txt}` : c.raison;
 }
 const N3 = n => String(n).padStart(3, "0");
@@ -2566,8 +2567,9 @@ function sceneCentre(apercu = false) {
   const nuitL = reposé ? `Bonjour ${nomDresseur()} ! ${h(dormi)} de sommeil : tes Pokémon sont en pleine forme. Shiny <b>${bonus} fois</b> plus fréquents aujourd'hui !`
     : dormi ? `Bonjour ${nomDresseur()} ! Nuit un peu courte, ${h(dormi)}. Pas de bonus shiny aujourd'hui, mais tes Pokémon t'attendent.`
     : `Bonjour ${nomDresseur()} ! Ta nuit n'est pas encore arrivée de ta montre.`;
-  // son anniversaire : un mot, sans cadeau (rien n'est offert dans ce jeu, sauf le starter)
+  // son anniversaire : un mot, et sa Shiny Ball (le seul cadeau du jeu avec le starter, voulu par Kiki)
   const anniv = /^\d{4}-\d{2}-\d{2}$/.test(DRESSEUR.naissance || "") && DRESSEUR.naissance.slice(5) === D.aujourdhui.slice(5);
+  const cadeau = CAPTURES.some(c => /#anniv\d{4}$/.test(c.id) && c.jour === D.aujourdhui && !estOuverte(c));
   let hierL = null;
   if (HIER) {
     const balls = CAPTURES.filter(c => c.jour === HIER.jour && !c.rate).length;
@@ -2579,7 +2581,8 @@ function sceneCentre(apercu = false) {
   const dv = V.defi;
   if (dv && dv.arrive) { const ar = LIEUX[dv.lieu].arene, reste = Math.max(ar.cible - dv.valeur, 0), resteB = ar.b ? Math.max(ar.b.cible - dv.valeur_b, 0) : null;
     jourL = `${CHAMPIONS[dv.numero].nom} t'attend : encore ${dv.unite === "pas" ? fr(reste) : Math.ceil(reste)} ${dv.unite}${resteB != null ? `, ou ${resteB} jour${resteB > 1 ? "s" : ""} d'objectif` : ""}.`; }
-  const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()} ! Tous les Pokémon du centre te le souhaitent. ` + nuitL.replace(/^Bonjour [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
+  const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()} !${cadeau ? " Tous les Pokémon du centre t'offrent une <b>Shiny Ball</b> : elle t'attend avec tes balls à ouvrir !" : " Tous les Pokémon du centre te le souhaitent."}` : null,
+    anniv ? nuitL.replace(/^Bonjour [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
   let fini = false;
   const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -2590,7 +2593,9 @@ function sceneCentre(apercu = false) {
     await pause(200); v.querySelector(".noir").style.opacity = 0;
     setTimeout(() => salle.style.transform = "translateX(-50%) scale(1.08)", 100);
     await pause(1000);
-    await DC.dire(lignes[0], "Infirmière Joëlle");
+    let debut = 1;
+    if (anniv) { await DC.dire(lignes[0], "Infirmière Joëlle"); SONS.shiny(); vibre([40, 60, 80]); debut = 2; }
+    await DC.dire(lignes[debut - 1], "Infirmière Joëlle");
     if (reposé) {  // la machine ne se lance qu'après une bonne nuit : c'est sa récompense
       DC.cacher(); v.classList.add("soin"); salle.style.transform = "translateX(-50%) scale(1.25)";
       await pause(350);
@@ -2601,7 +2606,7 @@ function sceneCentre(apercu = false) {
       al.forEach(a => a.classList.remove("on")); v.classList.remove("soin"); salle.style.transform = "translateX(-50%) scale(1.08)";
       await pause(300);
     }
-    for (const l of lignes.slice(1)) await DC.dire(l, "Infirmière Joëlle");
+    for (const l of lignes.slice(debut)) await DC.dire(l, "Infirmière Joëlle");
     fermer();
   })().catch(() => {});
 }
@@ -3180,6 +3185,9 @@ const STYLE_DRESSEUR = `
 .carte-dresseur .profil input[type=date]::-webkit-calendar-picker-indicator{margin:0;padding:0;width:15px}
 .carte-dresseur .av-unite{display:flex;align-items:center;gap:3px;min-width:0;flex:1}.carte-dresseur .av-unite i{font-style:normal;color:#5A6585;font-size:15px}
 .carte-dresseur .profil input[type=number]{-moz-appearance:textfield}.carte-dresseur .profil input[type=number]::-webkit-inner-spin-button{display:none}
+.carte-dresseur .choix-sexe{display:flex;gap:5px}
+.carte-dresseur .choix-sexe button{border:0;border-radius:6px;padding:1px 9px;font:400 17px 'Jersey 15',Outfit,monospace;background:#E4E7EF;color:#5A6585;cursor:pointer}
+.carte-dresseur .choix-sexe button.on{background:#E8382F;color:#fff;box-shadow:inset 0 0 0 1px #7A1712}
 .carte-dresseur .profil small{grid-column:1/-1;color:#fff;font-size:15px;line-height:1.05;text-shadow:1px 1px 0 #1F4E9A;font-family:'Jersey 15',monospace}
 .carte-dresseur .reglages{margin-top:8px;background:#F8F8F8;border-radius:10px;box-shadow:0 0 0 2px #283048;padding:1px 8px}
 .carte-dresseur .choix{display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:2px dashed #D4D8E4;font-size:19px;line-height:1.1}
@@ -3245,6 +3253,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
         <div class="boite region"><span>RÉGION</span><b>Kanto</b></div></div></div>
     <div class="profil"><label class="boite"><span>NAISSANCE</span><input class="naissance" type="date" max="${D.aujourdhui}" min="1920-01-01" value="${/^\d{4}-\d{2}-\d{2}$/.test(d.naissance || "") ? d.naissance : ""}" enterkeyhint="done"></label>
       <label class="boite"><span>TAILLE</span><span class="av-unite"><input class="taille" type="number" inputmode="numeric" min="100" max="250" placeholder="175" value="${+d.taille || ""}" enterkeyhint="done"><i>cm</i></span></label>
+      <div class="boite sexe"><span>SEXE</span><span class="choix-sexe"><button type="button" data-s="M" class="${d.sexe === "M" ? "on" : ""}">Masculin</button><button type="button" data-s="F" class="${d.sexe === "F" ? "on" : ""}">Féminin</button></span></div>
       <small>Facultatif. Rend ton bilan santé plus juste. Ça reste sur ton téléphone.</small></div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
@@ -3265,16 +3274,19 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   champ.oninput = () => { f.querySelector(".id").textContent = "N° ID " + idDresseur(champ.value.trim()); };
   // Entrée du clavier : le champ est validé, le clavier se ferme
   f.querySelectorAll("input").forEach(i => i.onkeydown = e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); i.blur(); } });
-  const avant = JSON.stringify([d.naissance || "", +d.taille || 0]);
+  f.querySelectorAll(".choix-sexe button").forEach(b => b.onclick = () => { const deja = b.classList.contains("on");
+    f.querySelectorAll(".choix-sexe button").forEach(x => x.classList.remove("on")); if (!deja) b.classList.add("on"); vibre(8); });
+  const avant = JSON.stringify([d.naissance || "", +d.taille || 0, d.sexe || ""]);
   const lireProfil = () => { const n = f.querySelector(".naissance").value, t = Math.round(+f.querySelector(".taille").value);
-    d.naissance = /^\d{4}-\d{2}-\d{2}$/.test(n) && n >= "1920-01-01" && n <= D.aujourdhui ? n : ""; d.taille = t >= 100 && t <= 250 ? t : 0; };
+    d.naissance = /^\d{4}-\d{2}-\d{2}$/.test(n) && n >= "1920-01-01" && n <= D.aujourdhui ? n : ""; d.taille = t >= 100 && t <= 250 ? t : 0;
+    const sx = f.querySelector(".choix-sexe button.on"); d.sexe = sx ? sx.dataset.s : ""; };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
       if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
       if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); d.partie = R.partie; lireProfil(); DRESSEUR = d;
         try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur();
         // l'âge et la taille servent au bilan, calculé par l'appli : elle doit les relire (sauf au tout début : l'aventure continue)
-        if (!accueil && JSON.stringify([d.naissance, d.taille]) !== avant && PW !== window) { f.remove(); ok(enregistrer); return PW.location.reload(); } }
+        if (!accueil && JSON.stringify([d.naissance, d.taille, d.sexe]) !== avant && PW !== window) { f.remove(); ok(enregistrer); return PW.location.reload(); } }
       f.remove(); ok(enregistrer); };
     f.querySelector(".ok").onclick = () => {
       if (accueil && !champ.value.trim()) {  // le pseudo d'abord
@@ -3503,7 +3515,7 @@ function etatVoyage() {
   vu = Math.min(isNaN(vu) ? 0 : vu, fin);
   const p0 = posDeC(vu);
   const lieux = LIEUX.filter((l, k) => k && l.dist > p0 && l.dist <= V.pos).map(l => l.nom.replace(" (retour)", ""));
-  const balls = TEST ? [] : CAPTURES.filter(c => c.c != null && c.c > vu + 1e-6 && c.c <= fin + 1e-6 && !c.id.endsWith("#chen"))
+  const balls = TEST ? [] : CAPTURES.filter(c => c.c != null && c.c > vu + 1e-6 && c.c <= fin + 1e-6 && !/#(chen|anniv\d{4})$/.test(c.id))
     .sort((a, b) => a.c - b.c);
   const attente = fin - vu >= SEUIL_VOYAGE || lieux.length > 0 || balls.length > 0;
   if (attente) balls.forEach(c => EN_ROUTE.add(c.id));
@@ -3872,6 +3884,10 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur)
   else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneCentre(); }, 1200);
+}
+{ // la Shiny Ball d'anniversaire : une trace dans la liste partagée, pour que le calcul de chaque heure la fige (la date de naissance ne sort pas du téléphone)
+  const c = CAPTURES.find(x => /#anniv\d{4}$/.test(x.id) && x.jour === D.aujourdhui);
+  if (c) { const trace = c.id.split("#")[0] + "#demande-anniv"; if (!serveur.has(trace)) memoriser(trace); }
 }
 { // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie
   const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);

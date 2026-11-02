@@ -8,10 +8,9 @@ Les Pokémon viennent de Kanto (rien ne dévoile la suite du jeu).
 
     analyser(stats, periode, debut, fin, aujourd, j_jour, profil) -> {"titre", "phrase", "cartes": [...]}
     conseil_du_jour(stats, aujourd, profil) -> phrase courte pour le récap du matin, ou None
-    lire_profil(texte, aujourd) -> {"age", "taille", "naissance"} : la carte du dresseur, gardée sur le téléphone du joueur
+    lire_profil(texte, aujourd) -> {"age", "taille", "sexe", "anniversaire"} : la carte du dresseur, gardée sur le téléphone du joueur
 
-Le profil n'est jamais enregistré ici : il sert au calcul, le temps de la visite. Le sexe n'est pas demandé : pas de repère de
-masse grasse, ni de cardio qui en dépende.
+Le profil n'est jamais enregistré ici : il sert au calcul, le temps de la visite.
 """
 import datetime as dt
 import hashlib
@@ -23,25 +22,44 @@ from chiffres import JOURS, OBJECTIFS, heure, hm, nombre, table
 
 NOMS_JOURS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 PERSONNAGES = {"sommeil": (143, "Ronflex"), "coucher": (39, "Rondoudou"), "recup": (113, "Leveinard"), "pas": (84, "Doduo"),
-               "sport": (66, "Machoc"), "assis": (54, "Psykokwak"), "poids": (76, "Grolem"), "oxygene": (113, "Leveinard"),
+               "sport": (66, "Machoc"), "assis": (54, "Psykokwak"), "poids": (76, "Grolem"), "gras": (68, "Mackogneur"), "oxygene": (113, "Leveinard"),
                "habitude": (65, "Alakazam")}
 BON, NEUTRE, ALERTE = "bon", "neutre", "alerte"
 SEMAINE_INTENSE = 75  # minutes d'effort intense par semaine : le repère de l'OMS (75 à 150)
 
 
 def lire_profil(texte, aujourd):
-    """Ce que le téléphone envoie (localStorage pkm_dresseur), vérifié : l'âge et la taille, ou rien."""
+    """Ce que le téléphone envoie (localStorage pkm_dresseur), vérifié : âge, taille, sexe, et si c'est son anniversaire."""
     try:
         d = json.loads(texte)
+    except (TypeError, ValueError):
+        d = None
+    d = d if isinstance(d, dict) else {}
+    try:
         naissance = dt.date.fromisoformat(str(d.get("naissance") or ""))
         age = aujourd.year - naissance.year - ((aujourd.month, aujourd.day) < (naissance.month, naissance.day))
-    except (TypeError, ValueError, AttributeError):
-        d, naissance, age = d if isinstance(locals().get("d"), dict) else {}, None, None
+    except ValueError:
+        naissance, age = None, None
     try:
         taille = float(d.get("taille") or 0)
     except (TypeError, ValueError):
         taille = 0
-    return {"age": age if age is not None and 5 <= age <= 110 else None, "taille": taille if 100 <= taille <= 250 else None}
+    age = age if age is not None and 5 <= age <= 110 else None
+    return {"age": age, "taille": taille if 100 <= taille <= 250 else None, "sexe": d.get("sexe") if d.get("sexe") in ("M", "F") else None,
+            "anniversaire": age is not None and (naissance.month, naissance.day) == (aujourd.month, aujourd.day)}
+
+
+def repere_gras(age, sexe):
+    """(bas, haut) de la masse grasse, en %, selon l'âge et le sexe (Gallagher et al., 2000) ; None sans les deux."""
+    if not age or not sexe or age < 20:
+        return None
+    tranche = 0 if age < 40 else 1 if age < 60 else 2
+    return {"M": ((8, 19), (11, 21), (13, 24)), "F": ((21, 32), (23, 33), (24, 35))}[sexe][tranche]
+
+
+def cardio_max(age, sexe):
+    """Le maximum cardiaque théorique : Gulati pour les femmes (206 - 0,88 × âge), Tanaka sinon (208 - 0,7 × âge)."""
+    return 206 - .88 * age if sexe == "F" else 208 - .7 * age
 
 
 def imc(poids, taille):
@@ -228,17 +246,32 @@ def _poids(d, jour, nuit, profil=None):
 
 
 def _intensite(d, jour, nuit, profil=None):
-    """Avec l'âge : le cardio du jour par rapport au maximum théorique (formule de Tanaka : 208 - 0,7 × âge)."""
+    """Avec l'âge : le cardio du jour par rapport au maximum théorique."""
     age = (profil or {}).get("age")
     v, z = _val(d, jour, "fc_max"), _val(d, jour, "zone_sport") or 0
     if not age or not v or z < 5:
         return []
-    maxi = 208 - .7 * age
+    maxi = cardio_max(age, (profil or {}).get("sexe"))
     if v >= maxi:
         return [_carte("sport", 52, NEUTRE, f"Cœur monté à {v:.0f} bpm", f"Machoc t'a vu : c'est au-dessus du maximum théorique à {age} ans ({maxi:.0f} bpm). Ce repère varie d'une personne à l'autre, et une montre peut se tromper en plein effort.", "Si tu t'es senti bien, tout va bien. Douleur, malaise ou essoufflement inhabituel : parles-en à un médecin.")]
     if v >= maxi * .85:
         return [_carte("sport", 38, BON, f"Bel effort : {v:.0f} bpm", f"{v / maxi * 100:.0f} % de ton maximum théorique à {age} ans : tu as vraiment travaillé {hm(z)}.")]
     return []
+
+
+def _gras(d, jour, nuit, profil=None):
+    """La masse grasse comparée aux repères de son âge et de son sexe, sur plusieurs pesées : une balance se trompe vite."""
+    g = _colonne(d.loc[jour - dt.timedelta(days=30):jour], "gras")
+    rep = repere_gras((profil or {}).get("age"), (profil or {}).get("sexe"))
+    if len(g) < 3 or not rep:
+        return []
+    v, (bas, haut) = float(g.tail(5).median()), rep
+    txt = f"Repère à ton âge : {bas} à {haut} %. Une balance donne une estimation : c'est la tendance qui compte."
+    if v > haut:
+        return [_carte("gras", 40, NEUTRE, f"Masse grasse : {nombre(v, 1)} %", f"Mackogneur te montre le chemin. {txt}", "Le plus efficace à long terme : de la muscu ou du rameur deux fois par semaine, et de vraies nuits. Pas besoin de régime strict.")]
+    if v < bas:
+        return [_carte("gras", 50, NEUTRE, f"Masse grasse basse : {nombre(v, 1)} %", f"Sous le repère. {txt}", "Si tu te sens fatigué ou si ça baisse encore, parles-en à ton médecin.")]
+    return [_carte("gras", 26, BON, f"Masse grasse : {nombre(v, 1)} %", f"Mackogneur valide : dans les repères. {txt}")]
 
 
 def _oxygene(d, jour, nuit):
@@ -289,7 +322,7 @@ def _habitudes(d, jour):
 def _toutes(d, jour, nuit, j_jour=None, profil=None):
     return (_oxygene(d, jour, nuit) + _recup(d, jour, nuit) + _sommeil(d, jour, nuit) + _coucher(d, jour, nuit)
             + _sport(d, jour, nuit, profil) + _intensite(d, jour, nuit, profil) + _pas(d, jour, nuit) + _assis(d, jour, nuit, j_jour)
-            + _poids(d, jour, nuit, profil) + _habitudes(d, jour))
+            + _poids(d, jour, nuit, profil) + _gras(d, jour, nuit, profil) + _habitudes(d, jour))
 
 
 def _choisir(cartes, jour, deja=frozenset(), n=3):

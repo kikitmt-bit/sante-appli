@@ -432,7 +432,7 @@ def accueil_ami():
     st.markdown("- **Lu :** activité, pas, cardio, séances, sommeil, poids, à partir des 14 jours avant ton inscription. Rien d'autre.\n"
                 "- **Tes chiffres ne sont visibles que par toi** dans l'appli, jamais par les autres joueurs.\n"
                 "- **Bon à savoir :** ils sont rangés dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
-                "- **Date de naissance et taille** (facultatives) : elles restent sur ton téléphone.\n"
+                "- **Date de naissance, taille et sexe** (facultatifs) : ils restent sur ton téléphone. Le jour de ton anniversaire, seule la trace de ton cadeau est enregistrée.\n"
                 "- **Tu peux tout arrêter** quand tu veux : ⚙️ → Supprimer mes données.")
     if s.get("SCRIPT_URL") and s.get("SCRIPT_CLE"):
         exp = int(time.time()) + 3600
@@ -651,10 +651,12 @@ with page_sante:
         gras7 = pesees["gras"].dropna().tail(7).mean()
         html = [f'<div class="tile"><div class="l">Poids</div><div class="v">{joli("poids", pesees["poids"].dropna().iloc[-1])}'
                 f'</div><div class="s">pesée du {der:%d/%m}</div></div>']
+        rep = bilan.repere_gras(PROFIL["age"], PROFIL["sexe"])
+        repere_gras = f" · repère {rep[0]} à {rep[1]} %" if rep else ""
         if pesees["gras"].notna().any():
             html.append(f'<div class="tile"><div class="l">Masse grasse</div><div class="v">'
                         f'{joli("gras", pesees["gras"].dropna().iloc[-1])}</div><div class="s">moyenne des 7 dernières '
-                        f'pesées : {nombre(gras7, 1)} %</div></div>')
+                        f'pesées : {nombre(gras7, 1)} %{repere_gras}</div></div>')
         i = bilan.imc(pesees["poids"].dropna().iloc[-1], PROFIL["taille"])
         if i:
             html.append(f'<div class="tile"><div class="l">IMC</div><div class="v">{nombre(i, 1)}</div><div class="s">repère 18,5 à 25, ne distingue pas le muscle du gras</div></div>')
@@ -673,7 +675,7 @@ with page_sante:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
 with page_jeu:
-    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL))
+    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL), PROFIL["anniversaire"])
 
 
 @st.dialog("⚙️ Configuration", width="large")

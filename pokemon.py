@@ -8,6 +8,7 @@
 - **Hyper Ball** : exploit du jour (10 000 pas, 25 min de sport ou une séance de 45 min). Shiny ×4.
 - **Shiny Ball** : 25 jours avec l'objectif (5 000 pas ou 10 min de sport) sur les 30 derniers, ou un sanctuaire dont on a
   déjà le légendaire : un shiny garanti parmi les Pokémon déjà attrapés.
+- **Anniversaire** : une Shiny Ball si on ouvre l'appli ce jour-là, une par an (voir `charger_jeu`).
 - **Légendaires** : les oiseaux dans leurs sanctuaires (kanto.SANCTUAIRES), Mewtwo à la Ligue, Mew au Pokédex complet
   (les 146 autres). Toute petite chance par ball (`legende_chance`) de tomber sur un oiseau avant, une seule fois par région.
 - Une nuit de 7 h ne donne pas de Poké Ball mais rend les shiny plus fréquents toute la journée (×1,5).
@@ -412,12 +413,13 @@ def bonus_du_jour(jour, stats, resumes, mission_du):
     return b
 
 
-def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None):
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=()):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
     figées sont reprises telles quelles ; les autres sont tirées. Chaque capture a « c » = les points cumulés au moment
     où elle a été tirée, et l'état a la « frise » (points et position sur la carte au début et à la fin de chaque
-    jour) : c'est ce que rejoue la carte. joueur = {"id", "debut"} pour un ami (None : Kiki). -> (captures, état)."""
+    jour) : c'est ce que rejoue la carte. joueur = {"id", "debut"} pour un ami (None : Kiki) ; anniversaires = les jours où
+    une Shiny Ball d'anniversaire est due. -> (captures, état)."""
     R = REGLAGES
     figees = {c["id"]: c for c in figees}
     captures, possedees, cumul = [], set(), 0.0
@@ -546,6 +548,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 sanct.append({"cle": f"sanct{num}", "ball": "master", "types": None, "fixe": num,
                               "raison": f"🏛️ Sanctuaire de {kanto.LIEUX[k]['nom']} : {nom}"})
         dues = balls_du_jour(jour, m, avant, cumul, shiny_ball, badges, debut, sanct)
+        if jour in anniversaires:
+            dues.append({"cle": f"anniv{jour.year}", "ball": "shiny", "types": None, "raison": "🎂 Joyeux anniversaire !"})
         # une capture figée reste, même si les chiffres ont baissé depuis
         for i in [i for i in figees if i.startswith(ident(jour, "", ami))]:
             c = figees[i]
@@ -655,14 +659,38 @@ def etat_mission(aujourd, stats, mission_du):
     return sortie
 
 
-def charger_jeu(lire, aujourd, joueur=None):
+def jours_anniversaire(ouvertes, figees, ami, debut, aujourd, aujourdhui_anniv):
+    """Les jours où une Shiny Ball d'anniversaire est due, une par an. La date de naissance reste sur le téléphone : ici, on sait
+    seulement que le joueur a ouvert l'appli le jour de son anniversaire (aujourdhui_anniv), et le téléphone laisse une trace dans la
+    liste partagée (« …#demande-anniv ») pour que le calcul de chaque heure (montre.py) fige la ball : seul ce jour est connu."""
+    deja = {c["id"].split("#anniv")[1] for c in figees if "#anniv" in c["id"]}
+    jours = []
+    for i in ouvertes:
+        try:
+            j = dt.date.fromisoformat(i[:10])
+        except ValueError:
+            continue
+        if i == ident(j, "demande-anniv", ami):
+            jours.append(j)
+    if aujourdhui_anniv:
+        jours.append(aujourd)
+    sortie = set()
+    for j in sorted(jours):
+        if str(j.year) not in deja and debut <= j <= aujourd:
+            deja.add(str(j.year))
+            sortie.add(j)
+    return sortie
+
+
+def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     """Statistiques depuis le début du jeu et captures figées, avec la fonction `lire` de l'appli (pour un ami : lire
-    donne ses fichiers à lui, voir chiffres.chez, et joueur = {"id", "debut"})."""
+    donne ses fichiers à lui, voir chiffres.chez, et joueur = {"id", "debut"}). anniversaire = le joueur a ouvert l'appli le jour de
+    son anniversaire."""
     debut, ami = joueur["debut"] if joueur else REGLAGES["debut"], joueur["id"] if joueur else None
     annees = range(debut.year, aujourd.year + 1)
     # les fichiers d'aujourd'hui et d'hier : le moment des Super / Hyper Balls pas encore figées avec leur moment
     recents = {j: f"data/jour/{j.year}/{j}.json" for j in (aujourd - dt.timedelta(days=1), aujourd) if j >= debut}
-    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, missions.FICHIER] + list(recents.values()))
+    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, OUVERTES, missions.FICHIER] + list(recents.values()))
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
@@ -670,8 +698,9 @@ def charger_jeu(lire, aujourd, joueur=None):
     stats = pd.DataFrame({j: chiffres.stats_jour(resumes.get(str(j))) for j in jours}).T
     figees = [c for c in (f.get(FIGEES) or {}).get("captures", [])  # seulement celles de la partie en cours
               if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], "", ami))]
+    anniv = jours_anniversaire((f.get(OUVERTES) or {}).get("ouvertes", {}), figees, ami, debut, aujourd, anniversaire)
     return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"),
-                 {j: f.get(c) for j, c in recents.items()}, joueur)
+                 {j: f.get(c) for j, c in recents.items()}, joueur, anniv)
 
 
 def figer(dossier):

@@ -46,11 +46,11 @@ def _acces_jeu(joueur):
     return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
 
 
-def afficher(lire, aujourd, joueur=None, conseil=None):
+def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False):
     """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki ; conseil = la phrase utile du
-    récap du matin (bilan.conseil_du_jour)."""
+    récap du matin (bilan.conseil_du_jour) ; anniversaire = c'est son anniversaire aujourd'hui (date gardée sur son téléphone)."""
     with st.spinner("Ouverture du Pokédex…"):
-        captures, etat = pokemon.charger_jeu(lire, aujourd, joueur)
+        captures, etat = pokemon.charger_jeu(lire, aujourd, joueur, anniversaire)
         f = lire([pokemon.OUVERTES])
 
     m, R = etat["mesures"], pokemon.REGLAGES
