@@ -58,7 +58,7 @@ REGLAGES = {
     "part_lieu": 0.8,                # chance de tirer dans le lieu actuel plutôt qu'en rattrapage (s'il reste des deux)
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
-    "pts_niveau": 220, "niveau_depart": 5, "evolutions": (16, 36),  # le starter : 1re évolution à 2 420 points, 2e à 6 820 (toujours avant les 7 000 de la carte)
+    "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
     "barre": 100,                    # points d'effort pour une Poké Ball

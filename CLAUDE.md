@@ -77,8 +77,8 @@ Pokémon par thème. Affiché dans Santé (`carte_bilan`), l'ancien coach Claude
 `pkm_dresseur`), relus à l'ouverture par `streamlit_js_eval` (`bilan.lire_profil`), jamais écrits sur un serveur (autre téléphone = à ressaisir).
 Servent au bilan : IMC (repère neutre, alerte seulement si perte de poids sous 18,5), maximum cardiaque théorique (Tanaka, ou Gulati pour
 les femmes), repères de masse grasse (Gallagher 2000), équilibre à 65 ans, tuile IMC. Ils ne changent pas les objectifs du jeu.
-**Le starter, vrai objectif (02/11, idée de Kiki)** : un niveau tous les 220 points d'effort (`pokemon.niveau`, part du niveau 5), évolue aux niveaux 16 et 36
-(`evolutions`, 2 420 et 6 820 points : la 2e toujours avant la fin de la carte, à 7 000) ; ses évolutions ne sortent plus des balls (`reserves`), capture `#evo1/2`, ball `evo`, jamais montrée
+**Le starter, vrai objectif (02/11, idée de Kiki)** : un niveau tous les 195 points d'effort (`pokemon.niveau`, part du niveau 1), évolue aux niveaux 16 et 36, sans autre condition
+(`evolutions`, 2 925 et 6 825 points : la 2e toujours avant la fin de la carte, à 7 000) ; ses évolutions ne sortent plus des balls (`reserves`), capture `#evo1/2`, ball `evo`, jamais montrée
 à la montre, scène `sceneEvolution`, carte `dessinerStarter` en haut de la barre (silhouette de la forme suivante), icône d'Aventure = sa forme du moment. Dans une autre région : icône = starter de cette région.
 **Shiny Ball d'anniversaire** (voulue par Kiki : 2e exception au « jamais de Pokémon offert », une par an, `pokemon.jours_anniversaire`) : l'appli voit
 que c'est le bon jour (profil du téléphone), la ball existe aussitôt, et le téléphone laisse `<jour>…#demande-anniv` dans la liste partagée
