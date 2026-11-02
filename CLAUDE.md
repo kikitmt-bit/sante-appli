@@ -52,6 +52,13 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
   Simulation à ce rythme, sans viser le champion / en le visant : Kiki 142 / ~103 jours pour la Ligue, sportif 77 / ~72, très
   sportif 46, débutant 375 / ~243 (point faible : objectifs adaptés à chacun à faire avant d'inviter les amis).
   Montre : pas encore à jour (Shiny Ball montrée en Master Ball, ratés masqués).
+**Interface du jeu (02/11, carte blanche de Kiki)** : 3 onglets dans l'onglet Pokémon : **Aventure** (carte, à ouvrir, barre,
+objectifs ; pastille = balls à ouvrir), **Pokédex** (compteurs, dernières captures, grille ; dessiné seulement quand on le
+regarde), **Dresseur** (Mon dresseur, place des amis et du classement, Comment ça marche, tests). Objectifs : défi, mission,
+Super et Hyper en grand ; Shiny Ball, Nuit, Pesée, Sanctuaire, Chasse en petites tuiles (`petits`) : le toucher ouvre le détail.
+Carte : petit bouton loupe en bas à droite (`carte-zoom`, toute la carte / retour au dresseur, seulement à la demande).
+**Pokédex par région** : `REGIONS` (une seule pour l'instant) : seules les régions ouvertes s'affichent ; ajouter Johto là
+quand elle s'ouvre. **Surprise voulue par Kiki : à la fin de Kanto on doit croire le jeu fini : aucun texte ne parle de la suite.**
 **Feuille de route du jeu** (01/11 : multijoueur, ratés de capture, stats du dresseur en coches, talents de Ligue, une
 nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de toucher au jeu.
 
@@ -290,7 +297,7 @@ nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de touche
     **Zoom** (`CARTE["zoom"]`, 2 pour Kanto, à régler par région) : `carte-vue` (fenêtre qui défile) sur `carte-wrap`
     (zoom × plus large), centrée sur le dresseur ; coordonnées en `LARG` = 370 × zoom (`echelle(z)` recalcule
     `LIEUX`/`TRACE`) donc traits et noms gardent leur taille (×1,25 quand zoomé) ; tailles en % divisées par `--z` ;
-    **Plus de vue d'ensemble ni de défilement libre** (29/10, Kiki : la carte se découvre au fur et à mesure) : toujours
+    **Pas de défilement libre, vue d'ensemble seulement par la loupe depuis le 02/11** (29/10, Kiki : la carte se découvre au fur et à mesure) : par défaut
     zoomée et centrée sur le dresseur (`overflow:hidden`). Bulle du champion posée dans `.carte-cadre` en pixels de
     l'écran (au-dessus du médaillon, sinon dessous) : jamais coupée.
     Mode **`grotte`** (Mont Sélénite → Azuria ; idée de Kiki, 29/10) : tirets, et le dresseur est vu dans une **boule de

@@ -344,6 +344,27 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 #mon-dresseur .nom{font-size:20px;font-weight:700}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:13px;opacity:.95}
 #mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 15px 'Pixelify Sans',Outfit,monospace;background:#F8F8F8;color:#283048;
   box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048;cursor:pointer}
+.onglets{display:flex;gap:4px;background:#0D1322;border-radius:14px;padding:4px;margin-bottom:12px}
+.onglets button{flex:1;position:relative;border:0;border-radius:11px;padding:9px 4px;background:none;color:#9AA7C2;font:800 13.5px Outfit,sans-serif;cursor:pointer}
+.onglets button.on{background:#1C2740;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
+.onglets .nb{display:inline-block;min-width:17px;margin-left:4px;padding:0 4px;border-radius:9px;background:#E8382F;color:#fff;font-size:11px;line-height:17px}
+.onglets .gr{margin-left:4px;color:#7C8AA8;font-weight:700;font-size:11.5px}
+section[hidden]{display:none}
+.carte.amis{margin-top:14px}
+.speciale.mission{grid-column:1/-1}
+.petits{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.petit-obj{position:relative;border:0;border-radius:12px;padding:7px 6px 9px;background:#141C31;color:#C9D3EA;cursor:pointer;text-align:center;font-family:Outfit,sans-serif;min-width:0}
+.petit-obj.on{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4);background:#1C2740}
+.petit-obj .hd{display:flex;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;color:#9AA7C2;white-space:nowrap}
+.petit-obj .hd .ico,.petit-obj .hd .mini-ball{width:18px;height:18px;flex:0 0 18px;vertical-align:0;margin:0;--k:1}
+.petit-obj .val{display:block;font-size:13.5px;font-weight:800;margin-top:2px;color:#EEF2FA}
+.petit-obj .bar{display:block;height:3px;border-radius:2px;background:#0D1322;margin-top:5px;overflow:hidden}
+.petit-obj .bar i{display:block;height:100%;background:#6B8CFF}
+.petit-obj.ok .bar i{background:#4CD3A0}
+.petit-obj.ok .val{color:#4CD3A0}
+#detail-obj{grid-column:1/-1}#detail-obj:empty{display:none}
+.carte-zoom.discret{left:auto;right:8px;bottom:8px;width:34px;height:34px;padding:0;justify-content:center;background:rgba(16,35,58,.7);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
+.carte-zoom.discret svg{width:18px;height:18px}
 details.regles{background:#1C2740;border-radius:14px;padding:10px 14px;margin:14px 0 4px;font-size:13px;color:#C9D3EA}
 details.regles summary{cursor:pointer;font-weight:700;color:#EEF2FA}
 details.regles li{margin:5px 0;line-height:1.4}
@@ -351,25 +372,36 @@ details.regles li{margin:5px 0;line-height:1.4}
 
 <div id="app" style="padding-bottom:56px">
   <div id="bandeau-test"></div>
-  <div id="bandeau-voyage"></div>
-  <!-- ordre (01/11, Kiki : la carte toujours en haut) : ton aventure (et le replay de ta journée), ce qui t'attend, ton
-       compteur du jour, tes objectifs du jour, ta collection -->
-  <div class="carte" id="voyage"></div>
-  <div class="carte" id="aouvrir"></div>
-  <div class="carte" id="barre"></div>
-  <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
-  <div class="grille2" id="speciales"></div>
-  <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
-  <h2><img class="ico g" id="ic-dex" alt="">Pokédex <span class="n" id="dex-n"></span></h2>
-  <div id="stats"></div>
-  <input id="recherche" type="search" placeholder="Chercher un Pokémon ou un numéro…" autocomplete="off">
-  <div class="defile" id="filtres"></div>
-  <div id="filtres-types"></div>
-  <div id="grille"></div><div id="rien">Aucun Pokémon ici.</div>
-  <h2>Mon dresseur</h2>
-  <div id="mon-dresseur"></div>
-  <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
-  <details class="regles tests" open><summary>🧪 Tester Kanto (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
+  <!-- 3 onglets (02/11, carte blanche de Kiki) : ce qu'on fait chaque jour, sa collection, soi et ses amis -->
+  <nav class="onglets" id="onglets"></nav>
+  <!-- Aventure (01/11, Kiki : la carte toujours en haut) : ton aventure et le replay de ta journée, ce qui t'attend, ton
+       compteur du jour, tes objectifs du jour -->
+  <section id="o-aventure">
+    <div id="bandeau-voyage"></div>
+    <div class="carte" id="voyage"></div>
+    <div class="carte" id="aouvrir"></div>
+    <div class="carte" id="barre"></div>
+    <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
+    <div class="grille2" id="speciales"></div>
+  </section>
+  <section id="o-dex" hidden>
+    <h2><img class="ico g" id="ic-dex" alt=""><span id="dex-titre">Pokédex</span> <span class="n" id="dex-n"></span></h2>
+    <div id="stats"></div>
+    <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
+    <input id="recherche" type="search" placeholder="Chercher un Pokémon ou un numéro…" autocomplete="off">
+    <div class="defile" id="regions"></div>
+    <div class="defile" id="filtres"></div>
+    <div id="filtres-types"></div>
+    <div id="grille"></div><div id="rien">Aucun Pokémon ici.</div>
+  </section>
+  <section id="o-dresseur" hidden>
+    <h2>Mon dresseur</h2>
+    <div id="mon-dresseur"></div>
+    <div class="carte amis"><div class="titre" style="font-size:16px">Tes amis</div>
+      <div class="petit gris" style="margin-top:4px">Bientôt ici : où ils en sont sur la carte, leurs Pokémon, leurs badges, et le classement.</div></div>
+    <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
+    <details class="regles tests"><summary>🧪 Tester Kanto (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
+  </section>
 </div>
 
 <script>
@@ -381,6 +413,11 @@ const COUL = {...D.couleurs, Normal: "#9FA19F", Combat: "#FF8000", Vol: "#81B9EF
   Plante: "#3FA129", "Électrik": "#FAC000", Psy: "#EF4179", Glace: "#3FD8FF", Dragon: "#5060E1", "Ténèbres": "#50413F",
   "Fée": "#EF70EF"}, LEG = new Set(D.legendaires);
 const DEX = D.dex.map(([num, nom, types]) => ({num, nom, types}));
+// Le Pokédex montre seulement les régions ouvertes : finir Kanto doit laisser croire que le jeu est fini. Une nouvelle région
+// (Johto : de 152 à 251) s'ajoute ici le jour où elle s'ouvre, et les boutons de région n'apparaissent qu'à partir de deux.
+const REGIONS = [{nom: "Kanto", de: 1, a: 151}];
+let regionVue = REGIONS[0], typesOuverts = false;
+const dexRegion = () => DEX.filter(p => p.num >= regionVue.de && p.num <= regionVue.a);
 const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
 // Les images, directement dans le dépôt public PokeAPI/sprites
 const IMG = {
@@ -1452,6 +1489,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     await Dl.dire(lignes[4]);
     Dl.cacher(); Dl.fin();
     await pause(350);
+    v.querySelector(".pkm-dial").remove();  // (invisible, elle restait par-dessus le bouton OK)
   }
 
   function montrerCarte() {  // le résultat : une boîte de dialogue façon jeu en bas (le décor reste visible), Kiki 01/11
@@ -1463,7 +1501,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
       <div class="phrase">${r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
-      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes}/151 · Shiny ${shinys}/151</span></div>
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes}/${DEX.length} · Shiny ${shinys}/${DEX.length}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
@@ -2456,7 +2494,7 @@ function scenePantheon(suite = null) {
   const lignes = ["Félicitations ! Tu as vaincu la Ligue Pokémon de Kanto !", `${nom} et ses Pokémon entrent au <b>Panthéon</b> !`,
     `Ton équipe : ${eq.map(e => `<b>${PAR_NUM[e.num].nom}</b>`).join(", ")}.`,
     `${nb} Pokémon attrapés, 8 badges, des milliers de pas… Ce voyage restera gravé ici pour toujours.`,
-    suite ? "Et maintenant… ouvre ta Master Ball : un Pokémon légendaire t'attend !" : "Une nouvelle région t'attend déjà au-delà des montagnes…"];
+    suite ? "Et maintenant… ouvre ta Master Ball : un Pokémon légendaire t'attend !" : "Mais qui sait ce qui t'attend, au-delà des montagnes…"];
   DP.prevoir(lignes.map(l => [l]));
   let fini = false;
   const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -2661,7 +2699,7 @@ function dessinerAOuvrir() {
       <div class="petit gris" style="margin-top:4px">Remplis ta barre d'effort, ou décroche une Super / Hyper Ball !</div>`;
     return;
   }
-  el.innerHTML = blocBadges + rappel + (G.fini ? `<div class="petit" style="margin-bottom:8px"><b>Professeur Chen :</b> « Avant de prendre le bateau, utilise tout ce qui reste dans ton sac : la prochaine région, on y arrive les mains vides ! »</div>` : "") + blocSac() + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
+  el.innerHTML = blocBadges + rappel + (G.fini ? `<div class="petit" style="margin-bottom:8px"><b>Professeur Chen :</b> « Quel voyage ! Il te reste des Poké Balls : ouvre-les toutes, il manque peut-être encore des Pokémon à ton Pokédex ! »</div>` : "") + blocSac() + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
     <div class="rang">${liste.slice(0, 12).map((c, i) => `<button class="bouton-ball" data-i="${CAPTURES.indexOf(c)}"
       style="animation-delay:${i * .25}s">${ballSVG(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
@@ -2691,7 +2729,26 @@ function dessinerSpeciales() {
     : `Encore <b>${R.master_jours - J.serie} jour${R.master_jours - J.serie > 1 ? "s" : ""}</b> avec l'objectif. ` +
       (J.serie_ok ? "Aujourd'hui compte déjà ✅" : `Pour qu'aujourd'hui compte : <b>${mPas}</b> ou <b>${mZone}</b>.`);
   const fen = J.fenetre.concat(Array(Math.max(R.master_fenetre - J.fenetre.length, 0)).fill(undefined));
-  document.getElementById("speciales").innerHTML = carteDefi() + carteMission(gris, champ, cadenas) + carteChasse() + `
+  const carteShiny = `    <div class="speciale ${mas ? "ok" : ""}">${mas ? '<span class="tampon">✅</span>' : ""}
+      <div class="tete"><span class="mini-ball">${ballSVG("shiny")}</span>Shiny Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un shiny garanti</div>
+      <div class="ligne"><span>${ico("shiny", "p brille")} ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
+      <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
+      <div class="reste">${resteMaster}</div></div>`;
+  const carteNuit = `    <div class="speciale nuit-carte ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
+      <div class="tete">${ico("nuit")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
+      <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
+      <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
+      ${nuit ? `<div class="reste">Touche pour passer au Centre Pokémon.</div>` : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
+  // Les petites tuiles (retour de Kiki, 02/11 : seules la mission, la Super et l'Hyper Ball comptent chaque jour) : on touche pour le détail
+  const pct = (v, c) => Math.min(c ? v / c * 100 : 0, 100);
+  const petits = [
+    {cle: "shiny", ic: `<span class="mini-ball">${ballSVG("shiny")}</span>`, nom: "Shiny", val: `${J.serie}/${R.master_jours}`, p: pct(J.serie, R.master_jours), ok: mas, detail: carteShiny},
+    {cle: "nuit", ic: ico("nuit"), nom: "Nuit", val: J.sommeil ? h(J.sommeil).replace(" h ", "h") : "—", p: pct(J.sommeil, R.nuit), ok: nuit, detail: carteNuit},
+    D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb}/${D.pesees.cible}`, p: pct(D.pesees.nb, D.pesees.cible), ok: D.pesees.nb >= D.pesees.cible, detail: cartePesee()} : null,
+    ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur}/${x.cible}`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
+    G.chasse && G.chasse.actif ? {cle: "chasse", ic: ico("radar"), nom: "Chasse", val: `${Math.round(G.chasse.chance * 100)} %`, p: G.chasse.chance * 100, detail: carteChasse()} : null,
+  ].filter(Boolean);
+  document.getElementById("speciales").innerHTML = carteDefi() + carteMission(gris, champ, cadenas) + `
     <div class="speciale ${sup ? "ok" : ""} ${gris ? "grise" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}Super Ball</div><div class="gain">Objectif double, ou un exploit · shiny ×2</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
@@ -2702,19 +2759,18 @@ function dessinerSpeciales() {
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
       <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}
-      ${verrou("hyper") || `<div class="reste">${resteHyper}</div>`}</div>
-    <div class="speciale ${mas ? "ok" : ""}">${mas ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete"><span class="mini-ball">${ballSVG("shiny")}</span>Shiny Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un shiny garanti</div>
-      <div class="ligne"><span>${ico("shiny", "p brille")} ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
-      <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
-      <div class="reste">${resteMaster}</div></div>
-    <div class="speciale nuit-carte ${nuit ? "ok" : ""}">${nuit ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ico("nuit")}Bonne nuit</div><div class="gain">Nuit de ${h(R.nuit)} · shiny ×1,5 sur toutes les balls du jour</div>
-      <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
-      <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
-      ${nuit ? `<div class="reste">Touche pour passer au Centre Pokémon.</div>` : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>` + cartePesee() + carteSanctuaires();
+      ${verrou("hyper") || `<div class="reste">${resteHyper}</div>`}</div>`
+    + `<div class="petits">${petits.map(x => `<button class="petit-obj ${x.ok ? "ok" : ""}" data-c="${x.cle}"><span class="hd">${x.ic}${x.nom}</span><span class="val">${x.val}</span><span class="bar"><i style="width:${x.p}%"></i></span></button>`).join("")}</div><div id="detail-obj"></div>`;
+  const detail = document.getElementById("detail-obj");
+  document.querySelectorAll("#speciales .petit-obj").forEach(b => b.onclick = () => {
+    const ouvert = b.classList.contains("on");
+    document.querySelectorAll("#speciales .petit-obj").forEach(x => x.classList.remove("on"));
+    detail.innerHTML = ""; vibre(10);
+    if (ouvert) return;
+    b.classList.add("on"); detail.innerHTML = petits.find(x => x.cle === b.dataset.c).detail; rognerImages(detail);
+    const nc = detail.querySelector(".nuit-carte"); if (nc && nuit) { nc.style.cursor = "pointer"; nc.onclick = () => sceneCentre(); }
+  });
   rognerImages(document.getElementById("speciales"));
-  if (nuit) { const nc = document.querySelector("#speciales .nuit-carte"); nc.style.cursor = "pointer"; nc.onclick = () => sceneCentre(); }
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
 }
 // La pesée de la semaine (29/10) : 3 pesées le matin du lundi au dimanche = une Poké Ball ; et la dernière pesée
@@ -2783,15 +2839,13 @@ function carteChasse() {
     <div class="jauge"><div style="width:${Math.min(pct, 100)}%;background:linear-gradient(90deg,#FFCB05,#E8382F)"></div></div></div>`;
 }
 // Les sanctuaires : un légendaire au bout d'un petit défi qui ne bloque jamais
-function carteSanctuaires() {
-  const liste = (V.sanctuaires || []).filter(s => s.atteint && !s.fait);
-  if (!liste.length) return "";
-  return liste.map(s => { const p = PAR_NUM[s.num], deja = !!collection()[s.num];
-    return `<div class="speciale sanct"><img class="silhouette ${deja ? "vue" : ""}" src="${IMG.mini(s.num, false)}" alt="">
+function carteSanctuaire(s) {
+  const p = PAR_NUM[s.num], deja = !!collection()[s.num];
+  return `<div class="speciale sanct"><img class="silhouette ${deja ? "vue" : ""}" src="${IMG.mini(s.num, false)}" alt="">
       <div class="tete">${ico("master")}Sanctuaire</div>
       <div class="gain">${s.nom.replace(" et Centrale", "")} · ${deja ? `Tu as déjà ${p.nom} : une Shiny Ball t'y attend` : "Un légendaire t'y attend"}. Rien ne presse : ça ne bloque jamais ton voyage.</div>
       <div class="ligne"><span>${s.valeur} / ${s.cible} jours d'exploit</span></div>
-      <div class="jauge"><div class="${s.valeur >= s.cible ? "ok" : ""}" style="width:${Math.min(s.valeur / s.cible * 100, 100)}%"></div></div></div>`; }).join("");
+      <div class="jauge"><div class="${s.valeur >= s.cible ? "ok" : ""}" style="width:${Math.min(s.valeur / s.cible * 100, 100)}%"></div></div></div>`;
 }
 // 3. Le défi de l'arène où l'on est arrivé, cumulé depuis l'arrivée (ou son plan B)
 function carteDefi() {
@@ -2828,19 +2882,28 @@ function dessinerDernieres() {
 }
 
 function dessinerDex() {
-  const col = collection(), especes = Object.keys(col).length;
+  const col = {}, tout = collection(), dexR = dexRegion();
+  dexR.forEach(p => { if (tout[p.num]) col[p.num] = tout[p.num]; });
+  const especes = Object.keys(col).length, total = dexR.length;
   const sh = Object.values(col).filter(l => l.some(c => c.shiny)).length, nb = Object.keys(V.badges).filter(k => k <= 8).length;
   const ici = new Set(LIEUX[V.ici].pokemon);
-  document.getElementById("dex-n").textContent = `${especes} / 151`;
+  document.getElementById("dex-titre").textContent = `Pokédex de ${regionVue.nom}`;
+  document.getElementById("dex-n").textContent = `${especes} / ${total}`;
+  const blocR = document.getElementById("regions");
+  blocR.innerHTML = REGIONS.length > 1 ? REGIONS.map((x, i) => `<button class="filtre ${x === regionVue ? "on" : ""}" data-i="${i}">${x.nom}</button>`).join("") : "";
+  blocR.querySelectorAll(".filtre").forEach(b => b.onclick = () => { regionVue = REGIONS[b.dataset.i]; dessinerDex(); });
   document.getElementById("stats").innerHTML = `
-    <div class="t"><div class="l">Espèces</div><div class="v">${especes} <small>/ 151</small></div>
-      <div class="jauge"><div style="width:${especes / 1.51}%;background:linear-gradient(90deg,#FF4B4B,#FFCB05)"></div></div></div>
+    <div class="t"><div class="l">Espèces</div><div class="v">${especes} <small>/ ${total}</small></div>
+      <div class="jauge"><div style="width:${especes / total * 100}%;background:linear-gradient(90deg,#FF4B4B,#FFCB05)"></div></div></div>
     <div class="t"><div class="l">Shiny</div><div class="v">${ico("shiny", "brille")} ${sh}</div></div>
     <div class="t"><div class="l">Badges</div><div class="v"><img src="${IMG.badge(Math.max(nb, 1))}"> ${nb} <small>/ 8</small></div></div>`;
-  const filtres = [["tous", "Tous"], ["oui", `Attrapés ${especes}`], ["non", `Manquants ${151 - especes}`],
+  const filtres = [["tous", "Tous"], ["oui", `Attrapés ${especes}`], ["non", `Manquants ${total - especes}`],
                    ["ici", `${ico("carte", "p")} ${LIEUX[V.ici].nom}`], ["shiny", `${ico("shiny", "p brille")} Shiny`], ["leg", `${ico("master", "p")} Légendaires`]];
   document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("");
-  document.querySelectorAll("#filtres .filtre").forEach(b => b.onclick = () => { filtre = b.dataset.k; dessinerDex(); });
+  document.getElementById("filtres").insertAdjacentHTML("beforeend", `<button class="filtre plus-types ${typesOuverts || filtreTypes.size ? "on" : ""}">Types${filtreTypes.size ? ` (${filtreTypes.size})` : ""}</button>`);
+  document.querySelector("#filtres .plus-types").onclick = () => { typesOuverts = !typesOuverts; dessinerDex(); };
+  document.getElementById("filtres-types").style.display = typesOuverts ? "" : "none";  // les 18 types : seulement à la demande (la grille reste en haut)
+  document.querySelectorAll("#filtres .filtre[data-k]").forEach(b => b.onclick = () => { filtre = b.dataset.k; dessinerDex(); });
   document.getElementById("filtres-types").classList.toggle("actif", filtreTypes.size > 0);
   document.getElementById("filtres-types").innerHTML = Object.keys(COUL).map(t =>
     `<button class="filtre ty ${filtreTypes.has(t) ? "on" : ""}" data-t="${t}" style="background:${COUL[t]}">${icoType(t)}${t}</button>`).join("");
@@ -2848,7 +2911,7 @@ function dessinerDex() {
     filtreTypes.has(b.dataset.t) ? filtreTypes.delete(b.dataset.t) : filtreTypes.add(b.dataset.t); dessinerDex(); });
 
   const q = texte.trim().toLowerCase();
-  const liste = DEX.filter(p => {
+  const liste = dexR.filter(p => {
     const mes = col[p.num] || [], a = mes.length > 0;
     if (filtre === "oui" && !a || filtre === "non" && a) return false;
     if (filtre === "ici" && !ici.has(p.num)) return false;
@@ -3292,7 +3355,7 @@ function infosLieu(k) {
 function blocArene() {
   const d = V.defi;
   if (!d) return `<div class="arene"><div class="bdg ligue">${ico("ligue", "g")}</div><div class="q"><div class="t">Champion de Kanto !</div>
-      Les 8 badges et la Ligue sont à toi. La suite du voyage (Johto) arrive bientôt.</div></div>`;
+      Les 8 badges et la Ligue sont à toi.</div></div>`;
   const l = LIEUX[d.lieu], a = l.arene, j = (v, c) => `<div class="jauge"><div class="${v >= c ? "ok" : ""}" style="width:${Math.min(v / c * 100, 100)}%"></div></div>`;
   const nomU = d.unite === "pas" ? "pas" : d.unite;
   const val = v => d.unite === "pas" ? fr(v) : Math.round(v * 10) / 10;
@@ -3471,6 +3534,8 @@ function dessinerVoyage() {
     <div class="avance"><div style="width:0"></div></div>
     ${blocArene()}<div class="carte-cadre" style="--ar:${V.carte.largeur}/${V.carte.hauteur}"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
       <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto(depuis)}${chefCarte()}<div class="heros-ancre">${heros()}</div></div></div>
+      ${VY.attente ? "" : `<button class="carte-zoom discret" title="${ZC > 1 ? "Voir toute la carte" : "Revenir sur ton dresseur"}" aria-label="${ZC > 1 ? "Voir toute la carte" : "Revenir sur ton dresseur"}">
+        <svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l5 5M6 8.5h5${ZC > 1 ? "" : "M8.5 6v5"}"/></svg></button>`}
       ${VY.attente ? `<button class="carte-attente"><span class="play"></span><b>Voir ton voyage</b><small>${texteVoyage(VY)}</small></button>` : ""}
 </div>
     ${infosLieu(k)}
@@ -3488,9 +3553,7 @@ function dessinerVoyage() {
   dessinerBandeauVoyage();
   vue.addEventListener("click", e => { if (GLISSE && GLISSE.bouge) { e.stopPropagation(); e.preventDefault(); } }, true);
   const bz = el.querySelector(".carte-zoom");
-  if (bz) bz.onclick = () => { const tout = ZC > 1;
-    try { localStorage.setItem("pkm_carte_vue", tout ? "tout" : "zoom"); } catch (e) {}
-    echelle(tout ? 1 : V.carte.zoom); dessinerVoyage(); vibre(10); };
+  if (bz) bz.onclick = () => { echelle(ZC > 1 ? 1 : V.carte.zoom); dessinerVoyage(); vibre(10); };
   badgesPropres(el.querySelector(".boite-badges"));
   const brancher = () => { el.querySelectorAll(".coin img").forEach(i => i.onclick = () => fiche(PAR_NUM[i.dataset.n])); rognerImages(el); };
   // toucher un lieu : il s'allume sur la carte et ses Pokémon s'affichent juste dessous (sans redessiner la carte)
@@ -3536,7 +3599,7 @@ function dessinerVoyage() {
 let TEST = null;  // {V: copie de l'état réel, vu: position du dernier voyage regardé pendant le test}
 function entrerTest() { if (!TEST) TEST = {V: JSON.parse(JSON.stringify(V)), G: JSON.parse(JSON.stringify(G)), vu: null}; }
 function redessinerTest() {
-  VOYAGE = null; lieuVu = null; EN_ROUTE.clear();
+  VOYAGE = null; lieuVu = null; EN_ROUTE.clear(); montrerOnglet("aventure", false);
   dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner();
   document.getElementById("bandeau-test").innerHTML = TEST ? `<div class="bandeau-test">MODE TEST · rien n'est enregistré
     <button>Quitter le test</button></div>` : "";
@@ -3591,7 +3654,7 @@ function dessinerRegles() {
     <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>
     <li>${ico("shiny", "p brille")} <b>Shiny Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un shiny garanti.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
-    <li>${ico("master", "p")} <b>Légendaires</b> : Artikodin, Électhor et Sulfura dans leurs sanctuaires sur la route (5 jours d'exploit, jamais bloquant), Mewtwo à la Ligue, Mew quand tu as les 146 autres. Et une toute petite chance de croiser un oiseau plus tôt, dans n'importe quelle ball, une seule fois par région.</li>
+    <li>${ico("master", "p")} <b>Légendaires</b> : Artikodin, Électhor et Sulfura dans leurs sanctuaires sur la route (5 jours d'exploit, jamais bloquant), Mewtwo à la Ligue, Mew quand tu as les 146 autres. Et une toute petite chance de croiser un oiseau plus tôt, dans n'importe quelle ball.</li>
     <li>${ico("nuit", "p")} Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
     <li>${ico("carte", "p")} <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
       au Plateau Indigo (environ 3 mois à ton rythme, moins si tu fonces). Rien à choisir : bouge, tu avances.</li>
@@ -3600,7 +3663,7 @@ function dessinerRegles() {
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : un défi cumulé depuis ton arrivée (rien ne se perd), ou son plan B avec l'objectif du jour (un jour d'exploit compte double). Ton dresseur attend à l'arène : la carte ne bouge plus.
       Dès le lendemain de ton arrivée, Super Ball, Hyper Ball et mission sont grisées : le champion les garde et te rend les ${R.rend} derniers jours quand tu le bats. Dès qu'il est battu, tout se débloque, même ce que tu as fait le matin. Badge = une Hyper Ball du type du champion.</li>
-    <li>${ico("ligue", "p")} <b>Fin de Kanto</b> : tu ouvres tout ce qui reste dans ton sac avant de partir. Dans chaque nouvelle région, on arrive les mains vides.</li>
+    <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
     <li>${ico("radar", "p")} <b>Mission du jour</b> : une mission choisie sur tes points faibles des 14 derniers jours (matinée active, coucher à l'heure,
@@ -3675,7 +3738,25 @@ function dessinerTests() {
 }
 
 [["ic-spe", "carnet"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerDex(); dessinerMonDresseur(); }
+let ONGLET = "aventure";
+function dessinerOnglets() {
+  const nb = aOuvrir().length + CAPTURES.filter(c => EN_ROUTE.has(c.id) && !estOuverte(c)).length;
+  const especes = Object.keys(collection()).length;
+  const el = document.getElementById("onglets");
+  el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["dex", `Pokédex<span class="gr">${especes}</span>`], ["dresseur", "Dresseur"]]
+    .map(([k, t]) => `<button class="${ONGLET === k ? "on" : ""}" data-k="${k}">${t}</button>`).join("");
+  el.querySelectorAll("button").forEach(b => b.onclick = () => montrerOnglet(b.dataset.k));
+}
+function montrerOnglet(k, defiler = true) {
+  const change = k !== ONGLET; ONGLET = k;
+  [["aventure", "o-aventure"], ["dex", "o-dex"], ["dresseur", "o-dresseur"]].forEach(([o, id]) => document.getElementById(id).hidden = o !== k);
+  if (k === "dex") { dessinerDernieres(); dessinerDex(); }
+  if (k === "aventure" && change) requestAnimationFrame(() => { if (CENTRER) CENTRER(); });
+  dessinerOnglets();
+  if (change && defiler) { try { (window.frameElement || document.getElementById("app")).scrollIntoView({block: "start"}); } catch (e) {} vibre(8); }
+}
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerMonDresseur(); dessinerOnglets();
+  if (ONGLET === "dex") { dessinerDernieres(); dessinerDex(); } }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
