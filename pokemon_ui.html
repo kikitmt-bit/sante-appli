@@ -1,7 +1,7 @@
 <!-- Onglet Pokémon (composant HTML affiché par ecran_pokemon.py, données dans __DONNEES__).
 L'animation d'ouverture et la fiche du Pokédex s'affichent par-dessus toute l'appli, dans la page parente
 (window.parent.document) ; la Poké Ball est en 3D (three.js), avec un repli en 2D si three.js ne charge pas. -->
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Pixelify+Sans:wght@500;700&family=Jersey+15&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -251,7 +251,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .carte-kanto .medaille .eclat{animation:pk-eclat 2.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 @keyframes pk-eclat{0%,55%,100%{opacity:0;transform:scale(.2) rotate(0)}75%{opacity:1;transform:scale(1) rotate(45deg)}}
 .bulle-chef{position:absolute;box-sizing:border-box;background:#F8F8F8;color:#383838;
-  border:3px solid #50607E;border-radius:10px;padding:7px 9px;font:500 12.5px/1.35 'Pixelify Sans',Outfit,sans-serif;z-index:5;
+  border:3px solid #50607E;border-radius:10px;padding:7px 9px;font:500 15px/1.35 'Jersey 15',Outfit,sans-serif;z-index:5;
   box-shadow:0 4px 12px rgba(0,0,0,.4);animation:pkl-bulle .25s ease-out}
 .bulle-chef b{color:#C03028}
 .bulle-chef small{display:block;margin-top:4px;font-size:11px;color:#6A6A6A}
@@ -292,7 +292,7 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .boite-badges .non{opacity:.55}
 
 /* ----- Dernières captures ----- */
-#dernieres{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;padding:2px 0 8px}
+#dernieres{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 0 8px}
 .mini{min-width:0;background:#1C2740;border-radius:14px;text-align:center;padding:6px 4px;cursor:pointer;position:relative}
 .mini img{width:64px;height:64px;object-fit:contain}
 .mini .lieu{font-size:9px;color:#6F7FA3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -321,29 +321,49 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 .filtre.ty{border:0;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);padding-left:10px}
 .actif .filtre.ty:not(.on){opacity:.4}
 .filtre.ty.on{opacity:1;box-shadow:0 0 0 2px #fff inset}
-#grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;margin-top:6px}
-.p{border-radius:12px;height:96px;text-align:center;cursor:pointer;position:relative;padding-top:4px;background:#161F35;
-  overflow:hidden;transition:transform .15s}
+#grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(102px,1fr));gap:8px;margin-top:8px}
+.p{border-radius:16px;height:132px;text-align:center;cursor:pointer;position:relative;padding:6px 4px 0;overflow:hidden;
+  background:radial-gradient(circle at 50% 38%,rgba(255,255,255,.3),transparent 58%),linear-gradient(145deg,var(--c0),var(--c1));
+  box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.25),0 3px 8px rgba(0,0,0,.35);animation:dex-pop .32s cubic-bezier(.2,1.4,.4,1) backwards;transition:transform .15s}
+@keyframes dex-pop{from{transform:scale(.7);opacity:0}}
 .p:active{transform:scale(.95)}
-.p img{width:56px;height:56px;object-fit:contain}
-.p.non img{filter:brightness(0);opacity:.28}
-.p .no{font-size:10px;color:#9AA7C2;font-weight:600}
-.p .nm{font-size:10.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px}
-.p.non .nm{color:#4A5878}
-.p.complet{box-shadow:inset 0 0 0 2px #FFCB05}
-.p .sh{position:absolute;top:3px;right:3px;line-height:0}.p .sh .ico{width:20px;height:20px}
-.p.leg.non{background:repeating-linear-gradient(135deg,#161F35 0 8px,#1A1834 8px 16px)}
+.p img.rogne{display:block;width:72px;height:72px;margin:8px auto 2px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 3px 2px rgba(0,0,0,.35))}
+.p .no{position:absolute;left:8px;top:6px;font-size:10px;color:#fff;font-weight:800;opacity:.8;text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.p .nm{font-size:12px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 4px;text-shadow:0 1px 2px rgba(0,0,0,.55)}
+.p .tys{display:none}
+.p.brillant{box-shadow:inset 0 0 0 2.5px #FFE27A,0 0 12px rgba(255,215,90,.7)}
+.p .sh{position:absolute;top:4px;right:4px;line-height:0}.p .sh .ico{width:20px;height:20px}
+.p.leg{box-shadow:inset 0 0 0 2.5px #D9B3FF,0 0 12px rgba(181,123,255,.75)}
+.dex-appareil{background:linear-gradient(180deg,#E8382F,#B81F1A);border-radius:18px;padding:10px 12px 12px;box-shadow:0 5px 14px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.3)}
+.haut-dex{display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.haut-dex b{margin-left:auto;font:400 22px 'Jersey 15',monospace;letter-spacing:2px;color:#fff;text-shadow:2px 2px 0 #7A1712}
+.lentille{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#CFF3FF,#39A6E8 45%,#0E5C9E);box-shadow:0 0 0 3px #fff,0 0 0 5px #7A1712}
+.led{width:10px;height:10px;border-radius:50%;margin-left:3px;box-shadow:0 0 0 1.5px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.7)}
+.led.r{background:#FF5D5D;margin-left:9px}.led.j{background:#FFD84A}.led.v{background:#5BE07A}
+.ecran-dex{display:flex;align-items:center;gap:12px;min-height:88px;border-radius:10px;padding:6px 14px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.05) 0 2px,transparent 2px 4px),linear-gradient(160deg,#BDEB9B,#86CC6E);box-shadow:inset 0 0 0 3px #3F6B33}
+.ecran-dex img{height:76px;width:76px;object-fit:contain;image-rendering:pixelated;flex:0 0 76px}
+.ecran-dex .chiffre{flex:1;color:#20391A;font-family:'Jersey 15',monospace;line-height:1}
+.ecran-dex .chiffre b{display:block;font-size:46px;font-weight:400}.ecran-dex .chiffre span{font-size:18px}
+.rang-dex{margin-top:9px;color:#fff}
+.ligne-r{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px}.ligne-r b{font-size:14.5px;white-space:nowrap}.ligne-r span{text-align:right;opacity:.92}
+.barre-r{height:7px;background:rgba(0,0,0,.35);border-radius:4px;margin-top:4px;overflow:hidden}.barre-r i{display:block;height:100%;background:linear-gradient(90deg,#FFE27A,#FFF);border-radius:4px}
+.trois{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:9px}
+.trois>div{background:rgba(0,0,0,.24);border-radius:10px;padding:5px 3px;text-align:center;color:#fff;font-size:11px;line-height:1.25}
+.trois b{display:block;font-size:18px;font-weight:900}
+.trois .ico{height:18px;width:18px;display:block;margin:0 auto}.trois .ronds{display:flex;justify-content:center;height:18px}.trois .ronds img.ty{margin:0 -2px;width:18px;height:18px}
+#stats{display:block !important;margin-bottom:12px}
 #rien{color:#9AA7C2;font-size:13px;padding:10px 2px;display:none}
-#mon-dresseur{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-family:'Pixelify Sans',Outfit,monospace;
+#mon-dresseur{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-family:'Jersey 15',Outfit,monospace;
   background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,transparent 2px 6px),linear-gradient(180deg,#5AA8E6,#3577C6);
   border:3px solid #F8F8F8;box-shadow:0 0 0 3px #283048}
 #mon-dresseur .photo{width:52px;height:74px;flex:0 0 52px;border-radius:6px;border:2px solid #F8F8F8;position:relative;
   background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/12px 12px}
-#mon-dresseur canvas{position:absolute;left:50%;bottom:2px;width:32px;height:64px;transform:translateX(-50%);image-rendering:pixelated}
+#mon-dresseur canvas{position:absolute;left:50%;bottom:2px;width:49px;height:66px;transform:translateX(-50%);image-rendering:pixelated}
 #mon-dresseur .txt{flex:1;min-width:0;color:#fff;text-shadow:2px 2px 0 #1F4E9A}
-#mon-dresseur .nom{font-size:20px;font-weight:700}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:13px;opacity:.95}
-#mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 15px 'Pixelify Sans',Outfit,monospace;background:#F8F8F8;color:#283048;
+#mon-dresseur .nom{font-size:25px;font-weight:400}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:16px;opacity:.95}
+#mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 18pxNone 'Jersey 15',Outfit,monospace;background:#F8F8F8;color:#283048;
   box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048;cursor:pointer}
+.onglets:empty{display:none}
 .onglets{display:flex;gap:4px;background:#0D1322;border-radius:14px;padding:4px;margin-bottom:12px}
 .onglets button{flex:1;position:relative;border:0;border-radius:11px;padding:9px 4px;background:none;color:#9AA7C2;font:800 13.5px Outfit,sans-serif;cursor:pointer}
 .onglets button.on{background:#1C2740;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}
@@ -380,14 +400,13 @@ details.regles li{margin:5px 0;line-height:1.4}
     <div id="bandeau-voyage"></div>
     <div class="carte" id="voyage"></div>
     <div class="carte" id="aouvrir"></div>
+    <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
     <div class="carte" id="barre"></div>
     <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
     <div class="grille2" id="speciales"></div>
   </section>
   <section id="o-dex" hidden>
-    <h2><img class="ico g" id="ic-dex" alt=""><span id="dex-titre">Pokédex</span> <span class="n" id="dex-n"></span></h2>
     <div id="stats"></div>
-    <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
     <input id="recherche" type="search" placeholder="Chercher un Pokémon ou un numéro…" autocomplete="off">
     <div class="defile" id="regions"></div>
     <div class="defile" id="filtres"></div>
@@ -416,8 +435,8 @@ const DEX = D.dex.map(([num, nom, types]) => ({num, nom, types}));
 // Le Pokédex montre seulement les régions ouvertes : finir Kanto doit laisser croire que le jeu est fini. Une nouvelle région
 // (Johto : de 152 à 251) s'ajoute ici le jour où elle s'ouvre, et les boutons de région n'apparaissent qu'à partir de deux.
 const REGIONS = [{nom: "Kanto", de: 1, a: 151}];
-let regionVue = REGIONS[0], typesOuverts = false;
-const dexRegion = () => DEX.filter(p => p.num >= regionVue.de && p.num <= regionVue.a);
+let regionVue = null, typesOuverts = false, triDex = "recent";  // regionVue null : toutes les régions (un seul Pokédex)
+const dexRegion = () => DEX.filter(p => (regionVue ? [regionVue] : REGIONS).some(x => p.num >= x.de && p.num <= x.a));
 const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
 // Les images, directement dans le dépôt public PokeAPI/sprites
 const IMG = {
@@ -829,22 +848,22 @@ const STYLE_VOILE = `
 #pkm-voile .carte.jeu{left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));max-width:470px;border-radius:10px;
   background:#F8F8F8;border:4px solid #50607E;box-shadow:0 0 0 3px #F8F8F8,0 0 0 6px #283048,0 8px 22px rgba(0,0,0,.45);
   backdrop-filter:none;-webkit-backdrop-filter:none;padding:10px 14px 12px;text-align:left;color:#383838;
-  font-family:'Pixelify Sans',Outfit,monospace;transform:translateY(24px);opacity:0;transition:transform .35s,opacity .35s}
+  font-family:'Jersey 15',Outfit,monospace;transform:translateY(24px);opacity:0;transition:transform .35s,opacity .35s}
 #pkm-voile .carte.jeu.vu{transform:none;opacity:1}
 #pkm-voile .carte.jeu .l1{display:flex;align-items:center;gap:6px;min-height:20px}
-#pkm-voile .carte.jeu .et{font-size:13px;letter-spacing:1px;padding:1px 7px;border-radius:4px;color:#fff;display:inline-flex;align-items:center;gap:3px}
+#pkm-voile .carte.jeu .et{font-size:16px;font-weight:400;letter-spacing:1px;padding:1px 7px;border-radius:4px;color:#fff;display:inline-flex;align-items:center;gap:3px}
 #pkm-voile .carte.jeu .et-nouveau{background:#E8382F;box-shadow:0 2px 0 #7A1712}
 #pkm-voile .carte.jeu .et-shiny{background:#D9A400;box-shadow:0 2px 0 #7A5A00}
 #pkm-voile .carte.jeu .et-leg{background:#8A4FD8;box-shadow:0 2px 0 #4A2280}
-#pkm-voile .carte.jeu .no{margin-left:auto;font-size:13px;color:#7A8095}
-#pkm-voile .carte.jeu .phrase{font-size:20px;line-height:1.3;margin:4px 0 2px;text-shadow:2px 2px 0 #D2D2CA;text-wrap:pretty}
-#pkm-voile .carte.jeu .phrase b{color:#C03028}
+#pkm-voile .carte.jeu .no{margin-left:auto;font-size:16px;color:#7A8095}
+#pkm-voile .carte.jeu .phrase{font-size:25px;line-height:1.15;margin:4px 0 2px;text-shadow:2px 2px 0 #D2D2CA;text-wrap:pretty}
+#pkm-voile .carte.jeu .phrase b{color:#C03028;font-weight:400}
 #pkm-voile .carte.jeu .l2{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
 #pkm-voile .carte.jeu .l2 .pkm-type{margin:0;font-family:Outfit,sans-serif}
-#pkm-voile .carte.jeu .cpt{font-size:13px;color:#5A6585;margin-left:auto}
+#pkm-voile .carte.jeu .cpt{font-size:16px;color:#5A6585;margin-left:auto}
 #pkm-voile .carte.jeu .boutons{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
 #pkm-voile .carte.jeu .boutons button{flex:0 0 auto;min-width:96px;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;
-  font:700 16px 'Pixelify Sans',monospace;background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
+  font:700 19.2pxNone 'Jersey 15',monospace;background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
 #pkm-voile .carte.jeu .boutons button:before{content:"▶ ";color:#E04040}
 #pkm-voile .carte.jeu .boutons button:active{transform:translateY(2px);box-shadow:0 0 0 2px #283048}
 `;
@@ -1501,7 +1520,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
       <div class="phrase">${r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
-      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes}/${DEX.length} · Shiny ${shinys}/${DEX.length}</span></div>
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes} · Shiny ${shinys}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
@@ -1522,7 +1541,7 @@ const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen-vid
 // rayon = demi-largeur. Plus de morceau d'image qui saute (on voyait le carré autour de la ball, Kiki 01/11).
 const STYLE_INTRO = `
 #pkm-intro{position:fixed;inset:0;z-index:999999;background:#C2965F;overflow:hidden;touch-action:manipulation;
-  user-select:none;-webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace}
+  user-select:none;-webkit-user-select:none;font-family:'Jersey 15',Outfit,monospace}
 #pkm-intro .labo{position:absolute;left:50%;top:0;transform:translateX(-50%)}
 #pkm-intro .labo>img:first-child{width:100%;height:100%;display:block;image-rendering:pixelated}
 #pkm-intro .noir{position:absolute;inset:0;background:#000;transition:opacity 1.2s;pointer-events:none}
@@ -1545,12 +1564,14 @@ const STYLE_INTRO = `
 // La boîte de dialogue façon Game Boy Advance (labo, arènes…) et le bouton ✕ des scènes
 const STYLE_DIAL = `
 .pkm-dial{position:absolute;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));max-width:470px;margin:0 auto;z-index:20;
-  font-family:'Pixelify Sans',Outfit,monospace;
+  font-family:'Jersey 15',Outfit,monospace;
   background:#F8F8F8;border:4px solid #50607E;border-radius:10px;box-shadow:0 0 0 3px #F8F8F8,0 0 0 6px #283048,0 8px 22px rgba(0,0,0,.45);
-  padding:14px 18px 22px;font-size:19px;line-height:1.38;color:#383838;text-wrap:pretty;text-shadow:2px 2px 0 #D2D2CA;min-height:104px;
+  padding:14px 18px 22px;font-size:23px;line-height:1.22;font-weight:400;color:#383838;text-wrap:pretty;text-shadow:2px 2px 0 #D2D2CA;min-height:104px;
   opacity:0;transform:translateY(16px);transition:opacity .35s,transform .35s}
 .pkm-dial.vu{opacity:1;transform:none}
-.pkm-dial .qui{font-weight:700;color:#C03028}
+.pkm-dial .qui{color:#C03028}
+.pkm-dial .txt b{font-weight:400;color:#C03028}
+.pkm-dial .l{visibility:hidden}.pkm-dial .l.v{visibility:visible}
 .pkm-dial .qui:empty{display:none}
 .pkm-dial .suite{position:absolute;right:14px;bottom:8px;width:0;height:0;border-left:7px solid transparent;
   border-right:7px solid transparent;border-top:10px solid #E04040;opacity:0;animation:pki-saute .7s ease-in-out infinite}
@@ -1563,7 +1584,7 @@ function preparerScene() {  // styles communs + police « pixel » des boîtes d
   installerStyle("pkm2-dial-style", STYLE_DIAL);
   if (!P.getElementById("pkm-police-pixel")) {
     const l = P.createElement("link"); l.id = "pkm-police-pixel"; l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap"; P.head.appendChild(l);
+    l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Jersey+15&display=swap"; P.head.appendChild(l);
   }
   audio();
 }
@@ -1591,17 +1612,24 @@ function dialogue(v, ignorer = ".pkm-passer") {
   const prevoir = liste => { prevues = prevues.concat(liste.filter(l => l && l[0])); haut = 0; dial.style.minHeight = ""; fixer(mesurer(prevues)); };
   const recaler = () => { if (!prevues.length) return; haut = 0; dial.style.minHeight = ""; fixer(mesurer(prevues)); };
   PW.addEventListener("resize", recaler);
-  try { P.fonts.ready.then(recaler); P.fonts.load("19px 'Pixelify Sans'").then(recaler); } catch (e) {}  // la police pixel arrive après
+  try { P.fonts.ready.then(recaler); P.fonts.load("23px 'Jersey 15'").then(recaler); } catch (e) {}  // la police pixel arrive après
   const dire = (html, nom = "", attendSuite = true) => new Promise(ok => {
     clearInterval(tape); dial.classList.add("vu"); dial.classList.remove("attend");
     fixer(mesurer([[html, nom]]));
     qui.textContent = entete(nom);
-    const plein = sansVeuve(html), brut = plein.replace(/<[^>]+>/g, "");
-    let n = 0; txt.textContent = "";
+    const plein = sansVeuve(html);
+    // toute la phrase est mise en page tout de suite, lettres invisibles : on les dévoile sans que rien ne bouge
+    txt.innerHTML = plein; const lettres = [];
+    const parcours = P.createTreeWalker(txt, NodeFilter.SHOW_TEXT), noeuds = [];
+    while (parcours.nextNode()) noeuds.push(parcours.currentNode);
+    noeuds.forEach(nd => { const fr = P.createDocumentFragment();
+      for (const ch of nd.nodeValue) { const sp = P.createElement("span"); sp.className = "l"; sp.textContent = ch; lettres.push(sp); fr.appendChild(sp); }
+      nd.replaceWith(fr); });
+    let n = 0;
     const finir = () => { clearInterval(tape); tape = null; txt.innerHTML = plein;
       if (attendSuite) { dial.classList.add("attend"); attendre = () => { attendre = null; ok(); }; } else { attendre = null; ok(); } };
-    tape = setInterval(() => { n += 1; txt.textContent = brut.slice(0, n);
-      if (n % 3 === 0) ton(1250, 0, .028, {type: "square", vol: .018}); if (n >= brut.length) finir(); }, 26);
+    tape = setInterval(() => { if (lettres[n]) lettres[n].classList.add("v"); n += 1;
+      if (n % 3 === 0) ton(1250, 0, .028, {type: "square", vol: .018}); if (n >= lettres.length) finir(); }, 26);
     attendre = () => finir();
   });
   v.addEventListener("pointerdown", e => { if (e.target.closest(ignorer)) return; if (attendre) attendre(); });
@@ -1766,7 +1794,7 @@ function portraitChamp(ch, attrs = "") {
 }
 const STYLE_BADGE = `
 #pkm-badge{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#05070D;touch-action:manipulation;user-select:none;
-  -webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace;color:#fff;--c:#B8A038}
+  -webkit-user-select:none;font-family:'Jersey 15',Outfit,monospace;color:#fff;--c:#B8A038}
 /* le décor : la ville sur la carte de la région, floutée et sombre, qui avance doucement (travelling) */
 #pkm-badge .decor{position:absolute;inset:-6%;background-repeat:no-repeat;filter:blur(5px) brightness(.32) saturate(1.25);
   transform:scale(1.04);animation:pkb-travelling 26s ease-out forwards;opacity:0;transition:opacity 1.4s}
@@ -1891,7 +1919,7 @@ const STYLE_BADGE = `
   box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #B98B2E,0 0 0 4px #FFE6A0,0 0 0 5.5px #6E4A0C,0 3px 4px 5px rgba(0,0,0,.35)}
 #pkm-badge .etui .case .fantome{width:66%;height:66%;object-fit:contain;filter:brightness(0) invert(.75) sepia(.4) hue-rotate(190deg);opacity:.16}
 #pkm-badge .etui .case img.vrai{position:absolute;width:76%;height:76%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.7))}
-#pkm-badge .etui .loge small{font:700 9.5px 'Pixelify Sans',monospace;letter-spacing:1px;color:#E9C774;text-shadow:0 1px 0 #000;white-space:nowrap;opacity:.85}
+#pkm-badge .etui .loge small{font:700 11.4pxNone 'Jersey 15',monospace;letter-spacing:1px;color:#E9C774;text-shadow:0 1px 0 #000;white-space:nowrap;opacity:.85}
 #pkm-badge .etui .loge.vide small{color:#7C86B8;opacity:.7}
 #pkm-badge .etui .case.ici{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 18px 6px rgba(255,216,74,.75);animation:pkb-attend 1.1s ease-in-out infinite}
 @keyframes pkb-attend{50%{box-shadow:inset 0 4px 7px rgba(0,0,0,.9),0 0 0 3px #FFD84A,0 0 0 4px #FFF3C4,0 0 6px 1px rgba(255,216,74,.4)}}
@@ -1909,13 +1937,13 @@ const STYLE_BADGE = `
 #pkm-badge .etui .couvercle .revers{transform:rotateX(180deg);
   background:repeating-linear-gradient(100deg,rgba(255,255,255,.06) 0 6px,rgba(0,0,0,.06) 6px 12px),linear-gradient(180deg,#24306E,#141A44);
   box-shadow:inset 0 0 0 2px #C9973A,inset 0 0 18px rgba(0,0,0,.6)}
-#pkm-badge .etui .couvercle .revers span{font:700 13px 'Pixelify Sans',monospace;letter-spacing:4px;color:#F2D58A;text-shadow:0 1px 0 #000}
+#pkm-badge .etui .couvercle .revers span{font:700 15.6pxNone 'Jersey 15',monospace;letter-spacing:4px;color:#F2D58A;text-shadow:0 1px 0 #000}
 #pkm-badge .etui .embleme{width:52px;height:52px;border-radius:50%;position:relative;
   background:radial-gradient(circle,#FFF2C0 0 13%,#8A5E12 14% 21%,transparent 22%),
     linear-gradient(180deg,transparent 45%,#7A520E 45% 55%,transparent 55%),
     linear-gradient(180deg,#F6D57A 0 50%,#C99A3A 50% 100%);
   box-shadow:0 0 0 3px #8A5E12,0 0 0 5px #F2D07A,0 3px 6px rgba(0,0,0,.55),inset 0 3px 4px rgba(255,255,255,.4)}
-#pkm-badge .etui .couvercle .face span{font:700 13px 'Pixelify Sans',monospace;letter-spacing:4px;
+#pkm-badge .etui .couvercle .face span{font:700 15.6pxNone 'Jersey 15',monospace;letter-spacing:4px;
   background:linear-gradient(180deg,#FFF0B0,#D9A93A 60%,#9A6A18);-webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 1px 0 rgba(0,0,0,.7))}
 #pkm-badge .etui .fermoir{position:absolute;left:50%;bottom:-9px;width:40px;height:18px;margin-left:-20px;border-radius:4px 4px 8px 8px;z-index:5;
@@ -2363,7 +2391,7 @@ function sceneBadge(n, c, rejouer = false) {
 // ================================================================================================
 const STYLE_ECRAN = `
 .pkm-ecran{position:fixed;inset:0;z-index:999999;overflow:hidden;background:#05070D;touch-action:manipulation;user-select:none;
-  -webkit-user-select:none;font-family:'Pixelify Sans',Outfit,monospace;color:#fff}
+  -webkit-user-select:none;font-family:'Jersey 15',Outfit,monospace;color:#fff}
 .pkm-ecran .salle{position:absolute;top:0;left:50%;transform:translateX(-50%);transform-origin:50% 45%;transition:transform 8s cubic-bezier(.3,0,.2,1)}
 .pkm-ecran .salle>img{width:100%;height:100%;display:block;image-rendering:pixelated}
 .pkm-ecran canvas.air{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -2385,7 +2413,7 @@ const STYLE_ECRAN = `
 .pkm-ecran .eclair.go{animation:pke-eclair .8s ease-out forwards}
 @keyframes pke-eclair{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}25%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}
 .pkm-ecran .titre-p{position:absolute;left:0;right:0;top:max(18px,env(safe-area-inset-top));text-align:center;z-index:20;opacity:0;
-  transition:opacity 1.2s,transform 1.2s;transform:translateY(-10px);font:700 26px/1.1 'Pixelify Sans',monospace;color:#FFE27A;letter-spacing:2px;
+  transition:opacity 1.2s,transform 1.2s;transform:translateY(-10px);font:700 31.2px/1.1 'Jersey 15',monospace;color:#FFE27A;letter-spacing:2px;
   text-shadow:3px 3px 0 #7A4A08,0 0 18px rgba(255,200,80,.8)}
 .pkm-ecran .titre-p small{display:block;font-size:14px;color:#FFF3C4;letter-spacing:1px;margin-top:6px;text-shadow:2px 2px 0 #7A4A08}
 .pkm-ecran .titre-p.vu{opacity:1;transform:none}
@@ -2428,7 +2456,7 @@ const STYLE_TITRE = `
   letter-spacing:8px;padding:4px 14px;background:#E8382F;border-radius:6px;box-shadow:0 3px 0 #7A1712;text-shadow:2px 2px 0 #7A1712}
 #pkm-titre .logo small{display:block;margin-top:10px;font:500 14px 'Pixelify Sans',monospace;color:#FFF3C4;letter-spacing:2px;text-shadow:2px 2px 0 rgba(40,30,80,.6)}
 #pkm-titre .touche{position:absolute;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));text-align:center;z-index:20;pointer-events:none;
-  font:700 19px 'Pixelify Sans',monospace;color:#fff;letter-spacing:2px;text-shadow:2px 2px 0 #284018,0 0 10px rgba(0,0,0,.5);opacity:0;transition:opacity .8s}
+  font:700 22.8pxNone 'Jersey 15',monospace;color:#fff;letter-spacing:2px;text-shadow:2px 2px 0 #284018,0 0 10px rgba(0,0,0,.5);opacity:0;transition:opacity .8s}
 #pkm-titre.pret .touche{opacity:1;animation:pkt-clign 1.2s steps(2,start) 1s infinite}
 @keyframes pkt-clign{50%{opacity:0}}
 #pkm-titre .touche small{display:block;font-size:12px;font-weight:500;letter-spacing:1px;margin-top:6px;opacity:.85}
@@ -2870,7 +2898,7 @@ function carteDefi() {
 }
 
 function dessinerDernieres() {
-  const ok = CAPTURES.filter(prise).reverse().slice(0, 8), vus = new Set();
+  const ok = CAPTURES.filter(prise).reverse().slice(0, 4), vus = new Set();
   const premiere = {};  // première capture de chaque espèce (pour l'étiquette « nouveau »)
   for (const c of CAPTURES) if (prise(c) && !vus.has(c.num)) { vus.add(c.num); premiere[c.id] = 1; }
   document.getElementById("bloc-dernieres").style.display = ok.length ? "" : "none";
@@ -2881,54 +2909,63 @@ function dessinerDernieres() {
   document.querySelectorAll(".mini").forEach(e => e.onclick = () => ouvrir(CAPTURES[e.dataset.i], true));
 }
 
+// Le Pokédex : un seul, sans total ni silhouette : on ne sait jamais combien il en reste (surprise voulue par Kiki). Un rang
+// qui monte avec le nombre d'espèces pour avoir un but sans dévoiler le total.
+const RANGS = [[0, "Apprenti"], [10, "Explorateur"], [25, "Chercheur"], [50, "Collectionneur"], [80, "Expert"], [120, "Grand expert"], [200, "Professeur"], [400, "Légende vivante"]];
+function rangDex(n) {
+  let i = 0; RANGS.forEach(([s], k) => { if (n >= s) i = k; });
+  const sv = RANGS[i + 1];
+  return {nom: RANGS[i][1], suivant: sv && sv[1], reste: sv ? sv[0] - n : 0, pct: sv ? (n - RANGS[i][0]) / (sv[0] - RANGS[i][0]) * 100 : 100};
+}
 function dessinerDex() {
-  const col = {}, tout = collection(), dexR = dexRegion();
-  dexR.forEach(p => { if (tout[p.num]) col[p.num] = tout[p.num]; });
-  const especes = Object.keys(col).length, total = dexR.length;
-  const sh = Object.values(col).filter(l => l.some(c => c.shiny)).length, nb = Object.keys(V.badges).filter(k => k <= 8).length;
-  const ici = new Set(LIEUX[V.ici].pokemon);
-  document.getElementById("dex-titre").textContent = `Pokédex de ${regionVue.nom}`;
-  document.getElementById("dex-n").textContent = `${especes} / ${total}`;
+  const tout = collection(), dexR = dexRegion().filter(p => tout[p.num]);
+  const col = {}; dexR.forEach(p => col[p.num] = tout[p.num]);
+  const nbTotal = Object.keys(tout).length, rg = rangDex(nbTotal);
+  const sh = dexR.filter(p => col[p.num].some(c => c.shiny)).length, leg = dexR.filter(p => LEG.has(p.num)).length;
+  const typesVus = [...new Set(dexR.flatMap(p => p.types))];
+  const der = CAPTURES.filter(prise).slice(-1)[0];
+  document.getElementById("stats").innerHTML = `<div class="dex-appareil"><div class="haut-dex"><i class="lentille"></i><i class="led r"></i><i class="led j"></i><i class="led v"></i><b>POKÉDEX</b></div>
+    <div class="ecran-dex">${der ? `<img src="${IMG.anim(der.num, der.shiny)}" ${repli(der.num, der.shiny)} alt="">` : ""}
+      <div class="chiffre"><b>${nbTotal}</b><span>espèce${nbTotal > 1 ? "s" : ""} capturée${nbTotal > 1 ? "s" : ""}</span></div></div>
+    <div class="rang-dex"><div class="ligne-r"><b>${rg.nom}</b>${rg.suivant ? `<span>encore ${rg.reste} pour devenir ${rg.suivant}</span>` : ""}</div>
+      <div class="barre-r"><i style="width:${rg.pct}%"></i></div></div>
+    <div class="trois"><div>${ico("shiny", "p brille")}<b>${sh}</b>shiny</div><div>${ico("master", "p")}<b>${leg}</b>légendaire${leg > 1 ? "s" : ""}</div><div><span class="ronds">${typesVus.slice(0, 3).map(icoType).join("")}</span><b>${typesVus.length}</b>type${typesVus.length > 1 ? "s" : ""}</div></div></div>`;
   const blocR = document.getElementById("regions");
-  blocR.innerHTML = REGIONS.length > 1 ? REGIONS.map((x, i) => `<button class="filtre ${x === regionVue ? "on" : ""}" data-i="${i}">${x.nom}</button>`).join("") : "";
-  blocR.querySelectorAll(".filtre").forEach(b => b.onclick = () => { regionVue = REGIONS[b.dataset.i]; dessinerDex(); });
-  document.getElementById("stats").innerHTML = `
-    <div class="t"><div class="l">Espèces</div><div class="v">${especes} <small>/ ${total}</small></div>
-      <div class="jauge"><div style="width:${especes / total * 100}%;background:linear-gradient(90deg,#FF4B4B,#FFCB05)"></div></div></div>
-    <div class="t"><div class="l">Shiny</div><div class="v">${ico("shiny", "brille")} ${sh}</div></div>
-    <div class="t"><div class="l">Badges</div><div class="v"><img src="${IMG.badge(Math.max(nb, 1))}"> ${nb} <small>/ 8</small></div></div>`;
-  const filtres = [["tous", "Tous"], ["oui", `Attrapés ${especes}`], ["non", `Manquants ${total - especes}`],
-                   ["ici", `${ico("carte", "p")} ${LIEUX[V.ici].nom}`], ["shiny", `${ico("shiny", "p brille")} Shiny`], ["leg", `${ico("master", "p")} Légendaires`]];
-  document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("");
-  document.getElementById("filtres").insertAdjacentHTML("beforeend", `<button class="filtre plus-types ${typesOuverts || filtreTypes.size ? "on" : ""}">Types${filtreTypes.size ? ` (${filtreTypes.size})` : ""}</button>`);
+  blocR.innerHTML = REGIONS.length > 1 ? [`<button class="filtre ${!regionVue ? "on" : ""}" data-i="">Toutes</button>`, ...REGIONS.map((x, i) => `<button class="filtre ${x === regionVue ? "on" : ""}" data-i="${i}">${x.nom}</button>`)].join("") : "";
+  blocR.querySelectorAll(".filtre").forEach(b => b.onclick = () => { regionVue = b.dataset.i === "" ? null : REGIONS[b.dataset.i]; dessinerDex(); });
+  const filtres = [["tous", "Tous"], ["shiny", `${ico("shiny", "p brille")} Shiny`], ["leg", `${ico("master", "p")} Légendaires`]];
+  document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("")
+    + `<button class="filtre plus-types ${typesOuverts || filtreTypes.size ? "on" : ""}">Types${filtreTypes.size ? ` (${filtreTypes.size})` : ""}</button>`
+    + `<button class="filtre tri">${triDex === "num" ? "Tri : n°" : "Tri : récents"}</button>`;
   document.querySelector("#filtres .plus-types").onclick = () => { typesOuverts = !typesOuverts; dessinerDex(); };
-  document.getElementById("filtres-types").style.display = typesOuverts ? "" : "none";  // les 18 types : seulement à la demande (la grille reste en haut)
+  document.querySelector("#filtres .tri").onclick = () => { triDex = triDex === "num" ? "recent" : "num"; dessinerDex(); };
   document.querySelectorAll("#filtres .filtre[data-k]").forEach(b => b.onclick = () => { filtre = b.dataset.k; dessinerDex(); });
-  document.getElementById("filtres-types").classList.toggle("actif", filtreTypes.size > 0);
-  document.getElementById("filtres-types").innerHTML = Object.keys(COUL).map(t =>
+  const ft = document.getElementById("filtres-types");
+  ft.style.display = typesOuverts ? "" : "none"; ft.classList.toggle("actif", filtreTypes.size > 0);
+  ft.innerHTML = typesVus.sort((a, b) => Object.keys(COUL).indexOf(a) - Object.keys(COUL).indexOf(b)).map(t =>
     `<button class="filtre ty ${filtreTypes.has(t) ? "on" : ""}" data-t="${t}" style="background:${COUL[t]}">${icoType(t)}${t}</button>`).join("");
   document.querySelectorAll("#filtres-types .filtre").forEach(b => b.onclick = () => {
     filtreTypes.has(b.dataset.t) ? filtreTypes.delete(b.dataset.t) : filtreTypes.add(b.dataset.t); dessinerDex(); });
 
   const q = texte.trim().toLowerCase();
+  const ordre = {}; CAPTURES.filter(prise).forEach((c, i) => ordre[c.num] = i);
   const liste = dexR.filter(p => {
-    const mes = col[p.num] || [], a = mes.length > 0;
-    if (filtre === "oui" && !a || filtre === "non" && a) return false;
-    if (filtre === "ici" && !ici.has(p.num)) return false;
+    const mes = col[p.num];
     if (filtre === "shiny" && !mes.some(c => c.shiny)) return false;
     if (filtre === "leg" && !LEG.has(p.num)) return false;
     if (filtreTypes.size && !p.types.some(t => filtreTypes.has(t))) return false;
-    if (q && !(String(p.num) === q.replace(/^0+/, "") || a && p.nom.toLowerCase().includes(q))) return false;
+    if (q && !(String(p.num) === q.replace(/^0+/, "") || p.nom.toLowerCase().includes(q))) return false;
     return true;
-  });
-  document.getElementById("rien").style.display = liste.length ? "none" : "block";
-  document.getElementById("grille").innerHTML = liste.map(p => {
-    const mes = col[p.num] || [], a = mes.length > 0, c0 = COUL[p.types[0]];
-    const n = mes.some(c => !c.shiny), s = mes.some(c => c.shiny);
-    return `<div class="p ${a ? "" : "non"} ${n && s ? "complet" : ""} ${LEG.has(p.num) ? "leg" : ""}" data-n="${p.num}"
-      ${a ? `style="background:radial-gradient(circle at 50% 35%,${c0}66,#1C2740 70%)"` : ""}>
-      ${s ? `<span class="sh">${ico("shiny", "p brille")}</span>` : ""}<img class="rogne" src="${IMG.mini(p.num, s && !n)}" loading="lazy">
-      <div class="no">${N3(p.num)}</div><div class="nm">${a ? p.nom : "???"}</div></div>`;
+  }).sort((a, b) => triDex === "num" ? a.num - b.num : ordre[b.num] - ordre[a.num]);
+  const rien = document.getElementById("rien");
+  rien.textContent = nbTotal ? "Aucun Pokémon ici." : "Ton Pokédex est encore vide : ouvre ta première Poké Ball !";
+  rien.style.display = liste.length ? "none" : "block";
+  document.getElementById("grille").innerHTML = liste.map((p, i) => {
+    const mes = col[p.num], c0 = COUL[p.types[0]], c1 = COUL[p.types[1] || p.types[0]], s = mes.some(c => c.shiny);
+    return `<div class="p ${s ? "brillant" : ""} ${LEG.has(p.num) ? "leg" : ""}" data-n="${p.num}" style="--c0:${c0};--c1:${c1};animation-delay:${Math.min(i, 24) * 22}ms">
+      ${s ? `<span class="sh">${ico("shiny", "p brille")}</span>` : ""}<span class="no">${N3(p.num)}</span>
+      <img class="rogne" src="${IMG.mini(p.num, s && !mes.some(c => !c.shiny))}" loading="lazy">
+      <div class="nm">${p.nom}</div><div class="tys">${p.types.map(icoType).join("")}</div></div>`;
   }).join("");
   document.querySelectorAll("#grille .p").forEach(e => e.onclick = () => fiche(PAR_NUM[e.dataset.n]));
   rognerImages(document.getElementById("grille"));
@@ -3096,7 +3133,7 @@ function colorerDresseur(racine) {  // remplace les images de Sacha d'un bloc pa
 // La carte dresseur (comme dans Rouge Feu) : on y règle son nom et ses couleurs
 const STYLE_DRESSEUR = `
 #pkm-dresseur{position:fixed;inset:0;z-index:1000001;display:flex;align-items:center;justify-content:center;padding:16px 12px 70px;
-  font-family:'Pixelify Sans',Outfit,monospace;color:#283048}
+  font-family:'Jersey 15',Outfit,monospace;color:#283048}
 #pkm-dresseur .ombre{position:absolute;inset:0;background:rgba(5,8,16,.78)}
 .carte-dresseur{position:relative;width:min(100%,430px);max-height:100%;overflow-y:auto;border-radius:14px;
   background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,transparent 2px 6px),linear-gradient(180deg,#5AA8E6,#3577C6);
@@ -3113,7 +3150,7 @@ const STYLE_DRESSEUR = `
 .carte-dresseur .boite{background:#F8F8F8;border-radius:8px;box-shadow:0 0 0 2px #283048;padding:6px 10px;font-size:15px;display:flex;justify-content:space-between}
 .carte-dresseur .boite b{color:#283048}
 .carte-dresseur .boite span{color:#5A6585}
-.carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 17px 'Pixelify Sans',Outfit,monospace;color:#283048;outline:none;
+.carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 20.4pxNone 'Jersey 15',Outfit,monospace;color:#283048;outline:none;
   text-align:right;padding:0}
 .carte-dresseur .reglages{margin-top:12px;background:#F8F8F8;border-radius:10px;box-shadow:0 0 0 2px #283048;padding:4px 10px}
 .carte-dresseur .choix{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:2px dashed #D4D8E4;font-size:16px}
@@ -3126,7 +3163,7 @@ const STYLE_DRESSEUR = `
 .carte-dresseur .fl.g:before{border-right:11px solid #E04040}.carte-dresseur .fl.d:before{border-left:11px solid #E04040}
 .carte-dresseur .fl:active{transform:scale(.85)}
 .carte-dresseur .boutons{display:flex;gap:8px;margin-top:12px}
-.carte-dresseur .boutons button{flex:1;border:0;border-radius:8px;padding:10px;font:700 17px 'Pixelify Sans',Outfit,monospace;cursor:pointer;
+.carte-dresseur .boutons button{flex:1;border:0;border-radius:8px;padding:10px;font:700 20.4pxNone 'Jersey 15',Outfit,monospace;cursor:pointer;
   background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
 .carte-dresseur .boutons .ok:before{content:"▶ ";color:#E04040}
 .carte-dresseur .boutons button:active{transform:translateY(2px);box-shadow:0 0 0 2px #283048}
@@ -3144,11 +3181,13 @@ const CHOIX_DRESSEUR = [["peau", "Peau", COULEURS_PEAU, 0], ["casquette", "Casqu
   ["veste", "Veste", COULEURS_TISSU, 1], ["pantalon", "Pantalon", COULEURS_PANTALON, 1]];
 const idDresseur = nom => String([...(nom || "Sacha")].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 100000, 7)).padStart(5, "0");
 // Dessine le dresseur (image fixe ou qui marche vers nous) dans un canvas 16×32 ; -> une fonction pour l'arrêter
-function apercuDresseur(cv, d = DRESSEUR, marche = true) {
+const CADRE_DRESSEUR = [1, 12, 14, 19];  // là où est vraiment le dresseur dans son image de 16 × 32 (sans le vide au-dessus)
+function apercuDresseur(cv, d = DRESSEUR, marche = true, cadre = null) {
   const ctx = cv.getContext("2d"); let img = null, t = 0, fini = false;
   const charger = dd => feuilleColoree("red_normal", dd).then(src => { const im = new Image(); im.onload = () => { img = im; dessin(); }; im.src = src; });
   const dessin = () => { if (!img) return; const k = marche ? [0, 3, 0, 4][t++ % 4] : 0;
-    ctx.clearRect(0, 0, 16, 32); ctx.drawImage(img, k * 16, 0, 16, 32, 0, 0, 16, 32); };
+    const [sx, sy, sw, sh] = cadre || [0, 0, 16, 32];
+    ctx.clearRect(0, 0, cv.width, cv.height); ctx.drawImage(img, k * 16 + sx, sy, sw, sh, 0, 0, cv.width, cv.height); };
   charger(d);
   const anim = marche ? setInterval(() => { if (fini || !cv.isConnected) return clearInterval(anim); dessin(); }, 200) : null;
   return {charger, stop: () => { fini = true; }};
@@ -3160,7 +3199,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   installerStyle("pkm2-dresseur-style", STYLE_DRESSEUR);
   if (!P.getElementById("pkm-police-pixel")) {
     const l = P.createElement("link"); l.id = "pkm-police-pixel"; l.rel = "stylesheet";
-    l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&display=swap"; P.head.appendChild(l);
+    l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Jersey+15&display=swap"; P.head.appendChild(l);
   }
   const d = {...DRESSEUR}, rgb = c => `rgb(${c.join(",")})`;
   if (accueil && d.partie !== R.partie) d.nom = "";  // nouvelle partie : comme un nouveau compte, on choisit son pseudo
@@ -3213,12 +3252,16 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
 function dessinerMonDresseur() {
   const el = document.getElementById("mon-dresseur");
   const nb = Object.keys(collection()).length, badges = Object.keys(V.badges).filter(k => k <= 8).length;
-  el.innerHTML = `<div class="photo"><canvas width="16" height="32"></canvas></div>
+  el.innerHTML = `<div class="photo"><canvas width="14" height="19"></canvas></div>
     <div class="txt"><div class="nom">${nomDresseur()}</div><div class="id">N° ID ${idDresseur(DRESSEUR.nom)}</div>
       <div class="chiffres">Pokédex ${nb} · Badges ${badges}</div></div>
     <button class="modifier">Modifier</button>`;
-  apercuDresseur(el.querySelector("canvas"), DRESSEUR, false);
+  apercuDresseur(el.querySelector("canvas"), DRESSEUR, false, CADRE_DRESSEUR);
   el.querySelector(".modifier").onclick = () => editerDresseur();
+  // son visage, avec ses couleurs, dans la barre du haut de l'appli
+  const icone = P.querySelector('.nav-jeu [data-o="dresseur"] img');
+  if (icone) feuilleColoree("red_normal", DRESSEUR).then(src => { const im = new Image(); im.onload = () => {
+    const c = document.createElement("canvas"); c.width = c.height = 14; c.getContext("2d").drawImage(im, 1, 12, 14, 14, 0, 0, 14, 14); icone.src = c.toDataURL(); }; im.src = src; });
 }
 // Le prochain champion, debout à côté de son arène sur la carte
 // Le badge de chaque arène sur la carte, dans une médaille : à gagner = fond sombre et liseré blanc en pointillés ;
@@ -3737,27 +3780,44 @@ function dessinerTests() {
   on(".t-rate", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "poke", shiny: false, rate: true, chasse: true, raison: "⚡ Aperçu : chasse aux shiny"})));
 }
 
-[["ic-spe", "carnet"], ["ic-der", "honneur"], ["ic-dex", "radar"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
+[["ic-spe", "carnet"], ["ic-der", "honneur"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
+// Les onglets : la barre est dans la page de l'appli (.nav-jeu, écrite par app.py) : Aventure, Pokédex, Dresseur (ici) et
+// Santé (les chiffres classiques, écrits par Streamlit : body.page-sante cache le jeu). Hors de l'appli (pages d'essai) : barre ici.
 let ONGLET = "aventure";
+const navP = () => P.querySelector(".nav-jeu");
 function dessinerOnglets() {
   const nb = aOuvrir().length + CAPTURES.filter(c => EN_ROUTE.has(c.id) && !estOuverte(c)).length;
-  const especes = Object.keys(collection()).length;
+  const nav = navP();
+  if (nav) { const b = nav.querySelector('[data-o="aventure"] .nb'); if (b) { b.textContent = nb || ""; b.hidden = !nb; } return; }
   const el = document.getElementById("onglets");
-  el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["dex", `Pokédex<span class="gr">${especes}</span>`], ["dresseur", "Dresseur"]]
+  el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["dex", "Pokédex"], ["dresseur", "Dresseur"]]
     .map(([k, t]) => `<button class="${ONGLET === k ? "on" : ""}" data-k="${k}">${t}</button>`).join("");
   el.querySelectorAll("button").forEach(b => b.onclick = () => montrerOnglet(b.dataset.k));
 }
 function montrerOnglet(k, defiler = true) {
   const change = k !== ONGLET; ONGLET = k;
-  [["aventure", "o-aventure"], ["dex", "o-dex"], ["dresseur", "o-dresseur"]].forEach(([o, id]) => document.getElementById(id).hidden = o !== k);
-  if (k === "dex") { dessinerDernieres(); dessinerDex(); }
+  try { PW.__ongletJeu = k; } catch (e) {}
+  const nav = navP();
+  if (nav) nav.querySelectorAll("[data-o]").forEach(b => b.classList.toggle("on", b.dataset.o === k));
+  P.body.classList.toggle("page-sante", k === "sante");
+  if (k !== "sante") [["aventure", "o-aventure"], ["dex", "o-dex"], ["dresseur", "o-dresseur"]].forEach(([o, id]) => document.getElementById(id).hidden = o !== k);
+  if (k === "dex") dessinerDex();
   if (k === "aventure" && change) requestAnimationFrame(() => { if (CENTRER) CENTRER(); });
   dessinerOnglets();
-  if (change && defiler) { try { (window.frameElement || document.getElementById("app")).scrollIntoView({block: "start"}); } catch (e) {} vibre(8); }
+  if (change && defiler) { const m = P.querySelector('[data-testid="stMain"]') || P.scrollingElement; if (m) m.scrollTo(0, 0); else scrollTo(0, 0); vibre(8); }
+  if (k === "sante") PW.dispatchEvent(new Event("resize"));
 }
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerMonDresseur(); dessinerOnglets();
-  if (ONGLET === "dex") { dessinerDernieres(); dessinerDex(); } }
-dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner();
+function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut être recréé par Streamlit)
+  const nav = navP(); if (!nav) return;
+  if (PW.__navJeu) P.removeEventListener("click", PW.__navJeu);
+  PW.__navJeu = e => { const b = e.target.closest && e.target.closest(".nav-jeu [data-o]"); if (b) montrerOnglet(b.dataset.o); };
+  P.addEventListener("click", PW.__navJeu);
+  if (PW.__ongletJeu && PW.__ongletJeu !== "aventure") montrerOnglet(PW.__ongletJeu, false);
+  else P.body.classList.remove("page-sante");
+}
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerMonDresseur(); dessinerOnglets();
+  if (ONGLET === "dex") dessinerDex(); }
+dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
   if (chen && !estOuverte(chen)) setTimeout(() => demarrerAventure(chen), 400);

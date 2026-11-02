@@ -52,18 +52,25 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
   Simulation à ce rythme, sans viser le champion / en le visant : Kiki 142 / ~103 jours pour la Ligue, sportif 77 / ~72, très
   sportif 46, débutant 375 / ~243 (point faible : objectifs adaptés à chacun à faire avant d'inviter les amis).
   Montre : pas encore à jour (Shiny Ball montrée en Master Ball, ratés masqués).
-**Interface du jeu (02/11, carte blanche de Kiki)** : 3 onglets dans l'onglet Pokémon : **Aventure** (carte, à ouvrir, barre,
-objectifs ; pastille = balls à ouvrir), **Pokédex** (compteurs, dernières captures, grille ; dessiné seulement quand on le
-regarde), **Dresseur** (Mon dresseur, place des amis et du classement, Comment ça marche, tests). Objectifs : défi, mission,
-Super et Hyper en grand ; Shiny Ball, Nuit, Pesée, Sanctuaire, Chasse en petites tuiles (`petits`) : le toucher ouvre le détail.
-Carte : petit bouton loupe en bas à droite (`carte-zoom`, toute la carte / retour au dresseur, seulement à la demande).
-**Pokédex par région** : `REGIONS` (une seule pour l'instant) : seules les régions ouvertes s'affichent ; ajouter Johto là
-quand elle s'ouvre. **Surprise voulue par Kiki : à la fin de Kanto on doit croire le jeu fini : aucun texte ne parle de la suite.**
+**Interface (02/11, carte blanche de Kiki) : l'appli est le jeu, plus de séparation Santé / Pokémon.** Barre du haut `.nav-jeu`
+(HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (Pikachu ; carte, à ouvrir,
+4 dernières captures, barre, objectifs ; pastille = balls à ouvrir), **Pokédex** (icône dessinée), **Dresseur** (son visage, à ses
+couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; anneaux pas / zone /
+sommeil, rubriques colorées, coach, graphiques), + 🔄 et ⚙️ en petit. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
+par `body.page-sante` (height 0 et pas display:none : largeur des graphiques, jeu qui tourne). Page de démarrage : Aventure.
+**Objectifs** : défi, mission, Super et Hyper en grand ; Shiny, Nuit, Pesée, Sanctuaire, Chasse en petites tuiles (`petits`), toucher = détail.
+**Carte** : loupe en bas à droite (`carte-zoom`, toute la carte / retour au dresseur, à la demande).
+**Pokédex** (`dessinerDex`) : **un seul, sans total ni silhouette** (seules les captures, surprise voulue par Kiki : à la fin de
+Kanto on doit croire le jeu fini, **aucun texte ne parle de la suite**) ; appareil rouge avec écran (dernière capture, nombre d'espèces),
+rang (`RANGS`) qui donne un but sans dévoiler le total, shiny / légendaires / types, cartes aux couleurs du type ; filtres : tous,
+shiny, légendaires, types (repliés), tri récents / n° ; pas de filtre par lieu. `REGIONS` : boutons de région à partir de la 2e.
+**Texte façon jeu** : police **Jersey 15** (Pixelify gardée pour les grands titres, trop peu lisible en petit) ; `dialogue.dire`
+pose toute la phrase avec ses lettres cachées puis les dévoile : plus de mot qui change de ligne en cours d'écriture.
 **Feuille de route du jeu** (01/11 : multijoueur, ratés de capture, stats du dresseur en coches, talents de Ligue, une
 nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de toucher au jeu.
 
-- `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; deux onglets « ❤️ Santé » et
-  « Pokémon » (icône = Pikachu de Rubis/Saphir, `pikachu.png`, en CSS) ; sur la même ligne à droite, deux petits boutons
+- `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; la barre d'onglets est décrite plus
+  haut (Interface) ; sur la même ligne à droite, deux petits boutons
   🔄 (actualiser) et ⚙️ (fenêtre Configuration : données brutes, oublier ce téléphone) dans le conteneur `outils`, posé
   par-dessus la barre des onglets. **Mobile d'abord** : jamais de défilement horizontal (tout passe à la ligne), et rien
   d'utile dans le coin en bas à droite (bouton « Manage app » de Streamlit, ~1 cm) : marge de 64 px en bas des calques. Filtre en haut : Jour / 7 jours

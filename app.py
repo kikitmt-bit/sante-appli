@@ -1,5 +1,6 @@
-"""Ma santé : toutes mes données Google Health (récoltées par sante.gs dans la branche « data ») sur une seule page,
-filtrées par jour / 7 jours / semaine / mois / année, avec l'analyse d'un coach (Claude)."""
+"""Pokémon Sport : le jeu (Aventure, Pokédex, Dresseur) et les chiffres de santé. Toutes mes données Google Health (récoltées
+par sante.gs dans la branche « data ») dans l'onglet Santé, filtrées par jour / 7 jours / semaine / mois / année, avec
+l'analyse d'un coach (Claude)."""
 import datetime as dt
 import hashlib
 import hmac
@@ -23,7 +24,7 @@ import pokemon
 from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
                       chemin_analyse, dossier_ami, dossier_coach, hm, joli, nombre, par_jour, table)
 
-st.set_page_config(page_title="Ma santé", page_icon="❤️", layout="centered")
+st.set_page_config(page_title="Pokémon Sport", page_icon=str(Path(__file__).with_name("pikachu.png")), layout="centered")
 
 BLEU, GRIS = "#6B8CFF", "#9AA7C2"
 PERIODES = ["Jour", "7 jours", "Semaine", "Mois", "Année"]
@@ -55,7 +56,7 @@ st.markdown("""<style>
 .block-container,[data-testid="stMainBlockContainer"]{padding-top:.6rem !important;max-width:760px}
 header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"]{display:none !important}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0 12px}
-.tile{background:#1C2740;border-radius:12px;padding:10px 12px}
+.tile{background:linear-gradient(160deg,#212E4C,#1A2438);border-radius:14px;padding:10px 12px;border-top:3px solid var(--c,#6B8CFF)}
 .tile .l{font-size:.78rem;color:#9AA7C2}
 .tile .v{font-size:1.35rem;font-weight:700;color:#EEF2FA;line-height:1.3}
 .tile .s{font-size:.72rem;color:#9AA7C2}
@@ -66,28 +67,52 @@ header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecorat
 .sport{background:#1C2740;border-radius:12px;padding:8px 12px;margin:4px 0;font-size:.9rem}
 .sport .s{color:#9AA7C2;font-size:.78rem}
 h3{margin-top:1.4rem !important}
+.rubrique{display:flex;align-items:center;gap:9px;margin:1.5rem 0 .5rem;font-size:1.2rem;font-weight:800;color:#EEF2FA}
+.rubrique i{display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--c);font-style:normal;font-size:1.1rem;box-shadow:0 3px 8px rgba(0,0,0,.35)}
+.anneaux{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 14px;background:#1C2740;border-radius:18px;padding:14px 8px}
+.anneau-s{text-align:center;min-width:0}
+.anneau-s .rond{--t:clamp(74px,24vw,104px);width:var(--t);height:var(--t);margin:0 auto 6px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(var(--c) calc(var(--p) * 1%),#0D1322 0)}
+.anneau-s .rond div{width:calc(var(--t) - 16px);height:calc(var(--t) - 16px);border-radius:50%;background:#1C2740;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
+.anneau-s .rond span{font-size:1.15rem}.anneau-s .rond b{font-size:.92rem;font-weight:800;color:#EEF2FA;white-space:nowrap}
+.anneau-s .n{font-size:.82rem;font-weight:700;color:#EEF2FA}.anneau-s .o{font-size:.7rem;color:#9AA7C2}
 [data-testid="stExpander"] h4{font-size:1.05rem !important;padding:.6rem 0 .2rem !important}
 [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;gap:.5rem}
 [data-testid="stColumn"]{min-width:0 !important}
 </style>""", unsafe_allow_html=True)
 
 
-# Haut de page : deux onglets (Santé, Pokémon avec Pikachu) et, sur la même ligne à droite, deux petits boutons 🔄 ⚙️
-# (le conteneur « outils », posé par-dessus la barre des onglets). Rien de caché sous « Manage app » (en bas à droite).
+# Haut de page : 4 onglets (Aventure, Pokédex, Dresseur : le jeu ; Santé : les chiffres) et, sur la même ligne à droite, deux
+# petits boutons 🔄 ⚙️ (le conteneur « outils », posé par-dessus). La barre est du simple HTML : les clics sont écoutés par le jeu
+# (pokemon_ui.html, relierNav), sans recharger la page ; body.page-sante montre les chiffres au lieu du jeu. Les pages restent
+# en place, repliées (height 0) plutôt que display:none : les graphiques gardent leur largeur et le jeu continue de tourner.
 PIKACHU = base64.b64encode(Path(__file__).with_name("pikachu.png").read_bytes()).decode()
+POKEDEX = base64.b64encode(b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect x="3" y="1.5" width="18" height="21" rx="3" fill="#E8382F" stroke="#7A1712" stroke-width="1.5"/>
+<circle cx="8" cy="6.5" r="2.8" fill="#6FD0FF" stroke="#fff" stroke-width="1.2"/><circle cx="13" cy="5" r="1" fill="#FFD84A"/><circle cx="16.3" cy="5" r="1" fill="#5BE07A"/>
+<rect x="6" y="11" width="12" height="8.5" rx="1" fill="#BDEB9B" stroke="#7A1712"/></svg>""").decode()
+LEVEINARD = f"{pokemon.IMAGES}/pokemon/versions/generation-vii/icons/113.png"  # Leveinard, l'infirmier des Pokémon : la santé
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
-.st-key-outils{{gap:6px !important}}
+.st-key-outils{{gap:4px !important}}
 [data-testid="stLayoutWrapper"]:has(> .st-key-outils){{position:absolute;top:.6rem;right:1rem;z-index:5;width:auto !important}}
 [data-testid="stElementContainer"]:has(iframe[height="0"]),
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
-.st-key-outils button{{min-height:34px;padding:2px 10px}}
-[data-testid="stTabs"] [role="tablist"]{{padding-right:100px}}
-[data-testid="stTab"] p{{font-size:1.02rem;font-weight:600}}
-[data-testid="stTab"][data-key="1"] p::before{{content:"";display:inline-block;width:21px;height:25px;
-  margin:-6px 6px -6px 0;vertical-align:-3px;background:url(data:image/png;base64,{PIKACHU}) center/contain no-repeat;
-  image-rendering:pixelated}}
+.st-key-outils button{{min-height:30px;height:30px;width:30px;padding:0;font-size:.8rem}}
+.nav-jeu{{display:flex;gap:3px;background:#0A101D;border-radius:14px;padding:3px;margin-right:72px}}
+.nav-jeu button{{flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:11px;padding:4px 0 3px;
+  background:none;color:#9AA7C2;font:700 11.5px Outfit,sans-serif;cursor:pointer}}
+.nav-jeu button.on{{background:#1C2740;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}}
+.nav-jeu img{{width:26px;height:26px;object-fit:contain;image-rendering:pixelated;display:block}}
+.nav-jeu img.leveinard{{transform:scale(1.75)}}
+.nav-jeu .nb{{position:absolute;top:1px;right:calc(50% - 22px);min-width:15px;padding:0 3px;border-radius:8px;background:#E8382F;color:#fff;font-size:10px;line-height:15px}}
+.nav-jeu .nb[hidden]{{display:none}}
+body:not(.page-sante) [data-testid="stLayoutWrapper"]:has(> .st-key-page_sante),body.page-sante [data-testid="stLayoutWrapper"]:has(> .st-key-page_jeu){{height:0 !important;min-height:0;overflow:hidden;visibility:hidden;margin:0;flex:0 0 0 !important}}
 </style>""", unsafe_allow_html=True)
+NAV = f"""<div class="nav-jeu">
+<button class="on" data-o="aventure"><img src="data:image/png;base64,{PIKACHU}" alt=""><span class="nb" hidden></span>Aventure</button>
+<button data-o="dex"><img src="data:image/svg+xml;base64,{POKEDEX}" alt="">Pokédex</button>
+<button data-o="dresseur"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">Dresseur</button>
+<button data-o="sante"><img class="leveinard" src="{LEVEINARD}" alt="">Santé</button></div>"""
 
 
 # ---------- Lecture des fichiers (GitHub, branche data) ----------
@@ -156,7 +181,24 @@ def lire_depot(paths, recents=()):
     return {p: c[p][1] for p in paths}
 
 
-def tuiles(cles, df, avant, un_jour, legende_avant):
+def rubrique(icone, titre, couleur):
+    st.markdown(f'<div class="rubrique" style="--c:{couleur}"><i>{icone}</i>{titre}</div>', unsafe_allow_html=True)
+
+
+def anneaux(df, un_jour):
+    """Les 3 anneaux du haut de la page, façon montre : pas, minutes en zone, sommeil par rapport à l'objectif (par jour)."""
+    html = []
+    for cle, icone, nom, couleur in (("pas", "👟", "Pas", BLEU), ("zone", "🔥", "En zone", "#FF9E80"), ("sommeil", "😴", "Sommeil", "#B39DFF")):
+        v, obj = par_jour(df, cle), OBJECTIFS.get(cle)
+        if v is None or v != v or not obj:
+            v = 0
+        pct = min(v / obj * 100, 100) if obj else 0
+        html.append(f'<div class="anneau-s"><div class="rond" style="--c:{couleur};--p:{pct:.0f}"><div><span>{icone}</span><b>{joli(cle, v) if v else "–"}</b></div></div>'
+                    f'<div class="n">{nom}</div><div class="o">{"objectif" if un_jour else "moy. / jour · objectif"} {joli(cle, obj)}</div></div>')
+    st.markdown(f'<div class="anneaux">{"".join(html)}</div>', unsafe_allow_html=True)
+
+
+def tuiles(cles, df, avant, un_jour, legende_avant, couleur=BLEU):
     html = []
     for cle in cles:
         v = agrege(df, cle)
@@ -183,7 +225,7 @@ def tuiles(cles, df, avant, un_jour, legende_avant):
         elif obj and agg == "total":
             col = pd.to_numeric(df[cle], errors="coerce")
             sous += f" · objectif {(col >= obj).sum()} j / {len(df)}"
-        html.append(f'<div class="tile"><div class="l">{nom}</div><div class="v">{joli(cle, v)}</div>'
+        html.append(f'<div class="tile" style="--c:{couleur}"><div class="l">{nom}</div><div class="v">{joli(cle, v)}</div>'
                     f'<div class="s">{sous}</div>{barre}</div>')
     if html:
         st.markdown(f'<div class="tiles">{"".join(html)}</div>', unsafe_allow_html=True)
@@ -330,11 +372,11 @@ def connexion_google():
     """Connexion avec Google (st.login, secrets [auth]) ; seules les adresses de COMPTES entrent. Streamlit retient la
     connexion 30 jours sur le téléphone."""
     if not st.user.get("is_logged_in"):
-        st.markdown("## ❤️ Ma santé")
+        st.markdown("## Pokémon Sport")
         st.button("Se connecter avec Google", type="primary", width="stretch", on_click=st.login)
         st.stop()
     if str(st.user.get("email", "")).lower() not in comptes():
-        st.markdown("## ❤️ Ma santé")
+        st.markdown("## Pokémon Sport")
         st.error(f"Le compte {st.user.get('email', '')} n'a pas accès à cette appli.")
         st.button("Changer de compte", width="stretch", on_click=st.logout)
         st.stop()
@@ -403,7 +445,7 @@ def verrou():
     if stored == jeton:
         st.session_state["ok"] = True
         return jeton
-    st.markdown("## ❤️ Ma santé")
+    st.markdown("## Pokémon Sport")
     with st.form("connexion", border=False):
         essai = st.text_input("Mot de passe", type="password")
         ok = st.form_submit_button("🔓 Entrer", type="primary", width="stretch")
@@ -460,9 +502,10 @@ with st.container(key="outils", horizontal=True):
     if st.button("🔄", key="maj", help="Aller chercher tes dernières données maintenant"):
         actualiser()
     st.button("⚙️", key="cfg", help="Configuration", on_click=lambda: st.session_state.update(config=True))
-onglet_sante, onglet_pokemon = st.tabs(["❤️ Santé", "Pokémon"])
+st.markdown(NAV, unsafe_allow_html=True)
+page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
-with onglet_sante:
+with page_sante:
     aujourd = dt.datetime.now(TZ).date()
     st.session_state.setdefault("ref", aujourd)
     periode = st.segmented_control("Période", PERIODES, default="Jour", key="periode",
@@ -491,13 +534,14 @@ with onglet_sante:
     st.markdown(f'<div class="fresh">⌚ Dernière mesure reçue aujourd\'hui : {max(heures)[:5] if heures else "aucune"}'
                 f' · {debut:%d/%m/%Y}{f" → {fin:%d/%m/%Y}" if fin != debut else ""}</div>', unsafe_allow_html=True)
 
+    anneaux(df, un_jour)
     if not AMI:  # le coach connaît le profil de Kiki et tourne sur son abonnement
         coach(donnees, lire_vite, aujourd)
 
     # ----- Activité -----
-    st.markdown("### 🏃 Activité")
+    rubrique("🏃", "Activité", BLEU)
     tuiles(["pas", "zone", "km", "etages", "denivele", "actives", "min_sport", "seances", "kcal", "kcal_act", "assis"],
-           df, avant, un_jour, legende_avant)
+           df, avant, un_jour, legende_avant, BLEU)
     if un_jour:
         pas = table(j_ref.get("steps"))
         col = next((c for c in ("countSum", "count") if c in pas), None)
@@ -533,16 +577,16 @@ with onglet_sante:
             st.markdown(liste, unsafe_allow_html=True)
 
     # ----- Sommeil -----
-    st.markdown("### 😴 Sommeil")
+    rubrique("😴", "Sommeil", "#7E5BD8")
     if not tuiles(["sommeil", "profond", "paradoxal", "leger", "eveil", "coucher", "lever"], df, avant, un_jour,
-                  legende_avant):
+                  legende_avant, "#B39DFF"):
         st.caption("Pas de sommeil enregistré pour cette période.")
     nuits = stats.loc[fin - dt.timedelta(days=6):fin] if un_jour else df  # un jour : la semaine pour comparer
     graphique_sommeil(regroupe(nuits, ["profond", "leger", "paradoxal", "eveil"], mensuel))
 
     # ----- Cœur -----
-    st.markdown("### ❤️ Cœur et respiration")
-    tuiles(["fc_repos", "vfc", "fc_max", "resp", "spo2", "spo2_min"], df, avant, un_jour, legende_avant)
+    rubrique("❤️", "Cœur et respiration", "#E0526B")
+    tuiles(["fc_repos", "vfc", "fc_max", "resp", "spo2", "spo2_min"], df, avant, un_jour, legende_avant, "#FF7C93")
     if un_jour:
         hr = table(j_ref.get("heart-rate"))
         hr = hr.sort_values("heure") if "heure" in hr else hr
@@ -565,7 +609,7 @@ with onglet_sante:
                   couleur="#B39DFF", hauteur=140)
 
     # ----- Poids -----
-    st.markdown("### ⚖️ Poids et masse grasse")
+    rubrique("⚖️", "Poids et masse grasse", "#2FA88A")
     pesees = donnees["pesees"]
     if pesees.empty:
         st.caption("Aucune pesée ces 3 derniers mois.")
@@ -592,7 +636,7 @@ with onglet_sante:
             with g2:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
-with onglet_pokemon:
+with page_jeu:
     ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR)
 
 
