@@ -1281,17 +1281,28 @@ function texture(type, haut) {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
-function Ball3D(canvas, type, pixel = false) {  // pixel : rendu en basse résolution agrandi sans lissage (style pixel art)
+// pixel (essai du 02/11, seulement dans « Tester Kanto » : `styleBall`) : la même ball et les mêmes mouvements, dessinée comme un sprite :
+// aplats de couleur, contour sombre, reflet peint, ~ PIXEL_BALL points de diamètre agrandis sans lissage.
+const PIXEL_BALL = 84;
+function Ball3D(canvas, type, pixel = false) {
   const renderer = new THREE.WebGLRenderer({canvas, antialias: !pixel, alpha: true});
-  renderer.setPixelRatio(pixel ? .2 : Math.min(PW.devicePixelRatio || 1, 2));
-  if (pixel) canvas.style.imageRendering = "pixelated";
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+  renderer.setPixelRatio(Math.min(PW.devicePixelRatio || 1, 2));
   const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, .1, 100);
-  scene.add(new THREE.HemisphereLight(0xCFDCFF, 0x1A1A2A, 1.4));
-  const cle = new THREE.DirectionalLight(0xffffff, 2.6); cle.position.set(3, 5, 6); scene.add(cle);
-  const contre = new THREE.DirectionalLight(0x8FB0FF, 2.2); contre.position.set(-5, 2, -4); scene.add(contre);
-  const R = 1, mat = (map, opts = {}) => new THREE.MeshPhysicalMaterial({map, roughness: pixel ? .55 : .32, metalness: .05,
-    clearcoat: pixel ? .3 : 1, clearcoatRoughness: .12, ...opts});
+  let aplats = null;
+  if (pixel) {
+    canvas.style.imageRendering = "pixelated";
+    const tons = new Uint8Array(32).map((_, i) => i < 17 ? 95 : i < 24 ? 170 : 255);  // trois aplats, selon l'angle de la lumière
+    aplats = new THREE.DataTexture(tons, 32, 1, THREE.RedFormat); aplats.minFilter = aplats.magFilter = THREE.NearestFilter; aplats.needsUpdate = true;
+    scene.add(new THREE.AmbientLight(0xD8DCFF, 1.05));
+    const cle = new THREE.DirectionalLight(0xffffff, 2.3); cle.position.set(-3, 5, 6); scene.add(cle);
+  } else {
+    renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+    scene.add(new THREE.HemisphereLight(0xCFDCFF, 0x1A1A2A, 1.4));
+    const cle = new THREE.DirectionalLight(0xffffff, 2.6); cle.position.set(3, 5, 6); scene.add(cle);
+    const contre = new THREE.DirectionalLight(0x8FB0FF, 2.2); contre.position.set(-5, 2, -4); scene.add(contre);
+  }
+  const R = 1, mat = (map, opts = {}) => pixel ? new THREE.MeshToonMaterial({map, gradientMap: aplats, ...opts})
+    : new THREE.MeshPhysicalMaterial({map, roughness: .32, metalness: .05, clearcoat: 1, clearcoatRoughness: .12, ...opts});
   const ball = new THREE.Group(), pivot = new THREE.Group(); scene.add(ball);
   // Moitié du bas + intérieur lumineux
   const bas = new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), mat(texture(type, false)));
@@ -1304,7 +1315,7 @@ function Ball3D(canvas, type, pixel = false) {  // pixel : rendu en basse résol
   haut.add(new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), mat(texture(type, true))));
   haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * .985, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2),
     new THREE.MeshStandardMaterial({color: 0x1B1B1F, side: THREE.BackSide, roughness: .8})));
-  const bandeMat = new THREE.MeshStandardMaterial({color: 0x141414, roughness: .5});
+  const bandeMat = pixel ? new THREE.MeshBasicMaterial({color: 0x282820}) : new THREE.MeshStandardMaterial({color: 0x141414, roughness: .5});
   const bandeH = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
   bandeH.position.y = R * .035; haut.add(bandeH);
   const bandeB = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
@@ -1313,9 +1324,18 @@ function Ball3D(canvas, type, pixel = false) {  // pixel : rendu en basse résol
   const bouton = new THREE.Group(); bouton.position.set(0, 0, R * .96); ball.add(bouton);
   const anneau = new THREE.Mesh(new THREE.CylinderGeometry(R * .3, R * .3, R * .14, 48), bandeMat);
   anneau.rotation.x = Math.PI / 2; bouton.add(anneau);
-  const btnMat = new THREE.MeshPhysicalMaterial({color: 0xF4F4F4, roughness: .25, clearcoat: 1, emissive: 0xffffff, emissiveIntensity: 0});
+  const btnMat = pixel ? new THREE.MeshToonMaterial({color: 0xF8F8E8, gradientMap: aplats, emissive: 0xffffff, emissiveIntensity: 0})
+    : new THREE.MeshPhysicalMaterial({color: 0xF4F4F4, roughness: .25, clearcoat: 1, emissive: 0xffffff, emissiveIntensity: 0});
   const btn = new THREE.Mesh(new THREE.CylinderGeometry(R * .19, R * .2, R * .1, 48), btnMat);
   btn.rotation.x = Math.PI / 2; btn.position.z = R * .07; bouton.add(btn);
+  if (pixel) {  // le contour (la ball un peu plus grande, vue de l'intérieur) et le reflet peint, qui suit le couvercle
+    const trait = new THREE.MeshBasicMaterial({color: 0x282820, side: THREE.BackSide});
+    ball.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), trait));
+    haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * 1.05, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2), trait));
+    const reflet = new THREE.Mesh(new THREE.CircleGeometry(R * .17, 24), new THREE.MeshBasicMaterial({color: 0xffffff}));
+    const point = new THREE.Vector3(-.5, .62, .6).normalize().multiplyScalar(R * 1.008);
+    reflet.position.copy(point); reflet.lookAt(point.clone().multiplyScalar(2)); reflet.scale.set(1.35, .85, 1); haut.add(reflet);
+  }
   // Faisceau de lumière (à l'ouverture)
   const gc = P.createElement("canvas"); gc.width = 4; gc.height = 128; const g2 = gc.getContext("2d");
   const grd = g2.createLinearGradient(0, 0, 0, 128); grd.addColorStop(0, "rgba(255,255,255,0)"); grd.addColorStop(1, "rgba(255,255,255,1)");
@@ -1334,7 +1354,8 @@ function Ball3D(canvas, type, pixel = false) {  // pixel : rendu en basse résol
 
   const taille = () => {
     const w = canvas.clientWidth, h = canvas.clientHeight; renderer.setSize(w, h, false); cam.aspect = w / h;
-    const cible = pixel ? Math.min(w * .3, 120) : Math.min(w * .48, h * .42, 230);  // diamètre de la ball à l'écran, en pixels
+    const cible = Math.min(w * .48, h * .42, 230);  // diamètre de la ball à l'écran, en pixels
+    if (pixel) { renderer.setPixelRatio(PIXEL_BALL / cible); renderer.setSize(w, h, false); }
     const hv = 2 * R * h / cible, d = hv / (2 * Math.tan(cam.fov * Math.PI / 360));
     cam.position.set(0, d * .12, d); cam.lookAt(0, 0, 0); cam.updateProjectionMatrix(); base = cam.position.clone();
   };
@@ -1428,7 +1449,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
   const fx = Particules($(".fx"));
   let B;
-  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
+  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball, c.styleBall === "pixel"); }
   catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), c.ball); }
 
   // Boucle d'affichage (dans la fenêtre parente : jamais ralentie)
@@ -4051,7 +4072,10 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
     <div class="groupe">Les ouvertures<small>Les nouveautés : une scène à part pour les légendaires, la Shiny Ball, le raté de la chasse.</small></div>
-    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
+    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>
+    <div class="groupe">Essai : la ball en pixels<small>Rien n'est remplacé : c'est seulement ici. Les mêmes mouvements, dessinés comme un sprite du jeu. À comparer avec la ball lisse actuelle, juste après.</small></div>
+    <div class="boutons-t">${[["poke", "Poké Ball"], ["super", "Super Ball"], ["hyper", "Hyper Ball"], ["master", "Master Ball"], ["shiny", "Shiny Ball"]].map(([k, n]) => b(`t-pix" data-b="${k}`, `${ico(k === "shiny" ? "sball" : k, "p")} ${n}`)).join("")}</div>
+    <div class="boutons-t">${b(`t-pix" data-b="poke" data-s="lisse`, `${ico("poke", "p")} La ball lisse actuelle, pour comparer`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
   on(".t-labo", () => { const p = PROFESSEURS.chen; intro(captureEssai(auHasard(p.starters), {id: "test#chen", shiny: false, lieu: "Bourg Palette",
@@ -4065,6 +4089,7 @@ function dessinerTests() {
   on(".t-sball", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "shiny", shiny: true, fond: "prairie", raison: "👑 Aperçu : Shiny Ball"})));
   on(".t-evo", () => { const l = (G.starter || {ligne: [4, 5, 6]}).ligne, k = formeStarter() ? Math.min(l.indexOf(formeStarter()) + 1, 2) : 1; sceneEvolution(captureEssai(l[k], {ball: "evo", shiny: false, raison: "Aperçu"})); });
   on(".t-rate", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "poke", shiny: false, rate: true, chasse: true, raison: "⚡ Aperçu : chasse aux shiny"})));
+  on(".t-pix", x => ouvrir(captureEssai(pokeDuType("Normal"), {ball: x.dataset.b, shiny: x.dataset.b === "shiny", fond: "prairie", styleBall: x.dataset.s === "lisse" ? "" : "pixel", raison: "⚡ Aperçu : essai de la ball en pixels"})));
 }
 
 [["ic-spe", "carnet"], ["ic-der", "poke"]].forEach(([id, c]) => document.getElementById(id).src = IC[c]);
