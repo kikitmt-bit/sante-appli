@@ -59,7 +59,7 @@ fond bleu nuit rayé `#22315A`. Thème : bloc « LA DIRECTION ARTISTIQUE » de `
 (HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (son starter, Pikachu avant ; carte, à ouvrir,
 4 dernières captures, barre, objectifs ; pastille = balls à ouvrir), **Pokédex** (icône dessinée), **Dresseur** (son visage, à ses
 couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; **écran de combat** `ecran_combat` : pas / zone / sommeil en barres de PV
-à la façon GBA ; analyse signée du **professeur de la région** `PROFESSEUR`, portrait pris dans son labo ; rubriques, coach, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
+à la façon GBA ; analyse signée du **professeur de la région** `PROFESSEUR`, portrait pris dans son labo ; rubriques, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
 Ronflex sommeil, Tauros activité, Rondoudou sommeil, Leveinard cœur, Grolem poids, Kadabra coach ; `fermerBulles` : les bulles de graphique se
 ferment en défilant, en touchant ailleurs et en changeant d'onglet), + 🔄 et ⚙️ en petit. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
 par `body.page-sante` (height 0 et pas display:none : largeur des graphiques, jeu qui tourne). Page de démarrage : Aventure.
@@ -72,8 +72,8 @@ shiny, légendaires, types (repliés), tri récents / n° ; pas de filtre par li
 **Texte façon jeu** : police **Jersey 15** (Pixelify gardée pour les grands titres, trop peu lisible en petit) ; `dialogue.dire`
 pose toute la phrase avec ses lettres cachées puis les dévoile : plus de mot qui change de ligne en cours d'écriture.
 **Page Santé (02/11, carte blanche de Kiki : de vraies stats, agréables à regarder)** : rubriques en cartes colorées (`st-key-rub_*`) ; tuiles avec tendance en couleur (`SENS` : vert si c'est mieux) et
-mini-courbe des 3 dernières semaines (`mini_courbe`) ; `carte_nuit` (Pierre Lune → Pierre Soleil, phases en bande) ; `carte_pouls` (le cœur bat au vrai rythme au repos) ; `curiosite_denivele` (en Onix), `poids_en_pokemon` (poids officiels) ;
-statut façon combat dans le bilan (EN FORME, CORRECT, À MÉNAGER), observations en bulles ; graphiques `_style`. **Jamais le même Pokémon à côté** : écran de combat Doduo, Ponyta, Ronflex ; rubriques (image fixe, sans cadre) Tauros, Rondoudou, Leveinard, Grolem ; coach Kadabra ;
+mini-courbe des 3 dernières semaines (`mini_courbe`) ; `carte_nuit` (Pierre Lune → Pierre Soleil, phases en bande) ; `carte_pouls` (chiffre et repère, plus de cœur qui bat : Kiki, kitsch) ; `curiosite_denivele` (en Onix), `poids_en_pokemon` (poids officiels) ;
+statut façon combat dans le bilan (EN FORME, CORRECT, À MÉNAGER), observations en bulles ; graphiques `_style`. Écran de combat et rubriques sur le même fond uni, **pas de trait de couleur** sur les boîtes (Kiki, 02/11 : pas beau) ; poids en Pokémon dans la tuile du poids. **Jamais le même Pokémon à côté** : écran de combat Doduo, Ponyta, Ronflex ; rubriques (image fixe, sans cadre) Tauros, Rondoudou, Leveinard, Grolem ; coach Kadabra ;
 bilan Soporifik, Hypnomade, Mélodelfe, Rattata, Machoc, Psykokwak, Ramoloss, Mackogneur, Alakazam. Toutes les mesures restent affichées.
 **Bilan santé autonome (`bilan.py`, 02/11, pour tous les joueurs, sans IA ni compte Claude)** : règles calculées sur les vraies
 données : observations par thème (sommeil, coucher, récup, pas, sport, assis, poids, oxygène, habitudes personnelles sur 90 jours),
@@ -90,7 +90,7 @@ les femmes), repères de masse grasse (Gallagher 2000), équilibre à 65 ans, tu
 **Shiny Ball d'anniversaire** (voulue par Kiki : 2e exception au « jamais de Pokémon offert », une par an, `pokemon.jours_anniversaire`) : l'appli voit
 que c'est le bon jour (profil du téléphone), la ball existe aussitôt, et le téléphone laisse `<jour>…#demande-anniv` dans la liste partagée
 (`ouvertes.json`, sans changer le script) pour que montre.py la fige. La date exacte n'est donc connue du dépôt que par ce jour-là.
-**Le coach Claude (crédits Claude) reste réservé au compte de Kiki** (`if not AMI`, confirmé par Kiki le 02/11 : à améliorer plus tard) ; les amis n'ont que le bilan autonome.
+**Le coach Claude (crédits Claude) est retiré de l'écran pour l'instant** (Kiki, 02/11 : volet et bouton 📋 ; `coach()` reste prête, à remettre pour Kiki seul, `if not AMI`) ; il reste le bilan autonome, signé du professeur.
 **Tes prochains objectifs** (`prochainsObjectifs`, sous la carte) : les 3 buts les plus proches parmi ce qui existe déjà (champion, lieu, évolution, rang, sanctuaire, Shiny Ball), aucune règle en plus.
 **Récap du matin** (`sceneCentre`, `D.matin`) : première visite du jour, 3 bulles au plus de l'Infirmière Joëlle : la nuit, hier
 (`etat["hier"]`), puis le défi du champion ou `bilan.conseil_du_jour` ; la machine de soin seulement après une bonne nuit ;

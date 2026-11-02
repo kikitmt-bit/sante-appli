@@ -76,15 +76,15 @@ header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecorat
 .sport{background:#1C2740;border-radius:12px;padding:8px 12px;margin:4px 0;font-size:.9rem}
 .sport .s{color:#9AA7C2;font-size:.78rem}
 h3{margin-top:1.4rem !important}
-[class*="st-key-rub_"]{background:#141C31;border-radius:20px;padding:10px 12px 12px;margin-top:8px;gap:.5rem;border-top:3px solid var(--r)}
-.st-key-rub_activite{--r:#6B8CFF}.st-key-rub_sommeil{--r:#B39DFF}.st-key-rub_coeur{--r:#FF7C93}.st-key-rub_poids{--r:#3DC8A6}
+[class*="st-key-rub_"]{background:#141C31;border-radius:20px;padding:10px 12px 12px;margin-top:8px;gap:.5rem}
 .rubrique{display:flex;align-items:center;gap:8px;font-size:1.18rem;font-weight:800;color:#EEF2FA;min-height:52px;padding-bottom:12px}
 .rubrique img{width:60px;height:60px;margin:-6px -4px -6px -8px;image-rendering:pixelated;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
 .chart-titre{font-size:.84rem;font-weight:700;color:#C9D3EA;margin:4px 0 2px}
 .curieux{display:flex;align-items:center;gap:9px;background:#1C2740;border-radius:13px;padding:5px 11px;font-size:.82rem;line-height:1.3;color:#C9D3EA;margin:2px 0 6px}
 .curieux img{flex:0 0 auto;height:38px;max-width:64px;object-fit:contain;image-rendering:pixelated}.curieux b{color:#EEF2FA}
-.pese{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;background:#1C2740;border-radius:13px;padding:6px 11px;font-size:.82rem;color:#C9D3EA;margin:2px 0 6px}
-.pese b{color:#EEF2FA;margin-right:4px}.pese span{display:inline-flex;align-items:center;font-weight:800;color:#FFE27A}.pese img{height:34px;max-width:52px;object-fit:contain;image-rendering:pixelated}
+.tile.large{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pese{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:2px 4px;min-width:0}
+.pese span{display:inline-flex;align-items:center;color:#686850}.pese img{height:34px;max-width:52px;object-fit:contain;image-rendering:pixelated}
 .nuit{background:linear-gradient(135deg,#232A58,#1A2240);border-radius:15px;padding:10px 12px;margin:2px 0 8px}
 .nuit .horaires{display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:700;color:#EEF2FA}
 .nuit .horaires img{width:24px;height:24px;image-rendering:pixelated}.nuit .horaires .tot{flex:1;text-align:center;font-size:1.36rem;font-weight:800}
@@ -92,8 +92,6 @@ h3{margin-top:1.4rem !important}
 .nuit .leg{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;font-size:.7rem;color:#C9D3EA;line-height:1.2}
 .nuit .leg i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px}.nuit .leg b{display:block;font-size:.86rem;color:#EEF2FA}
 .pouls{display:flex;align-items:center;gap:12px;background:#1C2740;border-radius:14px;padding:8px 12px;margin:2px 0 8px}
-.pouls .c{flex:0 0 44px;font-size:2rem;line-height:1;text-align:center;animation:pouls-bat var(--d) ease-in-out infinite;transform-origin:center}
-@keyframes pouls-bat{0%,100%{transform:scale(1)}12%{transform:scale(1.28)}26%{transform:scale(1.02)}40%{transform:scale(1.16)}}
 .pouls .v{font-size:1.32rem;font-weight:800;color:#EEF2FA;line-height:1.2}.pouls .s{font-size:.72rem;color:#9AA7C2;line-height:1.3}
 .st-key-periode button{padding:2px 8px !important;min-height:30px !important}.st-key-periode p{font-size:.82rem !important}
 .st-key-periode [data-testid="stButtonGroup"],.st-key-periode div[role="radiogroup"]{flex-wrap:nowrap}
@@ -158,24 +156,25 @@ st.markdown("""<style>
 [role="dialog"] hr{border-color:#C8C8A8 !important}
 [role="dialog"] label[data-baseweb="checkbox"] > div:first-child{background:#A8A890 !important}
 [role="dialog"] label[data-baseweb="checkbox"]:has(input:checked) > div:first-child{background:#D83830 !important}
-.fresh{color:#D8E0F0 !important;font-size:.9rem !important}
+.fresh{color:#D8E0F0 !important;font-size:.84rem !important;white-space:nowrap}
 .nav-jeu{background:#141C38 !important;border-radius:10px !important}
 .nav-jeu button{color:#C9D3EA !important;font-size:12.5px !important;line-height:1.1 !important;border-radius:8px 4px 8px 4px !important;border:2px solid transparent !important}
 .nav-jeu button.on{background:#F8F8E8 !important;color:#383828 !important;border-color:#484838 !important;box-shadow:2px 2px 0 rgba(0,0,0,.4) !important}
 .st-key-outils button,.st-key-page_sante [data-testid="stBaseButton-secondary"],.st-key-page_sante [data-testid="stDateInputField"],.st-key-page_sante [data-baseweb="input"],.st-key-periode button{
   background:#F8F8E8 !important;color:#383828 !important;border:2px solid #484838 !important;box-shadow:2px 2px 0 rgba(10,15,35,.45) !important;border-radius:8px 4px 8px 4px !important}
 .st-key-page_sante [data-testid="stBaseButton-secondary"] p,.st-key-periode p,.st-key-page_sante input{color:#383828 !important;-webkit-text-fill-color:#383828}
-.st-key-page_sante [data-testid="stDateInput"] *{color:#383828 !important;-webkit-text-fill-color:#383828;background:#F8F8E8 !important}
+.st-key-page_sante [data-testid="stDateInput"] *{color:#383828 !important;-webkit-text-fill-color:#383828;background:transparent !important}
+.st-key-page_sante [data-testid="stDateInput"] [data-testid="stDateInputField"]{background:#F8F8E8 !important}
 .st-key-periode button[aria-checked="true"],.st-key-periode button[kind*="Active"],.st-key-periode button[data-testid*="Active"]{background:#D83830 !important}
 .st-key-periode button[aria-checked="true"] p,.st-key-periode button[kind*="Active"] p,.st-key-periode button[data-testid*="Active"] p{color:#fff !important}
 .st-key-periode [data-testid="stButtonGroup"]{gap:4px !important}
 .st-key-bloc_coach [data-testid="stExpander"],.st-key-bloc_coach details{background:#F8F8E8 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .st-key-bloc_coach summary *,.st-key-bloc_coach [data-testid="stMarkdownContainer"] *{color:#383828 !important}
 /* les boîtes */
-.tile,.bilan,.nuit,.pouls,.curieux,.pese,div:has(> .vega-embed){background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
-.tile .l,.tile .s,.curieux,.pese,.pouls .s,.bilan .phrase,.bilan .note{color:#686850 !important}
+.tile,.bilan,.nuit,.pouls,.curieux,div:has(> .vega-embed){background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
+.tile .l,.tile .s,.curieux,.pouls .s,.bilan .phrase,.bilan .note{color:#686850 !important}
 .tile .l{font-size:.86rem !important}.tile .s{font-size:.8rem !important}
-.tile .v,.pouls .v,.bilan .tete,.curieux b,.pese b{color:#383828 !important}
+.tile .v,.pouls .v,.bilan .tete,.curieux b{color:#383828 !important}
 .tile .v{font-size:1.5rem !important}
 .chip{background:#E8E8D0 !important;color:#686850 !important;font-size:.76rem !important;border-radius:5px !important}
 .chip.bien{background:#D0F0D8 !important;color:#227040 !important}.chip.moins{background:#F8DCD0 !important;color:#B04020 !important}
@@ -183,12 +182,12 @@ st.markdown("""<style>
 .bar{background:#484838 !important;height:12px !important;padding:2px;border-radius:6px !important}
 .bar div{background:#48C868 !important;border-radius:4px !important}.bar div.ok{background:#F8C838 !important}
 .bilan{padding:10px !important}
-.bilan .bulle{background:#fff !important;border:2px solid #484838 !important;border-left:5px solid var(--c) !important;border-radius:8px 3px 8px 3px !important}
+.bilan .bulle{background:#fff !important;border:2px solid #484838 !important;border-radius:8px 3px 8px 3px !important}
 .bilan .bulle:before{display:none}
 .bilan .obs b{color:#383828 !important;font-size:1.04rem !important}.bilan .obs p{color:#585840 !important;font-size:.94rem !important;line-height:1.25 !important}.bilan .obs .cs{color:#B05010 !important}
 .statut{border-radius:4px !important;font-size:.76rem !important;box-shadow:1px 1px 0 rgba(0,0,0,.4) !important}
 .prof-portrait{border-color:#484838 !important}
-[class*="st-key-rub_"]{background:rgba(12,18,44,.55) !important;border:3px solid #484838 !important;border-top:6px solid var(--r) !important;border-radius:14px 6px 14px 6px !important}
+[class*="st-key-rub_"]{background:rgba(12,18,44,.55) !important;border:3px solid #484838 !important;border-radius:14px 6px 14px 6px !important}
 .rubrique{color:#fff !important;font-size:1.32rem !important;text-shadow:2px 2px 0 #141C38}
 .chart-titre{color:#fff !important;font-size:.95rem !important;text-shadow:1px 1px 0 #141C38}
 div:has(> .vega-embed){padding:6px 4px 2px !important}
@@ -196,9 +195,9 @@ div:has(> .vega-embed){padding:6px 4px 2px !important}
 .nuit{background:#232A58 !important;color:#fff}.nuit .horaires,.nuit .tot{color:#fff !important}.nuit .leg{color:#D8E0F0 !important;font-size:.82rem !important}.nuit .leg b{color:#fff !important;font-size:1rem !important}
 .nuit .tot{font-size:1.6rem !important}
 .pouls .v{font-size:1.5rem !important}.pouls .s{font-size:.84rem !important}
-.curieux{font-size:.92rem !important}.pese{font-size:.92rem !important}.pese span{color:#C03028 !important}
-.combat{background:url(https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/fond-prairie.webp) 50% 12%/cover no-repeat !important;border:3px solid #484838 !important;border-radius:14px 6px 14px 6px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important;padding:8px !important;image-rendering:pixelated}
-.combat .poke:before{background:rgba(40,50,15,.5) !important}
+.curieux{font-size:.92rem !important}
+.combat{background:rgba(12,18,44,.55) !important;border:3px solid #484838 !important;border-radius:14px 6px 14px 6px !important;box-shadow:none !important;padding:8px !important}
+.combat .poke:before{display:none}
 [data-testid="stCaptionContainer"] *{color:#D8E0F0 !important}
 </style>""", unsafe_allow_html=True)
 st.markdown(f"""<style>
@@ -402,12 +401,12 @@ def carte_nuit(ligne):
     return True
 
 
-def carte_pouls(bpm, un_jour):
-    """Le cœur bat vraiment au rythme du cœur au repos."""
+def carte_pouls(bpm):
+    """Le cœur au repos et son repère."""
     if bpm is None or pd.isna(bpm) or bpm <= 0:
         return
-    st.markdown(f'<div class="pouls" style="--d:{60 / bpm:.2f}s"><div class="c">❤️</div><div><div class="v">{bpm:.0f} bpm au repos</div>'
-                f'<div class="s">Ce cœur bat à ton rythme{" d" + chr(39) + "aujourd" + chr(39) + "hui" if un_jour else ""}. Chez un adulte, le repère va de 60 à 100, et plus bas chez les sportifs.</div></div></div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="pouls"><div><div class="v">{bpm:.0f} bpm au repos</div>'
+                f'<div class="s">Chez un adulte, le repère va de 60 à 100, et plus bas chez les sportifs.</div></div></div>', unsafe_allow_html=True)
 
 
 def curiosite_denivele(metres):
@@ -450,9 +449,9 @@ def regroupe(df, cles, mensuel):
 
 def _style(ch, hauteur):
     """Le même habillage partout : pas de cadre, juste de quoi lire, dans les couleurs de l'appli."""
-    return (ch.properties(height=hauteur, background="transparent").configure_view(stroke=None)
+    return (ch.properties(height=hauteur, background="transparent", padding={"left": 8, "right": 6, "top": 6, "bottom": 2}).configure_view(stroke=None)
             .configure_axis(grid=False, domain=False, ticks=False, labelColor="#585840", labelFontSize=13, labelFont="Jersey 15", titleColor="#585840")
-            .configure_axisY(grid=True, gridColor="#D8D8C0", gridDash=[2, 4], labelPadding=4)
+            .configure_axisY(grid=True, gridColor="#D8D8C0", gridDash=[2, 4], labelPadding=4, minExtent=30)
             .configure_legend(labelColor="#484838", labelFont="Jersey 15", labelFontSize=14, labelLimit=0, columnPadding=16))
 
 
@@ -490,7 +489,7 @@ def graphique_sommeil(d):
         alt.X("x:N", sort=None, title=None, axis=alt.Axis(labelAngle=0, labelOverlap="greedy")),
         alt.Y("h:Q", title=None, stack=True, axis=alt.Axis(tickCount=4)),
         alt.Color("Phase:N", scale=alt.Scale(domain=list(COULEURS_PHASES), range=list(COULEURS_PHASES.values())),
-                  legend=alt.Legend(orient="bottom", title=None)),
+                  legend=alt.Legend(orient="bottom", title=None, columns=2)),
         order=alt.Order("ordre:Q"), tooltip=["x:N", "Phase:N", alt.Tooltip("h:Q", format=".1f", title="heures")],
     ).transform_calculate(ordre=f"indexof({list(COULEURS_PHASES)}, datum.Phase)")
     st.markdown('<div class="chart-titre">Sommeil par nuit (heures)</div>', unsafe_allow_html=True)
@@ -754,16 +753,15 @@ with page_sante:
     # Fraîcheur : heure de la dernière mesure reçue aujourd'hui (l'heure de synchro donnée par Google n'est pas à jour)
     heures = [l[0] for typ in ("steps", "heart-rate", "active-energy-burned") if isinstance(du_jour.get(typ), dict)
               for l in du_jour[typ].get("lignes", []) if l and l[0]]
-    st.markdown(f'<div class="fresh">⌚ Dernière mesure reçue aujourd\'hui : {max(heures)[:5] if heures else "aucune"}'
-                f' · {debut:%d/%m/%Y}{f" → {fin:%d/%m/%Y}" if fin != debut else ""}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="fresh">⌚ Dernière mesure{" aujourd" + chr(39) + "hui" if fin == debut else ""} : {max(heures)[:5] if heures else "aucune"}'
+                f' · {debut:%d/%m}{f" → {fin:%d/%m}" if fin != debut else ""}</div>', unsafe_allow_html=True)
 
     histoire = stats.loc[fin - dt.timedelta(days=20):fin]  # les 3 dernières semaines, pour les mini-courbes de la vue Jour
     ecran_combat(df, un_jour)
     jour_bilan = aujourd - dt.timedelta(days=1) if un_jour and fin == aujourd else fin
     fichier_bilan = f"data/jour/{jour_bilan.year}/{jour_bilan}.json"
     carte_bilan(bilan.analyser(stats, periode, debut, fin, aujourd, lire_vite([fichier_bilan])[fichier_bilan] if un_jour else None, PROFIL))
-    if not AMI:  # le coach connaît le profil de Kiki et tourne sur son abonnement
-        coach(donnees, lire_vite, aujourd)
+    # Le coach Claude, volet et bouton 📋, est retiré de l'écran pour l'instant (Kiki, 02/11) : coach() reste prête, pour Kiki seul (if not AMI)
 
     # ----- Activité -----
     with st.container(key="rub_activite"):
@@ -819,7 +817,7 @@ with page_sante:
     # ----- Cœur -----
     with st.container(key="rub_coeur"):
         rubrique(113, "Cœur et respiration", "#E0526B")  # Leveinard, l'infirmier
-        carte_pouls(par_jour(df, "fc_repos"), un_jour)
+        carte_pouls(par_jour(df, "fc_repos"))
         tuiles(["fc_repos", "vfc", "fc_max", "resp", "spo2", "spo2_min"], df, avant, un_jour, legende_avant, "#FF7C93", histoire)
         if un_jour:
             hr = table(j_ref.get("heart-rate"))
@@ -851,8 +849,10 @@ with page_sante:
         else:
             der = pesees.index[-1]
             gras7 = pesees["gras"].dropna().tail(7).mean()
-            html = [f'<div class="tile"><div class="l">Poids</div><div class="v">{joli("poids", pesees["poids"].dropna().iloc[-1])}'
-                    f'</div><div class="s">pesée du {der:%d/%m}</div></div>']
+            en_pokemon = poids_en_pokemon(pesees["poids"].dropna().iloc[-1], der)
+            soit = f'<div class="pese">{en_pokemon}</div>' if en_pokemon else ""
+            html = [f'<div class="tile large"><div><div class="l">Poids</div><div class="v">{joli("poids", pesees["poids"].dropna().iloc[-1])}'
+                    f'</div><div class="s">pesée du {der:%d/%m}</div></div>{soit}</div>']
             rep = bilan.repere_gras(PROFIL["age"], PROFIL["sexe"])
             repere_gras = f" · repère {rep[0]} à {rep[1]} %" if rep else ""
             if pesees["gras"].notna().any():
@@ -867,18 +867,15 @@ with page_sante:
                 html.append(f'<div class="tile"><div class="l">Évolution sur la période</div><div class="v">'
                             f'{"+" if p_debut.iloc[-1] > p_debut.iloc[0] else ""}{nombre(p_debut.iloc[-1] - p_debut.iloc[0], 1)} kg</div><div class="s">{len(p_debut)} pesées</div></div>')
             st.markdown(f'<div class="tiles">{"".join(html)}</div>', unsafe_allow_html=True)
-            en_pokemon = poids_en_pokemon(pesees["poids"].dropna().iloc[-1], pesees["poids"].dropna().index[-1])
-            if en_pokemon:
-                st.markdown(f'<div class="pese"><b>Sur la balance du Pokédex :</b>{en_pokemon}</div>', unsafe_allow_html=True)
             courbe = pesees.loc[(debut if len(jours) >= 30 else donnees["debut_tout"]):]
             if len(courbe) >= 2:
                 meme_annee = courbe.index[0].year == courbe.index[-1].year
                 courbe.index = [x.strftime("%d/%m" if meme_annee else "%d/%m/%y") for x in courbe.index]
                 g1, g2 = st.columns(2)
                 with g1:
-                    graphique(courbe, "poids", "Poids (kg)", type_="ligne", hauteur=150, reperes=3)
+                    graphique(courbe, "poids", "Poids (kg)", type_="ligne", hauteur=150, reperes=2)
                 with g2:
-                    graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150, reperes=3)
+                    graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150, reperes=2)
 
 with page_jeu:
     ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL), PROFIL["anniversaire"])
