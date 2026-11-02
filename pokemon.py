@@ -8,6 +8,8 @@
 - **Hyper Ball** : exploit du jour (10 000 pas, 25 min de sport ou une séance de 45 min). Shiny ×4.
 - **Shiny Ball** : 25 jours avec l'objectif (5 000 pas ou 10 min de sport) sur les 30 derniers, ou un sanctuaire dont on a
   déjà le légendaire : un shiny garanti parmi les Pokémon déjà attrapés.
+- **Starter** : il gagne un niveau tous les `pts_niveau` points d'effort et évolue aux niveaux de `evolutions` (16 et 36, comme
+  dans les jeux). Ses évolutions ne sortent plus des balls : elles se méritent.
 - **Anniversaire** : une Shiny Ball si on ouvre l'appli ce jour-là, une par an (voir `charger_jeu`).
 - **Légendaires** : les oiseaux dans leurs sanctuaires (kanto.SANCTUAIRES), Mewtwo à la Ligue, Mew au Pokédex complet
   (les 146 autres). Toute petite chance par ball (`legende_chance`) de tomber sur un oiseau avant, une seule fois par région.
@@ -56,6 +58,7 @@ REGLAGES = {
     "part_lieu": 0.8,                # chance de tirer dans le lieu actuel plutôt qu'en rattrapage (s'il reste des deux)
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
+    "pts_niveau": 220, "niveau_depart": 5, "evolutions": (16, 36),  # le starter : 1re évolution à 2 420 points, 2e à 6 820 (toujours avant les 7 000 de la carte)
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
     "barre": 100,                    # points d'effort pour une Poké Ball
@@ -85,6 +88,7 @@ BALLS = {  # shiny : multiplicateur ; nouvelle : chance d'une espèce jamais vue
     "hyper": {"nom": "Hyper Ball", "shiny": 4, "nouvelle": 1},
     "master": {"nom": "Master Ball", "shiny": 1, "nouvelle": 1},
     "shiny": {"nom": "Shiny Ball", "shiny": 1, "nouvelle": 0},
+    "evo": {"nom": "Évolution", "shiny": 0, "nouvelle": 1},  # pas une vraie ball : la scène d'évolution du starter
 }
 
 # Ce qui remplit la barre : (icône, libellé, types favoris quand c'est ce qui a le plus rempli la barre du jour)
@@ -108,7 +112,13 @@ FORCE_TYPES = ("ROWING", "STRENGTH", "WEIGHT", "CALISTHENIC", "CIRCUIT", "HIIT",
 FORCE_NOMS = ("muscu", "renfo", "force", "poids", "haltère", "pompe", "traction", "gainage", "circuit", "hiit",
               "crossfit", "fractionné", "rameur", "strength", "weight", "rowing")
 
-STARTERS = [1, 4, 7]  # Bulbizarre, Salamèche, Carapuce : le cadeau du Professeur Chen (seul Pokémon offert)
+STARTERS = [1, 4, 7]  # Bulbizarre, Salamèche, Carapuce : le cadeau du Professeur Chen
+LIGNES = {n: [n, n + 1, n + 2] for n in STARTERS}  # ses évolutions
+
+
+def niveau(points):
+    """Le niveau du starter, d'après les points d'effort depuis le début."""
+    return REGLAGES["niveau_depart"] + int(points // REGLAGES["pts_niveau"])
 
 OISEAUX = [144, 145, 146]  # ce que la chance peut donner avant les sanctuaires
 TOTAL_ESPECES = len(POKEMON) - len(LEGENDAIRES)  # les 146 du diplôme
@@ -433,10 +443,14 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     retenues, en_attente, missions_gardees = [], [], []  # gardées par le champion ; sac et balls sans rien de nouveau
     chaine, chance_prise, perdues, en_defi = 0, False, 0, False
     avant, chrono, hier = 0.0, None, None
+    starter = None  # le Pokémon du cadeau du Professeur
+    reserves = lambda noms: [n for n in noms if not starter or n not in LIGNES[starter][1:]]  # ses évolutions ne sortent pas des balls  # noqa: E731
 
     def noter(c):
-        nonlocal chaine, chance_prise
+        nonlocal chaine, chance_prise, starter
         captures.append(c)
+        if c["id"].endswith("#chen"):
+            starter = c["num"]
         if not c.get("rate"):
             possedees.add((c["num"], c["shiny"]))
         if c.get("chasse"):
@@ -474,7 +488,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 return None
             c = {"num": rng.choice(sorted(pool)), "shiny": True, "nouvelle": False}
         else:
-            c = tirer(i, possedees, ici, passes, mi["types"], p, mi.get("nouvelle", ball["nouvelle"]), mi.get("seul_type"))
+            c = tirer(i, possedees, reserves(ici), reserves(passes), mi["types"], p, mi.get("nouvelle", ball["nouvelle"]), mi.get("seul_type"))
         return c
 
     def finaliser(c, mi, lieu):
@@ -595,6 +609,14 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         if jour == aujourd - dt.timedelta(days=1):  # pour le récap du matin
             hier = {"jour": str(jour), "pas": round(m["pas"]), "zone": round(m["zone"]), "super": super_ok(m), "hyper": exploit(m) is not None,
                     "mission": bool(mission_jour)}
+        # le starter évolue : au niveau voulu, s'il n'a pas déjà cette forme
+        if starter:
+            for stade, seuil in enumerate(R["evolutions"], 1):
+                num = LIGNES[starter][stade]
+                if niveau(cumul) >= seuil and not any(n == num for n, _ in possedees):
+                    mi = {"cle": f"evo{stade}", "ball": "evo", "types": None, "fixe": num, "jour": jour, "shiny_bonus": 1,
+                          "raison": f"✨ {POKEMON[LIGNES[starter][stade - 1]]['nom']} évolue en {POKEMON[num]['nom']}", "id": ident(jour, f"evo{stade}", ami)}
+                    noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
         # le Pokédex est complet (les 146) : le diplôme du Professeur Chen, avec Mew
         if len({n for n, _ in possedees if n not in LEGENDAIRES}) >= TOTAL_ESPECES and 151 not in {n for n, _ in possedees}:
             mi = {"cle": "diplome", "ball": "master", "types": None, "fixe": 151, "jour": jour, "shiny_bonus": shiny_bonus,
@@ -621,7 +643,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             break
     ici, passes = voyage.atteints()
     especes = {n for n, _ in possedees}
-    plus_rien = [*ici, *passes] and not [n for n in [*ici, *passes] if n not in especes]
+    plus_rien = [*ici, *passes] and not [n for n in reserves([*ici, *passes]) if n not in especes]
+    niv = niveau(cumul)
+    prochaine = next((s for s in R["evolutions"] if s > niv), None)
     return captures, {"pesees": {"semaine": semaine, "nb": len(pesees), "cible": R["pesees"],
                                  "avant": R["pesee_avant"], "derniere": derniere, "bonus": R["bonus_pesee"]},
                       "serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
@@ -635,7 +659,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "fini": 9 in voyage.badges, "hier": hier}
+                      "fini": 9 in voyage.badges, "hier": hier,
+                      "starter": starter and {"ligne": LIGNES[starter], "niveau": niv, "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1),
+                                              "evolue_a": prochaine, "reste": round((prochaine - R["niveau_depart"]) * R["pts_niveau"] - cumul) if prochaine else None}}
 
 
 def etat_mission(aujourd, stats, mission_du):

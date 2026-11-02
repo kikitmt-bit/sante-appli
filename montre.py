@@ -37,7 +37,7 @@ def contenu(lire, maintenant):
     captures = [c for c in captures if not c.get("rate")]  # la montre attend d'être à jour : les balls ratées restent sur le téléphone
     ouvertes = (lire([pokemon.OUVERTES])[pokemon.OUVERTES] or {}).get("ouvertes", {})
     limite = str(aujourd - dt.timedelta(days=JOURS_OUVERTES))
-    a_ouvrir = [c for c in captures if c["id"] not in ouvertes and c["jour"] >= limite]
+    a_ouvrir = [c for c in captures if c["id"] not in ouvertes and c["jour"] >= limite and c["ball"] != "evo"]  # l'évolution : sur le téléphone
     derniere = captures[-1:]  # la dernière capture, pour la revoir sur la montre (rien n'est enregistré)
     # Le Pokédex de la montre : espèces des Poké Balls ouvertes (ou de plus de 14 jours) et les 6 dernières ouvertes
     vues = [c for c in captures if c["id"] in ouvertes or c["jour"] < limite]
@@ -53,7 +53,7 @@ def contenu(lire, maintenant):
     gagnee = lambda cle: any(c["jour"] == str(aujourd) and c["id"].split("#")[1].startswith(cle) for c in captures)  # noqa: E731
     R = pokemon.REGLAGES
     # (la Shiny Ball n'existe pas encore sur la montre : elle y passe pour une Master Ball)
-    une = lambda c: {"id": c["id"], "jour": c["jour"], "ball": "master" if c["ball"] == "shiny" else c["ball"], "raison": c["raison"],  # noqa: E731
+    une = lambda c: {"id": c["id"], "jour": c["jour"], "ball": {"shiny": "master", "evo": "hyper"}.get(c["ball"], c["ball"]), "raison": c["raison"],  # noqa: E731
                      "num": c["num"], "nom": POKEMON[c["num"]]["nom"], "types": POKEMON[c["num"]]["types"],
                      "shiny": c["shiny"], "nouvelle": c["nouvelle"], "legendaire": c["num"] in LEGENDAIRES,
                      "image": images.get((c["num"], c["shiny"]), "")}

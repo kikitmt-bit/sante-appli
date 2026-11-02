@@ -53,7 +53,7 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
   sportif 46, débutant 375 / ~243 (point faible : objectifs adaptés à chacun à faire avant d'inviter les amis).
   Montre : pas encore à jour (Shiny Ball montrée en Master Ball, ratés masqués).
 **Interface (02/11, carte blanche de Kiki) : l'appli est le jeu, plus de séparation Santé / Pokémon.** Barre du haut `.nav-jeu`
-(HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (Pikachu ; carte, à ouvrir,
+(HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (son starter, Pikachu avant ; carte, à ouvrir,
 4 dernières captures, barre, objectifs ; pastille = balls à ouvrir), **Pokédex** (icône dessinée), **Dresseur** (son visage, à ses
 couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; anneaux pas / zone /
 sommeil, rubriques colorées, coach, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
@@ -77,6 +77,9 @@ Pokémon par thème. Affiché dans Santé (`carte_bilan`), l'ancien coach Claude
 `pkm_dresseur`), relus à l'ouverture par `streamlit_js_eval` (`bilan.lire_profil`), jamais écrits sur un serveur (autre téléphone = à ressaisir).
 Servent au bilan : IMC (repère neutre, alerte seulement si perte de poids sous 18,5), maximum cardiaque théorique (Tanaka, ou Gulati pour
 les femmes), repères de masse grasse (Gallagher 2000), équilibre à 65 ans, tuile IMC. Ils ne changent pas les objectifs du jeu.
+**Le starter, vrai objectif (02/11, idée de Kiki)** : un niveau tous les 220 points d'effort (`pokemon.niveau`, part du niveau 5), évolue aux niveaux 16 et 36
+(`evolutions`, 2 420 et 6 820 points : la 2e toujours avant la fin de la carte, à 7 000) ; ses évolutions ne sortent plus des balls (`reserves`), capture `#evo1/2`, ball `evo`, jamais montrée
+à la montre, scène `sceneEvolution`, carte `dessinerStarter` en haut de la barre (silhouette de la forme suivante), icône d'Aventure = sa forme du moment. Dans une autre région : icône = starter de cette région.
 **Shiny Ball d'anniversaire** (voulue par Kiki : 2e exception au « jamais de Pokémon offert », une par an, `pokemon.jours_anniversaire`) : l'appli voit
 que c'est le bon jour (profil du téléphone), la ball existe aussitôt, et le téléphone laisse `<jour>…#demande-anniv` dans la liste partagée
 (`ouvertes.json`, sans changer le script) pour que montre.py la fige. La date exacte n'est donc connue du dépôt que par ce jour-là.

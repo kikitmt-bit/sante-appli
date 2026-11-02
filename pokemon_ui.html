@@ -363,6 +363,20 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 #mon-dresseur .nom{font-size:25px;font-weight:400}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:16px;opacity:.95}
 #mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 18px 'Jersey 15',Outfit,monospace;background:#F8F8F8;color:#283048;
   box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048;cursor:pointer}
+.starter-carte{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:16px;padding:8px 12px;margin-bottom:12px;cursor:pointer;text-align:left;color:#EEF2FA;
+  background:linear-gradient(135deg,#2A3A63,#1C2740);font-family:Outfit,sans-serif;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.12)}
+.starter-carte .av{flex:0 0 58px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%)}
+.starter-carte .av img{max-width:56px;max-height:56px;image-rendering:pixelated}
+.starter-carte .milieu{flex:1;min-width:0;display:block}.starter-carte .l1{display:flex;justify-content:space-between;align-items:baseline}
+.starter-carte .l1 b{font-size:15px;font-weight:800}.starter-carte .l1 i{font-style:normal;font-weight:800;font-size:13px;color:#FFCB05}
+.starter-carte .barre-n{display:block;height:7px;border-radius:4px;background:#0D1322;overflow:hidden;margin:4px 0}.starter-carte .barre-n i{display:block;height:100%;background:linear-gradient(90deg,#4CD3A0,#FFE27A);border-radius:4px}
+.starter-carte small{display:block;font-size:11.5px;color:#9AA7C2}.starter-carte small b{color:#EEF2FA}
+.starter-carte .suite{flex:0 0 38px}.starter-carte .suite img{width:38px;height:38px;object-fit:contain;filter:brightness(0);opacity:.45;image-rendering:pixelated;display:block}
+.evo-attente{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 10px;padding:10px 12px;border:0;border-radius:14px;cursor:pointer;text-align:left;color:#20391A;background:linear-gradient(135deg,#FFF3C4,#FFCB05);
+  box-shadow:0 0 16px rgba(255,203,5,.55);animation:evo-pulse 1.3s ease-in-out infinite;font-family:Outfit,sans-serif}
+@keyframes evo-pulse{50%{box-shadow:0 0 26px rgba(255,255,255,.95)}}
+.evo-attente img{flex:0 0 54px;height:54px;object-fit:contain;image-rendering:pixelated;filter:brightness(1.4) drop-shadow(0 0 7px #fff)}
+.evo-attente b{display:block;font-size:15px;font-weight:800}.evo-attente small{display:block;font-size:12px;opacity:.85}
 .onglets:empty{display:none}
 .onglets{display:flex;gap:4px;background:#0D1322;border-radius:14px;padding:4px;margin-bottom:12px}
 .onglets button{flex:1;position:relative;border:0;border-radius:11px;padding:9px 4px;background:none;color:#9AA7C2;font:800 13.5px Outfit,sans-serif;cursor:pointer}
@@ -404,6 +418,7 @@ details.regles li{margin:5px 0;line-height:1.4}
     <div class="carte" id="voyage"></div>
     <div class="carte" id="aouvrir"></div>
     <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
+    <div id="starter"></div>
     <div class="carte" id="barre"></div>
     <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
     <div class="grille2" id="speciales"></div>
@@ -590,6 +605,7 @@ const CAPTURES = D.captures.map(c => ({...c, nom: PAR_NUM[c.num].nom, types: PAR
 const EN_ROUTE = new Set();
 const aOuvrir = () => CAPTURES.filter(c => !estOuverte(c) && !EN_ROUTE.has(c.id));
 const estBadge = c => /#(badge\d|ligue)$/.test(c.id);
+const estEvo = c => c.ball === "evo";
 const numBadge = c => c.id.endsWith("#ligue") ? 9 : +c.id.slice(-1);
 function collection() {  // ce que le Pokédex montre : seulement les Poké Balls ouvertes
   const par = {};
@@ -1641,10 +1657,61 @@ function dialogue(v, ignorer = ".pkm-passer") {
   return {dire, prevoir, cacher: () => { dial.classList.remove("vu"); attendre = null; },
     fin: () => PW.removeEventListener("resize", recaler)};
 }
+// L'évolution du starter : le grand moment de son aventure, à la façon des jeux (pas une ball)
+const STYLE_EVO = `
+#pkm-evo{position:fixed;inset:0;z-index:999999;overflow:hidden;background:radial-gradient(circle at 50% 42%,#26386A,#070B16 72%);font-family:'Jersey 15',Outfit,monospace;
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;opacity:0;transition:opacity .5s}
+#pkm-evo.vu{opacity:1}
+#pkm-evo img.forme{position:absolute;left:50%;top:40%;width:min(68vw,330px);transform:translate(-50%,-50%);transition:filter .5s,opacity .12s}
+#pkm-evo.lumiere img.forme{filter:brightness(0) invert(1) drop-shadow(0 0 22px #fff)}
+#pkm-evo img.apres{opacity:0}
+#pkm-evo .rayons{position:absolute;left:50%;top:40%;width:150vmax;height:150vmax;transform:translate(-50%,-50%);opacity:0;transition:opacity .6s;
+  background:repeating-conic-gradient(rgba(255,255,255,.14) 0 9deg,transparent 9deg 18deg);animation:pke-tourne 16s linear infinite}
+@keyframes pke-tourne{to{transform:translate(-50%,-50%) rotate(360deg)}}
+#pkm-evo.fin .rayons{opacity:1}
+#pkm-evo .flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .35s}
+`;
+function sceneEvolution(c, rejouer = false) {
+  ouverture = true;
+  installerStyle("pkm2-evo", STYLE_EVO); preparerScene(); audio();
+  const ligne = (G.starter || {}).ligne || [c.num - 1, c.num], avantN = ligne[ligne.indexOf(c.num) - 1] || c.num - 1;
+  const nomA = PAR_NUM[avantN].nom, nomB = PAR_NUM[c.num].nom;
+  const v = P.createElement("div"); v.id = "pkm-evo";
+  v.innerHTML = `<div class="rayons"></div><img class="forme avant" src="${IMG.hd(avantN, false)}" alt=""><img class="forme apres" src="${IMG.hd(c.num, false)}" alt="">
+    <div class="flash"></div><button class="pkm-passer">✕</button>`;
+  P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
+  const $ = q => v.querySelector(q), a = $(".avant"), b = $(".apres"), DE = dialogue(v);
+  const lignes = [`Quoi ? <b>${nomA}</b> évolue !`, `Félicitations ! Ton ${nomA} a évolué en <b>${nomB}</b> !`];
+  DE.prevoir(lignes.map(l => [l]));
+  let fini = false;
+  const pause = ms => new Promise(ok => setTimeout(ok, ms));
+  const fermer = () => { if (fini) return; fini = true; DE.fin(); if (!rejouer && !c.apercu) memoriser(c.id); ouverture = false;
+    v.style.opacity = 0; setTimeout(() => { v.remove(); dessiner(); }, 500); };
+  $(".pkm-passer").onclick = fermer;
+  (async () => {
+    await pause(600); crier(avantN);
+    await DE.dire(lignes[0]); DE.cacher();
+    v.classList.add("lumiere"); SONS.montee(2.2); vibre([30, 60, 30]);
+    await pause(700);
+    // les deux formes s'échangent de plus en plus vite, en silhouette blanche
+    for (const ms of [420, 340, 270, 210, 160, 120, 90, 70, 55, 45]) {
+      if (fini) return; const inv = a.style.opacity === "0";
+      a.style.opacity = inv ? 1 : 0; b.style.opacity = inv ? 0 : 1; ton(inv ? 620 : 880, 0, .05, {type: "square", vol: .03}); await pause(ms);
+    }
+    a.style.opacity = 0; b.style.opacity = 1;
+    $(".flash").style.opacity = 1; vibre([60, 40, 120]); await pause(420);
+    v.classList.remove("lumiere"); v.classList.add("fin"); $(".flash").style.opacity = 0;
+    crier(c.num); SONS.nouveau();
+    await pause(700);
+    await DE.dire(lignes[1]);
+    fermer();
+  })().catch(() => {});
+}
 function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur et les badges passent d'abord par leur scène
   const cle = c.id.split("#")[1], p = PROFESSEURS[cle];
   if (estOuverte(c)) return ouvrir(c);
   if (p) return intro(c, p);
+  if (estEvo(c)) return sceneEvolution(c);
   if (/^badge\d$/.test(cle)) return sceneBadge(+cle.slice(5), c);
   if (cle === "ligue") return sceneBadge(9, c);
   ouvrir(c);
@@ -2701,6 +2768,21 @@ function fiche(p) {
 const R = D.regles, J = D.jour;
 let filtre = "tous", filtreTypes = new Set(), texte = "";
 
+// Le starter : le Pokémon qui t'accompagne. Il gagne des niveaux avec tes points et évolue : un vrai objectif (02/11, idée de Kiki).
+const formeStarter = () => { const st = G.starter; if (!st) return null; const col = collection();
+  return [...st.ligne].reverse().find(n => (col[n] || []).length) || null; };
+function dessinerStarter() {
+  const el = document.getElementById("starter"), st = G.starter, n = formeStarter();
+  if (!st || !n) { el.innerHTML = ""; return; }
+  const suivant = st.ligne[st.ligne.indexOf(n) + 1], attend = aOuvrir().some(estEvo), plein = st.pts_niveau;
+  const pct = attend ? 100 : st.dans_niveau / plein * 100;
+  const objectif = attend ? "Il se passe quelque chose !" : suivant && st.evolue_a ? `encore <b>${fr(st.reste)} pts</b> pour évoluer` : `encore <b>${fr(plein - st.dans_niveau)} pts</b> pour le niveau ${st.niveau + 1}`;
+  el.innerHTML = `<button class="starter-carte"><span class="av"><img src="${IMG.anim(n, false)}" ${repli(n, false)} alt=""></span>
+    <span class="milieu"><span class="l1"><b>${PAR_NUM[n].nom}</b><i>Niv. ${st.niveau}</i></span><span class="barre-n"><i style="width:${pct}%"></i></span><small>${objectif}</small></span>
+    ${suivant ? `<span class="suite"><img class="rogne" src="${IMG.mini(suivant, false)}" alt="?"></span>` : ""}</button>`;
+  el.querySelector(".starter-carte").onclick = () => fiche(PAR_NUM[n]);
+  rognerImages(el);
+}
 function dessinerBarre() {
   const b = D.barre, pct = b.points / b.taille, circ = 2 * Math.PI * 50, reste = b.taille - b.points;
   const [ic, nom, ts] = b.origine;
@@ -2730,15 +2812,18 @@ function blocSac() {
 }
 function dessinerAOuvrir() {
   const tout = aOuvrir(), el = document.getElementById("aouvrir");
-  const badges = tout.filter(estBadge), liste = tout.filter(c => !estBadge(c));
+  const evos = tout.filter(estEvo), badges = tout.filter(estBadge), liste = tout.filter(c => !estBadge(c) && !estEvo(c));
   el.classList.toggle("vide", !tout.length && !(G.sac || []).length);
   // un badge gagné (la plus grosse récompense) : il attend, doré, qui tourne ; le toucher lance la scène de l'arène
-  const blocBadges = badges.map(c => { const n = numBadge(c), a = LIEUX.filter(l => l.arene)[n - 1].arene;
+  const blocEvos = evos.map(c => `<button class="evo-attente" data-i="${CAPTURES.indexOf(c)}"><img src="${IMG.anim(c.num - 1, false)}" ${repli(c.num - 1, false)} alt="">
+      <span class="txt"><b>Il se passe quelque chose !</b><small>${PAR_NUM[c.num - 1].nom} brille d'une drôle de lumière · touche-le</small></span></button>`).join("");
+  const blocBadges = blocEvos + badges.map(c => { const n = numBadge(c), a = LIEUX.filter(l => l.arene)[n - 1].arene;
     return `<button class="badge-attente" data-i="${CAPTURES.indexOf(c)}" style="--c:${a.type ? COUL[a.type] : "#B8860B"}">
       <span class="disque"><img ${a.image ? `data-badge="${IMG.badge(a.image)}"` : ""} src="${a.image ? IMG.badge(a.image) : IC.ligue}"></span>
       <span class="txt"><b>${a.image ? `${a.badge} gagné !` : "La Ligue est à toi !"}</b><small>${CHAMPIONS[n].nom} t'attend pour te le remettre · touche-le</small></span></button>`; }).join("");
-  if (!liste.length && badges.length) {
-    el.innerHTML = blocBadges; badgesPropres(el); el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
+  const brancherSpeciaux = () => el.querySelectorAll(".badge-attente,.evo-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
+  if (!liste.length && (badges.length || evos.length)) {
+    el.innerHTML = blocBadges; badgesPropres(el); brancherSpeciaux();
     return;
   }
   const route = CAPTURES.filter(c => EN_ROUTE.has(c.id) && !estOuverte(c)).length;
@@ -2747,7 +2832,7 @@ function dessinerAOuvrir() {
   const brancherRappel = () => { const b = el.querySelector(".en-route"); if (b) b.onclick = () => {
     document.getElementById("voyage").scrollIntoView({behavior: "smooth", block: "start"}); setTimeout(() => lancerVoyage(false), 350); }; };
   if (!liste.length && route) { el.classList.remove("vide"); el.innerHTML = blocBadges + rappel; brancherRappel(); badgesPropres(el);
-    el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i])); return; }
+    brancherSpeciaux(); return; }
   if (!liste.length) {
     el.innerHTML = blocSac() || `<div class="titre" style="font-size:16px">Aucune Poké Ball à ouvrir</div>
       <div class="petit gris" style="margin-top:4px">Remplis ta barre d'effort, ou décroche une Super / Hyper Ball !</div>`;
@@ -2758,9 +2843,9 @@ function dessinerAOuvrir() {
       style="animation-delay:${i * .25}s">${ballSVG(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
   el.querySelectorAll(".bouton-ball").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
-  el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir().filter(c => !estBadge(c))[0]);
+  el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir().filter(c => !estBadge(c) && !estEvo(c))[0]);
   brancherRappel();
-  el.querySelectorAll(".badge-attente").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i])); badgesPropres(el);
+  brancherSpeciaux(); badgesPropres(el);
 }
 
 function dessinerSpeciales() {
@@ -2932,7 +3017,7 @@ function dessinerDernieres() {
     ${premiere[c.id] ? '<span class="eti nv">NEW</span>' : ""}${c.shiny ? `<span class="eti sh">${ico("shiny", "p brille")}</span>` : ""}
     <img src="${IMG.anim(c.num, c.shiny)}" ${repli(c.num, c.shiny)} loading="lazy"><div class="nm">${c.nom}</div>
     <div class="qd">${c.quand}</div>${c.lieu ? `<div class="lieu">${ico("carte", "p")} ${c.lieu}</div>` : ""}</div>`).join("");
-  document.querySelectorAll(".mini").forEach(e => e.onclick = () => ouvrir(CAPTURES[e.dataset.i], true));
+  document.querySelectorAll(".mini").forEach(e => e.onclick = () => { const c = CAPTURES[e.dataset.i]; estEvo(c) ? sceneEvolution(c, true) : ouvrir(c, true); });
 }
 
 // Le Pokédex : un seul, sans total ni silhouette : on ne sait jamais combien il en reste (surprise voulue par Kiki). Un rang
@@ -3515,7 +3600,7 @@ function etatVoyage() {
   vu = Math.min(isNaN(vu) ? 0 : vu, fin);
   const p0 = posDeC(vu);
   const lieux = LIEUX.filter((l, k) => k && l.dist > p0 && l.dist <= V.pos).map(l => l.nom.replace(" (retour)", ""));
-  const balls = TEST ? [] : CAPTURES.filter(c => c.c != null && c.c > vu + 1e-6 && c.c <= fin + 1e-6 && !/#(chen|anniv\d{4})$/.test(c.id))
+  const balls = TEST ? [] : CAPTURES.filter(c => c.c != null && c.c > vu + 1e-6 && c.c <= fin + 1e-6 && !/#(chen|anniv\d{4}|evo\d)$/.test(c.id))
     .sort((a, b) => a.c - b.c);
   const attente = fin - vu >= SEUIL_VOYAGE || lieux.length > 0 || balls.length > 0;
   if (attente) balls.forEach(c => EN_ROUTE.add(c.id));
@@ -3747,6 +3832,7 @@ function dessinerRegles() {
       🏞️ elliptique → Psy, Spectre, Fée ; 👟 pas → tous les types.</li>
     <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min de sport dans la journée, ou n'importe quel exploit.</li>
     <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>
+    <li>${ico("effort", "p")} <b>Ton starter</b> : il gagne un niveau tous les ${(G.starter || {}).pts_niveau || 220} points d'effort et évolue en grandissant. Ses évolutions ne sortent jamais d'une ball : c'est ton sport qui les fait naître.</li>
     <li>${ico("shiny", "p brille")} <b>Shiny Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un shiny garanti.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
     <li>${ico("master", "p")} <b>Légendaires</b> : Artikodin, Électhor et Sulfura dans leurs sanctuaires sur la route (5 jours d'exploit, jamais bloquant), Mewtwo à la Ligue, Mew quand tu as les 146 autres. Et une toute petite chance de croiser un oiseau plus tôt, dans n'importe quelle ball.</li>
@@ -3817,7 +3903,7 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
     <div class="groupe">Les ouvertures<small>Les nouveautés : une scène à part pour les légendaires, la Shiny Ball, le raté de la chasse.</small></div>
-    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `<span class="mini-ball">${ballSVG("shiny")}</span> Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}</div>`;
+    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `<span class="mini-ball">${ballSVG("shiny")}</span> Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
   on(".t-labo", () => { const p = PROFESSEURS.chen; intro(captureEssai(auHasard(p.starters), {id: "test#chen", shiny: false, lieu: "Bourg Palette",
@@ -3829,6 +3915,7 @@ function dessinerTests() {
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
   on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
   on(".t-sball", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "shiny", shiny: true, fond: "prairie", raison: "👑 Aperçu : Shiny Ball"})));
+  on(".t-evo", () => { const l = (G.starter || {ligne: [4, 5, 6]}).ligne, k = formeStarter() ? Math.min(l.indexOf(formeStarter()) + 1, 2) : 1; sceneEvolution(captureEssai(l[k], {ball: "evo", shiny: false, raison: "Aperçu"})); });
   on(".t-rate", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "poke", shiny: false, rate: true, chasse: true, raison: "⚡ Aperçu : chasse aux shiny"})));
 }
 
@@ -3840,7 +3927,11 @@ const navP = () => P.querySelector(".nav-jeu");
 function dessinerOnglets() {
   const nb = aOuvrir().length + CAPTURES.filter(c => EN_ROUTE.has(c.id) && !estOuverte(c)).length;
   const nav = navP();
-  if (nav) { const b = nav.querySelector('[data-o="aventure"] .nb'); if (b) { b.textContent = nb || ""; b.hidden = !nb; } return; }
+  if (nav) { const b = nav.querySelector('[data-o="aventure"] .nb'); if (b) { b.textContent = nb || ""; b.hidden = !nb; }
+    // l'icône d'Aventure : ton starter, dans sa forme du moment (Pikachu tant que tu n'en as pas)
+    const n = formeStarter(), ic = nav.querySelector('[data-o="aventure"] img');
+    if (n && ic) { ic.src = `${D.images}/pokemon/versions/generation-iii/emerald/${n}.png`; ic.classList.add("sprite"); }
+    return; }
   const el = document.getElementById("onglets");
   el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["dex", "Pokédex"], ["dresseur", "Dresseur"]]
     .map(([k, t]) => `<button class="${ONGLET === k ? "on" : ""}" data-k="${k}">${t}</button>`).join("");
@@ -3875,7 +3966,7 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
   if (PW.__ongletJeu && PW.__ongletJeu !== "aventure") montrerOnglet(PW.__ongletJeu, false);
   else P.body.classList.remove("page-sante");
 }
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerMonDresseur(); dessinerOnglets();
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerMonDresseur(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure

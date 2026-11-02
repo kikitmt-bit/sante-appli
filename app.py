@@ -115,7 +115,7 @@ st.markdown(f"""<style>
   background:none;color:#9AA7C2;font:700 11.5px Outfit,sans-serif;cursor:pointer}}
 .nav-jeu button.on{{background:#1C2740;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}}
 .nav-jeu img{{width:27px;height:27px;object-fit:contain;image-rendering:pixelated;display:block}}
-.nav-jeu img.leveinard{{transform:scale(1.25)}}
+.nav-jeu img.leveinard,.nav-jeu img.sprite{{transform:scale(1.25)}}
 .nav-jeu .nb{{position:absolute;top:1px;right:calc(50% - 22px);min-width:15px;padding:0 3px;border-radius:8px;background:#E8382F;color:#fff;font-size:10px;line-height:15px}}
 .nav-jeu .nb[hidden]{{display:none}}
 body:not(.page-sante) [data-testid="stLayoutWrapper"]:has(> .st-key-page_sante),body.page-sante [data-testid="stLayoutWrapper"]:has(> .st-key-page_jeu){{height:0 !important;min-height:0;overflow:hidden;visibility:hidden;margin:0;flex:0 0 0 !important}}
