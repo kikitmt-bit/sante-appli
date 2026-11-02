@@ -761,7 +761,7 @@ const STYLE_VOILE = `
   background:radial-gradient(closest-side,rgba(255,250,220,.75),rgba(255,240,180,.25) 45%,transparent 70%);transition:opacity .4s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele .lueur-sol{opacity:.7;transform:translate(-50%,-50%) scale(1);transition:opacity 2.5s 1s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele.calme .lueur-sol{opacity:.25}
-#pkm-voile.dehors .poke{top:var(--py);width:var(--pw)}
+#pkm-voile.dehors .poke{left:var(--ox);top:var(--py);width:var(--pw)}
 #pkm-voile.dehors .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
 #pkm-voile.dehors.r-shiny .poke.couleur{filter:drop-shadow(0 0 18px rgba(255,215,90,.95))}
 #pkm-voile.habitat .haut{z-index:30}
@@ -876,7 +876,7 @@ const LEG_FOND = {144: "artikodin", 145: "electhor", 146: "sulfura", 150: "mewtw
 // sanctuaire ; sinon le lieu où l'on était sur la carte. c.fond force un décor (aperçus).
 function fondDe(c) {
   const cle = (c.id || "").split("#")[1] || "";
-  const k = c.fond || (cle === "chen" ? "labo" : /^badge\d$/.test(cle) ? "arene" + cle.slice(5) : LEG_FOND[c.num]
+  const k = c.fond || (cle === "chen" ? "labo" : /^badge\d$/.test(cle) ? "arene" + cle.slice(5) : (!c.chance && LEG_FOND[c.num])
     || LIEU_FOND[(c.lieu || "").replace(" (retour)", "")]);
   return FONDS[k] || null;
 }
@@ -1081,8 +1081,7 @@ function texture(type, haut) {
     if (haut && type === "super" && Math.abs(x) > .44 && Math.abs(x) < .7 && z > -.25) col = rouge;
     if (haut && type === "hyper" && Math.abs(x) > .26 && Math.abs(x) < .46 && z > -.55 && y > .12) col = jaune;
     if (haut && type === "shiny") {
-      // la Shiny Ball : or, étoiles à quatre branches, reflet plus clair sur le dessus
-      col = y > .55 ? hex(0xF6D04A) : base;
+      // la Shiny Ball : un seul or (Kiki, 02/11), étoiles à quatre branches
       for (const [sx, sy, sr] of [[0, .62, .3], [-.58, .42, .17], [.58, .42, .17], [-.3, .22, .1], [.3, .22, .1]])
         if (z > 0 && Math.sqrt(Math.abs(x - sx)) + Math.sqrt(Math.abs(y - sy)) < Math.sqrt(sr)) col = hex(0xFFFBE0);
     }
@@ -1194,6 +1193,12 @@ function Ball2D(el, type) {
 // ----- La séquence complète -----
 // Les nouveautés de l'ouverture (audit du 02/11)
 const STYLE_OUVERTURE = `
+#pkm-voile .souvenir{position:absolute;top:0;height:100%;opacity:0;transition:opacity 1.1s ease;pointer-events:none}
+#pkm-voile .souvenir img{display:block;height:100%;image-rendering:pixelated}
+#pkm-voile .souvenir:after{content:"";position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 45%,transparent 55%,rgba(255,255,255,.55) 100%)}
+#pkm-voile.en-pensee .souvenir{opacity:1}
+#pkm-voile.en-pensee canvas.vent{opacity:0;transition:opacity .6s}
+#pkm-voile.bascule :is(.poke,.ombre-sol,.lueur-sol){opacity:0!important;transition:opacity .4s!important}
 #pkm-voile .orage{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,rgba(40,0,70,.45),rgba(0,0,0,.96) 70%);opacity:0;transition:opacity .7s;pointer-events:none;z-index:4}
 #pkm-voile.presage .orage{opacity:1}
 #pkm-voile.presage .scene{opacity:.08;transition:opacity .6s}
@@ -1226,11 +1231,13 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 
   const v = P.createElement("div"); v.id = "pkm-voile";
   const F = fondDe(c);  // le décor du lieu de capture (labo, arène, sanctuaire du légendaire, lieu de la carte)
+  const FS = c.chance && F && FONDS[LEG_FOND[c.num]];  // le sanctuaire qu'on aperçoit en pensée (un légendaire trouvé par chance)
+  let Fa = F;  // le décor sur lequel le Pokémon est posé en ce moment
   v.innerHTML = `<div class="fond"></div>${F ? `<div class="decor-flou" style="background-image:url('${D.scenes}${F.image}')"></div>
-    <div class="decor"><img src="${D.scenes}${F.image}" alt=""></div><canvas class="vent"></canvas><div class="vignette"></div>
+    <div class="decor"><img src="${D.scenes}${F.image}" alt=""></div>${FS ? `<div class="souvenir"><img src="${D.scenes}${FS.image}" alt=""></div>` : ""}<canvas class="vent"></canvas><div class="vignette"></div>
     <div class="ombre-sol"></div><div class="lueur-sol"></div>` : ""}<div class="rayons"></div><canvas class="scene"></canvas><div class="ball2d" hidden></div>
     <img class="poke" alt=""><canvas class="fx"></canvas><div class="flash"></div>
-    <div class="orage"></div>${c.legendaire ? `<img class="ombre-leg" src="${IMG.hd(c.num, false)}" alt=""><div class="mot-leg"></div>` : ""}
+    <div class="orage"></div>${c.legendaire && !c.chance ? `<img class="ombre-leg" src="${IMG.hd(c.num, false)}" alt=""><div class="mot-leg"></div>` : ""}
     <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${titreBall(c)}</div>
       <button class="rond x">✕</button></div>
     <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
@@ -1256,8 +1263,8 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   PW.requestAnimationFrame(boucle);
   // le décor : toute la hauteur de l'écran, centré sur le rond de sol ; la ball et le Pokémon se posent sur ce rond
   let tailleVent = () => {};
-  const placer = () => { if (!F) return;
-    const H = PW.innerHeight, W = PW.innerWidth, f = H / F.hauteur, w = F.largeur * f, d = $(".decor");
+  const placer = () => { if (!Fa) return;
+    const F = Fa, H = PW.innerHeight, W = PW.innerWidth, f = H / F.hauteur, w = F.largeur * f, d = $(F === FS ? ".souvenir" : ".decor");
     // le décor glisse (sans laisser de vide sur les côtés) pour amener le rond de sol au plus près du milieu de l'écran
     const gauche = Math.min(0, Math.max(W - w, W / 2 - F.ovale[0] * f));
     d.style.width = w + "px"; d.style.left = gauche + "px";
@@ -1321,7 +1328,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     SONS.clic(); vibre([15, 40, 15]);
     { const [x, y] = centre(); fx.jet(x, y - 40, 3, {couleurs: ["#FFE27A", "#fff"], vitesse: 5, taille: 12, vie: .9, gravite: .05}); }
     await pause(650);
-    if (r.leg && !rejouer) await presage();
+    if (r.leg && !rejouer && !c.chance) await presage();
     // 5. Elle s'éveille : lueur (blanche, dorée pour un shiny, multicolore pour un légendaire, bleue pour un nouveau)
     SONS.montee(.9);
     await tween(900, (e, t) => { B.lueurBouton(e * 3, teinte); B.x = (Math.random() - .5) * .06 * e; B.rotZ = (Math.random() - .5) * .08 * e;
@@ -1333,7 +1340,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   // Un légendaire : l'écran s'assombrit, le sol tremble, sa silhouette apparaît et il pousse son cri
   async function presage() {
     v.classList.add("presage", "tremble");
-    $(".mot-leg").textContent = c.chance ? "Quelque chose d'énorme approche…" : "Le sol se met à trembler…";
+    $(".mot-leg").textContent = "Le sol se met à trembler…";
     bruit(0, 2.6, {vol: .35, f: 110, type: "lowpass"}); vibre([120, 80, 120, 80, 220]);
     await pause(1500);
     v.classList.remove("tremble"); crier(c.num); SONS.legendaire();
@@ -1403,7 +1410,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     await pause(vite ? 150 : 550);
     poke.classList.add("couleur"); vibre(r.nouveau || r.shiny ? [40, 60, 80] : 30);
     const pr = poke.getBoundingClientRect(), px = pr.left + pr.width / 2, py = pr.top + pr.height / 2;
-    if (r.leg) { if (rejouer) SONS.legendaire(); fx.jet(px, py, 90, {couleurs: couleursFx, vitesse: 12, taille: 10, vie: 2, gravite: .02, cercle: true}); }
+    if (r.leg) { if (rejouer || c.chance) SONS.legendaire(); if (c.chance && !rejouer) crier(c.num); fx.jet(px, py, 90, {couleurs: couleursFx, vitesse: 12, taille: 10, vie: 2, gravite: .02, cercle: true}); }
     if (r.shiny) { SONS.shiny(); fx.jet(px, py, 60, {couleurs: couleursFx, vitesse: 8, taille: 11, vie: 1.8, gravite: .01}); }
     else if (r.nouveau) SONS.nouveau(); else SONS.version();
     if (r.nouveau && !r.leg) fx.jet(px, py - 40, 110, {couleurs: ["#FF5D5D", "#FFCB05", "#4CD3A0", "#6B8CFF", "#B57BFF", "#fff"],
@@ -1411,7 +1418,40 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     brille = r.shiny || r.leg;
     setTimeout(() => poke.classList.add("danse"), 700);
     if (!rejouer && !c.apercu) memoriser(c.id);
+    if (c.chance && !rejouer && FS) await pensee();
     montrerCarte();
+  }
+
+  // Un légendaire trouvé par chance : capturé ici, mais la boîte de dialogue nous emmène un instant, en pensée, dans son
+  // sanctuaire (demande de Kiki, 02/11), puis un fondu nous ramène là où l'on est
+  async function pensee() {
+    const ici = (c.lieu || "").replace(" (retour)", "");
+    const la = {145: "à la Centrale", 144: "aux Îles Écume", 146: "sur la Route Victoire"}[c.num] || "très loin d'ici";
+    const lignes = [`Incroyable ! <b>${c.nom}</b> sauvage, ici même${ici ? ` : ${ici}` : ""} !`,
+      `D'habitude, il ne quitte jamais son sanctuaire, ${la}…`,
+      "Presque personne n'a la chance d'en voir un ailleurs.",
+      "Son sanctuaire t'attend toujours : réussis son défi, et tu y gagneras une Shiny Ball.",
+      `Quel coup de chance ! <b>${c.nom}</b> rejoint ton équipe.`];
+    await pause(900);
+    const Dl = dialogue(v, ".rond"); Dl.prevoir(lignes.map(l => [l]));
+    const bascule = async vers => {  // le Pokémon disparaît, le décor change en fondu, il réapparaît sur le rond de l'autre décor
+      v.classList.add("bascule");
+      await pause(450);
+      Fa = vers; placer();
+      v.classList.toggle("en-pensee", vers === FS);
+      await pause(900);
+      v.classList.remove("bascule");
+      await pause(300);
+    };
+    await Dl.dire(lignes[0]);
+    await bascule(FS);
+    await Dl.dire(lignes[1]);
+    await Dl.dire(lignes[2]);
+    await Dl.dire(lignes[3]);
+    await bascule(F);
+    await Dl.dire(lignes[4]);
+    Dl.cacher(); Dl.fin();
+    await pause(350);
   }
 
   function montrerCarte() {  // le résultat : une boîte de dialogue façon jeu en bas (le décor reste visible), Kiki 01/11
@@ -1422,7 +1462,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
-      <div class="phrase">${c.chance ? `Incroyable ! <b>${c.nom}</b> sauvage, ici !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
+      <div class="phrase">${r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
       <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes}/151 · Shiny ${shinys}/151</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
@@ -1449,20 +1489,17 @@ const STYLE_INTRO = `
 #pkm-intro .labo>img:first-child{width:100%;height:100%;display:block;image-rendering:pixelated}
 #pkm-intro .noir{position:absolute;inset:0;background:#000;transition:opacity 1.2s;pointer-events:none}
 #pkm-intro .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .45s;pointer-events:none}
-#pkm-intro .halo{position:absolute;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;opacity:0;transition:opacity .4s;
-  box-shadow:0 0 0 3px rgba(255,255,255,.9),0 0 18px 6px rgba(255,230,120,.85)}
-#pkm-intro.choix .halo{opacity:1;animation:pki-halo 1.2s ease-in-out infinite}
-#pkm-intro .halo.loin{opacity:0!important}
-@keyframes pki-halo{50%{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 28px 12px rgba(255,230,120,.95)}}
 #pkm-intro .zone{position:absolute;border-radius:50%;transform:translate(-50%,-50%);cursor:pointer}
 #pkm-intro .ballc{position:absolute;transform:translate(-50%,-100%);pointer-events:none;display:block;height:auto}
-#pkm-intro.choix .ballc{animation:pki-ball 1.6s ease-in-out infinite}
-#pkm-intro .ballc.loin{animation:none}
+#pkm-intro.choix .ballc{animation:pki-ball 1.4s ease-in-out infinite}
+#pkm-intro .ballc.loin{animation:none;filter:brightness(.8)}
 #pkm-intro .ballc.bouge{animation:pki-saute-ball .5s ease-out 2;filter:drop-shadow(0 0 6px rgba(255,240,170,.95)) drop-shadow(0 0 14px rgba(255,220,120,.7))}
-@keyframes pki-ball{50%{filter:drop-shadow(0 0 5px rgba(255,240,170,.9))}}
+@keyframes pki-ball{0%,100%{filter:drop-shadow(0 0 3px rgba(255,240,170,.65))}50%{filter:drop-shadow(0 0 7px rgba(255,240,170,1)) drop-shadow(0 0 16px rgba(255,220,120,.85))}}
 @keyframes pki-saute-ball{0%,100%{transform:translate(-50%,-100%)}40%{transform:translate(-50%,-150%)}}
 #pkm-intro .ombre-b{position:absolute;transform:translate(-50%,-50%);aspect-ratio:3.4;border-radius:50%;pointer-events:none;
   background:radial-gradient(closest-side,rgba(25,25,45,.42),rgba(25,25,45,.18) 60%,transparent)}
+#pkm-intro .ombre-b.bouge{animation:pki-ombre .5s ease-out 2}
+@keyframes pki-ombre{0%,100%{transform:translate(-50%,-50%) scale(1);opacity:1}40%{transform:translate(-50%,-50%) scale(.65);opacity:.5}}
 #pkm-intro .labo{transition:transform .75s cubic-bezier(.6,0,.9,.4)}
 @keyframes pki-tremble{0%,100%{transform:translate(-50%,-50%) rotate(0)}25%{transform:translate(-50%,-50%) rotate(-12deg)}
   75%{transform:translate(-50%,-50%) rotate(12deg)}}
@@ -1547,8 +1584,7 @@ function intro(c, p, rejouer = false) {
   const v = P.createElement("div"); v.id = "pkm-intro";
   const pc = (a, t) => a / t * 100 + "%", r0 = p.rayon;
   v.innerHTML = `<div class="labo"><img src="${D.scenes}${p.image}" alt="">
-      ${p.balls.map(([x, y], i) => `<div class="ombre-b" style="left:${pc(x, p.largeur)};top:${pc(y - 3, p.hauteur)};width:${pc(r0 * 2.2, p.largeur)}"></div>
-        <div class="halo" data-i="${i}" style="left:${pc(x, p.largeur)};top:${pc(y - r0, p.hauteur)};width:${pc(r0 * 2.3, p.largeur)};aspect-ratio:1"></div>
+      ${p.balls.map(([x, y], i) => `<div class="ombre-b" data-i="${i}" style="left:${pc(x, p.largeur)};top:${pc(y - 3, p.hauteur)};width:${pc(r0 * 2.2, p.largeur)}"></div>
         <img class="ballc" data-i="${i}" src="${D.scenes}${p.ball}" alt="" style="left:${pc(x, p.largeur)};top:${pc(y + 3, p.hauteur)};width:${pc(r0 * 2, p.largeur)}">
         <div class="zone" data-i="${i}" style="left:${pc(x, p.largeur)};top:${pc(y - r0, p.hauteur)};width:${pc(r0 * 3, p.largeur)};aspect-ratio:1"></div>`).join("")}
     </div><div class="noir"></div><div class="blanc"></div><button class="pkm-passer">✕</button>`;
@@ -1585,10 +1621,10 @@ function intro(c, p, rejouer = false) {
     v.classList.add("choix");
     const i = await new Promise(ok => v.querySelectorAll(".zone").forEach(z => z.onclick = () => ok(+z.dataset.i)));
     v.querySelectorAll(".zone").forEach(z => z.onclick = null);
-    v.querySelectorAll(".halo").forEach(h => h.classList.toggle("loin", +h.dataset.i !== i));
     SONS.clic(); vibre([15, 40, 15]);
     // la ball choisie saute (une vraie image transparente : rien autour d'elle), les autres s'éteignent
     v.querySelectorAll(".ballc").forEach(b => b.classList.toggle(+b.dataset.i === i ? "bouge" : "loin", true));
+    v.querySelector(`.ombre-b[data-i="${i}"]`).classList.add("bouge");
     choisie = i; setTimeout(() => { SONS.rebond(); vibre(15); }, 450);
     await dire(L[6]);
     fin(true);
@@ -3633,7 +3669,7 @@ function dessinerTests() {
   on(".t-centre", () => sceneCentre(true));
   on(".t-pantheon", () => scenePantheon());
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
-  on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, raison: "⚡ Aperçu : un oiseau par surprise"})));
+  on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
   on(".t-sball", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "shiny", shiny: true, fond: "prairie", raison: "👑 Aperçu : Shiny Ball"})));
   on(".t-rate", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "poke", shiny: false, rate: true, chasse: true, raison: "⚡ Aperçu : chasse aux shiny"})));
 }

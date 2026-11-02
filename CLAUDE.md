@@ -40,8 +40,11 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
 - **Shiny Ball** (nouvelle, or + étoiles) : 25 jours sur 30 (à la place de la Master Ball) : shiny garanti parmi les déjà
   attrapés, jamais un légendaire, s'ouvre même pendant un défi.
 - **Hyper Ball donne aussi la Super Ball** (`super_ok`) ; `pas_offerts` = 1 000 ; **Kanto = 7 000 points**, Route 1 à 100.
-- **Ouverture** : 4 secousses pas toujours rares (1 ball ordinaire sur 4, `hachage`) ; scène du légendaire (`presage` :
-  assombri, tremblement, silhouette, cri du dépôt PokeAPI/cries) ; raté de chasse (`enfuite`).
+- **Ouverture** : 4 secousses pas toujours rares (1 ball ordinaire sur 4, `hachage`) ; légendaire de sanctuaire / Ligue /
+  diplôme : `presage` (assombri, tremblement, silhouette, cri du dépôt PokeAPI/cries) ; raté de chasse (`enfuite`). **Légendaire
+  par chance** (retour de Kiki, 02/11) : aucun indice avant l'ouverture, ouvert dans le décor du lieu actuel, puis `pensee` : boîtes de
+  dialogue et fondu vers son sanctuaire (le Pokémon posé sur le rond de ce décor), fondu retour, résultat.
+- Labo : plus de rond autour des balls, leur lumière est un `drop-shadow` de l'image (elle suit le saut).
 - **Fin de région** : après la Ligue, plus de sac : tout sert à finir Kanto (manquants, puis chasse) ; mot de Chen ; région
   suivante = sac vide, barre à 0 (à faire avec Johto, comme le 25 % de rattrapage).
 - Une ball qui attend n'est pas une capture : elle garde le jour où elle a été gagnée (identifiant, graine), `c` = moment où
