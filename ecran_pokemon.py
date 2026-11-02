@@ -13,7 +13,7 @@ import streamlit as st
 
 import chiffres
 import pokemon
-from pokedex import COULEURS_TYPES, LEGENDAIRES, POIDS, POKEMON
+from pokedex import COULEURS_TYPES, FEMELLES, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
 UI = Path(__file__).with_name("pokemon_ui.html")
 
@@ -74,6 +74,8 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False):
         "voyage": etat["voyage"] | {"frise": etat["frise"], "cumul": etat["cumul"]},
         "pesees": etat["pesees"],
         "poids": POIDS,
+        "tailles": TAILLES,
+        "femelles": FEMELLES,
         "carte": f"https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/{etat['voyage']['carte']['image']}",
         "scenes": "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
         "legendaires": LEGENDAIRES,

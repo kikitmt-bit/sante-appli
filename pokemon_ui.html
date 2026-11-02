@@ -1505,7 +1505,6 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 
   // La grande illustration officielle (chargée pendant que la ball tombe) ; sinon l'image animée
   poke.onerror = () => { poke.onerror = null; poke.src = IMG.anim(c.num, c.shiny); };
-  infosPokemon(c.num);  // pour afficher son sexe dans le résultat
   rogne(IMG.grand(c.num, c.shiny)).then(([src, w, h]) => { spr = [w, h]; poke.src = src; placer(); });
 
   const centre = () => B.ecran();
@@ -1677,7 +1676,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
-      <div class="phrase">${(sx => r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c, INFOS_LUES.get(c.num))))}</div>
+      <div class="phrase">${(sx => r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
       <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes} · Shiny ${shinys}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
@@ -2918,22 +2917,20 @@ const STYLE_FICHE = `
 #pkm-voile .nom-ball,#pkm-voile .aide,#pkm-voile .aide small{font-family:'Jersey 15',Outfit,sans-serif !important;font-size-adjust:.53;font-weight:400 !important}
 `;
 
-// Ce que le Pokédex sait d'une espèce (taille, poids, chance d'être une femelle, catégorie, description) : lu sur PokeAPI à la demande, jamais copié ici
-const INFOS = new Map(), INFOS_LUES = new Map();
+// La catégorie et la description d'une espèce : lues sur PokeAPI à la demande, jamais copiées ici (sexe, taille et poids sont dans pokedex.py)
+const INFOS = new Map();
 function infosPokemon(n) {
-  if (!INFOS.has(n)) INFOS.set(n, (async () => { try {
-    const [e, q] = await Promise.all([`pokemon-species/${n}`, `pokemon/${n}`].map(u => fetch(`https://pokeapi.co/api/v2/${u}`).then(x => { if (!x.ok) throw 0; return x.json(); })));
+  if (!INFOS.has(n)) INFOS.set(n, fetch(`https://pokeapi.co/api/v2/pokemon-species/${n}`).then(x => { if (!x.ok) throw 0; return x.json(); }).then(e => {
     const fr = l => l.filter(x => x.language.name === "fr"), d = fr(e.flavor_text_entries).pop(), g = fr(e.genera)[0];
-    const res = {taux: e.gender_rate, genre: g ? g.genus : "", texte: d ? d.flavor_text.replace(/[\s\u00AD]+/g, " ") : "", h: q.height / 10, p: q.weight / 10};
-    INFOS_LUES.set(n, res); return res;
-  } catch (e) { INFOS.delete(n); return null; } })());
+    return {genre: g ? g.genus : "", texte: d ? d.flavor_text.replace(/[\s\u00AD]+/g, " ") : ""};
+  }).catch(() => { INFOS.delete(n); return null; }));
   return INFOS.get(n);
 }
 // Chaque Pokémon attrapé est un individu : son sexe, sa nature et sa taille sont tirés de l'identifiant de sa capture (toujours les mêmes pour lui)
 const NATURES = ["Hardi", "Solo", "Rigide", "Mauvais", "Brave", "Assuré", "Docile", "Malin", "Lâche", "Relax", "Modeste", "Doux", "Pudique", "Foufou", "Discret", "Calme", "Gentil", "Prudent", "Bizarre", "Malpoli", "Timide", "Pressé", "Jovial", "Naïf", "Sérieux"];
 const nombreFr = x => (x < 10 ? Math.round(x * 10) / 10 : Math.round(x)).toString().replace(".", ",");
 const hasard = (c, k) => hachage(`${k}|${c.id}|${k}`) / 4294967296;
-const sexeDe = (c, inf) => !inf || inf.taux < 0 ? "" : hasard(c, "sexe") * 8 < inf.taux ? "f" : "m";
+const sexeDe = c => { const t = D.femelles[c.num]; return t === undefined || t < 0 ? "" : hasard(c, "sexe") * 8 < t ? "f" : "m"; };
 const signeSexe = x => x ? `<span class="sexe ${x}">${x === "f" ? "♀" : "♂"}</span>` : "";
 function fiche(p) {
   installerStyle("pkm2-fiche-style", STYLE_FICHE);
@@ -2956,14 +2953,14 @@ function fiche(p) {
   const peindre = () => { if (!a) return;
     const c = vue ? shiny : normal, k = c.id.split("#")[1] || "", t = .85 + hasard(c, "taille") * .3;  // ±15 % autour de la taille du Pokédex
     const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
-    const note = !inf ? "" : t < .9 ? "Un tout petit spécimen !" : t > 1.1 ? "Un spécimen impressionnant !" : "";
-    f.querySelector(".sx").innerHTML = signeSexe(sexeDe(c, inf));
+    const note = t < .9 ? "Un tout petit spécimen !" : t > 1.1 ? "Un spécimen impressionnant !" : "";
+    f.querySelector(".sx").innerHTML = signeSexe(sexeDe(c));
     f.querySelector(".sous").textContent = inf ? inf.genre : "";
     f.querySelector(".corps").innerHTML = `<div class="ident">
       <div><small>Attrapé</small><b>${c.quand}</b></div><div><small>Avec</small><b>${origine[0]}${origine[1]}</b></div>
       ${c.lieu ? `<div><small>Lieu</small><b>${c.lieu}</b></div>` : ""}
       <div><small>Nature</small><b>${NATURES[Math.floor(hasard(c, "nature") * 25)]}</b></div>
-      ${inf ? `<div><small>Taille</small><b>${nombreFr(inf.h * t)} m</b></div><div><small>Poids</small><b>${nombreFr(inf.p * t * t)} kg</b></div>` : ""}
+      <div><small>Taille</small><b>${nombreFr(D.tailles[c.num] * t)} m</b></div><div><small>Poids</small><b>${nombreFr(D.poids[c.num] * t * t)} kg</b></div>
       ${note ? `<div class="note">${note}</div>` : ""}</div>`;
     f.querySelector(".desc").textContent = inf ? inf.texte : "";
     grande.src = IMG.grand(p.num, vue);
