@@ -16,7 +16,6 @@ import altair as alt
 import pandas as pd
 import requests
 import streamlit as st
-import streamlit.components.v1 as components
 from streamlit_js_eval import streamlit_js_eval
 
 import ecran_pokemon
@@ -348,7 +347,7 @@ def bouton_demander(periode, date, refaire):
 def bouton_copier(texte, libelle):
     """Bouton qui copie le dossier du coach (consigne + données) sans l'afficher, pour le coller dans Claude."""
     contenu_js = json.dumps(texte, ensure_ascii=False).replace("</", "<\\/")
-    components.html(f"""<style>body{{margin:0;background:transparent}}
+    st.iframe(f"""<style>body{{margin:0;background:transparent}}
 button{{width:100%;height:42px;border-radius:.5rem;border:1px solid rgba(238,242,250,.2);background:#0D1322;
 color:#EEF2FA;font:500 15px Outfit,sans-serif;cursor:pointer}}button:active{{border-color:#6B8CFF}}</style>
 <button id="b" title="Copier toutes les données de la période pour les coller dans Claude">{libelle}</button>

@@ -9,7 +9,6 @@ import hmac
 import json
 from pathlib import Path
 
-import streamlit.components.v1 as components
 import streamlit as st
 
 import chiffres
@@ -93,4 +92,4 @@ def afficher(lire, aujourd, joueur=None):
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"
-    components.html(UI.read_text(encoding="utf-8").replace("__DONNEES__", _js(donnees)), height=900)
+    st.iframe(UI.read_text(encoding="utf-8").replace("__DONNEES__", _js(donnees)), height=900)
