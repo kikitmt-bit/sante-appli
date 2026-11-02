@@ -82,8 +82,8 @@ h3{margin-top:1.4rem !important}
 .chart-titre{font-size:.84rem;font-weight:700;color:#C9D3EA;margin:4px 0 2px}
 .curieux{display:flex;align-items:center;gap:9px;background:#1C2740;border-radius:13px;padding:5px 11px;font-size:.82rem;line-height:1.3;color:#C9D3EA;margin:2px 0 6px}
 .curieux img{flex:0 0 auto;height:38px;max-width:64px;object-fit:contain;image-rendering:pixelated}.curieux b{color:#EEF2FA}
-.tile.large{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:10px}
-.pese{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:2px 4px;min-width:0}
+.tile.une-tuile{grid-column:1/-1}.une-tuile .cases{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}.une-tuile .cases>div:last-child:nth-child(odd){grid-column:1/-1}
+.pese{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2px 4px;margin-top:8px;padding-top:6px;border-top:2px dashed #D8D8B8}
 .pese span{display:inline-flex;align-items:center;color:#686850}.pese img{height:34px;max-width:52px;object-fit:contain;image-rendering:pixelated}
 .nuit{background:linear-gradient(135deg,#232A58,#1A2240);border-radius:15px;padding:10px 12px;margin:2px 0 8px}
 .nuit .horaires{display:flex;align-items:center;gap:7px;font-size:.86rem;font-weight:700;color:#EEF2FA}
@@ -190,6 +190,8 @@ st.markdown("""<style>
 [class*="st-key-rub_"]{background:rgba(12,18,44,.55) !important;border:3px solid #484838 !important;border-radius:14px 6px 14px 6px !important}
 .rubrique{color:#fff !important;font-size:1.32rem !important;text-shadow:2px 2px 0 #141C38}
 .chart-titre{color:#fff !important;font-size:.95rem !important;text-shadow:1px 1px 0 #141C38}
+.leg-sommeil{display:flex;justify-content:space-between;gap:8px;margin:0 2px 5px;color:#D8E0F0;font-size:.86rem;white-space:nowrap}
+.leg-sommeil span{display:inline-flex;align-items:center;gap:4px}.leg-sommeil i{width:10px;height:10px;border-radius:2px;flex:0 0 10px}
 div:has(> .vega-embed){padding:6px 4px 2px !important}
 .vega-embed{width:100% !important}
 .nuit{background:#232A58 !important;color:#fff}.nuit .horaires,.nuit .tot{color:#fff !important}.nuit .leg{color:#D8E0F0 !important;font-size:.82rem !important}.nuit .leg b{color:#fff !important;font-size:1rem !important}
@@ -451,8 +453,7 @@ def _style(ch, hauteur):
     """Le même habillage partout : pas de cadre, juste de quoi lire, dans les couleurs de l'appli."""
     return (ch.properties(height=hauteur, background="transparent", padding={"left": 8, "right": 6, "top": 6, "bottom": 2}).configure_view(stroke=None)
             .configure_axis(grid=False, domain=False, ticks=False, labelColor="#585840", labelFontSize=13, labelFont="Jersey 15", titleColor="#585840")
-            .configure_axisY(grid=True, gridColor="#D8D8C0", gridDash=[2, 4], labelPadding=4, minExtent=30)
-            .configure_legend(labelColor="#484838", labelFont="Jersey 15", labelFontSize=14, labelLimit=0, columnPadding=16))
+            .configure_axisY(grid=True, gridColor="#D8D8C0", gridDash=[2, 4], labelPadding=4, minExtent=30))
 
 
 def graphique(d, cle, titre, type_="barre", diviseur=1, objectif=None, couleur=BLEU, hauteur=170, reperes=5):
@@ -489,11 +490,12 @@ def graphique_sommeil(d):
         alt.X("x:N", sort=None, title=None, axis=alt.Axis(labelAngle=0, labelOverlap="greedy")),
         alt.Y("h:Q", title=None, stack=True, axis=alt.Axis(tickCount=4)),
         alt.Color("Phase:N", scale=alt.Scale(domain=list(COULEURS_PHASES), range=list(COULEURS_PHASES.values())),
-                  legend=alt.Legend(orient="bottom", title=None, columns=2)),
+                  legend=None),
         order=alt.Order("ordre:Q"), tooltip=["x:N", "Phase:N", alt.Tooltip("h:Q", format=".1f", title="heures")],
     ).transform_calculate(ordre=f"indexof({list(COULEURS_PHASES)}, datum.Phase)")
-    st.markdown('<div class="chart-titre">Sommeil par nuit (heures)</div>', unsafe_allow_html=True)
-    st.altair_chart(_style(ch, 190), width="stretch")
+    legende = "".join(f'<span><i style="background:{c}"></i>{n}</span>' for n, c in COULEURS_PHASES.items())
+    st.markdown(f'<div class="chart-titre">Sommeil par nuit (heures)</div><div class="leg-sommeil">{legende}</div>', unsafe_allow_html=True)
+    st.altair_chart(_style(ch, 160), width="stretch")
 
 
 # ---------- Coach ----------
@@ -850,23 +852,20 @@ with page_sante:
             der = pesees.index[-1]
             gras7 = pesees["gras"].dropna().tail(7).mean()
             en_pokemon = poids_en_pokemon(pesees["poids"].dropna().iloc[-1], der)
-            soit = f'<div class="pese">{en_pokemon}</div>' if en_pokemon else ""
-            html = [f'<div class="tile large"><div><div class="l">Poids</div><div class="v">{joli("poids", pesees["poids"].dropna().iloc[-1])}'
-                    f'</div><div class="s">pesée du {der:%d/%m}</div></div>{soit}</div>']
+            cases = [("Poids", joli("poids", pesees["poids"].dropna().iloc[-1]), f"pesée du {der:%d/%m}")]
             rep = bilan.repere_gras(PROFIL["age"], PROFIL["sexe"])
-            repere_gras = f" · repère {rep[0]} à {rep[1]} %" if rep else ""
+            repere_gras = f" · repère {rep[0]} à {rep[1]} %" if rep else ""
             if pesees["gras"].notna().any():
-                html.append(f'<div class="tile"><div class="l">Masse grasse</div><div class="v">'
-                            f'{joli("gras", pesees["gras"].dropna().iloc[-1])}</div><div class="s">moyenne des 7 dernières '
-                            f'pesées : {nombre(gras7, 1)} %{repere_gras}</div></div>')
+                cases.append(("Masse grasse", joli("gras", pesees["gras"].dropna().iloc[-1]), f"7 dernières pesées : {nombre(gras7, 1)} %{repere_gras}"))
             i = bilan.imc(pesees["poids"].dropna().iloc[-1], PROFIL["taille"])
             if i:
-                html.append(f'<div class="tile"><div class="l">IMC</div><div class="v">{nombre(i, 1)}</div><div class="s">repère 18,5 à 25, ne distingue pas le muscle du gras</div></div>')
+                cases.append(("IMC", nombre(i, 1), "repère 18,5 à 25, ne distingue pas le muscle du gras"))
             p_debut = pesees.loc[debut:, "poids"].dropna()
             if len(p_debut) >= 2:
-                html.append(f'<div class="tile"><div class="l">Évolution sur la période</div><div class="v">'
-                            f'{"+" if p_debut.iloc[-1] > p_debut.iloc[0] else ""}{nombre(p_debut.iloc[-1] - p_debut.iloc[0], 1)} kg</div><div class="s">{len(p_debut)} pesées</div></div>')
-            st.markdown(f'<div class="tiles">{"".join(html)}</div>', unsafe_allow_html=True)
+                cases.append(("Évolution sur la période", f'{"+" if p_debut.iloc[-1] > p_debut.iloc[0] else ""}{nombre(p_debut.iloc[-1] - p_debut.iloc[0], 1)} kg', f"{len(p_debut)} pesées"))
+            grille = "".join(f'<div><div class="l">{l}</div><div class="v">{v}</div><div class="s">{t}</div></div>' for l, v, t in cases)
+            soit = f'<div class="pese">{en_pokemon}</div>' if en_pokemon else ""
+            st.markdown(f'<div class="tiles"><div class="tile une-tuile"><div class="cases">{grille}</div>{soit}</div></div>', unsafe_allow_html=True)
             courbe = pesees.loc[(debut if len(jours) >= 30 else donnees["debut_tout"]):]
             if len(courbe) >= 2:
                 meme_annee = courbe.index[0].year == courbe.index[-1].year

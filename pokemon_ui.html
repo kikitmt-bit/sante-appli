@@ -463,7 +463,7 @@ details.regles{color:#484838 !important}
 .puce{background:#E8E8D0;color:#484838;border-radius:6px}.puce b{color:#C03028}
 .puce.bonus{background:#F8E8A0;box-shadow:none}
 .hud-barre{display:flex;align-items:center;gap:10px}
-.hud-barre .ball{flex:0 0 44px;height:44px}.hud-barre .ball svg{width:100%;height:100%}
+.hud-barre .ball{flex:0 0 44px;height:44px}.hud-barre .ball img{width:100%;height:100%;object-fit:contain;image-rendering:pixelated;display:block}
 .hud-barre .l1{display:flex;justify-content:space-between;align-items:baseline;font-size:19px}.hud-barre .l1 span{color:#686850;font-size:17px}
 .hud-barre .pv{display:flex;align-items:center;gap:4px;margin-top:3px;background:#484838;border-radius:7px;padding:2px 4px}
 .hud-barre .pv b{font-size:12px;color:#F8C838 !important}
@@ -625,6 +625,8 @@ const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", mas
 const OBJ = n => `${D.images}/items/${n}.png`;
 const ROGUE_UI = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/";
 const IC = {poke: OBJ("poke-ball"), super: OBJ("great-ball"), hyper: OBJ("ultra-ball"), master: OBJ("master-ball"),
+  // sball = la Poké Ball du jeu, recolorée couleur par couleur en or, avec une étoile (il n'existe pas de Shiny Ball dans les jeux)
+  sball: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABIAAAASCAYAAABWzo5XAAABf0lEQVR42qWUv0/CUBDHv22IHZGNOoCd6ChvASYTB2NiYqgk6kTYMC7GRf4DE9xYcDPqApgALqwkLrYsLx27FRyEjRWmOjSU/ngPNX6XNtd7n3d3vTvBcRywRAhhfqCUCix7jAfQH6SNF4SBgj8iQojDA/g1s8bQGnIAJoYhklqBpFa4ECmnI6nuon89DaQvhiGIV4F4dSNsJT8shl9KyumB93QOmDzL6xpls9lAXVaRLK0nLnA5KmBmjT2b1pCjEfEA4WKHJeKPWo4KTLsIAG9t69egcDSGuVg35MvnAdAeonihAgBO73c8x97tFzcdw1y4Z2G7xZYVJeDQPKNIn9uYdBRcvRI0Tz4Yh9ea2rbb2YQQp7Zvew6DbtdzOi6VuGmWU0PU3xVQSgWv2MXLIwweD1FODTHpuBGunixA724L+fx2dNYIIY7eykDKtNC5ScB/AbPopgGtnvDmLTK0/docyb08/6+ZhtuEPkgE5F8T/dqcCdLqCfy4Rv6z2L4BDqSxN1d9ZMQAAAAASUVORK5CYII=",
   honneur: OBJ("premier-ball"), shiny: ROGUE_UI + "ui/shiny.png", carte: ROGUE_UI + "items/map.png", rare: OBJ("star-piece"),
   velo: OBJ("bicycle"), bateau: OBJ("ss-ticket"), tele: OBJ("teachy-tv"), radar: OBJ("poke-radar"),
   carnet: OBJ("journal"), masse: OBJ("heavy-ball"),
@@ -640,7 +642,7 @@ img.ty{width:18px;height:18px;vertical-align:-4px;margin:0 4px 0 -6px;border-rad
 #pkm-fiche .f .trou img.ico{width:36px;height:36px}`;
 document.head.insertAdjacentHTML("beforeend", `<style>${STYLE_ICO}</style>`); installerStyle("pkm2-ico-style", STYLE_ICO);
 // (la classe « p » des cartes du Pokédex est prise : la petite taille s'appelle « pt »)
-const ZOOM = {poke: 1.4, super: 1.4, hyper: 1.4, master: 1.4, honneur: 1.4, rare: 1.45, effort: 1.23, ligue: 1.15,
+const ZOOM = {sball: .85, poke: 1.4, super: 1.4, hyper: 1.4, master: 1.4, honneur: 1.4, rare: 1.45, effort: 1.23, ligue: 1.15,
   bateau: 1.15, radar: 1.1, carnet: 1.1, masse: 1.3, velo: 1.1, tele: .88, shiny: .92};
 const ico = (cle, cls = "") => { const k = ZOOM[cle] || (/\/badges\//.test(cle) ? .85 : 1);
   return `<img class="ico ${cls.replace(/\bp\b/, "pt")}" src="${IC[cle] || cle}" alt=""${k !== 1 ? ` style="--k:${k}"` : ""}>`; };
@@ -2894,22 +2896,20 @@ function resteDefi() {
 // Tes prochains objectifs (02/11, idée de Kiki) : aucune règle en plus, juste les 3 buts les plus proches parmi ce qui existe déjà, pour
 // avoir toujours quelque chose à viser. Classés par points à faire (une espèce ou un jour ≈ 100 points : une barre). Rien sur ce qui viendra après.
 function prochainsObjectifs() {
-  const d = V.defi, st = G.starter, liste = [], route = (p, min = 0) => Math.max(Math.ceil(p), min);
+  const d = V.defi, liste = [], route = (p, min = 0) => Math.max(Math.ceil(p), min);
   if (d && d.arrive) liste.push({rang: -1, ic: LIEUX[d.lieu].arene.image ? ico(IMG.badge(LIEUX[d.lieu].arene.image)) : ico("ligue"), t: `Battre ${CHAMPIONS[d.numero].nom}`, v: resteDefi(), va: "speciales", prio: true});
   else if (d) { const a = LIEUX[d.lieu].arene;
     liste.push({rang: d.reste, ic: a.image ? ico(IMG.badge(a.image)) : ico("ligue"), t: a.type ? `Arène ${/^[AEIOUÉ]/.test(CHAMPIONS[d.numero].nom) ? "d'" : "de "}${CHAMPIONS[d.numero].nom}` : "La Ligue Pokémon", v: `encore ${fr(d.reste)} pts de route`, va: "voyage", prio: true}); }
   const suivant = LIEUX[V.ici + 1];
   if (suivant && !(d && d.arrive) && !(d && d.lieu === V.ici + 1)) liste.push({rang: suivant.dist - V.pos, ic: ico("carte"), t: suivant.nom.replace(" (retour)", ""), v: `encore ${fr(route(suivant.dist - V.pos))} pts de route`, va: "voyage"});
-  const n = formeStarter();
-  if (st && n && st.evolue_a && st.ligne[st.ligne.indexOf(n) + 1] && !aOuvrir().some(estEvo)) liste.push({rang: st.reste, ic: `<img class="ico rogne" src="${IMG.mini(n, false)}" alt="">`, t: `Faire évoluer ${PAR_NUM[n].nom}`, v: `encore ${fr(st.reste)} pts`, va: "starter", prio: true});
   const nb = Object.keys(collection()).length, rg = rangDex(nb);
   if (rg.suivant) liste.push({rang: rg.reste * 100, ic: ico("radar"), t: `Rang ${rg.suivant}`, v: `encore ${rg.reste} espèce${rg.reste > 1 ? "s" : ""}`, va: "dex"});
   (V.sanctuaires || []).forEach(x => { if (x.fait) return;
     const r = x.cible - x.valeur, dist = LIEUX[x.lieu].dist - V.pos;
     liste.push(x.atteint ? {rang: r * 100, ic: ico("master"), t: "Sanctuaire", v: `encore ${r} jour${r > 1 ? "s" : ""} d'exploit`, va: "speciales"}
       : {rang: dist + 400, ic: ico("master"), t: "Un sanctuaire", v: `encore ${fr(route(dist))} pts de route`, va: "voyage"}); });
-  if (J.serie >= R.master_jours / 2) { const r = R.master_jours - J.serie; liste.push({rang: r * 100, ic: `<span class="mini-ball">${ballSVG("shiny")}</span>`, t: "Shiny Ball", v: `encore ${r} jour${r > 1 ? "s" : ""} d'objectif`, va: "speciales"}); }
-  // le champion et l'évolution sont toujours là s'ils existent ; le reste complète, du plus proche au plus lointain
+  if (J.serie >= R.master_jours / 2) { const r = R.master_jours - J.serie; liste.push({rang: r * 100, ic: ico("sball"), t: "Shiny Ball", v: `encore ${r} jour${r > 1 ? "s" : ""} d'objectif`, va: "speciales"}); }
+  // le champion est toujours là s'il existe (l'évolution a sa carte juste en dessous : pas de doublon) ; le reste complète, du plus proche au plus lointain
   liste.sort((a, b) => a.rang - b.rang);
   return [...liste.filter(x => x.prio), ...liste.filter(x => !x.prio)].slice(0, 3).sort((a, b) => a.rang - b.rang);
 }
@@ -2938,7 +2938,7 @@ function dessinerBarre() {
   const b = D.barre, pct = b.points / b.taille, reste = b.taille - b.points;
   const [ic, nom, ts] = b.origine;
   const pas = Math.ceil(reste) * 100, zone = Math.ceil(reste / (R.zone_points || 5)), sport = Math.ceil(reste), muscu = Math.ceil(reste / R.force);
-  document.getElementById("barre").innerHTML = `<div class="hud-barre"><span class="ball">${ballSVG("poke")}</span><div>
+  document.getElementById("barre").innerHTML = `<div class="hud-barre"><span class="ball"><img class="rogne" src="${IC.poke}" alt=""></span><div>
       <div class="l1"><span style="color:#383828;font-size:19px">Prochaine Poké Ball</span><span>${Math.floor(b.points)} / ${b.taille}</span></div>
       <div class="pv"><b>EXP</b><div><i style="width:0"></i></div></div></div></div>
     <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min de sport</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
@@ -2946,6 +2946,7 @@ function dessinerBarre() {
         + (b.bonus || []).map(([i, n, p]) => `<span class="puce bonus">${i} ${n} <b>+${p}</b></span>`).join("")
       : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
     ${ts.length ? `<div class="petit gris" style="margin-top:6px">Aujourd'hui : ${ic} ${nom} → ${typesHTML(ts)}</div>` : ""}`;
+  rognerImages(document.getElementById("barre"));
   requestAnimationFrame(() => setTimeout(() => document.querySelector("#barre .pv i").style.width = pct * 100 + "%", 60));
 }
 
@@ -3016,7 +3017,7 @@ function dessinerSpeciales() {
       (J.serie_ok ? "Aujourd'hui compte déjà ✅" : `Pour qu'aujourd'hui compte : <b>${mPas}</b> ou <b>${mZone}</b>.`);
   const fen = J.fenetre.concat(Array(Math.max(R.master_fenetre - J.fenetre.length, 0)).fill(undefined));
   const carteShiny = `    <div class="speciale ${mas ? "ok" : ""}">${mas ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete"><span class="mini-ball">${ballSVG("shiny")}</span>Shiny Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un shiny garanti</div>
+      <div class="tete">${ico("sball")}Shiny Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un shiny garanti</div>
       <div class="ligne"><span>${ico("shiny", "p brille")} ${J.serie} / ${R.master_jours} jours</span><span>sur ${R.master_fenetre}</span></div>${j(J.serie, R.master_jours)}
       <div class="points-serie">${fen.map(e => `<i class="${e === 1 ? "on" : e === 0 ? "rate" : e === null ? "auj" : ""}"></i>`).join("")}</div>
       <div class="reste">${resteMaster}</div></div>`;
@@ -3028,7 +3029,7 @@ function dessinerSpeciales() {
   // Les petites tuiles (retour de Kiki, 02/11 : seules la mission, la Super et l'Hyper Ball comptent chaque jour) : on touche pour le détail
   const pct = (v, c) => Math.min(c ? v / c * 100 : 0, 100);
   const petits = [
-    {cle: "shiny", ic: `<span class="mini-ball">${ballSVG("shiny")}</span>`, nom: "Shiny", val: `${J.serie}/${R.master_jours}`, p: pct(J.serie, R.master_jours), ok: mas, detail: carteShiny},
+    {cle: "shiny", ic: ico("sball"), nom: "Shiny", val: `${J.serie}/${R.master_jours}`, p: pct(J.serie, R.master_jours), ok: mas, detail: carteShiny},
     {cle: "nuit", ic: ico("nuit"), nom: "Nuit", val: J.sommeil ? h(J.sommeil).replace(" h ", "h") : "—", p: pct(J.sommeil, R.nuit), ok: nuit, detail: carteNuit},
     D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb}/${D.pesees.cible}`, p: pct(D.pesees.nb, D.pesees.cible), ok: D.pesees.nb >= D.pesees.cible, detail: cartePesee()} : null,
     ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur}/${x.cible}`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
@@ -4050,7 +4051,7 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
     <div class="groupe">Les ouvertures<small>Les nouveautés : une scène à part pour les légendaires, la Shiny Ball, le raté de la chasse.</small></div>
-    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `<span class="mini-ball">${ballSVG("shiny")}</span> Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
+    <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
   on(".t-labo", () => { const p = PROFESSEURS.chen; intro(captureEssai(auHasard(p.starters), {id: "test#chen", shiny: false, lieu: "Bourg Palette",
