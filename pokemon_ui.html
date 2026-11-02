@@ -512,6 +512,28 @@ details.regles{color:#484838 !important}
 .p .nm{font-size:13.5px;text-shadow:1px 1px 0 rgba(0,0,0,.6)}.p .no{opacity:1;text-shadow:1px 1px 0 rgba(0,0,0,.6)}
 .p.brillant,.p.leg{box-shadow:inset 0 0 0 2px #FFE27A,2px 2px 0 rgba(10,15,35,.4)}.p.leg{box-shadow:inset 0 0 0 2px #D9B3FF,2px 2px 0 rgba(10,15,35,.4)}
 .carte.amis .titre{color:#383828}
+/* Jouer à plusieurs (02/11) : les autres dresseurs sur la carte, et la liste des joueurs dans l'onglet Dresseur */
+.carte-wrap .ami-carte{position:absolute;transform:translate(-50%,-100%);pointer-events:none;display:flex;flex-direction:column;align-items:center;width:calc(20% / var(--z));z-index:1}
+.carte-wrap .ami-carte .sacha{width:23%!important}
+.carte-wrap .ami-carte .nom-ami{font:400 11px/1 'Jersey 15',monospace;color:#fff;white-space:nowrap;margin-bottom:1px;padding:0 3px;border-radius:3px;background:rgba(20,28,56,.72)}
+.carte-wrap .ami-carte.etiquette{width:auto;z-index:3}
+.carte-wrap .ami-carte .nom-ami em{font-style:normal;color:#FFCB05}
+.joueur{display:flex;align-items:center;gap:9px;padding:7px 2px;border-top:2px dashed #D8D4B8;cursor:pointer}
+.joueur:first-of-type{border-top:0}
+.joueur .rg{flex:0 0 18px;font-size:20px;color:#686850;text-align:center}
+.joueur .ph{flex:0 0 34px;width:34px;height:46px;border-radius:5px;border:2px solid #484838;position:relative;background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/10px 10px}
+.joueur .ph canvas{position:absolute;left:50%;bottom:1px;width:31px;height:42px;transform:translateX(-50%);image-rendering:pixelated}
+.joueur .tx{flex:1;min-width:0;color:#383828;line-height:1.15}
+.joueur .tx b{font-size:19px;font-weight:400}.joueur .tx b i{font-style:normal;color:#C03028;font-size:15px;margin-left:5px}
+.joueur .tx small{display:block;font-size:15px;color:#686850}
+.joueur .st{flex:0 0 40px;width:40px;height:40px;image-rendering:pixelated;object-fit:contain}
+.joueur.moi{background:rgba(64,168,248,.12);border-radius:8px}
+.detail-ami{padding:4px 2px 10px;color:#383828;font-size:15px}
+.detail-ami .cmp{display:flex;gap:6px;margin:4px 0 6px}.detail-ami .cmp span{flex:1;text-align:center;background:#EEEAD2;border-radius:8px;padding:3px 2px;line-height:1.1}
+.detail-ami .cmp b{display:block;font-size:20px;font-weight:400;color:#C03028}
+.detail-ami .lot{display:flex;flex-wrap:wrap;gap:2px}.detail-ami .lot img{width:40px;height:40px;image-rendering:pixelated}
+.detail-ami .lot img.sh{filter:drop-shadow(0 0 2px #F8C838)}
+.amis-note{margin-top:8px;font-size:14px;color:#686850;line-height:1.15}
 #mon-dresseur{border-radius:12px 5px 12px 5px;border:3px solid #484838;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .onglets{background:#141C38;border-radius:10px}.onglets button{color:#C9D3EA}.onglets button.on{background:#F8F8E8;color:#383828}
 </style>
@@ -545,8 +567,7 @@ details.regles{color:#484838 !important}
     <h2>Mon dresseur</h2>
     <div id="mon-dresseur"></div>
     <label class="reglage-recap"><input type="checkbox" id="recap-matin"><span><b>Récap du matin</b><small>L'Infirmière Joëlle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></span></label>
-    <div class="carte amis"><div class="titre" style="font-size:16px">Tes amis</div>
-      <div class="petit gris" style="margin-top:4px">Bientôt ici : où ils en sont sur la carte, leurs Pokémon, leurs badges, et le classement.</div></div>
+    <div class="carte amis" id="amis"></div>
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
     <details class="regles tests"><summary>🧪 Tester Kanto (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
   </section>
@@ -3525,9 +3546,10 @@ function feuilleColoree(feuille, d = DRESSEUR) {
   }));
   return IMAGES_DRESSEUR.get(cle);
 }
-function colorerDresseur(racine) {  // remplace les images de Sacha d'un bloc par celles du dresseur
-  racine.querySelectorAll(".sacha[data-feuille]").forEach(e =>
-    feuilleColoree(e.dataset.feuille).then(src => { e.style.backgroundImage = `url('${src}')`; }));
+function colorerDresseur(racine) {  // remplace les images de Sacha d'un bloc par celles du dresseur (data-d : un autre joueur)
+  racine.querySelectorAll(".sacha[data-feuille]").forEach(e => {
+    let d = DRESSEUR; try { if (e.dataset.d) d = JSON.parse(e.dataset.d); } catch (err) {}
+    feuilleColoree(e.dataset.feuille, d).then(src => { e.style.backgroundImage = `url('${src}')`; }); });
 }
 // La carte dresseur (comme dans Rouge Feu) : on y règle son nom et ses couleurs
 const STYLE_DRESSEUR = `
@@ -3657,7 +3679,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
     const fermer = enregistrer => { ap.stop();
       if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
       if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); d.partie = R.partie; lireProfil(); DRESSEUR = d;
-        try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur();
+        try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur(); dessinerAmis();
         // l'âge et la taille servent au bilan, calculé par l'appli : elle doit les relire (sauf au tout début : l'aventure continue)
         if (!accueil && JSON.stringify([d.naissance, d.taille, d.sexe]) !== avant && PW !== window) { f.remove(); ok(enregistrer); return PW.location.reload(); } }
       f.remove(); ok(enregistrer); };
@@ -3734,6 +3756,69 @@ function heros(P = POSE) {  // le dresseur à la pose P (poseA) ; .suit = ce qui
   return `${ombre}<div class="heros suit" style="${pos};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
 }
 const NAVIRE = SACHA.replace("/people/", "/misc/") + "ss_anne.png";
+
+// ---------- Jouer à plusieurs (02/11) : les autres joueurs (D.joueurs, calculés par le serveur : seulement le jeu) ----------
+const AUTRES = () => (D.joueurs || []).filter(j => !j.moi && j.carte === V.carte.image && !TEST);
+// Les autres dresseurs sur la carte, avec leur pseudo. Au même endroit (tous à Bourg Palette au début) : côte à côte, jamais
+// les uns sur les autres ; ton dresseur reste au milieu, les autres se rangent à droite puis à gauche.
+function amisSurCarte(depuis = V.pos) {
+  const autres = AUTRES(); if (!autres.length) return "";
+  const moi = poseA(depuis), ECART = 12, groupes = [{x: moi.x, y: moi.y, gens: [{moi: true, nom: nomDresseur()}]}];
+  autres.forEach(j => {  // regroupés quand ils sont au même endroit (à 8 points près sur la carte)
+    const P = poseA(j.pos), g = groupes.find(g => Math.hypot(g.x - P.x, g.y - P.y) < 8);
+    if (g) g.gens.push(j); else groupes.push({x: P.x, y: P.y, gens: [j]});
+  });
+  return groupes.map(g => {
+    // le premier au milieu (toi, s'il s'agit de ton groupe), puis à droite, à gauche, encore à droite…
+    const places = g.gens.map((j, i) => ({j, dx: i ? (i % 2 ? 1 : -1) * Math.ceil(i / 2) * ECART : 0})).sort((a, b) => a.dx - b.dx);
+    const corps = places.filter(p => !p.j.moi).map(({j, dx}) => {
+      const d = JSON.stringify(j.couleurs).replace(/'/g, "");
+      return `<div class="ami-carte" style="left:${(g.x + dx) / LARG * 100}%;top:${g.y / HC * 100}%">
+        ${sacha("red_normal", "bas", false).replace('<div class="sacha', `<div data-d='${d}' class="sacha`)}</div>`; }).join("");
+    if (g.gens.length === 1 && g.gens[0].moi) return "";
+    // une seule étiquette par groupe, les pseudos dans l'ordre des dresseurs de gauche à droite (le tien en rouge)
+    const noms = places.map(({j}) => j.moi ? `<em>${j.nom}</em>` : j.nom).join(" · ");
+    return corps + `<div class="ami-carte etiquette ${g.gens.some(j => j.moi) ? "toi" : ""}" style="left:${g.x / LARG * 100}%;top:${(g.y - 21) / HC * 100}%">
+      <span class="nom-ami">${noms}</span></div>`;
+  }).join("");
+}
+// L'onglet Dresseur : tous les joueurs (toi avec tes chiffres en direct), du plus avancé au moins avancé ; toucher un ami =
+// son Pokédex comparé au tien et ses dernières captures
+let AMI_OUVERT = null;
+function dessinerAmis() {
+  const el = document.getElementById("amis"); if (!el) return;
+  const col = collection(), mien = Object.keys(col).map(Number).filter(n => col[n].some(c => !c.rate));
+  const moi = {id: "moi", moi: true, nom: nomDresseur(), couleurs: DRESSEUR, pos: V.pos, lieu: LIEUX[V.ici].nom,
+    badges: Object.keys(V.badges).map(Number), especes: mien, shiny: mien.filter(n => col[n].some(c => c.shiny && !c.rate)),
+    starter: G.starter ? {num: G.starter.ligne[G.starter.niveau >= 36 ? 2 : G.starter.niveau >= 16 ? 1 : 0]} : null};
+  const autres = (D.joueurs || []).filter(j => !j.moi);
+  const titre = `<div class="titre" style="font-size:16px">Les dresseurs</div>`;
+  if (!autres.length) { el.innerHTML = titre + `<div class="petit gris" style="margin-top:4px">Aucun autre dresseur pour l'instant.</div>`; return; }
+  const tous = [moi, ...autres].sort((a, b) => b.badges.filter(n => n <= 8).length - a.badges.filter(n => n <= 8).length
+    || b.especes.length - a.especes.length || b.shiny.length - a.shiny.length || b.pos - a.pos);
+  const lignes = tous.map((j, i) => {
+    const nb = j.badges.filter(n => n <= 8).length;
+    const ligne = `<div class="joueur ${j.moi ? "moi" : ""}" data-id="${j.id}"><span class="rg">${i + 1}</span>
+      <div class="ph"><canvas width="14" height="19"></canvas></div>
+      <div class="tx"><b>${j.nom}${j.moi ? "<i>toi</i>" : ""}</b><small>${j.lieu.replace(" (retour)", "")}</small>
+        <small>Pokédex ${j.especes.length} · Badges ${nb}${j.shiny.length ? ` · ✨ ${j.shiny.length}` : ""}</small></div>
+      ${j.starter ? `<img class="st" src="${IMG.mini(j.starter.num)}" alt="">` : ""}</div>`;
+    if (j.moi || AMI_OUVERT !== j.id) return ligne;
+    const a = new Set(mien), b = new Set(j.especes), lui = j.especes.filter(n => !a.has(n));
+    const nom = n => (PAR_NUM[n] || {}).nom || "#" + n;
+    return ligne + `<div class="detail-ami"><div class="cmp"><span><b>${mien.filter(n => b.has(n)).length}</b>en commun</span>
+      <span><b>${mien.filter(n => !b.has(n)).length}</b>que toi</span><span><b>${lui.length}</b>que ${j.nom}</span></div>
+      ${lui.length ? `<div>Ce que ${j.nom} a et pas toi :</div><div class="lot">${lui.map(n => `<img src="${IMG.mini(n, j.shiny.includes(n))}" title="${nom(n)}" alt="${nom(n)}">`).join("")}</div>` : ""}
+      ${j.dernieres && j.dernieres.length ? `<div style="margin-top:6px">Ses dernières captures :</div><div class="lot">${j.dernieres.map(c => `<img class="${c.shiny ? "sh" : ""}" src="${IMG.mini(c.num, c.shiny)}" title="${nom(c.num)}" alt="${nom(c.num)}">`).join("")}</div>` : ""}</div>`;
+  }).join("");
+  el.innerHTML = titre + lignes + `<div class="amis-note">Les autres voient ton pseudo, ton dresseur sur la carte, ton lieu, tes badges et ton Pokédex.
+    Jamais tes pas, ton sommeil, ton cœur ni ton poids.</div>`;
+  el.querySelectorAll(".joueur").forEach((r, i) => {
+    const j = tous.find(x => x.id === r.dataset.id);
+    apercuDresseur(r.querySelector("canvas"), {...DRESSEUR, ...j.couleurs}, false, CADRE_DRESSEUR);
+    if (!j.moi) r.onclick = () => { AMI_OUVERT = AMI_OUVERT === j.id ? null : j.id; dessinerAmis(); vibre(10); };
+  });
+}
 
 // L'intérieur de la grotte (dans la boule de cristal) : une bande de pixel art dessinée une fois, qui défile
 const GROTTE = (() => {
@@ -3934,6 +4019,7 @@ let CENTRER = () => {};
 function voyagerDepuis(el, v, centrer, immediat) {
   const vue = el.querySelector(".carte-vue"), g = el.querySelector("#chemin-anim"), ancre = el.querySelector(".heros-ancre");
   const cadre = el.querySelector(".carte-cadre"), c0 = v.vu, c1 = v.fin, p0 = v.p0;
+  el.querySelectorAll(".ami-carte.toi").forEach(x => x.remove());  // l'étiquette de ton groupe resterait sur place pendant que tu marches
   // durée : selon ce qui a été fait (entre 3 et 9 s), un peu plus quand il y a des balls à voir sortir
   const T = ZC > 1 ? 1.25 : 1, duree = Math.min(9000, 2800 + (c1 - c0) * 7 + v.balls.length * 250);
   const balls = v.balls.slice(), jours = new Set((V.frise || []).filter(f => f.c1 > c0 && f.c0 < c1).map(f => f.jour));
@@ -3987,7 +4073,7 @@ function dessinerVoyage() {
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
     ${blocArene()}<div class="carte-cadre" style="--ar:${V.carte.largeur}/${V.carte.hauteur}"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
-      <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto(depuis)}${chefCarte()}<div class="heros-ancre">${heros()}</div></div></div>
+      <div class="carte-wrap" style="width:${ZC * 100}%;--z:${ZC}">${svgKanto(depuis)}${chefCarte()}<div class="amis-ancre">${amisSurCarte(depuis)}</div><div class="heros-ancre">${heros()}</div></div></div>
       ${VY.attente ? "" : `<button class="carte-zoom discret" title="${ZC > 1 ? "Voir toute la carte" : "Revenir sur ton dresseur"}" aria-label="${ZC > 1 ? "Voir toute la carte" : "Revenir sur ton dresseur"}">
         <svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"><circle cx="8.5" cy="8.5" r="5.5"/><path d="M13 13l5 5M6 8.5h5${ZC > 1 ? "" : "M8.5 6v5"}"/></svg></button>`}
       ${VY.attente ? `<button class="carte-attente"><span class="play"></span><b>Voir ton voyage</b><small>${texteVoyage(VY)}</small></button>` : ""}
@@ -4240,7 +4326,7 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
   if (PW.__ongletJeu && PW.__ongletJeu !== "aventure") montrerOnglet(PW.__ongletJeu, false);
   else P.body.classList.remove("page-sante");
 }
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerOnglets();
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure

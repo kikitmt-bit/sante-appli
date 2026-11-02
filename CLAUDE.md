@@ -21,7 +21,17 @@ Kiki) : signature `ouvrir:<id>` qui ne sert qu'à noter ses balls. Pas de coach 
 ⚙️ : Kiki voit qui est relié ; un ami peut tout supprimer (`quoi=delier`). `montre.py` : `calculer_amis` (mission + captures
 figées de chacun ; dépôt public : ni identifiant ni erreur dans le journal), pas de `montre.json` pour eux. **Récolte d'un
 ami à l'ouverture de l'appli** (`demander_recolte(ouverture=1)`, une fois par session), au bouton 🔄, et une fois par jour
-sinon ; détails et quotas : CLAUDE.md du dépôt privé. **Pas encore** : voir les autres joueurs (classement, avatars), `Mon matériel`.
+sinon ; détails et quotas : CLAUDE.md du dépôt privé. **Jouer à plusieurs, 1re version (02/11, carte blanche de Kiki)** : `amis.py`. Chaque téléphone publie le pseudo et les 4 couleurs
+de sa carte du dresseur (et rien d'autre de `pkm_dresseur`) dans `data/dresseurs/<kiki|id>.json` (`publier_dresseur`, `ecrire_depot` : l'appli écrit
+avec son jeton GitHub, une fois par visite, seulement si ça a changé). `les_joueurs` calcule la partie de chaque joueur côté serveur (`amis.partie` =
+`pokemon.charger_jeu` dans son dossier, gardée 10 min ; un joueur en panne est absent) et n'envoie que le jeu (`amis.resume` : position, lieu, badges,
+espèces ouvertes, shiny, légendaires, starter, 3 dernières captures ; **jamais** pas, sommeil, cœur, poids) dans `D.joueurs` (soi = `moi`).
+Carte : `amisSurCarte` (les autres dresseurs à leurs couleurs, `data-d` lu par `colorerDresseur`) ; **au même endroit** (tout le monde part de Bourg
+Palette) : regroupés, côte à côte (toi au milieu, puis droite, gauche…), une seule étiquette par groupe avec les pseudos dans l'ordre (le tien en jaune).
+Onglet Dresseur : « Les dresseurs » (`dessinerAmis`, classement badges → espèces → shiny → avancée ; toi avec tes chiffres en direct ; toucher un ami =
+Pokédex comparé + ce qu'il a et pas toi + ses dernières captures ; phrase sur ce que les autres voient, aussi sur `accueil_ami`). ⚙️ (Kiki) :
+« 🔧 Suivi des amis » (`suivi_amis`, `amis.suivi` : dernière récolte, erreurs de Google par message, pas / sport / sommeil des 14 derniers jours).
+Pas encore : fil « X a capturé… », cadeau du lundi, objectifs adaptés à chacun, dresseurs en vol / surf sur la carte (toujours à pied), `Mon matériel`.
 **Calibrage du jeu (audit du 02/11, carte blanche de Kiki, partie 4)** : simulations sur 6 profils, chaque réglage testé
 (simulateur non gardé dans le dépôt ; à refaire : profils de joueurs + `pokemon.jouer`). Le jeu doit favoriser celui qui
 s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les passages plus anciens ci-dessous** :

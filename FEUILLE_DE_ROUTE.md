@@ -79,6 +79,7 @@ Chaque nouveauté se construit en arrivant dans la région. Entre deux : thème 
   rubrique reste à faire.
 - **Visible par les amis** : nombre de Pokémon et de shiny, Pokédex comparé, ville, badges, stats du dresseur,
   dernières captures, avatar sur la carte quand on est dans la même région, fil « Max a capturé Ronflex ✨ ».
+  **1re version le 02/11** (carte, classement, Pokédex comparé : voir CLAUDE.md) ; reste le fil et les stats du dresseur.
   **Jamais visible** : pas, sommeil, poids, cardio. Texte clair pour les amis + bouton « supprimer mes données ».
 - **Cadeau du lundi** : pas seulement au premier (toujours le même) : Poké Ball pour tous ceux qui ont tenu leur
   semaine + petit plus pour la plus belle prise de la semaine (la chance décide, pas les pas). Plus tard : défis de

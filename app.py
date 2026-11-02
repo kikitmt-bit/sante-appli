@@ -19,6 +19,7 @@ import requests
 import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
 
+import amis
 import bilan
 import ecran_pokemon
 import pokemon
@@ -278,6 +279,58 @@ def lire(paths, recents=()):
     seul chemin qui mène aux données : un ami ne peut pas lire celles d'un autre."""
     lu = lire_depot([PREFIXE + p for p in paths], {PREFIXE + p for p in recents})
     return {p: lu[PREFIXE + p] for p in paths}
+
+
+def ecrire_depot(path, objet, message):
+    """Écrit un petit fichier JSON dans la branche data (le jeton GitHub de l'appli a le droit d'écrire). -> réussi ?"""
+    s = st.secrets
+    url = f"https://api.github.com/repos/{s['GITHUB_REPO']}/contents/{path}"
+    entetes = {"Authorization": f"Bearer {s['GITHUB_TOKEN']}", "Accept": "application/vnd.github+json"}
+    branche = s.get("GITHUB_BRANCH", "data")
+    try:
+        r = requests.get(url, params={"ref": branche}, headers=entetes, timeout=20)
+        sha = r.json().get("sha") if r.status_code == 200 else None
+        corps = {"message": message, "branch": branche, "content": base64.b64encode(
+            json.dumps(objet, ensure_ascii=False).encode()).decode()} | ({"sha": sha} if sha else {})
+        ok = requests.put(url, json=corps, headers=entetes, timeout=30).status_code in (200, 201)
+    except requests.RequestException:
+        ok = False
+    if ok:
+        _cache()[path] = (time.time(), objet)
+    return ok
+
+
+def publier_dresseur(texte):
+    """Le pseudo et les couleurs du dresseur de ce téléphone, pour que les autres joueurs le voient (une fois par visite,
+    seulement s'ils ont changé ; jamais la date de naissance, la taille ni le sexe)."""
+    d = amis.dresseur_du_telephone(texte)
+    if not d or st.session_state.get("dresseur_publie") == d:
+        return
+    st.session_state["dresseur_publie"] = d
+    chemin = amis.DRESSEURS.format(AMI or amis.KIKI)
+    if lire_depot([chemin], {chemin})[chemin] != d:
+        ecrire_depot(chemin, d, "dresseur")
+
+
+def les_joueurs(aujourd):
+    """Tous les joueurs (soi compris), résumés pour le jeu ; gardés 10 min. Un joueur en panne est simplement absent."""
+    moi = AMI or amis.KIKI
+    tous = amis.joueurs(REGISTRE)
+    if len(tous) < 2:
+        return []
+    c, now = _cache(), time.time()
+    dresseurs = lire_depot([amis.DRESSEURS.format(i) for i in tous], {amis.DRESSEURS.format(i) for i in tous})
+    out = []
+    for ident, debut in tous.items():
+        cle = f"jeu-de:{ident}:{aujourd}"
+        if cle not in c or now - c[cle][0] > 600:
+            try:
+                c[cle] = (now, amis.partie(lire_depot, ident, debut, aujourd))
+            except Exception:  # noqa: BLE001 : un ami en panne ne gêne jamais les autres
+                c[cle] = (now, None)
+        if c[cle][1]:
+            out.append(amis.public(ident, dresseurs.get(amis.DRESSEURS.format(ident)), c[cle][1], ident == moi))
+    return out
 
 
 def lire_depot(paths, recents=()):
@@ -624,7 +677,8 @@ def accueil_ami():
     st.markdown("Ton sport fait avancer ton dresseur et te fait gagner des Poké Balls. Pour ça, l'appli lit les données de "
                 "ta montre dans **Google Santé**.")
     st.markdown("- **Lu :** activité, pas, cardio, séances, sommeil, poids, à partir des 14 jours avant ton inscription. Rien d'autre.\n"
-                "- **Tes chiffres ne sont visibles que par toi** dans l'appli, jamais par les autres joueurs.\n"
+                "- **Tes chiffres ne sont visibles que par toi** dans l'appli, jamais par les autres joueurs. Eux voient "
+                "seulement le jeu : ton pseudo, ton dresseur sur la carte, ton lieu, tes badges et ton Pokédex.\n"
                 "- **Bon à savoir :** ils sont rangés dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
                 "- **Date de naissance, taille et sexe** (facultatifs) : ils restent sur ton téléphone. Le jour de ton anniversaire, seule la trace de ton cadeau est enregistrée.\n"
                 "- **Tu peux tout arrêter** quand tu veux : ⚙️ → Supprimer mes données.")
@@ -725,8 +779,10 @@ with st.container(key="outils", horizontal=True):
     st.button("⚙️", key="cfg", help="Configuration", on_click=lambda: st.session_state.update(config=True))
 st.markdown(NAV, unsafe_allow_html=True)
 # L'âge et la taille restent sur le téléphone (carte du dresseur) : relus à l'ouverture, pour le calcul, jamais enregistrés ici
-PROFIL = bilan.lire_profil(streamlit_js_eval(js_expressions="localStorage.getItem('pkm_dresseur') || ''", key="profil_dresseur"),
-                           dt.datetime.now(TZ).date())
+CARTE_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_dresseur') || ''", key="profil_dresseur")
+PROFIL = bilan.lire_profil(CARTE_TEL, dt.datetime.now(TZ).date())
+if CARTE_TEL is not None:
+    publier_dresseur(CARTE_TEL)
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:
@@ -877,7 +933,37 @@ with page_sante:
                     graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150, reperes=2)
 
 with page_jeu:
-    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL), PROFIL["anniversaire"])
+    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL), PROFIL["anniversaire"],
+                           les_joueurs(aujourd))
+
+
+def suivi_amis(emails):
+    """Pour Kiki : chaque ami relié, ce que Google a vraiment donné (14 derniers jours) ; rien n'est enregistré."""
+    st.caption("Pour vérifier que tout marche et calibrer le jeu. Tes amis savent que tu as accès à leurs données "
+               "(écrit sur leur page d'accueil) ; eux ne voient jamais celles des autres.")
+    aujourd = dt.datetime.now(TZ).date()
+    for email in emails:
+        ident = id_ami(email)
+        d = (lire_depot([amis.DRESSEURS.format(ident)])[amis.DRESSEURS.format(ident)] or {}).get("nom") or "pseudo pas encore choisi"
+        with st.expander(f"{d} · {email}"):
+            try:
+                s = amis.suivi(lire_depot, ident, dt.date.fromisoformat(REGISTRE[ident]["debut"]), aujourd)
+            except Exception as e:  # noqa: BLE001
+                st.error(f"Lecture impossible : {str(e)[:150]}")
+                continue
+            if s["derniere"]:
+                quand = dt.datetime.fromisoformat(s["derniere"].replace("Z", "+00:00")).astimezone(TZ)
+                st.markdown(f"Dernière récolte : **{quand:%d/%m à %H:%M}**")
+            else:
+                st.markdown("Dernière récolte : **aucune**")
+            for msg, types in s["erreurs"].items():
+                aide = (" → ce compte Google n'est pas configuré dans l'appli **Google Santé** (ou ce n'est pas celui de sa montre)"
+                        if "not linked" in msg.lower() else "")
+                st.warning(f"Google refuse {len(types)} type(s) : « {msg} »{aide}")
+            jours = pd.DataFrame([{"Jour": f"{JOURS[j['jour'].weekday()]} {j['jour']:%d/%m}", "Pas": j["pas"],
+                                   "Min de sport": j["zone_sport"], "Sommeil": hm(j["sommeil"]) if j["sommeil"] else None,
+                                   "Types reçus": j["types"]} for j in s["jours"]])
+            st.dataframe(jours, hide_index=True, width="stretch")
 
 
 @st.dialog("⚙️ Configuration", width="large")
@@ -913,12 +999,14 @@ def configuration():
 
     st.divider()
     if not AMI:
-        amis = comptes() - {str(st.user.get("email", "")).lower()} if GOOGLE else set()
-        if amis:
+        copains = comptes() - {str(st.user.get("email", "")).lower()} if GOOGLE else set()
+        if copains:
             st.markdown("**👥 Comptes des amis**")
-            for email in sorted(amis):
+            for email in sorted(copains):
                 info = REGISTRE.get(id_ami(email))
                 st.caption(f"{'✅ relié le ' + info['debut'] if info else '⏳ montre pas encore reliée'} · {email}")
+            if any(id_ami(e) in REGISTRE for e in copains) and st.toggle("🔧 Suivi des amis (récolte, erreurs de Google)", key="suivi"):
+                suivi_amis(sorted(e for e in copains if id_ami(e) in REGISTRE))
     else:
         st.markdown("**⌚ Ma montre** : reliée depuis le " + JOUEUR["debut"].strftime("%d/%m/%Y"))
         with st.expander("Supprimer mes données"):
