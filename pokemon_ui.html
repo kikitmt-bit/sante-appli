@@ -566,6 +566,8 @@ const IMG = {
   mini: (n, s) => `${D.images}/pokemon/${s ? "shiny/" : ""}${n}.png`,                    // 96 px, pixel art
   anim: (n, s) => `${D.images}/pokemon/other/showdown/${s ? "shiny/" : ""}${n}.gif`,      // animée
   hd: (n, s) => `${D.images}/pokemon/other/official-artwork/${s ? "shiny/" : ""}${n}.png`, // grande illustration
+  // le sprite du jeu, en pixels (capture, fiche, évolution ; Kiki, 02/11) : tous existent en normal et en shiny
+  grand: (n, s) => `${D.images}/pokemon/${n <= 386 ? "versions/generation-iii/emerald/" : n <= 493 ? "versions/generation-iv/platinum/" : n <= 649 ? "versions/generation-v/black-white/" : ""}${s ? "shiny/" : ""}${n}.png`,
   badge: i => `${D.images}/badges/${i}.png`,
 };
 // Image animée absente (les tout derniers Pokémon) : la petite image à la place
@@ -886,7 +888,7 @@ const STYLE_VOILE = `
 #pkm-voile .ball2d{position:absolute;left:50%;top:34%;width:150px;height:150px;margin:-75px 0 0 -75px;transform-origin:50% 80%}
 #pkm-voile .ball2d svg{width:100%;height:100%}
 #pkm-voile .poke{position:absolute;left:50%;top:34%;width:min(250px,64vw);transform:translate(-50%,-50%) scale(.05);opacity:0;
-  filter:brightness(0) invert(1) drop-shadow(0 0 14px #fff);image-rendering:auto;pointer-events:none;
+  filter:brightness(0) invert(1) drop-shadow(0 0 14px #fff);image-rendering:pixelated;pointer-events:none;
   transition:transform .6s cubic-bezier(.2,1.5,.4,1),opacity .2s,filter .9s ease}
 #pkm-voile .poke.sort{opacity:1;transform:translate(-50%,-50%) scale(1)}
 #pkm-voile .poke.couleur{filter:drop-shadow(0 0 18px rgba(140,170,255,.55))}
@@ -964,7 +966,7 @@ const STYLE_VOILE = `
   background:radial-gradient(closest-side,rgba(255,250,220,.75),rgba(255,240,180,.25) 45%,transparent 70%);transition:opacity .4s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele .lueur-sol{opacity:.7;transform:translate(-50%,-50%) scale(1);transition:opacity 2.5s 1s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele.calme .lueur-sol{opacity:.25}
-#pkm-voile.dehors .poke{left:var(--ox);top:var(--py);width:var(--pw)}
+#pkm-voile.dehors .poke{left:var(--ox);top:var(--pky,var(--py));width:var(--pkw,var(--pw))}
 #pkm-voile.dehors .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
 #pkm-voile.dehors.r-shiny .poke.couleur{filter:drop-shadow(0 0 18px rgba(255,215,90,.95))}
 #pkm-voile.habitat .haut{z-index:30}
@@ -1416,7 +1418,7 @@ const STYLE_OUVERTURE = `
 #pkm-voile .orage{position:absolute;inset:0;background:radial-gradient(circle at 50% 42%,rgba(40,0,70,.45),rgba(0,0,0,.96) 70%);opacity:0;transition:opacity .7s;pointer-events:none;z-index:4}
 #pkm-voile.presage .orage{opacity:1}
 #pkm-voile.presage .scene{opacity:.08;transition:opacity .6s}
-#pkm-voile .ombre-leg{position:absolute;left:50%;top:40%;width:min(78vw,380px);transform:translate(-50%,-50%) scale(.82);filter:brightness(0) drop-shadow(0 0 22px #B57BFF);
+#pkm-voile .ombre-leg{position:absolute;left:50%;top:40%;width:min(78vw,380px);image-rendering:pixelated;transform:translate(-50%,-50%) scale(.82);filter:brightness(0) drop-shadow(0 0 22px #B57BFF);
   opacity:0;transition:opacity 1s,transform 1.8s ease-out;pointer-events:none;z-index:5}
 #pkm-voile.presage .ombre-leg{opacity:.92;transform:translate(-50%,-50%) scale(1)}
 #pkm-voile .mot-leg{position:absolute;left:16px;right:16px;top:17%;text-align:center;color:#fff;font:400 26px/1.2 "Pixelify Sans",monospace;text-shadow:2px 2px 0 #000;opacity:0;transition:opacity .5s;z-index:6;pointer-events:none}
@@ -1451,7 +1453,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     <div class="decor"><img src="${D.scenes}${F.image}" alt=""></div>${FS ? `<div class="souvenir"><img src="${D.scenes}${FS.image}" alt=""></div>` : ""}<canvas class="vent"></canvas><div class="vignette"></div>
     <div class="ombre-sol"></div><div class="lueur-sol"></div>` : ""}<div class="rayons"></div><canvas class="scene"></canvas><div class="ball2d" hidden></div>
     <img class="poke" alt=""><canvas class="fx"></canvas><div class="flash"></div>
-    <div class="orage"></div>${c.legendaire && !c.chance ? `<img class="ombre-leg" src="${IMG.hd(c.num, false)}" alt=""><div class="mot-leg"></div>` : ""}
+    <div class="orage"></div>${c.legendaire && !c.chance ? `<img class="ombre-leg" src="${IMG.grand(c.num, false)}" alt=""><div class="mot-leg"></div>` : ""}
     <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${titreBall(c)}</div>
       <button class="rond x">✕</button></div>
     <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
@@ -1476,7 +1478,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   };
   PW.requestAnimationFrame(boucle);
   // le décor : toute la hauteur de l'écran, centré sur le rond de sol ; la ball et le Pokémon se posent sur ce rond
-  let tailleVent = () => {};
+  let tailleVent = () => {}, spr = null;
   const placer = () => { if (!Fa) return;
     const F = Fa, H = PW.innerHeight, W = PW.innerWidth, f = H / F.hauteur, w = F.largeur * f, d = $(F === FS ? ".souvenir" : ".decor");
     // le décor glisse (sans laisser de vide sur les côtés) pour amener le rond de sol au plus près du milieu de l'écran
@@ -1487,6 +1489,8 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     // le Pokémon : sa taille suit le rond de sol (taille = réglage du fond), ses pieds posés au milieu du rond
     const pw = Math.min(F.rayon * f * 1.1 * (F.taille || 1), W * .62);
     v.style.setProperty("--pw", pw + "px"); v.style.setProperty("--py", oy - pw * .4 + "px");
+    // le sprite recadré : les plus petits (moins de 48 points) restent un peu plus petits que les autres, les pieds toujours au même endroit du rond
+    if (spr) { const k = pw / Math.max(spr[0], spr[1], 48); v.style.setProperty("--pkw", spr[0] * k + "px"); v.style.setProperty("--pky", oy + pw * .06 - spr[1] * k / 2 + "px"); }
     v.style.setProperty("--ow", Math.min(F.rayon * f * .62 * (F.taille || 1), W * .5) + "px");
     tailleVent();
   };
@@ -1506,7 +1510,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 
   // La grande illustration officielle (chargée pendant que la ball tombe) ; sinon l'image animée
   poke.onerror = () => { poke.onerror = null; poke.src = IMG.anim(c.num, c.shiny); };
-  poke.src = IMG.hd(c.num, c.shiny);
+  rogne(IMG.grand(c.num, c.shiny)).then(([src, w, h]) => { spr = [w, h]; poke.src = src; placer(); });
 
   const centre = () => B.ecran();
   (async () => {
@@ -1874,7 +1878,7 @@ function sceneEvolution(c, rejouer = false) {
   const coul = COUL[PAR_NUM[c.num].types[0]] || "#6B8CFF";
   const melange = (h, k) => { const n = parseInt(h.slice(1), 16), m = x => Math.round(x * k + 8 * (1 - k)); return `rgb(${m(n >> 16 & 255)},${m(n >> 8 & 255)},${m(n & 255)})`; };
   const bandes = [.16, .2, .25, .31, .38, .46, .55, .46, .36].map((k, i, l) => `${melange(coul, k)} ${i / l.length * 100}% ${(i + 1) / l.length * 100}%`).join(",");
-  const spr = n => `${D.images}/pokemon/versions/generation-iii/emerald/${n}.png`;
+  const spr = n => IMG.grand(n, false);
   const repli = n => `onerror="this.onerror=null;this.src='${IMG.hd(n, false)}'"`;
   const v = P.createElement("div"); v.id = "pkm-evo"; v.style.setProperty("--c", melange(coul, .9));
   v.innerHTML = `<div class="ciel" style="background:linear-gradient(180deg,${bandes})"></div><div class="lueur"></div><div class="sol"></div>
@@ -2885,7 +2889,7 @@ const STYLE_FICHE = `
 #pkm-fiche.vu .feuille{transform:none}
 #pkm-fiche .poignee{width:42px;height:5px;border-radius:3px;background:#2A3756;margin:4px auto 10px}
 #pkm-fiche .tete{display:flex;gap:12px;align-items:center;border-radius:18px;padding:10px 12px}
-#pkm-fiche .tete .grande{width:132px;height:132px;flex:0 0 132px;object-fit:contain;filter:drop-shadow(0 6px 12px rgba(0,0,0,.45));
+#pkm-fiche .tete .grande{width:128px;height:128px;flex:0 0 128px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 6px 12px rgba(0,0,0,.45));
   transition:opacity .25s}
 #pkm-fiche .tete .grande.non{filter:brightness(0);opacity:.35;image-rendering:pixelated}
 #pkm-fiche .no{font-size:12px;color:#C9D3EA}#pkm-fiche h3{margin:0;font-size:26px;font-weight:900}
@@ -2945,7 +2949,7 @@ function fiche(p) {
   const f = P.createElement("div"); f.id = "pkm-fiche";
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
     <div class="tete">
-      <img class="grande ${a ? "" : "non"}" src="${a ? IMG.hd(p.num, vue) : IMG.mini(p.num, false)}">
+      <img class="grande ${a ? "" : "non"}" src="${IMG.grand(p.num, a ? vue : false)}">
       <div><div class="no">N° ${N3(p.num)}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
         <div>${typesHTML(p.types, "pkm-type")}</div>
         <div class="sous">${a ? `Attrapé ${mes[0].quand}${mes[0].lieu ? ` · ${mes[0].lieu}` : ""}` : "Pas encore attrapé"}</div></div></div>
@@ -2959,7 +2963,7 @@ function fiche(p) {
     if (+e.dataset.s === +vue) e.classList.add("on");
     e.onclick = () => { f.querySelectorAll(".f").forEach(x => x.classList.remove("on")); e.classList.add("on");
       const sh = e.dataset.s === "1";
-      grande.style.opacity = 0; setTimeout(() => { grande.src = IMG.hd(p.num, sh); grande.style.opacity = 1; }, 200); };
+      grande.style.opacity = 0; setTimeout(() => { grande.src = IMG.grand(p.num, sh); grande.style.opacity = 1; }, 200); };
   });
   const fermer = () => { f.classList.remove("vu"); setTimeout(() => f.remove(), 350); };
   f.querySelector(".ombre").onclick = fermer; f.querySelector(".fermer").onclick = fermer;
