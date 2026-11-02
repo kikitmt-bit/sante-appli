@@ -55,8 +55,8 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
 **Interface (02/11, carte blanche de Kiki) : l'appli est le jeu, plus de séparation Santé / Pokémon.** Barre du haut `.nav-jeu`
 (HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (son starter, Pikachu avant ; carte, à ouvrir,
 4 dernières captures, barre, objectifs ; pastille = balls à ouvrir), **Pokédex** (icône dessinée), **Dresseur** (son visage, à ses
-couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; anneaux pas / zone /
-sommeil, rubriques colorées, coach, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
+couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; **écran de combat** `ecran_combat` : pas / zone / sommeil en barres de PV
+à la façon GBA ; analyse signée du **professeur de la région** `PROFESSEUR`, portrait pris dans son labo ; rubriques, coach, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
 Ronflex sommeil, Tauros activité, Rondoudou sommeil, Leveinard cœur, Grolem poids, Kadabra coach ; `fermerBulles` : les bulles de graphique se
 ferment en défilant, en touchant ailleurs et en changeant d'onglet), + 🔄 et ⚙️ en petit. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
 par `body.page-sante` (height 0 et pas display:none : largeur des graphiques, jeu qui tourne). Page de démarrage : Aventure.
@@ -70,7 +70,7 @@ shiny, légendaires, types (repliés), tri récents / n° ; pas de filtre par li
 pose toute la phrase avec ses lettres cachées puis les dévoile : plus de mot qui change de ligne en cours d'écriture.
 **Page Santé (02/11, carte blanche de Kiki : de vraies stats, agréables à regarder)** : rubriques en cartes colorées (`st-key-rub_*`) ; tuiles avec tendance en couleur (`SENS` : vert si c'est mieux) et
 mini-courbe des 3 dernières semaines (`mini_courbe`) ; `carte_nuit` (Pierre Lune → Pierre Soleil, phases en bande) ; `carte_pouls` (le cœur bat au vrai rythme au repos) ; `curiosite_denivele` (en Onix), `poids_en_pokemon` (poids officiels) ;
-statut façon combat dans le bilan (EN FORME, CORRECT, À MÉNAGER), observations en bulles ; graphiques `_style`. **Jamais le même Pokémon à côté** : anneaux Doduo, Ponyta, Ronflex ; rubriques Tauros, Rondoudou, Leveinard, Grolem ; coach Kadabra ;
+statut façon combat dans le bilan (EN FORME, CORRECT, À MÉNAGER), observations en bulles ; graphiques `_style`. **Jamais le même Pokémon à côté** : écran de combat Doduo, Ponyta, Ronflex ; rubriques (image fixe, sans cadre) Tauros, Rondoudou, Leveinard, Grolem ; coach Kadabra ;
 bilan Soporifik, Hypnomade, Mélodelfe, Rattata, Machoc, Psykokwak, Ramoloss, Mackogneur, Alakazam. Toutes les mesures restent affichées.
 **Bilan santé autonome (`bilan.py`, 02/11, pour tous les joueurs, sans IA ni compte Claude)** : règles calculées sur les vraies
 données : observations par thème (sommeil, coucher, récup, pas, sport, assis, poids, oxygène, habitudes personnelles sur 90 jours),

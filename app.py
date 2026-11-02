@@ -55,6 +55,7 @@ NOMS = {
 }
 
 st.markdown("""<style>
+@import url('https://fonts.googleapis.com/css2?family=Jersey+15&display=swap');
 .block-container,[data-testid="stMainBlockContainer"]{padding-top:.6rem !important;max-width:760px}
 header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"]{display:none !important}
 .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:4px 0 8px}
@@ -77,7 +78,8 @@ header[data-testid="stHeader"],[data-testid="stToolbar"],[data-testid="stDecorat
 h3{margin-top:1.4rem !important}
 [class*="st-key-rub_"]{background:#141C31;border-radius:20px;padding:10px 12px 12px;margin-top:8px;gap:.5rem;border-top:3px solid var(--r)}
 .st-key-rub_activite{--r:#6B8CFF}.st-key-rub_sommeil{--r:#B39DFF}.st-key-rub_coeur{--r:#FF7C93}.st-key-rub_poids{--r:#3DC8A6}
-.rubrique{display:flex;align-items:center;gap:10px;font-size:1.18rem;font-weight:800;color:#EEF2FA;margin-bottom:2px}
+.rubrique{display:flex;align-items:center;gap:8px;font-size:1.18rem;font-weight:800;color:#EEF2FA;min-height:52px;padding-bottom:12px}
+.rubrique img{width:60px;height:60px;margin:-6px -4px -6px -8px;image-rendering:pixelated;filter:drop-shadow(0 2px 2px rgba(0,0,0,.45))}
 .chart-titre{font-size:.84rem;font-weight:700;color:#C9D3EA;margin:4px 0 2px}
 .curieux{display:flex;align-items:center;gap:9px;background:#1C2740;border-radius:13px;padding:5px 11px;font-size:.82rem;line-height:1.3;color:#C9D3EA;margin:2px 0 6px}
 .curieux img{flex:0 0 auto;height:38px;max-width:64px;object-fit:contain;image-rendering:pixelated}.curieux b{color:#EEF2FA}
@@ -95,13 +97,11 @@ h3{margin-top:1.4rem !important}
 .pouls .v{font-size:1.32rem;font-weight:800;color:#EEF2FA;line-height:1.2}.pouls .s{font-size:.72rem;color:#9AA7C2;line-height:1.3}
 .st-key-periode button{padding:2px 8px !important;min-height:30px !important}.st-key-periode p{font-size:.82rem !important}
 .st-key-periode [data-testid="stButtonGroup"],.st-key-periode div[role="radiogroup"]{flex-wrap:nowrap}
-.rubrique i{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:13px;background:var(--c);box-shadow:0 3px 8px rgba(0,0,0,.35)}
-.rubrique img{max-width:40px;max-height:40px;image-rendering:pixelated}
 .statut{display:inline-block;font-size:.68rem;font-weight:800;letter-spacing:.5px;color:#fff;border-radius:5px;padding:1px 7px;margin-left:8px;vertical-align:2px;background:var(--c);box-shadow:0 2px 0 rgba(0,0,0,.35)}
 .st-key-bloc_coach summary p::before{content:"";display:inline-block;width:26px;height:26px;margin:-6px 6px -6px 0;vertical-align:-3px;
   background:url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/64.gif) center/contain no-repeat;image-rendering:pixelated}
 .bilan{background:#1C2740;border-radius:18px;padding:12px;margin:0 0 12px}
-.bilan .tete{font-size:1.08rem;font-weight:800;color:#EEF2FA}.bilan .phrase{font-size:.84rem;color:#9AA7C2;margin:1px 0 9px}
+.bilan .tete{font-size:1.08rem;font-weight:800;color:#EEF2FA;line-height:1.2}.bilan .phrase{font-size:.84rem;color:#9AA7C2;margin:2px 0 0}
 .bilan .obs{display:flex;gap:9px;align-items:center;margin-top:9px}
 .bilan .obs img{flex:0 0 52px;width:52px;height:52px;object-fit:contain;image-rendering:pixelated}
 .bilan .bulle{flex:1;min-width:0;position:relative;background:#141C31;border-radius:13px;padding:8px 11px;border:2px solid var(--c)}
@@ -110,13 +110,23 @@ h3{margin-top:1.4rem !important}
 .bilan .obs p{margin:2px 0 0 !important;font-size:.84rem;line-height:1.35;color:#C9D3EA}
 .bilan .obs .cs{margin-top:4px !important;color:#FFE27A}
 .bilan .note{font-size:.7rem;color:#7C8AA8;margin-top:8px}
-.anneaux{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 14px;background:#1C2740;border-radius:18px;padding:14px 8px}
-.anneau-s{text-align:center;min-width:0}
-.anneau-s .rond{--t:clamp(74px,24vw,104px);width:var(--t);height:var(--t);margin:0 auto 6px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  background:conic-gradient(var(--c) calc(var(--p) * 1%),#0D1322 0)}
-.anneau-s .rond div{width:calc(var(--t) - 16px);height:calc(var(--t) - 16px);border-radius:50%;background:#1C2740;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.1}
-.anneau-s .rond img{height:calc(var(--t) * .4);max-width:calc(var(--t) * .62);object-fit:contain;image-rendering:pixelated}.anneau-s .rond b{font-size:.92rem;font-weight:800;color:#EEF2FA;white-space:nowrap}
-.anneau-s .n{font-size:.82rem;font-weight:700;color:#EEF2FA}.anneau-s .o{font-size:.7rem;color:#9AA7C2}
+.combat{background:linear-gradient(180deg,#5FAE6E 0,#7CC47F 42%,#E6D9A5 42%,#D9C98F 100%);border-radius:18px;padding:10px;margin:6px 0 14px;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18);font-family:'Jersey 15',Outfit,monospace}
+.combat .rang{display:flex;align-items:center;gap:6px;margin-top:6px}.combat .rang:first-child{margin-top:0}
+.combat .poke{position:relative;flex:0 0 66px;height:58px;display:flex;align-items:flex-end;justify-content:center}
+.combat .poke:before{content:"";position:absolute;left:3px;right:3px;bottom:1px;height:15px;border-radius:50%;background:rgba(60,70,30,.42)}
+.combat .poke img{position:relative;max-width:64px;max-height:56px;object-fit:contain;image-rendering:pixelated;margin-bottom:4px}
+.combat .hud{flex:1;min-width:0;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px 10px 4px;box-shadow:3px 3px 0 rgba(40,40,30,.4);padding:3px 9px 4px;color:#383828}
+.combat .l1{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:1.28rem;line-height:1}
+.combat .l1 span{font-size:1.05rem;color:#585840;white-space:nowrap}
+.combat .pv{display:flex;align-items:center;gap:4px;margin-top:3px;background:#484838;border-radius:7px;padding:2px 4px}
+.combat .pv b{font-size:.82rem;font-weight:400;color:#F8C838;line-height:1}
+.combat .pv div{flex:1;height:8px;border-radius:4px;background:#F0F0E0;overflow:hidden}
+.combat .pv i{display:block;height:100%;border-radius:4px;background:var(--pv)}
+.combat .val{text-align:right;font-size:1.28rem;line-height:1;margin-top:2px}
+.combat .val small{font-size:.95rem;color:#686850}
+.combat .gagne{color:#2F8F4E}
+.prof-tete{display:flex;align-items:center;gap:11px}
+.prof-portrait{flex:0 0 60px;width:60px;height:60px;border-radius:50%;border:3px solid #FFE27A;background-repeat:no-repeat;box-shadow:0 2px 8px rgba(0,0,0,.45)}
 [data-testid="stExpander"] h4{font-size:1.05rem !important;padding:.6rem 0 .2rem !important}
 [data-testid="stHorizontalBlock"]{flex-wrap:nowrap !important;gap:.5rem}
 [data-testid="stColumn"]{min-width:0 !important}
@@ -132,6 +142,9 @@ POKEDEX = base64.b64encode(b"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="
 <circle cx="8" cy="6.5" r="2.8" fill="#6FD0FF" stroke="#fff" stroke-width="1.2"/><circle cx="13" cy="5" r="1" fill="#FFD84A"/><circle cx="16.3" cy="5" r="1" fill="#5BE07A"/>
 <rect x="6" y="11" width="12" height="8.5" rx="1" fill="#BDEB9B" stroke="#7A1712"/></svg>""").decode()
 LEVEINARD = f"{pokemon.IMAGES}/pokemon/versions/generation-iii/emerald/113.png"  # Leveinard, l'infirmier des Pokémon : la santé
+# Le professeur de la région : il signe l'analyse. Son portrait vient de son labo (carré de son visage, en pixels de l'image de 940 px de large) ; une ligne par région ouverte.
+PROFESSEUR = {"nom": "Professeur Chen", "image": "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/labo-chen-vide.webp", "largeur": 940, "visage": (640, 530, 175)}
+FIXE = pokemon.IMAGES + "/pokemon/versions/generation-iii/emerald/{}.png"  # les Pokémon des titres de rubrique : image fixe, sans cadre
 ANIME = pokemon.IMAGES + "/pokemon/other/showdown/{}.gif"  # les Pokémon qui illustrent la page Santé (de Kanto : rien ne dévoile la suite)
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
@@ -223,24 +236,25 @@ def lire_depot(paths, recents=()):
     return {p: c[p][1] for p in paths}
 
 
-def rubrique(num, titre, couleur):
+def rubrique(num, titre, couleur=None):
     """Le titre d'une rubrique, illustré par un Pokémon (num)."""
-    st.markdown(f'<div class="rubrique" style="--c:{couleur}"><i><img src="{ANIME.format(num)}" alt=""></i>{titre}</div>',
-                unsafe_allow_html=True)
+    st.markdown(f'<div class="rubrique"><img src="{FIXE.format(num)}" alt="">{titre}</div>', unsafe_allow_html=True)
 
 
-def anneaux(df, un_jour):
-    """Les 3 anneaux du haut de la page, façon montre : pas, minutes en zone, sommeil par rapport à l'objectif (par jour)."""
+def ecran_combat(df, un_jour):
+    """Les 3 objectifs de la journée, à la façon d'un écran de combat Pokémon : ta barre de PV se remplit vers l'objectif. Vert à partir
+    de la moitié, jaune avant, rouge au début, comme dans les jeux. Doduo court, Ponyta est un cheval de feu, Ronflex dort."""
     html = []
-    # Doduo court sur ses deux pattes, Ponyta est un cheval de feu, Ronflex dort
-    for cle, num, nom, couleur in (("pas", 84, "Pas", BLEU), ("zone", 77, "En zone", "#FF9E80"), ("sommeil", 143, "Sommeil", "#B39DFF")):
+    for cle, num, nom in (("pas", 84, "PAS"), ("zone", 77, "EN ZONE"), ("sommeil", 143, "SOMMEIL")):
         v, obj = par_jour(df, cle), OBJECTIFS.get(cle)
-        if v is None or v != v or not obj:
-            v = 0
+        v = 0 if v is None or v != v else v
         pct = min(v / obj * 100, 100) if obj else 0
-        html.append(f'<div class="anneau-s"><div class="rond" style="--c:{couleur};--p:{pct:.0f}"><div><img src="{ANIME.format(num)}" alt=""><b>{joli(cle, v) if v else "–"}</b></div></div>'
-                    f'<div class="n">{nom}</div><div class="o">{"objectif" if un_jour else "moy. · objectif"} {joli(cle, obj)}</div></div>')
-    st.markdown(f'<div class="anneaux">{"".join(html)}</div>', unsafe_allow_html=True)
+        pv = "#48C868" if pct >= 50 else "#F8C838" if pct >= 20 else "#E85038"
+        fait = v >= obj
+        html.append(f'<div class="rang"><div class="poke"><img src="{ANIME.format(num)}" alt=""></div><div class="hud"><div class="l1">{nom}<span>{"moyenne / jour" if not un_jour else "objectif atteint !" if fait else ""}</span></div>'
+                    f'<div class="pv"><b>PV</b><div><i style="width:{pct:.0f}%;--pv:{pv}"></i></div></div>'
+                    f'<div class="val {"gagne" if fait else ""}">{joli(cle, v) if v else "0"}<small> / {joli(cle, obj)}</small></div></div></div>')
+    st.markdown(f'<div class="combat">{"".join(html)}</div>', unsafe_allow_html=True)
 
 
 def carte_bilan(b):
@@ -254,7 +268,11 @@ def carte_bilan(b):
     statut = f'<span class="statut" style="--c:{coul}">{nom_statut}</span>' if tons else ""
     obs = "".join(f'<div class="obs" style="--c:{couleurs[c["ton"]]}"><img src="{ANIME.format(c["num"])}" alt="{c["qui"]}"><div class="bulle"><b>{c["titre"]}</b><p>{c["texte"]}</p>'
                   + (f'<p class="cs">{c["conseil"]}</p>' if c.get("conseil") else "") + "</div></div>" for c in b["cartes"])
-    st.markdown(f'<div class="bilan"><div class="tete">{b["titre"]}{statut}</div><div class="phrase">{b["phrase"]}</div>{obs}'
+    x, y, cote = PROFESSEUR["visage"]
+    k = 54 / cote  # le visage dans le médaillon
+    portrait = (f'<div class="prof-portrait" style="background-image:url({PROFESSEUR["image"]});background-size:{PROFESSEUR["largeur"] * k:.0f}px auto;'
+                f'background-position:-{x * k:.0f}px -{y * k:.0f}px"></div>')
+    st.markdown(f'<div class="bilan"><div class="prof-tete">{portrait}<div><div class="tete">{b["titre"]} du {PROFESSEUR["nom"]}{statut}</div><div class="phrase">{b["phrase"]}</div></div></div>{obs}'
                 '<div class="note">Calculé sur tes données : des repères utiles, pas un avis médical.</div></div>', unsafe_allow_html=True)
 
 
@@ -685,7 +703,7 @@ with page_sante:
                 f' · {debut:%d/%m/%Y}{f" → {fin:%d/%m/%Y}" if fin != debut else ""}</div>', unsafe_allow_html=True)
 
     histoire = stats.loc[fin - dt.timedelta(days=20):fin]  # les 3 dernières semaines, pour les mini-courbes de la vue Jour
-    anneaux(df, un_jour)
+    ecran_combat(df, un_jour)
     jour_bilan = aujourd - dt.timedelta(days=1) if un_jour and fin == aujourd else fin
     fichier_bilan = f"data/jour/{jour_bilan.year}/{jour_bilan}.json"
     carte_bilan(bilan.analyser(stats, periode, debut, fin, aujourd, lire_vite([fichier_bilan])[fichier_bilan] if un_jour else None, PROFIL))

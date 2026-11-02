@@ -21,7 +21,7 @@ import pandas as pd
 from chiffres import JOURS, OBJECTIFS, heure, hm, nombre, table
 
 NOMS_JOURS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-# Jamais le même Pokémon que juste à côté dans la page : anneaux (Doduo, Ponyta, Ronflex), rubriques (Tauros, Rondoudou, Leveinard, Grolem), coach (Kadabra)
+# Jamais le même Pokémon que juste à côté dans la page : écran de combat (Doduo, Ponyta, Ronflex), rubriques (Tauros, Rondoudou, Leveinard, Grolem), coach (Kadabra)
 PERSONNAGES = {"sommeil": (96, "Soporifik"), "coucher": (97, "Hypnomade"), "recup": (36, "Mélodelfe"), "pas": (19, "Rattata"),
                "sport": (66, "Machoc"), "assis": (54, "Psykokwak"), "poids": (79, "Ramoloss"), "gras": (68, "Mackogneur"), "oxygene": (36, "Mélodelfe"),
                "habitude": (65, "Alakazam")}
@@ -388,11 +388,11 @@ def analyser(stats, periode, debut, fin, aujourd, j_jour=None, profil=None):
             return None
         nuit_de = lambda j: j + dt.timedelta(days=1) if hier and j + dt.timedelta(days=1) in d.index and _val(d, j + dt.timedelta(days=1), "sommeil") is not None else j  # noqa: E731
         cartes = _choisir(_toutes(d, jour, nuit_de(jour), j_jour, profil), jour, _themes_recents(d, jour, lambda j: j, profil))
-        titre = "Le bilan d'hier" if hier else f"Le bilan du {JOURS[jour.weekday()]} {jour:%d/%m}"
+        titre = "L'analyse d'hier" if hier else f"L'analyse du {JOURS[jour.weekday()]} {jour:%d/%m}"
     else:
-        titre = {"7 jours": "Le bilan des 7 jours", "Semaine": "Le bilan de la semaine", "Mois": "Le bilan du mois", "Année": "Le bilan de l'année"}.get(periode, "Le bilan")
+        titre = {"7 jours": "L'analyse des 7 jours", "Semaine": "L'analyse de la semaine", "Mois": "L'analyse du mois", "Année": "L'analyse de l'année"}.get(periode, "L'analyse")
         if (fin - debut).days < 2:  # la période vient de commencer : on regarde les 7 derniers jours plutôt que rien
-            debut, titre = fin - dt.timedelta(days=6), "Le bilan des 7 derniers jours"
+            debut, titre = fin - dt.timedelta(days=6), "L'analyse des 7 derniers jours"
         cartes = _periode(d, debut, fin, profil)
     if not cartes:
         return {"titre": titre, "phrase": "Il me faut encore quelques jours de données pour bien te connaître.", "cartes": []}
