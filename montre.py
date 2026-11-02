@@ -276,6 +276,26 @@ def calculer_missions(lire, aujourd):
     return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour)
 
 
+def calculer_amis(session, aujourd):
+    """Pour chaque ami : sa mission du jour et ses captures figées, dans son dossier. Dépôt public : ni identifiant ni
+    message d'erreur dans le journal ; un ami en panne ne gêne pas les autres."""
+    pareil = lambda a, b: json.loads(a) == json.loads(b)  # noqa: E731
+    registre = lecteur_github(session)([chiffres.JOUEURS])[chiffres.JOUEURS] or {}
+    for n, (ami, info) in enumerate(sorted(registre.items()), 1):
+        try:
+            prefixe = chiffres.dossier_ami(ami)
+            lire = chiffres.chez(lecteur_github(session), prefixe)
+            texte = json.dumps(calculer_missions(lire, aujourd), ensure_ascii=False, indent=0)
+            ecrire_github(session, texte, prefixe + missions.FICHIER, pareil)
+            lire = chiffres.chez(lecteur_github(session), prefixe)  # relire (la mission vient d'être écrite)
+            joueur = {"id": ami, "debut": dt.date.fromisoformat(info["debut"])}
+            captures, _ = pokemon.charger_jeu(lire, aujourd, joueur)
+            figees = json.dumps({"captures": captures}, ensure_ascii=False, indent=0)
+            print(f"ami n° {n} :", ecrire_github(session, figees, prefixe + pokemon.FIGEES, pareil))
+        except Exception as e:
+            print(f"ami n° {n} : échec ({type(e).__name__})")
+
+
 def main(args):
     maintenant = dt.datetime.now(chiffres.TZ)
     if args[:1] == ["github"]:
@@ -301,6 +321,7 @@ def main(args):
         figees = json.dumps({"captures": captures}, ensure_ascii=False, indent=0)
         print("captures figées :", ecrire_github(session, figees, pokemon.FIGEES,
                                                  lambda a, b: json.loads(a) == json.loads(b)))
+        calculer_amis(session, maintenant.date())
     elif args:
         chemin = Path(args[0]) / MONTRE
         chemin.parent.mkdir(parents=True, exist_ok=True)

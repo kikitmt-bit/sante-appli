@@ -486,7 +486,8 @@ let ouverture = false;  // une animation est en cours : on ne redessine pas l'é
 // sur la montre entre-temps arrive dans la réponse. Sans réseau : renvoyé au prochain affichage.
 function partager(ids) {
   if (!D.jeu) return;
-  const u = `${D.jeu.url}?quoi=ouvrir&ou=telephone&cle=${encodeURIComponent(D.jeu.cle)}&ids=${encodeURIComponent(ids.join(","))}`;
+  const qui = D.jeu.joueur ? `joueur=${D.jeu.joueur}&sig=${D.jeu.sig}` : `cle=${encodeURIComponent(D.jeu.cle)}`;  // un ami : sa signature, jamais la clé du jeu
+  const u = `${D.jeu.url}?quoi=ouvrir&ou=telephone&${qui}&ids=${encodeURIComponent(ids.join(","))}`;
   fetch(u).then(r => r.json()).then(j => {
     if (!j.ok) return;
     const avant = ouvertes.size;

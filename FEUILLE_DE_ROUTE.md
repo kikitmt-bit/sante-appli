@@ -65,7 +65,9 @@ Chaque nouveauté se construit en arrivant dans la région. Entre deux : thème 
 - **Comptes** : adresses Gmail dans `COMPTES` (connexion Google déjà en place), un joueur par adresse.
 - **Données santé** : comme le padel (`padel_resa`) : bouton « Relier ma montre », Google Health API par OAuth (Fitbit,
   Pixel Watch ; Samsung, Garmin, Xiaomi par Health Connect sur Android). **iPhone / Apple Watch impossible.** Jetons
-  dans les réglages privés du script Google ; données par joueur dans le dépôt privé (`data/joueurs/<pseudo>/`).
+  dans les réglages privés du script Google ; données par joueur dans le dépôt privé (`data/joueurs/<id>/`).
+  **Construit le 02/11** (comptes, liaison, récolte, partie à part, suppression) : voir CLAUDE.md ; le reste de cette
+  rubrique reste à faire.
 - **Visible par les amis** : nombre de Pokémon et de shiny, Pokédex comparé, ville, badges, stats du dresseur,
   dernières captures, avatar sur la carte quand on est dans la même région, fil « Max a capturé Ronflex ✨ ».
   **Jamais visible** : pas, sommeil, poids, cardio. Texte clair pour les amis + bouton « supprimer mes données ».
@@ -77,6 +79,5 @@ Chaque nouveauté se construit en arrivant dans la région. Entre deux : thème 
     objectifs calés sur chacun (sa moyenne des dernières semaines, comme un handicap au golf) ; plafond de balls par jour ;
   - perso : « Mon matériel » dans Mon dresseur (rameur, barre de traction, vélo, balance, paddle…), les missions du jour
     sont tirées dans ce qu'on a ; une « habitude » au choix (pesée, coucher, étirements…), même valeur pour tous.
-- Tout ce qui est écrit pour Kiki seul (coach, missions, calcul de la montre) devra tourner pour chaque joueur : c'est le
-  plus gros du travail.
+- Missions et captures figées tournent déjà pour chaque joueur (02/11). Restent pour Kiki seul : le coach et la montre.
 - Commencer avec 2-3 amis sur Android quelques semaines avant d'en inviter d'autres.

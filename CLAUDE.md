@@ -6,8 +6,22 @@ le dépôt **privé** `kikitmt-bit/sante` (branche `data`, format décrit dans s
 GitHub avec les secrets `GITHUB_TOKEN`, `GITHUB_REPO` (= kikitmt-bit/sante). L'appli est publique sur Streamlit (la seule
 appli privée gratuite de Kiki est prise par le padel) : **connexion Google** (27/10, `connexion_google()`, `st.login`,
 secrets `[auth]` + `COMPTES` = adresses Gmail autorisées, jamais dans le dépôt ; ⚙️ → Se déconnecter). Tant que `[auth]`
-manque, repli sur l'ancien `verrou()` (`APP_PASSWORD`, mémorisé : localStorage + cookie `sante_ok`). Comptes pour
-les potes (mode multijoueur Pokémon) : plus tard. On travaille directement sur `main`.
+manque, repli sur l'ancien `verrou()` (`APP_PASSWORD`, mémorisé : localStorage + cookie `sante_ok`). On travaille
+directement sur `main`.
+**Comptes des amis** (02/11) : adresses Gmail ajoutées à `COMPTES` ; secret `PROPRIETAIRE` = l'adresse de Kiki (sans lui :
+la seule adresse de `COMPTES`, et s'il y en a plusieurs, personne n'est Kiki : ses données ne sortent jamais).
+`identifiant_ami()` : `AMI` = None pour Kiki, sinon 12 chiffres hexa (sha256 de l'adresse), `PREFIXE` = `data/joueurs/<id>/`
+ajouté par `lire()` à **tout** chemin : un ami lit les mêmes fichiers que Kiki, dans son dossier. `data/joueurs.json` =
+{id: {debut}} (écrit par le script). Pas encore dedans : `accueil_ami()` (ce qui est lu, qui peut le voir, lien signé
+« Relier ma montre » vers `?quoi=relier` du script). `JOUEUR` = {id, debut} passé à `ecran_pokemon.afficher` →
+`pokemon.charger_jeu` / `jouer` : sa partie commence le jour où il relie sa montre, cadeau du Professeur compris, et son
+id entre dans l'identifiant des balls, donc dans la graine (`ident(jour, cle, ami)`, autres tirages que Kiki ; ceux de
+Kiki n'ont pas bougé). **La clé `JEU_CLE` ne va jamais chez un ami** (elle ouvre aussi la montre, l'agenda et Claude de
+Kiki) : signature `ouvrir:<id>` qui ne sert qu'à noter ses balls. Pas de coach pour un ami (profil et abonnement de Kiki).
+⚙️ : Kiki voit qui est relié ; un ami peut tout supprimer (`quoi=delier`). `montre.py` : `calculer_amis` (mission + captures
+figées de chacun ; dépôt public : ni identifiant ni erreur dans le journal), pas de `montre.json` pour eux. **Récolte d'un
+ami à l'ouverture de l'appli** (`demander_recolte(ouverture=1)`, une fois par session), au bouton 🔄, et une fois par jour
+sinon ; détails et quotas : CLAUDE.md du dépôt privé. **Pas encore** : voir les autres joueurs (classement, avatars), `Mon matériel`.
 **Feuille de route du jeu** (01/11 : multijoueur, ratés de capture, stats du dresseur en coches, talents de Ligue, une
 nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de toucher au jeu.
 

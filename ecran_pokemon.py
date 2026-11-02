@@ -4,6 +4,8 @@ PokeAPI/sprites (pokemon.IMAGES). Tout l'écran est un seul composant HTML (poke
 Poké Balls ont été ouvertes (localStorage du téléphone + liste partagée avec la montre, data/pokemon/ouvertes.json, écrite
 par le script Google : secrets SCRIPT_URL et JEU_CLE), donc ce qui apparaît déjà dans le Pokédex."""
 import datetime as dt
+import hashlib
+import hmac
 import json
 from pathlib import Path
 
@@ -31,9 +33,24 @@ def _conseils():
     return conseils
 
 
-def afficher(lire, aujourd):
+def _acces_jeu(joueur):
+    """Ce que le téléphone reçoit pour noter ses Poké Balls ouvertes : Kiki a la clé du jeu ; un ami, une signature qui ne
+    sert qu'à ça (la clé du jeu ouvre aussi la montre, l'agenda et Claude de Kiki : elle ne quitte jamais le serveur)."""
+    s = st.secrets
+    if not s.get("SCRIPT_URL"):
+        return None
+    if not joueur:
+        return {"url": s["SCRIPT_URL"], "cle": s["JEU_CLE"]} if s.get("JEU_CLE") else None
+    if not s.get("SCRIPT_CLE"):
+        return None
+    sig = hmac.new(s["SCRIPT_CLE"].encode(), f"ouvrir:{joueur['id']}".encode(), hashlib.sha256).hexdigest()
+    return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
+
+
+def afficher(lire, aujourd, joueur=None):
+    """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki."""
     with st.spinner("Ouverture du Pokédex…"):
-        captures, etat = pokemon.charger_jeu(lire, aujourd)
+        captures, etat = pokemon.charger_jeu(lire, aujourd, joueur)
         f = lire([pokemon.OUVERTES])
 
     m, R = etat["mesures"], pokemon.REGLAGES
@@ -44,8 +61,7 @@ def afficher(lire, aujourd):
     donnees = {
         "aujourdhui": str(aujourd),
         "ouvertes": list((f[pokemon.OUVERTES] or {}).get("ouvertes", {})),
-        "jeu": {"url": st.secrets["SCRIPT_URL"], "cle": st.secrets["JEU_CLE"]}
-               if st.secrets.get("SCRIPT_URL") and st.secrets.get("JEU_CLE") else None,
+        "jeu": _acces_jeu(joueur),
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
             "shiny": c["shiny"], "raison": c["raison"], "lieu": c.get("lieu", ""), "legendaire": c["num"] in LEGENDAIRES,
@@ -74,4 +90,6 @@ def afficher(lire, aujourd):
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
                                      "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie")},
     }
+    if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
+        donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"
     components.html(UI.read_text(encoding="utf-8").replace("__DONNEES__", _js(donnees)), height=900)

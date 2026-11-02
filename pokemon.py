@@ -311,11 +311,12 @@ def objectif_ok(m):
     return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= seuils_zone(m)[1]
 
 
-def balls_du_jour(jour, m, avant, apres, master=None, badges=()):
+def balls_du_jour(jour, m, avant, apres, master=None, badges=(), debut=None):
     """Les Poké Balls gagnées un jour : avant / apres = points d'effort cumulés depuis le début du jeu ; master = numéro
-    de la Master Ball gagnée ce jour-là, ou None ; badges = [(numéro, lieu)] des arènes gagnées ce jour-là."""
+    de la Master Ball gagnée ce jour-là, ou None ; badges = [(numéro, lieu)] des arènes gagnées ce jour-là ; debut = le
+    premier jour du joueur (par défaut, celui de la partie de Kiki)."""
     dues = []
-    if jour == REGLAGES["debut"]:  # le premier jour : le Professeur Chen offre un des 3 starters, au hasard
+    if jour == (debut or REGLAGES["debut"]):  # le premier jour : le Professeur Chen offre un des 3 starters, au hasard
         dues.append({"cle": "chen", "ball": "poke", "raison": "🎁 Cadeau du Professeur Chen", "types": None,
                      "parmi": STARTERS})
     for k, lieu in badges:
@@ -364,9 +365,10 @@ def pesee_matin(resume):
     return any(h < REGLAGES["pesee_avant"] for h, _, _ in pesees_du_jour(resume))
 
 
-def ident(jour, cle):
-    """Identifiant d'une ball (et graine de son tirage) : « 2026-10-27-p2#poke3 » (partie 1 : « 2026-10-19#poke3 »)."""
-    return f"{jour}{'' if REGLAGES['partie'] == 1 else '-p' + str(REGLAGES['partie'])}#{cle}"
+def ident(jour, cle, ami=None):
+    """Identifiant d'une ball (et graine de son tirage) : « 2026-10-27-p2#poke3 » (partie 1 : « 2026-10-19#poke3 ») ;
+    un ami a le sien dedans (« 2026-11-02-p3-a1b2c3d4e5f6#poke3 ») : chacun ses tirages, même avec les mêmes chiffres."""
+    return f"{jour}{'' if REGLAGES['partie'] == 1 else '-p' + str(REGLAGES['partie'])}{'-' + ami if ami else ''}#{cle}"
 
 
 def bonus_du_jour(jour, stats, resumes, mission_du):
@@ -388,17 +390,18 @@ def bonus_du_jour(jour, stats, resumes, mission_du):
     return b
 
 
-def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None):
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
     figées sont reprises telles quelles ; les autres sont tirées. Chaque capture a « c » = les points cumulés au moment
     où elle a été gagnée, et l'état a la « frise » (points et position sur la carte au début et à la fin de chaque
-    jour) : c'est ce que rejoue la carte (01/11). -> (captures, état)."""
+    jour) : c'est ce que rejoue la carte (01/11). joueur = {"id", "debut"} pour un ami (None : Kiki). -> (captures, état)."""
     figees = {c["id"]: c for c in figees}
     captures, possedees, sans_nouvelle, cumul = [], set(), 0, 0.0
-    jours_ok, masters, depuis_master = [], 0, REGLAGES["debut"]  # Master Ball : jours avec l'objectif dans la fenêtre
+    debut, ami = joueur["debut"] if joueur else REGLAGES["debut"], joueur["id"] if joueur else None
+    jours_ok, masters, depuis_master = [], 0, debut  # Master Ball : jours avec l'objectif dans la fenêtre
     voyage = kanto.Voyage()
-    jour, m, ok, shiny_bonus = REGLAGES["debut"], {}, False, 1
+    jour, m, ok, shiny_bonus = debut, {}, False, 1
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
     mission_du = lambda j: (missions_jours or {}).get(str(j)) if j >= missions.DEPUIS else None  # noqa: E731
     bonus, frise = [], []
@@ -426,12 +429,12 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             pesees = set()
         if pesee_matin(resumes.get(str(jour))):
             pesees.add(jour)
-        dues = balls_du_jour(jour, m, avant, cumul, master, badges)
-        ids = {ident(jour, mi["cle"]) for mi in dues}
-        dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(ident(jour, "")) and i not in ids]  # figées
-        dues.sort(key=lambda mi: ident(jour, mi["cle"]) not in figees)  # figées d'abord : les nouvelles les évitent
+        dues = balls_du_jour(jour, m, avant, cumul, master, badges, debut)
+        ids = {ident(jour, mi["cle"], ami) for mi in dues}
+        dues += [{"cle": i.split("#")[1]} for i in figees if i.startswith(ident(jour, "", ami)) and i not in ids]  # figées
+        dues.sort(key=lambda mi: ident(jour, mi["cle"], ami) not in figees)  # figées d'abord : les nouvelles les évitent
         for mi in dues:  # une capture figée reste, même si les chiffres ont baissé depuis
-            i = ident(jour, mi["cle"])
+            i = ident(jour, mi["cle"], ami)
             c = figees.get(i)
             if c is None:
                 ball = BALLS[mi["ball"]]
@@ -508,9 +511,10 @@ def etat_mission(aujourd, stats, mission_du):
     return sortie
 
 
-def charger_jeu(lire, aujourd):
-    """Statistiques depuis le début du jeu et captures figées, avec la fonction `lire` de l'appli."""
-    debut = REGLAGES["debut"]
+def charger_jeu(lire, aujourd, joueur=None):
+    """Statistiques depuis le début du jeu et captures figées, avec la fonction `lire` de l'appli (pour un ami : lire
+    donne ses fichiers à lui, voir chiffres.chez, et joueur = {"id", "debut"})."""
+    debut, ami = joueur["debut"] if joueur else REGLAGES["debut"], joueur["id"] if joueur else None
     annees = range(debut.year, aujourd.year + 1)
     # les fichiers d'aujourd'hui et d'hier : le moment des Super / Hyper Balls pas encore figées avec leur moment
     recents = {j: f"data/jour/{j.year}/{j}.json" for j in (aujourd - dt.timedelta(days=1), aujourd) if j >= debut}
@@ -521,9 +525,9 @@ def charger_jeu(lire, aujourd):
     jours = [debut + dt.timedelta(days=i) for i in range((aujourd - debut).days + 1)]
     stats = pd.DataFrame({j: chiffres.stats_jour(resumes.get(str(j))) for j in jours}).T
     figees = [c for c in (f.get(FIGEES) or {}).get("captures", [])  # seulement celles de la partie en cours
-              if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], ""))]
+              if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], "", ami))]
     return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"),
-                 {j: f.get(c) for j, c in recents.items()})
+                 {j: f.get(c) for j, c in recents.items()}, joueur)
 
 
 def figer(dossier):

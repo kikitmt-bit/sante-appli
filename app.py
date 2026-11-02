@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import time
+import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 
 import base64
@@ -19,8 +20,8 @@ from streamlit_js_eval import streamlit_js_eval
 
 import ecran_pokemon
 import pokemon
-from chiffres import (JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
-                      chemin_analyse, dossier_coach, hm, joli, nombre, par_jour, table)
+from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
+                      chemin_analyse, dossier_ami, dossier_coach, hm, joli, nombre, par_jour, table)
 
 st.set_page_config(page_title="Ma santé", page_icon="❤️", layout="centered")
 
@@ -108,25 +109,42 @@ def _cache():
     return {}  # chemin -> (heure de lecture, contenu)
 
 
-def actualiser():
-    """Bouton 🔄 : demande au script Google de récolter tout de suite l'essentiel d'aujourd'hui (s'il est déployé en
-    Application Web : secrets SCRIPT_URL et SCRIPT_CLE), puis relit les fichiers (les images restent en mémoire)."""
+def demander_recolte(**en_plus):
+    """Demande au script Google (déployé en Application Web : secrets SCRIPT_URL et SCRIPT_CLE) de récolter tout de suite."""
     s = st.secrets
-    if s.get("SCRIPT_URL"):
-        with st.spinner("Je demande tes dernières données à Google…"):
-            try:
-                rep = requests.get(s["SCRIPT_URL"], params={"cle": s.get("SCRIPT_CLE", "")}, timeout=90).json()
-            except Exception as e:
-                rep = {"ok": False, "erreur": str(e)[:120]}
+    with st.spinner("Je demande tes dernières données à Google…"):
+        try:
+            params = {"cle": s.get("SCRIPT_CLE", "")} | ({"joueur": AMI} if AMI else {}) | en_plus
+            return requests.get(s["SCRIPT_URL"], params=params, timeout=90).json()
+        except Exception as e:
+            return {"ok": False, "erreur": str(e)[:120]}
+
+
+def oublier_fichiers():
+    """Les fichiers de la personne connectée seront relus (les images restent en mémoire)."""
+    c = _cache()
+    for chemin in [k for k in c if not k.startswith("sprites:") and k.startswith(PREFIXE)]:
+        del c[chemin]
+
+
+def actualiser():
+    """Bouton 🔄 : récolte immédiate de l'essentiel d'aujourd'hui, puis relit les fichiers."""
+    if st.secrets.get("SCRIPT_URL"):
+        rep = demander_recolte()
         st.session_state["message_maj"] = ("✅ Données à jour" if rep.get("ok")
                                            else f"⚠️ Actualisation impossible : {rep.get('erreur', '?')}")
-    c = _cache()
-    for chemin in [k for k in c if not k.startswith("sprites:")]:
-        del c[chemin]
+    oublier_fichiers()
     st.rerun()
 
 
 def lire(paths, recents=()):
+    """Les fichiers de la personne connectée : ceux de Kiki, ou pour un ami les mêmes dans son dossier (PREFIXE). Le
+    seul chemin qui mène aux données : un ami ne peut pas lire celles d'un autre."""
+    lu = lire_depot([PREFIXE + p for p in paths], {PREFIXE + p for p in recents})
+    return {p: lu[PREFIXE + p] for p in paths}
+
+
+def lire_depot(paths, recents=()):
     """Contenu de plusieurs fichiers (lus en parallèle). Relus après 2 min pour les plus récents, 1 h pour les autres."""
     c, now = _cache(), time.time()
     a_lire = [p for p in paths if p not in c or c[p][1] is None and now - c[p][0] > 120 or
@@ -322,6 +340,52 @@ def connexion_google():
         st.stop()
 
 
+def identifiant_ami():
+    """None pour Kiki (secret PROPRIETAIRE, ou la seule adresse de COMPTES), sinon l'identifiant de l'ami : son dossier
+    de données et sa graine au jeu, sans son adresse. Dans le doute (plusieurs comptes et pas de PROPRIETAIRE), personne
+    n'est Kiki : ses données ne s'affichent jamais chez un ami."""
+    if not GOOGLE:
+        return None
+    email, autorises = str(st.user.get("email", "")).lower(), comptes()
+    moi = str(st.secrets.get("PROPRIETAIRE", "")).strip().lower() or (next(iter(autorises)) if len(autorises) == 1 else "")
+    return None if email == moi else id_ami(email)
+
+
+def id_ami(email):
+    return hashlib.sha256(f"sante:{email}".encode()).hexdigest()[:12]
+
+
+def accueil_ami():
+    """Un ami pas encore relié : ce que fait l'appli de ses données, puis « Relier ma montre » (page du script Google)."""
+    s = st.secrets
+    st.markdown("## Pokémon Sport")
+    st.markdown("Ton sport fait avancer ton dresseur et te fait gagner des Poké Balls. Pour ça, l'appli lit les données de "
+                "ta montre dans **Google Santé**.")
+    st.markdown("- **Lu :** activité, pas, cardio, séances, sommeil, poids, à partir des 14 jours avant ton inscription. Rien d'autre.\n"
+                "- **Tes chiffres ne sont visibles que par toi** dans l'appli, jamais par les autres joueurs.\n"
+                "- **Bon à savoir :** ils sont rangés dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
+                "- **Tu peux tout arrêter** quand tu veux : ⚙️ → Supprimer mes données.")
+    if s.get("SCRIPT_URL") and s.get("SCRIPT_CLE"):
+        exp = int(time.time()) + 3600
+        sig = hmac.new(s["SCRIPT_CLE"].encode(), f"relier:{AMI}:{exp}".encode(), hashlib.sha256).hexdigest()
+        lien = f"{s['SCRIPT_URL']}?{urllib.parse.urlencode({'quoi': 'relier', 'joueur': AMI, 'exp': exp, 'sig': sig})}"
+        st.link_button("⌚ Relier ma montre", lien, type="primary", width="stretch")
+    else:
+        st.warning("La liaison des montres n'est pas encore ouverte : reviens un peu plus tard.")
+    with st.expander("Quelle montre ?"):
+        st.markdown("**Fitbit ou Pixel Watch** : rien à régler. Vérifie juste que l'appli Google Santé est ouverte avec le "
+                    "même compte Google que ta montre.\n\n"
+                    "**Autre marque (Samsung, Garmin, Xiaomi, Amazfit…) sur un téléphone Android** : dans l'appli de ta montre, "
+                    "active **Health Connect** ; puis dans Google Santé : Paramètres → Applis et appareils connectés → "
+                    "Health Connect, et autorise la lecture.\n\n"
+                    "**iPhone / Apple Watch** : pas possible pour l'instant (Health Connect n'existe que sur Android).")
+    if st.button("C'est fait", width="stretch", help="Une fois ta montre reliée"):
+        _cache().pop(JOUEURS, None)
+        st.rerun()
+    st.button("🚪 Se déconnecter", width="stretch", on_click=st.logout)
+    st.stop()
+
+
 def verrou():
     """Mot de passe APP_PASSWORD tapé une fois, puis mémorisé sur ce téléphone (localStorage + cookie : le cookie seul
     ne suffit pas sur Streamlit Cloud). Ce qui est mémorisé est une empreinte, pas le mot de passe."""
@@ -373,6 +437,19 @@ if "GITHUB_TOKEN" not in st.secrets:
     st.stop()
 GOOGLE = "auth" in st.secrets  # connexion Google ; sinon l'ancien mot de passe APP_PASSWORD (le temps de la régler)
 JETON = connexion_google() if GOOGLE else verrou()
+AMI = identifiant_ami()  # None : Kiki
+PREFIXE = dossier_ami(AMI) if AMI else ""
+REGISTRE = lire_depot([JOUEURS], {JOUEURS})[JOUEURS] or {}
+if AMI and AMI not in REGISTRE:
+    accueil_ami()
+JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if AMI else None
+# Les données d'un ami sont récoltées à l'ouverture de l'appli (une fois par jour sinon, pour ménager les quotas de Google).
+# En cas de panne, il voit simplement ses dernières données.
+if AMI and st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
+    st.session_state["recolte_ouverture"] = True
+    reponse_recolte = demander_recolte(ouverture=1)
+    if reponse_recolte.get("ok") and not reponse_recolte.get("frais"):
+        oublier_fichiers()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
@@ -414,7 +491,8 @@ with onglet_sante:
     st.markdown(f'<div class="fresh">⌚ Dernière mesure reçue aujourd\'hui : {max(heures)[:5] if heures else "aucune"}'
                 f' · {debut:%d/%m/%Y}{f" → {fin:%d/%m/%Y}" if fin != debut else ""}</div>', unsafe_allow_html=True)
 
-    coach(donnees, lire_vite, aujourd)
+    if not AMI:  # le coach connaît le profil de Kiki et tourne sur son abonnement
+        coach(donnees, lire_vite, aujourd)
 
     # ----- Activité -----
     st.markdown("### 🏃 Activité")
@@ -515,7 +593,7 @@ with onglet_sante:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
 with onglet_pokemon:
-    ecran_pokemon.afficher(lire_vite, aujourd)
+    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR)
 
 
 @st.dialog("⚙️ Configuration", width="large")
@@ -550,6 +628,30 @@ def configuration():
                     st.dataframe(lignes, width="stretch", hide_index=True)
 
     st.divider()
+    if not AMI:
+        amis = comptes() - {str(st.user.get("email", "")).lower()} if GOOGLE else set()
+        if amis:
+            st.markdown("**👥 Comptes des amis**")
+            for email in sorted(amis):
+                info = REGISTRE.get(id_ami(email))
+                st.caption(f"{'✅ relié le ' + info['debut'] if info else '⏳ montre pas encore reliée'} · {email}")
+    else:
+        st.markdown("**⌚ Ma montre** : reliée depuis le " + JOUEUR["debut"].strftime("%d/%m/%Y"))
+        with st.expander("Supprimer mes données"):
+            st.caption("Coupe l'accès à Google Santé et retire tes données et ta partie de l'appli. Il en reste une trace "
+                       "dans l'historique du dépôt privé de Kiki : demande-lui de l'effacer si tu le souhaites.")
+            if st.checkbox("Oui, je veux tout supprimer", key="adieu") and st.button("Supprimer", type="primary"):
+                try:
+                    rep = requests.get(st.secrets["SCRIPT_URL"], timeout=90, params={
+                        "quoi": "delier", "cle": st.secrets.get("SCRIPT_CLE", ""), "joueur": AMI}).json()
+                except Exception as e:
+                    rep = {"ok": False, "erreur": str(e)[:120]}
+                if rep.get("ok"):
+                    c = _cache()
+                    for chemin in [k for k in c if k.startswith(PREFIXE) or k == JOUEURS]:
+                        del c[chemin]
+                    st.rerun()
+                st.error(f"Suppression impossible : {rep.get('erreur', '?')}")
     if GOOGLE:
         st.caption(f"Connecté avec {st.user.get('email', '')}")
         st.button("🚪 Se déconnecter", on_click=st.logout)

@@ -11,6 +11,23 @@ OBJECTIFS = {"pas": 5000, "zone": 15, "sommeil": 7 * 60}  # (plus tard : page «
 JOURS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"]
 PHASES = {"DEEP": "Profond", "LIGHT": "Léger", "REM": "Paradoxal", "AWAKE": "Éveil", "ASLEEP": "Endormi", "RESTLESS": "Agité"}
 CONSIGNE = Path(__file__).with_name("coach.md")
+JOUEURS = "data/joueurs.json"  # les amis reliés : {id: {"debut": jour}} (écrit par le script Google)
+
+
+# ---------- Les amis (multijoueur) : les mêmes fichiers que Kiki, chacun dans son dossier ----------
+def dossier_ami(ami):
+    return f"data/joueurs/{ami}/"
+
+
+def chez(lire, prefixe):
+    """Une fonction `lire` qui lit les fichiers d'un ami, sous les mêmes noms que ceux de Kiki."""
+    if not prefixe:
+        return lire
+
+    def lire_chez(chemins):
+        lu = lire([prefixe + c for c in chemins])
+        return {c: lu[prefixe + c] for c in chemins}
+    return lire_chez
 
 
 # ---------- Petits outils ----------
