@@ -2566,6 +2566,8 @@ function sceneCentre(apercu = false) {
   const nuitL = reposé ? `Bonjour ${nomDresseur()} ! ${h(dormi)} de sommeil : tes Pokémon sont en pleine forme. Shiny <b>${bonus} fois</b> plus fréquents aujourd'hui !`
     : dormi ? `Bonjour ${nomDresseur()} ! Nuit un peu courte, ${h(dormi)}. Pas de bonus shiny aujourd'hui, mais tes Pokémon t'attendent.`
     : `Bonjour ${nomDresseur()} ! Ta nuit n'est pas encore arrivée de ta montre.`;
+  // son anniversaire : un mot, sans cadeau (rien n'est offert dans ce jeu, sauf le starter)
+  const anniv = /^\d{4}-\d{2}-\d{2}$/.test(DRESSEUR.naissance || "") && DRESSEUR.naissance.slice(5) === D.aujourdhui.slice(5);
   let hierL = null;
   if (HIER) {
     const balls = CAPTURES.filter(c => c.jour === HIER.jour && !c.rate).length;
@@ -2577,7 +2579,7 @@ function sceneCentre(apercu = false) {
   const dv = V.defi;
   if (dv && dv.arrive) { const ar = LIEUX[dv.lieu].arene, reste = Math.max(ar.cible - dv.valeur, 0), resteB = ar.b ? Math.max(ar.b.cible - dv.valeur_b, 0) : null;
     jourL = `${CHAMPIONS[dv.numero].nom} t'attend : encore ${dv.unite === "pas" ? fr(reste) : Math.ceil(reste)} ${dv.unite}${resteB != null ? `, ou ${resteB} jour${resteB > 1 ? "s" : ""} d'objectif` : ""}.`; }
-  const lignes = [nuitL, hierL, jourL].filter(Boolean);
+  const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()} ! Tous les Pokémon du centre te le souhaitent. ` + nuitL.replace(/^Bonjour [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
   let fini = false;
   const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -3171,7 +3173,15 @@ const STYLE_DRESSEUR = `
 .carte-dresseur .boite span{color:#5A6585}
 .carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 20.4px 'Jersey 15',Outfit,monospace;color:#283048;outline:none;
   text-align:right;padding:0}
-.carte-dresseur .reglages{margin-top:9px;background:#F8F8F8;border-radius:10px;box-shadow:0 0 0 2px #283048;padding:1px 8px}
+.carte-dresseur .profil{margin-top:8px;display:grid;grid-template-columns:1fr;gap:5px}
+.carte-dresseur .profil .boite{cursor:text;min-width:0;gap:4px}.carte-dresseur .profil .boite>span:first-child{flex:0 0 auto;font-size:15px}
+.carte-dresseur .profil input{font:400 18px 'Jersey 15',Outfit,monospace;min-height:24px;background:none}
+.carte-dresseur .profil input[type=date]{min-width:0;flex:1;max-width:180px;margin-left:auto}
+.carte-dresseur .profil input[type=date]::-webkit-calendar-picker-indicator{margin:0;padding:0;width:15px}
+.carte-dresseur .av-unite{display:flex;align-items:center;gap:3px;min-width:0;flex:1}.carte-dresseur .av-unite i{font-style:normal;color:#5A6585;font-size:15px}
+.carte-dresseur .profil input[type=number]{-moz-appearance:textfield}.carte-dresseur .profil input[type=number]::-webkit-inner-spin-button{display:none}
+.carte-dresseur .profil small{grid-column:1/-1;color:#fff;font-size:15px;line-height:1.05;text-shadow:1px 1px 0 #1F4E9A;font-family:'Jersey 15',monospace}
+.carte-dresseur .reglages{margin-top:8px;background:#F8F8F8;border-radius:10px;box-shadow:0 0 0 2px #283048;padding:1px 8px}
 .carte-dresseur .choix{display:flex;align-items:center;gap:6px;padding:2px 0;border-bottom:2px dashed #D4D8E4;font-size:19px;line-height:1.1}
 .carte-dresseur .choix:last-child{border-bottom:0}
 .carte-dresseur .choix .lib{flex:0 0 76px;color:#5A6585;font-size:17px}
@@ -3233,6 +3243,9 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
       <div class="infos"><div class="boite"><span>NOM</span><input maxlength="12" placeholder="${accueil ? "Ton pseudo" : "Sacha"}" value="${d.nom.replace(/"/g, "")}" autocomplete="off" enterkeyhint="done"></div>
         <div class="boite"><span>POKÉDEX</span><b>${nb}</b></div><div class="boite"><span>BADGES</span><b>${badges}</b></div>
         <div class="boite region"><span>RÉGION</span><b>Kanto</b></div></div></div>
+    <div class="profil"><label class="boite"><span>NAISSANCE</span><input class="naissance" type="date" max="${D.aujourdhui}" min="1920-01-01" value="${/^\d{4}-\d{2}-\d{2}$/.test(d.naissance || "") ? d.naissance : ""}" enterkeyhint="done"></label>
+      <label class="boite"><span>TAILLE</span><span class="av-unite"><input class="taille" type="number" inputmode="numeric" min="100" max="250" placeholder="175" value="${+d.taille || ""}" enterkeyhint="done"><i>cm</i></span></label>
+      <small>Facultatif. Rend ton bilan santé plus juste. Ça reste sur ton téléphone.</small></div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
     <div class="boutons">${accueil ? `<button class="ok go">COMMENCER L'AVENTURE</button>`
@@ -3250,12 +3263,18 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   });
   const champ = f.querySelector("input");
   champ.oninput = () => { f.querySelector(".id").textContent = "N° ID " + idDresseur(champ.value.trim()); };
-  champ.onkeydown = e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); champ.blur(); } };  // Entrée du clavier : le nom est validé, le clavier se ferme
+  // Entrée du clavier : le champ est validé, le clavier se ferme
+  f.querySelectorAll("input").forEach(i => i.onkeydown = e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); i.blur(); } });
+  const avant = JSON.stringify([d.naissance || "", +d.taille || 0]);
+  const lireProfil = () => { const n = f.querySelector(".naissance").value, t = Math.round(+f.querySelector(".taille").value);
+    d.naissance = /^\d{4}-\d{2}-\d{2}$/.test(n) && n >= "1920-01-01" && n <= D.aujourdhui ? n : ""; d.taille = t >= 100 && t <= 250 ? t : 0; };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
       if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
-      if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); d.partie = R.partie; DRESSEUR = d;
-        try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur(); }
+      if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); d.partie = R.partie; lireProfil(); DRESSEUR = d;
+        try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur();
+        // l'âge et la taille servent au bilan, calculé par l'appli : elle doit les relire (sauf au tout début : l'aventure continue)
+        if (!accueil && JSON.stringify([d.naissance, d.taille]) !== avant && PW !== window) { f.remove(); ok(enregistrer); return PW.location.reload(); } }
       f.remove(); ok(enregistrer); };
     f.querySelector(".ok").onclick = () => {
       if (accueil && !champ.value.trim()) {  // le pseudo d'abord

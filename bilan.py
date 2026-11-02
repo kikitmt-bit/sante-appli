@@ -6,11 +6,16 @@ comparant la journée aux repères de santé et surtout à la propre moyenne du 
 Rien de notable = pas de carte. Le ton est celui du jeu, les chiffres et les conseils sont vrais ; ce n'est pas un avis médical.
 Les Pokémon viennent de Kanto (rien ne dévoile la suite du jeu).
 
-    analyser(stats, periode, debut, fin, aujourd, j_jour) -> {"titre", "phrase", "cartes": [...]}
-    conseil_du_jour(stats, aujourd) -> phrase courte pour le récap du matin, ou None
+    analyser(stats, periode, debut, fin, aujourd, j_jour, profil) -> {"titre", "phrase", "cartes": [...]}
+    conseil_du_jour(stats, aujourd, profil) -> phrase courte pour le récap du matin, ou None
+    lire_profil(texte, aujourd) -> {"age", "taille", "naissance"} : la carte du dresseur, gardée sur le téléphone du joueur
+
+Le profil n'est jamais enregistré ici : il sert au calcul, le temps de la visite. Le sexe n'est pas demandé : pas de repère de
+masse grasse, ni de cardio qui en dépende.
 """
 import datetime as dt
 import hashlib
+import json
 
 import pandas as pd
 
@@ -22,6 +27,25 @@ PERSONNAGES = {"sommeil": (143, "Ronflex"), "coucher": (39, "Rondoudou"), "recup
                "habitude": (65, "Alakazam")}
 BON, NEUTRE, ALERTE = "bon", "neutre", "alerte"
 SEMAINE_INTENSE = 75  # minutes d'effort intense par semaine : le repère de l'OMS (75 à 150)
+
+
+def lire_profil(texte, aujourd):
+    """Ce que le téléphone envoie (localStorage pkm_dresseur), vérifié : l'âge et la taille, ou rien."""
+    try:
+        d = json.loads(texte)
+        naissance = dt.date.fromisoformat(str(d.get("naissance") or ""))
+        age = aujourd.year - naissance.year - ((aujourd.month, aujourd.day) < (naissance.month, naissance.day))
+    except (TypeError, ValueError, AttributeError):
+        d, naissance, age = d if isinstance(locals().get("d"), dict) else {}, None, None
+    try:
+        taille = float(d.get("taille") or 0)
+    except (TypeError, ValueError):
+        taille = 0
+    return {"age": age if age is not None and 5 <= age <= 110 else None, "taille": taille if 100 <= taille <= 250 else None}
+
+
+def imc(poids, taille):
+    return poids / (taille / 100) ** 2 if poids and taille else None
 
 
 def _graine(*morceaux):
@@ -147,7 +171,7 @@ def _pas(d, jour, nuit):
     return [_carte("pas", 22, BON, f"Objectif atteint : {nombre(v)} pas", f"{nombre(v)} pas : l'objectif est là.")]
 
 
-def _sport(d, jour, nuit):
+def _sport(d, jour, nuit, profil=None):
     z = _colonne(d.loc[jour - dt.timedelta(days=6):jour], "zone_sport")
     sc = _colonne(d.loc[jour - dt.timedelta(days=6):jour], "min_sport")
     if not len(z) and not len(sc):
@@ -157,7 +181,8 @@ def _sport(d, jour, nuit):
     if len(z) >= 4 and total >= SEMAINE_INTENSE:
         return [_carte("sport", 60, BON, f"{hm(total)} d'effort intense en 7 jours", f"Machoc applaudit : tu dépasses le repère de l'OMS ({SEMAINE_INTENSE} min d'effort intense par semaine). Le cœur et le moral en profitent.", "Pense à garder au moins un jour plus calme par semaine.")]
     if len(z) >= 5 and total == 0 and seances == 0:
-        return [_carte("sport", 62, NEUTRE, "7 jours sans effort intense", "Machoc s'ennuie : aucune minute en zone intense, aucune séance cette semaine. Pas besoin d'y passer une heure pour que ça compte.", "Commence petit : 10 min de marche rapide ou de rameur qui font monter le cœur, et c'est une Super Ball de plus près.")]
+        return [_carte("sport", 62, NEUTRE, "7 jours sans effort intense", "Machoc s'ennuie : aucune minute en zone intense, aucune séance cette semaine. Pas besoin d'y passer une heure pour que ça compte.", ("Commence petit : 10 min de marche rapide qui font monter le cœur. À partir de 65 ans, l'OMS ajoute des exercices d'équilibre, trois fois par semaine." if ((profil or {}).get("age") or 0) >= 65
+                        else "Commence petit : 10 min de marche rapide ou de rameur qui font monter le cœur, et c'est une Super Ball de plus près."))]
     if v >= 25:
         return [_carte("sport", 54, BON, f"{hm(v)} de vrai sport", f"Machoc valide : {hm(v)} en zone intense, dans la meilleure tranche pour le cœur. Sur 7 jours, tu en es à {hm(total)}.", "Demain, tu peux y aller plus doucement.")]
     if len(z) >= 4 and total > 0:
@@ -176,7 +201,7 @@ def _assis(d, jour, nuit, j_jour):
     return []
 
 
-def _poids(d, jour, nuit):
+def _poids(d, jour, nuit, profil=None):
     p = _colonne(d.loc[jour - dt.timedelta(days=45):jour], "poids")
     tout = _colonne(d.loc[:jour], "poids")
     if not len(tout):
@@ -185,16 +210,35 @@ def _poids(d, jour, nuit):
     attente = (jour - derniere).days
     if attente >= 14:
         return [_carte("poids", 22, NEUTRE, f"Pas de pesée depuis {attente} jours", "Grolem ne pèse pas tous les jours, mais une tendance a besoin de quelques points.", "Une pesée le matin, trois fois par semaine, et les courbes deviennent fiables.")]
+    i = imc(tout.iloc[-1], (profil or {}).get("taille"))
     if len(p) < 4 or (p.index[-1] - p.index[0]).days < 14:
         return []
     jours = pd.Series([(x - p.index[0]).days for x in p.index], index=p.index, dtype=float)
     pente = float(jours.cov(p) / jours.var()) * 7 if jours.var() else 0
     duree = (p.index[-1] - p.index[0]).days
-    if abs(pente) >= .7:
-        return [_carte("poids", 50, NEUTRE, f"Poids : {pente:+.1f} kg par semaine".replace(".", ","), f"La tendance sur {duree} jours va vite. Une pesée seule ne veut rien dire, mais {len(p)} pesées, si. Un rythme d'environ 0,5 kg par semaine est plus facile à tenir.", "Regarde ce qui a changé récemment : repas, sommeil ou activité.")]
+    rythme = f"{pente:+.1f} kg par semaine".replace(".", ",")
+    if i is not None and i < 18.5 and pente < -.1:  # perdre alors qu'on est déjà bas : le seul cas qui mérite une alerte
+        return [_carte("poids", 78, ALERTE, f"Poids en baisse : {rythme}", f"Ton IMC est de {nombre(i, 1)}, sous le repère de 18,5, et ton poids continue de baisser sur {duree} jours.", "Si ce n'est pas voulu, parles-en à ton médecin. Rien ne presse côté jeu : mange bien, les points viendront.")]
+    if abs(pente) >= max(tout.iloc[-1] * .01, .5):  # plus de 1 % du poids par semaine : un repère courant
+        return [_carte("poids", 50, NEUTRE, f"Poids : {rythme}", f"La tendance sur {duree} jours va vite : plus de 1 % de ton poids par semaine. Une pesée seule ne veut rien dire, mais {len(p)} pesées, si.", "Regarde ce qui a changé récemment : repas, sommeil ou activité.")]
     if abs(pente) <= .15:
-        return [_carte("poids", 24, BON, f"Poids stable : {nombre(p.iloc[-1], 1)} kg", f"Sur {duree} jours et {len(p)} pesées, la tendance est stable. Grolem respecte.")]
-    return [_carte("poids", 32, NEUTRE, f"Poids : {pente:+.1f} kg par semaine".replace(".", ","), f"Tendance calculée sur {len(p)} pesées en {duree} jours : un rythme raisonnable.")]
+        repere = f" IMC {nombre(i, 1)}." if i is not None else ""
+        return [_carte("poids", 24, BON, f"Poids stable : {nombre(p.iloc[-1], 1)} kg", f"Sur {duree} jours et {len(p)} pesées, la tendance est stable. Grolem respecte.{repere}")]
+    return [_carte("poids", 32, NEUTRE, f"Poids : {rythme}", f"Tendance calculée sur {len(p)} pesées en {duree} jours : un rythme raisonnable.")]
+
+
+def _intensite(d, jour, nuit, profil=None):
+    """Avec l'âge : le cardio du jour par rapport au maximum théorique (formule de Tanaka : 208 - 0,7 × âge)."""
+    age = (profil or {}).get("age")
+    v, z = _val(d, jour, "fc_max"), _val(d, jour, "zone_sport") or 0
+    if not age or not v or z < 5:
+        return []
+    maxi = 208 - .7 * age
+    if v >= maxi:
+        return [_carte("sport", 52, NEUTRE, f"Cœur monté à {v:.0f} bpm", f"Machoc t'a vu : c'est au-dessus du maximum théorique à {age} ans ({maxi:.0f} bpm). Ce repère varie d'une personne à l'autre, et une montre peut se tromper en plein effort.", "Si tu t'es senti bien, tout va bien. Douleur, malaise ou essoufflement inhabituel : parles-en à un médecin.")]
+    if v >= maxi * .85:
+        return [_carte("sport", 38, BON, f"Bel effort : {v:.0f} bpm", f"{v / maxi * 100:.0f} % de ton maximum théorique à {age} ans : tu as vraiment travaillé {hm(z)}.")]
+    return []
 
 
 def _oxygene(d, jour, nuit):
@@ -242,9 +286,10 @@ def _habitudes(d, jour):
     return []
 
 
-def _toutes(d, jour, nuit, j_jour=None):
+def _toutes(d, jour, nuit, j_jour=None, profil=None):
     return (_oxygene(d, jour, nuit) + _recup(d, jour, nuit) + _sommeil(d, jour, nuit) + _coucher(d, jour, nuit)
-            + _sport(d, jour, nuit) + _pas(d, jour, nuit) + _assis(d, jour, nuit, j_jour) + _poids(d, jour, nuit) + _habitudes(d, jour))
+            + _sport(d, jour, nuit, profil) + _intensite(d, jour, nuit, profil) + _pas(d, jour, nuit) + _assis(d, jour, nuit, j_jour)
+            + _poids(d, jour, nuit, profil) + _habitudes(d, jour))
 
 
 def _choisir(cartes, jour, deja=frozenset(), n=3):
@@ -270,12 +315,12 @@ def _choisir(cartes, jour, deja=frozenset(), n=3):
     return choisies
 
 
-def _themes_recents(d, jour, nuit_de):
+def _themes_recents(d, jour, nuit_de, profil=None):
     """Ce qui a été dit les 2 jours d'avant."""
     deja = set()
     for k in (1, 2):
         j = jour - dt.timedelta(days=k)
-        deja |= {c["theme"] for c in _choisir(_toutes(d, j, nuit_de(j)), j)}
+        deja |= {c["theme"] for c in _choisir(_toutes(d, j, nuit_de(j), None, profil), j)}
     return frozenset(deja)
 
 
@@ -298,8 +343,9 @@ def _phrase(cartes):
     return "Rien de grave : voici ce qui ferait la différence."
 
 
-def analyser(stats, periode, debut, fin, aujourd, j_jour=None):
-    """Le bilan affiché dans l'onglet Santé. j_jour = fichier du jour analysé (détail des périodes assises), facultatif."""
+def analyser(stats, periode, debut, fin, aujourd, j_jour=None, profil=None):
+    """Le bilan affiché dans l'onglet Santé. j_jour = fichier du jour analysé (détail des périodes assises), facultatif ;
+    profil = {"age", "taille"} du joueur (lire_profil), facultatif."""
     d = _numerique(stats)
     if periode == "Jour":
         hier = fin == aujourd
@@ -307,31 +353,31 @@ def analyser(stats, periode, debut, fin, aujourd, j_jour=None):
         if jour not in d.index:
             return None
         nuit_de = lambda j: j + dt.timedelta(days=1) if hier and j + dt.timedelta(days=1) in d.index and _val(d, j + dt.timedelta(days=1), "sommeil") is not None else j  # noqa: E731
-        cartes = _choisir(_toutes(d, jour, nuit_de(jour), j_jour), jour, _themes_recents(d, jour, lambda j: j))
+        cartes = _choisir(_toutes(d, jour, nuit_de(jour), j_jour, profil), jour, _themes_recents(d, jour, lambda j: j, profil))
         titre = "Le bilan d'hier" if hier else f"Le bilan du {JOURS[jour.weekday()]} {jour:%d/%m}"
     else:
         titre = {"7 jours": "Le bilan des 7 jours", "Semaine": "Le bilan de la semaine", "Mois": "Le bilan du mois", "Année": "Le bilan de l'année"}.get(periode, "Le bilan")
         if (fin - debut).days < 2:  # la période vient de commencer : on regarde les 7 derniers jours plutôt que rien
             debut, titre = fin - dt.timedelta(days=6), "Le bilan des 7 derniers jours"
-        cartes = _periode(d, debut, fin)
+        cartes = _periode(d, debut, fin, profil)
     if not cartes:
         return {"titre": titre, "phrase": "Il me faut encore quelques jours de données pour bien te connaître.", "cartes": []}
     return {"titre": titre, "phrase": _phrase(cartes), "cartes": cartes}
 
 
-def conseil_du_jour(stats, aujourd):
+def conseil_du_jour(stats, aujourd, profil=None):
     """La phrase utile du récap du matin (Infirmière Joëlle) : le conseil le plus important, ou None. Sans répéter les jours d'avant."""
     d = _numerique(stats)
     jour = aujourd - dt.timedelta(days=1)
     if jour not in d.index:
         return None
     nuit = aujourd if _val(d, aujourd, "sommeil") is not None else jour
-    cartes = _choisir(_toutes(d, jour, nuit), jour, _themes_recents(d, jour, lambda j: j), 1)
+    cartes = _choisir(_toutes(d, jour, nuit, None, profil), jour, _themes_recents(d, jour, lambda j: j, profil), 1)
     return next((c["conseil"] for c in cartes if c.get("conseil")), None)
 
 
 # ---------- Le bilan d'une période ----------
-def _periode(d, debut, fin):
+def _periode(d, debut, fin, profil=None):
     p = d.loc[debut:fin]
     n = len(p)
     if n < 3:
@@ -364,6 +410,8 @@ def _periode(d, debut, fin):
             cartes.append(_carte("recup", 56, BON if e < 0 else NEUTRE, f"Cœur au repos : {p['fc_repos'].mean():.0f} bpm", f"{abs(e):.0f} bpm de {'moins' if e < 0 else 'plus'} que la période d'avant. {'Leveinard aime ça : le cœur devient plus efficace.' if e < 0 else 'Fatigue, stress ou sommeil, à surveiller.'}"))
     q = _colonne(d.loc[debut:fin], "poids")
     if len(q) >= 3 and (q.index[-1] - q.index[0]).days >= 7:
-        cartes.append(_carte("poids", 40, NEUTRE, f"Poids : {q.iloc[-1] - q.iloc[0]:+.1f} kg".replace(".", ","), f"De {nombre(q.iloc[0], 1)} à {nombre(q.iloc[-1], 1)} kg en {len(q)} pesées. Grolem regarde la tendance, jamais une seule pesée."))
+        i = imc(q.iloc[-1], (profil or {}).get("taille"))
+        repere = f" IMC {nombre(i, 1)} (repère 18,5 à 25, qui ne distingue pas le muscle du gras)." if i is not None else ""
+        cartes.append(_carte("poids", 40, NEUTRE, f"Poids : {q.iloc[-1] - q.iloc[0]:+.1f} kg".replace(".", ","), f"De {nombre(q.iloc[0], 1)} à {nombre(q.iloc[-1], 1)} kg en {len(q)} pesées. Grolem regarde la tendance, jamais une seule pesée.{repere}"))
     cartes += _oxygene(d, fin, fin) + _habitudes(d, fin)
     return _choisir(cartes, fin, n=4)

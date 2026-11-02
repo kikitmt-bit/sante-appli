@@ -432,6 +432,7 @@ def accueil_ami():
     st.markdown("- **Lu :** activité, pas, cardio, séances, sommeil, poids, à partir des 14 jours avant ton inscription. Rien d'autre.\n"
                 "- **Tes chiffres ne sont visibles que par toi** dans l'appli, jamais par les autres joueurs.\n"
                 "- **Bon à savoir :** ils sont rangés dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
+                "- **Date de naissance et taille** (facultatives) : elles restent sur ton téléphone.\n"
                 "- **Tu peux tout arrêter** quand tu veux : ⚙️ → Supprimer mes données.")
     if s.get("SCRIPT_URL") and s.get("SCRIPT_CLE"):
         exp = int(time.time()) + 3600
@@ -529,6 +530,9 @@ with st.container(key="outils", horizontal=True):
         actualiser()
     st.button("⚙️", key="cfg", help="Configuration", on_click=lambda: st.session_state.update(config=True))
 st.markdown(NAV, unsafe_allow_html=True)
+# L'âge et la taille restent sur le téléphone (carte du dresseur) : relus à l'ouverture, pour le calcul, jamais enregistrés ici
+PROFIL = bilan.lire_profil(streamlit_js_eval(js_expressions="localStorage.getItem('pkm_dresseur') || ''", key="profil_dresseur"),
+                           dt.datetime.now(TZ).date())
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:
@@ -563,7 +567,7 @@ with page_sante:
     anneaux(df, un_jour)
     jour_bilan = aujourd - dt.timedelta(days=1) if un_jour and fin == aujourd else fin
     fichier_bilan = f"data/jour/{jour_bilan.year}/{jour_bilan}.json"
-    carte_bilan(bilan.analyser(stats, periode, debut, fin, aujourd, lire_vite([fichier_bilan])[fichier_bilan] if un_jour else None))
+    carte_bilan(bilan.analyser(stats, periode, debut, fin, aujourd, lire_vite([fichier_bilan])[fichier_bilan] if un_jour else None, PROFIL))
     if not AMI:  # le coach connaît le profil de Kiki et tourne sur son abonnement
         coach(donnees, lire_vite, aujourd)
 
@@ -651,6 +655,9 @@ with page_sante:
             html.append(f'<div class="tile"><div class="l">Masse grasse</div><div class="v">'
                         f'{joli("gras", pesees["gras"].dropna().iloc[-1])}</div><div class="s">moyenne des 7 dernières '
                         f'pesées : {nombre(gras7, 1)} %</div></div>')
+        i = bilan.imc(pesees["poids"].dropna().iloc[-1], PROFIL["taille"])
+        if i:
+            html.append(f'<div class="tile"><div class="l">IMC</div><div class="v">{nombre(i, 1)}</div><div class="s">repère 18,5 à 25, ne distingue pas le muscle du gras</div></div>')
         p_debut = pesees.loc[debut:, "poids"].dropna()
         if len(p_debut) >= 2:
             html.append(f'<div class="tile"><div class="l">Évolution sur la période</div><div class="v">'
@@ -666,7 +673,7 @@ with page_sante:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
 with page_jeu:
-    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd))
+    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL))
 
 
 @st.dialog("⚙️ Configuration", width="large")

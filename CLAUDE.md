@@ -73,6 +73,10 @@ données : observations par thème (sommeil, coucher, récup, pas, sport, assis,
 comparées aux repères et à la moyenne du joueur ; 3 cartes au plus (4 pour une période), un thème chacune, ce qui vient d'être dit
 s'efface (`_choisir`) sauf l'important, habitudes un jour sur 4, un conseil qui pousse saute si le cœur dit le contraire ; un
 Pokémon par thème. Affiché dans Santé (`carte_bilan`), l'ancien coach Claude reste en plus pour Kiki seul. À affiner ici, pas dans une IA.
+**Profil du joueur (date de naissance, taille, carte du dresseur, facultatifs)** : **gardés sur le téléphone seulement** (localStorage
+`pkm_dresseur`), relus à l'ouverture par `streamlit_js_eval` (`bilan.lire_profil`), jamais écrits sur un serveur (autre téléphone = à ressaisir).
+Servent au bilan : IMC (repère neutre, alerte seulement si perte de poids sous 18,5), maximum cardiaque théorique (Tanaka, 208 - 0,7 × âge),
+équilibre à 65 ans, tuile IMC, mot d'anniversaire de Joëlle. Le sexe n'est pas demandé. Ils ne changent pas les objectifs du jeu.
 **Récap du matin** (`sceneCentre`, `D.matin`) : première visite du jour, 3 bulles au plus de l'Infirmière Joëlle : la nuit, hier
 (`etat["hier"]`), puis le défi du champion ou `bilan.conseil_du_jour` ; la machine de soin seulement après une bonne nuit ;
 coupable dans Dresseur (`pkm_recap_non`).
