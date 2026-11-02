@@ -52,6 +52,9 @@ s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les
   Simulation à ce rythme, sans viser le champion / en le visant : Kiki 142 / ~103 jours pour la Ligue, sportif 77 / ~72, très
   sportif 46, débutant 375 / ~243 (point faible : objectifs adaptés à chacun à faire avant d'inviter les amis).
   Montre : pas encore à jour (Shiny Ball montrée en Master Ball, ratés masqués).
+**Direction artistique : une GBA moderne, partout (02/11, Kiki, d'après l'écran de combat)** : une seule police **Jersey 15** (`font-size-adjust` pour rester lisible, jamais de faux gras : le gras se dit en couleur) ;
+**boîtes crème** `#F8F8E8` à bord `#484838`, coins `12px 5px`, ombre dure `3px 3px 0` ; encre `#383828`, secondaire `#686850`, accent `#C03028` / `#B05010` ; barres : PV vert `#48C868`, EXP bleue `#40A8F8`, objectif atteint or `#F8C838` ; boutons rouges `#D83830` avec ▶ ;
+fond bleu nuit rayé `#22315A`. Thème : bloc « LA DIRECTION ARTISTIQUE » de `pokemon_ui.html`, `THEME` dans `STYLE_FICHE`, premier bloc de style de `app.py`. Toute nouvelle carte suit ça, sans fioritures : simple, clair, lisible.
 **Interface (02/11, carte blanche de Kiki) : l'appli est le jeu, plus de séparation Santé / Pokémon.** Barre du haut `.nav-jeu`
 (HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (son starter, Pikachu avant ; carte, à ouvrir,
 4 dernières captures, barre, objectifs ; pastille = balls à ouvrir), **Pokédex** (icône dessinée), **Dresseur** (son visage, à ses

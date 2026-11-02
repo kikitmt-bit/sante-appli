@@ -413,6 +413,99 @@ section[hidden]{display:none}
 details.regles{background:#1C2740;border-radius:14px;padding:10px 14px;margin:14px 0 4px;font-size:13px;color:#C9D3EA}
 details.regles summary{cursor:pointer;font-weight:700;color:#EEF2FA}
 details.regles li{margin:5px 0;line-height:1.4}
+
+/* ================================================================================================
+   LA DIRECTION ARTISTIQUE : une GBA moderne (02/11, demande de Kiki, d'après l'écran de combat de la page Santé).
+   Une seule police (Jersey 15, agrandie pour rester lisible), de grandes boîtes crème à bord sombre et ombre dure, des barres de PV
+   vertes et d'EXP bleues, un curseur ▶ rouge. Les règles ci-dessus décrivent la mise en page ; ce bloc donne le style : il passe après.
+   ================================================================================================ */
+*{font-family:'Jersey 15',Outfit,system-ui,sans-serif !important;font-size-adjust:.53 !important;font-synthesis:none;font-weight:400 !important;letter-spacing:.1px}
+html,body{color:#383828}
+.carte,.speciale,.sac,.mini,.prochains,.starter-carte,.reglage-recap,details.regles,#recherche,.petit-obj,.en-route,.bandeau-voyage{
+  background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
+h2{color:#fff;font-size:21px;text-shadow:2px 2px 0 #141C38;margin:16px 2px 8px}
+.gris,.gain,.speciale .gain,#voyage .entete .ou,.infos-lieu .nom small,.mini .qd,.mini .lieu,.speciale .m-pourquoi,.sac small,.petit-obj .hd,.reglage-recap small,.starter-carte small,.prochains .titre-p,.semaine-pesee i,.pesee-comp,#rien{color:#686850 !important}
+.speciale .ligne,.pesee-der,.speciale.defi .conseil4 i,#barre .manque,.arene .q{color:#484838 !important}
+.speciale .ligne b,.speciale.defi .ligne b,.pesee-der b,.sac b{color:#383828 !important}
+#barre .manque b,.starter-carte small b{color:#C03028 !important}
+.bouton-ball .q{color:#585840 !important;font-size:12px}
+.speciale .reste,.speciale.mission .m-titre,.speciale.defi .garde-champ{color:#B05010 !important}
+.speciale.ok .reste,.petit-obj.ok .val{color:#2F8F4E !important}
+.speciale .verrou{color:#C03028 !important}
+.speciale.defi .garde-champ{border-top:2px dashed #C8C8A8}
+.petit-obj .val,.mini .nm,.starter-carte .l1 b,.prochains .tx b,#voyage .entete .titre,#barre .titre,#aouvrir .titre,.infos-lieu .nom,.reglage-recap b,.speciale .tete{color:#383828 !important}
+.starter-carte .l1 i{color:#C03028 !important}
+.prochains .tx small{color:#B05010 !important}
+.prochains button{color:#383828;border-top:2px dashed #D8D8B8 !important}
+.prochains button:before{content:"▶";color:#D83830;font-size:12px;margin-right:-3px}
+.mini .nm{font-size:13px}.mini .qd,.mini .lieu{font-size:11px}
+/* les barres : PV, EXP */
+.jauge,.avance,.barre-n,.pv-j{height:12px !important;background:#484838 !important;border-radius:6px !important;padding:2px;overflow:hidden}
+.jauge div,.barre-n i,.pv-j i{display:block;height:100%;border-radius:4px !important;background:#48C868 !important}
+.jauge div.ok{background:#F8C838 !important}
+.jauge{background-clip:padding-box}
+.avance div{height:100%;border-radius:4px;background:#40A8F8 !important}
+.barre-n i{background:#40A8F8 !important}
+.speciale.chasse .jauge div{background:linear-gradient(90deg,#F8C838,#E85038) !important}
+/* boutons et filtres */
+.gros-bouton{background:#D83830 !important;border:3px solid #484838 !important;border-radius:10px 5px 10px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important;font-size:19px;text-shadow:2px 2px 0 #7A1712;animation:none}
+.gros-bouton:before{content:"▶ "}
+.gros-bouton:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(10,15,35,.45) !important}
+.filtre{background:#F8F8E8;border:2px solid #484838;color:#383828;border-radius:8px 4px 8px 4px;box-shadow:2px 2px 0 rgba(10,15,35,.4)}
+.filtre.on{background:#D83830;border-color:#484838;color:#fff}
+.filtre.ty{border:2px solid #484838;border-radius:8px 4px 8px 4px;color:#fff}
+#tests .groupe,details.regles summary{color:#383828 !important}#tests .groupe small{color:#686850 !important}
+details.regles{color:#484838 !important}
+#recherche{color:#383828 !important}#recherche::placeholder{color:#888870}
+/* chaque carte */
+#barre{display:block !important}
+.carte .type,.puce{font-size:12.5px}
+.puce{background:#E8E8D0;color:#484838;border-radius:6px}.puce b{color:#C03028}
+.puce.bonus{background:#F8E8A0;box-shadow:none}
+.hud-barre{display:flex;align-items:center;gap:10px}
+.hud-barre .ball{flex:0 0 44px;height:44px}.hud-barre .ball svg{width:100%;height:100%}
+.hud-barre .l1{display:flex;justify-content:space-between;align-items:baseline;font-size:19px}.hud-barre .l1 span{color:#686850;font-size:17px}
+.hud-barre .pv{display:flex;align-items:center;gap:4px;margin-top:3px;background:#484838;border-radius:7px;padding:2px 4px}
+.hud-barre .pv b{font-size:12px;color:#F8C838 !important}
+.hud-barre .pv div{flex:1;height:8px;border-radius:4px;background:#F0F0E0;overflow:hidden}.hud-barre .pv i{display:block;height:100%;border-radius:4px;background:#40A8F8;transition:width 1.2s}
+.hud-barre>div{flex:1;min-width:0}
+#barre .manque{font-size:14px;margin:8px 0 6px;line-height:1.25}
+.speciale.defi{background:#F8F8E8 !important;border-color:var(--c) !important}
+.speciale.defi .portrait{box-shadow:0 0 0 3px #484838}
+.speciale.grise{background:#E4E4D2 !important}
+.speciale.ok{border-color:#2F8F4E !important}
+.speciale.sanct{border-color:#8A4FD8 !important}.speciale.chasse{border-color:#C89010 !important}
+.speciale .tampon{color:#2F8F4E}
+.points-serie i{background:#D8D8C0}.points-serie i.on{background:#8A4FD8;box-shadow:none}.points-serie i.rate{background:#B8B8A0}.points-serie i.auj{box-shadow:inset 0 0 0 2px #8A4FD8}
+.semaine-pesee i{background:#E8E8D0;box-shadow:inset 0 0 0 1px #A8A890}.semaine-pesee i.on{background:#48C868;color:#183818 !important}.semaine-pesee i.rate{background:#D0D0B8}.semaine-pesee i.auj{box-shadow:inset 0 0 0 2px #C03028;color:#C03028 !important}
+#voyage{padding:10px !important}
+.infos-lieu{background:#EDEDD8;border:0;border-radius:0 0 8px 8px}
+.carte-vue,.carte-attente{border-radius:8px 8px 0 0}
+.carte-cadre{margin-top:8px;box-shadow:0 0 0 2px #484838;border-radius:8px 8px 0 0}
+.coin img{background:#E0E0C8;border-radius:6px}.coin img.non{background:none;opacity:.42}
+.boite-badges div{background:#3A3A2C;border-radius:6px}.boite-badges .oui{background:radial-gradient(circle,#786820,#3A3A2C 70%)}
+.carte-kanto text{font-family:'Jersey 15',Outfit,sans-serif !important}
+.mini{padding:5px 3px}
+.eti.nv{background:#D83830;color:#fff;border-radius:4px}
+.starter-carte .av{background:radial-gradient(circle,#D8E8C0,transparent 70%)}
+.sac{border-width:2px !important;box-shadow:none !important;background:#EDEDD8 !important}
+.en-route small,.bandeau-voyage small{color:#B05010 !important}.en-route b,.bandeau-voyage b{color:#383828}
+.bandeau-voyage{animation:none}
+.badge-attente{border:3px solid #484838;border-radius:12px 5px 12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
+.evo-attente{border:3px solid #484838;border-radius:12px 5px 12px 5px;color:#383828}
+.reglage-recap b{font-size:15px}
+.petit-obj .hd{font-size:13px}
+.petit-obj .bar{height:7px;background:#484838;border-radius:4px;padding:1px}.petit-obj .bar i{background:#48C868;border-radius:3px}
+.petit-obj.on{background:#F8E8A0 !important}
+.bandeau-test{font-size:14px}
+/* le Pokédex garde son appareil rouge, avec le même bord */
+.dex-appareil{border:3px solid #484838;border-radius:14px 6px 14px 6px;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
+.p{border:3px solid #484838;border-radius:12px 5px 12px 5px;box-shadow:2px 2px 0 rgba(10,15,35,.4)}
+.p .nm{font-size:13.5px;text-shadow:1px 1px 0 rgba(0,0,0,.6)}.p .no{opacity:1;text-shadow:1px 1px 0 rgba(0,0,0,.6)}
+.p.brillant,.p.leg{box-shadow:inset 0 0 0 2px #FFE27A,2px 2px 0 rgba(10,15,35,.4)}.p.leg{box-shadow:inset 0 0 0 2px #D9B3FF,2px 2px 0 rgba(10,15,35,.4)}
+.carte.amis .titre{color:#383828}
+#mon-dresseur{border-radius:12px 5px 12px 5px;border:3px solid #484838;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
+.onglets{background:#141C38;border-radius:10px}.onglets button{color:#C9D3EA}.onglets button.on{background:#F8F8E8;color:#383828}
 </style>
 
 <div id="app" style="padding-bottom:56px">
@@ -1305,7 +1398,7 @@ const crier = n => { if (!son) return; try { const a = new PW.Audio(CRI(n)); a.v
 const hachage = t => [...String(t)].reduce((a, x) => (a * 31 + x.charCodeAt(0)) >>> 0, 7);
 function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de la scène du labo (la ball a déjà été choisie)
   ouverture = true;
-  installerStyle("pkm2-style", STYLE_VOILE); installerStyle("pkm2-ouverture", STYLE_OUVERTURE); preparerScene();  // preparerScene : police pixel de la boîte de résultat
+  installerStyle("pkm2-style", STYLE_VOILE); installerStyle("pkm2-ouverture", STYLE_OUVERTURE); installerStyle("pkm2-fiche-style", STYLE_FICHE); preparerScene();  // preparerScene : police pixel de la boîte de résultat
   audio();  // le toucher qui ouvre autorise le son
   // Nouveau Pokémon = première capture ouverte de cette espèce
   const nouveau = rejouer ? (CAPTURES.find(x => x.num === c.num && prise(x)) || c).id === c.id : !collection()[c.num];
@@ -2719,6 +2812,21 @@ const STYLE_FICHE = `
   font:700 15px Outfit,sans-serif;cursor:pointer}
 .pkm-type{display:inline-block;padding:2px 10px;border-radius:9px;font-size:12px;font-weight:700;color:#fff;margin:6px 2px 0;
   text-shadow:0 1px 1px rgba(0,0,0,.35)}
+
+/* la fiche d'un Pokémon : la même boîte crème que le reste */
+#pkm-fiche,#pkm-fiche *{font-family:'Jersey 15',Outfit,system-ui,sans-serif !important;font-size-adjust:.53;font-synthesis:none;font-weight:400 !important}
+#pkm-fiche{color:#383828}
+#pkm-fiche .feuille{background:#E8E8D0;border-radius:16px 16px 0 0;border:3px solid #484838;border-bottom:0}
+#pkm-fiche .poignee{background:#A8A890}
+#pkm-fiche .tete{border:3px solid #484838;background:#F8F8E8 !important;border-radius:12px 5px 12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.3)}
+#pkm-fiche .no,#pkm-fiche .sous,#pkm-fiche h4 span{color:#686850}#pkm-fiche h3{font-size:30px}
+#pkm-fiche .f,#pkm-fiche .ou{background:#F8F8E8;border:2px solid #484838;border-radius:10px 4px 10px 4px;color:#585840;font-size:13.5px}
+#pkm-fiche .f.sh{background:#FBF2C8}#pkm-fiche .f.on{box-shadow:inset 0 0 0 2px #D83830}#pkm-fiche .f.sh.on{box-shadow:inset 0 0 0 2px #C89010}
+#pkm-fiche .f b,#pkm-fiche .ou b{color:#383828;font-size:15px}#pkm-fiche .ou{color:#484838;line-height:1.3}
+#pkm-fiche .f .trou{color:#A8A890}
+#pkm-fiche .fermer{background:#D83830;border:3px solid #484838;border-radius:10px 5px 10px 5px;color:#fff;box-shadow:3px 3px 0 rgba(10,15,35,.3);font-size:18px;text-shadow:2px 2px 0 #7A1712}
+#pkm-fiche .fermer:before{content:"▶ "}
+#pkm-voile .nom-ball,#pkm-voile .aide,#pkm-voile .aide small{font-family:'Jersey 15',Outfit,sans-serif !important;font-size-adjust:.53;font-weight:400 !important}
 `;
 
 function fiche(p) {
@@ -2741,7 +2849,7 @@ function fiche(p) {
   const vue = normal ? false : !!shiny;  // la grande image : la forme attrapée (le normal d'abord)
   const f = P.createElement("div"); f.id = "pkm-fiche";
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
-    <div class="tete" style="background:linear-gradient(135deg,${c0}55,#1C2740 70%)">
+    <div class="tete">
       <img class="grande ${a ? "" : "non"}" src="${a ? IMG.hd(p.num, vue) : IMG.mini(p.num, false)}">
       <div><div class="no">N° ${N3(p.num)}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
         <div>${typesHTML(p.types, "pkm-type")}</div>
@@ -2827,22 +2935,18 @@ function dessinerStarter() {
   rognerImages(el);
 }
 function dessinerBarre() {
-  const b = D.barre, pct = b.points / b.taille, circ = 2 * Math.PI * 50, reste = b.taille - b.points;
+  const b = D.barre, pct = b.points / b.taille, reste = b.taille - b.points;
   const [ic, nom, ts] = b.origine;
   const pas = Math.ceil(reste) * 100, zone = Math.ceil(reste / (R.zone_points || 5)), sport = Math.ceil(reste), muscu = Math.ceil(reste / R.force);
-  document.getElementById("barre").innerHTML = `<div class="filigrane">${ballSVG("poke")}</div>
-    <div class="anneau"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#0D1322" stroke-width="12"/>
-      <circle class="arc" cx="60" cy="60" r="50" fill="none" stroke="url(#gb)" stroke-width="12" stroke-linecap="round"
-        stroke-dasharray="${circ}" stroke-dashoffset="${circ}"/>
-      <defs><linearGradient id="gb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFCB05"/><stop offset="1" stop-color="#FF4B4B"/></linearGradient></defs></svg>
-      <div class="centre"><div class="v">${Math.floor(b.points)}</div><div class="s">/ ${b.taille} pts</div></div></div>
-    <div class="droite"><div class="titre">Prochaine Poké Ball</div>
-      <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min de sport</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
-      <div class="puces">${b.sources.length || (b.bonus || []).length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
-          + (b.bonus || []).map(([i, n, p]) => `<span class="puce bonus">${i} ${n} <b>+${p}</b></span>`).join("")
-        : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
-      ${ts.length ? `<div class="petit gris" style="margin-top:6px">Aujourd'hui : ${ic} ${nom} → ${typesHTML(ts)}</div>` : ""}</div>`;
-  requestAnimationFrame(() => setTimeout(() => document.querySelector("#barre .arc").style.strokeDashoffset = circ * (1 - pct), 60));
+  document.getElementById("barre").innerHTML = `<div class="hud-barre"><span class="ball">${ballSVG("poke")}</span><div>
+      <div class="l1"><span style="color:#383828;font-size:19px">Prochaine Poké Ball</span><span>${Math.floor(b.points)} / ${b.taille}</span></div>
+      <div class="pv"><b>EXP</b><div><i style="width:0"></i></div></div></div></div>
+    <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min de sport</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
+    <div class="puces">${b.sources.length || (b.bonus || []).length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
+        + (b.bonus || []).map(([i, n, p]) => `<span class="puce bonus">${i} ${n} <b>+${p}</b></span>`).join("")
+      : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
+    ${ts.length ? `<div class="petit gris" style="margin-top:6px">Aujourd'hui : ${ic} ${nom} → ${typesHTML(ts)}</div>` : ""}`;
+  requestAnimationFrame(() => setTimeout(() => document.querySelector("#barre .pv i").style.width = pct * 100 + "%", 60));
 }
 
 // Le sac : les balls qui attendent le lieu suivant, ou la victoire sur le champion (audit du 02/11)

@@ -146,6 +146,61 @@ LEVEINARD = f"{pokemon.IMAGES}/pokemon/versions/generation-iii/emerald/113.png" 
 PROFESSEUR = {"nom": "Professeur Chen", "image": "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/labo-chen-vide.webp", "largeur": 940, "visage": (640, 530, 175)}
 FIXE = pokemon.IMAGES + "/pokemon/versions/generation-iii/emerald/{}.png"  # les Pokémon des titres de rubrique : image fixe, sans cadre
 ANIME = pokemon.IMAGES + "/pokemon/other/showdown/{}.gif"  # les Pokémon qui illustrent la page Santé (de Kanto : rien ne dévoile la suite)
+st.markdown("""<style>
+/* La direction artistique, la même que dans le jeu : une GBA moderne */
+[data-testid="stApp"]{background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 2px,transparent 2px 6px),#22315A !important}
+[data-testid="stApp"] *:not([data-testid="stIconMaterial"]):not([class*="material"]){font-family:'Jersey 15',Outfit,system-ui,sans-serif !important;font-size-adjust:.53;font-synthesis:none;font-weight:400 !important}
+[role="dialog"] *:not([data-testid="stIconMaterial"]):not([class*="material"]){font-family:'Jersey 15',Outfit,system-ui,sans-serif !important;font-size-adjust:.53;font-synthesis:none;font-weight:400 !important;color:#383828}
+[role="dialog"]{background:#F8F8E8 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
+[role="dialog"] button{background:#fff !important;border:2px solid #484838 !important;color:#383828 !important}
+[role="dialog"] button[aria-label="Close"]{background:none !important;border:0 !important}
+[role="dialog"] button[aria-label="Close"] svg{fill:#383828}
+[role="dialog"] hr{border-color:#C8C8A8 !important}
+[role="dialog"] label[data-baseweb="checkbox"] > div:first-child{background:#A8A890 !important}
+[role="dialog"] label[data-baseweb="checkbox"]:has(input:checked) > div:first-child{background:#D83830 !important}
+.fresh{color:#D8E0F0 !important;font-size:.9rem !important}
+.nav-jeu{background:#141C38 !important;border-radius:10px !important}
+.nav-jeu button{color:#C9D3EA !important;font-size:12.5px !important;line-height:1.1 !important;border-radius:8px 4px 8px 4px !important;border:2px solid transparent !important}
+.nav-jeu button.on{background:#F8F8E8 !important;color:#383828 !important;border-color:#484838 !important;box-shadow:2px 2px 0 rgba(0,0,0,.4) !important}
+.st-key-outils button,.st-key-page_sante [data-testid="stBaseButton-secondary"],.st-key-page_sante [data-testid="stDateInputField"],.st-key-page_sante [data-baseweb="input"],.st-key-periode button{
+  background:#F8F8E8 !important;color:#383828 !important;border:2px solid #484838 !important;box-shadow:2px 2px 0 rgba(10,15,35,.45) !important;border-radius:8px 4px 8px 4px !important}
+.st-key-page_sante [data-testid="stBaseButton-secondary"] p,.st-key-periode p,.st-key-page_sante input{color:#383828 !important;-webkit-text-fill-color:#383828}
+.st-key-page_sante [data-testid="stDateInput"] *{color:#383828 !important;-webkit-text-fill-color:#383828;background:#F8F8E8 !important}
+.st-key-periode button[aria-checked="true"],.st-key-periode button[kind*="Active"],.st-key-periode button[data-testid*="Active"]{background:#D83830 !important}
+.st-key-periode button[aria-checked="true"] p,.st-key-periode button[kind*="Active"] p,.st-key-periode button[data-testid*="Active"] p{color:#fff !important}
+.st-key-periode [data-testid="stButtonGroup"]{gap:4px !important}
+.st-key-bloc_coach [data-testid="stExpander"],.st-key-bloc_coach details{background:#F8F8E8 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
+.st-key-bloc_coach summary *,.st-key-bloc_coach [data-testid="stMarkdownContainer"] *{color:#383828 !important}
+/* les boîtes */
+.tile,.bilan,.nuit,.pouls,.curieux,.pese,div:has(> .vega-embed){background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
+.tile .l,.tile .s,.curieux,.pese,.pouls .s,.bilan .phrase,.bilan .note{color:#686850 !important}
+.tile .l{font-size:.86rem !important}.tile .s{font-size:.8rem !important}
+.tile .v,.pouls .v,.bilan .tete,.curieux b,.pese b{color:#383828 !important}
+.tile .v{font-size:1.5rem !important}
+.chip{background:#E8E8D0 !important;color:#686850 !important;font-size:.76rem !important;border-radius:5px !important}
+.chip.bien{background:#D0F0D8 !important;color:#227040 !important}.chip.moins{background:#F8DCD0 !important;color:#B04020 !important}
+.spark i{background:#C8C8A8 !important}.spark i:last-child{background:var(--c) !important}.spark i.vide{background:#E0E0C8 !important}
+.bar{background:#484838 !important;height:12px !important;padding:2px;border-radius:6px !important}
+.bar div{background:#48C868 !important;border-radius:4px !important}.bar div.ok{background:#F8C838 !important}
+.bilan{padding:10px !important}
+.bilan .bulle{background:#fff !important;border:2px solid #484838 !important;border-left:5px solid var(--c) !important;border-radius:8px 3px 8px 3px !important}
+.bilan .bulle:before{display:none}
+.bilan .obs b{color:#383828 !important;font-size:1.04rem !important}.bilan .obs p{color:#585840 !important;font-size:.94rem !important;line-height:1.25 !important}.bilan .obs .cs{color:#B05010 !important}
+.statut{border-radius:4px !important;font-size:.76rem !important;box-shadow:1px 1px 0 rgba(0,0,0,.4) !important}
+.prof-portrait{border-color:#484838 !important}
+[class*="st-key-rub_"]{background:rgba(12,18,44,.55) !important;border:3px solid #484838 !important;border-top:6px solid var(--r) !important;border-radius:14px 6px 14px 6px !important}
+.rubrique{color:#fff !important;font-size:1.32rem !important;text-shadow:2px 2px 0 #141C38}
+.chart-titre{color:#fff !important;font-size:.95rem !important;text-shadow:1px 1px 0 #141C38}
+div:has(> .vega-embed){padding:6px 4px 2px !important}
+.vega-embed{width:100% !important}
+.nuit{background:#232A58 !important;color:#fff}.nuit .horaires,.nuit .tot{color:#fff !important}.nuit .leg{color:#D8E0F0 !important;font-size:.82rem !important}.nuit .leg b{color:#fff !important;font-size:1rem !important}
+.nuit .tot{font-size:1.6rem !important}
+.pouls .v{font-size:1.5rem !important}.pouls .s{font-size:.84rem !important}
+.curieux{font-size:.92rem !important}.pese{font-size:.92rem !important}.pese span{color:#C03028 !important}
+.combat{background:url(https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/fond-prairie.webp) 50% 12%/cover no-repeat !important;border:3px solid #484838 !important;border-radius:14px 6px 14px 6px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important;padding:8px !important;image-rendering:pixelated}
+.combat .poke:before{background:rgba(40,50,15,.5) !important}
+[data-testid="stCaptionContainer"] *{color:#D8E0F0 !important}
+</style>""", unsafe_allow_html=True)
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
 .st-key-outils{{gap:4px !important}}
@@ -396,16 +451,16 @@ def regroupe(df, cles, mensuel):
 def _style(ch, hauteur):
     """Le même habillage partout : pas de cadre, juste de quoi lire, dans les couleurs de l'appli."""
     return (ch.properties(height=hauteur, background="transparent").configure_view(stroke=None)
-            .configure_axis(grid=False, domain=False, ticks=False, labelColor="#9AA7C2", labelFontSize=10, labelFont="Outfit", titleColor="#9AA7C2")
-            .configure_axisY(grid=True, gridColor="#232E4C", gridDash=[2, 4], labelPadding=4)
-            .configure_legend(labelColor="#C9D3EA", labelFont="Outfit", labelFontSize=11))
+            .configure_axis(grid=False, domain=False, ticks=False, labelColor="#585840", labelFontSize=13, labelFont="Jersey 15", titleColor="#585840")
+            .configure_axisY(grid=True, gridColor="#D8D8C0", gridDash=[2, 4], labelPadding=4)
+            .configure_legend(labelColor="#484838", labelFont="Jersey 15", labelFontSize=14, labelLimit=0, columnPadding=16))
 
 
-def graphique(d, cle, titre, type_="barre", diviseur=1, objectif=None, couleur=BLEU, hauteur=170):
+def graphique(d, cle, titre, type_="barre", diviseur=1, objectif=None, couleur=BLEU, hauteur=170, reperes=5):
     if cle not in d or d[cle].notna().sum() == 0:
         return
     data = pd.DataFrame({"x": d.index, "y": d[cle] / diviseur})
-    etiquettes = {"values": list(d.index[::max(len(d) // 6, 1)])} if len(d) > 8 else {}  # quelques dates seulement quand il y en a beaucoup
+    etiquettes = {"values": list(d.index[::-(-len(d) // reperes)])} if len(d) > reperes else {}  # quelques repères seulement : ils ne se chevauchent jamais
     x = alt.X("x:N", sort=None, title=None, axis=alt.Axis(labelAngle=0, labelOverlap="greedy", **etiquettes))
     valeurs = data["y"].dropna()
     marge = max((valeurs.max() - valeurs.min()) * .25, abs(valeurs.max()) * .01, .5)  # une courbe se lit sur ses variations, pas depuis zéro
@@ -420,7 +475,7 @@ def graphique(d, cle, titre, type_="barre", diviseur=1, objectif=None, couleur=B
         if len(data.dropna()) <= 31:
             ch += alt.Chart(data.dropna()).mark_circle(color=couleur, size=26, opacity=.9).encode(x, y, tooltip=tip)
     if objectif:
-        ch += alt.Chart(pd.DataFrame({"y": [objectif / diviseur]})).mark_rule(color="#4CD3A0", strokeDash=[4, 4]).encode(y="y:Q")
+        ch += alt.Chart(pd.DataFrame({"y": [objectif / diviseur]})).mark_rule(color="#2F8F4E", strokeDash=[4, 4]).encode(y="y:Q")
     st.markdown(f'<div class="chart-titre">{titre}</div>', unsafe_allow_html=True)
     st.altair_chart(_style(ch, hauteur), width="stretch")
 
@@ -817,12 +872,13 @@ with page_sante:
                 st.markdown(f'<div class="pese"><b>Sur la balance du Pokédex :</b>{en_pokemon}</div>', unsafe_allow_html=True)
             courbe = pesees.loc[(debut if len(jours) >= 30 else donnees["debut_tout"]):]
             if len(courbe) >= 2:
-                courbe.index = [f"{x:%d/%m/%y}" for x in courbe.index]
+                meme_annee = courbe.index[0].year == courbe.index[-1].year
+                courbe.index = [x.strftime("%d/%m" if meme_annee else "%d/%m/%y") for x in courbe.index]
                 g1, g2 = st.columns(2)
                 with g1:
-                    graphique(courbe, "poids", "Poids (kg)", type_="ligne", hauteur=150)
+                    graphique(courbe, "poids", "Poids (kg)", type_="ligne", hauteur=150, reperes=3)
                 with g2:
-                    graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
+                    graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150, reperes=3)
 
 with page_jeu:
     ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL), PROFIL["anniversaire"])

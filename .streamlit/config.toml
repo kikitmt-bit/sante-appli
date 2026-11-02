@@ -3,17 +3,17 @@ toolbarMode = "minimal"
 
 # Thème sombre (comme l'appli padel) : mêmes couleurs en clair et en sombre
 [theme]
-font = "Outfit:https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap"
+font = "Jersey 15:https://fonts.googleapis.com/css2?family=Jersey+15&display=swap"
 baseRadius = "medium"
 
 [theme.light]
 primaryColor = "#6B8CFF"
-backgroundColor = "#0D1322"
-secondaryBackgroundColor = "#1C2740"
+backgroundColor = "#22315A"
+secondaryBackgroundColor = "#1A2548"
 textColor = "#EEF2FA"
 
 [theme.dark]
 primaryColor = "#6B8CFF"
-backgroundColor = "#0D1322"
-secondaryBackgroundColor = "#1C2740"
+backgroundColor = "#22315A"
+secondaryBackgroundColor = "#1A2548"
 textColor = "#EEF2FA"
