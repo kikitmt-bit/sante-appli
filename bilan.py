@@ -21,8 +21,9 @@ import pandas as pd
 from chiffres import JOURS, OBJECTIFS, heure, hm, nombre, table
 
 NOMS_JOURS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-PERSONNAGES = {"sommeil": (143, "Ronflex"), "coucher": (39, "Rondoudou"), "recup": (113, "Leveinard"), "pas": (84, "Doduo"),
-               "sport": (66, "Machoc"), "assis": (54, "Psykokwak"), "poids": (76, "Grolem"), "gras": (68, "Mackogneur"), "oxygene": (113, "Leveinard"),
+# Jamais le même Pokémon que juste à côté dans la page : anneaux (Doduo, Ponyta, Ronflex), rubriques (Tauros, Rondoudou, Leveinard, Grolem), coach (Kadabra)
+PERSONNAGES = {"sommeil": (96, "Soporifik"), "coucher": (97, "Hypnomade"), "recup": (36, "Mélodelfe"), "pas": (19, "Rattata"),
+               "sport": (66, "Machoc"), "assis": (54, "Psykokwak"), "poids": (79, "Ramoloss"), "gras": (68, "Mackogneur"), "oxygene": (36, "Mélodelfe"),
                "habitude": (65, "Alakazam")}
 BON, NEUTRE, ALERTE = "bon", "neutre", "alerte"
 SEMAINE_INTENSE = 75  # minutes d'effort intense par semaine : le repère de l'OMS (75 à 150)
@@ -109,10 +110,10 @@ def _sommeil(d, jour, nuit):
     cou = _avant(d, nuit, "coucher")
     plus_tot = f" vers {heure(cou.median() - 30)}" if len(cou) >= 7 else ""
     if v < 360:
-        return [_carte("sommeil", 80, ALERTE, f"Nuit courte : {hm(v)}", f"Ronflex n'en revient pas : {hm(v)} de sommeil{repere}. Sous 6 h, l'énergie et la récupération baissent nettement le lendemain.",
+        return [_carte("sommeil", 80, ALERTE, f"Nuit courte : {hm(v)}", f"Soporifik n'en revient pas : {hm(v)} de sommeil{repere}. Sous 6 h, l'énergie et la récupération baissent nettement le lendemain.",
                        f"Pas besoin de tout rattraper d'un coup : couche-toi 30 min plus tôt ce soir{plus_tot}, et garde ton heure de lever.")]
     if courtes >= 4 and dette >= 120:
-        return [_carte("sommeil", 72, ALERTE, f"{hm(dette)} de sommeil en retard", f"{courtes} nuits sous 7 h sur les 7 dernières. Ronflex a compté : il te manque {hm(dette)} sur la semaine, et ça se sent sur l'énergie comme sur l'envie de bouger.",
+        return [_carte("sommeil", 72, ALERTE, f"{hm(dette)} de sommeil en retard", f"{courtes} nuits sous 7 h sur les 7 dernières. Soporifik a compté : il te manque {hm(dette)} sur la semaine, et ça se sent sur l'énergie comme sur l'envie de bouger.",
                        f"Vise deux nuits complètes d'affilée : c'est plus efficace qu'une grasse matinée isolée.{' Coucher visé :' + plus_tot + '.' if plus_tot else ''}")]
     if v < 420:
         return [_carte("sommeil", 42, NEUTRE, f"Presque : {hm(v)}", f"Il manque {hm(420 - v)} pour atteindre les 7 h{repere}.", f"30 min plus tôt au lit ce soir suffiraient{plus_tot}, et ton bonus shiny est de retour.")]
@@ -122,10 +123,10 @@ def _sommeil(d, jour, nuit):
             break
         serie += 1
     if serie >= 5:
-        return [_carte("sommeil", 66, BON, f"{serie} nuits de 7 h d'affilée", f"Ronflex est jaloux : {serie} nuits complètes de suite. C'est un des meilleurs leviers pour l'énergie, le cœur et le poids.", "Continue, c'est la régularité qui fait tout.")]
+        return [_carte("sommeil", 66, BON, f"{serie} nuits de 7 h d'affilée", f"Soporifik est jaloux : {serie} nuits complètes de suite. C'est un des meilleurs leviers pour l'énergie, le cœur et le poids.", "Continue, c'est la régularité qui fait tout.")]
     if len(base) >= 7 and v >= base.median() + 45:
         return [_carte("sommeil", 45, BON, f"Belle nuit : {hm(v)}", f"{hm(v - base.median())} de plus que d'habitude. Tes réserves sont pleines.", "Bon jour pour faire une séance un peu plus intense.", pousse=True)]
-    return [_carte("sommeil", 24, BON, f"Nuit complète : {hm(v)}", f"{hm(v)} de sommeil{repere}. Ronflex approuve.")]
+    return [_carte("sommeil", 24, BON, f"Nuit complète : {hm(v)}", f"{hm(v)} de sommeil{repere}. Soporifik approuve.")]
 
 
 def _coucher(d, jour, nuit):
@@ -136,7 +137,7 @@ def _coucher(d, jour, nuit):
     e = float(h14.std())
     sorties = []
     if e >= 70:
-        sorties.append(_carte("coucher", 54, NEUTRE, "Horaires qui font le yoyo", f"Tes couchers varient de {hm(e)} en moyenne sur 14 jours, de {heure(h14.min())} à {heure(h14.max())}. Rondoudou chante, mais à des heures différentes, c'est moins efficace.",
+        sorties.append(_carte("coucher", 54, NEUTRE, "Horaires qui font le yoyo", f"Tes couchers varient de {hm(e)} en moyenne sur 14 jours, de {heure(h14.min())} à {heure(h14.max())}. Hypnomade balance son pendule, mais à des heures différentes, c'est moins efficace.",
                               "Le plus simple : se lever à la même heure, même après une nuit courte. Le coucher suit tout seul."))
     elif e <= 30 and len(h14) >= 10:
         sorties.append(_carte("coucher", 44, BON, "Des horaires réguliers", f"Coucher vers {heure(h14.median())}, à {hm(e)} près sur 14 jours. Le corps adore ça : il s'endort plus vite et récupère mieux."))
@@ -152,14 +153,14 @@ def _recup(d, jour, nuit):
     ecart_v = (vfc - bv.median()) / bv.median() if vfc is not None and len(bv) >= 7 and bv.median() else None
     mauvais_f, mauvais_v = ecart_f is not None and ecart_f >= 4, ecart_v is not None and ecart_v <= -.2
     if mauvais_f and mauvais_v:
-        return [_carte("recup", 86, ALERTE, "Ton corps demande du calme", f"Cœur au repos à {fc:.0f} bpm (+{ecart_f:.0f}) et variabilité en baisse de {-ecart_v * 100:.0f} %. Leveinard voit ça après un manque de sommeil, du stress, de l'alcool, une grosse séance, ou un début de maladie.",
+        return [_carte("recup", 86, ALERTE, "Ton corps demande du calme", f"Cœur au repos à {fc:.0f} bpm (+{ecart_f:.0f}) et variabilité en baisse de {-ecart_v * 100:.0f} %. Mélodelfe voit ça après un manque de sommeil, du stress, de l'alcool, une grosse séance, ou un début de maladie.",
                        "Aujourd'hui, marche plutôt qu'effort intense, et bois bien. Si tu te sens mal, repos complet : les points attendront.")]
     if mauvais_f:
         return [_carte("recup", 68, NEUTRE, f"Cœur au repos un peu haut : {fc:.0f} bpm", f"{ecart_f:.0f} bpm de plus que ta moyenne ({bf.median():.0f}). Souvent le signe d'une récupération pas terminée.", "Si tu te sens fatigué, remplace l'intense du jour par de la marche.")]
     if mauvais_v:
         return [_carte("recup", 62, NEUTRE, "Récupération en retard", f"Ta variabilité cardiaque est {-ecart_v * 100:.0f} % sous ta moyenne ({vfc:.0f} ms contre {bv.median():.0f}).", "Séance légère aujourd'hui, et une vraie nuit ce soir.")]
     if ecart_v is not None and ecart_v >= .15 and (ecart_f is None or ecart_f <= 1):
-        return [_carte("recup", 56, BON, "Feu vert de Leveinard", f"Variabilité cardiaque {ecart_v * 100:.0f} % au-dessus de ta moyenne ({vfc:.0f} ms) : tu as bien récupéré.", "C'est un bon jour pour pousser un peu : une séance plus intense passera bien.", pousse=True)]
+        return [_carte("recup", 56, BON, "Feu vert de Mélodelfe", f"Variabilité cardiaque {ecart_v * 100:.0f} % au-dessus de ta moyenne ({vfc:.0f} ms) : tu as bien récupéré.", "C'est un bon jour pour pousser un peu : une séance plus intense passera bien.", pousse=True)]
     longue = _avant(d, nuit, "fc_repos", 90)
     recente = _avant(d, nuit, "fc_repos", 14)
     if len(longue) >= 40 and len(recente) >= 7 and recente.mean() <= longue.mean() - 2:
@@ -178,12 +179,12 @@ def _pas(d, jour, nuit):
             break
         serie += 1
     if v >= 10000:
-        return [_carte("pas", 58, BON, f"{nombre(v)} pas", _au_choix(jour, "pas", f"Doduo est essoufflé : {nombre(v)} pas, soit {v / max(base.median(), 1):.1f} fois ta journée habituelle." if len(base) >= 7 else f"Doduo est essoufflé : {nombre(v)} pas !", f"Hyper Ball méritée : {nombre(v)} pas dans la journée."),
+        return [_carte("pas", 58, BON, f"{nombre(v)} pas", _au_choix(jour, "pas", f"Rattata est essoufflé : {nombre(v)} pas, soit {v / max(base.median(), 1):.1f} fois ta journée habituelle." if len(base) >= 7 else f"Rattata est essoufflé : {nombre(v)} pas !", f"Hyper Ball méritée : {nombre(v)} pas dans la journée."),
                        "Le lendemain d'une grosse journée, 5 000 pas suffisent : le corps progresse aussi au repos.")]
     if serie >= 3:
         return [_carte("pas", 40 + min(serie, 10) * 3, BON, f"{serie} jours à {nombre(obj)} pas", f"Série en cours : {serie} jours d'affilée au-dessus de {nombre(obj)} pas. La régularité compte plus qu'un gros jour isolé.", "Garde le rythme, même avec une petite marche aujourd'hui.")]
     if v < 2000 and (_val(d, jour - dt.timedelta(days=1), "pas") or 0) < 8000:
-        return [_carte("pas", 56, NEUTRE, f"Journée très calme : {nombre(v)} pas", f"Doduo a à peine bougé : {nombre(v)} pas" + (f", alors que ta journée habituelle est à {nombre(base.median())}." if len(base) >= 7 else "."), "Dix minutes de marche après un repas, c'est déjà environ 1 000 pas. Le plus dur, c'est de sortir.")]
+        return [_carte("pas", 56, NEUTRE, f"Journée très calme : {nombre(v)} pas", f"Rattata a à peine bougé : {nombre(v)} pas" + (f", alors que ta journée habituelle est à {nombre(base.median())}." if len(base) >= 7 else "."), "Dix minutes de marche après un repas, c'est déjà environ 1 000 pas. Le plus dur, c'est de sortir.")]
     if v < obj:
         return [_carte("pas", 30, NEUTRE, f"{nombre(v)} pas", f"Il manquait {nombre(obj - v)} pas pour l'objectif.", f"Environ {max((obj - v) / 100, 5):.0f} min de marche auraient suffi.")]
     return [_carte("pas", 22, BON, f"Objectif atteint : {nombre(v)} pas", f"{nombre(v)} pas : l'objectif est là.")]
@@ -227,7 +228,7 @@ def _poids(d, jour, nuit, profil=None):
     derniere = tout.index[-1]
     attente = (jour - derniere).days
     if attente >= 14:
-        return [_carte("poids", 22, NEUTRE, f"Pas de pesée depuis {attente} jours", "Grolem ne pèse pas tous les jours, mais une tendance a besoin de quelques points.", "Une pesée le matin, trois fois par semaine, et les courbes deviennent fiables.")]
+        return [_carte("poids", 22, NEUTRE, f"Pas de pesée depuis {attente} jours", "Ramoloss n'est pas pressé, mais une tendance a besoin de quelques points.", "Une pesée le matin, trois fois par semaine, et les courbes deviennent fiables.")]
     i = imc(tout.iloc[-1], (profil or {}).get("taille"))
     if len(p) < 4 or (p.index[-1] - p.index[0]).days < 14:
         return []
@@ -241,7 +242,7 @@ def _poids(d, jour, nuit, profil=None):
         return [_carte("poids", 50, NEUTRE, f"Poids : {rythme}", f"La tendance sur {duree} jours va vite : plus de 1 % de ton poids par semaine. Une pesée seule ne veut rien dire, mais {len(p)} pesées, si.", "Regarde ce qui a changé récemment : repas, sommeil ou activité.")]
     if abs(pente) <= .15:
         repere = f" IMC {nombre(i, 1)}." if i is not None else ""
-        return [_carte("poids", 24, BON, f"Poids stable : {nombre(p.iloc[-1], 1)} kg", f"Sur {duree} jours et {len(p)} pesées, la tendance est stable. Grolem respecte.{repere}")]
+        return [_carte("poids", 24, BON, f"Poids stable : {nombre(p.iloc[-1], 1)} kg", f"Sur {duree} jours et {len(p)} pesées, la tendance est stable. Ramoloss approuve, sans se presser.{repere}")]
     return [_carte("poids", 32, NEUTRE, f"Poids : {rythme}", f"Tendance calculée sur {len(p)} pesées en {duree} jours : un rythme raisonnable.")]
 
 
@@ -277,7 +278,7 @@ def _gras(d, jour, nuit, profil=None):
 def _oxygene(d, jour, nuit):
     s, m = _colonne(d.loc[nuit - dt.timedelta(days=6):nuit], "spo2"), _colonne(d.loc[nuit - dt.timedelta(days=6):nuit], "spo2_min")
     if int((s < 93).sum()) >= 3 or int((m < 88).sum()) >= 3:
-        return [_carte("oxygene", 84, ALERTE, "Oxygène bas plusieurs nuits", f"Leveinard préfère te le signaler : sur 7 nuits, l'oxygène est descendu bas plusieurs fois (moyenne {nombre(s.mean(), 1)} %, plus bas {nombre(m.min(), 1)} %). Une montre n'est pas un appareil médical, et elle peut se tromper.",
+        return [_carte("oxygene", 84, ALERTE, "Oxygène bas plusieurs nuits", f"Mélodelfe préfère te le signaler : sur 7 nuits, l'oxygène est descendu bas plusieurs fois (moyenne {nombre(s.mean(), 1)} %, plus bas {nombre(m.min(), 1)} %). Une montre n'est pas un appareil médical, et elle peut se tromper.",
                        "Si ça continue, ou si tu ronfles beaucoup et te réveilles fatigué, parles-en à ton médecin.")]
     return []
 
@@ -422,7 +423,7 @@ def _periode(d, debut, fin, profil=None):
         ok, ref = int((s >= 420).sum()), avant["sommeil"].mean() if "sommeil" in avant else None
         evol = f" ({hm(abs(s.mean() - ref))} de {'plus' if s.mean() > ref else 'moins'} que la période d'avant)" if ref == ref and ref and abs(s.mean() - ref) >= 10 else ""
         ton = BON if ok >= len(s) * .7 else ALERTE if s.mean() < 360 else NEUTRE
-        cartes.append(_carte("sommeil", 66 if ton != NEUTRE else 50, ton, f"{hm(s.mean())} par nuit", f"Ronflex a compté {ok} nuits de 7 h sur {len(s)}{evol}.", None if ton == BON else "Vise une nuit complète de plus par semaine, puis encore une."))
+        cartes.append(_carte("sommeil", 66 if ton != NEUTRE else 50, ton, f"{hm(s.mean())} par nuit", f"Soporifik a compté {ok} nuits de 7 h sur {len(s)}{evol}.", None if ton == BON else "Vise une nuit complète de plus par semaine, puis encore une."))
     if "coucher" in p and p["coucher"].notna().sum() >= 5:
         c = p["coucher"].dropna()
         if c.std() >= 70:
@@ -432,7 +433,7 @@ def _periode(d, debut, fin, profil=None):
         ok, ref = int((v >= OBJECTIFS["pas"]).sum()), avant["pas"].mean() if "pas" in avant else None
         evol = f", {abs(v.mean() / ref - 1) * 100:.0f} % de {'plus' if v.mean() > ref else 'moins'} que la période d'avant" if ref == ref and ref and abs(v.mean() / ref - 1) >= .08 else ""
         mei = v.idxmax()
-        cartes.append(_carte("pas", 60 if ok >= len(v) * .7 or evol else 44, BON if ok >= len(v) * .6 else NEUTRE, f"{nombre(v.mean())} pas par jour", f"Doduo a tenu l'objectif {ok} jours sur {len(v)}{evol}. Meilleur jour : {JOURS[mei.weekday()]} {mei:%d/%m}, {nombre(v.max())} pas.", None if ok >= len(v) * .6 else "Mieux vaut 5 000 pas tous les jours que 12 000 une fois."))
+        cartes.append(_carte("pas", 60 if ok >= len(v) * .7 or evol else 44, BON if ok >= len(v) * .6 else NEUTRE, f"{nombre(v.mean())} pas par jour", f"Rattata a tenu l'objectif {ok} jours sur {len(v)}{evol}. Meilleur jour : {JOURS[mei.weekday()]} {mei:%d/%m}, {nombre(v.max())} pas.", None if ok >= len(v) * .6 else "Mieux vaut 5 000 pas tous les jours que 12 000 une fois."))
     z = p["zone_sport"].dropna() if "zone_sport" in p else pd.Series(dtype=float)
     if len(z) >= 3:
         hebdo = z.sum() / len(z) * 7
@@ -440,11 +441,11 @@ def _periode(d, debut, fin, profil=None):
     if "fc_repos" in p and p["fc_repos"].notna().sum() >= 3 and "fc_repos" in avant and avant["fc_repos"].notna().sum() >= 3:
         e = p["fc_repos"].mean() - avant["fc_repos"].mean()
         if abs(e) >= 2:
-            cartes.append(_carte("recup", 56, BON if e < 0 else NEUTRE, f"Cœur au repos : {p['fc_repos'].mean():.0f} bpm", f"{abs(e):.0f} bpm de {'moins' if e < 0 else 'plus'} que la période d'avant. {'Leveinard aime ça : le cœur devient plus efficace.' if e < 0 else 'Fatigue, stress ou sommeil, à surveiller.'}"))
+            cartes.append(_carte("recup", 56, BON if e < 0 else NEUTRE, f"Cœur au repos : {p['fc_repos'].mean():.0f} bpm", f"{abs(e):.0f} bpm de {'moins' if e < 0 else 'plus'} que la période d'avant. {'Mélodelfe aime ça : le cœur devient plus efficace.' if e < 0 else 'Fatigue, stress ou sommeil, à surveiller.'}"))
     q = _colonne(d.loc[debut:fin], "poids")
     if len(q) >= 3 and (q.index[-1] - q.index[0]).days >= 7:
         i = imc(q.iloc[-1], (profil or {}).get("taille"))
         repere = f" IMC {nombre(i, 1)} (repère 18,5 à 25, qui ne distingue pas le muscle du gras)." if i is not None else ""
-        cartes.append(_carte("poids", 40, NEUTRE, f"Poids : {q.iloc[-1] - q.iloc[0]:+.1f} kg".replace(".", ","), f"De {nombre(q.iloc[0], 1)} à {nombre(q.iloc[-1], 1)} kg en {len(q)} pesées. Grolem regarde la tendance, jamais une seule pesée.{repere}"))
+        cartes.append(_carte("poids", 40, NEUTRE, f"Poids : {q.iloc[-1] - q.iloc[0]:+.1f} kg".replace(".", ","), f"De {nombre(q.iloc[0], 1)} à {nombre(q.iloc[-1], 1)} kg en {len(q)} pesées. Ramoloss regarde la tendance, jamais une seule pesée.{repere}"))
     cartes += _oxygene(d, fin, fin) + _habitudes(d, fin)
     return _choisir(cartes, fin, n=4)
