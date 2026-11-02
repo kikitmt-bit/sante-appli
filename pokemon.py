@@ -430,7 +430,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     bonus, frise = [], []
     retenues, en_attente, missions_gardees = [], [], []  # gardées par le champion ; sac et balls sans rien de nouveau
     chaine, chance_prise, perdues, en_defi = 0, False, 0, False
-    avant, chrono = 0.0, None
+    avant, chrono, hier = 0.0, None, None
 
     def noter(c):
         nonlocal chaine, chance_prise
@@ -588,6 +588,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 sac += 1
                 reste.append(mi)
         en_attente = reste
+        if jour == aujourd - dt.timedelta(days=1):  # pour le récap du matin
+            hier = {"jour": str(jour), "pas": round(m["pas"]), "zone": round(m["zone"]), "super": super_ok(m), "hyper": exploit(m) is not None,
+                    "mission": bool(mission_jour)}
         # le Pokédex est complet (les 146) : le diplôme du Professeur Chen, avec Mew
         if len({n for n, _ in possedees if n not in LEGENDAIRES}) >= TOTAL_ESPECES and 151 not in {n for n, _ in possedees}:
             mi = {"cle": "diplome", "ball": "master", "types": None, "fixe": 151, "jour": jour, "shiny_bonus": shiny_bonus,
@@ -628,7 +631,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "fini": 9 in voyage.badges}
+                      "fini": 9 in voyage.badges, "hier": hier}
 
 
 def etat_mission(aujourd, stats, mission_du):

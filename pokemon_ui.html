@@ -385,6 +385,9 @@ section[hidden]{display:none}
 #detail-obj{grid-column:1/-1}#detail-obj:empty{display:none}
 .carte-zoom.discret{left:auto;right:8px;bottom:8px;width:34px;height:34px;padding:0;justify-content:center;background:rgba(16,35,58,.7);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
 .carte-zoom.discret svg{width:18px;height:18px}
+.reglage-recap{display:flex;gap:10px;align-items:flex-start;background:#1C2740;border-radius:14px;padding:11px 13px;margin-top:14px;cursor:pointer}
+.reglage-recap input{width:19px;height:19px;margin:1px 0 0;accent-color:#4CD3A0;flex:0 0 19px}
+.reglage-recap b{display:block;font-size:13.5px}.reglage-recap small{display:block;color:#9AA7C2;font-size:11.5px;line-height:1.3;margin-top:1px}
 details.regles{background:#1C2740;border-radius:14px;padding:10px 14px;margin:14px 0 4px;font-size:13px;color:#C9D3EA}
 details.regles summary{cursor:pointer;font-weight:700;color:#EEF2FA}
 details.regles li{margin:5px 0;line-height:1.4}
@@ -416,6 +419,7 @@ details.regles li{margin:5px 0;line-height:1.4}
   <section id="o-dresseur" hidden>
     <h2>Mon dresseur</h2>
     <div id="mon-dresseur"></div>
+    <label class="reglage-recap"><input type="checkbox" id="recap-matin"><span><b>Récap du matin</b><small>L'Infirmière Joëlle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></span></label>
     <div class="carte amis"><div class="titre" style="font-size:16px">Tes amis</div>
       <div class="petit gris" style="margin-top:4px">Bientôt ici : où ils en sont sur la carte, leurs Pokémon, leurs badges, et le classement.</div></div>
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
@@ -2556,10 +2560,24 @@ function sceneCentre(apercu = false) {
      <div class="lampe" style="left:${pcI(75, L)};top:${pcI(40, H)}"></div><div class="lampe" style="left:${pcI(716, L)};top:${pcI(40, H)}"></div>` +
     ALVEOLES.map(([x, y]) => `<div class="alveole" style="left:${pcI(x, L)};top:${pcI(y, H)}"></div>`).join("") + `<div class="voile-rose"></div>`);
   const air = ambiance(v.querySelector("canvas.air"), [{type: "reflets", coul: ["#FFFFFF", "#FFF3C4"], n: 22, haut: [0, .2]}], () => !v.isConnected);
-  const DC = dialogue(v), dormi = J.sommeil || R.nuit, bonus = String(Math.round((J.shiny_bonus > 1 ? J.shiny_bonus : 1.5) * 100) / 100).replace(".", ",");
-  const lignes = ["Bonjour ! Bienvenue au Centre Pokémon.", `Tu as dormi ${h(dormi)} cette nuit : tes Pokémon aussi se sont bien reposés !`,
-    "Je vais les soigner pour bien commencer la journée. Un instant…",
-    `Tes Pokémon sont en pleine forme ! Aujourd'hui, les Pokémon shiny sont <b>${bonus} fois</b> plus fréquents. Bonne journée !`];
+  // Le récap du matin (02/11) : la nuit, hier, ce qui compte aujourd'hui. Trois bulles au plus : ça doit rester rapide.
+  const DC = dialogue(v), dormi = J.sommeil, reposé = dormi >= R.nuit, M = D.matin || {}, HIER = M.hier;
+  const bonus = String(Math.round((J.shiny_bonus > 1 ? J.shiny_bonus : 1.5) * 100) / 100).replace(".", ",");
+  const nuitL = reposé ? `Bonjour ${nomDresseur()} ! ${h(dormi)} de sommeil : tes Pokémon sont en pleine forme. Shiny <b>${bonus} fois</b> plus fréquents aujourd'hui !`
+    : dormi ? `Bonjour ${nomDresseur()} ! Nuit un peu courte, ${h(dormi)}. Pas de bonus shiny aujourd'hui, mais tes Pokémon t'attendent.`
+    : `Bonjour ${nomDresseur()} ! Ta nuit n'est pas encore arrivée de ta montre.`;
+  let hierL = null;
+  if (HIER) {
+    const balls = CAPTURES.filter(c => c.jour === HIER.jour && !c.rate).length;
+    const faits = [HIER.hyper && "Hyper Ball", HIER.super && "Super Ball", HIER.mission && "mission réussie"].filter(Boolean);
+    hierL = HIER.pas || balls ? `Hier : <b>${fr(HIER.pas)} pas</b>${HIER.zone ? `, ${HIER.zone} min de sport` : ""}${balls ? `, ${balls} Pokémon attrapé${balls > 1 ? "s" : ""}` : ""}${faits.length ? `, ${faits.join(", ")}` : ""}.`
+      : "Hier a été tout calme : aujourd'hui, c'est reparti !";
+  }
+  let jourL = M.conseil || null;
+  const dv = V.defi;
+  if (dv && dv.arrive) { const ar = LIEUX[dv.lieu].arene, reste = Math.max(ar.cible - dv.valeur, 0), resteB = ar.b ? Math.max(ar.b.cible - dv.valeur_b, 0) : null;
+    jourL = `${CHAMPIONS[dv.numero].nom} t'attend : encore ${dv.unite === "pas" ? fr(reste) : Math.ceil(reste)} ${dv.unite}${resteB != null ? `, ou ${resteB} jour${resteB > 1 ? "s" : ""} d'objectif` : ""}.`; }
+  const lignes = [nuitL, hierL, jourL].filter(Boolean);
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
   let fini = false;
   const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -2570,17 +2588,18 @@ function sceneCentre(apercu = false) {
     await pause(200); v.querySelector(".noir").style.opacity = 0;
     setTimeout(() => salle.style.transform = "translateX(-50%) scale(1.08)", 100);
     await pause(1000);
-    for (const l of lignes.slice(0, 3)) await DC.dire(l, "Infirmière Joëlle");
-    DC.cacher(); v.classList.add("soin"); salle.style.transform = "translateX(-50%) scale(1.25)";
-    await pause(500);
-    const al = v.querySelectorAll(".alveole");
-    for (let i = 0; i < al.length; i++) { al[i].classList.add("on"); ton(NOTE(76 + [0, 4, 7, 12, 7, 12][i]), 0, .16, {type: "square", vol: .05}); vibre(10); await pause(260); }
-    // un petit air de soin (original)
-    [[72, 0], [76, .14], [79, .28], [84, .42], [83, .62], [79, .76], [84, .9]].forEach(([n, t]) => ton(NOTE(n), t, .2, {type: "triangle", vol: .09}));
-    await pause(1400);
-    al.forEach(a => a.classList.remove("on")); v.classList.remove("soin"); salle.style.transform = "translateX(-50%) scale(1.08)";
-    await pause(400);
-    await DC.dire(lignes[3], "Infirmière Joëlle");
+    await DC.dire(lignes[0], "Infirmière Joëlle");
+    if (reposé) {  // la machine ne se lance qu'après une bonne nuit : c'est sa récompense
+      DC.cacher(); v.classList.add("soin"); salle.style.transform = "translateX(-50%) scale(1.25)";
+      await pause(350);
+      const al = v.querySelectorAll(".alveole");
+      for (let i = 0; i < al.length; i++) { al[i].classList.add("on"); ton(NOTE(76 + [0, 4, 7, 12, 7, 12][i]), 0, .16, {type: "square", vol: .05}); vibre(10); await pause(150); }
+      [[72, 0], [76, .14], [79, .28], [84, .42]].forEach(([n, t]) => ton(NOTE(n), t, .2, {type: "triangle", vol: .09}));
+      await pause(700);
+      al.forEach(a => a.classList.remove("on")); v.classList.remove("soin"); salle.style.transform = "translateX(-50%) scale(1.08)";
+      await pause(300);
+    }
+    for (const l of lignes.slice(1)) await DC.dire(l, "Infirmière Joëlle");
     fermer();
   })().catch(() => {});
 }
@@ -3761,8 +3780,8 @@ function dessinerTests() {
     <div class="boutons-t">${ext.map(f => b(`t-fond" data-f="${f}`, NOM_FOND[f])).join("")}</div>
     <div class="boutons-t">${["artikodin", "electhor", "sulfura", "mewtwo", "mew"].map(f => b(`t-fond" data-f="${f}`, `${ico("master", "p")} ${NOM_FOND[f]}`)).join("")}</div>
     <div class="boutons-t">${b(`t-fond" data-f="labo`, "Labo (starter)")}${[1, 2, 3, 4, 5, 6, 7, 8].map(n => b(`t-fond" data-f="arene${n}`, `${ico(IMG.badge(n), "p")} ${CHAMPIONS[n].nom}`)).join("")}</div>
-    <div class="groupe">Les écrans<small>Le Centre Pokémon s'ouvre tout seul le matin après une nuit de ${R.nuit / 60} h (et en touchant « Bonne nuit ») ; le Panthéon après la Ligue.</small></div>
-    <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Centre Pokémon de nuit`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
+    <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
+    <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
@@ -3831,14 +3850,17 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
   if (chen && !estOuverte(chen)) setTimeout(() => demarrerAventure(chen), 400);
-  // une bonne nuit : l'Infirmière Joëlle soigne tes Pokémon (une fois par jour, à la première visite)
-  else if (J.sommeil >= R.nuit && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui; } catch (e) { return false; } })())
+  // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur)
+  else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneCentre(); }, 1200);
 }
 { // ouvertes ici mais pas encore dans la liste partagée (première fois, ou envoi raté) : on les envoie
   const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);
   partager([...ouvertes].filter(id => !serveur.has(id) && id.slice(0, 10) >= depuis));
 }
+{ const c = document.getElementById("recap-matin");
+  try { c.checked = localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { c.checked = true; }
+  c.onchange = () => { try { localStorage.setItem("pkm_recap_non", c.checked ? "0" : "1"); } catch (e) {} }; }
 document.getElementById("recherche").addEventListener("input", e => { texte = e.target.value; dessinerDex(); });
 document.getElementById("recherche").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); e.target.blur(); } });
 

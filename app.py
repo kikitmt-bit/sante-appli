@@ -18,6 +18,7 @@ import requests
 import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
 
+import bilan
 import ecran_pokemon
 import pokemon
 from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
@@ -71,6 +72,14 @@ h3{margin-top:1.4rem !important}
 .rubrique img{max-width:40px;max-height:40px;image-rendering:pixelated}
 .st-key-bloc_coach summary p::before{content:"";display:inline-block;width:26px;height:26px;margin:-6px 6px -6px 0;vertical-align:-3px;
   background:url(https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/65.gif) center/contain no-repeat;image-rendering:pixelated}
+.bilan{background:#1C2740;border-radius:18px;padding:12px;margin:0 0 12px}
+.bilan .tete{font-size:1.08rem;font-weight:800;color:#EEF2FA}.bilan .phrase{font-size:.84rem;color:#9AA7C2;margin:1px 0 9px}
+.bilan .obs{display:flex;gap:10px;background:#141C31;border-radius:13px;padding:9px 10px;margin-top:7px;border-left:4px solid var(--c)}
+.bilan .obs img{flex:0 0 46px;width:46px;height:46px;object-fit:contain;image-rendering:pixelated;align-self:center}
+.bilan .obs b{display:block;font-size:.95rem;line-height:1.25;color:#EEF2FA}
+.bilan .obs p{margin:2px 0 0 !important;font-size:.84rem;line-height:1.35;color:#C9D3EA}
+.bilan .obs .cs{margin-top:4px !important;color:#FFE27A}
+.bilan .note{font-size:.7rem;color:#7C8AA8;margin-top:8px}
 .anneaux{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:6px 0 14px;background:#1C2740;border-radius:18px;padding:14px 8px}
 .anneau-s{text-align:center;min-width:0}
 .anneau-s .rond{--t:clamp(74px,24vw,104px);width:var(--t);height:var(--t);margin:0 auto 6px;border-radius:50%;display:flex;align-items:center;justify-content:center;
@@ -202,6 +211,17 @@ def anneaux(df, un_jour):
         html.append(f'<div class="anneau-s"><div class="rond" style="--c:{couleur};--p:{pct:.0f}"><div><img src="{ANIME.format(num)}" alt=""><b>{joli(cle, v) if v else "–"}</b></div></div>'
                     f'<div class="n">{nom}</div><div class="o">{"objectif" if un_jour else "moy. / jour · objectif"} {joli(cle, obj)}</div></div>')
     st.markdown(f'<div class="anneaux">{"".join(html)}</div>', unsafe_allow_html=True)
+
+
+def carte_bilan(b):
+    """Le bilan du jour ou de la période : calculé ici, sans IA (bilan.py)."""
+    if not b:
+        return
+    couleurs = {"bon": "#4CD3A0", "neutre": "#6B8CFF", "alerte": "#FF9E80"}
+    obs = "".join(f'<div class="obs" style="--c:{couleurs[c["ton"]]}"><img src="{ANIME.format(c["num"])}" alt="{c["qui"]}"><div><b>{c["titre"]}</b><p>{c["texte"]}</p>'
+                  + (f'<p class="cs">{c["conseil"]}</p>' if c.get("conseil") else "") + "</div></div>" for c in b["cartes"])
+    st.markdown(f'<div class="bilan"><div class="tete">{b["titre"]}</div><div class="phrase">{b["phrase"]}</div>{obs}'
+                '<div class="note">Calculé sur tes données : des repères utiles, pas un avis médical.</div></div>', unsafe_allow_html=True)
 
 
 def tuiles(cles, df, avant, un_jour, legende_avant, couleur=BLEU):
@@ -541,6 +561,9 @@ with page_sante:
                 f' · {debut:%d/%m/%Y}{f" → {fin:%d/%m/%Y}" if fin != debut else ""}</div>', unsafe_allow_html=True)
 
     anneaux(df, un_jour)
+    jour_bilan = aujourd - dt.timedelta(days=1) if un_jour and fin == aujourd else fin
+    fichier_bilan = f"data/jour/{jour_bilan.year}/{jour_bilan}.json"
+    carte_bilan(bilan.analyser(stats, periode, debut, fin, aujourd, lire_vite([fichier_bilan])[fichier_bilan] if un_jour else None))
     if not AMI:  # le coach connaît le profil de Kiki et tourne sur son abonnement
         coach(donnees, lire_vite, aujourd)
 
@@ -643,7 +666,7 @@ with page_sante:
                 graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150)
 
 with page_jeu:
-    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR)
+    ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd))
 
 
 @st.dialog("⚙️ Configuration", width="large")

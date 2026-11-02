@@ -46,8 +46,9 @@ def _acces_jeu(joueur):
     return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
 
 
-def afficher(lire, aujourd, joueur=None):
-    """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki."""
+def afficher(lire, aujourd, joueur=None, conseil=None):
+    """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki ; conseil = la phrase utile du
+    récap du matin (bilan.conseil_du_jour)."""
     with st.spinner("Ouverture du Pokédex…"):
         captures, etat = pokemon.charger_jeu(lire, aujourd, joueur)
         f = lire([pokemon.OUVERTES])
@@ -83,6 +84,7 @@ def afficher(lire, aujourd, joueur=None):
                   "origine": [ic, nom, types or []], "pas_offerts": R["pas_offerts"],
                   "bonus": [list(b) for b in etat["bonus"]]},
         "mission": etat["mission"],
+        "matin": {"hier": etat["hier"], "conseil": conseil},
         "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],

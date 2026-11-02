@@ -68,6 +68,14 @@ rang (`RANGS`) qui donne un but sans dévoiler le total, shiny / légendaires / 
 shiny, légendaires, types (repliés), tri récents / n° ; pas de filtre par lieu. `REGIONS` : boutons de région à partir de la 2e.
 **Texte façon jeu** : police **Jersey 15** (Pixelify gardée pour les grands titres, trop peu lisible en petit) ; `dialogue.dire`
 pose toute la phrase avec ses lettres cachées puis les dévoile : plus de mot qui change de ligne en cours d'écriture.
+**Bilan santé autonome (`bilan.py`, 02/11, pour tous les joueurs, sans IA ni compte Claude)** : règles calculées sur les vraies
+données : observations par thème (sommeil, coucher, récup, pas, sport, assis, poids, oxygène, habitudes personnelles sur 90 jours),
+comparées aux repères et à la moyenne du joueur ; 3 cartes au plus (4 pour une période), un thème chacune, ce qui vient d'être dit
+s'efface (`_choisir`) sauf l'important, habitudes un jour sur 4, un conseil qui pousse saute si le cœur dit le contraire ; un
+Pokémon par thème. Affiché dans Santé (`carte_bilan`), l'ancien coach Claude reste en plus pour Kiki seul. À affiner ici, pas dans une IA.
+**Récap du matin** (`sceneCentre`, `D.matin`) : première visite du jour, 3 bulles au plus de l'Infirmière Joëlle : la nuit, hier
+(`etat["hier"]`), puis le défi du champion ou `bilan.conseil_du_jour` ; la machine de soin seulement après une bonne nuit ;
+coupable dans Dresseur (`pkm_recap_non`).
 **Feuille de route du jeu** (01/11 : multijoueur, ratés de capture, stats du dresseur en coches, talents de Ligue, une
 nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de toucher au jeu.
 
