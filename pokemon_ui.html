@@ -363,6 +363,14 @@ h2 .n{font-size:12px;font-weight:600;color:#9AA7C2;margin-left:auto}
 #mon-dresseur .nom{font-size:25px;font-weight:400}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:16px;opacity:.95}
 #mon-dresseur .modifier{border:0;border-radius:8px;padding:8px 12px;font:700 18px 'Jersey 15',Outfit,monospace;background:#F8F8F8;color:#283048;
   box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048;cursor:pointer}
+.prochains{background:#141C31;border-radius:14px;padding:8px 10px 4px;margin-bottom:12px}
+.prochains .titre-p{display:block;font-size:12px;font-weight:800;color:#9AA7C2;margin-bottom:2px}
+.prochains button{display:flex;align-items:center;gap:9px;width:100%;border:0;background:none;color:#EEF2FA;padding:4px 0;cursor:pointer;text-align:left;font-family:Outfit,sans-serif;border-top:1px solid rgba(255,255,255,.07)}
+.prochains .titre-p+button{border-top:0}
+.prochains .ic{flex:0 0 30px;height:30px;display:flex;align-items:center;justify-content:center}
+.prochains .ic .ico{width:26px;height:26px;margin:0;vertical-align:0}.prochains .ic .mini-ball{width:24px;height:24px}
+.prochains .tx{flex:1;min-width:0;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.prochains .tx b{font-size:13.5px;font-weight:700}.prochains .tx small{font-size:12px;color:#FFE27A;text-align:right}
 .starter-carte{display:flex;align-items:center;gap:10px;width:100%;border:0;border-radius:16px;padding:8px 12px;margin-bottom:12px;cursor:pointer;text-align:left;color:#EEF2FA;
   background:linear-gradient(135deg,#2A3A63,#1C2740);font-family:Outfit,sans-serif;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.12)}
 .starter-carte .av{flex:0 0 58px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%)}
@@ -416,6 +424,7 @@ details.regles li{margin:5px 0;line-height:1.4}
   <section id="o-aventure">
     <div id="bandeau-voyage"></div>
     <div class="carte" id="voyage"></div>
+    <div id="prochains"></div>
     <div class="carte" id="aouvrir"></div>
     <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
     <div id="starter"></div>
@@ -2645,9 +2654,7 @@ function sceneCentre(apercu = false) {
       : "Hier a été tout calme : aujourd'hui, c'est reparti !";
   }
   let jourL = M.conseil || null;
-  const dv = V.defi;
-  if (dv && dv.arrive) { const ar = LIEUX[dv.lieu].arene, reste = Math.max(ar.cible - dv.valeur, 0), resteB = ar.b ? Math.max(ar.b.cible - dv.valeur_b, 0) : null;
-    jourL = `${CHAMPIONS[dv.numero].nom} t'attend : encore ${dv.unite === "pas" ? fr(reste) : Math.ceil(reste)} ${dv.unite}${resteB != null ? `, ou ${resteB} jour${resteB > 1 ? "s" : ""} d'objectif` : ""}.`; }
+  if (V.defi && V.defi.arrive) jourL = `${CHAMPIONS[V.defi.numero].nom} t'attend : ${resteDefi()}.`;
   const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()} !${cadeau ? " Tous les Pokémon du centre t'offrent une <b>Shiny Ball</b> : elle t'attend avec tes balls à ouvrir !" : " Tous les Pokémon du centre te le souhaitent."}` : null,
     anniv ? nuitL.replace(/^Bonjour [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
@@ -2771,6 +2778,42 @@ let filtre = "tous", filtreTypes = new Set(), texte = "";
 // Le starter : le Pokémon qui t'accompagne. Il gagne des niveaux avec tes points et évolue : un vrai objectif (02/11, idée de Kiki).
 const formeStarter = () => { const st = G.starter; if (!st) return null; const col = collection();
   return [...st.ligne].reverse().find(n => (col[n] || []).length) || null; };
+// Ce qu'il reste à faire pour battre le champion chez qui l'on est
+function resteDefi() {
+  const d = V.defi, a = LIEUX[d.lieu].arene, reste = Math.max(a.cible - d.valeur, 0), resteB = a.b ? Math.max(a.b.cible - d.valeur_b, 0) : null;
+  return `encore ${d.unite === "pas" ? fr(reste) : Math.ceil(reste)} ${d.unite}${resteB != null ? `, ou ${resteB} jour${resteB > 1 ? "s" : ""} d'objectif` : ""}`;
+}
+// Tes prochains objectifs (02/11, idée de Kiki) : aucune règle en plus, juste les 3 buts les plus proches parmi ce qui existe déjà, pour
+// avoir toujours quelque chose à viser. Classés par points à faire (une espèce ou un jour ≈ 100 points : une barre). Rien sur ce qui viendra après.
+function prochainsObjectifs() {
+  const d = V.defi, st = G.starter, liste = [], route = (p, min = 0) => Math.max(Math.ceil(p), min);
+  if (d && d.arrive) liste.push({rang: -1, ic: LIEUX[d.lieu].arene.image ? ico(IMG.badge(LIEUX[d.lieu].arene.image)) : ico("ligue"), t: `Battre ${CHAMPIONS[d.numero].nom}`, v: resteDefi(), va: "speciales", prio: true});
+  else if (d) { const a = LIEUX[d.lieu].arene;
+    liste.push({rang: d.reste, ic: a.image ? ico(IMG.badge(a.image)) : ico("ligue"), t: a.type ? `Arène ${/^[AEIOUÉ]/.test(CHAMPIONS[d.numero].nom) ? "d'" : "de "}${CHAMPIONS[d.numero].nom}` : "La Ligue Pokémon", v: `encore ${fr(d.reste)} pts de route`, va: "voyage", prio: true}); }
+  const suivant = LIEUX[V.ici + 1];
+  if (suivant && !(d && d.arrive) && !(d && d.lieu === V.ici + 1)) liste.push({rang: suivant.dist - V.pos, ic: ico("carte"), t: suivant.nom.replace(" (retour)", ""), v: `encore ${fr(route(suivant.dist - V.pos))} pts de route`, va: "voyage"});
+  const n = formeStarter();
+  if (st && n && st.evolue_a && st.ligne[st.ligne.indexOf(n) + 1] && !aOuvrir().some(estEvo)) liste.push({rang: st.reste, ic: `<img class="ico rogne" src="${IMG.mini(n, false)}" alt="">`, t: `Faire évoluer ${PAR_NUM[n].nom}`, v: `encore ${fr(st.reste)} pts`, va: "starter", prio: true});
+  const nb = Object.keys(collection()).length, rg = rangDex(nb);
+  if (rg.suivant) liste.push({rang: rg.reste * 100, ic: ico("radar"), t: `Rang ${rg.suivant}`, v: `encore ${rg.reste} espèce${rg.reste > 1 ? "s" : ""}`, va: "dex"});
+  (V.sanctuaires || []).forEach(x => { if (x.fait) return;
+    const r = x.cible - x.valeur, dist = LIEUX[x.lieu].dist - V.pos;
+    liste.push(x.atteint ? {rang: r * 100, ic: ico("master"), t: "Sanctuaire", v: `encore ${r} jour${r > 1 ? "s" : ""} d'exploit`, va: "speciales"}
+      : {rang: dist + 400, ic: ico("master"), t: "Un sanctuaire", v: `encore ${fr(route(dist))} pts de route`, va: "voyage"}); });
+  if (J.serie >= R.master_jours / 2) { const r = R.master_jours - J.serie; liste.push({rang: r * 100, ic: `<span class="mini-ball">${ballSVG("shiny")}</span>`, t: "Shiny Ball", v: `encore ${r} jour${r > 1 ? "s" : ""} d'objectif`, va: "speciales"}); }
+  // le champion et l'évolution sont toujours là s'ils existent ; le reste complète, du plus proche au plus lointain
+  liste.sort((a, b) => a.rang - b.rang);
+  return [...liste.filter(x => x.prio), ...liste.filter(x => !x.prio)].slice(0, 3).sort((a, b) => a.rang - b.rang);
+}
+function dessinerProchains() {
+  const el = document.getElementById("prochains"), l = prochainsObjectifs();
+  if (!l.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="prochains"><b class="titre-p">Tes prochains objectifs</b>${l.map((x, i) => `<button data-i="${i}"><span class="ic">${x.ic}</span><span class="tx"><b>${x.t}</b><small>${x.v}</small></span></button>`).join("")}</div>`;
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { const k = l[b.dataset.i].va; vibre(8);
+    if (k === "dex") return montrerOnglet("dex");
+    const c = document.getElementById(k); if (c) c.scrollIntoView({behavior: "smooth", block: "center"}); });
+  rognerImages(el);
+}
 function dessinerStarter() {
   const el = document.getElementById("starter"), st = G.starter, n = formeStarter();
   if (!st || !n) { el.innerHTML = ""; return; }
@@ -3966,7 +4009,7 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
   if (PW.__ongletJeu && PW.__ongletJeu !== "aventure") montrerOnglet(PW.__ongletJeu, false);
   else P.body.classList.remove("page-sante");
 }
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerMonDresseur(); dessinerOnglets();
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure

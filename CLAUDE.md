@@ -83,6 +83,8 @@ les femmes), repères de masse grasse (Gallagher 2000), équilibre à 65 ans, tu
 **Shiny Ball d'anniversaire** (voulue par Kiki : 2e exception au « jamais de Pokémon offert », une par an, `pokemon.jours_anniversaire`) : l'appli voit
 que c'est le bon jour (profil du téléphone), la ball existe aussitôt, et le téléphone laisse `<jour>…#demande-anniv` dans la liste partagée
 (`ouvertes.json`, sans changer le script) pour que montre.py la fige. La date exacte n'est donc connue du dépôt que par ce jour-là.
+**Le coach Claude (crédits Claude) reste réservé au compte de Kiki** (`if not AMI`, confirmé par Kiki le 02/11 : à améliorer plus tard) ; les amis n'ont que le bilan autonome.
+**Tes prochains objectifs** (`prochainsObjectifs`, sous la carte) : les 3 buts les plus proches parmi ce qui existe déjà (champion, lieu, évolution, rang, sanctuaire, Shiny Ball), aucune règle en plus.
 **Récap du matin** (`sceneCentre`, `D.matin`) : première visite du jour, 3 bulles au plus de l'Infirmière Joëlle : la nuit, hier
 (`etat["hier"]`), puis le défi du champion ou `bilan.conseil_du_jour` ; la machine de soin seulement après une bonne nuit ;
 coupable dans Dresseur (`pkm_recap_non`).
