@@ -65,7 +65,7 @@ def afficher(lire, aujourd, joueur=None):
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
             "shiny": c["shiny"], "raison": c["raison"], "lieu": c.get("lieu", ""), "legendaire": c["num"] in LEGENDAIRES,
-            "c": c.get("c"),
+            "c": c.get("c"), "rate": bool(c.get("rate")), "chasse": bool(c.get("chasse")), "chance": bool(c.get("chance")),
             "quand": "aujourd'hui" if c["jour"] == str(aujourd) else
                      f"{chiffres.JOURS[dt.date.fromisoformat(c['jour']).weekday()]} {c['jour'][8:]}/{c['jour'][5:7]}",
         } for c in captures],
@@ -84,11 +84,12 @@ def afficher(lire, aujourd, joueur=None):
                   "origine": [ic, nom, types or []], "pas_offerts": R["pas_offerts"],
                   "bonus": [list(b) for b in etat["bonus"]]},
         "mission": etat["mission"],
+        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
-                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie")},
+                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts")},
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"

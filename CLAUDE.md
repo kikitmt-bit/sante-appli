@@ -22,6 +22,33 @@ Kiki) : signature `ouvrir:<id>` qui ne sert qu'à noter ses balls. Pas de coach 
 figées de chacun ; dépôt public : ni identifiant ni erreur dans le journal), pas de `montre.json` pour eux. **Récolte d'un
 ami à l'ouverture de l'appli** (`demander_recolte(ouverture=1)`, une fois par session), au bouton 🔄, et une fois par jour
 sinon ; détails et quotas : CLAUDE.md du dépôt privé. **Pas encore** : voir les autres joueurs (classement, avatars), `Mon matériel`.
+**Calibrage du jeu (audit du 02/11, carte blanche de Kiki, partie 4)** : simulations sur 6 profils, chaque réglage testé
+(simulateur non gardé dans le dépôt ; à refaire : profils de joueurs + `pokemon.jouer`). Le jeu doit favoriser celui qui
+s'implique et le sport, jamais celui qui traîne ; **ces règles priment sur les passages plus anciens ci-dessous** :
+- **Captures** : seulement dans les lieux atteints, jamais à venir (`tirer`, `part_lieu` = 80 % lieu actuel, sinon rattrapage).
+  Pokédex impossible à finir avant le Plateau Indigo. Plus de garde-fou ni de pioche dans tout Kanto.
+- **Plus rien de nouveau** : `sac` = 3 balls attendent le lieu suivant, les autres = **chasse aux shiny** (`chasser` : 3 %,
+  +3 % par raté ; raté = capture `rate` : le Pokémon s'enfuit, hors Pokédex et hors montre).
+- **Arène** : dès le lendemain de l'arrivée (`defi_grise`), Super / Hyper / mission retenues et grisées, Poké Balls sans rien
+  de nouveau en attente sans chasse ; victoire = tout se débloque dans la journée, le champion rend `rend` = 3 derniers jours,
+  le reste est perdu. Défi et plan B **cumulés depuis l'arrivée**, plan B 4, 4, 5, 5, (Koga 5), 6, 6, 7, 7 jours, jour
+  d'exploit = 2. Ligue : 1 jour de Super Ball = 1 membre du Conseil 4 battu (`conseil4`).
+- **Légendaires** : `kanto.SANCTUAIRES` (Électhor, Artikodin, Sulfura : 5 jours d'exploit depuis qu'on l'a atteint, jamais
+  bloquant, marque sur la carte), Mewtwo = Ligue, Mew = diplôme (146 autres), toute petite chance d'un oiseau par ball
+  (`legende_chance` 0,1 / 0,25 / 0,5 %, tirée une fois par ball, une par région : environ 3 parties sur 10). Sanctuaire dont on a
+  déjà le légendaire = Shiny Ball. Liés à la carte, pas au calendrier (sinon le retard s'accumule d'une région à l'autre).
+- **Shiny Ball** (nouvelle, or + étoiles) : 25 jours sur 30 (à la place de la Master Ball) : shiny garanti parmi les déjà
+  attrapés, jamais un légendaire, s'ouvre même pendant un défi.
+- **Hyper Ball donne aussi la Super Ball** (`super_ok`) ; `pas_offerts` = 1 000 ; **Kanto = 7 000 points**, Route 1 à 100.
+- **Ouverture** : 4 secousses pas toujours rares (1 ball ordinaire sur 4, `hachage`) ; scène du légendaire (`presage` :
+  assombri, tremblement, silhouette, cri du dépôt PokeAPI/cries) ; raté de chasse (`enfuite`).
+- **Fin de région** : après la Ligue, plus de sac : tout sert à finir Kanto (manquants, puis chasse) ; mot de Chen ; région
+  suivante = sac vide, barre à 0 (à faire avec Johto, comme le 25 % de rattrapage).
+- Une ball qui attend n'est pas une capture : elle garde le jour où elle a été gagnée (identifiant, graine), `c` = moment où
+  elle sort. Tests dans « 🧪 Tester Kanto » (cartes grisées, sac et chasse, légendaire surprise, Shiny Ball, ball ratée).
+  Simulation à ce rythme, sans viser le champion / en le visant : Kiki 142 / ~103 jours pour la Ligue, sportif 77 / ~72, très
+  sportif 46, débutant 375 / ~243 (point faible : objectifs adaptés à chacun à faire avant d'inviter les amis).
+  Montre : pas encore à jour (Shiny Ball montrée en Master Ball, ratés masqués).
 **Feuille de route du jeu** (01/11 : multijoueur, ratés de capture, stats du dresseur en coches, talents de Ligue, une
 nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de toucher au jeu.
 
@@ -296,8 +323,8 @@ nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de touche
     Dernières captures : les 8 dernières. Pokémon **rares** ⭐
     (`kanto.RARES`, poids ÷ 3). Choix voulu (29/10, carte blanche de Kiki : « ça reste une appli de sport ») : chemin fixe, pas de
     « rester ici » ni de carrefours (il faudrait enregistrer ces choix côté script Google, car ils changent les tirages).
-  - **Parties** (`REGLAGES` `debut` + `partie`) : partie 1 du 19/10 au 26/10 ; **partie 3 depuis le 27/10** (Kiki
-    a tout remis à zéro pour régler le jeu, la 2 n'a duré que quelques heures ; nouvelle partie avec ses amis plus tard). Recommencer = nouvelle date
+  - **Parties** (`REGLAGES` `debut` + `partie`) : partie 1 du 19/10 au 26/10 ; partie 3 du 27/10 au 01/11 ; **partie 4 depuis
+    le 02/11** (règles de l'audit ; Kiki repartira encore de zéro quand le jeu sera fini). Recommencer = nouvelle date
     `debut` + `partie` + 1 : rien de l'ancienne partie ne revient (les données santé ne bougent pas).
   - Identifiants `ident(jour, cle)` = « 2026-10-27-p2#poke3 / super / hyper / master1 / badge1 / ligue / chen »
     (partie 1 : sans « -p1 ») = graines (rejouable) ; les captures figées et les balls ouvertes d'une autre partie

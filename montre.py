@@ -34,6 +34,7 @@ def contenu(lire, maintenant):
     """Le contenu de montre.json."""
     aujourd = maintenant.date()
     captures, etat = pokemon.charger_jeu(lire, aujourd)
+    captures = [c for c in captures if not c.get("rate")]  # la montre attend d'être à jour : les balls ratées restent sur le téléphone
     ouvertes = (lire([pokemon.OUVERTES])[pokemon.OUVERTES] or {}).get("ouvertes", {})
     limite = str(aujourd - dt.timedelta(days=JOURS_OUVERTES))
     a_ouvrir = [c for c in captures if c["id"] not in ouvertes and c["jour"] >= limite]
@@ -51,7 +52,8 @@ def contenu(lire, maintenant):
     hm = lambda x: f"{int(x) // 60 % 24:02d}:{int(x) % 60:02d}" if x == x and x is not None else None  # noqa: E731
     gagnee = lambda cle: any(c["jour"] == str(aujourd) and c["id"].split("#")[1].startswith(cle) for c in captures)  # noqa: E731
     R = pokemon.REGLAGES
-    une = lambda c: {"id": c["id"], "jour": c["jour"], "ball": c["ball"], "raison": c["raison"],  # noqa: E731
+    # (la Shiny Ball n'existe pas encore sur la montre : elle y passe pour une Master Ball)
+    une = lambda c: {"id": c["id"], "jour": c["jour"], "ball": "master" if c["ball"] == "shiny" else c["ball"], "raison": c["raison"],  # noqa: E731
                      "num": c["num"], "nom": POKEMON[c["num"]]["nom"], "types": POKEMON[c["num"]]["types"],
                      "shiny": c["shiny"], "nouvelle": c["nouvelle"], "legendaire": c["num"] in LEGENDAIRES,
                      "image": images.get((c["num"], c["shiny"]), "")}

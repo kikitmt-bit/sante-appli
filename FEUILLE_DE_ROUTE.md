@@ -4,7 +4,8 @@ Rien de tout ça n'est construit : ce sont les idées validées, à faire dans l
 
 ## Durée
 
-- 9 000 points d'effort par région (comme Kanto) : ~3 mois en jouant normalement, ~2 mois à fond.
+- 7 000 points d'effort par région (comme Kanto, audit du 02/11) : ~3 à 5 mois en jouant normalement, ~2 mois à fond,
+  arrêts aux arènes compris.
 - 9 régions = **~2 ans** d'aventure (voulu par Kiki : « un truc vraiment peaufiné »).
 - Contre la lassitude : **9 petits jeux qui se suivent**, chacun avec sa nouveauté (plus bas).
 
@@ -13,11 +14,19 @@ Rien de tout ça n'est construit : ce sont les idées validées, à faire dans l
 - Toujours **une seule déclinaison : le shiny** (refusé : finitions façon cartes TCG, holo, full art…, « trop copier le
   système de cartes »).
 - Toujours **jamais de doublon**.
-- Raretés actuelles : communs, rares ⭐ (`kanto.RARES`, ÷ 3), légendaires (Master Balls seulement), shiny par-dessus.
+- Raretés actuelles : communs, rares ⭐ (`kanto.RARES`, ÷ 3), légendaires (sanctuaires, Ligue, diplôme, toute petite chance
+  par ball), shiny par-dessus. Shiny Ball = un shiny garanti (construit le 02/11).
 - **Ratés** : une ball peut rater (« Oh non ! Le Pokémon s'est libéré ! », la ball éclate). Au départ 1 fois sur 10 avec
   une Poké Ball, moins avec les meilleures balls, jamais avec une Master Ball ; les rares et légendaires sont plus durs.
   Le Pokémon raté n'est pas perdu (il reste dans les tirages).
-- **Rare venu d'ailleurs** : petite chance qu'un rare ⭐ pas encore attrapé sorte hors de son lieu (stat Flair).
+- **Rare un peu plus fréquent** (stat Flair) : plus de chances d'un rare ⭐ **des lieux déjà atteints** (jamais d'un lieu à
+  venir, règle du 02/11).
+
+## Légendaires des régions suivantes
+
+Chaque région : ~5 grands légendaires (sanctuaires sur la carte, trophée de la Ligue, diplôme du Pokédex complet) ; les
+autres légendaires (Ultra-Chimères d'Alola…) = rares ⭐ à un endroit précis. Liés à la carte, jamais au calendrier : sinon le
+retard s'accumule (38 Master Balls au plus en 2 ans pour 100 légendaires ou plus). À chaque région : sac vide, barre à 0.
 
 ## Stats du dresseur
 
@@ -30,7 +39,7 @@ Rien de tout ça n'est construit : ce sont les idées validées, à faire dans l
 |---|---|---|---|
 | 🎯 Lancer | ratés moins fréquents | 1 sur 10 | 1 sur 100 |
 | ✨ Chance | shiny | 1 sur 33 | 1 sur 10 |
-| 🔍 Flair | rare venu d'ailleurs | 1 sur 50 | 1 sur 8 |
+| 🔍 Flair | rares ⭐ des lieux atteints plus fréquents | ÷ 3 | ÷ 1,5 |
 | 🧲 Affinité | Pokémon du type du sport du jour | ×3 | ×8 |
 
 (Refusé : « Pistage », retrouver les Pokémon enfuis.)
