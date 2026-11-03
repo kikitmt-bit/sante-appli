@@ -4318,7 +4318,7 @@ const ENTR = {
 const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Soleil"], Feu: ["Griffe", "Flammèche", "Crocs Feu", "Lance-Flammes"], Eau: ["Charge", "Pistolet à O", "Morsure", "Hydrocanon"]};
 // Les décors du combat (images ChatGPT, scenes/PROMPT.md) : un au hasard à chaque série. Tant qu'il n'y en a pas : le décor du lieu, avec des ronds de sol dessinés.
 const DECORS_COMBAT = [];
-const VERSION_DETECTION = "squats v7";
+const VERSION_DETECTION = "squats v8";
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
 const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
@@ -4367,7 +4367,7 @@ const STYLE_ENTR = `
 // dans un sens puis dans l'autre (squat : descendre puis remonter ; traction : monter puis redescendre). Les mesures sont gardées pour régler les seuils.
 function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
   const haut = reglage.premier === "haut", s1 = reglage.s1 * facteur, s2 = reglage.s2 * facteur, tauG = reglage.tauG || .8, tauV = reglage.tauV || 1.2;
-  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0, biais = null, duree = 0, plusVite = 0, vitDescente = 0, calme = 0, linAvant = 0, plusGrandTrou = 0, vmin = 0, pic = 0;
+  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0, biais = 0, duree = 0, plusVite = 0, vitDescente = 0, calme = 0, linAvant = 0, plusGrandTrou = 0, vmin = 0, pic = 0;
   const mesures = [], brut = [], evenements = [], debutMesures = performance.now();
   let prochainBrut = 0;
   const lire = e => {
@@ -4387,8 +4387,10 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
     let lin = ((a.x - g.x) * g.x + (a.y - g.y) * g.y + (a.z - g.z) * g.z) / n;
     if (b) {
       const hx = a.x - b.x, hy = a.y - b.y, hz = a.z - b.z, hn = Math.hypot(hx, hy, hz) || 1; lin = (b.x * hx + b.y * hy + b.z * hz) / hn;
-      // le capteur a un petit décalage, qui faisait croire à une descente même immobile (vu sur les mesures de Kiki) : on le retire en continu
-      duree += dt; biais = biais === null ? lin : biais + (lin - biais) * Math.min(dt / (duree < 2 ? .5 : 4), 1); lin -= biais;
+      // le capteur a un petit décalage : on l'apprend seulement quand le téléphone est calme. Apprendre vite au départ (v7) prenait un vrai squat pour un décalage : la
+      // vitesse restait bloquée ~10 s, d'où « au début rien, puis ça marche » (série de Kiki, 03/11)
+      if (Math.abs(lin - biais) < .4) biais += (lin - biais) * Math.min(dt / 4, 1);
+      lin -= biais;
     }
     // la moyenne des deux dernières mesures : le calcul reste juste même à 6 mesures par seconde (rejoué sur les mesures de Kiki)
     vit = (vit + (b ? (lin + linAvant) / 2 : lin) * dt) * Math.exp(-dt / tauV); linAvant = lin;
@@ -4440,7 +4442,7 @@ function entrainement(type, {essai = false} = {}) {
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
-  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens || "normale", mesures = [], sonde = null;
+  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null;
   const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
   let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
@@ -4497,7 +4499,7 @@ function entrainement(type, {essai = false} = {}) {
     const n = v.querySelector(".regle b");
     v.querySelector(".moins").onclick = () => { cible = Math.max(cible - 1, 1); n.textContent = cible; };
     v.querySelector(".plus").onclick = () => { cible++; n.textContent = cible; };
-    v.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { sens = b.dataset.s; moi.sens = sens; mem[type] = moi; garderEntr(mem); v.querySelectorAll("[data-s]").forEach(x => x.classList.toggle("on", x === b)); });
+    v.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { sens = b.dataset.s; moi.sens2 = sens; mem[type] = moi; garderEntr(mem); v.querySelectorAll("[data-s]").forEach(x => x.classList.toggle("on", x === b)); });
     v.querySelector(".retour").onclick = fermer;
     v.querySelector(".go").onclick = async () => {
       audio(); parler("Prêt ?"); allume(); pleinEcran();  // son, voix, écran et capteurs ne s'autorisent que sur un toucher
