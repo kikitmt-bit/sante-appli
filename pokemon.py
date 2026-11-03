@@ -60,7 +60,7 @@ REGLAGES = {
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
     "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
-    "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour
+    "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_planche": .1, "bonus_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
     "barre": 100,                    # points d'effort pour une Poké Ball
@@ -413,7 +413,7 @@ def ident(jour, cle, ami=None):
 
 
 GESTES = "data/pokemon/gestes.json"  # pompes, tractions et squats, jour par jour (la montre ne sait pas les compter)
-_GESTE = re.compile(r"#geste-(pompes|tractions|squats|combatshiny)_(-?\d+)_(\d+)$")
+_GESTE = re.compile(r"#geste-(pompes|tractions|squats|planche|combatshiny)_(-?\d+)_(\d+)$")
 SERIE_ECART = 30 * 60 * 1000  # une nouvelle série de pompes : 30 min après la précédente (en millisecondes, comme les traces)
 SERIE_POMPES = 10
 
@@ -436,7 +436,7 @@ def gestes_du(ancien, ouvertes, ami, aujourd):
     for i in ouvertes or ():
         m = _GESTE.search(i)
         if m and i.startswith(ident(i[:10], "geste", ami).split("geste")[0]):
-            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "combatshiny": 0, "_touches": []})
+            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "planche": 0, "combatshiny": 0, "_touches": []})
             t[m[1]] += int(m[2])
             if m[1] == "pompes":
                 t["_touches"].append((int(m[3]), int(m[2])))
@@ -459,7 +459,7 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
         if avant < REGLAGES["pesees"] or jour < missions.NOUVELLES:
             b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
     g = (gestes or {}).get(str(jour)) or {}
-    pts = min(g.get("pompes", 0) * REGLAGES["bonus_pompe"] + g.get("tractions", 0) * REGLAGES["bonus_traction"] + g.get("squats", 0) * REGLAGES["bonus_squat"],
+    pts = min(g.get("pompes", 0) * REGLAGES["bonus_pompe"] + g.get("tractions", 0) * REGLAGES["bonus_traction"] + g.get("squats", 0) * REGLAGES["bonus_squat"] + g.get("planche", 0) * REGLAGES["bonus_planche"],
               REGLAGES["bonus_gestes_max"])
     if pts:
         b.append(("💪", "Pompes, tractions et squats", pts))

@@ -3030,10 +3030,10 @@ function resteDefi() {
   return o.mode === "jour" ? `${o.texte.replace(/^Une /, "une ")}${ouB}` : `encore ${o.unite === "pas" ? fr(Math.max(o.cible - o.v, 0)) : Math.ceil(Math.max(o.cible - o.v, 0))} ${o.unite}${ouB}`;
 }
 // Les pompes, tractions et squats (la montre ne sait pas les compter) : un bouton, et chaque toucher part dans la liste partagée
-const GESTES = {pompes: {nom: "Pompes", pas: [5, 10]}, tractions: {nom: "Tractions", pas: [1, 5]}, squats: {nom: "Squats", pas: [10, 25]}};
+const GESTES = {pompes: {nom: "Pompes", pas: [5, 10]}, tractions: {nom: "Tractions", pas: [1, 5]}, squats: {nom: "Squats", pas: [10, 25]}, planche: {nom: "Planche", pas: []}};
 function gestesAuj() {
-  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0, squats: 0, series: 0}, touches = [];
-  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions|squats)_(-?\d+)_(\d+)/); if (m) { g[m[1]] += +m[2]; if (m[1] === "pompes") touches.push([+m[3], +m[2]]); } });
+  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0, squats: 0, planche: 0, series: 0}, touches = [];
+  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions|squats|planche)_(-?\d+)_(\d+)/); if (m) { g[m[1]] += +m[2]; if (m[1] === "pompes") touches.push([+m[3], +m[2]]); } });
   g.pompes = Math.max(g.pompes, 0); g.tractions = Math.max(g.tractions, 0); g.squats = Math.max(g.squats, 0);
   // les séries : au moins 10 pompes, à 30 min d'écart (même calcul que pokemon.series_de)
   let total = 0, dernier = null;
@@ -3043,7 +3043,7 @@ function gestesAuj() {
   if (!TEST) Object.keys(g).forEach(k => { g[k] = Math.max(g[k], (D.gestes_jour || {})[k] || 0); });
   return g;
 }
-function blocGestes(types = ["pompes", "tractions", "squats"]) {
+function blocGestes(types = ["pompes", "tractions", "squats", "planche"]) {
   const g = gestesAuj();
   return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}<button class="lancer" data-compte="${t}">▶ Série</button></span><b>${g[t]}</b>${t === "tractions" ? `
     <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}` : ""}</div>`).join("")}</div>`;
@@ -3201,7 +3201,7 @@ function dessinerSpeciales() {
     {cle: "nuit", ic: ico("nuit"), nom: "Nuit", val: J.sommeil ? h(J.sommeil).replace(" h ", "h") : "—", p: pct(J.sommeil, R.nuit), ok: nuit, detail: carteNuit},
     D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb}/${D.pesees.cible}`, p: pct(D.pesees.nb, D.pesees.cible), ok: D.pesees.nb >= D.pesees.cible, detail: cartePesee()} : null,
     ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur}/${x.cible}`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
-    {cle: "gestes", ic: "<span>💪</span>", nom: "Pompes", val: `${gestesAuj().pompes + gestesAuj().tractions + gestesAuj().squats}`, p: pct(gestesAuj().pompes * R.bonus_pompe + gestesAuj().tractions * R.bonus_traction + gestesAuj().squats * R.bonus_squat, R.bonus_gestes_max), detail: cartePompes()},
+    {cle: "gestes", ic: "<span>💪</span>", nom: "Pompes", val: `${gestesAuj().pompes + gestesAuj().tractions + gestesAuj().squats}`, p: pct(gestesAuj().pompes * R.bonus_pompe + gestesAuj().tractions * R.bonus_traction + gestesAuj().squats * R.bonus_squat + gestesAuj().planche * R.bonus_planche, R.bonus_gestes_max), detail: cartePompes()},
     G.chasse && G.chasse.actif ? {cle: "chasse", ic: ico("radar"), nom: "Chasse", val: `${Math.round(G.chasse.chance * 100)} %`, p: G.chasse.chance * 100, detail: carteChasse()} : null,
   ].filter(Boolean);
   document.getElementById("speciales").innerHTML = carteDefi() + carteMission(gris, champ, cadenas) + `
@@ -3311,7 +3311,7 @@ function carteSanctuaire(s) {
 // 3. Le défi de l'arène où l'on est arrivé, cumulé depuis l'arrivée (ou son plan B)
 function cartePompes() {
   return `<div class="speciale"><div class="tete">💪 Pompes, tractions, squats</div>
-    <div class="gain">La montre ne sait pas les compter : lance une série, le téléphone compte pour toi. ${R.bonus_pompe * 10} points d'effort pour 10 pompes, ${R.bonus_traction} par traction, ${R.bonus_squat * 10} pour 10 squats, ${R.bonus_gestes_max} au plus par jour. Certains champions acceptent pompes et tractions, et certaines missions aussi.</div>
+    <div class="gain">La montre ne sait pas les compter : lance une série, le téléphone compte pour toi. ${R.bonus_pompe * 10} points d'effort pour 10 pompes, ${R.bonus_traction} par traction, ${R.bonus_squat * 10} pour 10 squats, ${R.bonus_planche * 10} pour 10 s de planche, ${R.bonus_gestes_max} au plus par jour. Certains champions acceptent pompes et tractions, et certaines missions aussi.</div>
     ${blocGestes()}<div class="petit gris" style="margin-top:6px">Tes points arrivent à la prochaine actualisation.</div></div>`;
 }
 function carteDefi() {
@@ -4261,7 +4261,7 @@ function dessinerRegles() {
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
-    <li>💪 <b>Pompes, tractions et squats</b> : la montre ne les compte pas : lance une série depuis « Pompes », le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
+    <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis « Pompes », le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
@@ -4311,6 +4311,8 @@ const ENTR = {
   squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
     capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, balance: 1.15, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte, à ton rythme."},
+  planche: {nom: "Planche", un: "seconde", coach: 76, defaut: 30, decompte: 8, paysage: true, chrono: true, pas: 5, repos: 45,
+    consigne: "Pose le téléphone au sol, en paysage, devant toi. Sur les avant-bras, coudes sous les épaules, <b>corps bien droit de la tête aux talons</b>, sans creuser le dos. Tu n'as que ton honneur comme arbitre : touche l'écran quand tu arrêtes."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
 };
@@ -4374,6 +4376,7 @@ const STYLE_ENTR = `
 .entr-scene .ennemi{left:72%;top:45%;width:21%;transform:translate(-50%,-100%)}.entr-scene .sol.e{left:72%;top:45%;width:28%;height:7%;transform:translate(-50%,-50%)}
 .entr-scene .coach{left:27%;top:68%;width:27%;transform:translate(-50%,-100%)}.entr-scene .sol.c{left:27%;top:68%;width:34%;height:8%;transform:translate(-50%,-50%)}
 .entr-scene .coach.attaque{transform:translate(-50%,-100%) translate(22%,-8%) scale(1.06)}
+.entr-scene .ennemi.attaque-e{transform:translate(-50%,-100%) translate(-26%,10%) scale(1.08)}.entr-scene .coach.abri{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 14px #40A8F8) drop-shadow(0 0 24px #40A8F8)}
 .entr-scene .ennemi.touche{filter:brightness(3) saturate(0);transform:translate(-50%,-100%) translateX(10%)}.entr-scene .ennemi.ko{opacity:0;transform:translate(-50%,-100%) translateY(30%)}.entr-scene .ennemi.entre{opacity:0;transform:translate(-50%,-100%) translateX(50%)}
 .entr-scene .pv-e{background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:5px 9px;font-size:18px;color:#383828}
 .entr-scene .barre{height:12px;background:#484838;border:2px solid #484838;border-radius:7px;overflow:hidden;margin-top:2px}.entr-scene .barre i{display:block;height:100%;width:100%;background:#48C868;transition:width .2s}.entr-scene .barre i.moyen{background:#F8C838}.entr-scene .barre i.bas{background:#D83830}
@@ -4515,7 +4518,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
-  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "";
+  let cible = resteMission || (moi.derniere ? (M.chrono ? Math.max(M.defaut, moi.derniere + (M.pas || 1)) : moi.derniere + 1) : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "";
   const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
   let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
@@ -4562,18 +4565,18 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   function reglage() {
     v.classList.remove("plein");
     const dit = resteMission ? `Pour ta mission du jour, il reste ${resteMission} ${M.un}${resteMission > 1 ? "s" : ""}${mis.geste === "series" ? " dans cette série" : ""}.`
-      : moi.derniere ? `Dernière série : ${moi.derniere}. Vise un peu plus !` : "Première série : à toi de régler.";
+      : moi.derniere ? `Dernière série : ${moi.derniere}${M.chrono ? " s" : ""}. Vise un peu plus !` : "Première série : à toi de régler.";
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><h3>${M.nom}</h3></div><p>${M.consigne}</p></div>
-      <div class="boite"><small>Ton objectif pour cette série</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
-        <small>${dit}${moi.record ? ` Ton record : ${moi.record}.` : ""}</small>
+      <div class="boite"><small>Ton objectif pour cette série${M.chrono ? " (en secondes)" : ""}</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
+        <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? " s" : ""}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
         <div><small class="veille">${veille}</small></div>${D.kiki && M.capteur ? `<div><small>Version : ${VERSION_DETECTION}</small></div>` : ""}</div>
       <button class="go">C'est parti</button><button class="sec retour">Retour</button>
       ${D.kiki && M.capteur ? `<button class="sec apprendre">🎓 Apprentissage : montrer mes vrais mouvements</button>` : ""}`;
     const appr = v.querySelector(".apprendre"); if (appr) appr.onclick = () => { fermer(); apprentissage(type); };
     const n = v.querySelector(".regle b");
-    v.querySelector(".moins").onclick = () => { cible = Math.max(cible - 1, 1); n.textContent = cible; };
-    v.querySelector(".plus").onclick = () => { cible++; n.textContent = cible; };
+    v.querySelector(".moins").onclick = () => { cible = Math.max(cible - (M.pas || 1), M.pas || 1); n.textContent = cible; };
+    v.querySelector(".plus").onclick = () => { cible += M.pas || 1; n.textContent = cible; };
     v.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { sens = b.dataset.s; moi.sens2 = sens; mem[type] = moi; garderEntr(mem); v.querySelectorAll("[data-s]").forEach(x => x.classList.toggle("on", x === b)); });
     v.querySelector(".retour").onclick = fermer;
     v.querySelector(".go").onclick = async () => {
@@ -4625,7 +4628,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   function combat() {
     nettoyer(); v.classList.add("plein");
     motShiny = "";
-    const sh = essai && !shinyEssai ? null : shinyDuJour(cible, shinyEssai);
+    const sh = M.chrono || (essai && !shinyEssai) ? null : shinyDuJour(cible, shinyEssai);
     let n = 0, derniere = 0, pv = sh ? sh.pv : cible, pvMax = sh ? sh.pvMax : cible, koDit = false, finie = false, attaque = 0, adv = sh ? sh.num : adversaireDuLieu(), estShiny = !!sh;
     const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[acteur].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
     const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null, boule = type === "pompes";
@@ -4633,8 +4636,8 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
           ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
           <div class="txt">${sh ? "" : sansVeuve(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`)}</div></div>
-        <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
-          <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
+        <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.chrono ? "Touche l'écran pour arrêter" : M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
+          <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}${M.chrono ? " s" : ""}</small></div>
           <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
     const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair"), anneau = S.querySelector(".anneau .pv");
     S.classList.toggle("boule", boule); S.classList.toggle("chromatique", !!sh);
@@ -4653,7 +4656,24 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       if (boule && ou) {  // l'étoile part de l'endroit exact où le nez a touché
         const b = S.getBoundingClientRect(), i = P.createElement("div"); i.className = "impact"; i.style.left = `${ou.clientX - b.left}px`; i.style.top = `${ou.clientY - b.top}px`; S.appendChild(i); setTimeout(() => i.remove(), 320);
       }
-      n++; nb.textContent = n; derniere = Date.now(); vibre(boule ? 45 : 25); if (!M.capteur) parler(boule && cible - n > 0 && cible - n <= 3 ? `${n}. Plus que ${cible - n} !` : n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
+      n++; nb.textContent = n; derniere = Date.now();
+      if (M.chrono) {  // une seconde de plus : l'adversaire s'épuise, et il attaque toutes les 5 secondes
+        pv--; peindre();
+        if (n % 5 === 0 && pv > 0) {
+          E.classList.add("attaque-e"); apres(() => E.classList.remove("attaque-e"), 220); apres(() => { C.classList.add("abri"); ton(740, 0, .1, {type: "triangle", vol: .1}); ton(990, .08, .14, {type: "triangle", vol: .08}); dire(`${nomC} se protège !`, 1200); }, 160); apres(() => C.classList.remove("abri"), 800);
+        }
+        if (cible - n === 10) parler("Plus que 10 secondes !"); else if (cible - n === 5) parler("Tiens bon !");
+        if (n === cible) { koDit = true; }
+        if (rec && n === rec + 1) { dire("Nouveau record !", 2200); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }
+        if (pv <= 0) { const parti = PAR_NUM[ennemi()].nom; E.classList.add("ko"); vibre(60); [[76, 0], [79, .12], [84, .24]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .09}));
+          if (n === cible) parler("Objectif atteint !");
+          dire(`${parti} est épuisé ! ${n === cible ? "Objectif atteint !" : ""}`, 1800);
+          adv = adversaireDuLieu(adv); pvMax = pv = 15;
+          apres(() => { rogne(IMG.grand(ennemi())).then(([src]) => { E.src = src; }); S.querySelector(".nom-e").textContent = PAR_NUM[ennemi()].nom; E.classList.remove("ko"); E.classList.add("entre"); peindre();
+            requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre"))); dire(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Encore ${pv} s ?`, 1800); }, 800); }
+        return;
+      }
+      vibre(boule ? 45 : 25); if (!M.capteur) parler(boule && cible - n > 0 && cible - n <= 3 ? `${n}. Plus que ${cible - n} !` : n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
       nb.classList.add("tape"); apres(() => nb.classList.remove("tape"), 110);
       C.classList.add("attaque"); apres(() => C.classList.remove("attaque"), 130);
       E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
@@ -4705,7 +4725,11 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       if (D.kiki) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".cpt").appendChild(m);
         minuteurs.push(setInterval(() => { m.textContent = `${VERSION_DETECTION} · ${c.debit()} mesures/s · trou ${c.trou()} ms`; }, 1000)); }
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
-    })(); else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
+    })(); else if (M.chrono) {  // le chrono démarre, et on touche l'écran quand on arrête : pas besoin de viser
+      const depart = Date.now(); dire("Tiens bon !", 1500);
+      minuteurs.push(setInterval(() => { while (!finie && n < Math.floor((Date.now() - depart) / 1000)) rep(); }, 200));
+      S.onpointerdown = e => { e.preventDefault(); fin(); };
+    } else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
       S.onpointerdown = e => { e.preventDefault(); if (Date.now() - derniere < ECART_POMPE) return dire("Trop vite : va jusqu'en haut, bras tendus !", 1200); rep(e); };
     }
   }
@@ -4714,17 +4738,15 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     v.classList.remove("plein");
     const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.kiki && mesures.length;
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
-        <small>${M.nom} comptées${M.poche ? " (corrige si le téléphone s'est trompé)" : ` (corrige une petite erreur, ${CORRECTION_MAX} au plus)`}</small><div class="regle"><button class="moins">−</button><b>${n}</b><button class="plus">+</button></div>
+        <small>${M.chrono ? "Secondes tenues" : `${M.nom} comptées${M.poche ? " (corrige si le téléphone s'est trompé)" : ` (corrige une petite erreur, ${CORRECTION_MAX} au plus)`}`}</small><div class="regle">${M.chrono ? "" : '<button class="moins">−</button>'}<b>${n}</b>${M.chrono ? "" : '<button class="plus">+</button>'}</div>
         ${motShiny}<small class="veille">${veille}</small>${aMesures && sonde ? `<div><small>${VERSION_DETECTION} · ${sonde.debit()} mesures/s · plus grand trou ${sonde.trou()} ms</small></div>` : ""}</div>
-      <button class="go suite">Série suivante (repos ${REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
+      <button class="go suite">Série suivante (repos ${M.repos || REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
       ${aMesures ? `<button class="sec envoi">📤 Envoyer cette série à Claude</button>` : ""}
       ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
     const c = v.querySelector(".regle b"), detecte = n, bm = v.querySelector(".moins"), bp = v.querySelector(".plus");
     const ecartMax = M.poche ? Infinity : CORRECTION_MAX;  // les tractions : sans limite, tant que leur détection n'est pas réglée
     const peindreC = () => { c.textContent = n; bm.disabled = n <= 0 || detecte - n >= ecartMax; bp.disabled = n - detecte >= ecartMax; };
-    bm.onclick = () => { n = Math.max(n - 1, 0); peindreC(); };
-    bp.onclick = () => { n++; peindreC(); };
-    peindreC();
+    if (bm) { bm.onclick = () => { n = Math.max(n - 1, 0); peindreC(); }; bp.onclick = () => { n++; peindreC(); }; peindreC(); }
     // Chaque série de Kiki part toute seule au prochain chargement de l'appli (même chemin que l'apprentissage) ; le bouton l'envoie tout de suite, avec le vrai nombre
     const quand = new Date().toISOString();
     const noter = () => { try {
@@ -4738,13 +4760,13 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n}_${Date.now()}`);
       moi.derniere = n; moi.record = Math.max(moi.record || 0, n); mem[type] = moi; garderEntr(mem);
     };
-    v.querySelector(".suite").onclick = () => { garder(); cible = Math.max(n, 1); repos(REPOS_SERIE); };
+    v.querySelector(".suite").onclick = () => { garder(); if (!M.chrono) cible = Math.max(n, 1); repos(M.repos || REPOS_SERIE); };
     v.querySelector(".fini").onclick = () => { garder(); fermer(); };
   }
 
   function repos(s) {  // récupérer entre deux séries, c'est ce qui permet d'en refaire une vraie
     nettoyer();
-    v.innerHTML = `<div class="rythme">Repos</div><div class="gros">${s}</div><div class="rythme">Respire, secoue les bras. Prochaine série : ${cible}.</div><button class="go go-r">J'y retourne</button><button class="sec fini">J'ai fini</button>`;
+    v.innerHTML = `<div class="rythme">Repos</div><div class="gros">${s}</div><div class="rythme">Respire, secoue les bras. Prochaine série : ${cible}${M.chrono ? " s" : ""}.</div><button class="go go-r">J'y retourne</button><button class="sec fini">J'ai fini</button>`;
     v.querySelector(".fini").onclick = fermer;
     v.querySelector(".go-r").onclick = () => decompte(M.decompte);
     const el = v.querySelector(".gros");
@@ -4836,7 +4858,7 @@ function dessinerTests() {
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
     <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
-    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
+    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
