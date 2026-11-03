@@ -590,6 +590,7 @@ details.regles{color:#484838 !important}
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
     <details class="regles tests"><summary>🧪 Tester Kanto (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
     <button class="bouton-param" id="ouvrir-param">⚙️ Paramètres</button>
+    <button class="bouton-param" id="synchroniser">🔄 Synchroniser mes données</button>
   </section>
 </div>
 
@@ -4731,7 +4732,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       const q = duel.equipe[rangD], suivant = duel.equipe[++rangD];
       if (!suivant) {
         vaincu = true; EPIQUE.fanfare(); vibre([60, 60, 120]);
-        motShiny = `<p><b>${q.qui} est ${DUELS[q.qui].vaincu} !</b>${essai ? "" : " Ton badge arrive à la prochaine actualisation (🔄)."}</p>`;
+        motShiny = `<p><b>${q.qui} est ${DUELS[q.qui].vaincu} !</b>${essai ? "" : " Ton badge arrive à la prochaine actualisation."}</p>`;
         apres(() => dire(`${q.qui} : ${DUELS[q.qui].fin}`, 4000), 1500); apres(fin, 4500);
         return;
       }
@@ -5036,7 +5037,12 @@ function relierBulles() {
   P.addEventListener("scroll", PW.__bullesJeu.defile, true); P.addEventListener("pointerdown", PW.__bullesJeu.touche, true);
 }
 function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut être recréé par Streamlit)
-  document.getElementById("ouvrir-param").onclick = () => { const b = P.querySelector(".st-key-cfg button"); if (b) b.click(); };  // le bouton ⚙️ de Streamlit, caché
+  // les boutons de Streamlit, cachés (conteneur « outils » d'app.py)
+  document.getElementById("ouvrir-param").onclick = () => { const b = P.querySelector(".st-key-cfg button"); if (b) b.click(); };
+  const sync = document.getElementById("synchroniser");
+  sync.onclick = () => { const b = P.querySelector(".st-key-maj button"); if (!b) return; const texte = sync.textContent; vibre(10);
+    sync.textContent = "🔄 Synchronisation en cours…"; sync.disabled = true; b.click();
+    setTimeout(() => { sync.textContent = texte; sync.disabled = false; }, 45000); };  // la page se recharge d'elle-même si des données changent
   const nav = navP(); if (!nav) return;
   relierBulles();
   if (PW.__navJeu) P.removeEventListener("click", PW.__navJeu);

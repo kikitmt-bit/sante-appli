@@ -133,8 +133,8 @@ h3{margin-top:1.4rem !important}
 </style>""", unsafe_allow_html=True)
 
 
-# Haut de page : 5 onglets (Aventure, Muscu, Pokédex, Dresseur : le jeu ; Santé : les chiffres). Le conteneur « outils » : synchroniser
-# en bas à gauche, ⚙️ caché. La barre est du simple HTML : les clics sont écoutés par le jeu
+# Haut de page : 5 onglets (Aventure, Muscu, Pokédex, Dresseur : le jeu ; Santé : les chiffres).
+# La barre est du simple HTML : les clics sont écoutés par le jeu
 # (pokemon_ui.html, relierNav), sans recharger la page ; body.page-sante montre les chiffres au lieu du jeu. Les pages restent
 # en place, repliées (height 0) plutôt que display:none : les graphiques gardent leur largeur et le jeu continue de tourner.
 PIKACHU = base64.b64encode(Path(__file__).with_name("pikachu.png").read_bytes()).decode()
@@ -204,20 +204,12 @@ div:has(> .vega-embed){padding:6px 4px 2px !important}
 .combat .poke:before{display:none}
 [data-testid="stCaptionContainer"] *{color:#D8E0F0 !important}
 </style>""", unsafe_allow_html=True)
-# Synchroniser (03/11, Kiki : ces boutons n'allaient pas en haut) : une petite boîte du jeu, toujours en bas à gauche, à portée de pouce ; elle tourne pendant le chargement.
-# Le bouton ⚙️ reste dans la page mais caché : c'est « Paramètres », tout en bas de Dresseur, qui le touche (pokemon_ui.html).
-SYNCHRO = urllib.parse.quote('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="#D83830" shape-rendering="crispEdges"><g id="a"><path d="M4 2h7v1h1v1h1v3h-2V5h-1V4H5v1H4v1H2V4h1V3h1z"/><path d="M9 7h6v1h-1v1h-1v1h-1V9h-1V8H9z"/></g><g transform="rotate(180 8 8)"><path d="M4 2h7v1h1v1h1v3h-2V5h-1V4H5v1H4v1H2V4h1V3h1z"/><path d="M9 7h6v1h-1v1h-1v1h-1V9h-1V8H9z"/></g></svg>')
+# Le conteneur « outils » est caché : ce sont « Paramètres » et « Synchroniser », tout en bas de Dresseur, qui touchent ses boutons (pokemon_ui.html).
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
-[data-testid="stLayoutWrapper"]:has(> .st-key-outils){{position:fixed;left:14px;bottom:14px;z-index:5;width:auto !important}}
+[data-testid="stLayoutWrapper"]:has(> .st-key-outils){{display:none !important}}
 [data-testid="stElementContainer"]:has(iframe[height="0"]),
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
-.st-key-cfg{{display:none !important}}
-.st-key-maj button{{position:relative;width:46px;height:46px;min-height:46px;padding:0;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}}
-.st-key-maj button p{{font-size:0}}
-.st-key-maj button:before{{content:"";position:absolute;inset:5px;background:url("data:image/svg+xml,{SYNCHRO}") center/contain no-repeat}}
-[data-test-script-state="running"] .st-key-maj button:before{{animation:synchro 1.2s steps(8) infinite}}
-@keyframes synchro{{to{{transform:rotate(360deg)}}}}
 .nav-jeu{{display:flex;gap:3px;background:#0A101D;border-radius:14px;padding:3px}}
 .nav-jeu button{{flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:11px;padding:4px 0 3px;
   background:none;color:#9AA7C2;font:700 11.5px Outfit,sans-serif;cursor:pointer}}
@@ -255,15 +247,21 @@ def _cache():
     return {}  # chemin -> (heure de lecture, contenu)
 
 
-def demander_recolte(**en_plus):
+def demander_recolte(attente=90, **en_plus):
     """Demande au script Google (déployé en Application Web : secrets SCRIPT_URL et SCRIPT_CLE) de récolter tout de suite."""
     s = st.secrets
     with st.spinner("Je demande tes dernières données à Google…"):
         try:
             params = {"cle": s.get("SCRIPT_CLE", "")} | ({"joueur": AMI} if AMI else {}) | en_plus
-            return requests.get(s["SCRIPT_URL"], params=params, timeout=90).json()
+            return requests.get(s["SCRIPT_URL"], params=params, timeout=attente).json()
         except Exception as e:
             return {"ok": False, "erreur": str(e)[:120]}
+
+
+@st.cache_resource
+def _recoltes_ouverture():
+    """Le moment de la dernière récolte à l'ouverture, par joueur (commun à tous ses téléphones)."""
+    return {}
 
 
 def oublier_fichiers():
@@ -274,7 +272,7 @@ def oublier_fichiers():
 
 
 def actualiser():
-    """Bouton 🔄 : récolte immédiate de l'essentiel d'aujourd'hui, puis relit les fichiers."""
+    """« Synchroniser » (Dresseur) : récolte immédiate de l'essentiel d'aujourd'hui, puis relit les fichiers."""
     if st.secrets.get("SCRIPT_URL"):
         rep = demander_recolte()
         st.session_state["message_maj"] = ("✅ Données à jour" if rep.get("ok")
@@ -769,13 +767,16 @@ REGISTRE = lire_depot([JOUEURS], {JOUEURS})[JOUEURS] or {}
 if AMI and AMI not in REGISTRE:
     accueil_ami()
 JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if AMI else None
-# Les données d'un ami sont récoltées à l'ouverture de l'appli (une fois par jour sinon, pour ménager les quotas de Google).
-# En cas de panne, il voit simplement ses dernières données.
-if AMI and st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
+# Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois en 5 min
+# par joueur, et 30 s d'attente au plus. Trop long ou en panne : il voit ses dernières données, la récolte continue côté Google.
+if st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
     st.session_state["recolte_ouverture"] = True
-    reponse_recolte = demander_recolte(ouverture=1)
-    if reponse_recolte.get("ok") and not reponse_recolte.get("frais"):
-        oublier_fichiers()
+    recoltes, maintenant_s = _recoltes_ouverture(), time.time()
+    if maintenant_s - recoltes.get(AMI, 0) > 300:
+        recoltes[AMI] = maintenant_s
+        reponse_recolte = demander_recolte(attente=30, ouverture=1)
+        if reponse_recolte.get("ok") and not reponse_recolte.get("frais"):
+            oublier_fichiers()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
@@ -783,9 +784,9 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
 if "message_maj" in st.session_state:
     st.toast(st.session_state.pop("message_maj"))
 with st.container(key="outils", horizontal=True):
-    synchroniser = st.button("Synchroniser", key="maj", help="Aller chercher tes dernières données maintenant")
-    st.button("⚙️", key="cfg", help="Configuration", on_click=lambda: st.session_state.update(config=True))
-if synchroniser:  # hors du conteneur : son message d'attente ne s'écrit pas dans le petit bouton
+    synchroniser = st.button("Synchroniser", key="maj")
+    st.button("⚙️", key="cfg", on_click=lambda: st.session_state.update(config=True))
+if synchroniser:  # hors du conteneur, qui est caché : son message d'attente doit se voir
     actualiser()
 st.markdown(NAV, unsafe_allow_html=True)
 # L'âge et la taille restent sur le téléphone (carte du dresseur) : relus à l'ouverture, pour le calcul, jamais enregistrés ici
