@@ -4309,7 +4309,7 @@ const ENTR = {
     attaques: ["Poing-Karaté", "Balayage", "Frappe Atlas", "Sacrifice"],
     consigne: "Pose le téléphone <b>en paysage</b> au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
   squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
-    capteur: {premier: "bas", s1: .1, s2: .15, ecart: 1500, tauG: 2.5, tauV: 3, descente: .06, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
+    capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, descente: .25, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte. Suis le rythme : 2 s pour descendre, 1 s pour remonter."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
@@ -4366,7 +4366,7 @@ const STYLE_ENTR = `
 // dans un sens puis dans l'autre (squat : descendre puis remonter ; traction : monter puis redescendre). Les mesures sont gardées pour régler les seuils.
 function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
   const haut = reglage.premier === "haut", s1 = reglage.s1 * facteur, s2 = reglage.s2 * facteur, tauG = reglage.tauG || .8, tauV = reglage.tauV || 1.2;
-  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0;
+  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0, biais = null, duree = 0;
   const mesures = [];
   const lire = e => {
     const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
@@ -4377,10 +4377,14 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
     const n = Math.hypot(g.x, g.y, g.z) || 1, b = reglage.separe && e.acceleration && e.acceleration.x != null ? e.acceleration : null;
     // Pencher le téléphone n'est pas bouger : quand il sait séparer la pesanteur du mouvement, on prend sa réponse (sinon, 1 cm et un poignet qui bouge = un squat)
     let lin = ((a.x - g.x) * g.x + (a.y - g.y) * g.y + (a.z - g.z) * g.z) / n;
-    if (b) { const hx = a.x - b.x, hy = a.y - b.y, hz = a.z - b.z, hn = Math.hypot(hx, hy, hz) || 1; lin = (b.x * hx + b.y * hy + b.z * hz) / hn; }
+    if (b) {
+      const hx = a.x - b.x, hy = a.y - b.y, hz = a.z - b.z, hn = Math.hypot(hx, hy, hz) || 1; lin = (b.x * hx + b.y * hy + b.z * hz) / hn;
+      // le capteur a un petit décalage, qui faisait croire à une descente même immobile (vu sur les mesures de Kiki) : on le retire en continu
+      duree += dt; biais = biais === null ? lin : biais + (lin - biais) * Math.min(dt / (duree < 2 ? .5 : 4), 1); lin -= biais;
+    }
     vit = (vit + lin * dt) * Math.exp(-dt / tauV);
-    // la distance descendue, estimée : un mouvement de 1 cm n'est pas un squat (test : 15 cm réels donnent au moins 6,5 ; 5 cm jamais plus de 3,5)
-    if (vit < -.03) creux += -vit * dt; else if (vit > .02 && creux) { descendu = creux; creux = 0; }
+    // la distance descendue, estimée. Vraies mesures de Kiki (03/11) : ses vrais squats donnent 37 à 70, ses tout petits mouvements 8 à 20
+    if (vit < -.15) creux += -vit * dt; else if (vit > .1 && creux) { descendu = creux; creux = 0; }
     choc += (Math.abs(Math.hypot(a.x, a.y, a.z) - n) - choc) * .25;
     if (t >= prochain && mesures.length < 4000) { prochain = t + 50; mesures.push(`${Math.round(t)},${lin.toFixed(2)},${vit.toFixed(2)},${choc.toFixed(1)}`); }
     if (reglage.impact && choc > reglage.impact) return surImpact && surImpact(t);  // on a lâché la barre, on marche : fini
