@@ -413,7 +413,7 @@ def ident(jour, cle, ami=None):
 
 
 GESTES = "data/pokemon/gestes.json"  # pompes, tractions et squats, jour par jour (la montre ne sait pas les compter)
-_GESTE = re.compile(r"#geste-(pompes|tractions|squats)_(-?\d+)_(\d+)$")
+_GESTE = re.compile(r"#geste-(pompes|tractions|squats|combatshiny)_(-?\d+)_(\d+)$")
 SERIE_ECART = 30 * 60 * 1000  # une nouvelle série de pompes : 30 min après la précédente (en millisecondes, comme les traces)
 SERIE_POMPES = 10
 
@@ -436,7 +436,7 @@ def gestes_du(ancien, ouvertes, ami, aujourd):
     for i in ouvertes or ():
         m = _GESTE.search(i)
         if m and i.startswith(ident(i[:10], "geste", ami).split("geste")[0]):
-            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "_touches": []})
+            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "combatshiny": 0, "_touches": []})
             t[m[1]] += int(m[2])
             if m[1] == "pompes":
                 t["_touches"].append((int(m[3]), int(m[2])))
@@ -566,6 +566,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         ok, chrono = objectif_ok(m), None
         debut_fenetre = max(depuis_master, jour - dt.timedelta(days=R["master_fenetre"] - 1))
         jours_ok = [j for j in jours_ok if j >= debut_fenetre] + ([jour] if ok else [])
+        if ((gestes or {}).get(str(jour)) or {}).get("combatshiny"):  # un shiny battu à l'entraînement : un jour de plus sur la barre (un seul par jour)
+            jours_ok.append(jour)
         shiny_ball = None
         if len(jours_ok) >= R["master_jours"]:  # 25 jours sur 30 : une Shiny Ball, et on recommence à compter
             shiny_balls += 1

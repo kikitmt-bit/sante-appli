@@ -4381,6 +4381,7 @@ const STYLE_ENTR = `
 .entr-scene .deg{position:absolute;left:78%;top:5%;font-size:42px;color:#D83830;text-shadow:2px 2px 0 #fff;animation:entr-deg .6s forwards;pointer-events:none}@keyframes entr-deg{to{transform:translateY(-44px);opacity:0}}
 .entr-scene .eclair{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.entr-scene .eclair.on{animation:entr-eclair .28s}@keyframes entr-eclair{30%{opacity:.75}}
 .entr-scene .txt{position:absolute;left:2%;right:2%;bottom:2%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 11px;min-height:1.3em;font-size:21px;color:#383828;line-height:1.1}
+.entr-scene .pv-e.brille{background:#FFF3B8;border-color:#A87E10}.entr-scene .ennemi.scintille{filter:drop-shadow(0 0 7px #F8C838) drop-shadow(0 0 2px #FFF)}
 .entr-scene .moi{color:#C9D3EA;font-size:16px;text-align:center}.entr-scene .mesure{color:#8FA0C4;font-size:13px;text-align:center}
 .entr-scene .fin{align-self:flex-end;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
 @media (orientation:landscape){.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
@@ -4459,13 +4460,38 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
   return {arreter: () => PW.removeEventListener("devicemotion", lire), recus: () => recus, mesures, brut, evenements, debit, trou: () => Math.round(plusGrandTrou)};
 }
 
-function entrainement(type, {essai = false, decorEssai = null} = {}) {
+// L'adversaire : comme les balls, un Pokémon des lieux atteints, jamais d'un lieu à venir ; 8 fois sur 10 le lieu actuel, les rares moins souvent. C'est visuel : combattre n'attrape pas.
+function adversaireDuLieu(sauf = null) {
+  const ok = n => n !== sauf && !(G.starter && G.starter.ligne.includes(n));
+  const ici = (LIEUX[V.ici].pokemon || []).filter(ok), passes = [...new Set(LIEUX.slice(0, V.ici).flatMap(l => l.pokemon || []))].filter(ok);
+  let lot = ici.length && (!passes.length || Math.random() < .8) ? ici : passes;
+  if (!lot.length) lot = (LIEUX.find(l => (l.pokemon || []).length) || {pokemon: [19]}).pokemon;  // Bourg Palette n'a personne : ceux de la Route 1
+  const poids = lot.map(n => RARES.has(n) ? 1 : 3); let r = Math.random() * poids.reduce((a, b) => a + b, 0);
+  return lot.find((n, i) => (r -= poids[i]) <= 0) || lot[0];
+}
+// Le shiny du jour (Kiki, 03/11) : une chance sur 30 par jour, tirée sur la date (ouvrir et refermer ne change rien). Il vaut deux fois l'objectif, reste jusqu'à minuit et garde ses PV d'une
+// série à l'autre. Battu : +1 jour sur la barre de Shiny Ball (trace geste-combatshiny, comptée par le jeu). Seules les répétitions faites au combat comptent, pas les boutons.
+const SHINY_COMBAT = 30, SHINY_PV_MIN = 20;
+function shinyDuJour(cible, essai) {
+  if (essai) return {num: adversaireDuLieu(), pvMax: Math.max(SHINY_PV_MIN, cible * 2), pv: Math.max(SHINY_PV_MIN, cible * 2), essai: true};
+  if (hachage(`shiny|${D.prefixe}`) % SHINY_COMBAT) return null;
+  if ([...ouvertes].some(i => i.startsWith(`${D.prefixe}geste-combatshiny_`))) return null;
+  let s = null; try { s = JSON.parse(localStorage.getItem("pkm_shiny") || "null"); } catch (e) {}
+  if (!s || s.jour !== D.aujourdhui) {
+    const lot = (LIEUX[V.ici].pokemon || []).length ? LIEUX[V.ici].pokemon : [adversaireDuLieu()];
+    const pv = Math.max(SHINY_PV_MIN, cible * 2);
+    s = {jour: D.aujourdhui, num: lot[hachage(`qui|${D.prefixe}`) % lot.length], pvMax: pv, pv};
+  }
+  return s;
+}
+const garderShiny = s => { if (s.essai) return; try { localStorage.setItem("pkm_shiny", JSON.stringify(s)); } catch (e) {} };
+function entrainement(type, {essai = false, decorEssai = null, shinyEssai = false} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR);
   const M = ENTR[type], mem = lireEntr(), moi = mem[type] || {}, g = gestesAuj(), mis = D.mission || {};
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
-  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null;
+  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "";
   const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
   let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
@@ -4507,6 +4533,8 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
     v.remove(); apresGeste();
   };
 
+  // le décor est chargé dès maintenant : pas de fond vide au début du combat
+  if (!M.poche) { const d0 = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")]; if (d0) (new PW.Image()).src = `${D.scenes}${d0.image}`; }
   function reglage() {
     v.classList.remove("plein");
     const dit = resteMission ? `Pour ta mission du jour, il reste ${resteMission} ${M.un}${resteMission > 1 ? "s" : ""}${mis.geste === "series" ? " dans cette série" : ""}.`
@@ -4572,21 +4600,27 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
   // Pompes et squats : un écran de combat. Chaque répétition est une attaque ; K.O. = l'objectif est atteint, et un autre arrive si tu continues.
   function combat() {
     nettoyer(); v.classList.add("plein");
-    let n = 0, derniere = 0, pv = cible, pvMax = cible, koDit = false, finie = false, iE = M.cibles.findIndex(s => cible <= s), attaque = 0;
-    iE = iE < 0 ? M.cibles.length : iE;
+    motShiny = "";
+    const sh = essai && !shinyEssai ? null : shinyDuJour(cible, shinyEssai);
+    let n = 0, derniere = 0, pv = sh ? sh.pv : cible, pvMax = sh ? sh.pvMax : cible, koDit = false, finie = false, attaque = 0, adv = sh ? sh.num : adversaireDuLieu(), estShiny = !!sh;
     const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[acteur].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
     const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null;
-    const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => M.ennemis[Math.min(iE, M.ennemis.length - 1)];
+    const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => adv;
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
-          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne" src="${IMG.grand(ennemi())}" alt="" ${decor ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" ${decor ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
-          <div class="txt">Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !</div></div>
-        <div class="panneau"><div class="pv-e"><span class="nom-e">${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
+          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" ${decor ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
+          <div class="txt">${sh ? "" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`}</div></div>
+        <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
           <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
           <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
     const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair");
     rognerImages(S);
     let parole = 0;
     const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.textContent = t; };
+    if (sh) {  // l'apparition
+      const nom = PAR_NUM[sh.num].nom, deja = sh.vu; sh.vu = true; garderShiny(sh);
+      dire(deja ? `${nom} chromatique est toujours là ! Encore ${sh.pv} PV.` : `Attention ! Un ${nom} chromatique apparaît ! Il est bien plus résistant !`, 3500);
+      SONS.shiny(); vibre([40, 60, 80]); eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
+    }
     const peindre = () => { const p = Math.max(pv / pvMax * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : ""; };
     const rep = () => {
       n++; nb.textContent = n; derniere = Date.now(); vibre(25); if (!M.capteur) parler(n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
@@ -4598,6 +4632,8 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
       const d = P.createElement("div"); d.className = "deg"; d.textContent = "-1"; S.querySelector(".monde").appendChild(d); setTimeout(() => d.remove(), 650);
       if (sesAttaques) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
       pv--; peindre();
+      if (estShiny) { sh.pv = pv; garderShiny(sh); }
+      if (n === cible && pv > 0) { koDit = true; apres(() => parler("Objectif atteint !"), 300); dire(estShiny ? "Objectif atteint, mais il résiste encore !" : "Objectif atteint !", 1800); }
       if (rec && n === rec + 1) { dire("Coup critique ! Nouveau record !", 2200); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }
       if (pv <= 0) {
         const parti = PAR_NUM[ennemi()].nom; E.classList.add("ko"); vibre(60);
@@ -4605,12 +4641,21 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
         [[76, 0], [79, .12], [84, .24]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .09}));
         if (!koDit) { koDit = true; apres(() => parler("Objectif atteint !"), 500); }
         dire(`${parti} est K.O. ! ${n === cible ? "Objectif atteint !" : ""}`, 1500);
-        iE++; pvMax = pv = 5;  // le suivant : de quoi aller chercher quelques répétitions de plus
+        if (estShiny) {  // la victoire : une seule par jour
+          estShiny = false; sh.battu = true; garderShiny(sh); SONS.shiny(); vibre([60, 60, 120]);
+          if (!sh.essai) memoriser(`${TEST ? "test#" : D.prefixe}geste-combatshiny_1_${Date.now()}`);
+          S.querySelector(".pv-e").classList.remove("brille"); E.classList.remove("scintille");
+          motShiny = `<p><b>${parti} chromatique est K.O. !</b> Ta barre de Shiny Ball gagne 1 jour : ${Math.min(J.serie + 1, R.master_jours)} / ${R.master_jours}.</p>`;
+          dire(`${parti} chromatique est K.O. ! Ta barre de Shiny Ball gagne 1 jour !`, 3000);
+        }
+        adv = adversaireDuLieu(adv); pvMax = pv = 5;  // le suivant : de quoi aller chercher quelques répétitions de plus
         apres(() => { rogne(IMG.grand(ennemi())).then(([src]) => { E.src = src; }); S.querySelector(".nom-e").textContent = PAR_NUM[ennemi()].nom; E.classList.remove("ko"); E.classList.add("entre"); peindre();
           requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre"))); dire(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Encore ${pv} ?`, 1800); }, 800);
       }
     };
-    const fin = () => { if (finie) return; finie = true; nettoyer(); bilan(n, Math.round((Date.now() - debutSerie) / 1000)); };
+    const fin = () => { if (finie) return; finie = true; nettoyer();
+      if (estShiny) motShiny = `<p>${PAR_NUM[sh.num].nom} chromatique t'attend jusqu'à minuit : encore <b>${pv} PV</b>.</p>`;
+      bilan(n, Math.round((Date.now() - debutSerie) / 1000)); };
     const bFin = S.querySelector(".fin");
     if (M.capteur) { bFin.onclick = e => { e.stopPropagation(); fin(); }; bFin.onpointerdown = e => e.stopPropagation(); }
     else { let tenu = null;
@@ -4639,7 +4684,7 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
     const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.kiki && mesures.length;
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
         <small>${M.nom} comptées (corrige si le téléphone s'est trompé)</small><div class="regle"><button class="moins">−</button><b>${n}</b><button class="plus">+</button></div>
-        <small class="veille">${veille}</small>${aMesures && sonde ? `<div><small>${VERSION_DETECTION} · ${sonde.debit()} mesures/s · plus grand trou ${sonde.trou()} ms</small></div>` : ""}</div>
+        ${motShiny}<small class="veille">${veille}</small>${aMesures && sonde ? `<div><small>${VERSION_DETECTION} · ${sonde.debit()} mesures/s · plus grand trou ${sonde.trou()} ms</small></div>` : ""}</div>
       <button class="go suite">Série suivante (repos ${REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
       ${aMesures ? `<button class="sec envoi">📤 Envoyer cette série à Claude</button>` : ""}
       ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
@@ -4757,7 +4802,7 @@ function dessinerTests() {
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
     <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
-    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
+    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
@@ -4770,7 +4815,7 @@ function dessinerTests() {
   on(".t-arene", x => testScene(+x.dataset.n));
   on(".t-fond", x => apercuCapture(x.dataset.f));
   on(".t-centre", () => sceneCentre(true));
-  document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d}));
+  document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d, shinyEssai: !!x.dataset.s}));
   on(".t-pantheon", () => scenePantheon());
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
   on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
