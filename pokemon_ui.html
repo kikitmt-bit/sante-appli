@@ -4404,6 +4404,7 @@ const STYLE_ENTR = `
 .entr-scene.boule .anneau circle{fill:none;stroke-width:5}.entr-scene.boule .anneau .fond{stroke:rgba(20,28,56,.75)}.entr-scene.boule .anneau .pv{stroke:#48C868;transition:stroke-dashoffset .2s}
 .entr-scene.boule .anneau .pv.moyen{stroke:#F8C838}.entr-scene.boule .anneau .pv.bas{stroke:#D83830}.entr-scene.boule.chromatique .anneau .pv{stroke:#F8C838}
 .entr-scene.boule .coach{left:2%;top:auto;bottom:3%;width:24vmin;height:24vmin;transform:none;z-index:2}.entr-scene.boule .coach.attaque{transform:translateY(-18%) scale(1.12)}
+.entr-scene.boule .champ{position:absolute;left:13%;bottom:13vmin;width:20%;height:68vmin;object-fit:contain;object-position:50% 100%;image-rendering:pixelated;z-index:1;filter:drop-shadow(0 0 5px rgba(10,15,35,.7))}
 .entr-scene.boule .panneau{position:absolute;inset:0;padding:0;pointer-events:none;display:block}
 .entr-scene.boule .pv-e,.entr-scene.boule .moi,.entr-scene.boule .cpt small{display:none}
 .entr-scene.boule .cpt{position:absolute;right:3%;top:50%;transform:translateY(-50%);width:auto}.entr-scene.boule .nb{font-size:46vmin;text-shadow:5px 5px 0 #141C38,-2px -2px 0 #141C38}
@@ -4415,7 +4416,7 @@ const STYLE_ENTR = `
 .entr-scene.boule .etourdi{position:absolute;left:50%;top:50%;width:0;height:0;display:none;animation:entr-tourne 1s linear infinite;z-index:1}.entr-scene.boule.sonne .etourdi{display:block}
 .entr-scene.boule .etourdi i{position:absolute;font-style:normal;font-size:7vmin;color:#F8C838;text-shadow:1px 1px 0 #141C38}
 @keyframes entr-tourne{to{transform:rotate(360deg)}}
-@media (orientation:portrait){.entr-scene.boule .cpt{top:10%;right:5%;transform:none}.entr-scene.boule .nb{font-size:30vmin}}
+@media (orientation:portrait){.entr-scene.boule .champ{left:4%;top:9%;bottom:auto;width:40%;height:24vh;object-position:0 0}.entr-scene.boule .cpt{top:10%;right:5%;transform:none}.entr-scene.boule .nb{font-size:30vmin}}
 @media (orientation:landscape){.entr-scene.boule .txt{white-space:nowrap}.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
 
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
@@ -4517,7 +4518,33 @@ function shinyDuJour(cible, essai) {
   return s;
 }
 const garderShiny = s => { if (s.essai) return; try { localStorage.setItem("pkm_shiny", JSON.stringify(s)); } catch (e) {} };
-function entrainement(type, {essai = false, decorEssai = null, shinyEssai = false} = {}) {
+// Le combat d'arène (Kiki, 03/11) : arrivé chez un champion qui accepte les pompes, chaque série se joue dans son arène, contre ses Pokémon, avec lui à côté. Ses PV = les pompes de son défi,
+// réparties entre ses Pokémon : tout se déduit des pompes déjà faites, rien à garder en plus, d'une série et d'un téléphone à l'autre. Le badge reste donné par le défi, comme avant.
+const DUELS = {
+  Pierre: {equipe: [74, 95], vaincu: "vaincu", debut: "Ta tête est-elle aussi dure que mes rochers ?", fin: "Quelle tête dure ! Je m'incline."},
+  Ondine: {equipe: [120, 121], vaincu: "vaincue", debut: "Ici, on ne gagne pas sans se mouiller !", fin: "Hmpf… Tu as plus de bras que je ne pensais !"},
+  Koga: {equipe: [109, 89, 110], vaincu: "vaincu", debut: "Un ninja ne se laisse jamais toucher !", fin: "Je ne t'ai pas vu venir…"},
+  Giovanni: {equipe: [111, 31, 34, 112], vaincu: "vaincu", debut: "Voyons ce que tu as dans les bras.", fin: "Une telle force mérite le respect."},
+  Aldo: {equipe: [107, 106, 68], vaincu: "vaincu", debut: "Montre-moi ce que valent tes muscles !", fin: "Ouah ! Tu t'entraînes aussi dur que moi !"},
+  Agatha: {equipe: [93, 42, 94], vaincu: "vaincue", debut: "Hé hé… Approche, gamin.", fin: "Hmpf ! Tu as la tête dure, gamin."},
+};
+function duelEnCours(essaiQui) {
+  let a, ep;
+  if (essaiQui) {
+    a = LIEUX.map(l => l.arene).find(x => x && (x.champion === essaiQui || x.epreuves.some(e => e.qui === essaiQui)));
+    ep = a.epreuves.map(e => ({qui: e.qui, voies: e.voies.map(o => ({...o, v: 0})), fait: false}));
+  } else {
+    const d = V.defi; if (!d || !d.arrive) return null;
+    a = LIEUX[d.lieu].arene; ep = voiesDefi();
+  }
+  const restent = ep.filter(e => !e.fait && e.voies.some(o => o.defi === "pompes")); if (!restent.length) return null;
+  const numero = a.image || 9, voie = restent[0].voies.find(o => o.defi === "pompes"), total = voie.cible, deja = Math.floor(voie.v);
+  const equipe = restent.flatMap(e => { const qui = e.qui || a.champion, ch = e.qui ? CONSEIL.find(x => x.nom === e.qui) : CHAMPIONS[numero];  // la Ligue n'a pas de salle vide : on regarde le haut de la salle
+    return DUELS[qui].equipe.map(num => ({num, qui, ch, image: numero <= 8 ? FONDS[`arene${numero}`].image : ch.arene.image, haut: numero > 8})); });
+  const seuils = equipe.map((_, i) => Math.round(total * (i + 1) / equipe.length)), rang = seuils.findIndex(s => s > deja);
+  return {equipe, seuils, total, deja, rang, pv: seuils[rang] - deja, pvMax: seuils[rang] - (seuils[rang - 1] || 0)};
+}
+function entrainement(type, {essai = false, decorEssai = null, shinyEssai = false, duelEssai = null} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR);
   const M = ENTR[type], mem = lireEntr(), moi = mem[type] || {}, g = gestesAuj(), mis = D.mission || {};
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
@@ -4567,11 +4594,14 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
 
   // le décor est chargé dès maintenant : pas de fond vide au début du combat
   if (!M.poche) { const d0 = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")]; if (d0) (new PW.Image()).src = `${D.scenes}${d0.image}`; }
+  const lireDuel = () => type === "pompes" && (!essai || duelEssai) ? duelEnCours(duelEssai) : null;
   function reglage() {
     v.classList.remove("plein");
+    const duelR = lireDuel(), adversR = duelR && duelR.equipe[duelR.rang];
+    if (adversR) (new PW.Image()).src = `${D.scenes}${adversR.image}`;
     const dit = resteMission ? `Pour ta mission du jour, il reste ${resteMission} ${M.un}${resteMission > 1 ? "s" : ""}${mis.geste === "series" ? " dans cette série" : ""}.`
       : moi.derniere ? `Dernière série : ${moi.derniere}${M.chrono ? " s" : ""}. Vise un peu plus !` : "Première série : à toi de régler.";
-    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><h3>${M.nom}</h3></div><p>${M.consigne}</p></div>
+    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><h3>${M.nom}${adversR ? ` contre ${adversR.qui}` : ""}</h3></div><p>${M.consigne}</p>${adversR ? `<p><b>Tes pompes comptent pour son défi : encore ${duelR.total - duelR.deja} pour gagner.</b></p>` : ""}</div>
       <div class="boite"><small>Ton objectif pour cette série${M.chrono ? " (en secondes)" : ""}</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
         <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? " s" : ""}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
@@ -4633,14 +4663,15 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   function combat() {
     nettoyer(); v.classList.add("plein");
     motShiny = "";
-    const sh = essai && !shinyEssai ? null : shinyDuJour(cible, shinyEssai);
-    let n = 0, derniere = 0, pv = sh ? sh.pv : cible, pvMax = sh ? sh.pvMax : cible, koDit = false, finie = false, attaque = 0, adv = sh ? sh.num : adversaireDuLieu(), estShiny = !!sh;
+    const duel = lireDuel(), sh = duel || (essai && !shinyEssai) ? null : shinyDuJour(cible, shinyEssai);
+    let rangD = duel ? duel.rang : 0, vaincu = false;
+    let n = 0, derniere = 0, pv = sh ? sh.pv : duel ? duel.pv : cible, pvMax = sh ? sh.pvMax : duel ? duel.pvMax : cible, koDit = false, finie = false, attaque = 0, adv = sh ? sh.num : duel ? duel.equipe[rangD].num : adversaireDuLieu(), estShiny = !!sh;
     const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[acteur].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
     const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null, boule = type === "pompes";
-    const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => adv;
-    v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
-          ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
-          <div class="txt">${sh ? "" : sansVeuve(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`)}</div></div>
+    const image = duel ? duel.equipe[rangD].image : decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => adv;
+    v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')${duel ? `;background-position:50% ${duel.equipe[rangD].haut ? 0 : 45}%` : ""}">
+          ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}>${duel ? `<img class="champ" src="${D.scenes}${duel.equipe[rangD].ch.arene.perso}" alt="">` : ""}<div class="eclair"></div>
+          <div class="txt">${sh || duel ? "" : sansVeuve(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`)}</div></div>
         <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
           <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
           <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
@@ -4650,6 +4681,12 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     let parole = 0;
     const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.textContent = sansVeuve(t);
       if (boule) { txt.style.fontSize = ""; if (txt.scrollWidth > txt.clientWidth) txt.style.fontSize = `${Math.floor(19 * txt.clientWidth / txt.scrollWidth)}px`; } };  // tout tient sur une ligne
+    const crierAdv = () => { try { const a = new PW.Audio(CRI(ennemi())); a.volume = .4; a.play().catch(() => {}); } catch (e) {} };
+    if (duel) {  // le champion t'accueille, puis envoie le Pokémon où tu en étais
+      const q = duel.equipe[rangD];
+      dire(duel.deja > 0 ? `${q.qui} : encore ${duel.total - duel.deja} pompes, et ${PAR_NUM[q.num].nom} t'attend !` : `${q.qui} : ${DUELS[q.qui].debut}`, 3200);
+      crierAdv();
+    }
     if (sh) {  // l'apparition
       const nom = PAR_NUM[sh.num].nom, deja = sh.vu; sh.vu = true; garderShiny(sh);
       dire(deja ? `${nom} chromatique est toujours là ! Encore ${sh.pv} PV.` : `Attention ! Un ${nom} chromatique apparaît !`, 3500);
@@ -4657,12 +4694,27 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     }
     const peindre = () => { const p = Math.max(pv / pvMax * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : "";
       if (anneau) { anneau.style.strokeDashoffset = 100 - p; anneau.setAttribute("class", `pv ${p < 25 ? "bas" : p < 55 ? "moyen" : ""}`); S.classList.toggle("sonne", p < 25 && pv > 0); } };
+    const suiteDuel = () => {  // son Pokémon suivant, ou la victoire : la série s'arrête là, le badge vient du défi
+      const q = duel.equipe[rangD], suivant = duel.equipe[++rangD];
+      if (!suivant) {
+        vaincu = true; EPIQUE.fanfare(); vibre([60, 60, 120]);
+        motShiny = `<p><b>${q.qui} est ${DUELS[q.qui].vaincu} !</b>${essai ? "" : " Ton badge arrive à la prochaine actualisation (🔄)."}</p>`;
+        apres(() => dire(`${q.qui} : ${DUELS[q.qui].fin}`, 4000), 1500); apres(fin, 4500);
+        return;
+      }
+      adv = suivant.num; pvMax = pv = duel.seuils[rangD] - duel.seuils[rangD - 1];
+      apres(() => { rogne(IMG.grand(adv)).then(([src]) => { E.src = src; });
+        if (suivant.ch !== q.ch) { S.querySelector(".champ").src = `${D.scenes}${suivant.ch.arene.perso}`; S.querySelector(".monde").style.backgroundImage = `url('${D.scenes}${suivant.image}')`; }
+        E.classList.remove("ko"); E.classList.add("entre"); peindre(); requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre")));
+        dire(`${suivant.qui} envoie ${PAR_NUM[adv].nom} !`, 1800); crierAdv(); }, 800);
+    };
     const rep = ou => {
+      if (vaincu) return;
       if (boule && ou) {  // l'étoile part de l'endroit exact où le nez a touché
         const b = S.getBoundingClientRect(), i = P.createElement("div"); i.className = "impact"; i.style.left = `${ou.clientX - b.left}px`; i.style.top = `${ou.clientY - b.top}px`; S.appendChild(i); setTimeout(() => i.remove(), 320);
       }
       n++; nb.textContent = n; derniere = Date.now();
-      vibre(boule ? 45 : 25); if (!M.capteur) parler(boule && cible - n > 0 && cible - n <= 3 ? `${n}. Plus que ${cible - n} !` : n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
+      vibre(boule ? 45 : 25); if (!M.capteur) { const reste = duel ? duel.total - duel.deja - n : cible - n; parler(boule && reste > 0 && reste <= 3 ? `${n}. Plus que ${reste} !` : n); }  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
       nb.classList.add("tape"); apres(() => nb.classList.remove("tape"), 110);
       C.classList.add("attaque"); apres(() => C.classList.remove("attaque"), 130);
       E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
@@ -4688,12 +4740,14 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
           motShiny = `<p><b>${parti} chromatique est K.O. !</b> Ta barre de Shiny Ball gagne 1 jour : ${Math.min(J.serie + 1, R.master_jours)} / ${R.master_jours}.</p>`;
           dire(`${parti} chromatique K.O. ! +1 jour de Shiny Ball !`, 3000);
         }
+        if (duel) return suiteDuel();
         adv = adversaireDuLieu(adv); pvMax = pv = 5;  // le suivant : de quoi aller chercher quelques répétitions de plus
         apres(() => { rogne(IMG.grand(ennemi())).then(([src]) => { E.src = src; }); S.querySelector(".nom-e").textContent = PAR_NUM[ennemi()].nom; E.classList.remove("ko"); E.classList.add("entre"); peindre();
           requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre"))); dire(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Encore ${pv} ?`, 1800); }, 800);
       }
     };
     const fin = () => { if (finie) return; finie = true; nettoyer();
+      if (duel && !vaincu) { const restePompes = duel.total - duel.deja - n; motShiny = `<p>${duel.equipe[rangD].qui} t'attend : encore <b>${restePompes} pompe${restePompes > 1 ? "s" : ""}</b> pour gagner. Rien n'est perdu.</p>`; }
       if (estShiny) motShiny = `<p>${PAR_NUM[sh.num].nom} chromatique t'attend jusqu'à minuit : encore <b>${pv} PV</b>.</p>`;
       bilan(n, Math.round((Date.now() - debutSerie) / 1000)); };
     const bFin = S.querySelector(".fin");
@@ -4887,7 +4941,7 @@ function dessinerTests() {
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
     <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
-    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
+    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DUELS).map(q => b(`t-entr" data-e="pompes" data-c="${q}`, `Arène : ${q}`)).join("")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
@@ -4900,7 +4954,7 @@ function dessinerTests() {
   on(".t-arene", x => testScene(+x.dataset.n));
   on(".t-fond", x => apercuCapture(x.dataset.f));
   on(".t-centre", () => sceneCentre(true));
-  document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d, shinyEssai: !!x.dataset.s}));
+  document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d, shinyEssai: !!x.dataset.s, duelEssai: x.dataset.c || null}));
   on(".t-pantheon", () => scenePantheon());
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
   on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
