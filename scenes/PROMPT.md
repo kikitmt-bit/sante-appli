@@ -152,7 +152,7 @@ Composition, very important, landscape format 3:2:
 Strict rules: no text, no letters, no numbers, no UI, no health bars, no dialogue box, no frame, no Pokémon, no creature, no person, no Poké Ball.
 ```
 
-`[PLACE]` : le lieu de la carte, décrit avec ses détails reconnaissables. Fait : Bourg Palette (ChatGPT fait les ronds plus grands que demandé, sans gêne : la place se mesure sur l'image).
+`[PLACE]` : le lieu de la carte, décrit avec ses détails reconnaissables. Kanto : les 20 lieux sont faits (03/11). ChatGPT fait les ronds plus grands que demandé, sans gêne : la place se mesure sur chaque image. Préciser le sol du lieu dans chaque prompt, et « no writing » pour les bâtiments.
 
 **Le sol (03/11, Kiki)** : ChatGPT recopiait partout un rond de sable bordé d'herbe. À ajouter à chaque prompt : `Important: there is NO sand and NO border unless this place has some. The two ovals are simply slightly lighter, worn patches of the same ground as this place, with soft natural edges. The bottom strip of the image is also the same ground. The ovals stay at the same positions and sizes, clearly visible but natural.` Bon exemple : `combat-foret-de-jade.webp`.
 
