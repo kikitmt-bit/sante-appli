@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import random
+import threading
 import time
 import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
@@ -207,6 +208,8 @@ div:has(> .vega-embed){padding:6px 4px 2px !important}
 # Le conteneur « outils » est caché : ce sont « Paramètres » et « Synchroniser », tout en bas de Dresseur, qui touchent ses boutons (pokemon_ui.html).
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
+.st-key-nouvelles{{position:fixed;left:10px;bottom:12px;z-index:50;width:auto !important}}
+.st-key-nouvelles button{{background:#F8F8E8 !important;color:#383828 !important;border:2px solid #484838 !important;box-shadow:2px 2px 0 rgba(10,15,35,.45) !important;border-radius:8px 4px 8px 4px !important}}
 [data-testid="stLayoutWrapper"]:has(> .st-key-outils){{display:none !important}}
 [data-testid="stElementContainer"]:has(iframe[height="0"]),
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
@@ -264,6 +267,38 @@ def _recoltes_ouverture():
     return {}
 
 
+def lancer_recolte():
+    """La récolte de l'ouverture, en tâche de fond : le jeu s'affiche sans attendre Google. -> son état, rempli quand elle finit."""
+    s, etat = st.secrets, {"fini": False, "rep": None}
+    url, params = s["SCRIPT_URL"], {"cle": s.get("SCRIPT_CLE", ""), "ouverture": 1} | ({"joueur": AMI} if AMI else {})
+
+    def travail():
+        try:
+            etat["rep"] = requests.get(url, params=params, timeout=90).json()
+        except Exception as e:  # noqa: BLE001
+            etat["rep"] = {"ok": False, "erreur": str(e)[:120]}
+        etat["fini"] = True
+    etat["fil"] = threading.Thread(target=travail, daemon=True)
+    etat["fil"].start()
+    return etat
+
+
+@st.fragment(run_every=5)
+def suivi_recolte():
+    """Quand Google répond après l'affichage : un petit bouton propose les nouvelles données. On ne recharge jamais le jeu tout seul : il peut y avoir une ball ou une série en cours."""
+    etat = st.session_state.get("recolte")
+    if not etat or not etat["fini"]:
+        return
+    rep = etat["rep"] or {}
+    if not rep.get("ok") or rep.get("frais"):
+        del st.session_state["recolte"]
+        st.rerun()
+    oublier_fichiers()
+    if st.button("🔄 Nouvelles données", key="nouvelles"):
+        del st.session_state["recolte"]
+        st.rerun()
+
+
 def oublier_fichiers():
     """Les fichiers de la personne connectée seront relus (les images restent en mémoire)."""
     c = _cache()
@@ -281,10 +316,24 @@ def actualiser():
     st.rerun()
 
 
+class Panne(Exception):
+    """GitHub ne répond pas, et on n'a encore aucune version de ce fichier."""
+
+
+def ecran_panne():
+    st.markdown("## Pokémon Sport")
+    st.warning("Tes données ne répondent pas pour le moment (GitHub). Rien n'est perdu : réessaie dans une minute.")
+    st.button("Réessayer", type="primary", width="stretch")
+    st.stop()
+
+
 def lire(paths, recents=()):
     """Les fichiers de la personne connectée : ceux de Kiki, ou pour un ami les mêmes dans son dossier (PREFIXE). Le
     seul chemin qui mène aux données : un ami ne peut pas lire celles d'un autre."""
-    lu = lire_depot([PREFIXE + p for p in paths], {PREFIXE + p for p in recents})
+    try:
+        lu = lire_depot([PREFIXE + p for p in paths], {PREFIXE + p for p in recents})
+    except Panne:
+        ecran_panne()
     return {p: lu[PREFIXE + p] for p in paths}
 
 
@@ -315,8 +364,11 @@ def publier_dresseur(texte):
         return
     st.session_state["dresseur_publie"] = d
     chemin = amis.DRESSEURS.format(AMI or amis.KIKI)
-    if lire_depot([chemin], {chemin})[chemin] != d:
-        ecrire_depot(chemin, d, "dresseur")
+    try:
+        if lire_depot([chemin], {chemin})[chemin] != d:
+            ecrire_depot(chemin, d, "dresseur")
+    except Panne:
+        st.session_state.pop("dresseur_publie", None)  # à la prochaine visite
 
 
 def les_joueurs(aujourd):
@@ -326,7 +378,10 @@ def les_joueurs(aujourd):
     if len(tous) < 2:
         return []
     c, now = _cache(), time.time()
-    dresseurs = lire_depot([amis.DRESSEURS.format(i) for i in tous], {amis.DRESSEURS.format(i) for i in tous})
+    try:
+        dresseurs = lire_depot([amis.DRESSEURS.format(i) for i in tous], {amis.DRESSEURS.format(i) for i in tous})
+    except Panne:
+        return []
     out = []
     for ident, debut in tous.items():
         cle = f"jeu-de:{ident}:{aujourd}"
@@ -341,14 +396,32 @@ def les_joueurs(aujourd):
 
 
 def lire_depot(paths, recents=()):
-    """Contenu de plusieurs fichiers (lus en parallèle). Relus après 2 min pour les plus récents, 1 h pour les autres."""
+    """Contenu de plusieurs fichiers (lus en parallèle). Relus après 2 min pour les plus récents, 1 h pour les autres. GitHub en panne : on
+    garde la dernière version lue et on ne réessaie qu'une minute plus tard ; sans aucune version : Panne."""
     c, now = _cache(), time.time()
     a_lire = [p for p in paths if p not in c or c[p][1] is None and now - c[p][0] > 120 or
               not p.startswith("sprites:") and now - c[p][0] > (120 if p in recents else 3600)]  # images : gardées
-    if a_lire:
+    en_panne = now < c.get("__panne", 0)
+    if en_panne:
+        a_lire = [p for p in a_lire if p not in c]
+
+    def un(p):
+        try:
+            return _github(p), True
+        except (requests.RequestException, ValueError):
+            return None, False
+    if a_lire and not en_panne:
         with ThreadPoolExecutor(8) as ex:
-            for p, v in zip(a_lire, ex.map(_github, a_lire)):
-                c[p] = (now, v)
+            for p, (v, ok) in zip(a_lire, ex.map(un, a_lire)):
+                if ok:
+                    c[p] = (now, v)
+                else:
+                    c["__panne"] = now + 60
+                    if "panne_dite" not in st.session_state:
+                        st.session_state["panne_dite"] = True
+                        st.toast("⚠️ GitHub ne répond pas : tu vois tes dernières données connues.")
+    if any(p not in c for p in paths):
+        raise Panne
     return {p: c[p][1] for p in paths}
 
 
@@ -763,20 +836,13 @@ GOOGLE = "auth" in st.secrets  # connexion Google ; sinon l'ancien mot de passe 
 JETON = connexion_google() if GOOGLE else verrou()
 AMI = identifiant_ami()  # None : Kiki
 PREFIXE = dossier_ami(AMI) if AMI else ""
-REGISTRE = lire_depot([JOUEURS], {JOUEURS})[JOUEURS] or {}
+try:
+    REGISTRE = lire_depot([JOUEURS], {JOUEURS})[JOUEURS] or {}
+except Panne:
+    ecran_panne()
 if AMI and AMI not in REGISTRE:
     accueil_ami()
 JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if AMI else None
-# Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois en 5 min
-# par joueur, et 30 s d'attente au plus. Trop long ou en panne : il voit ses dernières données, la récolte continue côté Google.
-if st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
-    st.session_state["recolte_ouverture"] = True
-    recoltes, maintenant_s = _recoltes_ouverture(), time.time()
-    if maintenant_s - recoltes.get(AMI, 0) > 300:
-        recoltes[AMI] = maintenant_s
-        reponse_recolte = demander_recolte(attente=30, ouverture=1)
-        if reponse_recolte.get("ok") and not reponse_recolte.get("frais"):
-            oublier_fichiers()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
@@ -789,6 +855,21 @@ with st.container(key="outils", horizontal=True):
 if synchroniser:  # hors du conteneur, qui est caché : son message d'attente doit se voir
     actualiser()
 st.markdown(NAV, unsafe_allow_html=True)
+# Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois en 5 min
+# par joueur. 5 s d'attente au plus, en tâche de fond ensuite : le jeu s'affiche, et un petit bouton propose les nouvelles données (suivi_recolte).
+if st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
+    st.session_state["recolte_ouverture"] = True
+    recoltes, maintenant_s = _recoltes_ouverture(), time.time()
+    if maintenant_s - recoltes.get(AMI, 0) > 300:
+        recoltes[AMI] = maintenant_s
+        recolte = lancer_recolte()
+        with st.spinner("Je demande tes dernières données à Google…"):
+            recolte["fil"].join(5)
+        if recolte["fini"]:
+            if (recolte["rep"] or {}).get("ok") and not recolte["rep"].get("frais"):
+                oublier_fichiers()
+        else:
+            st.session_state["recolte"] = recolte
 # L'âge et la taille restent sur le téléphone (carte du dresseur) : relus à l'ouverture, pour le calcul, jamais enregistrés ici
 CARTE_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_dresseur') || ''", key="profil_dresseur")
 PROFIL = bilan.lire_profil(CARTE_TEL, dt.datetime.now(TZ).date())
@@ -1060,5 +1141,8 @@ def configuration():
         st.success("C'est oublié : le mot de passe sera redemandé à la prochaine ouverture.")
 
 
+if st.session_state.get("recolte"):
+    with st.container(key="bandeau_recolte"):
+        suivi_recolte()
 if st.session_state.pop("config", False):  # « Paramètres », en bas de Dresseur
     configuration()

@@ -6,7 +6,7 @@
   = une Poké Ball, dont les types favoris dépendent de ce qui a le plus rempli la barre ce jour-là.
 - **Super Ball** : journée « objectif double » (5 000 pas ET 10 min de sport), ou n'importe quel exploit. Shiny ×2.
 - **Hyper Ball** : exploit du jour (10 000 pas, 25 min de sport ou une séance de 45 min). Shiny ×4.
-- **Shiny Ball** : 25 jours avec l'objectif (5 000 pas ou 10 min de sport) sur les 30 derniers, ou un sanctuaire dont on a
+- **Shiny Ball** : 25 jours avec l'objectif (5 000 pas, 10 min de sport ou 15 points de muscu) sur les 30 derniers, ou un sanctuaire dont on a
   déjà le légendaire : un shiny garanti parmi les Pokémon déjà attrapés.
 - **Starter** : il gagne un niveau tous les `pts_niveau` points d'effort et évolue aux niveaux de `evolutions` (16 et 36, comme
   dans les jeux). Ses évolutions ne sortent plus des balls : elles se méritent.
@@ -60,7 +60,8 @@ REGLAGES = {
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
     "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
-    "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_planche": .1, "bonus_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour
+    "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_planche": .1, "bonus_gestes_max": 40, "ancien_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour (25 avant le 04/11)
+    "objectif_gestes": 15, "bonus_famille": 15, "familles_semaine": 4, "hebdo_jours": 4,  # audit du 03/11, depuis le 04/11 : 15 points de muscu dans la journée (30 pompes, 15 tractions, 60 squats) = l'objectif du jour est atteint ; chaque famille de sport travaillée dans la semaine : +15 ; 4 familles : une Super Ball ; 4 jours d'objectif sur 7 : une Super Ball
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
     "barre": 100,                    # points d'effort pour une Poké Ball
@@ -122,6 +123,7 @@ def niveau(points):
     """Le niveau du starter, d'après les points d'effort depuis le début."""
     return REGLAGES["niveau_depart"] + int(points // REGLAGES["pts_niveau"])
 
+NOMS_FAMILLES = {"marche": "la marche", "cardio": "le cardio", "pousser": "les bras", "tirer": "le dos", "jambes": "les jambes"}
 OISEAUX = [144, 145, 146]  # ce que la chance peut donner avant les sanctuaires
 TOTAL_ESPECES = len(POKEMON) - len(LEGENDAIRES)  # les 146 du diplôme
 
@@ -184,12 +186,13 @@ def mesures(s, exercices, jour=None):
         minutes = chiffres.duree(c.get("activeDuration")) / 60
         if minutes >= REGLAGES["seance_min"] and not (equitable(jour) and chiffres.est_marche(c)):
             t = c.get("exerciseType") or "OTHER"
+            if "ROWING" in t or "SWIM" in t:
+                m["eau"] += minutes
             if est_force(c):
                 m["force"] += minutes
                 m["nb_force"] += 1
-            if "ROWING" in t or "SWIM" in t:
-                m["eau"] += minutes
-                t = t if t in SPORTS else "FORCE"
+            if t not in SPORTS and (est_force(c) or "ROWING" in t or "SWIM" in t):  # musculation : ses types (Combat, Acier), voir sport_principal
+                t = "FORCE"
             m["sports"][t] = m["sports"].get(t, 0) + minutes
             m["seance_max"] = max(m["seance_max"], minutes)
     m["sport"] = sum(m["sports"].values())
@@ -207,10 +210,10 @@ def sport_principal(m):
 
 def origine_barre(m):
     """(icône, libellé, types) de ce qui a le plus rempli la barre ce jour-là, sans compter les pas (ils sont là presque
-    tous les jours) : zone, étages ou séances dès 10 points, sinon les pas (tous les types)."""
-    autres = {k: v for k, v in m["points"].items() if k != "pas" and v >= 10}
+    tous les jours) : zone, étages, séances, pompes et squats dès 10 points, sinon les pas (tous les types)."""
+    autres = {k: v for k, v in {**m["points"], "gestes": m.get("gestes_pts", 0)}.items() if k != "pas" and v >= 10}
     cle = max(autres, key=autres.get) if autres else "pas"
-    return sport_principal(m) if cle == "sport" else SOURCES[cle]
+    return MUSCU if cle == "gestes" else sport_principal(m) if cle == "sport" else SOURCES[cle]
 
 
 def exploit(m):
@@ -448,6 +451,13 @@ def gestes_du(ancien, ouvertes, ami, aujourd):
     return jours
 
 
+def points_gestes(g, jour):
+    """Les points d'effort des pompes, tractions, squats et planche d'un jour."""
+    R = REGLAGES
+    return min(g.get("pompes", 0) * R["bonus_pompe"] + g.get("tractions", 0) * R["bonus_traction"] + g.get("squats", 0) * R["bonus_squat"] + g.get("planche", 0) * R["bonus_planche"],
+               R["bonus_gestes_max"] if equitable(jour) else R["ancien_gestes_max"])
+
+
 def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
     """Les petits bonus de points d'effort d'un jour : [(icône, texte, points)]. Pesée du matin : +10 ; mission du
     jour réussie : +25 (le coucher d'hier soir est compté ce matin, quand la nuit est connue). Comptés le jour où on
@@ -459,8 +469,7 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
         if avant < REGLAGES["pesees"] or jour < missions.NOUVELLES:
             b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
     g = (gestes or {}).get(str(jour)) or {}
-    pts = min(g.get("pompes", 0) * REGLAGES["bonus_pompe"] + g.get("tractions", 0) * REGLAGES["bonus_traction"] + g.get("squats", 0) * REGLAGES["bonus_squat"] + g.get("planche", 0) * REGLAGES["bonus_planche"],
-              REGLAGES["bonus_gestes_max"])
+    pts = points_gestes(g, jour)
     if pts:
         b.append(("💪", "Pompes, tractions et squats", pts))
     st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
@@ -490,6 +499,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     voyage = kanto.Voyage()
     jour, m, ok, shiny_bonus = debut, {}, False, 1
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
+    sem, semaine_passee = None, None  # la semaine en cours et celle d'avant (bilan du dimanche)
     mission_du = lambda j: (missions_jours or {}).get(str(j)) if j >= missions.DEPUIS else None  # noqa: E731
     bonus, frise = [], []
     retenues, en_attente, missions_gardees = [], [], []  # gardées par le champion ; sac et balls sans rien de nouveau
@@ -563,7 +573,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     while jour <= aujourd:
         s = stats.loc[jour].to_dict() if jour in stats.index else {}
         m = mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []], jour)
-        ok, chrono = objectif_ok(m), None
+        g = (gestes or {}).get(str(jour)) or {}
+        m["gestes_pts"] = points_gestes(g, jour)
+        ok, chrono = objectif_ok(m) or (equitable(jour) and m["gestes_pts"] >= R["objectif_gestes"]), None
         debut_fenetre = max(depuis_master, jour - dt.timedelta(days=R["master_fenetre"] - 1))
         jours_ok = [j for j in jours_ok if j >= debut_fenetre] + ([jour] if ok else [])
         if ((gestes or {}).get(str(jour)) or {}).get("combatshiny"):  # un shiny battu à l'entraînement : un jour de plus sur la barre (un seul par jour)
@@ -573,6 +585,16 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             shiny_balls += 1
             shiny_ball, jours_ok, depuis_master = shiny_balls, [], jour + dt.timedelta(days=1)
         shiny_bonus = R["shiny_nuit"] if m["sommeil"] >= R["nuit"] else 1
+        if jour.weekday() == 0 or sem is None:
+            semaine_passee = sem
+            sem = {"lundi": str(jour - dt.timedelta(days=jour.weekday())), "jours_ok": 0, "familles": [], "hebdo": False, "variete": False, "jours": 0, "pas": 0, "sport": 0, "nuits": 0, "points": 0}
+        sem["jours"] += 1
+        sem["jours_ok"] += ok
+        sem["pas"] += round(m["pas"])
+        sem["sport"] += round(m["zone"])
+        sem["nuits"] += m["sommeil"] >= R["nuit"]
+        nouvelles_familles = [f for f in missions.FAMILLES if f in missions.familles_du(s, g) and f not in sem["familles"]] if equitable(jour) else []
+        sem["familles"] += nouvelles_familles
         tous_bonus = bonus_du_jour(jour, stats, resumes, mission_du, gestes)
         mission_jour = [b for b in tous_bonus if b[0] == "🎯"]
         bonus = [b for b in tous_bonus if b[0] != "🎯"]
@@ -580,9 +602,10 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         etait_en_defi = voyage.arrivee is not None and voyage.arrivee < jour
         if not etait_en_defi:
             bonus += mission_jour
+        bonus += [("🧩", f"Variété : {NOMS_FAMILLES[f]}", R["bonus_famille"]) for f in nouvelles_familles]
         avant, cumul = cumul, cumul + sum(m["points"].values()) + sum(p for _, _, p in bonus)
+        sem["points"] += round(cumul - avant)
         p0 = voyage.pos
-        g = (gestes or {}).get(str(jour)) or {}
         soir = ((missions_jours or {}).get(str(jour)) or {}).get("pas_soir") or 0
         km = s.get("km") if s.get("km") == s.get("km") and s.get("km") else 0  # None ou NaN : pas de distance ce jour-là
         badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"], "force_min": m["force"],
@@ -619,6 +642,12 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 sanct.append({"cle": f"sanct{num}", "ball": "master", "types": None, "fixe": num,
                               "raison": f"🏛️ Sanctuaire de {kanto.LIEUX[k]['nom']} : {nom}"})
         dues = balls_du_jour(jour, m, avant, cumul, shiny_ball, badges, debut, sanct)
+        if equitable(jour) and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
+            sem["hebdo"] = True
+            dues.append({"cle": "hebdo", "ball": "super", "types": None, "raison": f"📅 {R['hebdo_jours']} jours d'objectif dans la semaine"})
+        if equitable(jour) and not sem["variete"] and len(sem["familles"]) >= R["familles_semaine"]:
+            sem["variete"] = True
+            dues.append({"cle": "variete", "ball": "super", "types": None, "raison": f"🧩 {R['familles_semaine']} sports différents dans la semaine"})
         if jour in anniversaires:
             dues.append({"cle": f"anniv{jour.year}", "ball": "shiny", "types": None, "raison": "🎂 Joyeux anniversaire !"})
         # une capture figée reste, même si les chiffres ont baissé depuis
@@ -714,6 +743,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
+                      "semaine": sem, "semaine_passee": semaine_passee,
+                      "seances_jour": {k: round(float(s.get(f"min_{k}") or 0)) for k in ("rameur", "danse", "velo")} if m else {},
                       "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
                       "starter": starter and {"ligne": LIGNES[starter], "niveau": niveau(cumul), "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1)}}
 

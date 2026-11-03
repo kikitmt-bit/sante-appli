@@ -191,6 +191,8 @@ def stats_jour(r, j=None):
     s["seances"] = len(ex)
     s["min_sport"] = sum(duree(contenu(p).get("activeDuration")) for p in ex) / 60
     s["seance_max"] = max((duree(contenu(p).get("activeDuration")) for p in ex if not est_marche(contenu(p))), default=0) / 60
+    for cle, mots in (("min_rameur", ("ROWING", "rameur")), ("min_velo", ("BIK", "vélo")), ("min_danse", ("DANC", "danse"))):
+        s[cle] = sum(duree(contenu(p).get("activeDuration")) for p in ex if any(m in (contenu(p).get("exerciseType") or "") or m in (contenu(p).get("displayName") or "").lower() for m in mots)) / 60
     return s
 
 

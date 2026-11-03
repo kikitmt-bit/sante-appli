@@ -561,6 +561,7 @@ details.regles{color:#484838 !important}
   <section id="o-aventure">
     <div id="bandeau-voyage"></div>
     <div class="carte" id="voyage"></div>
+    <div id="aujourdhui"></div>
     <div id="prochains"></div>
     <div class="carte" id="aouvrir"></div>
     <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
@@ -715,6 +716,8 @@ function titreBall(c) {
   if (cle === "diplome") return `${nom} · Diplôme du Professeur Chen`;
   if (cle.startsWith("shinyball")) return `${nom} · ${R.master_jours} jours sur ${R.master_fenetre}`;
   if (c.chasse) return `${nom} · Chasse aux shiny`;
+  if (cle === "hebdo") return `${nom} · ${R.hebdo_jours} jours sur 7`;
+  if (cle === "variete") return `${nom} · ${R.familles_semaine} sports dans la semaine`;
   if (c.ball === "hyper") return `${nom} · exploit du jour`;
   if (c.ball === "super") return `${nom} · objectif double`;
   const ici = lieu || (c.fond && NOM_FOND[c.fond]);
@@ -723,7 +726,7 @@ function titreBall(c) {
 function raisonHTML(c) {
   const [e, ...reste] = (c.raison || "").split(" "), txt = reste.join(" ");
   const badge = /#badge(\d)/.exec(c.id), a = badge && LIEUX.filter(l => l.arene)[badge[1] - 1];
-  const i = {"🎁": "poke", "🎂": "shiny", "🏆": "ligue", "👑": "shiny", "🏛️": "master", "🎓": "master", "🎯": "super", "⚡": "effort", "⚖️": "masse"}[e];
+  const i = {"🎁": "poke", "🎂": "shiny", "🏆": "ligue", "👑": "shiny", "🏛️": "master", "🎓": "master", "🎯": "super", "📅": "super", "🧩": "super", "⚡": "effort", "⚖️": "masse"}[e];
   return a && a.arene.image ? `${ico(IMG.badge(a.arene.image), "p")} ${txt}` : i ? `${ico(i, "p")} ${txt}` : c.raison;
 }
 const N3 = n => String(n).padStart(3, "0");
@@ -2875,9 +2878,10 @@ function sceneCentre(apercu = false) {
   // Le récap du matin (02/11) : la nuit, hier, ce qui compte aujourd'hui. Trois bulles au plus : ça doit rester rapide.
   const DC = dialogue(v), dormi = J.sommeil, reposé = dormi >= R.nuit, M = D.matin || {}, HIER = M.hier;
   const bonus = String(Math.round((J.shiny_bonus > 1 ? J.shiny_bonus : 1.5) * 100) / 100).replace(".", ",");
-  const nuitL = reposé ? `Bonjour ${nomDresseur()} ! ${h(dormi)} de sommeil : tes Pokémon sont en pleine forme. Shiny <b>${bonus} fois</b> plus fréquents aujourd'hui !`
-    : dormi ? `Bonjour ${nomDresseur()} ! Nuit un peu courte, ${h(dormi)}. Pas de bonus shiny aujourd'hui, mais tes Pokémon t'attendent.`
-    : `Bonjour ${nomDresseur()} ! Ta nuit n'est pas encore arrivée de ta montre.`;
+  const salut = new Date().getHours() >= 18 ? "Bonsoir" : "Bonjour";
+  const nuitL = reposé ? `${salut} ${nomDresseur()} ! ${h(dormi)} de sommeil : tes Pokémon sont en pleine forme. Shiny <b>${bonus} fois</b> plus fréquents aujourd'hui !`
+    : dormi ? `${salut} ${nomDresseur()} ! Nuit un peu courte, ${h(dormi)}. Pas de bonus shiny aujourd'hui, mais tes Pokémon t'attendent.`
+    : `${salut} ${nomDresseur()} ! Ta nuit n'est pas encore arrivée de ta montre.`;
   // son anniversaire : un mot, et sa Shiny Ball (le seul cadeau du jeu avec le starter, voulu par Kiki)
   const anniv = /^\d{4}-\d{2}-\d{2}$/.test(DRESSEUR.naissance || "") && DRESSEUR.naissance.slice(5) === D.aujourdhui.slice(5);
   const cadeau = CAPTURES.some(c => /#anniv\d{4}$/.test(c.id) && c.jour === D.aujourdhui && !estOuverte(c));
@@ -2891,7 +2895,7 @@ function sceneCentre(apercu = false) {
   let jourL = M.conseil || null;
   if (V.defi && V.defi.arrive) jourL = `${CHAMPIONS[V.defi.numero].nom} t'attend : ${resteDefi()}.`;
   const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()} !${cadeau ? " Tous les Pokémon du centre t'offrent une <b>Shiny Ball</b> : elle t'attend avec tes balls à ouvrir !" : " Tous les Pokémon du centre te le souhaitent."}` : null,
-    anniv ? nuitL.replace(/^Bonjour [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
+    anniv ? nuitL.replace(/^Bon(jour|soir) [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
   let fini = false;
   const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -2916,6 +2920,36 @@ function sceneCentre(apercu = false) {
       await pause(300);
     }
     for (const l of lignes.slice(debut)) await DC.dire(l, "Infirmière Joëlle");
+    fermer();
+  })().catch(() => {});
+}
+// Le bilan de la semaine (audit du 03/11) : le dimanche à partir de 18 h, ou à la première visite d'après. Il manquait un rythme entre la journée et la région.
+function bilanSemaineDu() {
+  const d = new Date(), s = d.getDay() === 0 && d.getHours() >= 18 ? G.semaine : G.semaine_passee;
+  if (!s || s.jours < 3) return null;
+  try { return (localStorage.getItem(`pkm_bilan_sem_${R.partie}`) || "") >= s.lundi ? null : s; } catch (e) { return null; }
+}
+function sceneSemaine(s, apercu = false) {
+  const {v, salle, fin: finE} = ecran("pkm-centre", "centre-nuit-kanto.webp", 941, 1672, `<div class="voile-rose"></div>`);
+  ambiance(v.querySelector("canvas.air"), [{type: "reflets", coul: ["#FFFFFF", "#FFF3C4"], n: 22, haut: [0, .2]}], () => !v.isConnected);
+  const DC = dialogue(v), noms = {marche: "la marche", cardio: "le cardio", pousser: "les bras", tirer: "le dos", jambes: "les jambes"};
+  const liste = a => a.length > 1 ? `${a.slice(0, -1).join(", ")} et ${a[a.length - 1]}` : a[0];
+  const faites = s.familles.map(f => noms[f]), manquent = Object.keys(noms).filter(f => !s.familles.includes(f)).map(f => noms[f]);
+  const pl = (n, m) => `${n} ${m}${n > 1 ? "s" : ""}`;
+  const lignes = [`Voici ta semaine, ${nomDresseur()} ! <b>${pl(s.jours_ok, "jour")} sur 7</b> avec ton objectif.${s.hebdo ? " Une <b>Super Ball</b> t'attend !" : ` Il en fallait ${R.hebdo_jours} pour la Super Ball.`}`,
+    `<b>${fr(s.pas)} pas</b>, ${s.sport} min de sport, ${pl(s.nuits, "nuit")} de 7 h, et <b>${fr(s.points)} points</b> d'effort.`,
+    faites.length ? `Tu as travaillé ${liste(faites)}.${s.variete ? " Autant de variété vaut une <b>Super Ball</b> de plus !" : ""}${manquent.length ? ` La semaine prochaine, pense à ${liste(manquent)}.` : ""}` : "Une semaine calme, ça arrive. La suivante repart de zéro !"];
+  DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
+  let fini = false;
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  const fermer = () => { if (fini) return; fini = true; DC.fin(); finE(); v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); };
+  v.querySelector(".pkm-passer").onclick = fermer;
+  if (!apercu) try { localStorage.setItem(`pkm_bilan_sem_${R.partie}`, s.lundi); localStorage.setItem("pkm_centre_vu", D.aujourdhui); } catch (e) {}
+  (async () => {
+    await pause(200); v.querySelector(".noir").style.opacity = 0;
+    setTimeout(() => salle.style.transform = "translateX(-50%) scale(1.08)", 100);
+    await pause(1000);
+    for (const l of lignes) await DC.dire(l, "Infirmière Joëlle");
     fermer();
   })().catch(() => {});
 }
@@ -3060,15 +3094,16 @@ function blocGestes(types = ["pompes", "tractions", "squats", "planche"]) {
 }
 function apresGeste() {  // tout redessiner, le bonus ouvert le reste
   const ouvert = document.querySelector("#speciales .suivi button.on"), cle = ouvert && ouvert.dataset.c;
-  dessinerSpeciales(); dessinerMuscu();
+  dessinerSpeciales(); dessinerMuscu(); dessinerAujourdhui();
   if (cle) { const t = document.querySelector(`#speciales .suivi button[data-c="${cle}"]`); if (t) t.click(); }
 }
 // La page Muscu (03/11, Kiki : pompes, tractions, squats et planche étaient cachés derrière une petite tuile) : un exercice, un toucher, le téléphone compte
+const EXOS_MONTRE = [["rameur", "Rameur", 86, "traversee", "1 min = 2 pts"], ["danse", "Tapis de danse", 35, "danse", "1 min = 1 pt"]];  // ceux que la montre mesure, avec le matériel de Kiki
 const EXOS = [["pompes", "10 = 5 pts"], ["squats", "10 = 2,5 pts"], ["tractions", "1 = 1 pt"], ["planche", "10 s = 1 pt"]];
 function dessinerMuscu() {
   const el = document.getElementById("muscu"), g = gestesAuj(), mem = lireEntr(), mis = D.mission || {};
   const points = Math.min(g.pompes * R.bonus_pompe + g.tractions * R.bonus_traction + g.squats * R.bonus_squat + g.planche * R.bonus_planche, R.bonus_gestes_max);
-  const pourMission = {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste];
+  const pourMission = {pompes: "pompes", series: "pompes", squats: "squats", tractions: "tractions"}[mis.geste];
   const duel = duelEnCours();
   el.innerHTML = `<div class="muscu-points"><div class="l1"><span>Points d'effort du jour</span><b>${String(Math.round(points * 10) / 10).replace(".", ",")} / ${R.bonus_gestes_max}</b></div>
       <div class="bar"><i class="${points >= R.bonus_gestes_max ? "ok" : ""}" style="width:${points / R.bonus_gestes_max * 100}%"></i></div>
@@ -3079,7 +3114,10 @@ function dessinerMuscu() {
         <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
         <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
         <button class="go-exo" data-compte="${t}">▶ Lancer</button>
-        ${t === "tractions" ? `<div class="plus-moins"><button data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : ""}</div>`; }).join("")}</div>`;
+        ${t === "tractions" ? `<div class="plus-moins"><button data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : ""}</div>`; }).join("")}
+      ${D.kiki ? EXOS_MONTRE.map(([k, nom, num, cle, gain]) => `<div class="exo">${mis.cle === cle && mis.ok !== true ? `<span class="tag">Mission</span>` : ""}<img class="pk rogne" src="${IMG.mini(num)}" alt=""><h3>${nom}</h3>
+        <div class="nb-exo">${(G.seances_jour || {})[k] || 0}<small> min</small></div>
+        <div class="d">aujourd'hui · ${gain}<br>Lance l'exercice sur ta montre : il compte tout seul.</div></div>`).join("") : ""}</div>`;
   brancherGestes(el); rognerImages(el);
 }
 function brancherGestes(racine) {
@@ -3108,6 +3146,27 @@ function prochainsObjectifs() {
   // le champion est toujours là s'il existe (l'évolution reste une surprise) ; le reste complète, du plus proche au plus lointain
   liste.sort((a, b) => a.rang - b.rang);
   return [...liste.filter(x => x.prio), ...liste.filter(x => !x.prio)].slice(0, 3).sort((a, b) => a.rang - b.rang);
+}
+// Aujourd'hui (audit du 03/11) : ce qu'il y a à faire aujourd'hui, sans descendre au 3e écran : le champion, la mission, la prochaine ball spéciale
+function dessinerAujourdhui() {
+  const el = document.getElementById("aujourdhui"), l = [], d = V.defi, m = D.mission, g = gestesAuj();
+  const gagnee = cle => CAPTURES.some(c => c.jour === D.aujourdhui && c.id.split("#")[1].startsWith(cle));
+  if (d && d.arrive) l.push({ic: LIEUX[d.lieu].arene.image ? ico(IMG.badge(LIEUX[d.lieu].arene.image)) : ico("ligue"), t: `Battre ${CHAMPIONS[d.numero].nom}`, v: resteDefi(), va: "speciales"});
+  if (m && m.cle && m.cle !== "coucher") {
+    const val = Math.max(m.valeur == null ? 0 : m.valeur, m.geste ? g[m.geste] || 0 : 0), ok = m.ok === true || (!!m.geste && val >= m.seuil);
+    l.push({ic: m.num ? ico(IMG.mini(m.num)) : ico("radar"), t: m.titre, v: ok ? `Réussie : +${m.bonus} pts` : m.texte, va: !ok && (m.geste || ["traversee", "danse"].includes(m.cle)) ? "muscu" : "speciales"});
+  }
+  if (!G.defi_grise) {
+    const reste = (v, s, u) => v < s ? (u ? `${Math.ceil(s - v)} ${u}` : `${fr(Math.ceil((s - v) / 10) * 10)} pas`) : null;
+    if (!gagnee("super")) l.push({ic: ico("super"), t: "Super Ball", v: `encore ${[reste(J.pas, R.objectif_pas), reste(J.zone, R.objectif_zone, "min de sport")].filter(Boolean).join(" et ")}`, va: "speciales"});
+    else if (!gagnee("hyper")) l.push({ic: ico("hyper"), t: "Hyper Ball", v: `encore ${reste(J.pas, R.exploit_pas)} ou ${reste(J.zone, R.exploit_zone, "min de sport")}`, va: "speciales"});
+  }
+  if (!l.length) { el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="prochains"><b class="titre-p">Aujourd'hui</b>${l.map((x, i) => `<button data-i="${i}"><span class="ic">${x.ic}</span><span class="tx"><b>${x.t}</b><small>${x.v}</small></span></button>`).join("")}</div>`;
+  el.querySelectorAll("button").forEach(b => b.onclick = () => { const k = l[b.dataset.i].va; vibre(8);
+    if (k === "muscu") return montrerOnglet("muscu");
+    const c = document.getElementById(k); if (c) c.scrollIntoView({behavior: "smooth", block: "start"}); });
+  rognerImages(el);
 }
 function dessinerProchains() {
   const el = document.getElementById("prochains"), l = prochainsObjectifs();
@@ -3235,7 +3294,14 @@ function dessinerSpeciales() {
       ${nuit ? `<div class="reste">Touche pour passer au Centre Pokémon.</div>` : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
   // Les bonus : une liste comme « Tes prochains objectifs » (Kiki, 03/11 : les petites tuiles n'étaient pas belles) ; on touche une ligne pour le détail
   const pct = (v, c) => Math.min(c ? v / c * 100 : 0, 100);
+  const S = G.semaine, nomsF = {marche: "La marche", cardio: "Le cardio", pousser: "Les bras", tirer: "Le dos", jambes: "Les jambes"};
+  const carteSemaine = () => `    <div class="speciale ${S.hebdo ? "ok" : ""}">${S.hebdo ? '<span class="tampon">✅</span>' : ""}
+      <div class="tete">${ico("super")}Ta semaine</div><div class="gain">${R.hebdo_jours} jours avec ton objectif = une Super Ball. ${R.familles_semaine} sports différents = une autre. Chaque nouveau sport de la semaine = +${R.bonus_famille} pts.</div>
+      <div class="ligne"><span>Jours d'objectif</span><span>${S.jours_ok} / ${R.hebdo_jours}</span></div>${j(S.jours_ok, R.hebdo_jours)}
+      <div class="ligne"><span>Sports différents</span><span>${S.familles.length} / ${R.familles_semaine}</span></div>${j(S.familles.length, R.familles_semaine)}
+      ${Object.entries(nomsF).map(([f, n]) => `<div class="ligne"><span>${S.familles.includes(f) ? "✅" : "▫️"} ${n}</span></div>`).join("")}</div>`;
   const bonus = [
+    S ? {cle: "semaine", ic: ico("super"), nom: "Ta semaine", val: `${S.jours_ok} / ${R.hebdo_jours} jours · ${S.familles.length} / ${R.familles_semaine} sports`, p: pct(S.jours_ok, R.hebdo_jours), detail: carteSemaine()} : null,
     {cle: "shiny", ic: ico("sball"), nom: "Shiny Ball", val: `${J.serie} / ${R.master_jours} jours`, p: pct(J.serie, R.master_jours), detail: carteShiny},
     {cle: "nuit", ic: ico("nuit"), nom: "Bonne nuit", val: `${J.sommeil ? h(J.sommeil) : "—"} / ${h(R.nuit)}`, p: pct(J.sommeil, R.nuit), detail: carteNuit},
     D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb} / ${D.pesees.cible} cette semaine`, p: pct(D.pesees.nb, D.pesees.cible), detail: cartePesee()} : null,
@@ -3297,7 +3363,7 @@ function carteMission(gris = false, champ = "", cadenas = "") {
   const hier = m && m.hier_coucher != null ? `<div class="pesee-der">Hier soir : couché à <b>${h(m.hier_coucher)}</b> ${m.hier_ok ? "✅ +" + (m.bonus || 25) : "· raté"}</div>` : "";
   if (!m || !m.cle) return `<div class="speciale mission"><div class="tete">${ico("radar")}Mission du jour</div>
     <div class="gain">${hier ? "Pas de nouvelle mission ce soir." : "Elle arrive dans l'heure."}</div>${hier}</div>`;
-  const coucher = m.cle === "coucher", types = {pompes: "pompes", series: "pompes", squats: "squats"}[m.geste];
+  const coucher = m.cle === "coucher", types = {pompes: "pompes", series: "pompes", squats: "squats", tractions: "tractions"}[m.geste];
   const val = Math.max(m.valeur == null ? 0 : m.valeur, m.geste ? gestesAuj()[m.geste] || 0 : 0), ok = m.ok === true || (!!m.geste && val >= m.seuil);
   const u = n => n < 2 && m.unite !== "pas" ? m.unite.replace(/s$/, "") : m.unite;  // « 1 série », mais « 1 pas »
   const j = `<div class="jauge"><div class="${ok ? "ok" : ""}" style="width:${Math.min(val / m.seuil * 100, 100)}%"></div></div>`;
@@ -4281,16 +4347,17 @@ function dessinerRegles() {
       (au moins ${R.seance_min} min, pas la marche : tes pas comptent déjà), ${R.force} par minute de musculation, pompes, tractions ou rameur.</li>
     <li>${ico("radar", "p")} Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes de sport → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
       🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
-      🏞️ elliptique → Psy, Spectre, Fée ; 👟 pas → tous les types.</li>
+      🏞️ elliptique → Psy, Spectre, Fée ; 💪 pompes et squats → Combat, Acier ; 👟 pas → tous les types.</li>
+    <li>${ico("super", "p")} <b>Ta semaine</b> : ${R.hebdo_jours} jours avec ton objectif = une Super Ball, ${R.familles_semaine} sports différents (marche, cardio, bras, dos, jambes) = une autre, et +${R.bonus_famille} points la première fois de la semaine pour chacun. Bilan le dimanche soir.</li>
     <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min de sport dans la journée, ou n'importe quel exploit.</li>
     <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>
     <li>${ico("effort", "p")} <b>Ton starter</b> : il gagne un niveau tous les ${(G.starter || {}).pts_niveau || 195} points d'effort et évolue en grandissant. Ses évolutions ne sortent jamais d'une ball : c'est ton sport qui les fait naître.</li>
-    <li>${ico("shiny", "p brille")} <b>Shiny Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ${fr(R.objectif_pas)} pas ou ${R.objectif_zone} min de sport = un shiny garanti.
+    <li>${ico("shiny", "p brille")} <b>Shiny Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ton objectif (${fr(R.objectif_pas)} pas, ${R.objectif_zone} min de sport, ou ${R.objectif_gestes} points de muscu, soit ${R.objectif_gestes * 2} pompes) = un shiny garanti.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
     <li>${ico("master", "p")} <b>Légendaires</b> : Artikodin, Électhor et Sulfura dans leurs sanctuaires sur la route (5 jours d'exploit, jamais bloquant), Mewtwo à la Ligue, Mew quand tu as les 146 autres. Et une toute petite chance de croiser un oiseau plus tôt, dans n'importe quelle ball.</li>
     <li>${ico("nuit", "p")} Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
     <li>${ico("carte", "p")} <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
-      au Plateau Indigo (environ 3 mois à ton rythme, moins si tu fonces). Rien à choisir : bouge, tu avances.</li>
+      au Plateau Indigo (de 3 à 7 mois selon ton rythme). Rien à choisir : bouge, tu avances.</li>
     <li>${ico("poke", "p")} Les balls ne donnent que des Pokémon des lieux où tu es déjà passé : surtout ici, parfois ceux que tu as ratés plus tôt, et plus souvent ceux des types de ta journée.
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
@@ -4299,10 +4366,10 @@ function dessinerRegles() {
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
-    <li>${ico("radar", "p")} <b>Mission du jour</b> : chaque jour, un Pokémon te lance un défi au hasard, parmi ce que ta montre sait mesurer. Réussie = 20 à 40 points d'effort selon la difficulté.</li>
+    <li>${ico("radar", "p")} <b>Mission du jour</b> : chaque jour, un Pokémon te lance un défi, parmi ce que ta montre sait mesurer. Réussie = 20 à 40 points d'effort selon la difficulté.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
-    ${V.badges[1] || !D.kiki ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
+    ${V.badges[1] || !D.essais ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
 `;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
@@ -4580,7 +4647,7 @@ function duelEnCours(essaiQui) {
 function entrainement(type, {essai = false, decorEssai = null, shinyEssai = false, duelEssai = null} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR);
   const M = ENTR[type], mem = lireEntr(), moi = mem[type] || {}, g = gestesAuj(), mis = D.mission || {};
-  const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
+  const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats", tractions: "tractions"}[mis.geste] === type;
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
   let cible = resteMission || (moi.derniere ? (M.chrono ? Math.max(M.defaut, moi.derniere + (M.pas || 1)) : moi.derniere + 1) : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "";
@@ -4638,9 +4705,9 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       <div class="boite"><small>Ton objectif pour cette série${M.chrono ? " (en secondes)" : ""}</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
         <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? " s" : ""}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
-        <div><small class="veille">${veille}</small></div>${D.kiki && M.capteur ? `<div><small>Version : ${VERSION_DETECTION}</small></div>` : ""}</div>
+        <div><small class="veille">${veille}</small></div>${D.essais && M.capteur ? `<div><small>Version : ${VERSION_DETECTION}</small></div>` : ""}</div>
       <button class="go">C'est parti</button><button class="sec retour">Retour</button>
-      ${D.kiki && M.capteur ? `<button class="sec apprendre">🎓 Apprentissage : montrer mes vrais mouvements</button>` : ""}`;
+      ${D.essais && M.capteur ? `<button class="sec apprendre">🎓 Apprentissage : montrer mes vrais mouvements</button>` : ""}`;
     const appr = v.querySelector(".apprendre"); if (appr) appr.onclick = () => { fermer(); apprentissage(type); };
     const n = v.querySelector(".regle b");
     v.querySelector(".moins").onclick = () => { cible = Math.max(cible - (M.pas || 1), M.pas || 1); n.textContent = cible; };
@@ -4799,7 +4866,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       const c = capteurMouvement(M.capteur, SENSIBILITES[sens], () => rep(), null,
         () => { if (Date.now() - plusBas < 1500) return; plusBas = Date.now(); dire("Pas assez bas : descends cuisses à l'horizontale !", 1400); ton(220, 0, .18, {type: "square", vol: .08}); });
       arret = c.arreter; mesures = c.mesures; sonde = c;
-      if (D.kiki) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".cpt").appendChild(m);
+      if (D.essais) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".cpt").appendChild(m);
         minuteurs.push(setInterval(() => { m.textContent = `${VERSION_DETECTION} · ${c.debit()} mesures/s · trou ${c.trou()} ms`; }, 1000)); }
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
     })(); else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
@@ -4853,7 +4920,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
 
   function bilan(n, duree) {
     v.classList.remove("plein");
-    const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.kiki && mesures.length;
+    const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.essais && mesures.length;
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
         <small>${M.chrono ? "Secondes tenues" : `${M.nom} comptées${M.poche ? " (corrige si le téléphone s'est trompé)" : ` (corrige une petite erreur, ${CORRECTION_MAX} au plus)`}`}</small><div class="regle">${M.chrono ? "" : '<button class="moins">−</button>'}<b>${n}</b>${M.chrono ? "" : '<button class="plus">+</button>'}</div>
         ${motShiny}<small class="veille">${veille}</small>${aMesures && sonde ? `<div><small>${VERSION_DETECTION} · ${sonde.debit()} mesures/s · plus grand trou ${sonde.trou()} ms</small></div>` : ""}</div>
@@ -4861,9 +4928,13 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       ${aMesures ? `<button class="sec envoi">📤 Envoyer cette série à Claude</button>` : ""}
       ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
     const c = v.querySelector(".regle b"), detecte = n, bm = v.querySelector(".moins"), bp = v.querySelector(".plus");
-    const ecartMax = M.poche ? Infinity : CORRECTION_MAX;  // les tractions : sans limite, tant que leur détection n'est pas réglée
+    let ecartMax = M.poche ? Infinity : CORRECTION_MAX;  // les tractions : sans limite, tant que leur détection n'est pas réglée
     const peindreC = () => { c.textContent = n; bm.disabled = n <= 0 || detecte - n >= ecartMax; bp.disabled = n - detecte >= ecartMax; };
     if (bm) { bm.onclick = () => { n = Math.max(n - 1, 0); peindreC(); }; bp.onclick = () => { n++; peindreC(); }; peindreC(); }
+    if (bm && !M.poche) {  // le filet de sécurité (audit du 03/11) : si le capteur rate une série, l'effort n'est pas perdu
+      const l = P.createElement("button"); l.textContent = "Le téléphone a mal compté ?"; l.style.cssText = "display:block;margin:4px auto 0;background:none;border:0;text-decoration:underline;color:inherit;font:inherit;padding:4px;cursor:pointer";
+      v.querySelector(".regle").after(l); l.onclick = () => { ecartMax = Infinity; l.remove(); peindreC(); };
+    }
     // Chaque série de Kiki part toute seule au prochain chargement de l'appli (même chemin que l'apprentissage) ; le bouton l'envoie tout de suite, avec le vrai nombre
     const quand = new Date().toISOString();
     const noter = () => { try {
@@ -4872,11 +4943,13 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       localStorage.setItem("pkm_appr", JSON.stringify(deja.slice(-3))); return true;
     } catch (e) { return false; } };
     if (aMesures) { noter(); v.querySelector(".envoi").onclick = () => { if (noter()) { garder(); PW.location.reload(); } else v.querySelector(".envoi").textContent = "Série trop longue pour l'envoi : dis-le à Claude"; }; }
+    let sauve = 0;  // ce qui est déjà gardé : la série part dès cet écran (appli fermée ici : rien de perdu), puis seulement la correction
     const garder = () => {
-      if (n <= 0 || essai) return;
-      memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n}_${Date.now()}`);
-      moi.derniere = n; moi.record = Math.max(moi.record || 0, n); mem[type] = moi; garderEntr(mem);
+      if (essai) return;
+      if (n !== sauve) { memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n - sauve}_${Date.now()}`); sauve = n; }
+      if (n > 0) { moi.derniere = n; moi.record = Math.max(moi.record || 0, n); mem[type] = moi; garderEntr(mem); }
     };
+    garder();
     v.querySelector(".suite").onclick = () => { garder(); if (!M.chrono) cible = Math.max(n, 1); repos(M.repos || REPOS_SERIE); };
     v.querySelector(".fini").onclick = () => { garder(); fermer(); };
   }
@@ -4960,7 +5033,7 @@ function apprentissage(type) {
 }
 
 function dessinerTests() {
-  if (!D.kiki) { const d = document.querySelector("details.tests"); if (d) d.remove(); return; }  // une surprise pour les amis : arènes, lieux, légendaires…
+  if (!D.essais) { const d = document.querySelector("details.tests"); if (d) d.remove(); return; }  // une surprise pour les amis : arènes, lieux, légendaires…
   const b = (cls, html) => `<button class="filtre ${cls}">${html}</button>`;
   const ext = ["prairie", "foret", "grotte", "riviere", "mer", "ville", "montagne", "centrale", "tour", "safari", "volcan"];
   document.getElementById("tests").innerHTML = `
@@ -5036,6 +5109,23 @@ function relierBulles() {
   PW.__bullesJeu = {defile: () => fermerBulles(), touche: e => { if (!(e.target.closest && e.target.closest(".vega-embed"))) fermerBulles(); }};
   P.addEventListener("scroll", PW.__bullesJeu.defile, true); P.addEventListener("pointerdown", PW.__bullesJeu.touche, true);
 }
+// Le bouton retour d'Android (audit du 03/11) : il ferme ce qui est ouvert, puis revient à Aventure, et seulement ensuite quitte l'appli. Jamais de ball perdue : une ouverture ou une scène de badge ne se quitte pas.
+function relierRetour() {
+  if (PW.__retourJeu) { PW.removeEventListener("popstate", PW.__retourJeu); P.removeEventListener("pointerdown", PW.__gardeJeu, true); }
+  const poser = () => { if (!PW.__gardePosee) { PW.history.pushState({pkm: 1}, ""); PW.__gardePosee = true; } };  // au premier toucher : sans geste, Chrome ignorerait cette étape
+  PW.__gardeJeu = poser;
+  PW.__retourJeu = () => {
+    PW.__gardePosee = false;
+    const fermer = P.querySelector("#pkm-fiche .fermer, .pkm-entr .retour, .pkm-entr .fini, .pkm-entr .passer, .pkm-ecran .pkm-passer");
+    if (fermer) { fermer.click(); poser(); return; }
+    if (P.querySelector(".pkm-entr, .pkm-ecran, #pkm-badge, #pkm-intro, #pkm-voile")) { poser(); return; }
+    if (ONGLET !== "aventure") { montrerOnglet("aventure"); poser(); return; }
+    PW.history.back();
+  };
+  PW.addEventListener("popstate", PW.__retourJeu);
+  P.addEventListener("pointerdown", poser, true);
+  document.addEventListener("pointerdown", poser, true);  // (un toucher dans le jeu ne remonte pas jusqu'à la page)
+}
 function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut être recréé par Streamlit)
   // les boutons de Streamlit, cachés (conteneur « outils » d'app.py)
   document.getElementById("ouvrir-param").onclick = () => { const b = P.querySelector(".st-key-cfg button"); if (b) b.click(); };
@@ -5044,20 +5134,22 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
     sync.textContent = "🔄 Synchronisation en cours…"; sync.disabled = true; b.click();
     setTimeout(() => { sync.textContent = texte; sync.disabled = false; }, 45000); };  // la page se recharge d'elle-même si des données changent
   const nav = navP(); if (!nav) return;
-  relierBulles();
+  relierBulles(); relierRetour();
   if (PW.__navJeu) P.removeEventListener("click", PW.__navJeu);
   PW.__navJeu = e => { const b = e.target.closest && e.target.closest(".nav-jeu [data-o]"); if (b) montrerOnglet(b.dataset.o); };
   P.addEventListener("click", PW.__navJeu);
   if (PW.__ongletJeu && PW.__ongletJeu !== "aventure") montrerOnglet(PW.__ongletJeu, false);
   else P.body.classList.remove("page-sante");
 }
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerAujourdhui(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
   if (chen && !estOuverte(chen)) setTimeout(() => demarrerAventure(chen), 400);
-  // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur)
+  // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur) ; ou le bilan de la semaine quand il est dû
+  else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
+    setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);
   else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneCentre(); }, 1200);
 }

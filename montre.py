@@ -275,7 +275,7 @@ def calculer_missions(lire, aujourd, ami=None):
         chemins = {j: f"data/jour/{j.year}/{j}.json" for j in jours}
         lu = lire(list(chemins.values()))
         return {j: lu[c] for j, c in chemins.items()}
-    return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour, ami)
+    return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour, ami, calculer_gestes(lire, aujourd, ami)["jours"])
 
 
 def calculer_gestes(lire, aujourd, ami=None):

@@ -65,7 +65,9 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "prefixe": pokemon.ident(aujourd, "", joueur["id"] if joueur else None),
         "gestes_jour": etat["gestes_jour"],
         "jeu": _acces_jeu(joueur),
-        "kiki": joueur is None,  # les tests et les aperçus : Kiki seul, le reste du jeu doit rester une surprise pour les amis
+        "kiki": joueur is None,
+        # les tests, les aperçus et les réglages des capteurs : Kiki seul, avec ?essais=1 dans l'adresse (le reste du jeu doit rester une surprise, pour lui aussi)
+        "essais": joueur is None and st.query_params.get("essais") == "1",
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
             "shiny": c["shiny"], "raison": c["raison"], "lieu": c.get("lieu", ""), "legendaire": c["num"] in LEGENDAIRES,
@@ -94,12 +96,12 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "mission": etat["mission"],
         "joueurs": list(joueurs),
         "matin": {"hier": etat["hier"], "conseil": conseil},
-        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter")},
+        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "seances_jour")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
-                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_squat", "bonus_planche", "bonus_gestes_max")},
+                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_squat", "bonus_planche", "bonus_gestes_max", "objectif_gestes", "bonus_famille", "familles_semaine", "hebdo_jours")},
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"

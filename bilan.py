@@ -366,10 +366,14 @@ def _numerique(stats):
 
 
 def _phrase(cartes):
-    alertes = sum(c["ton"] == ALERTE for c in cartes)
+    alertes = {c["theme"] for c in cartes if c["ton"] == ALERTE}
     bons = sum(c["ton"] == BON for c in cartes)
-    if alertes:
+    if "recup" in alertes:
         return "On lève le pied aujourd'hui, ton corps a des choses à dire."
+    if "sommeil" in alertes:
+        return "Pas de grosse séance aujourd'hui : bouge doucement et couche-toi plus tôt."
+    if alertes:
+        return "Un point à surveiller, sans s'affoler."
     if bons >= 2:
         return "Tes Pokémon sont en forme, et toi aussi."
     if bons:
