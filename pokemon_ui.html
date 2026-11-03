@@ -170,6 +170,9 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff;font-family:Outfit,sans-serif;
   background:radial-gradient(circle at 50% 50%,rgba(10,16,30,.35),rgba(10,16,30,.72));transition:opacity .45s}
 .carte-attente.part{opacity:0;pointer-events:none}
+.panneau-lieu{position:absolute;left:0;right:0;top:0;height:100px;z-index:9;overflow:hidden;pointer-events:none;text-align:center}
+.panneau-lieu div{display:inline-block;margin-top:44px;padding:5px 22px;max-width:86%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:24px;line-height:1.1;color:#383828;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.35);animation:panneau-lieu 1.9s both}
+@keyframes panneau-lieu{0%,100%{transform:translateY(-100px)}14%,86%{transform:none}}
 .puce-replay{position:absolute;left:10px;top:10px;z-index:8;padding:5px 10px;border-radius:999px;background:rgba(10,16,30,.82);
   color:#fff;font-size:13px;font-weight:800;box-shadow:0 2px 8px rgba(0,0,0,.4);transition:opacity .8s;pointer-events:none}
 .puce-replay b{color:#FFE27A}
@@ -4024,12 +4027,12 @@ function etatVoyage() {
   const fin = cumulV();
   vu = Math.min(isNaN(vu) ? 0 : vu, fin);
   const p0 = posDeC(vu);
-  const lieux = LIEUX.filter((l, k) => k && l.dist > p0 && l.dist <= V.pos).map(l => l.nom.replace(" (retour)", ""));
+  const etapes = LIEUX.filter((l, k) => k && l.dist > p0 && l.dist <= V.pos), lieux = etapes.map(l => l.nom.replace(" (retour)", ""));
   const balls = TEST ? [] : CAPTURES.filter(c => c.c != null && c.c > vu + 1e-6 && c.c <= fin + 1e-6 && !/#(chen|anniv\d{4}|evo\d)$/.test(c.id))
     .sort((a, b) => a.c - b.c);
   const attente = fin - vu >= SEUIL_VOYAGE || lieux.length > 0 || balls.length > 0;
   if (attente) balls.forEach(c => EN_ROUTE.add(c.id));
-  return (VOYAGE = {vu, p0, fin, gain: Math.round(fin - vu), lieux, balls, attente});
+  return (VOYAGE = {vu, p0, fin, gain: Math.round(fin - vu), etapes, lieux, balls, attente});
 }
 function texteVoyage(v) {
   const n = v.balls.filter(c => !estOuverte(c)).length;
@@ -4081,6 +4084,15 @@ function sortirBall(el, c) {
       const a = document.getElementById("aouvrir"); a.classList.remove("recu"); void a.offsetWidth; a.classList.add("recu"); }, 650);
   }, spe ? 1300 : 800);
 }
+// Un nouveau lieu pendant le replay : son nom sur un panneau en haut de la carte, comme dans les jeux GBA, le dresseur s'arrête un instant (03/11)
+const PAUSE_LIEU = 1200;
+function panneauLieu(cadre, nom) {
+  const ancien = cadre.querySelector(".panneau-lieu"); if (ancien) ancien.remove();
+  const b = document.createElement("div"); b.className = "panneau-lieu"; b.innerHTML = `<div>${nom}</div>`;
+  cadre.appendChild(b);
+  try { ton(784, 0, .08, {type: "square", vol: .04}); ton(1047, .09, .14, {type: "square", vol: .04}); } catch (e) {}
+  setTimeout(() => b.remove(), 1900);
+}
 let CENTRER = () => {};
 function voyagerDepuis(el, v, centrer, immediat) {
   const vue = el.querySelector(".carte-vue"), g = el.querySelector("#chemin-anim"), ancre = el.querySelector(".heros-ancre");
@@ -4088,7 +4100,7 @@ function voyagerDepuis(el, v, centrer, immediat) {
   el.querySelectorAll(".ami-carte.toi").forEach(x => x.remove());  // l'étiquette de ton groupe resterait sur place pendant que tu marches
   // durée : selon ce qui a été fait (entre 3 et 9 s), un peu plus quand il y a des balls à voir sortir
   const T = ZC > 1 ? 1.25 : 1, duree = Math.min(9000, 2800 + (c1 - c0) * 7 + v.balls.length * 250);
-  const balls = v.balls.slice(), jours = new Set((V.frise || []).filter(f => f.c1 > c0 && f.c0 < c1).map(f => f.jour));
+  const balls = v.balls.slice(), etapes = v.etapes.slice(), jours = new Set((V.frise || []).filter(f => f.c1 > c0 && f.c0 < c1).map(f => f.jour));
   let suivre = true, cle = "", u = 0, avant = null, vite = false, attendu = false;
   ["pointerdown", "wheel", "touchstart"].forEach(ev => vue.addEventListener(ev, () => (suivre = false), {once: true, passive: true}));
   vue.addEventListener("click", () => { if (u < 1) vite = true; }, {once: true});  // toucher la carte : la fin tout de suite
@@ -4105,8 +4117,8 @@ function voyagerDepuis(el, v, centrer, immediat) {
     if (!document.body.contains(g)) { balls.forEach(c => EN_ROUTE.delete(c.id)); puce.remove(); dessinerAOuvrir(); return; }
     if (!attendu) { if (!immediat && !visible()) return setTimeout(() => requestAnimationFrame(pas), 250);
       attendu = true; avant = now + (immediat ? 150 : 600); }
-    if (now < avant) return requestAnimationFrame(pas);
-    u = Math.min(1, u + (now - avant) / (vite ? 450 : duree)); avant = now;
+    if (now < avant && !vite) return requestAnimationFrame(pas);
+    u = Math.min(1, u + Math.max(now - avant, 0) / (vite ? 450 : duree)); avant = now;
     const e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
     const c = u >= 1 ? c1 : c0 + (c1 - c0) * e, p = u >= 1 ? V.pos : posDeC(c), P = poseA(p);
     g.innerHTML = trajet(p0, p).map(x => traitFait(x, T)).join("");
@@ -4117,6 +4129,8 @@ function voyagerDepuis(el, v, centrer, immediat) {
     if (suivre) centrer(P);
     puce.innerHTML = `${jours.size > 1 || jourDeC(c) !== D.aujourdhui ? `<b>${date(jourDeC(c))}</b> · ` : ""}+${fr(Math.round(c - c0))} pts`;
     while (balls.length && balls[0].c <= c + 1e-6) sortirBall(el, balls.shift());
+    while (etapes.length && etapes[0].dist <= p + 1e-6) { const l = etapes.shift();
+      if (!vite) { panneauLieu(cadre, l.nom.replace(" (retour)", "")); avant = now + PAUSE_LIEU; } }
     if (u < 1) return requestAnimationFrame(pas);
     setTimeout(() => { puce.classList.add("fin"); setTimeout(() => puce.remove(), 900); }, 1600);
     // arrivé à une arène pendant ce voyage : le champion se présente et lance son défi

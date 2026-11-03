@@ -312,7 +312,7 @@ nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de touche
     d'aujourd'hui et d'hier, ramené au total du jour, `moment` ; badges et Master = fin du jour ; figé avec la capture) ;
     `etat["frise"]` = par jour c0→c1 (points) et p0→p1 (carte ; pendant un défi la carte ne bouge pas). Le bouton ▶
     rejoue depuis `pkm_c_vu_<partie>` (points ; repli : ancienne `pkm_pos_vu_` convertie) : 3 à 9 s selon les points,
-    puce « sam. 31/10 · +340 pts », chaque ball sort au-dessus du dresseur à son moment (Super / Hyper plus grosses avec
+    puce « sam. 31/10 · +340 pts », panneau du nouveau lieu en haut de la carte façon GBA (`panneauLieu`, le dresseur s'arrête 1,2 s ; 03/11, décidé par Claude à la demande de Kiki), chaque ball sort au-dessus du dresseur à son moment (Super / Hyper plus grosses avec
     leur nom) puis file vers « à ouvrir » (`sortirBall`) ; d'ici là elles sont `EN_ROUTE` (pas dans « à ouvrir », qui
     montre « N Poké Balls t'attendent sur ta route » → lance le replay). Toucher la carte pendant le replay = la fin.
   - **Minutes de sport** (01/11, Kiki) : le jeu ne compte plus les minutes en zone (la zone modérée, verte, se déclenche
