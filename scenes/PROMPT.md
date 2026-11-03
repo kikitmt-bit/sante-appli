@@ -153,3 +153,25 @@ Strict rules: no text, no letters, no numbers, no UI, no health bars, no dialogu
 ```
 
 `[PLACE]` : le lieu de la carte, décrit avec ses détails reconnaissables. Fait : Bourg Palette (ChatGPT fait les ronds plus grands que demandé, sans gêne : la place se mesure sur l'image).
+
+### Les 19 autres lieux de Kanto (dans la même conversation ChatGPT : `Same composition and strict rules as before, new place: …`)
+
+- `combat-route-1.webp`, Route 1 : a quiet country path between Pallet Town and the next city, tall grass patches, small rocky ledges, trees on both sides
+- `combat-jadielle.webp`, Jadielle : Viridian City, a calm green town: a small pond, trees, houses with green roofs, a Pokémon Center with a red roof and a closed gym in the distance
+- `combat-foret-de-jade.webp`, Forêt de Jade : Viridian Forest, a dense and slightly dark forest: huge trees, tall grass, soft rays of light through the leaves
+- `combat-argenta.webp`, Argenta : Pewter City, a town of grey stone at the foot of the mountains: rocky ground, a stone gym, a museum in the distance, mountains behind
+- `combat-route-3.webp`, Route 3 : a dry rocky hillside: boulders, small ledges, sparse grass, the dark entrance of a mountain cave far away
+- `combat-mont-selenite.webp`, Mont Sélénite : inside Mt. Moon, a dark cave: rough rock walls, glowing pale moon crystals, a few fossils in the walls, soft blue light
+- `combat-azuria.webp`, Azuria : Cerulean City, a bright town of blue roofs crossed by clear water: a small river, a footbridge, a gym with a pool roof in the distance
+- `combat-route-5.webp`, Route 5 et Cave Taupiqueur : a country road bordered by hedges, with mole holes and mounds of earth in the ground, and the entrance of Diglett's Cave in a hillside
+- `combat-carmin-sur-mer.webp`, Carmin-sur-Mer : Vermilion City, a harbor at the end of the afternoon: wooden docks, the sea, a big white cruise ship moored, harbor cranes, a warm orange sky
+- `combat-grotte-centrale.webp`, Grotte et Centrale : the outskirts of an abandoned power plant at the foot of a rocky cliff: old pylons, rusty pipes, cables, small yellow electric sparks, a cave entrance in the cliff
+- `combat-lavanville.webp`, Lavanville : Lavender Town at dusk: a quiet village under a purple sky and light mist, small sad houses, and in the distance a very tall dark tower
+- `combat-celadopole.webp`, Céladopole : Celadon City, a large colorful city: flower beds and hedges, a huge department store, a gym surrounded by flowers in the distance, sunny sky
+- `combat-piste-cyclable.webp`, Piste cyclable : a long paved bike road built on stilts above the sea: guard rails, sea on both sides, blue sky, small islands in the distance
+- `combat-parmanie-safari.webp`, Parmanie et Parc Safari : the Safari Zone near Fuchsia City: wild savanna with tall golden grass, wooden fences, exotic trees, a small pond, warm sunlight
+- `combat-safrania.webp`, Safrania : Saffron City, a big modern metropolis: paved square, grey and gold skyscrapers, a very tall office tower in the center of the background
+- `combat-iles-ecume.webp`, Îles Écume : the Seafoam Islands: an icy sea cave open to the sky, blue ice and snow on the ground, frozen rocks, dark water in the background
+- `combat-cramoisile.webp`, Cramois'Île : Cinnabar Island: dark volcanic ground, a smoking volcano in the background, the sea on the horizon, a few glowing lava cracks at the edges
+- `combat-route-victoire.webp`, Route Victoire : inside Victory Road, a huge rocky cave: massive boulders, stone walls, a few torches on the walls, dramatic warm light
+- `combat-plateau-indigo.webp`, Plateau Indigo : Indigo Plateau at sunset: a grand stone esplanade, a majestic league building with golden decorations and blank banners, mountains around, a glorious orange sky
