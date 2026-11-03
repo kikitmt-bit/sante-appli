@@ -4310,7 +4310,7 @@ const ENTR = {
     consigne: "Pose le téléphone <b>en paysage</b> au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
   squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
     capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, balance: 1.15, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
-    consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte. Suis le rythme : 2 s pour descendre, 1 s pour remonter."},
+    consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte, à ton rythme."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
 };
@@ -4321,7 +4321,7 @@ const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Sole
 const DECORS_COMBAT = {
   "Bourg Palette": {image: "combat-bourg-palette.webp", e: [72.7, 39.6], c: [28.5, 63.5], te: 22, tc: 30},
 };
-const VERSION_DETECTION = "squats v10";
+const VERSION_DETECTION = "squats v11";
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
 const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
@@ -4347,7 +4347,7 @@ const STYLE_ENTR = `
 /* Le combat : un vrai écran de jeu, tout l'écran se touche (le nez n'a pas à viser) */
 .entr-scene{position:relative;flex:1;min-height:0;overflow:hidden;background:#22315A;touch-action:none;display:flex;flex-direction:column}
 .entr-scene .monde{position:relative;flex:none;width:100%;aspect-ratio:3/2;overflow:hidden;background-size:cover;background-position:center;image-rendering:pixelated}
-.entr-scene .panneau{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;padding:8px 10px;box-sizing:border-box}
+.entr-scene .panneau{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;padding:8px 10px 64px;box-sizing:border-box}
 .entr-scene.secousse{animation:entr-secousse .22s}@keyframes entr-secousse{25%{transform:translate(-5px,3px)}50%{transform:translate(5px,-3px)}75%{transform:translate(-3px,-2px)}}
 .entr-scene .sol{position:absolute;border-radius:50%;background:rgba(0,0,0,.28)}
 .entr-scene .ennemi,.entr-scene .coach{position:absolute;image-rendering:pixelated;object-fit:contain;transition:opacity .45s,transform .12s}
@@ -4362,9 +4362,8 @@ const STYLE_ENTR = `
 .entr-scene .deg{position:absolute;left:78%;top:5%;font-size:42px;color:#D83830;text-shadow:2px 2px 0 #fff;animation:entr-deg .6s forwards;pointer-events:none}@keyframes entr-deg{to{transform:translateY(-44px);opacity:0}}
 .entr-scene .eclair{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.entr-scene .eclair.on{animation:entr-eclair .28s}@keyframes entr-eclair{30%{opacity:.75}}
 .entr-scene .txt{position:absolute;left:2%;right:2%;bottom:2%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 11px;min-height:1.3em;font-size:21px;color:#383828;line-height:1.1}
-.entr-scene .txt.rythmee{color:#C03028}
 .entr-scene .moi{color:#C9D3EA;font-size:16px;text-align:center}.entr-scene .mesure{color:#8FA0C4;font-size:13px;text-align:center}
-.entr-scene .fin{align-self:center;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
+.entr-scene .fin{align-self:flex-end;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
 @media (orientation:landscape){.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
 
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
@@ -4561,14 +4560,14 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
     const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => M.ennemis[Math.min(iE, M.ennemis.length - 1)];
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
           ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne" src="${IMG.grand(ennemi())}" alt="" ${decor ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" ${decor ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
-          <div class="txt">${M.capteur ? "Prépare-toi…" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Touche l'écran avec le nez.`}</div></div>
-        <div class="panneau"><div class="pv-e"><span class="nom-e">${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div>
+          <div class="txt">Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !</div></div>
+        <div class="panneau"><div class="pv-e"><span class="nom-e">${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
           <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
-          <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button></div></div>`;
+          <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
     const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair");
     rognerImages(S);
     let parole = 0;
-    const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.classList.remove("rythmee"); txt.textContent = t; };
+    const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.textContent = t; };
     const peindre = () => { const p = Math.max(pv / pvMax * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : ""; };
     const rep = () => {
       n++; nb.textContent = n; derniere = Date.now(); vibre(25); if (!M.capteur) parler(n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
@@ -4578,7 +4577,7 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
       if (n % 5 === 0) { S.classList.remove("secousse"); void S.offsetWidth; S.classList.add("secousse"); }
       ton(180 + Math.min(n, 30) * 10, 0, .08, {type: "square", vol: .12}); bruit(0, .09, {vol: .12, f: 900});
       const d = P.createElement("div"); d.className = "deg"; d.textContent = "-1"; S.querySelector(".monde").appendChild(d); setTimeout(() => d.remove(), 650);
-      if (sesAttaques && n % 3 === 1) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
+      if (sesAttaques) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
       pv--; peindre();
       if (rec && n === rec + 1) { dire("Coup critique ! Nouveau record !", 2200); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }
       if (pv <= 0) {
@@ -4599,21 +4598,18 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
       bFin.onpointerdown = e => { e.stopPropagation(); bFin.classList.add("appui"); tenu = setTimeout(fin, 700); };
       bFin.onpointerup = bFin.onpointercancel = e => { e.stopPropagation(); bFin.classList.remove("appui"); clearTimeout(tenu); }; }
     peindre();
+    minuteurs.push(setInterval(() => { if (Date.now() > parole && Date.now() - Math.max(derniere, debutSerie) > 5000) txt.textContent = `Que doit faire ${nomC} ?`; }, 1000));
     if (M.capteur) (async () => {
       const fondImg = new PW.Image(); fondImg.src = `${D.scenes}${image}`;
       await Promise.race([fondImg.decode().catch(() => {}), new Promise(r => setTimeout(r, 2500))]);
       if (finie || !v.isConnected) return;
       let plusBas = 0;
-      const c = capteurMouvement(M.capteur, SENSIBILITES[sens], ecart => { rep(); if (ecart < 1500 && n > 1) dire("Plus lentement : contrôle la descente."); }, null,
+      const c = capteurMouvement(M.capteur, SENSIBILITES[sens], () => rep(), null,
         () => { if (Date.now() - plusBas < 1500) return; plusBas = Date.now(); dire("Pas assez bas : descends cuisses à l'horizontale !", 1400); ton(220, 0, .18, {type: "square", vol: .08}); });
       arret = c.arreter; mesures = c.mesures; sonde = c;
-      if (D.kiki) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".moi").after(m);
+      if (D.kiki) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".cpt").appendChild(m);
         minuteurs.push(setInterval(() => { m.textContent = `${VERSION_DETECTION} · ${c.debit()} mesures/s · trou ${c.trou()} ms`; }, 1000)); }
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
-      // Le rythme : 2 s pour descendre, 1 s pour remonter
-      let bas = false;
-      const battre = () => { bas = !bas; if (Date.now() > parole) { txt.classList.add("rythmee"); txt.textContent = bas ? "Descends…" : "Remonte !"; } ton(bas ? 392 : 660, 0, .12, {type: "triangle", vol: .08}); minuteurs.push(setTimeout(battre, bas ? 2000 : 1000)); };
-      battre();
     })(); else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
       S.onpointerdown = e => { e.preventDefault(); if (Date.now() - derniere < ECART_POMPE) return dire("Trop vite : va jusqu'en haut, bras tendus !", 1200); rep(); };
     }
