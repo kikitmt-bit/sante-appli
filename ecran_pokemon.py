@@ -65,6 +65,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "prefixe": pokemon.ident(aujourd, "", joueur["id"] if joueur else None),
         "gestes_jour": etat["gestes_jour"],
         "jeu": _acces_jeu(joueur),
+        "kiki": joueur is None,  # les tests et les aperçus : Kiki seul, le reste du jeu doit rester une surprise pour les amis
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
             "shiny": c["shiny"], "raison": c["raison"], "lieu": c.get("lieu", ""), "legendaire": c["num"] in LEGENDAIRES,

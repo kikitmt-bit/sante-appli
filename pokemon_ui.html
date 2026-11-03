@@ -4268,7 +4268,7 @@ function dessinerRegles() {
     <li>${ico("radar", "p")} <b>Mission du jour</b> : chaque jour, un Pokémon te lance un défi au hasard, parmi ce que ta montre sait mesurer. Réussie = 20 à 40 points d'effort selon la difficulté.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
-    ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
+    ${V.badges[1] || !D.kiki ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
 `;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
@@ -4479,6 +4479,7 @@ function entrainement(type, {essai = false} = {}) {
 }
 
 function dessinerTests() {
+  if (!D.kiki) { const d = document.querySelector("details.tests"); if (d) d.remove(); return; }  // une surprise pour les amis : arènes, lieux, légendaires…
   const b = (cls, html) => `<button class="filtre ${cls}">${html}</button>`;
   const ext = ["prairie", "foret", "grotte", "riviere", "mer", "ville", "montagne", "centrale", "tour", "safari", "volcan"];
   document.getElementById("tests").innerHTML = `
