@@ -257,7 +257,7 @@ def ecrire_github(session, texte, chemin=MONTRE, pareil=lambda a, b: sans_heure(
     raise RuntimeError("GitHub refuse l'écriture (409 trois fois)")
 
 
-def calculer_missions(lire, aujourd):
+def calculer_missions(lire, aujourd, ami=None):
     """La mission de chaque jour (missions.py) : choisie une fois, puis gardée ; pas d'avant 13 h relus (fichiers du jour)."""
     annees = range(missions.DEPUIS.year - 1, aujourd.year + 1)
     f = lire([f"data/resume/{y}.json" for y in annees] + [missions.FICHIER])
@@ -275,7 +275,7 @@ def calculer_missions(lire, aujourd):
         chemins = {j: f"data/jour/{j.year}/{j}.json" for j in jours}
         lu = lire(list(chemins.values()))
         return {j: lu[c] for j, c in chemins.items()}
-    return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour)
+    return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour, ami)
 
 
 def calculer_gestes(lire, aujourd, ami=None):
@@ -293,7 +293,7 @@ def calculer_amis(session, aujourd):
         try:
             prefixe = chiffres.dossier_ami(ami)
             lire = chiffres.chez(lecteur_github(session), prefixe)
-            texte = json.dumps(calculer_missions(lire, aujourd), ensure_ascii=False, indent=0)
+            texte = json.dumps(calculer_missions(lire, aujourd, ami), ensure_ascii=False, indent=0)
             ecrire_github(session, texte, prefixe + missions.FICHIER, pareil)
             ecrire_github(session, json.dumps(calculer_gestes(lire, aujourd, ami), ensure_ascii=False, indent=0), prefixe + pokemon.GESTES, pareil)
             lire = chiffres.chez(lecteur_github(session), prefixe)  # relire (la mission vient d'être écrite)

@@ -60,7 +60,7 @@ REGLAGES = {
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
     "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
-    "bonus_pompe": .5, "bonus_traction": 1, "bonus_gestes_max": 25,  # points d'effort par pompe, par traction, et au plus par jour
+    "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
     "barre": 100,                    # points d'effort pour une Poké Ball
@@ -406,24 +406,39 @@ def ident(jour, cle, ami=None):
     return f"{jour}{'' if REGLAGES['partie'] == 1 else '-p' + str(REGLAGES['partie'])}{'-' + ami if ami else ''}#{cle}"
 
 
-GESTES = "data/pokemon/gestes.json"  # pompes et tractions, jour par jour (la montre ne sait pas les compter)
-_GESTE = re.compile(r"#geste-(pompes|tractions)_(-?\d+)_\d+$")
+GESTES = "data/pokemon/gestes.json"  # pompes, tractions et squats, jour par jour (la montre ne sait pas les compter)
+_GESTE = re.compile(r"#geste-(pompes|tractions|squats)_(-?\d+)_(\d+)$")
+SERIE_ECART = 30 * 60 * 1000  # une nouvelle série de pompes : 30 min après la précédente (en millisecondes, comme les traces)
+SERIE_POMPES = 10
+
+
+def series_de(touches):
+    """Le nombre de séries d'au moins 10 pompes à 30 min d'écart, depuis les touchers [(moment, nombre)] sur le bouton."""
+    series, total, dernier = 0, 0, None
+    for moment, n in sorted(touches):
+        if dernier is not None and moment - dernier >= SERIE_ECART:
+            series, total = series + (total >= SERIE_POMPES), 0
+        total, dernier = total + n, moment
+    return series + (total >= SERIE_POMPES)
 
 
 def gestes_du(ancien, ouvertes, ami, aujourd):
-    """Les pompes et tractions de chaque jour : {jour: {"pompes", "tractions"}}. Le téléphone laisse chaque toucher sur le bouton dans
+    """Les pompes, tractions et squats de chaque jour : {jour: {"pompes", "tractions", "squats", "series"}}. Le téléphone laisse chaque toucher sur le bouton dans
     la liste partagée (« …#geste-pompes_10_1234 »), qui ne garde que 20 jours : le calcul de chaque heure (montre.py) les recopie dans
     gestes.json ; aujourd'hui et les jours récents viennent de la liste, les plus vieux du fichier."""
     jours, traces = {j: dict(v) for j, v in ((ancien or {}).get("jours") or {}).items()}, {}
     for i in ouvertes or ():
         m = _GESTE.search(i)
         if m and i.startswith(ident(i[:10], "geste", ami).split("geste")[0]):
-            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0})
+            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "_touches": []})
             t[m[1]] += int(m[2])
+            if m[1] == "pompes":
+                t["_touches"].append((int(m[3]), int(m[2])))
     limite = str(aujourd - dt.timedelta(days=18))
     for j, t in traces.items():
         if j >= limite:
-            jours[j] = {k: max(v, 0) for k, v in t.items()}
+            touches = t.pop("_touches")
+            jours[j] = {k: max(v, 0) for k, v in t.items()} | {"series": series_de(touches)}
     return jours
 
 
@@ -435,18 +450,19 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
     if pesee_matin(resumes.get(str(jour))):
         b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
     g = (gestes or {}).get(str(jour)) or {}
-    pts = min(g.get("pompes", 0) * REGLAGES["bonus_pompe"] + g.get("tractions", 0) * REGLAGES["bonus_traction"], REGLAGES["bonus_gestes_max"])
+    pts = min(g.get("pompes", 0) * REGLAGES["bonus_pompe"] + g.get("tractions", 0) * REGLAGES["bonus_traction"] + g.get("squats", 0) * REGLAGES["bonus_squat"],
+              REGLAGES["bonus_gestes_max"])
     if pts:
-        b.append(("💪", "Pompes et tractions", pts))
+        b.append(("💪", "Pompes, tractions et squats", pts))
     st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
-    pm = lambda j: (mission_du(j) or {}).get("pas_matin")  # noqa: E731
     hier = jour - dt.timedelta(days=1)
     for j, quand in ((hier, "coucher"), (jour, None)):
         e = mission_du(j)
         if not e or not e.get("cle") or (quand and e["cle"] != quand) or (not quand and e["cle"] == "coucher"):
             continue
-        if missions.reussite(e["cle"], j, st, pm):
-            b.append(("🎯", f"Mission : {missions.MISSIONS[e['cle']]['titre']}", missions.BONUS))
+        if missions.reussite(e["cle"], j, st, mission_du, gestes):
+            m = missions.MISSIONS[e["cle"]]
+            b.append(("🎯", f"Mission : {m['titre']}", m.get("bonus", missions.BONUS)))
     return b
 
 
@@ -680,7 +696,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
                       "possedees": possedees, "mesures": m,
                       "barre": cumul % b, "origine": origine_barre(m) if m else SOURCES["pas"], "shiny_bonus": shiny_bonus,
-                      "bonus": bonus, "mission": etat_mission(aujourd, stats, mission_du), "cumul": round(cumul, 1),
+                      "bonus": bonus, "mission": etat_mission(aujourd, stats, mission_du, gestes), "cumul": round(cumul, 1),
                       "frise": frise[-30:],
                       "defi_grise": en_defi, "perdues": perdues,
                       "retenues": [{"ball": mi["ball"], "jour": str(mi["jour"])} for mi in retenues],
@@ -688,29 +704,31 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0},
+                      "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
                       "starter": starter and {"ligne": LIGNES[starter], "niveau": niv, "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1),
                                               "evolue_a": prochaine, "reste": round((prochaine - R["niveau_depart"]) * R["pts_niveau"] - cumul) if prochaine else None}}
 
 
-def etat_mission(aujourd, stats, mission_du):
+def etat_mission(aujourd, stats, mission_du, gestes=None):
     """Ce que l'écran montre de la mission du jour (et du coucher d'hier soir)."""
     st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
-    pm = lambda j: (mission_du(j) or {}).get("pas_matin")  # noqa: E731
     e, hier = mission_du(aujourd), mission_du(aujourd - dt.timedelta(days=1))
     sortie = None
     if e and e.get("cle"):
         m, s = missions.MISSIONS[e["cle"]], st(aujourd)
-        valeur = {"matinee": pm(aujourd), "zone": s.get(missions.cle_zone(aujourd)),
-                  "seance": s.get("min_sport")}.get(e["cle"])
-        sortie = {"cle": e["cle"], "titre": m["titre"], "texte": m["texte"], "seuil": m["seuil"], "unite": m["unite"],
-                  "raison": e.get("raison", ""), "valeur": None if valeur is None or valeur != valeur else round(valeur),
-                  "ok": missions.reussite(e["cle"], aujourd, st, pm) if e["cle"] != "coucher" else None,
-                  "bonus": missions.BONUS}
+        if m.get("ancienne"):
+            valeur = {"matinee": e.get("pas_matin"), "zone": s.get(missions.cle_zone(aujourd)), "seance": s.get("min_sport")}.get(e["cle"])
+        else:
+            valeur = missions.valeur(e["cle"], aujourd, st, mission_du, gestes)
+        seuil = missions.seuil_de(e["cle"], e)
+        sortie = {"cle": e["cle"], "titre": m["titre"], "texte": m["texte"].replace("{seuil}", chiffres.nombre(seuil)), "seuil": seuil, "unite": m["unite"],
+                  "raison": m.get("phrase") or e.get("raison", ""), "valeur": None if valeur is None or valeur != valeur else round(valeur, 1 if m["unite"] == "km" else None),
+                  "ok": missions.reussite(e["cle"], aujourd, st, mission_du, gestes) if e["cle"] != "coucher" else None,
+                  "bonus": m.get("bonus", missions.BONUS), "num": m.get("num"), "geste": m.get("geste")}
     if hier and hier.get("cle") == "coucher":
         c = st(aujourd).get("coucher")
         sortie = (sortie or {}) | {"hier_coucher": None if c is None or c != c else round(c),
-                                   "hier_ok": missions.reussite("coucher", aujourd - dt.timedelta(days=1), st, pm)}
+                                   "hier_ok": missions.reussite("coucher", aujourd - dt.timedelta(days=1), st, mission_du)}
     return sortie
 
 

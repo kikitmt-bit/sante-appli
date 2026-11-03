@@ -98,7 +98,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
-                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_gestes_max")},
+                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_squat", "bonus_gestes_max")},
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"

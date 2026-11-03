@@ -396,6 +396,7 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
 section[hidden]{display:none}
 .carte.amis{margin-top:14px}
 .speciale.mission{grid-column:1/-1}
+.speciale.mission .m-pk{float:right;width:64px;height:64px;margin:-2px 0 2px 8px;object-fit:contain;image-rendering:pixelated}
 .petits{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
 .petit-obj{position:relative;border:0;border-radius:12px;padding:7px 6px 9px;background:#141C31;color:#C9D3EA;cursor:pointer;text-align:center;font-family:Outfit,sans-serif;min-width:0}
 .petit-obj.on{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4);background:#1C2740}
@@ -3027,17 +3028,21 @@ function resteDefi() {
   const o = ep[0].voies[0];
   return o.mode === "jour" ? `${o.texte.replace(/^Une /, "une ")}${ouB}` : `encore ${o.unite === "pas" ? fr(Math.max(o.cible - o.v, 0)) : Math.ceil(Math.max(o.cible - o.v, 0))} ${o.unite}${ouB}`;
 }
-// Les pompes et les tractions (la montre ne sait pas les compter) : un bouton, et chaque toucher part dans la liste partagée
-const GESTES = {pompes: {nom: "Pompes", pas: [5, 10]}, tractions: {nom: "Tractions", pas: [1, 5]}};
+// Les pompes, tractions et squats (la montre ne sait pas les compter) : un bouton, et chaque toucher part dans la liste partagée
+const GESTES = {pompes: {nom: "Pompes", pas: [5, 10]}, tractions: {nom: "Tractions", pas: [1, 5]}, squats: {nom: "Squats", pas: [10, 25]}};
 function gestesAuj() {
-  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0};
-  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions)_(-?\d+)_/); if (m) g[m[1]] += +m[2]; });
-  g.pompes = Math.max(g.pompes, 0); g.tractions = Math.max(g.tractions, 0);
+  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0, squats: 0, series: 0}, touches = [];
+  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions|squats)_(-?\d+)_(\d+)/); if (m) { g[m[1]] += +m[2]; if (m[1] === "pompes") touches.push([+m[3], +m[2]]); } });
+  g.pompes = Math.max(g.pompes, 0); g.tractions = Math.max(g.tractions, 0); g.squats = Math.max(g.squats, 0);
+  // les séries : au moins 10 pompes, à 30 min d'écart (même calcul que pokemon.series_de)
+  let total = 0, dernier = null;
+  touches.sort((a, b) => a[0] - b[0]).forEach(([t, n]) => { if (dernier !== null && t - dernier >= 18e5) { if (total >= 10) g.series++; total = 0; } total += n; dernier = t; });
+  if (total >= 10) g.series++;
   // ce que le serveur sait déjà, s'il en sait plus (autre téléphone, liste pas encore revenue)
   if (!TEST) Object.keys(g).forEach(k => { g[k] = Math.max(g[k], (D.gestes_jour || {})[k] || 0); });
   return g;
 }
-function blocGestes(types = ["pompes", "tractions"]) {
+function blocGestes(types = ["pompes", "tractions", "squats"]) {
   const g = gestesAuj();
   return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}</span><b>${g[t]}</b>
     <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>`).join("")}</div>`;
@@ -3191,7 +3196,7 @@ function dessinerSpeciales() {
     {cle: "nuit", ic: ico("nuit"), nom: "Nuit", val: J.sommeil ? h(J.sommeil).replace(" h ", "h") : "—", p: pct(J.sommeil, R.nuit), ok: nuit, detail: carteNuit},
     D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb}/${D.pesees.cible}`, p: pct(D.pesees.nb, D.pesees.cible), ok: D.pesees.nb >= D.pesees.cible, detail: cartePesee()} : null,
     ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur}/${x.cible}`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
-    {cle: "gestes", ic: "<span>💪</span>", nom: "Pompes", val: `${gestesAuj().pompes + gestesAuj().tractions}`, p: pct(gestesAuj().pompes * R.bonus_pompe + gestesAuj().tractions * R.bonus_traction, R.bonus_gestes_max), detail: cartePompes()},
+    {cle: "gestes", ic: "<span>💪</span>", nom: "Pompes", val: `${gestesAuj().pompes + gestesAuj().tractions + gestesAuj().squats}`, p: pct(gestesAuj().pompes * R.bonus_pompe + gestesAuj().tractions * R.bonus_traction + gestesAuj().squats * R.bonus_squat, R.bonus_gestes_max), detail: cartePompes()},
     G.chasse && G.chasse.actif ? {cle: "chasse", ic: ico("radar"), nom: "Chasse", val: `${Math.round(G.chasse.chance * 100)} %`, p: G.chasse.chance * 100, detail: carteChasse()} : null,
   ].filter(Boolean);
   document.getElementById("speciales").innerHTML = carteDefi() + carteMission(gris, champ, cadenas) + `
@@ -3243,20 +3248,23 @@ function comparerPokemon(kg, graine) {
   }
   return meilleur ? meilleur.choix : null;
 }
-// La mission du jour (29/10) : choisie sur les lacunes des 14 derniers jours ; réussie = +25 points d'effort
+// La mission du jour (refaite le 03/11) : un Pokémon, un défi, 20 à 40 points d'effort ; les pompes et les squats se comptent ici même
 function carteMission(gris = false, champ = "", cadenas = "") {
   const m = D.mission;
   const h = v => `${Math.floor(v / 60) % 24} h ${String(Math.round(v % 60)).padStart(2, "0")}`;
   const hier = m && m.hier_coucher != null ? `<div class="pesee-der">Hier soir : couché à <b>${h(m.hier_coucher)}</b> ${m.hier_ok ? "✅ +" + (m.bonus || 25) : "· raté"}</div>` : "";
   if (!m || !m.cle) return `<div class="speciale mission"><div class="tete">${ico("radar")}Mission du jour</div>
-    <div class="gain">${hier ? "Pas de nouvelle mission ce soir." : "Elle arrive dans l'heure : je regarde tes derniers jours."}</div>${hier}</div>`;
-  const ok = m.ok === true, coucher = m.cle === "coucher";
-  const val = m.valeur == null ? 0 : m.valeur, j = `<div class="jauge"><div class="${ok ? "ok" : ""}" style="width:${Math.min(val / m.seuil * 100, 100)}%"></div></div>`;
+    <div class="gain">${hier ? "Pas de nouvelle mission ce soir." : "Elle arrive dans l'heure."}</div>${hier}</div>`;
+  const coucher = m.cle === "coucher", types = {pompes: "pompes", series: "pompes", squats: "squats"}[m.geste];
+  const val = Math.max(m.valeur == null ? 0 : m.valeur, m.geste ? gestesAuj()[m.geste] || 0 : 0), ok = m.ok === true || (!!m.geste && val >= m.seuil);
+  const u = n => n < 2 && m.unite !== "pas" ? m.unite.replace(/s$/, "") : m.unite;  // « 1 série », mais « 1 pas »
+  const j = `<div class="jauge"><div class="${ok ? "ok" : ""}" style="width:${Math.min(val / m.seuil * 100, 100)}%"></div></div>`;
   const ligne = coucher ? `<div class="reste">Vérifié demain matin avec ta nuit · <b>+${m.bonus}</b></div>`
-    : `<div class="ligne"><span>${m.unite === "pas" ? fr(val) : val} ${m.unite}</span><span>${m.unite === "pas" ? fr(m.seuil) : m.seuil}</span></div>${j}
-      <div class="reste">${ok ? `Réussie : <b>+${m.bonus} pts</b> !` : `Encore <b>${m.unite === "pas" ? fr(m.seuil - val) : Math.ceil(m.seuil - val)} ${m.unite}</b> · +${m.bonus} pts`}</div>`;
+    : `<div class="ligne"><span>${m.unite === "pas" ? fr(val) : val} ${u(val)}</span><span>${m.unite === "pas" ? fr(m.seuil) : m.seuil}</span></div>${j}
+      <div class="reste">${ok ? `Réussie : <b>+${m.bonus} pts</b> !` : `Encore <b>${m.unite === "pas" ? fr(m.seuil - val) : m.unite === "km" ? String(Math.round((m.seuil - val) * 10) / 10).replace(".", ",") : Math.ceil(m.seuil - val)} ${u(m.seuil - val)}</b> · +${m.bonus} pts`}</div>
+      ${m.geste && !ok ? blocGestes([types]) : ""}`;
   return `<div class="speciale mission ${ok ? "ok" : ""} ${gris ? "grise" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
-    <div class="tete">${ico("radar")}Mission du jour</div>
+    ${m.num ? `<img class="m-pk" src="${IMG.mini(m.num)}" alt="">` : ""}<div class="tete">${ico("radar")}Mission du jour</div>
     <div class="m-titre">${m.titre}</div><div class="gain">${m.texte}</div>${gris ? `<div class="verrou">${cadenas}${ok ? `Réussie ! ${champ} garde tes <b>+${m.bonus} pts</b> : bats-le pour les récupérer.` : `Bats ${champ} pour la débloquer.`}</div>` : ligne}
     <div class="m-pourquoi">${m.raison}</div>${hier}</div>`;
 }
@@ -3297,8 +3305,8 @@ function carteSanctuaire(s) {
 }
 // 3. Le défi de l'arène où l'on est arrivé, cumulé depuis l'arrivée (ou son plan B)
 function cartePompes() {
-  return `<div class="speciale"><div class="tete">💪 Pompes et tractions</div>
-    <div class="gain">La montre ne sait pas les compter : à toi de les noter. ${R.bonus_pompe * 10} points d'effort pour 10 pompes, ${R.bonus_traction} par traction, ${R.bonus_gestes_max} au plus par jour. Certains champions les acceptent aussi.</div>
+  return `<div class="speciale"><div class="tete">💪 Pompes, tractions, squats</div>
+    <div class="gain">La montre ne sait pas les compter : à toi de les noter. ${R.bonus_pompe * 10} points d'effort pour 10 pompes, ${R.bonus_traction} par traction, ${R.bonus_squat * 10} pour 10 squats, ${R.bonus_gestes_max} au plus par jour. Certains champions acceptent pompes et tractions, et certaines missions aussi.</div>
     ${blocGestes()}<div class="petit gris" style="margin-top:6px">Tes points arrivent à la prochaine actualisation.</div></div>`;
 }
 function carteDefi() {
@@ -4248,12 +4256,11 @@ function dessinerRegles() {
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
-    <li>💪 <b>Pompes et tractions</b> : la montre ne les compte pas, note-les toi-même dans « Pompes ». Elles donnent des points d'effort et ouvrent une voie chez certains champions.</li>
+    <li>💪 <b>Pompes, tractions et squats</b> : la montre ne les compte pas, note-les toi-même dans « Pompes ». Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
-    <li>${ico("radar", "p")} <b>Mission du jour</b> : une mission choisie sur tes points faibles des 14 derniers jours (matinée active, coucher à l'heure,
-      minutes de sport, petite séance). Réussie = +25 points d'effort. Pas de mission de coucher le week-end.</li>
+    <li>${ico("radar", "p")} <b>Mission du jour</b> : chaque jour, un Pokémon te lance un défi au hasard, parmi ce que ta montre sait mesurer. Réussie = 20 à 40 points d'effort selon la difficulté.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
     ${V.badges[1] ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}

@@ -184,6 +184,7 @@ def stats_jour(r, j=None):
     ex = r.get("exercise") or []
     s["seances"] = len(ex)
     s["min_sport"] = sum(duree(contenu(p).get("activeDuration")) for p in ex) / 60
+    s["seance_max"] = max((duree(contenu(p).get("activeDuration")) for p in ex), default=0) / 60
     return s
 
 
