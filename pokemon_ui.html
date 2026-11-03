@@ -4309,7 +4309,7 @@ const ENTR = {
     attaques: ["Poing-Karaté", "Balayage", "Frappe Atlas", "Sacrifice"],
     consigne: "Pose le téléphone <b>en paysage</b> au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
   squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
-    capteur: {premier: "bas", s1: .1, s2: .15, ecart: 1500, tauG: 2.5, tauV: 3, descente: .06}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
+    capteur: {premier: "bas", s1: .1, s2: .15, ecart: 1500, tauG: 2.5, tauV: 3, descente: .06, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte. Suis le rythme : 2 s pour descendre, 1 s pour remonter."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
@@ -4374,7 +4374,10 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
     const t = e.timeStamp || performance.now(), dt = avant === null ? 0 : Math.min((t - avant) / 1000, .1); avant = t;
     if (!g) g = {x: a.x, y: a.y, z: a.z};
     const k = Math.min(dt / tauG, 1); g.x += (a.x - g.x) * k; g.y += (a.y - g.y) * k; g.z += (a.z - g.z) * k;
-    const n = Math.hypot(g.x, g.y, g.z) || 1, lin = ((a.x - g.x) * g.x + (a.y - g.y) * g.y + (a.z - g.z) * g.z) / n;
+    const n = Math.hypot(g.x, g.y, g.z) || 1, b = reglage.separe && e.acceleration && e.acceleration.x != null ? e.acceleration : null;
+    // Pencher le téléphone n'est pas bouger : quand il sait séparer la pesanteur du mouvement, on prend sa réponse (sinon, 1 cm et un poignet qui bouge = un squat)
+    let lin = ((a.x - g.x) * g.x + (a.y - g.y) * g.y + (a.z - g.z) * g.z) / n;
+    if (b) { const hx = a.x - b.x, hy = a.y - b.y, hz = a.z - b.z, hn = Math.hypot(hx, hy, hz) || 1; lin = (b.x * hx + b.y * hy + b.z * hz) / hn; }
     vit = (vit + lin * dt) * Math.exp(-dt / tauV);
     // la distance descendue, estimée : un mouvement de 1 cm n'est pas un squat (test : 15 cm réels donnent au moins 6,5 ; 5 cm jamais plus de 3,5)
     if (vit < -.03) creux += -vit * dt; else if (vit > .02 && creux) { descendu = creux; creux = 0; }
@@ -4453,7 +4456,9 @@ function entrainement(type, {essai = false} = {}) {
         <small>${dit}${moi.record ? ` Ton record : ${moi.record}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
         <div><small class="veille">${veille}</small></div></div>
-      <button class="go">C'est parti</button><button class="sec retour">Retour</button>`;
+      <button class="go">C'est parti</button><button class="sec retour">Retour</button>
+      ${D.kiki && M.capteur ? `<button class="sec apprendre">🎓 Apprentissage : montrer mes vrais mouvements</button>` : ""}`;
+    const appr = v.querySelector(".apprendre"); if (appr) appr.onclick = () => { fermer(); apprentissage(type); };
     const n = v.querySelector(".regle b");
     v.querySelector(".moins").onclick = () => { cible = Math.max(cible - 1, 1); n.textContent = cible; };
     v.querySelector(".plus").onclick = () => { cible++; n.textContent = cible; };
@@ -4600,6 +4605,72 @@ function entrainement(type, {essai = false} = {}) {
     minuteurs.push(t);
   }
   reglage();
+}
+
+// L'apprentissage (Kiki seul, son idée, 03/11) : la voix le guide, il fait de vrais mouvements et de faux, et le téléphone enregistre tout ce que voient ses capteurs.
+// Rechargé, l'appli range l'enregistrement dans le dépôt privé (app.py) : Claude règle la détection sur de vrais mouvements, plus sur des simulations.
+const APPRENDRE = {
+  squats: {consigne: "Tiens le téléphone comme pour un vrai squat, en paysage. La voix te guide pendant environ une minute et demie. Fais des mouvements propres.", attente: 5, etapes: [
+    {nom: "immobile", dit: "Ne bouge plus.", ms: 4000},
+    {nom: "vrais", dit: "Dix vrais squats. Suis le bip.", reps: 10, bas: 2000, haut: 1000},
+    {nom: "repos", dit: "Repos, reste debout.", ms: 4000},
+    {nom: "rapides", dit: "Cinq vrais squats, plus vite.", reps: 5, bas: 1000, haut: 700},
+    {nom: "repos", dit: "Repos, reste debout.", ms: 4000},
+    {nom: "petits", dit: "Dix tout petits mouvements. Un centimètre seulement.", reps: 10, bas: 700, haut: 700},
+    {nom: "repos", dit: "Repos, reste debout.", ms: 4000},
+    {nom: "bras", dit: "Sans plier les jambes, penche et bouge le téléphone avec les bras.", ms: 10000}]},
+  tractions: {consigne: "Mets le téléphone au fond de ta poche. La voix te guide : cinq tractions propres, puis tu lâches, tu marches et tu sors le téléphone.", attente: 15, etapes: [
+    {nom: "suspendu", dit: "Suspends-toi à la barre, sans bouger.", ms: 4000},
+    {nom: "vrais", dit: "Cinq tractions propres, à ton rythme.", ms: 25000},
+    {nom: "lacher", dit: "Lâche la barre et marche.", ms: 10000},
+    {nom: "sortir", dit: "Sors le téléphone de ta poche.", ms: 6000}]},
+};
+function apprentissage(type) {
+  preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR);
+  const A = APPRENDRE[type], v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
+  let minuteurs = [], verrou = null, ligne = 0;
+  const lignes = [], phases = [], t0 = performance.now(), rond = x => x == null ? null : Math.round(x * 100) / 100;
+  const parler = t => { try { const s = PW.speechSynthesis; s.cancel(); const u = new PW.SpeechSynthesisUtterance(t); u.lang = "fr-FR"; s.speak(u); } catch (e) {} };
+  const lire = e => {
+    const t = performance.now(); if (t < ligne || lignes.length > 4000) return; ligne = t + 30;  // ~30 mesures par seconde
+    const a = e.accelerationIncludingGravity || {}, b = e.acceleration || {}, r = e.rotationRate || {};
+    lignes.push([Math.round(t - t0), rond(a.x), rond(a.y), rond(a.z), rond(b.x), rond(b.y), rond(b.z), rond(r.alpha), rond(r.beta), rond(r.gamma)]);
+  };
+  const fermer = () => { minuteurs.forEach(clearTimeout); PW.removeEventListener("devicemotion", lire); try { PW.speechSynthesis.cancel(); if (verrou) verrou.release(); } catch (e) {} v.remove(); };
+  const attendre = ms => new Promise(r => minuteurs.push(setTimeout(r, ms)));
+  v.innerHTML = `<div class="boite"><div class="tete-e"><h3>Apprentissage : ${ENTR[type].nom}</h3></div><p>${A.consigne}</p></div><button class="go">C'est parti</button><button class="sec retour">Retour</button>`;
+  v.querySelector(".retour").onclick = fermer;
+  v.querySelector(".go").onclick = async () => {
+    audio(); parler("Prépare-toi.");
+    for (const w of [PAGE_HAUTE(), PW]) { try { verrou = await w.navigator.wakeLock.request("screen"); break; } catch (e) {} }
+    if (PW.DeviceMotionEvent && PW.DeviceMotionEvent.requestPermission) { try { await PW.DeviceMotionEvent.requestPermission(); } catch (e) {} }
+    PW.addEventListener("devicemotion", lire);
+    v.innerHTML = `<div class="gros etape-n">${A.attente}</div><div class="rythme etape">Mets-toi en place</div><button class="sec passer">Annuler</button>`;
+    v.querySelector(".passer").onclick = fermer;
+    const nb = v.querySelector(".etape-n"), txt = v.querySelector(".etape");
+    for (let s = A.attente; s > 0; s--) { nb.textContent = s; await attendre(1000); }
+    for (const e of A.etapes) {
+      phases.push([e.nom, Math.round(performance.now() - t0)]); txt.textContent = e.dit; nb.textContent = ""; parler(e.dit); await attendre(e.reps ? 3500 : 0);
+      if (e.reps) for (let i = 1; i <= e.reps; i++) {
+        nb.textContent = i; phases.push([`${e.nom}-bas`, Math.round(performance.now() - t0)]); ton(392, 0, .14, {type: "triangle", vol: .12}); await attendre(e.bas);
+        phases.push([`${e.nom}-haut`, Math.round(performance.now() - t0)]); ton(660, 0, .14, {type: "triangle", vol: .12}); await attendre(e.haut);
+      } else await attendre(e.ms);
+    }
+    PW.removeEventListener("devicemotion", lire);
+    parler("C'est fini, merci !"); ton(880, 0, .3, {type: "square", vol: .1});
+    let fait = type === "tractions" ? 5 : null;
+    v.innerHTML = `<div class="boite"><h3>Merci !</h3><p>${lignes.length} mesures enregistrées${lignes.length ? "" : " : les capteurs n'ont rien donné sur ce téléphone"}.</p>
+        ${fait === null ? "" : `<small>Combien de tractions as-tu vraiment faites ?</small><div class="regle"><button class="moins">−</button><b>${fait}</b><button class="plus">+</button></div>`}</div>
+      <button class="go envoyer">Envoyer à Claude</button><button class="sec retour">Ne pas envoyer</button><small style="color:#fff;text-align:center">L'appli se recharge pour l'envoyer dans ton dépôt privé.</small>`;
+    v.querySelector(".retour").onclick = fermer;
+    if (fait !== null) { const c = v.querySelector(".regle b"); v.querySelector(".moins").onclick = () => { fait = Math.max(fait - 1, 0); c.textContent = fait; }; v.querySelector(".plus").onclick = () => { fait++; c.textContent = fait; }; }
+    v.querySelector(".envoyer").onclick = () => {
+      let deja = []; try { deja = JSON.parse(localStorage.getItem("pkm_appr") || "[]"); } catch (e) {}
+      deja.push({type, quand: new Date().toISOString(), fait, phases, colonnes: ["ms", "ax", "ay", "az", "bx", "by", "bz", "ra", "rb", "rg"], lignes, appareil: PW.navigator.userAgent.slice(0, 120)});
+      try { localStorage.setItem("pkm_appr", JSON.stringify(deja.slice(-3))); PW.location.reload(); }
+      catch (e) { v.querySelector(".envoyer").textContent = "Enregistrement trop gros : dis-le à Claude"; }
+    };
+  };
 }
 
 function dessinerTests() {

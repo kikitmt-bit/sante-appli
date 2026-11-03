@@ -71,8 +71,9 @@ Chaque nouveauté se construit en arrivant dans la région. Entre deux : thème 
 
 ## Les combats de sport (idée validée par Kiki, 03/11)
 
-L'écran de combat de l'entraînement (ton starter contre un adversaire, chaque répétition = une attaque) lui plaît beaucoup : à reprendre pour les champions
-d'arène (Pierre : 30 pompes = son Onix à terre), la Ligue, peut-être les sanctuaires. À faire quand les détections seront réglées.
+L'écran de combat de l'entraînement (ton starter contre un adversaire, chaque répétition = une attaque) lui plaît beaucoup : à reprendre pour certains
+champions d'arène, plus tard dans le jeu ou dans d'autres régions, la Ligue, peut-être les sanctuaires. **Pas pour le premier champion ni comme passage obligé** : certains
+amis ne font pas 3 pompes, ce serait frustrant (Kiki, 03/11). À faire quand les détections seront réglées.
 
 ## Jouer avec les amis
 

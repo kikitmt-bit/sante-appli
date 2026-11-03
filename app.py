@@ -784,6 +784,19 @@ CARTE_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_dresseur
 PROFIL = bilan.lire_profil(CARTE_TEL, dt.datetime.now(TZ).date())
 if CARTE_TEL is not None:
     publier_dresseur(CARTE_TEL)
+if not AMI:  # L'apprentissage du téléphone (entraînement) : ses mesures, rangées dans le dépôt privé pour régler la détection
+    MESURES_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_appr') || ''", key="appr_lire")
+    if MESURES_TEL and st.session_state.get("appr_envoye") != MESURES_TEL[:200]:
+        try:
+            ok = all(ecrire_depot(f"data/calibrage/mouvements/{m['type']}-{str(m['quand'])[:19].replace(':', '-')}.json", m, "mesures de l'apprentissage") for m in json.loads(MESURES_TEL))
+        except (ValueError, KeyError, TypeError):
+            ok = False
+        if ok:
+            st.session_state["appr_envoye"] = MESURES_TEL[:200]
+            streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_appr')", key="appr_effacer")
+            st.toast("✅ Mesures envoyées à Claude, merci !")
+        else:
+            st.toast("⚠️ Mesures pas envoyées : elles restent sur ton téléphone, recharge l'appli pour réessayer.")
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:
