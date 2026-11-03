@@ -4384,6 +4384,28 @@ const STYLE_ENTR = `
 .entr-scene .pv-e.brille{background:#FFF3B8;border-color:#A87E10}.entr-scene .ennemi.scintille{filter:drop-shadow(0 0 7px #F8C838) drop-shadow(0 0 2px #FFF)}
 .entr-scene .moi{color:#C9D3EA;font-size:16px;text-align:center}.entr-scene .mesure{color:#8FA0C4;font-size:13px;text-align:center}
 .entr-scene .fin{align-self:flex-end;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
+/* Le Coup d'Boule (pompes) : façon Punch-Out, le téléphone au sol, l'adversaire remplit l'écran et le nez frappe. Tout se lit bras tendus */
+.entr-scene.boule{display:block}
+.entr-scene.boule .monde{position:absolute;inset:0;width:100%;height:100%;max-width:none;aspect-ratio:auto;background-position:center}
+.entr-scene.boule .monde:before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(20,28,56,.45) 25%,rgba(20,28,56,.92) 75%)}
+.entr-scene.boule .ennemi{left:50%;top:50%;width:auto;height:66vmin;max-width:62%;transform:translate(-50%,-50%)}
+.entr-scene.boule .ennemi.touche{filter:brightness(3) saturate(0);transform:translate(-50%,-50%) scale(.84) rotate(-5deg)}
+.entr-scene.boule .ennemi.ko{opacity:0;transform:translate(-50%,-50%) scale(1.5,.08)}.entr-scene.boule .ennemi.entre{opacity:0;transform:translate(-50%,-50%) scale(.25)}
+.entr-scene.boule .anneau{position:absolute;left:50%;top:50%;width:92vmin;height:92vmin;transform:translate(-50%,-50%) rotate(-90deg);pointer-events:none}
+.entr-scene.boule .anneau circle{fill:none;stroke-width:5}.entr-scene.boule .anneau .fond{stroke:rgba(20,28,56,.75)}.entr-scene.boule .anneau .pv{stroke:#48C868;transition:stroke-dashoffset .2s}
+.entr-scene.boule .anneau .pv.moyen{stroke:#F8C838}.entr-scene.boule .anneau .pv.bas{stroke:#D83830}.entr-scene.boule.chromatique .anneau .pv{stroke:#F8C838}
+.entr-scene.boule .coach{left:2%;top:auto;bottom:3%;width:24vmin;height:24vmin;transform:none;z-index:2}.entr-scene.boule .coach.attaque{transform:translateY(-18%) scale(1.12)}
+.entr-scene.boule .panneau{position:absolute;inset:0;padding:0;pointer-events:none;display:block}
+.entr-scene.boule .pv-e,.entr-scene.boule .moi,.entr-scene.boule .cpt small{display:none}
+.entr-scene.boule .cpt{position:absolute;right:3%;top:50%;transform:translateY(-50%);width:auto}.entr-scene.boule .nb{font-size:46vmin;text-shadow:5px 5px 0 #141C38,-2px -2px 0 #141C38}
+.entr-scene.boule .fin{position:absolute;left:2%;top:3%;pointer-events:auto;color:#fff;font-size:14px;z-index:3}
+.entr-scene.boule .txt{left:26%;right:26%;bottom:2%;text-align:center;font-size:19px;z-index:2}
+.entr-scene.boule .eclair{z-index:1}
+.entr-scene .impact{position:absolute;width:42vmin;height:42vmin;margin:-21vmin 0 0 -21vmin;background:#F8C838;clip-path:polygon(50% 0,61% 33%,96% 22%,72% 50%,96% 78%,61% 67%,50% 100%,39% 67%,4% 78%,28% 50%,4% 22%,39% 33%);pointer-events:none;animation:entr-impact .3s forwards;z-index:2}
+@keyframes entr-impact{from{transform:scale(.2);opacity:1}to{transform:scale(1.2) rotate(35deg);opacity:0}}
+.entr-scene.boule .etourdi{position:absolute;left:50%;top:50%;width:0;height:0;display:none;animation:entr-tourne 1s linear infinite;z-index:1}.entr-scene.boule.sonne .etourdi{display:block}
+.entr-scene.boule .etourdi i{position:absolute;font-style:normal;font-size:7vmin;color:#F8C838;text-shadow:1px 1px 0 #141C38}
+@keyframes entr-tourne{to{transform:rotate(360deg)}}
 @media (orientation:landscape){.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
 
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
@@ -4604,15 +4626,16 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const sh = essai && !shinyEssai ? null : shinyDuJour(cible, shinyEssai);
     let n = 0, derniere = 0, pv = sh ? sh.pv : cible, pvMax = sh ? sh.pvMax : cible, koDit = false, finie = false, attaque = 0, adv = sh ? sh.num : adversaireDuLieu(), estShiny = !!sh;
     const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[acteur].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
-    const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null;
+    const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null, boule = type === "pompes";
     const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => adv;
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
-          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" ${decor ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
+          ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
           <div class="txt">${sh ? "" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`}</div></div>
         <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
           <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
           <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
-    const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair");
+    const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair"), anneau = S.querySelector(".anneau .pv");
+    S.classList.toggle("boule", boule); S.classList.toggle("chromatique", !!sh);
     rognerImages(S);
     let parole = 0;
     const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.textContent = t; };
@@ -4621,16 +4644,21 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       dire(deja ? `${nom} chromatique est toujours là ! Encore ${sh.pv} PV.` : `Attention ! Un ${nom} chromatique apparaît ! Il est bien plus résistant !`, 3500);
       SONS.shiny(); vibre([40, 60, 80]); eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
     }
-    const peindre = () => { const p = Math.max(pv / pvMax * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : ""; };
-    const rep = () => {
-      n++; nb.textContent = n; derniere = Date.now(); vibre(25); if (!M.capteur) parler(n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
+    const peindre = () => { const p = Math.max(pv / pvMax * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : "";
+      if (anneau) { anneau.style.strokeDashoffset = 100 - p; anneau.setAttribute("class", `pv ${p < 25 ? "bas" : p < 55 ? "moyen" : ""}`); S.classList.toggle("sonne", p < 25 && pv > 0); } };
+    const rep = ou => {
+      if (boule && ou) {  // l'étoile part de l'endroit exact où le nez a touché
+        const b = S.getBoundingClientRect(), i = P.createElement("div"); i.className = "impact"; i.style.left = `${ou.clientX - b.left}px`; i.style.top = `${ou.clientY - b.top}px`; S.appendChild(i); setTimeout(() => i.remove(), 320);
+      }
+      n++; nb.textContent = n; derniere = Date.now(); vibre(boule ? 45 : 25); if (!M.capteur) parler(boule && cible - n > 0 && cible - n <= 3 ? `${n}. Plus que ${cible - n} !` : n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
       nb.classList.add("tape"); apres(() => nb.classList.remove("tape"), 110);
       C.classList.add("attaque"); apres(() => C.classList.remove("attaque"), 130);
       E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
       if (n % 5 === 0) { S.classList.remove("secousse"); void S.offsetWidth; S.classList.add("secousse"); }
       ton(180 + Math.min(n, 30) * 10, 0, .08, {type: "square", vol: .12}); bruit(0, .09, {vol: .12, f: 900});
       const d = P.createElement("div"); d.className = "deg"; d.textContent = "-1"; S.querySelector(".monde").appendChild(d); setTimeout(() => d.remove(), 650);
-      if (sesAttaques) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
+      if (boule) dire("Coup d'Boule !", 700);
+      else if (sesAttaques) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
       pv--; peindre();
       if (estShiny) { sh.pv = pv; garderShiny(sh); }
       if (n === cible && pv > 0) { koDit = true; apres(() => parler("Objectif atteint !"), 300); dire(estShiny ? "Objectif atteint, mais il résiste encore !" : "Objectif atteint !", 1800); }
@@ -4644,7 +4672,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
         if (estShiny) {  // la victoire : une seule par jour
           estShiny = false; sh.battu = true; garderShiny(sh); SONS.shiny(); vibre([60, 60, 120]);
           if (!sh.essai) memoriser(`${TEST ? "test#" : D.prefixe}geste-combatshiny_1_${Date.now()}`);
-          S.querySelector(".pv-e").classList.remove("brille"); E.classList.remove("scintille");
+          S.querySelector(".pv-e").classList.remove("brille"); E.classList.remove("scintille"); S.classList.remove("chromatique");
           motShiny = `<p><b>${parti} chromatique est K.O. !</b> Ta barre de Shiny Ball gagne 1 jour : ${Math.min(J.serie + 1, R.master_jours)} / ${R.master_jours}.</p>`;
           dire(`${parti} chromatique est K.O. ! Ta barre de Shiny Ball gagne 1 jour !`, 3000);
         }
@@ -4675,7 +4703,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
         minuteurs.push(setInterval(() => { m.textContent = `${VERSION_DETECTION} · ${c.debit()} mesures/s · trou ${c.trou()} ms`; }, 1000)); }
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
     })(); else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
-      S.onpointerdown = e => { e.preventDefault(); if (Date.now() - derniere < ECART_POMPE) return dire("Trop vite : va jusqu'en haut, bras tendus !", 1200); rep(); };
+      S.onpointerdown = e => { e.preventDefault(); if (Date.now() - derniere < ECART_POMPE) return dire("Trop vite : va jusqu'en haut, bras tendus !", 1200); rep(e); };
     }
   }
 
