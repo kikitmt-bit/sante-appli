@@ -73,7 +73,7 @@ Chaque nouveauté se construit en arrivant dans la région. Entre deux : thème 
 
 - **Comptes** : adresses Gmail dans `COMPTES` (connexion Google déjà en place), un joueur par adresse.
 - **Données santé** : comme le padel (`padel_resa`) : bouton « Relier ma montre », Google Health API par OAuth (Fitbit,
-  Pixel Watch ; Samsung, Garmin, Xiaomi par Health Connect sur Android). **iPhone / Apple Watch impossible.** Jetons
+  Pixel Watch ; Samsung, Garmin, Xiaomi par Health Connect sur Android). **iPhone** : possible, par Apple Santé, mais sans minutes de sport ni séances (sport estimé par le cœur, 03/11). Jetons
   dans les réglages privés du script Google ; données par joueur dans le dépôt privé (`data/joueurs/<id>/`).
   **Construit le 02/11** (comptes, liaison, récolte, partie à part, suppression) : voir CLAUDE.md ; le reste de cette
   rubrique reste à faire.

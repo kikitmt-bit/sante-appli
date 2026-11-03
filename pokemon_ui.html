@@ -4238,10 +4238,10 @@ function quitterTest() {
 function dessinerRegles() {
   document.getElementById("regles").innerHTML = `
     <li>${ico("effort", "p")} <b>Barre d'effort</b> (${D.barre.taille} points = une Poké Ball, elle ne se vide jamais) : 1 point par 100 pas au-delà de
-      ${fr(D.barre.pas_offerts)} (la vie à la maison ne compte pas), ${R.zone_points || 5} points par minute de sport (zone cardio intense ou maximum, jaune ou rouge sur la montre ; la zone modérée, atteinte en marchant, ne compte pas), 1 par étage, 1 par minute de séance de sport
-      (au moins ${R.seance_min} min), ${R.force} par minute de musculation, pompes, tractions ou rameur.</li>
+      ${fr(D.barre.pas_offerts)} (la vie à la maison ne compte pas), ${R.zone_points || 5} points par minute de sport (zone cardio intense ou maximum, jaune ou rouge sur la montre ; la zone modérée, atteinte en marchant, ne compte pas ; si ta montre ne donne pas ces minutes, elles sont estimées d'après ton cœur), 1 par minute de séance de sport
+      (au moins ${R.seance_min} min, pas la marche : tes pas comptent déjà), ${R.force} par minute de musculation, pompes, tractions ou rameur.</li>
     <li>${ico("radar", "p")} Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes de sport → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
-      🪜 étages → Roche, Sol, Acier ; 🌳 marche → Plante, Insecte, Poison ; 🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
+      🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 👟 pas → tous les types.</li>
     <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min de sport dans la journée, ou n'importe quel exploit.</li>
     <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>

@@ -1,8 +1,8 @@
 """Le jeu Pokémon : on gagne des Poké Balls en faisant du sport, jamais en ne faisant rien. Réglages : audit du 02/11.
 
 - La **barre d'effort** se remplit avec les pas (au-delà des 1 000 de la vie à la maison), les minutes de sport (zone
-  cardio intense ou maximum, jaune et rouge sur la montre : 5 points la minute), les étages et les séances de sport
-  (musculation, pompes, tractions, rameur : 2 points par minute) ; elle ne se vide pas le soir. Barre pleine (100 points)
+  cardio intense ou maximum, jaune et rouge sur la montre : 5 points la minute) et les séances de sport (musculation,
+  pompes, tractions, rameur : 2 points par minute ; pas la marche, ses pas comptent déjà) ; elle ne se vide pas le soir. Barre pleine (100 points)
   = une Poké Ball, dont les types favoris dépendent de ce qui a le plus rempli la barre ce jour-là.
 - **Super Ball** : journée « objectif double » (5 000 pas ET 10 min de sport), ou n'importe quel exploit. Shiny ×2.
 - **Hyper Ball** : exploit du jour (10 000 pas, 25 min de sport ou une séance de 45 min). Shiny ×4.
@@ -138,6 +138,12 @@ FIGEES = "data/pokemon/captures_v2.json"
 OUVERTES = "data/pokemon/ouvertes.json"  # Poké Balls ouvertes, partagées par la montre et le téléphone (script Google)
 
 
+def equitable(jour):
+    """Le même effort vaut la même chose pour tous, quelle que soit la montre (règles du 04/11) : les étages ne donnent plus de points
+    (toutes les montres ne les comptent pas) et la marche n'est plus une séance (ses pas comptent déjà). Jour inconnu : oui."""
+    return jour is None or jour >= missions.NOUVELLES
+
+
 def nouveau(jour):
     """Le jour suit-il les règles des minutes de sport (zone jaune / rouge) ? (jour inconnu : oui)"""
     return jour is None or jour >= REGLAGES["zone_depuis"]
@@ -176,7 +182,7 @@ def mesures(s, exercices, jour=None):
     m["sports"], m["seance_max"], m["force"], m["nb_force"], m["eau"] = {}, 0, 0, 0, 0
     for c in exercices:
         minutes = chiffres.duree(c.get("activeDuration")) / 60
-        if minutes >= REGLAGES["seance_min"]:
+        if minutes >= REGLAGES["seance_min"] and not (equitable(jour) and chiffres.est_marche(c)):
             t = c.get("exerciseType") or "OTHER"
             if est_force(c):
                 m["force"] += minutes
@@ -188,7 +194,7 @@ def mesures(s, exercices, jour=None):
             m["seance_max"] = max(m["seance_max"], minutes)
     m["sport"] = sum(m["sports"].values())
     force = m["force"] if jour is None or jour >= REGLAGES["force_depuis"] else 0
-    m["points"] = points_par_source(m["pas"], m["zone"], m["etages"], m["sport"], force, seuils_zone(m)[0])
+    m["points"] = points_par_source(m["pas"], m["zone"], 0 if equitable(jour) else m["etages"], m["sport"], force, seuils_zone(m)[0])
     return m
 
 
@@ -287,7 +293,7 @@ def chronologie(fichier, resume, jour):
             zone[i] += float(v) * (2 if z in ("CARDIO", "PEAK") else 1)
     for h, _, n in ((t.get("floors") or {}).get("lignes") or []):
         i = _minute(h)
-        if i is not None and n:
+        if i is not None and n and not equitable(jour):
             etages[i] += float(n)
     par_min = seuils_zone({"nouveau": neuf})[0]
     for p in (resume or {}).get("exercise") or []:
@@ -299,7 +305,7 @@ def chronologie(fichier, resume, jour):
             fin = dt.datetime.fromisoformat(iv["endTime"].replace("Z", "+00:00")).astimezone(chiffres.TZ)
         except (KeyError, ValueError):
             continue
-        if minutes < REGLAGES["seance_min"] or debut.date() != jour:
+        if minutes < REGLAGES["seance_min"] or debut.date() != jour or (equitable(jour) and chiffres.est_marche(c)):
             continue
         a = debut.hour * 60 + debut.minute
         b = min(fin.hour * 60 + fin.minute if fin.date() == jour else 1439, 1439)
@@ -768,7 +774,8 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
     jours = [debut + dt.timedelta(days=i) for i in range((aujourd - debut).days + 1)]
-    stats = pd.DataFrame({j: chiffres.stats_jour(resumes.get(str(j))) for j in jours}).T
+    lignes_m = (f.get(missions.FICHIER) or {}).get("jours") or {}
+    stats = pd.DataFrame({j: missions.avec_coeur(chiffres.stats_jour(resumes.get(str(j))), lignes_m.get(str(j)), j) for j in jours}).T
     figees = [c for c in (f.get(FIGEES) or {}).get("captures", [])  # seulement celles de la partie en cours
               if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], "", ami))]
     anniv = jours_anniversaire((f.get(OUVERTES) or {}).get("ouvertes", {}), figees, ami, debut, aujourd, anniversaire)

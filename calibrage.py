@@ -28,14 +28,15 @@ def journal(lire_depot, ident, debut, depuis, aujourd, nom):
     jours_m = (f.get(missions.FICHIER) or {}).get("jours") or {}
     gestes = pokemon.gestes_du(f.get(pokemon.GESTES), (f.get(pokemon.OUVERTES) or {}).get("ouvertes", {}), ami, aujourd)
     jours = [depuis + dt.timedelta(days=k) for k in range((aujourd - depuis).days + 1)]
-    stats = pd.DataFrame({j: chiffres.stats_jour(resumes.get(str(j))) for j in jours}).T
+    chiffres_du = lambda j: missions.avec_coeur(chiffres.stats_jour(resumes.get(str(j))), jours_m.get(str(j)), j)  # noqa: E731
+    stats = pd.DataFrame({j: chiffres_du(j) for j in jours}).T
     st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
     mission_du = lambda j: jours_m.get(str(j)) if j >= missions.DEPUIS else None  # noqa: E731
     captures, _ = pokemon.charger_jeu(lire, aujourd, {"id": ami, "debut": debut} if ami else None)
     balls = collections.Counter((c["jour"], c.get("ball", "poke")) for c in captures if not c.get("rate"))
     lignes = []
     for j in jours:
-        s = chiffres.stats_jour(resumes.get(str(j)))
+        s = chiffres_du(j)
         m = pokemon.mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(j)) or {}).get("exercise") or []], j)
         _, obj_sport, exp_sport = pokemon.seuils_zone(m)
         R = pokemon.REGLAGES
@@ -45,7 +46,7 @@ def journal(lire_depot, ident, debut, depuis, aujourd, nom):
         info = missions.MISSIONS.get(cle) or {}
         valeur = None if not cle or info.get("ancienne") else missions.valeur(cle, j, st, mission_du, gestes)
         lignes.append({
-            "joueur": nom, "jour": str(j), "en_cours": j == aujourd, "donnees": bool(m["pas"]), "sport_mesure": s.get("zone_sport") is not None,
+            "joueur": nom, "jour": str(j), "en_cours": j == aujourd, "donnees": bool(m["pas"]), "sport_mesure": s.get("zone_sport") is not None, "sport_estime": bool(s.get("sport_estime")),
             "pas": round(float(m["pas"])), "km": round(float(s.get("km") or 0), 1), "sport": round(float(m["zone"]), 1),
             "seance_max": round(float(m["seance_max"])), "force": round(float(m["force"])), "etages": round(float(m["etages"])),
             "pompes": g.get("pompes", 0), "tractions": g.get("tractions", 0), "squats": g.get("squats", 0),
@@ -77,7 +78,7 @@ def taux(lignes):
     for nom in dict.fromkeys(x["joueur"] for x in lignes):
         j = [x for x in comptes(lignes) if x["joueur"] == nom]
         t, avec = len(j), [x for x in j if x["mission"]]
-        out.append({"Joueur": nom, "Jours": t, "Sport mesuré": _part(sum(x["sport_mesure"] for x in j), t),
+        out.append({"Joueur": nom, "Jours": t, "Sport mesuré": _part(sum(x["sport_mesure"] for x in j), t), "Dont estimé par le cœur": sum(x["sport_estime"] for x in j),
                     "5 000 pas": _part(sum(x["pas"] >= x["obj_pas"] for x in j), t), "Objectif du jour": _part(sum(x["objectif"] for x in j), t),
                     "Super Ball": _part(sum(x["super"] for x in j), t), "Hyper Ball": _part(sum(x["hyper"] for x in j), t),
                     "Hyper par les pas": _part(sum(x["hyper_pas"] for x in j), t), "Hyper par le sport": _part(sum(x["hyper_sport"] for x in j), t),

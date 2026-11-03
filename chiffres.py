@@ -46,6 +46,12 @@ def contenu(p):
     return p
 
 
+def est_marche(c):
+    """Une séance de marche ? Le plus souvent détectée toute seule par la montre ou le téléphone (Google Fit : 173 min pour 3 757 pas),
+    et ses pas comptent déjà : pour le jeu, marcher n'est pas une séance (Apple Santé ne les donne pas : ce serait injuste)."""
+    return any(t in (c.get("exerciseType") or "").upper() for t in ("WALK", "HIK"))
+
+
 def table(t):
     """Tableau compact du script -> DataFrame."""
     return pd.DataFrame(t["lignes"], columns=t["colonnes"]) if t and t.get("lignes") else pd.DataFrame()
@@ -184,7 +190,7 @@ def stats_jour(r, j=None):
     ex = r.get("exercise") or []
     s["seances"] = len(ex)
     s["min_sport"] = sum(duree(contenu(p).get("activeDuration")) for p in ex) / 60
-    s["seance_max"] = max((duree(contenu(p).get("activeDuration")) for p in ex), default=0) / 60
+    s["seance_max"] = max((duree(contenu(p).get("activeDuration")) for p in ex if not est_marche(contenu(p))), default=0) / 60
     return s
 
 

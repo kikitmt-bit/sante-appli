@@ -18,6 +18,10 @@ BONUS = 25                       # points d'effort d'une ancienne mission réuss
 HISTOIRE = 14                    # jours de données qu'il faut pour le fantôme et Rattata (et jours regardés par l'ancien choix)
 PAS_REVENIR = 5                  # une mission ne revient pas avant ce nombre de jours
 PAS_FANTOME = 4000               # battre une journée à 800 pas ne serait pas un défi
+# Le sport quand la montre ne donne pas les minutes officielles (Apple Santé…) : les relevés du cœur à ce seuil ou plus (testé sur
+# 14 jours de Kiki : à 1 minute près du chiffre de Google ; un seuil unique car l'âge reste sur le téléphone). Un relevé vaut le temps
+# qui le sépare du suivant, 5 min au plus. Moins de 60 relevés dans la journée, sans aucun haut : on ne sait pas.
+COEUR_SPORT, COEUR_RELEVES, COEUR_MAX_MIN = 132, 60, 5
 SOIR = 20                        # les pas à partir de cette heure : le défi de Koga (gardés avec ceux du matin)
 
 TOUS_LES_JOURS = set(range(7))
@@ -94,6 +98,29 @@ def rythme(jour_fichier):
     return float(minutes.rolling(60, min_periods=1).sum().max()), int((n.groupby(h.str[:2]).sum() >= 1000).sum())
 
 
+def sport_coeur(jour_fichier):
+    """Les minutes de sport estimées d'après le cœur, d'un fichier du jour, ou None si on ne peut pas savoir."""
+    c = chiffres.table((jour_fichier or {}).get("types", {}).get("heart-rate"))
+    if "beatsPerMinuteAvg" not in c or "heure" not in c:
+        return None
+    import pandas as pd
+    hauts = int((pd.to_numeric(c["beatsPerMinuteAvg"], errors="coerce") >= COEUR_SPORT).sum())
+    if len(c) < COEUR_RELEVES and not hauts:
+        return None
+    minutes = pd.Series(sorted(int(x[:2]) * 60 + int(x[3:5]) for x in c["heure"].astype(str))).diff().dropna()
+    ecart = float(minutes.median()) if len(minutes) else COEUR_MAX_MIN
+    return float(hauts * min(max(ecart, 1), COEUR_MAX_MIN))
+
+
+def avec_coeur(s, e, jour):
+    """Les chiffres d'un jour (chiffres.stats_jour), avec le sport estimé si la montre ne le donne pas. e = sa ligne de missions.json."""
+    z, c = s.get("zone_sport"), (e or {}).get("sport_coeur")
+    if jour >= NOUVELLES and (z is None or z != z) and c is not None:
+        s["zone_sport"] = c
+        s["sport_estime"] = True
+    return s
+
+
 def valeur(cle, jour, stats, info, gestes=None):
     """Où en est le joueur sur une mission, ce jour-là (None : on ne sait pas). info(j) = sa ligne de missions.json, gestes =
     pokemon.gestes_du."""
@@ -152,7 +179,7 @@ def possible(cle, jour, stats):
     if cle == "galop":  # la montre donne les zones ?
         return m["seuil"] if any(s.get("zone_sport") is not None and s["zone_sport"] == s["zone_sport"] for s in avant[:HISTOIRE]) else None
     if cle == "charge":  # la montre enregistre les séances ?
-        return m["seuil"] if any((s.get("min_sport") or 0) > 0 for s in avant) else None
+        return m["seuil"] if any((s.get("seance_max") or 0) >= 10 for s in avant) else None
     return m["seuil"]
 
 
@@ -197,13 +224,14 @@ def calculer(ancien, aujourd, stats, lire_jour, ami=None):
         jours.setdefault(str(j), {})["pas_matin"] = pas_matin(fichiers.get(j))
         jours[str(j)]["pas_soir"] = pas_matin(fichiers.get(j), apres=SOIR)
         jours[str(j)]["max60"], jours[str(j)]["h1000"] = rythme(fichiers.get(j))
+        jours[str(j)]["sport_coeur"] = sport_coeur(fichiers.get(j))
     pm = lambda j: (jours.get(str(j)) or {}).get("pas_matin")  # noqa: E731
     j = DEPUIS
     while j <= aujourd:
         e = jours.setdefault(str(j), {})
         if "cle" not in e:
             if j >= NOUVELLES:
-                e.update(tirer(j, stats, jours, ami))
+                e.update(tirer(j, lambda x: avec_coeur(dict(stats(x)), jours.get(str(x)), x), jours, ami))
             else:
                 e["cle"], e["raison"] = choisir(j, stats, pm, (jours.get(str(j - dt.timedelta(days=1))) or {}).get("cle"))
         j += dt.timedelta(days=1)
