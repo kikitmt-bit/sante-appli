@@ -3045,8 +3045,8 @@ function gestesAuj() {
 }
 function blocGestes(types = ["pompes", "tractions", "squats"]) {
   const g = gestesAuj();
-  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}<button class="lancer" data-compte="${t}">▶ Série</button></span><b>${g[t]}</b>
-    <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>`).join("")}</div>`;
+  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}<button class="lancer" data-compte="${t}">▶ Série</button></span><b>${g[t]}</b>${t === "tractions" ? `
+    <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}` : ""}</div>`).join("")}</div>`;
 }
 function apresGeste() {  // tout redessiner, la petite tuile ouverte le reste
   const ouvert = document.querySelector("#speciales .petit-obj.on"), cle = ouvert && ouvert.dataset.c;
@@ -3311,7 +3311,7 @@ function carteSanctuaire(s) {
 // 3. Le défi de l'arène où l'on est arrivé, cumulé depuis l'arrivée (ou son plan B)
 function cartePompes() {
   return `<div class="speciale"><div class="tete">💪 Pompes, tractions, squats</div>
-    <div class="gain">La montre ne sait pas les compter : à toi de les noter. ${R.bonus_pompe * 10} points d'effort pour 10 pompes, ${R.bonus_traction} par traction, ${R.bonus_squat * 10} pour 10 squats, ${R.bonus_gestes_max} au plus par jour. Certains champions acceptent pompes et tractions, et certaines missions aussi.</div>
+    <div class="gain">La montre ne sait pas les compter : lance une série, le téléphone compte pour toi. ${R.bonus_pompe * 10} points d'effort pour 10 pompes, ${R.bonus_traction} par traction, ${R.bonus_squat * 10} pour 10 squats, ${R.bonus_gestes_max} au plus par jour. Certains champions acceptent pompes et tractions, et certaines missions aussi.</div>
     ${blocGestes()}<div class="petit gris" style="margin-top:6px">Tes points arrivent à la prochaine actualisation.</div></div>`;
 }
 function carteDefi() {
@@ -4261,7 +4261,7 @@ function dessinerRegles() {
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
-    <li>💪 <b>Pompes, tractions et squats</b> : la montre ne les compte pas, note-les toi-même dans « Pompes ». Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
+    <li>💪 <b>Pompes, tractions et squats</b> : la montre ne les compte pas : lance une série depuis « Pompes », le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
@@ -4341,6 +4341,7 @@ const DECORS_COMBAT = {
   "Plateau Indigo": {image: "combat-plateau-indigo.webp", e: [68.4, 42], c: [27, 63], te: 22, tc: 30},
 };
 const VERSION_DETECTION = "squats v11";
+const CORRECTION_MAX = 5;
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
 const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
@@ -4356,7 +4357,7 @@ const STYLE_ENTR = `
 .pkm-entr .go:before{content:"▶ "}.pkm-entr .sec{width:100%;padding:9px;background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:12px 5px;font-size:18px}
 .pkm-entr .tete-e{display:flex;align-items:center;gap:10px}.pkm-entr .tete-e img{width:72px;height:72px;object-fit:contain;image-rendering:pixelated}
 .pkm-entr .regle{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0}.pkm-entr .regle b{font-size:44px;font-weight:400;min-width:74px;text-align:center}
-.pkm-entr .regle button{width:52px;height:46px;font-size:26px;background:#F8F8E8;border:3px solid #484838;border-radius:9px 4px;color:#383828}
+.pkm-entr .regle button{width:52px;height:46px;font-size:26px;background:#F8F8E8;border:3px solid #484838;border-radius:9px 4px;color:#383828}.pkm-entr .regle button:disabled{opacity:.35}
 .pkm-entr .choix{display:flex;gap:6px}.pkm-entr .choix button{flex:1;padding:6px 2px;background:#F8F8E8;border:2px solid #484838;border-radius:7px 3px;color:#383828}.pkm-entr .choix button.on{background:#40A8F8;color:#fff}
 .pkm-entr .gros{font-size:92px;text-align:center;color:#fff;text-shadow:3px 3px 0 #141C38;line-height:1;margin:auto 0}.pkm-entr .rythme{text-align:center;font-size:26px;color:#fff;text-shadow:1px 1px 0 #141C38}
 .pkm-entr textarea{width:100%;height:90px;font:12px monospace;box-sizing:border-box}
@@ -4713,14 +4714,17 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     v.classList.remove("plein");
     const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.kiki && mesures.length;
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
-        <small>${M.nom} comptées (corrige si le téléphone s'est trompé)</small><div class="regle"><button class="moins">−</button><b>${n}</b><button class="plus">+</button></div>
+        <small>${M.nom} comptées${M.poche ? " (corrige si le téléphone s'est trompé)" : ` (corrige une petite erreur, ${CORRECTION_MAX} au plus)`}</small><div class="regle"><button class="moins">−</button><b>${n}</b><button class="plus">+</button></div>
         ${motShiny}<small class="veille">${veille}</small>${aMesures && sonde ? `<div><small>${VERSION_DETECTION} · ${sonde.debit()} mesures/s · plus grand trou ${sonde.trou()} ms</small></div>` : ""}</div>
       <button class="go suite">Série suivante (repos ${REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
       ${aMesures ? `<button class="sec envoi">📤 Envoyer cette série à Claude</button>` : ""}
       ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
-    const c = v.querySelector(".regle b"), detecte = n;
-    v.querySelector(".moins").onclick = () => { n = Math.max(n - 1, 0); c.textContent = n; };
-    v.querySelector(".plus").onclick = () => { n++; c.textContent = n; };
+    const c = v.querySelector(".regle b"), detecte = n, bm = v.querySelector(".moins"), bp = v.querySelector(".plus");
+    const ecartMax = M.poche ? Infinity : CORRECTION_MAX;  // les tractions : sans limite, tant que leur détection n'est pas réglée
+    const peindreC = () => { c.textContent = n; bm.disabled = n <= 0 || detecte - n >= ecartMax; bp.disabled = n - detecte >= ecartMax; };
+    bm.onclick = () => { n = Math.max(n - 1, 0); peindreC(); };
+    bp.onclick = () => { n++; peindreC(); };
+    peindreC();
     // Chaque série de Kiki part toute seule au prochain chargement de l'appli (même chemin que l'apprentissage) ; le bouton l'envoie tout de suite, avec le vrai nombre
     const quand = new Date().toISOString();
     const noter = () => { try {
