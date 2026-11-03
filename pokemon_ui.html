@@ -4312,7 +4312,7 @@ const ENTR = {
     capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, balance: 1.15, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte, à ton rythme."},
   planche: {nom: "Planche", un: "seconde", coach: 76, defaut: 30, decompte: 8, paysage: true, chrono: true, pas: 5, repos: 45,
-    consigne: "Pose le téléphone au sol, en paysage, devant toi. Sur les avant-bras, coudes sous les épaules, <b>corps bien droit de la tête aux talons</b>, sans creuser le dos. Tu n'as que ton honneur comme arbitre : touche l'écran quand tu arrêtes."},
+    consigne: "Pose le téléphone au sol, en paysage, devant toi. Sur les avant-bras, coudes sous les épaules, <b>corps bien droit de la tête aux talons</b>, sans creuser le dos. Ton starter porte une planche, et des Pokémon vont s'y empiler. Tu n'as que ton honneur comme arbitre : touche l'écran quand tu arrêtes, et tout s'écroule !"},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
 };
@@ -4376,7 +4376,7 @@ const STYLE_ENTR = `
 .entr-scene .ennemi{left:72%;top:45%;width:21%;transform:translate(-50%,-100%)}.entr-scene .sol.e{left:72%;top:45%;width:28%;height:7%;transform:translate(-50%,-50%)}
 .entr-scene .coach{left:27%;top:68%;width:27%;transform:translate(-50%,-100%)}.entr-scene .sol.c{left:27%;top:68%;width:34%;height:8%;transform:translate(-50%,-50%)}
 .entr-scene .coach.attaque{transform:translate(-50%,-100%) translate(22%,-8%) scale(1.06)}
-.entr-scene .ennemi.attaque-e{transform:translate(-50%,-100%) translate(-26%,10%) scale(1.08)}.entr-scene .coach.abri{filter:drop-shadow(0 0 4px #fff) drop-shadow(0 0 14px #40A8F8) drop-shadow(0 0 24px #40A8F8)}
+
 .entr-scene .ennemi.touche{filter:brightness(3) saturate(0);transform:translate(-50%,-100%) translateX(10%)}.entr-scene .ennemi.ko{opacity:0;transform:translate(-50%,-100%) translateY(30%)}.entr-scene .ennemi.entre{opacity:0;transform:translate(-50%,-100%) translateX(50%)}
 .entr-scene .pv-e{background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:5px 9px;font-size:18px;color:#383828}
 .entr-scene .barre{height:12px;background:#484838;border:2px solid #484838;border-radius:7px;overflow:hidden;margin-top:2px}.entr-scene .barre i{display:block;height:100%;width:100%;background:#48C868;transition:width .2s}.entr-scene .barre i.moyen{background:#F8C838}.entr-scene .barre i.bas{background:#D83830}
@@ -4389,6 +4389,27 @@ const STYLE_ENTR = `
 .entr-scene .moi{color:#C9D3EA;font-size:16px;text-align:center}.entr-scene .mesure{color:#8FA0C4;font-size:13px;text-align:center}
 .entr-scene .fin{align-self:flex-end;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
 /* Le Coup d'Boule (pompes) : façon Punch-Out, le téléphone au sol, l'adversaire remplit l'écran et le nez frappe. Tout se lit bras tendus */
+/* La Pile (la planche) */
+.pile-scene{position:relative;flex:1;min-height:0;overflow:hidden;background-size:cover;background-position:center;touch-action:none;image-rendering:pixelated}
+.pile-voile{position:absolute;inset:0;background:rgba(20,28,56,.28)}
+.pile-monde{position:absolute;left:0;right:0;bottom:0;top:0;transform-origin:50% 100%;transition:transform .6s}
+.pile-porteur{position:absolute;left:50%;bottom:13vmin;height:30vmin;transform:translateX(-50%);image-rendering:pixelated;z-index:3}
+.pile-bois{position:absolute;left:50%;bottom:30vmin;width:92vmin;height:14vmin;transform:translateX(-50%);overflow:visible;z-index:4}
+.pile-bois path{fill:none;vector-effect:non-scaling-stroke}.pile-bois .bord{stroke:#3A2410;stroke-width:4.4vmin}.pile-bois .bois{stroke:#B8803C;stroke-width:3vmin}
+.pile-tas{position:absolute;inset:0;z-index:5;transform-origin:50% 45vmin;transform:translateY(var(--plie,0));animation:pile-penche 1.7s ease-in-out infinite}
+@keyframes pile-penche{0%,100%{rotate:calc(var(--penche,0deg) * -1)}50%{rotate:var(--penche,0deg)}}
+.pile-poke{position:absolute;transform:translateX(-50%);image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(0,0,0,.35))}
+.pile-poke.silhouette{filter:brightness(0)}.pile-poke.tombe{transition:bottom .35s cubic-bezier(.55,0,1,.6)}
+.pile-goutte{position:absolute;left:calc(50% + 15vmin);bottom:34vmin;font-size:6vmin;opacity:0;z-index:6}.pile-scene.lourd .pile-goutte{opacity:1;animation:pile-goutte 1s infinite}
+@keyframes pile-goutte{from{transform:translateY(0);opacity:1}to{transform:translateY(7vmin);opacity:0}}
+.pile-scene.lourd .pile-porteur{animation:pile-tremble .25s infinite}.pile-scene.ecrasant .pile-porteur{animation:pile-tremble .12s infinite;height:25vmin}
+@keyframes pile-tremble{25%{transform:translateX(calc(-50% - 2px))}75%{transform:translateX(calc(-50% + 2px))}}
+.pile-scene.boum .pile-monde{animation:entr-secousse .22s}
+.pile-scene.ecroule .pile-bois{transform:translateX(-50%) rotate(14deg) translateY(10vmin);transition:transform .35s;opacity:.85}.pile-scene.ecroule .pile-tas{animation:none}.pile-scene.ecroule .pile-porteur{animation:none;height:18vmin}
+.pile-score{position:absolute;right:3%;top:3%;text-align:right;color:#fff;z-index:7;line-height:1;text-shadow:3px 3px 0 #141C38,-1px -1px 0 #141C38}.pile-score b{font-size:25vmin;font-weight:400;display:inline-block;transition:transform .12s;transform-origin:100% 50%}.pile-score b.tape{transform:scale(1.15)}
+.pile-score span{font-size:8vmin;margin-left:1vmin}.pile-score small{display:block;margin-top:1vmin;font-size:max(17px,5vmin);color:#fff}.pile-score small.atteint{color:#F8C838}
+.pile-aide{position:absolute;left:3%;top:3%;color:#fff;font-size:15px;text-shadow:1px 1px 0 #141C38;z-index:7}
+.pile-txt{position:absolute;left:3%;right:24%;bottom:2.5%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:5px 11px;font-size:20px;color:#383828;line-height:1.1;white-space:nowrap;text-align:center;z-index:7}
 .entr-scene.boule{display:block}
 .entr-scene.boule .monde{position:absolute;inset:0;width:100%;height:100%;max-width:none;aspect-ratio:auto;background-position:center}
 .entr-scene.boule .monde:before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(20,28,56,.45) 25%,rgba(20,28,56,.92) 75%)}
@@ -4518,7 +4539,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
-  let cible = resteMission || (moi.derniere ? (M.chrono ? Math.max(M.defaut, moi.derniere + (M.pas || 1)) : moi.derniere + 1) : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "";
+  let cible = resteMission || (moi.derniere ? (M.chrono ? Math.max(M.defaut, moi.derniere + (M.pas || 1)) : moi.derniere + 1) : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "", kgSerie = 0;
   const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
   let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
@@ -4568,7 +4589,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       : moi.derniere ? `Dernière série : ${moi.derniere}${M.chrono ? " s" : ""}. Vise un peu plus !` : "Première série : à toi de régler.";
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><h3>${M.nom}</h3></div><p>${M.consigne}</p></div>
       <div class="boite"><small>Ton objectif pour cette série${M.chrono ? " (en secondes)" : ""}</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
-        <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? " s" : ""}.` : ""}</small>
+        <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? ` s${moi.recordKg ? `, ${fr(moi.recordKg)} kg` : ""}` : ""}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
         <div><small class="veille">${veille}</small></div>${D.kiki && M.capteur ? `<div><small>Version : ${VERSION_DETECTION}</small></div>` : ""}</div>
       <button class="go">C'est parti</button><button class="sec retour">Retour</button>
@@ -4592,7 +4613,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     v.querySelector(".passer").onclick = fermer;
     const el = v.querySelector(".gros");
     const t = setInterval(() => { n--; if (n > 0) { el.textContent = n; ton(660, 0, .1, {type: "square", vol: .08}); if (n <= 3) parler(n); }
-      else { clearInterval(t); ton(990, 0, .3, {type: "square", vol: .1}); parler("Go !"); M.poche ? seriePoche() : combat(); } }, 1000);
+      else { clearInterval(t); ton(990, 0, .3, {type: "square", vol: .1}); parler("Go !"); M.poche ? seriePoche() : M.chrono ? pile() : combat(); } }, 1000);
     minuteurs.push(t);
   }
 
@@ -4628,7 +4649,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   function combat() {
     nettoyer(); v.classList.add("plein");
     motShiny = "";
-    const sh = M.chrono || (essai && !shinyEssai) ? null : shinyDuJour(cible, shinyEssai);
+    const sh = essai && !shinyEssai ? null : shinyDuJour(cible, shinyEssai);
     let n = 0, derniere = 0, pv = sh ? sh.pv : cible, pvMax = sh ? sh.pvMax : cible, koDit = false, finie = false, attaque = 0, adv = sh ? sh.num : adversaireDuLieu(), estShiny = !!sh;
     const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[acteur].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
     const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null, boule = type === "pompes";
@@ -4636,8 +4657,8 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
           ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
           <div class="txt">${sh ? "" : sansVeuve(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`)}</div></div>
-        <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.chrono ? "Touche l'écran pour arrêter" : M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
-          <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}${M.chrono ? " s" : ""}</small></div>
+        <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
+          <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
           <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
     const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair"), anneau = S.querySelector(".anneau .pv");
     S.classList.toggle("boule", boule); S.classList.toggle("chromatique", !!sh);
@@ -4657,22 +4678,6 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
         const b = S.getBoundingClientRect(), i = P.createElement("div"); i.className = "impact"; i.style.left = `${ou.clientX - b.left}px`; i.style.top = `${ou.clientY - b.top}px`; S.appendChild(i); setTimeout(() => i.remove(), 320);
       }
       n++; nb.textContent = n; derniere = Date.now();
-      if (M.chrono) {  // une seconde de plus : l'adversaire s'épuise, et il attaque toutes les 5 secondes
-        pv--; peindre();
-        if (n % 5 === 0 && pv > 0) {
-          E.classList.add("attaque-e"); apres(() => E.classList.remove("attaque-e"), 220); apres(() => { C.classList.add("abri"); ton(740, 0, .1, {type: "triangle", vol: .1}); ton(990, .08, .14, {type: "triangle", vol: .08}); dire(`${nomC} se protège !`, 1200); }, 160); apres(() => C.classList.remove("abri"), 800);
-        }
-        if (cible - n === 10) parler("Plus que 10 secondes !"); else if (cible - n === 5) parler("Tiens bon !");
-        if (n === cible) { koDit = true; }
-        if (rec && n === rec + 1) { dire("Nouveau record !", 2200); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }
-        if (pv <= 0) { const parti = PAR_NUM[ennemi()].nom; E.classList.add("ko"); vibre(60); [[76, 0], [79, .12], [84, .24]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .09}));
-          if (n === cible) parler("Objectif atteint !");
-          dire(`${parti} est épuisé ! ${n === cible ? "Objectif atteint !" : ""}`, 1800);
-          adv = adversaireDuLieu(adv); pvMax = pv = 15;
-          apres(() => { rogne(IMG.grand(ennemi())).then(([src]) => { E.src = src; }); S.querySelector(".nom-e").textContent = PAR_NUM[ennemi()].nom; E.classList.remove("ko"); E.classList.add("entre"); peindre();
-            requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre"))); dire(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Encore ${pv} s ?`, 1800); }, 800); }
-        return;
-      }
       vibre(boule ? 45 : 25); if (!M.capteur) parler(boule && cible - n > 0 && cible - n <= 3 ? `${n}. Plus que ${cible - n} !` : n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
       nb.classList.add("tape"); apres(() => nb.classList.remove("tape"), 110);
       C.classList.add("attaque"); apres(() => C.classList.remove("attaque"), 130);
@@ -4725,13 +4730,80 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       if (D.kiki) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".cpt").appendChild(m);
         minuteurs.push(setInterval(() => { m.textContent = `${VERSION_DETECTION} · ${c.debit()} mesures/s · trou ${c.trou()} ms`; }, 1000)); }
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
-    })(); else if (M.chrono) {  // le chrono démarre, et on touche l'écran quand on arrête : pas besoin de viser
-      const depart = Date.now(); dire("Tiens bon !", 1500);
-      minuteurs.push(setInterval(() => { while (!finie && n < Math.floor((Date.now() - depart) / 1000)) rep(); }, 200));
-      S.onpointerdown = e => { e.preventDefault(); fin(); };
-    } else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
+    })(); else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
       S.onpointerdown = e => { e.preventDefault(); if (Date.now() - derniere < ECART_POMPE) return dire("Trop vite : va jusqu'en haut, bras tendus !", 1200); rep(e); };
     }
+  }
+
+  // La Pile (la planche, idée de Kiki : l'exercice est ennuyeux, il faut un spectacle) : son starter soutient une planche de bois, et toutes les 5 s un Pokémon
+  // tombe dessus, d'abord en silhouette (« qui arrive ? »). Le score, c'est le poids porté, en vrais kilos. Toucher l'écran : tout s'écroule.
+  function pile() {
+    nettoyer(); v.classList.add("plein");
+    const fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie", decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")];
+    const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, recKg = moi.recordKg || 0;
+    v.innerHTML = `<div class="pile-scene" style="background-image:url('${D.scenes}${image}')"><div class="pile-voile"></div>
+        <div class="pile-monde"><div class="pile-tas"></div>
+          <svg class="pile-bois" viewBox="0 0 100 14" preserveAspectRatio="none"><path class="bord" d="M0 4 Q50 4 100 4"/><path class="bois" d="M0 4 Q50 4 100 4"/></svg>
+          <img class="pile-porteur rogne" src="${IMG.grand(acteur)}" alt=""><div class="pile-goutte">💦</div></div>
+        <div class="pile-score"><b class="kg">0</b><span>kg</span><small class="temps">0 s · objectif ${cible} s</small>${recKg ? `<small>record ${fr(recKg)} kg</small>` : ""}${D.kiki ? "" : ""}</div>
+        <div class="pile-aide">Touche l'écran quand tu arrêtes</div><div class="txt pile-txt">Tiens bon !</div></div>`;
+    const S = v.querySelector(".pile-scene"), monde = S.querySelector(".pile-monde"), tas = S.querySelector(".pile-tas"), kgEl = S.querySelector(".kg"), temps = S.querySelector(".temps"), txt = S.querySelector(".pile-txt");
+    const chemins = S.querySelectorAll(".pile-bois path"), porteur = S.querySelector(".pile-porteur");
+    rognerImages(S);
+    const u = Math.min(S.clientWidth, S.clientHeight) / 100, colonnes = [0, 0, 0], X = [-27, 0, 27], BASE = 41;  // en centièmes du petit côté de l'écran
+    const pris = new Set([acteur]), debut = Date.now();
+    let kg = 0, n = 0, finie = false, chute = 0, recordDit = false, vus = [];
+    const dire = t => { txt.textContent = sansVeuve(t); txt.style.fontSize = ""; if (txt.scrollWidth > txt.clientWidth) txt.style.fontSize = `${Math.floor(20 * txt.clientWidth / txt.scrollWidth)}px`; };
+    // de plus en plus lourds : la pile doit devenir absurde
+    const prochain = () => {
+      const [mini, maxi] = chute < 2 ? [0, 25] : chute < 4 ? [10, 80] : chute < 7 ? [40, 220] : [100, 1000];
+      let lot = DEX.filter(p => !LEG.has(p.num) && !pris.has(p.num) && D.poids[p.num] >= mini && D.poids[p.num] <= maxi);
+      if (!lot.length) lot = DEX.filter(p => !LEG.has(p.num) && !pris.has(p.num));
+      const p = lot[Math.floor(Math.random() * lot.length)]; if (!p) return null;
+      pris.add(p.num); return p;
+    };
+    const plier = () => {
+      const b = Math.min(kg / 90, 9), d = `M0 4 Q50 ${4 + b * 1.1} 100 4`; chemins.forEach(c => c.setAttribute("d", d));
+      tas.style.setProperty("--plie", `${b * .55}vmin`); tas.style.setProperty("--penche", `${Math.min(.4 + kg / 260, 4)}deg`);
+      S.classList.toggle("lourd", kg >= 150); S.classList.toggle("ecrasant", kg >= 450);
+      const haut = Math.max(...colonnes) + BASE + 36;  // la caméra recule quand la pile monte
+      monde.style.transform = `scale(${Math.min(1, 92 / haut)})`;
+    };
+    const faireTomber = () => {
+      const p = prochain(); if (!p) return;
+      chute++; const poids = D.poids[p.num], h = Math.max(17, Math.min(40, 14 + Math.sqrt(poids) * 1.45)), col = colonnes.indexOf(Math.min(...colonnes));
+      const im = P.createElement("img"); im.className = "pile-poke silhouette"; im.alt = "";
+      rogne(IMG.grand(p.num)).then(([src]) => { im.src = src; }).catch(() => { im.src = IMG.grand(p.num); });
+      const bas = BASE + colonnes[col]; colonnes[col] += h * .78;
+      im.style.cssText = `left:calc(50% + ${X[col] + (Math.random() - .5) * 5}vmin);bottom:${bas + 120}vmin;height:${h}vmin`; tas.appendChild(im); vus.push(im);
+      dire("Qui arrive ?"); ton(880, 0, .35, {type: "sine", vol: .05, f2: 300});
+      apres(() => { if (finie) return; im.classList.add("tombe"); im.style.bottom = `${bas}vmin`; }, 1100);
+      apres(() => { if (finie) return;
+        im.classList.remove("silhouette"); kg += poids; kgEl.textContent = fr(kg); kgEl.classList.add("tape"); apres(() => kgEl.classList.remove("tape"), 150); plier();
+        S.classList.remove("boum"); void S.offsetWidth; S.classList.add("boum");
+        const lourd = poids >= 200; ton(lourd ? 70 : 150, 0, lourd ? .5 : .2, {type: "square", vol: .16, f2: 45}); bruit(0, lourd ? .4 : .15, {vol: lourd ? .3 : .15, f: 400}); vibre(lourd ? [120, 40, 120] : 40);
+        try { const a = new PW.Audio(CRI(p.num)); a.volume = .3; a.play().catch(() => {}); } catch (e) {}
+        if (lourd) { dire(`Oh non, c'est ${p.nom} ! +${fr(poids)} kg !`); parler(`Oh non, ${p.nom} !`); } else dire(`${p.nom} s'installe ! +${String(Math.round(poids * 10) / 10).replace(".", ",")} kg`);
+        if (recKg && kg > recKg && !recordDit) { recordDit = true; apres(() => { dire("Nouveau record de poids !"); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }, 1200); }
+      }, 1450);
+    };
+    const fin = () => { if (finie) return; finie = true; nettoyer(); S.onpointerdown = null;
+      // tout s'écroule
+      kg = Math.round(kg * 10) / 10; kgSerie = kg; S.classList.add("ecroule"); bruit(0, .7, {vol: .35, f: 300}); ton(90, 0, .6, {type: "square", vol: .16, f2: 35}); vibre([160, 50, 200]);
+      vus.forEach(im => { const a = (Math.random() - .5) * 110, c = (Math.random() - .5) * 720; im.classList.remove("silhouette"); im.style.transition = "transform .9s cubic-bezier(.4,0,1,1),opacity .9s"; im.style.transform = `translate(calc(-50% + ${a}vmin),${40 + Math.random() * 60}vmin) rotate(${c}deg)`; im.style.opacity = 0; });
+      const mot = kg > recKg && recKg ? ` <b>Nouveau record !</b>` : "", cmp = D.poids[143] && kg >= D.poids[143] ? ` Autant que ${String(Math.round(kg / D.poids[143] * 10) / 10).replace(".", ",")} Ronflex.` : "";
+      motShiny = `<p>Ta planche a porté <b>${fr(kg)} kg</b> de Pokémon.${cmp}${mot}</p>`;
+      dire(`Tout s'écroule ! ${fr(kg)} kg !`); apres(() => bilan(n, n), 1300);
+    };
+    S.onpointerdown = e => { e.preventDefault(); fin(); };
+    plier();
+    minuteurs.push(setInterval(() => { if (finie) return;
+      const s = Math.floor((Date.now() - debut) / 1000); if (s === n) return; n = s;
+      temps.textContent = `${n} s · objectif ${cible} s`;
+      if (cible - n === 10) parler("Plus que 10 secondes !"); else if (cible - n === 5) parler("Tiens bon !");
+      if (n === cible) { parler("Objectif atteint !"); [[76, 0], [79, .12], [84, .24]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .09})); temps.classList.add("atteint"); dire("Objectif atteint ! Encore un peu ?"); }
+      if (n % 5 === 1) faireTomber();
+    }, 200));
   }
 
   function bilan(n, duree) {
@@ -4758,7 +4830,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const garder = () => {
       if (n <= 0 || essai) return;
       memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n}_${Date.now()}`);
-      moi.derniere = n; moi.record = Math.max(moi.record || 0, n); mem[type] = moi; garderEntr(mem);
+      moi.derniere = n; moi.record = Math.max(moi.record || 0, n); if (M.chrono) moi.recordKg = Math.max(moi.recordKg || 0, kgSerie); mem[type] = moi; garderEntr(mem);
     };
     v.querySelector(".suite").onclick = () => { garder(); if (!M.chrono) cible = Math.max(n, 1); repos(M.repos || REPOS_SERIE); };
     v.querySelector(".fini").onclick = () => { garder(); fermer(); };
