@@ -154,6 +154,8 @@ Strict rules: no text, no letters, no numbers, no UI, no health bars, no dialogu
 
 `[PLACE]` : le lieu de la carte, décrit avec ses détails reconnaissables. Fait : Bourg Palette (ChatGPT fait les ronds plus grands que demandé, sans gêne : la place se mesure sur l'image).
 
+**Le sol (03/11, Kiki)** : ChatGPT recopiait partout un rond de sable bordé d'herbe. À ajouter à chaque prompt : `Important: there is NO sand and NO border unless this place has some. The two ovals are simply slightly lighter, worn patches of the same ground as this place, with soft natural edges. The bottom strip of the image is also the same ground. The ovals stay at the same positions and sizes, clearly visible but natural.` Bon exemple : `combat-foret-de-jade.webp`.
+
 ### Les 19 autres lieux de Kanto (dans la même conversation ChatGPT : `Same composition and strict rules as before, new place: …`)
 
 - `combat-route-1.webp`, Route 1 : a quiet country path between Pallet Town and the next city, tall grass patches, small rocky ledges, trees on both sides
