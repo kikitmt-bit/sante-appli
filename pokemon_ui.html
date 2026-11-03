@@ -4380,7 +4380,7 @@ const STYLE_ENTR = `
 .entr-scene .nb{font-size:min(32vmin,150px);line-height:.9;color:#fff;text-shadow:4px 4px 0 #141C38;transition:transform .1s}.entr-scene .nb.tape{transform:scale(1.18)}
 .entr-scene .deg{position:absolute;left:78%;top:5%;font-size:42px;color:#D83830;text-shadow:2px 2px 0 #fff;animation:entr-deg .6s forwards;pointer-events:none}@keyframes entr-deg{to{transform:translateY(-44px);opacity:0}}
 .entr-scene .eclair{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.entr-scene .eclair.on{animation:entr-eclair .28s}@keyframes entr-eclair{30%{opacity:.75}}
-.entr-scene .txt{position:absolute;left:2%;right:2%;bottom:2%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 11px;min-height:1.3em;font-size:21px;color:#383828;line-height:1.1}
+.entr-scene .txt{position:absolute;left:2%;right:2%;bottom:2%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 11px;min-height:1.3em;font-size:21px;color:#383828;line-height:1.1;text-wrap:balance}
 .entr-scene .pv-e.brille{background:#FFF3B8;border-color:#A87E10}.entr-scene .ennemi.scintille{filter:drop-shadow(0 0 7px #F8C838) drop-shadow(0 0 2px #FFF)}
 .entr-scene .moi{color:#C9D3EA;font-size:16px;text-align:center}.entr-scene .mesure{color:#8FA0C4;font-size:13px;text-align:center}
 .entr-scene .fin{align-self:flex-end;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
@@ -4399,14 +4399,15 @@ const STYLE_ENTR = `
 .entr-scene.boule .pv-e,.entr-scene.boule .moi,.entr-scene.boule .cpt small{display:none}
 .entr-scene.boule .cpt{position:absolute;right:3%;top:50%;transform:translateY(-50%);width:auto}.entr-scene.boule .nb{font-size:46vmin;text-shadow:5px 5px 0 #141C38,-2px -2px 0 #141C38}
 .entr-scene.boule .fin{position:absolute;left:2%;top:3%;pointer-events:auto;color:#fff;font-size:14px;z-index:3}
-.entr-scene.boule .txt{left:26%;right:26%;bottom:2%;text-align:center;font-size:19px;z-index:2}
+.entr-scene.boule .txt{left:12%;right:12%;bottom:2%;text-align:center;font-size:19px;z-index:2}
 .entr-scene.boule .eclair{z-index:1}
 .entr-scene .impact{position:absolute;width:42vmin;height:42vmin;margin:-21vmin 0 0 -21vmin;background:#F8C838;clip-path:polygon(50% 0,61% 33%,96% 22%,72% 50%,96% 78%,61% 67%,50% 100%,39% 67%,4% 78%,28% 50%,4% 22%,39% 33%);pointer-events:none;animation:entr-impact .3s forwards;z-index:2}
 @keyframes entr-impact{from{transform:scale(.2);opacity:1}to{transform:scale(1.2) rotate(35deg);opacity:0}}
 .entr-scene.boule .etourdi{position:absolute;left:50%;top:50%;width:0;height:0;display:none;animation:entr-tourne 1s linear infinite;z-index:1}.entr-scene.boule.sonne .etourdi{display:block}
 .entr-scene.boule .etourdi i{position:absolute;font-style:normal;font-size:7vmin;color:#F8C838;text-shadow:1px 1px 0 #141C38}
 @keyframes entr-tourne{to{transform:rotate(360deg)}}
-@media (orientation:landscape){.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
+@media (orientation:portrait){.entr-scene.boule .cpt{top:10%;right:5%;transform:none}.entr-scene.boule .nb{font-size:30vmin}}
+@media (orientation:landscape){.entr-scene.boule .txt{white-space:nowrap}.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
 
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
 // vite. Elle voit les mouvements lents (un squat en 2 s secoue très peu le téléphone) et ignore les petites secousses de la marche. Une répétition = une vitesse
@@ -4630,7 +4631,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => adv;
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
           ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
-          <div class="txt">${sh ? "" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`}</div></div>
+          <div class="txt">${sh ? "" : sansVeuve(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`)}</div></div>
         <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
           <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
           <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
@@ -4638,10 +4639,11 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     S.classList.toggle("boule", boule); S.classList.toggle("chromatique", !!sh);
     rognerImages(S);
     let parole = 0;
-    const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.textContent = t; };
+    const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.textContent = sansVeuve(t);
+      if (boule) { txt.style.fontSize = ""; if (txt.scrollWidth > txt.clientWidth) txt.style.fontSize = `${Math.floor(19 * txt.clientWidth / txt.scrollWidth)}px`; } };  // tout tient sur une ligne
     if (sh) {  // l'apparition
       const nom = PAR_NUM[sh.num].nom, deja = sh.vu; sh.vu = true; garderShiny(sh);
-      dire(deja ? `${nom} chromatique est toujours là ! Encore ${sh.pv} PV.` : `Attention ! Un ${nom} chromatique apparaît ! Il est bien plus résistant !`, 3500);
+      dire(deja ? `${nom} chromatique est toujours là ! Encore ${sh.pv} PV.` : `Attention ! Un ${nom} chromatique apparaît !`, 3500);
       SONS.shiny(); vibre([40, 60, 80]); eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
     }
     const peindre = () => { const p = Math.max(pv / pvMax * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : "";
@@ -4674,7 +4676,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
           if (!sh.essai) memoriser(`${TEST ? "test#" : D.prefixe}geste-combatshiny_1_${Date.now()}`);
           S.querySelector(".pv-e").classList.remove("brille"); E.classList.remove("scintille"); S.classList.remove("chromatique");
           motShiny = `<p><b>${parti} chromatique est K.O. !</b> Ta barre de Shiny Ball gagne 1 jour : ${Math.min(J.serie + 1, R.master_jours)} / ${R.master_jours}.</p>`;
-          dire(`${parti} chromatique est K.O. ! Ta barre de Shiny Ball gagne 1 jour !`, 3000);
+          dire(`${parti} chromatique K.O. ! +1 jour de Shiny Ball !`, 3000);
         }
         adv = adversaireDuLieu(adv); pvMax = pv = 5;  // le suivant : de quoi aller chercher quelques répétitions de plus
         apres(() => { rogne(IMG.grand(ennemi())).then(([src]) => { E.src = src; }); S.querySelector(".nom-e").textContent = PAR_NUM[ennemi()].nom; E.classList.remove("ko"); E.classList.add("entre"); peindre();
@@ -4690,7 +4692,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       bFin.onpointerdown = e => { e.stopPropagation(); bFin.classList.add("appui"); tenu = setTimeout(fin, 700); };
       bFin.onpointerup = bFin.onpointercancel = e => { e.stopPropagation(); bFin.classList.remove("appui"); clearTimeout(tenu); }; }
     peindre();
-    minuteurs.push(setInterval(() => { if (Date.now() > parole && Date.now() - Math.max(derniere, debutSerie) > 5000) txt.textContent = `Que doit faire ${nomC} ?`; }, 1000));
+    minuteurs.push(setInterval(() => { if (Date.now() > parole && Date.now() - Math.max(derniere, debutSerie) > 5000) txt.textContent = sansVeuve(`Que doit faire ${nomC} ?`); }, 1000));
     if (M.capteur) (async () => {
       const fondImg = new PW.Image(); fondImg.src = `${D.scenes}${image}`;
       await Promise.race([fondImg.decode().catch(() => {}), new Promise(r => setTimeout(r, 2500))]);
