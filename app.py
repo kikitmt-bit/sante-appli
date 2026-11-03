@@ -133,8 +133,8 @@ h3{margin-top:1.4rem !important}
 </style>""", unsafe_allow_html=True)
 
 
-# Haut de page : 4 onglets (Aventure, Pokédex, Dresseur : le jeu ; Santé : les chiffres) et, sur la même ligne à droite, deux
-# petits boutons 🔄 ⚙️ (le conteneur « outils », posé par-dessus). La barre est du simple HTML : les clics sont écoutés par le jeu
+# Haut de page : 5 onglets (Aventure, Muscu, Pokédex, Dresseur : le jeu ; Santé : les chiffres). Le conteneur « outils » : synchroniser
+# en bas à gauche, ⚙️ caché. La barre est du simple HTML : les clics sont écoutés par le jeu
 # (pokemon_ui.html, relierNav), sans recharger la page ; body.page-sante montre les chiffres au lieu du jeu. Les pages restent
 # en place, repliées (height 0) plutôt que display:none : les graphiques gardent leur largeur et le jeu continue de tourner.
 PIKACHU = base64.b64encode(Path(__file__).with_name("pikachu.png").read_bytes()).decode()
@@ -162,7 +162,6 @@ st.markdown("""<style>
 .nav-jeu{background:#141C38 !important;border-radius:10px !important}
 .nav-jeu button{color:#C9D3EA !important;font-size:12.5px !important;line-height:1.1 !important;border-radius:8px 4px 8px 4px !important;border:2px solid transparent !important}
 .nav-jeu button.on{background:#F8F8E8 !important;color:#383828 !important;border-color:#484838 !important;box-shadow:2px 2px 0 rgba(0,0,0,.4) !important}
-@media(max-width:380px){.nav-jeu button{font-size:11.5px !important}}
 .st-key-outils button,.st-key-page_sante [data-testid="stBaseButton-secondary"],.st-key-page_sante [data-testid="stDateInputField"],.st-key-page_sante [data-baseweb="input"],.st-key-periode button{
   background:#F8F8E8 !important;color:#383828 !important;border:2px solid #484838 !important;box-shadow:2px 2px 0 rgba(10,15,35,.45) !important;border-radius:8px 4px 8px 4px !important}
 .st-key-page_sante [data-testid="stBaseButton-secondary"] p,.st-key-periode p,.st-key-page_sante input{color:#383828 !important;-webkit-text-fill-color:#383828}
@@ -205,14 +204,21 @@ div:has(> .vega-embed){padding:6px 4px 2px !important}
 .combat .poke:before{display:none}
 [data-testid="stCaptionContainer"] *{color:#D8E0F0 !important}
 </style>""", unsafe_allow_html=True)
+# Synchroniser (03/11, Kiki : ces boutons n'allaient pas en haut) : une petite boîte du jeu, toujours en bas à gauche, à portée de pouce ; elle tourne pendant le chargement.
+# Le bouton ⚙️ reste dans la page mais caché : c'est « Paramètres », tout en bas de Dresseur, qui le touche (pokemon_ui.html).
+SYNCHRO = urllib.parse.quote('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="#D83830" shape-rendering="crispEdges"><g id="a"><path d="M4 2h7v1h1v1h1v3h-2V5h-1V4H5v1H4v1H2V4h1V3h1z"/><path d="M9 7h6v1h-1v1h-1v1h-1V9h-1V8H9z"/></g><g transform="rotate(180 8 8)"><path d="M4 2h7v1h1v1h1v3h-2V5h-1V4H5v1H4v1H2V4h1V3h1z"/><path d="M9 7h6v1h-1v1h-1v1h-1V9h-1V8H9z"/></g></svg>')
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
-.st-key-outils{{gap:4px !important}}
-[data-testid="stLayoutWrapper"]:has(> .st-key-outils){{position:absolute;top:.6rem;right:1rem;z-index:5;width:auto !important}}
+[data-testid="stLayoutWrapper"]:has(> .st-key-outils){{position:fixed;left:14px;bottom:14px;z-index:5;width:auto !important}}
 [data-testid="stElementContainer"]:has(iframe[height="0"]),
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
-.st-key-outils button{{min-height:30px;height:30px;width:30px;padding:0;font-size:.8rem}}
-.nav-jeu{{display:flex;gap:3px;background:#0A101D;border-radius:14px;padding:3px;margin-right:72px}}
+.st-key-cfg{{display:none !important}}
+.st-key-maj button{{position:relative;width:46px;height:46px;min-height:46px;padding:0;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}}
+.st-key-maj button p{{font-size:0}}
+.st-key-maj button:before{{content:"";position:absolute;inset:5px;background:url("data:image/svg+xml,{SYNCHRO}") center/contain no-repeat}}
+[data-test-script-state="running"] .st-key-maj button:before{{animation:synchro 1.2s steps(8) infinite}}
+@keyframes synchro{{to{{transform:rotate(360deg)}}}}
+.nav-jeu{{display:flex;gap:3px;background:#0A101D;border-radius:14px;padding:3px}}
 .nav-jeu button{{flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:11px;padding:4px 0 3px;
   background:none;color:#9AA7C2;font:700 11.5px Outfit,sans-serif;cursor:pointer}}
 .nav-jeu button.on{{background:#1C2740;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.14)}}
@@ -224,10 +230,10 @@ body:not(.page-sante) [data-testid="stLayoutWrapper"]:has(> .st-key-page_sante),
 </style>""", unsafe_allow_html=True)
 NAV = f"""<div class="nav-jeu">
 <button class="on" data-o="aventure"><img src="data:image/png;base64,{PIKACHU}" alt=""><span class="nb" hidden></span>Aventure</button>
-<button data-o="dex"><img src="data:image/svg+xml;base64,{POKEDEX}" alt="">Pokédex</button>
 <button data-o="muscu"><img class="sprite" src="{pokemon.IMAGES}/pokemon/versions/generation-iii/emerald/68.png" alt="">Muscu</button>
-<button data-o="dresseur"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">Dresseur</button>
-<button data-o="sante"><img class="leveinard" src="{LEVEINARD}" alt="">Santé</button></div>"""
+<button data-o="sante"><img class="leveinard" src="{LEVEINARD}" alt="">Santé</button>
+<button data-o="dex"><img src="data:image/svg+xml;base64,{POKEDEX}" alt="">Pokédex</button>
+<button data-o="dresseur"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">Dresseur</button></div>"""
 
 
 # ---------- Lecture des fichiers (GitHub, branche data) ----------
@@ -684,7 +690,7 @@ def accueil_ami():
                 "seulement le jeu : ton pseudo, ton dresseur sur la carte, ton lieu, tes badges, ton Pokédex et tes belles captures.\n"
                 "- **Bon à savoir :** ils sont rangés dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
                 "- **Date de naissance, taille et sexe** (facultatifs) : ils restent sur ton téléphone. Le jour de ton anniversaire, seule la trace de ton cadeau est enregistrée.\n"
-                "- **Tu peux tout arrêter** quand tu veux : ⚙️ → Supprimer mes données.")
+                "- **Tu peux tout arrêter** quand tu veux : Dresseur → Paramètres → Supprimer mes données.")
     if s.get("SCRIPT_URL") and s.get("SCRIPT_CLE"):
         exp = int(time.time()) + 3600
         sig = hmac.new(s["SCRIPT_CLE"].encode(), f"relier:{AMI}:{exp}".encode(), hashlib.sha256).hexdigest()
@@ -777,9 +783,10 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
 if "message_maj" in st.session_state:
     st.toast(st.session_state.pop("message_maj"))
 with st.container(key="outils", horizontal=True):
-    if st.button("🔄", key="maj", help="Aller chercher tes dernières données maintenant"):
-        actualiser()
+    synchroniser = st.button("Synchroniser", key="maj", help="Aller chercher tes dernières données maintenant")
     st.button("⚙️", key="cfg", help="Configuration", on_click=lambda: st.session_state.update(config=True))
+if synchroniser:  # hors du conteneur : son message d'attente ne s'écrit pas dans le petit bouton
+    actualiser()
 st.markdown(NAV, unsafe_allow_html=True)
 # L'âge et la taille restent sur le téléphone (carte du dresseur) : relus à l'ouverture, pour le calcul, jamais enregistrés ici
 CARTE_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_dresseur') || ''", key="profil_dresseur")
@@ -1052,5 +1059,5 @@ def configuration():
         st.success("C'est oublié : le mot de passe sera redemandé à la prochaine ouverture.")
 
 
-if st.session_state.pop("config", False):  # bouton ⚙️ en haut à droite
+if st.session_state.pop("config", False):  # « Paramètres », en bas de Dresseur
     configuration()

@@ -543,6 +543,7 @@ details.regles{color:#484838 !important}
 .exo .go-exo:active{transform:translate(2px,2px);box-shadow:none}
 .exo .plus-moins{display:flex;gap:4px;width:100%;margin-top:6px}.exo .plus-moins button{flex:1;min-width:0;padding:4px 0;border:2px solid #484838;border-radius:7px 3px;background:#F8F8E8;color:#383828;font:inherit;font-size:16px;cursor:pointer}.exo .plus-moins button:disabled{opacity:.35}
 #starter-dresseur{margin-top:12px}#starter-dresseur .starter-carte{margin-bottom:0}
+.bouton-param{display:block;width:100%;margin-top:12px;padding:10px 12px;text-align:left;cursor:pointer;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);color:#383828;font:inherit;font-size:19px}
 .nouvelles{margin-top:10px}.nouvelles .titre{margin-bottom:2px}
 .nouvelle{display:flex;align-items:center;gap:8px;padding:3px 2px;border-top:2px dashed #D8D4B8;color:#383828;font-size:16px;line-height:1.1}
 .nouvelle img{flex:0 0 34px;width:34px;height:34px;object-fit:contain;image-rendering:pixelated}.nouvelle img.sh{filter:drop-shadow(0 0 2px #F8C838)}
@@ -588,6 +589,7 @@ details.regles{color:#484838 !important}
     <div class="carte amis" id="amis"></div>
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
     <details class="regles tests"><summary>🧪 Tester Kanto (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
+    <button class="bouton-param" id="ouvrir-param">⚙️ Paramètres</button>
   </section>
 </div>
 
@@ -5008,7 +5010,7 @@ function dessinerOnglets() {
     if (n && ic) { ic.src = `${D.images}/pokemon/versions/generation-iii/emerald/${n}.png`; ic.classList.add("sprite"); }
     return; }
   const el = document.getElementById("onglets");
-  el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["dex", "Pokédex"], ["muscu", "Muscu"], ["dresseur", "Dresseur"]]
+  el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["muscu", "Muscu"], ["dex", "Pokédex"], ["dresseur", "Dresseur"]]
     .map(([k, t]) => `<button class="${ONGLET === k ? "on" : ""}" data-k="${k}">${t}</button>`).join("");
   el.querySelectorAll("button").forEach(b => b.onclick = () => montrerOnglet(b.dataset.k));
 }
@@ -5034,6 +5036,7 @@ function relierBulles() {
   P.addEventListener("scroll", PW.__bullesJeu.defile, true); P.addEventListener("pointerdown", PW.__bullesJeu.touche, true);
 }
 function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut être recréé par Streamlit)
+  document.getElementById("ouvrir-param").onclick = () => { const b = P.querySelector(".st-key-cfg button"); if (b) b.click(); };  // le bouton ⚙️ de Streamlit, caché
   const nav = navP(); if (!nav) return;
   relierBulles();
   if (PW.__navJeu) P.removeEventListener("click", PW.__navJeu);

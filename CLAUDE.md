@@ -86,7 +86,7 @@ fond bleu nuit rayé `#22315A`. Thème : bloc « LA DIRECTION ARTISTIQUE » de `
 couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; **écran de combat** `ecran_combat` : pas / sport (`zone_sport`, les mêmes minutes que le jeu : Kiki, 03/11, « En zone » de Google le perdait, gardé seulement en tuile « Zones Google ») / sommeil en barres de PV
 à la façon GBA ; analyse signée du **professeur de la région** `PROFESSEUR`, portrait pris dans son labo ; rubriques, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
 Ronflex sommeil, Tauros activité, Rondoudou sommeil, Leveinard cœur, Grolem poids, Kadabra coach ; `fermerBulles` : les bulles de graphique se
-ferment en défilant, en touchant ailleurs et en changeant d'onglet), + 🔄 et ⚙️ en petit. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
+ferment en défilant, en touchant ailleurs et en changeant d'onglet). Ordre des onglets (Kiki, 03/11) : Aventure, Muscu, Santé, Pokédex, Dresseur. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
 par `body.page-sante` (height 0 et pas display:none : largeur des graphiques, jeu qui tourne). Page de démarrage : Aventure.
 **Objectifs** : défi, mission, Super et Hyper en grand ; Shiny, Nuit, Pesée, Sanctuaire, Chasse dans la liste « Tes bonus » (`.suivi`, même dessin que « Tes prochains objectifs », les petites tuiles déplaisaient à Kiki, 03/11), toucher = détail sous la ligne.
 **Onglet Muscu (03/11, carte blanche de Kiki : pompes, squats, tractions, planche étaient cachés derrière une petite tuile)** : `dessinerMuscu`, 4 grandes cartes (Pokémon, compte du jour, record, ▶ Lancer → `entrainement` ; +1 / +5 pour les tractions tant que leur détection n'est pas réglée), points du jour sur 25, étiquette Mission / Arène.
@@ -125,9 +125,9 @@ coupable dans Dresseur (`pkm_recap_non`).
 nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de toucher au jeu.
 
 - `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; la barre d'onglets est décrite plus
-  haut (Interface) ; sur la même ligne à droite, deux petits boutons
-  🔄 (actualiser) et ⚙️ (fenêtre Configuration : données brutes, oublier ce téléphone) dans le conteneur `outils`, posé
-  par-dessus la barre des onglets. **Mobile d'abord** : jamais de défilement horizontal (tout passe à la ligne), et rien
+  haut (Interface) ; conteneur `outils` : **synchroniser** = petite boîte fixe en bas à gauche
+  (flèches en pixels, tourne pendant le chargement ; c'est le « 🔄 » de ces notes) ; **⚙️** (fenêtre Configuration : données brutes, oublier ce téléphone) caché,
+  touché par « Paramètres » tout en bas de Dresseur (`ouvrir-param` ; c'est le « ⚙️ » de ces notes). **Mobile d'abord** : jamais de défilement horizontal (tout passe à la ligne), et rien
   d'utile dans le coin en bas à droite (bouton « Manage app » de Streamlit, ~1 cm) : marge de 64 px en bas des calques. Filtre en haut : Jour / 7 jours
   / Semaine / Mois / Année + date et ◀ ▶. En haut, l'analyse du coach (repliée) et un bouton 📋 qui copie
   le dossier du coach sans l'afficher ; puis Activité, Séances, Sommeil, Cœur, Poids. Les chiffres viennent des **résumés annuels** (`data/resume/AAAA.json`,
