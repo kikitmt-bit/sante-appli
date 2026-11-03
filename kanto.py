@@ -3,7 +3,7 @@
 n'attrape que dans les lieux déjà atteints (jamais ceux à venir), surtout celui où l'on est (pokemon.tirer). Dans une ville à
 arène, on s'arrête jusqu'à réussir le défi du champion ou son plan B (refonte du 02/11, Kiki) : un exploit à son thème, faisable vite,
 avec une autre voie quand il faut du matériel ou un escalier (pompes, tractions) ; jamais de sommeil ni d'horaire de coucher (travail de
-nuit, horaires décalés). Le plan B, plus long, reste pour tous : un jour d'exploit y compte double. Pendant le défi, le dresseur reste à l'arène : les points gagnés
+nuit, horaires décalés). Le plan B, plus long, reste pour tous : un jour d'exploit y compte double, une petite journée moitié. Pendant le défi, le dresseur reste à l'arène : les points gagnés
 ne font pas avancer la carte. Un badge = une Hyper Ball du type du champion ; la Ligue = la Master Ball de Mewtwo.
 Trois sanctuaires (oiseaux légendaires) se débloquent sur la route : un petit défi qui ne bloque jamais.
 
@@ -19,9 +19,12 @@ def _n(noms):
     return [_NUM[x] for x in noms.split(", ")] if noms else []
 
 
+PAS_PETIT = 3000  # une petite journée compte pour moitié au plan B : à 4 000 pas sans sport, on restait bloqué à vie chez Pierre (03/11)
+
+
 def _plan_b(jours):
-    """Le plan B d'une arène : la difficulté monte d'arène en arène, et un jour d'exploit compte pour deux."""
-    return "objectif", jours, f"{jours} jours avec ton objectif du jour (un exploit compte double)"
+    """Le plan B d'une arène : la difficulté monte d'arène en arène, un jour d'exploit compte pour deux, une petite journée pour moitié."""
+    return "objectif", jours, f"{jours} jours avec ton objectif du jour (un exploit compte double, une journée à {PAS_PETIT // 1000} 000 pas compte moitié)"
 
 
 def _o(defi, cible, texte):
@@ -45,7 +48,7 @@ LIEUX = [
     ("Jadielle", 190, 240, 652, "Nidoran♀, Nidoran♂, Piafabec, Férosinge", None),
     ("Forêt de Jade", 230, 240, 450, "Chenipan, Chrysacier, Papilusion, Aspicot, Coconfort, Dardargnan, Pikachu", None),
     ("Argenta", 310, 245, 262, "Racaillou, Onix",
-     _arene("Pierre", "Roche", "Badge Roche", 1, [_o("etages", 35, "35 étages"), _o("pompes", 30, "30 pompes")], _plan_b(6))),
+     _arene("Pierre", "Roche", "Badge Roche", 1, [_o("etages", 35, "35 étages en une journée"), _o("pompes", 30, "30 pompes")], _plan_b(6))),
     ("Route 3", 310, 420, 299, "Rondoudou, Abo, Sabelette, Herbizarre", None),
     ("Mont Sélénite", 350, 615, 193, "Nosferapti, Paras, Mélofée, Mélodelfe, Grodoudou, Amonita, Kabuto", None),
     ("Azuria", 350, 968, 192, "Chétiflor, Mystherbe, Abra, Psykokwak, Ptitard, Carabaffe, Bulbizarre, Salamèche",
@@ -81,7 +84,7 @@ LIEUX = [
      _arene("Conseil 4", None, "Ligue Pokémon", None, None, _plan_b(10), [
          ("Olga", [_o("pas_jour", 10000, "10 000 pas en une journée")]),
          ("Aldo", [_o("force", 20, "20 min de muscu ou de rameur en une journée"), _o("pompes", 60, "60 pompes"), _o("tractions", 20, "20 tractions")]),
-         ("Agatha", [_o("etages", 40, "40 étages"), _o("pompes", 60, "60 pompes")]),
+         ("Agatha", [_o("etages", 40, "40 étages en une journée"), _o("pompes", 60, "60 pompes")]),
          ("Peter", [_o("seance", 45, "Une séance de 45 min")]),
          ("Régis", [_o("complet", 1, "Une journée complète : 5 000 pas et 10 min de sport")])])),
 ]
@@ -135,7 +138,7 @@ RARES = set(_n("Pikachu, Évoli, Porygon, Minidraco, Draco, Dracolosse, Lokhlass
                "Kicklee, Tygnon, Excelangue, Onix, Saquedeneu, Noadkoko, Léviator, Bulbizarre, Salamèche, Carapuce"))
 
 DEFIS = {  # défi -> (valeur d'une journée, unité, « somme » = cumulé depuis l'arrivée ou « jour » = la meilleure journée depuis l'arrivée)
-    "etages": (lambda j: j["etages"], "étages", "somme"),
+    "etages": (lambda j: j["etages"], "étages", "jour"),  # en une journée : cumulés, ils venaient tout seuls (11 par jour chez Kiki, 03/11)
     "eau": (lambda j: j["eau"], "min", "somme"),
     "pompes": (lambda j: j["pompes"], "pompes", "somme"),
     "tractions": (lambda j: j["tractions"], "tractions", "somme"),
@@ -145,7 +148,7 @@ DEFIS = {  # défi -> (valeur d'une journée, unité, « somme » = cumulé depu
     "seance": (lambda j: j["seance"], "min", "jour"),
     "force": (lambda j: j["force_min"], "min", "jour"),
     "complet": (lambda j: j["double"], "jour", "jour"),
-    "objectif": (lambda j: 2 if j["hyper"] else j["ok"], "jours", "somme"),  # un jour d'exploit compte double
+    "objectif": (lambda j: 2 if j["hyper"] else 1 if j["ok"] else .5 if j["pas"] >= PAS_PETIT else 0, "jours", "somme"),  # un jour d'exploit compte double, une petite journée moitié
 }
 for _l in LIEUX:  # l'écran a besoin de l'unité et du mode de chaque voie
     for _e in (_l["arene"] or {}).get("epreuves", []):

@@ -3024,7 +3024,7 @@ function voiesDefi() {  // chaque épreuve du défi en cours : ses voies avec o�
     return {qui: e.qui, voies, fait: voies.some(o => o.v >= o.cible)}; });
 }
 function resteDefi() {
-  const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = Math.max(a.b.cible - d.valeur_b, 0), ouB = `, ou ${resteB} jour${resteB > 1 ? "s" : ""} d'objectif`;
+  const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = Math.max(a.b.cible - d.valeur_b, 0), ouB = `, ou ${String(resteB).replace(".", ",")} jour${resteB >= 2 ? "s" : ""} d'objectif`;
   if (ep.length > 1) { const n = ep.filter(e => !e.fait).length; return `encore ${n} épreuve${n > 1 ? "s" : ""}${ouB}`; }
   const o = ep[0].voies[0];
   return o.mode === "jour" ? `${o.texte.replace(/^Une /, "une ")}${ouB}` : `encore ${o.unite === "pas" ? fr(Math.max(o.cible - o.v, 0)) : Math.ceil(Math.max(o.cible - o.v, 0))} ${o.unite}${ouB}`;
@@ -3334,7 +3334,7 @@ function carteDefi() {
     <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté depuis ton arrivée, rien ne se perd</div>${conseil4}
     ${ep.map(e => `<div class="epreuve ${e.fait ? "faite" : ""}">${e.qui ? `<div class="qui-e">${e.qui}${e.fait ? " ✅" : ""}</div>` : ""}${e.voies.map(voie).join(`<div class="ou-e">ou</div>`)}</div>`).join("")}
     ${types.length && !ok ? blocGestes(types) : ""}
-    <div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span>${d.valeur_b} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}
+    <div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span style="white-space:nowrap">${String(d.valeur_b).replace(".", ",")} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}
     ${ep.some(e => e.voies.some(o => o.defi === "soir")) ? `<div class="petit gris" style="margin-top:4px">Les pas du soir sont comptés une fois par heure.</div>` : ""}
     <div class="reste">${ok ? "Défi réussi : ton badge arrive !" : ep.length > 1 ? `Encore <b>${restent} épreuve${restent > 1 ? "s" : ""}</b>, dans l'ordre que tu veux.` : ep[0].voies.length > 1 ? "Une seule de ces voies suffit." : ""}</div>${garde_txt}</div>`;
 }
@@ -4260,7 +4260,7 @@ function dessinerRegles() {
     <li>${ico("poke", "p")} Les balls ne donnent que des Pokémon des lieux où tu es déjà passé : surtout ici, parfois ceux que tu as ratés plus tôt, et plus souvent ceux des types de ta journée.
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
-    <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
+    <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double, une petite journée moitié. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
     <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis « Pompes », le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
