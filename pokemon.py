@@ -68,7 +68,7 @@ REGLAGES = {
     "seance_min": 10,                # une séance compte à partir de 10 min
     "force": 2, "force_depuis": dt.date(2026, 10, 27),  # points par minute de musculation / rameur (avant : 1)
     "master_jours": 25, "master_fenetre": 30,  # jours avec l'objectif sur les 30 derniers pour un légendaire
-    "objectif_pas": 5000, "objectif_zone": 10,
+    "objectif_pas": 5000, "objectif_zone": chiffres.OBJECTIFS["zone_sport"],
     "exploit_pas": 10000, "exploit_zone": 25, "exploit_seance": 45,
     # 01/11 (Kiki) : les « minutes en zone » de Google comptent la zone modérée (verte, dès 108 bpm), atteinte en marchant
     # ou assis le cœur un peu haut (soirée) : 323 min le 31/10 pour une journée de marche. Le jeu ne compte plus que les

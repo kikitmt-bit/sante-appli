@@ -3216,12 +3216,12 @@ function dessinerSpeciales() {
     <div class="speciale ${sup ? "ok" : ""} ${gris ? "grise" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}Super Ball</div><div class="gain">Objectif double, ou un exploit · shiny ×2</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
-      <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}
+      <div class="ligne"><span>🔥 sport ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}
       ${verrou("super") || `<div class="reste">${resteSuper}</div>`}</div>
     <div class="speciale ${hyp ? "ok" : ""} ${gris ? "grise" : ""}">${hyp ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("hyper")}Hyper Ball</div><div class="gain">Un exploit au choix · shiny ×4, donne aussi la Super Ball</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}
-      <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
+      <div class="ligne"><span>🔥 sport ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
       <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}
       ${verrou("hyper") || `<div class="reste">${resteHyper}</div>`}</div>`
     + `<div class="petits">${petits.map(x => `<button class="petit-obj ${x.ok ? "ok" : ""}" data-c="${x.cle}"><span class="hd">${x.ic}${x.nom}</span><span class="val">${x.val}</span><span class="bar"><i style="width:${x.p}%"></i></span></button>`).join("")}</div><div id="detail-obj"></div>`;

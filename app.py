@@ -355,7 +355,7 @@ def ecran_combat(df, un_jour):
     """Les 3 objectifs de la journée, à la façon d'un écran de combat Pokémon : ta barre de PV se remplit vers l'objectif. Vert à partir
     de la moitié, jaune avant, rouge au début, comme dans les jeux. Doduo court, Ponyta est un cheval de feu, Ronflex dort."""
     html = []
-    for cle, num, nom in (("pas", 84, "PAS"), ("zone", 77, "EN ZONE"), ("sommeil", 143, "SOMMEIL")):
+    for cle, num, nom in (("pas", 84, "PAS"), ("zone_sport", 77, "SPORT"), ("sommeil", 143, "SOMMEIL")):
         v, obj = par_jour(df, cle), OBJECTIFS.get(cle)
         v = 0 if v is None or v != v else v
         pct = min(v / obj * 100, 100) if obj else 0
@@ -387,7 +387,7 @@ def carte_bilan(b):
 
 
 # Le sens d'une évolution : plus = mieux (1), moins = mieux (-1), ni l'un ni l'autre (0)
-SENS = {"pas": 1, "zone": 1, "km": 1, "etages": 1, "denivele": 1, "actives": 1, "min_sport": 1, "seances": 1, "kcal_act": 1, "assis": -1, "sommeil": 1,
+SENS = {"pas": 1, "zone_sport": 1, "zone": 1, "km": 1, "etages": 1, "denivele": 1, "actives": 1, "min_sport": 1, "seances": 1, "kcal_act": 1, "assis": -1, "sommeil": 1,
         "profond": 1, "paradoxal": 1, "eveil": -1, "fc_repos": -1, "vfc": 1, "spo2": 1, "spo2_min": 1}
 
 
@@ -838,7 +838,7 @@ with page_sante:
     # ----- Activité -----
     with st.container(key="rub_activite"):
         rubrique(128, "Activité", BLEU)  # Tauros, toujours lancé
-        tuiles(["pas", "zone", "km", "etages", "denivele", "actives", "min_sport", "seances", "kcal", "kcal_act", "assis"],
+        tuiles(["pas", "zone_sport", "km", "etages", "denivele", "actives", "zone", "min_sport", "seances", "kcal", "kcal_act", "assis"],
                df, avant, un_jour, legende_avant, BLEU, histoire)
         curiosite_denivele(agrege(df, "denivele"))
         if un_jour:
@@ -850,11 +850,11 @@ with page_sante:
                 h = pd.to_numeric(pas[col], errors="coerce").groupby(pas["heure"].str[:2] + "h").sum()
                 graphique(pd.DataFrame({"pas": h}), "pas", "Pas par heure")
         else:
-            d = regroupe(df, ["pas", "zone"], mensuel)
+            d = regroupe(df, ["pas", "zone_sport"], mensuel)
             graphique(d, "pas", "Pas par jour" + (" (moyenne par mois)" if mensuel else ""),
                       objectif=OBJECTIFS["pas"])
-            graphique(d, "zone", "Minutes en zone par jour" + (" (moyenne par mois)" if mensuel else ""),
-                      objectif=OBJECTIFS["zone"], couleur="#FF9E80", hauteur=140)
+            graphique(d, "zone_sport", "Minutes de sport par jour" + (" (moyenne par mois)" if mensuel else ""),
+                      objectif=OBJECTIFS["zone_sport"], couleur="#FF9E80", hauteur=140)
 
         lignes_sport = [(x["type"], x["nom"], x["quand"], x["details"], x["km"], x["minutes"]) for x in donnees["seances"]]
         if lignes_sport:

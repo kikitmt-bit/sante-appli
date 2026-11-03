@@ -11,7 +11,7 @@ les sorties du soir sont difficiles. Il se déplace souvent à vélo. Matériel 
 Dance Dance Revolution, poids du corps (pompes, tractions). Parc extérieur avec appareils (vélo elliptique…) près de
 chez lui. Il déteste les burpees : ne jamais en proposer.
 
-Ses objectifs : 5 000 pas par jour minimum (sur le tapis de danse si besoin), 15 minutes en zone par jour, rameur 1 à 2
+Ses objectifs : 5 000 pas par jour minimum (sur le tapis de danse si besoin), 10 minutes de sport (zone jaune ou rouge) par jour, rameur 1 à 2
 fois par semaine (10 min), quelques pompes et tractions, garder la masse grasse sous 20 %. Il veut des objectifs
 réalistes et progressifs pour ne pas se décourager, ni se cramer la première semaine.
 

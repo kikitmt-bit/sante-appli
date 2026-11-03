@@ -7,7 +7,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 
 TZ = ZoneInfo("Europe/Paris")
-OBJECTIFS = {"pas": 5000, "zone": 15, "sommeil": 7 * 60}  # (plus tard : page « Réglages »)
+OBJECTIFS = {"pas": 5000, "zone_sport": 10, "sommeil": 7 * 60}  # (plus tard : page « Réglages »)
 JOURS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"]
 PHASES = {"DEEP": "Profond", "LIGHT": "Léger", "REM": "Paradoxal", "AWAKE": "Éveil", "ASLEEP": "Endormi", "RESTLESS": "Agité"}
 CONSIGNE = Path(__file__).with_name("coach.md")
@@ -196,7 +196,7 @@ def stats_jour(r, j=None):
 
 # clé: (libellé, agrégation sur une période, format)
 METRIQUES = {
-    "pas": ("Pas", "total", "n"), "km": ("Distance", "total", "km"), "zone": ("Minutes en zone", "total", "min"),
+    "pas": ("Pas", "total", "n"), "km": ("Distance", "total", "km"), "zone_sport": ("Minutes de sport", "total", "min"), "zone": ("Zones Google", "total", "min"),
     "actives": ("Minutes actives", "total", "min"), "min_sport": ("Temps d'exercice", "total", "min"),
     "seances": ("Séances", "total", "n"), "kcal": ("Calories totales", "total", "n"),
     "kcal_act": ("Calories actives", "total", "n"), "etages": ("Étages", "total", "n"),
@@ -266,6 +266,7 @@ def bornes(periode, ref):
 
 def charger(lire, periode, ref, aujourd):
     """Tout ce qu'il faut pour afficher ou analyser une période. `lire(chemins)` -> {chemin: contenu ou None}."""
+    import missions  # ici : missions.py a besoin de ce fichier
     debut, fin = bornes(periode, ref)
     fin = min(fin, aujourd)
     jours = [debut + dt.timedelta(days=i) for i in range((fin - debut).days + 1)]
@@ -274,12 +275,13 @@ def charger(lire, periode, ref, aujourd):
     debut_tout = min(debut_avant, fin - dt.timedelta(days=90))  # le poids : 3 mois au moins
     annees = range(debut_tout.year, fin.year + 1)
     fichier_ref = f"data/jour/{fin.year}/{fin}.json"
-    f = lire([f"data/resume/{y}.json" for y in annees] + ["data/profil.json", fichier_ref])
+    f = lire([f"data/resume/{y}.json" for y in annees] + ["data/profil.json", fichier_ref, missions.FICHIER])
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
     tous = [debut_tout + dt.timedelta(days=i) for i in range((fin - debut_tout).days + 1)]
-    stats = pd.DataFrame({d: stats_jour(resumes.get(str(d)), f.get(fichier_ref) if d == fin else None)
+    lignes_m = (f.get(missions.FICHIER) or {}).get("jours") or {}  # le même sport que le jeu, estimé par le cœur si la montre ne le donne pas
+    stats = pd.DataFrame({d: missions.avec_coeur(stats_jour(resumes.get(str(d)), f.get(fichier_ref) if d == fin else None), lignes_m.get(str(d)), d)
                           for d in tous}).T
     seances = sorted((contenu(p) for d in jours for p in (resumes.get(str(d)) or {}).get("exercise") or []),
                      key=lambda c: c["interval"]["startTime"])
@@ -299,11 +301,11 @@ def seance(c):
     m = c.get("metricsSummary", {})
     km = (num(m.get("distanceMillimeters")) or 0) / 1e6
     z = m.get("heartRateZoneDurations") or {}
-    zone = (duree(z.get("moderateTime")) + 2 * (duree(z.get("vigorousTime")) + duree(z.get("peakTime")))) / 60
+    sport = (duree(z.get("vigorousTime")) + duree(z.get("peakTime"))) / 60
     minutes = duree(c.get("activeDuration")) / 60
     details = [hm(minutes)] + ([f"{nombre(km, 1)} km"] if km else []) + \
               [f"{m.get('caloriesKcal', '–')} kcal", f"cardio moy. {m.get('averageHeartRateBeatsPerMinute', '–')}",
-               f"{zone:.0f} min en zone"]
+               f"{sport:.0f} min de sport"]
     return {"type": c.get("exerciseType"), "nom": c.get("displayName") or c.get("exerciseType", "Exercice"),
             "quand": local(c["interval"]["startTime"]), "details": details, "km": km, "minutes": minutes}
 
@@ -418,7 +420,7 @@ def dossier_coach(d, analyses=(), memoire=None):
         consigne, "---",
         f"Âge : {d['age'] or 'inconnu'} ans. Nous sommes le {maintenant:%d/%m/%Y}, il est {maintenant:%H:%M}.",
         f"Période à analyser : {periode.lower()} du {d['debut']:%d/%m/%Y} au {d['fin']:%d/%m/%Y}.",
-        f"Objectifs : {OBJECTIFS['pas']} pas et {OBJECTIFS['zone']} min en zone par jour, {hm(OBJECTIFS['sommeil'])} "
+        f"Objectifs : {OBJECTIFS['pas']} pas et {OBJECTIFS['zone_sport']} min de sport (zone jaune ou rouge) par jour, {hm(OBJECTIFS['sommeil'])} "
         "de sommeil.",
         f"\n## Données (une ligne par {'semaine, moyenne par jour' if len(df) > 62 else 'jour'})\n{tableau(df)}",
     ]

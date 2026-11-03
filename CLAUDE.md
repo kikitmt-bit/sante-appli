@@ -83,7 +83,7 @@ fond bleu nuit rayé `#22315A`. Thème : bloc « LA DIRECTION ARTISTIQUE » de `
 **Interface (02/11, carte blanche de Kiki) : l'appli est le jeu, plus de séparation Santé / Pokémon.** Barre du haut `.nav-jeu`
 (HTML écrit par `app.py`, clics écoutés par `relierNav` dans le jeu, aucun rechargement) : **Aventure** (son starter, Pikachu avant ; carte, à ouvrir,
 4 dernières captures, barre, objectifs ; pastille = balls à ouvrir), **Pokédex** (icône dessinée), **Dresseur** (son visage, à ses
-couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; **écran de combat** `ecran_combat` : pas / zone / sommeil en barres de PV
+couleurs ; Mon dresseur, place des amis et du classement, Comment ça marche, tests), **Santé** (Leveinard ; **écran de combat** `ecran_combat` : pas / sport (`zone_sport`, les mêmes minutes que le jeu : Kiki, 03/11, « En zone » de Google le perdait, gardé seulement en tuile « Zones Google ») / sommeil en barres de PV
 à la façon GBA ; analyse signée du **professeur de la région** `PROFESSEUR`, portrait pris dans son labo ; rubriques, graphiques ; **illustrés par des Pokémon de Kanto, gifs showdown** : Doduo pas, Ponyta zone,
 Ronflex sommeil, Tauros activité, Rondoudou sommeil, Leveinard cœur, Grolem poids, Kadabra coach ; `fermerBulles` : les bulles de graphique se
 ferment en défilant, en touchant ailleurs et en changeant d'onglet), + 🔄 et ⚙️ en petit. `st.container(key="page_jeu" / "page_sante")`, l'une repliée
@@ -137,7 +137,7 @@ nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de touche
   ou maximum (jaune / rouge, dès 132 bpm chez Kiki = 60 % de la réserve cardiaque), une fois chacune : c'est ce que
   compte le jeu depuis le 01/11. Pixel Watch en plus :
   étages, dénivelé, SpO2 de la nuit (moyenne, plus basse, courbe).
-  Objectifs dans `OBJECTIFS` (5 000 pas, 15 min en zone, 7 h de sommeil). Fichiers gardés 2 min (récents) ou 1 h.
+  Objectifs dans `OBJECTIFS` (5 000 pas, 10 min de sport, 7 h de sommeil). Fichiers gardés 2 min (récents) ou 1 h.
   🔄 (Santé et Pokémon) = `actualiser()` : appelle le script Google (secrets `SCRIPT_URL`, `SCRIPT_CLE`, Application Web
   `doGet` de sante.gs) pour une récolte immédiate, puis relit tout sauf les images.
 - `chiffres.py` : tous les calculs, sans Streamlit (`stats_jour`, `charger`, `dossier_coach`…), partagés par l'appli et
