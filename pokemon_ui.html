@@ -468,6 +468,7 @@ details.regles{color:#484838 !important}
 .gestes{margin-top:8px;display:grid;gap:6px}
 .geste{display:flex;align-items:center;gap:5px}.geste .nm{flex:1;font-size:16px;color:#383828}.geste b{min-width:30px;text-align:right;font-size:20px;color:#383828;margin-right:4px}
 .geste button{min-width:38px;padding:5px 6px;border:2px solid #484838;border-radius:7px 3px 7px 3px;background:#F8F8E8;color:#383828;font-size:15px;cursor:pointer}
+.geste .lancer{display:block;margin-top:3px;min-width:0;padding:3px 7px;background:#40A8F8;color:#fff;text-shadow:1px 1px 0 #1C5C94;font-size:14px}
 .geste button.plus{background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712}.geste button:disabled{opacity:.35}
 .epreuve+.epreuve{margin-top:7px;padding-top:6px;border-top:2px dashed #D8D8B8}.epreuve.faite{opacity:.6}.qui-e{font-size:15px;color:#B05010;margin-bottom:1px}
 .ou-e{font-size:13px;color:#686850;margin-top:4px}
@@ -3044,17 +3045,21 @@ function gestesAuj() {
 }
 function blocGestes(types = ["pompes", "tractions", "squats"]) {
   const g = gestesAuj();
-  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}</span><b>${g[t]}</b>
+  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}<button class="lancer" data-compte="${t}">▶ Série</button></span><b>${g[t]}</b>
     <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>`).join("")}</div>`;
+}
+function apresGeste() {  // tout redessiner, la petite tuile ouverte le reste
+  const ouvert = document.querySelector("#speciales .petit-obj.on"), cle = ouvert && ouvert.dataset.c;
+  dessinerSpeciales();
+  document.getElementById("detail-obj").innerHTML = "";
+  if (cle) { const t = document.querySelector(`#speciales .petit-obj[data-c="${cle}"]`); if (t) t.click(); }
 }
 function brancherGestes(racine) {
   racine.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { vibre(12); ton(1250, 0, .04, {type: "square", vol: .03});
     memoriser(`${TEST ? "test#" : D.prefixe}geste-${b.dataset.g}_${b.dataset.n}_${Date.now()}`);
-    const ouvert = document.querySelector("#speciales .petit-obj.on"), cle = ouvert && ouvert.dataset.c;
-    dessinerSpeciales();
-    document.getElementById("detail-obj").innerHTML = "";
-    if (cle) { const t = document.querySelector(`#speciales .petit-obj[data-c="${cle}"]`); if (t) t.click(); }
+    apresGeste();
   });
+  racine.querySelectorAll("[data-compte]").forEach(b => b.onclick = () => entrainement(b.dataset.compte));
 }
 // Tes prochains objectifs (02/11, idée de Kiki) : aucune règle en plus, juste les 3 buts les plus proches parmi ce qui existe déjà, pour
 // avoir toujours quelque chose à viser. Classés par points à faire (une espèce ou un jour ≈ 100 points : une barre). Rien sur ce qui viendra après.
@@ -4297,6 +4302,182 @@ function testScene(n) {  // la scène du badge (ou de la Ligue : Conseil 4, Rég
     : captureEssai(pokeDuType(ar.type), {ball: "hyper", fond: "arene" + n, raison: `🏅 ${ar.badge} (${CHAMPIONS[n].nom})`});
   sceneBadge(n, c);
 }
+// ---------- L'entraînement (03/11, idée de Kiki) : le téléphone compte pompes, squats et tractions, façon combat, sans rien de plus à
+// noter : chaque série part dans la liste partagée comme les boutons (gestes). Le sport d'abord : amplitude, rythme, repos, un peu plus que la dernière fois.
+const ENTR = {
+  pompes: {nom: "Pompes", un: "pompe", coach: 68, defaut: 10, decompte: 5, ennemis: [[10, 74], [25, 75], [9999, 95]],
+    consigne: "Pose le téléphone au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
+  squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, capteur: {seuil: 1.1, ecart: 1100, premier: "bas"}, ennemis: [[20, 27], [50, 76], [9999, 112]],
+    consigne: "Tiens le téléphone à deux mains contre ta poitrine. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte. Suis le rythme : 2 s pour descendre, 1 s pour remonter."},
+  tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, capteur: {seuil: 1.4, ecart: 1300, premier: "haut"}, poche: true,
+    consigne: "Mets le téléphone au fond de ta poche, écran contre toi. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer ; la voix compte pour toi."},
+};
+const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700;
+const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
+const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
+const STYLE_ENTR = `
+.pkm-entr{position:fixed;inset:0;z-index:100000;background:#22315A repeating-linear-gradient(0deg,rgba(255,255,255,.03) 0 2px,transparent 2px 6px);color:#383828;font:400 18px/1.2 'Jersey 15',monospace;font-size-adjust:.55;
+  display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px 72px;box-sizing:border-box;overflow:auto;user-select:none;-webkit-user-select:none}
+.pkm-entr .boite{background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:10px 12px}
+.pkm-entr h3{margin:0 0 4px;font-size:26px;font-weight:400;color:#C03028}.pkm-entr p{margin:4px 0;color:#383828}.pkm-entr p b{font-weight:400;color:#C03028}.pkm-entr small{color:#686850;font-size:16px}
+.pkm-entr button{font:inherit;cursor:pointer;touch-action:manipulation}
+.pkm-entr .go{width:100%;padding:13px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);font-size:23px}
+.pkm-entr .go:before{content:"▶ "}.pkm-entr .sec{width:100%;padding:9px;background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:12px 5px;font-size:18px}
+.pkm-entr .tete-e{display:flex;align-items:center;gap:10px}.pkm-entr .tete-e img{width:72px;height:72px;object-fit:contain;image-rendering:pixelated}
+.pkm-entr .regle{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0}.pkm-entr .regle b{font-size:44px;font-weight:400;min-width:74px;text-align:center}
+.pkm-entr .regle button{width:52px;height:46px;font-size:26px;background:#F8F8E8;border:3px solid #484838;border-radius:9px 4px;color:#383828}
+.pkm-entr .choix{display:flex;gap:6px}.pkm-entr .choix button{flex:1;padding:6px 2px;background:#F8F8E8;border:2px solid #484838;border-radius:7px 3px;color:#383828}.pkm-entr .choix button.on{background:#40A8F8;color:#fff}
+.pkm-entr .combat{display:flex;align-items:center;gap:10px}.pkm-entr .combat img{width:84px;height:84px;object-fit:contain;image-rendering:pixelated;transition:opacity .4s,transform .1s}.pkm-entr .combat .pv{flex:1}
+.pkm-entr .combat.touche img{transform:translateX(7px);filter:brightness(2.5)}.pkm-entr .combat.ko img{opacity:0;transform:translateY(16px)}
+.pkm-entr .barre{height:13px;background:#484838;border:2px solid #484838;border-radius:7px;overflow:hidden;margin-top:3px}.pkm-entr .barre i{display:block;height:100%;width:100%;background:#48C868;transition:width .2s}.pkm-entr .barre i.or{background:#F8C838}
+.pkm-entr .compte{flex:1;min-height:210px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;touch-action:none;text-align:center;padding:8px}
+.pkm-entr .compte b{font-size:128px;font-weight:400;line-height:.9;color:#383828}.pkm-entr .compte.sombre{background:#141C38;color:#fff;border-color:#141C38}.pkm-entr .compte.sombre b{color:#fff}.pkm-entr .compte.sombre small{color:#C9D3EA}
+.pkm-entr .compte .msg{min-height:25px;font-size:20px;color:#C03028}.pkm-entr .rythme{text-align:center;font-size:26px;color:#fff;text-shadow:1px 1px 0 #141C38}.pkm-entr .niveau{height:7px;background:#141C38;border-radius:4px;overflow:hidden}.pkm-entr .niveau i{display:block;height:100%;width:0;background:#40A8F8}
+.pkm-entr .gros{font-size:92px;text-align:center;color:#fff;text-shadow:3px 3px 0 #141C38;line-height:1;margin:auto 0}`;
+
+// Une répétition = une phase d'accélération suivie de la phase contraire. Squat : on descend (le téléphone « pèse » moins), puis on freine en bas
+// (il pèse plus). Traction : on tire (plus lourd), puis on freine en haut (plus léger). `ecart` : le temps qu'il faut au moins pour un mouvement complet.
+function capteurMouvement(reglage, facteur, surRep) {
+  const seuil = reglage.seuil * facteur, hautDAbord = reglage.premier === "haut";
+  let lisse = 0, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0;
+  const lire = e => {
+    const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+    recus++;
+    const t = e.timeStamp || performance.now(), v = Math.hypot(a.x, a.y, a.z) - 9.81;
+    lisse += (v - lisse) * .25;
+    const premier = hautDAbord ? lisse > seuil : lisse < -seuil, second = hautDAbord ? lisse < -seuil : lisse > seuil;
+    if (phase === 0 && premier) { phase = 1; debutPhase = t; }
+    else if (phase === 1) {
+      if (t - debutPhase > 3000) phase = 0;
+      else if (second && t - debutPhase > 150) { phase = 0; if (t - derniere >= reglage.ecart) { const ecart = t - derniere; derniere = t; surRep(ecart); } }
+    }
+  };
+  PW.addEventListener("devicemotion", lire);
+  return {arreter: () => PW.removeEventListener("devicemotion", lire), recus: () => recus, niveau: () => lisse, seuil};
+}
+
+function entrainement(type, {essai = false} = {}) {
+  preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR);
+  const M = ENTR[type], mem = lireEntr(), moi = mem[type] || {}, g = gestesAuj(), mis = D.mission || {};
+  const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
+  const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
+  // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
+  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = mem.sens || "normale";
+  const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
+  let minuteurs = [], arret = () => {}, verrou = null;
+  const apres = (f, ms) => { const t = setTimeout(f, ms); minuteurs.push(t); return t; };
+  const nettoyer = () => { minuteurs.forEach(t => { clearTimeout(t); clearInterval(t); }); minuteurs = []; arret(); arret = () => {}; };
+  const parler = t => { try { if (!son) return; const s = PW.speechSynthesis; s.cancel(); const u = new PW.SpeechSynthesisUtterance(String(t)); u.lang = "fr-FR"; u.rate = 1.15; s.speak(u); } catch (e) {} };
+  const fermer = () => { nettoyer(); try { PW.speechSynthesis.cancel(); if (verrou) verrou.release(); } catch (e) {} v.remove(); apresGeste(); };
+  const allume = async () => { try { verrou = await PW.navigator.wakeLock.request("screen"); } catch (e) {} };
+  const ennemi = () => M.ennemis ? M.ennemis.find(([s]) => cible <= s)[1] : null;
+
+  function reglage() {
+    const dit = resteMission ? `Pour ta mission du jour, il reste ${resteMission} ${M.un}${resteMission > 1 ? "s" : ""}${mis.geste === "series" ? " dans cette série" : ""}.`
+      : moi.derniere ? `Dernière série : ${moi.derniere}. Vise un peu plus !` : "Première série : à toi de régler.";
+    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3></div><p>${M.consigne}</p></div>
+      <div class="boite"><small>Ton objectif pour cette série</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
+        <small>${dit}${moi.record ? ` Ton record : ${moi.record}.` : ""}</small>
+        ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}</div>
+      <button class="go">C'est parti</button><button class="sec retour">Retour</button>`;
+    const n = v.querySelector(".regle b");
+    v.querySelector(".moins").onclick = () => { cible = Math.max(cible - 1, 1); n.textContent = cible; };
+    v.querySelector(".plus").onclick = () => { cible++; n.textContent = cible; };
+    v.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { sens = b.dataset.s; mem.sens = sens; garderEntr(mem); v.querySelectorAll("[data-s]").forEach(x => x.classList.toggle("on", x === b)); });
+    v.querySelector(".retour").onclick = fermer;
+    v.querySelector(".go").onclick = async () => {
+      audio(); parler("Prêt ?"); allume();  // son, voix, écran et capteurs ne s'autorisent que sur un toucher
+      if (M.capteur && PW.DeviceMotionEvent && PW.DeviceMotionEvent.requestPermission) { try { await PW.DeviceMotionEvent.requestPermission(); } catch (e) {} }
+      decompte(M.decompte);
+    };
+  }
+
+  function decompte(n) {
+    nettoyer();
+    v.innerHTML = `<div class="gros">${n}</div><div class="rythme">${M.poche ? "Téléphone dans la poche !" : "En position !"}</div><button class="sec passer">Annuler</button>`;
+    v.querySelector(".passer").onclick = fermer;
+    const el = v.querySelector(".gros");
+    const t = setInterval(() => { n--; if (n > 0) { el.textContent = n; ton(660, 0, .1, {type: "square", vol: .08}); if (n <= 3) parler(n); }
+      else { clearInterval(t); ton(990, 0, .3, {type: "square", vol: .1}); parler("Go !"); serie(); } }, 1000);
+    minuteurs.push(t);
+  }
+
+  function serie() {
+    nettoyer();
+    let n = 0, derniere = 0, koDit = false;
+    const rec = moi.record || 0, num = ennemi(), debutSerie = Date.now();
+    v.innerHTML = M.poche ? `<div class="compte sombre"><b>0</b><div class="msg"></div><small>La voix compte pour toi : garde le téléphone dans ta poche.</small></div><button class="sec fin">Maintiens pour terminer</button>`
+      : `<div class="boite combat"><img src="${IMG.mini(num)}" alt=""><div class="pv"><span>${PAR_NUM[num].nom}</span><div class="barre"><i></i></div><small class="reste">${cible} ${M.un}${cible > 1 ? "s" : ""}</small></div></div>
+         ${M.capteur ? `<div class="rythme">Prépare-toi…</div><div class="niveau"><i></i></div>` : ""}
+         <div class="compte"><b>0</b><div class="msg"></div><small>${M.capteur ? "Le téléphone suit ton mouvement." : "Touche l'écran avec le nez."}</small></div><button class="sec fin">Terminer la série</button>`;
+    const compte = v.querySelector(".compte"), nb = compte.querySelector("b"), msg = compte.querySelector(".msg"), combat = v.querySelector(".combat");
+    const dire = t => { msg.textContent = t; apres(() => { if (msg.textContent === t) msg.textContent = ""; }, 1600); };
+    const rep = () => {
+      n++; nb.textContent = n; vibre(25); derniere = Date.now();
+      ton(520 + Math.min(n, 30) * 18, 0, .09, {type: "square", vol: .09}); parler(n);
+      if (combat && n <= cible) {
+        combat.classList.add("touche"); apres(() => combat.classList.remove("touche"), 110);
+        const i = combat.querySelector(".barre i"), reste = cible - n; i.style.width = `${Math.max(reste / cible * 100, 0)}%`;
+        combat.querySelector(".reste").textContent = reste ? `encore ${reste}` : "K.O. ! Objectif atteint";
+      }
+      if (n === cible && !koDit) { koDit = true; if (combat) combat.classList.add("ko"); [[76, 0], [79, .12], [84, .24]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .09}));
+        apres(() => parler(M.poche ? "Objectif atteint ! Encore une ?" : "Objectif atteint !"), 500); vibre(60); dire("K.O. ! Objectif atteint : continue si tu peux."); }
+      if (rec && n === rec + 1) { dire("Coup critique ! Nouveau record !"); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }
+    };
+    const fin = () => { nettoyer(); bilan(n, Math.round((Date.now() - debutSerie) / 1000)); };
+    const bFin = v.querySelector(".fin");
+    if (M.poche) {  // dans la poche : pas de toucher par erreur, et la série se termine toute seule
+      let t = null;
+      bFin.onpointerdown = () => { t = setTimeout(fin, 900); }; bFin.onpointerup = bFin.onpointerleave = () => clearTimeout(t);
+      const garde = setInterval(() => { if (n && Date.now() - derniere > 40000) { parler("Série terminée. Repos !"); fin(); } }, 1000); minuteurs.push(garde);
+    } else bFin.onclick = fin;
+    if (M.capteur) {
+      const c = capteurMouvement(M.capteur, SENSIBILITES[sens], ecart => { rep(); if (type === "squats" && ecart < 1500 && n > 1) dire("Plus lentement : contrôle la descente."); });
+      arret = c.arreter;
+      const niveau = v.querySelector(".niveau i");
+      if (niveau) { const t = setInterval(() => { niveau.style.width = `${Math.min(Math.abs(c.niveau()) / c.seuil * 50, 100)}%`; }, 80); minuteurs.push(t); }
+      // Sans capteur (refus, vieux téléphone) : on compte en touchant l'écran
+      apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition."); compte.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
+      if (type === "squats") {  // le rythme : 2 s pour descendre, 1 s pour remonter
+        const r = v.querySelector(".rythme"); let bas = false;
+        const battre = () => { bas = !bas; r.textContent = bas ? "Descends…" : "Remonte !"; ton(bas ? 392 : 660, 0, .12, {type: "triangle", vol: .08}); minuteurs.push(setTimeout(battre, bas ? 2000 : 1000)); };
+        battre();
+      }
+    } else {  // le nez : une pompe demande au moins 0,7 s, sinon ce n'est pas un vrai mouvement
+      compte.onpointerdown = e => { e.preventDefault(); if (Date.now() - derniere < ECART_POMPE) return dire("Trop vite : va jusqu'en haut, bras tendus !"); rep(); };
+    }
+  }
+
+  function bilan(n, duree) {
+    const nouveau = n > (moi.record || 0) && n > 0;
+    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(M.coach)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
+        <small>${M.nom} comptées (corrige si le téléphone s'est trompé)</small><div class="regle"><button class="moins">−</button><b>${n}</b><button class="plus">+</button></div></div>
+      <button class="go suite">Série suivante (repos ${REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
+      ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
+    const c = v.querySelector(".regle b");
+    v.querySelector(".moins").onclick = () => { n = Math.max(n - 1, 0); c.textContent = n; };
+    v.querySelector(".plus").onclick = () => { n++; c.textContent = n; };
+    const garder = () => {
+      if (n <= 0 || essai) return;
+      memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n}_${Date.now()}`);
+      moi.derniere = n; moi.record = Math.max(moi.record || 0, n); mem[type] = moi; garderEntr(mem);
+    };
+    v.querySelector(".suite").onclick = () => { garder(); cible = Math.max(n, 1); repos(REPOS_SERIE); };
+    v.querySelector(".fini").onclick = () => { garder(); fermer(); };
+  }
+
+  function repos(s) {  // récupérer entre deux séries, c'est ce qui permet d'en refaire une vraie
+    nettoyer();
+    v.innerHTML = `<div class="rythme">Repos</div><div class="gros">${s}</div><div class="rythme">Respire, secoue les bras. Prochaine série : ${cible}.</div><button class="go go-r">J'y retourne</button><button class="sec fini">J'ai fini</button>`;
+    v.querySelector(".fini").onclick = fermer;
+    v.querySelector(".go-r").onclick = () => decompte(M.decompte);
+    const el = v.querySelector(".gros");
+    const t = setInterval(() => { s--; el.textContent = s; if (s === 10) parler("Dix secondes"); if (s <= 0) { clearInterval(t); ton(880, 0, .3, {type: "square", vol: .1}); vibre(200); decompte(M.decompte); } }, 1000);
+    minuteurs.push(t);
+  }
+  reglage();
+}
+
 function dessinerTests() {
   const b = (cls, html) => `<button class="filtre ${cls}">${html}</button>`;
   const ext = ["prairie", "foret", "grotte", "riviere", "mer", "ville", "montagne", "centrale", "tour", "safari", "volcan"];
@@ -4311,6 +4492,8 @@ function dessinerTests() {
     <div class="boutons-t">${b(`t-fond" data-f="labo`, "Labo (starter)")}${[1, 2, 3, 4, 5, 6, 7, 8].map(n => b(`t-fond" data-f="arene${n}`, `${ico(IMG.badge(n), "p")} ${CHAMPIONS[n].nom}`)).join("")}</div>
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
     <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
+    <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
+    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
@@ -4323,6 +4506,7 @@ function dessinerTests() {
   on(".t-arene", x => testScene(+x.dataset.n));
   on(".t-fond", x => apercuCapture(x.dataset.f));
   on(".t-centre", () => sceneCentre(true));
+  document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true}));
   on(".t-pantheon", () => scenePantheon());
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
   on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
