@@ -4309,7 +4309,7 @@ const ENTR = {
     attaques: ["Poing-Karaté", "Balayage", "Frappe Atlas", "Sacrifice"],
     consigne: "Pose le téléphone <b>en paysage</b> au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
   squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
-    capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, balance: 1.1, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
+    capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, balance: 1.15, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte. Suis le rythme : 2 s pour descendre, 1 s pour remonter."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
@@ -4402,8 +4402,8 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
     choc += (Math.abs(Math.hypot(a.x, a.y, a.z) - n) - choc) * .25;
     if (t >= prochain && mesures.length < 4000) { prochain = t + 50; mesures.push(`${Math.round(t)},${lin.toFixed(2)},${vit.toFixed(2)},${choc.toFixed(1)}`); }
     if (reglage.impact && choc > reglage.impact) return surImpact && surImpact(t);  // on a lâché la barre, on marche : fini
-    // Les squats : l'écart entre la vitesse de descente et celle de remontée. Sur les mesures de Kiki, ses vrais squats vont de 1,6 à 2,6 et ses petits mouvements
-    // de 0,7 à 1 ; un squat lent mais profond passe aussi, ce qu'une distance estimée ne permettait pas (un mouvement s'arrête en remontant : rien ne s'additionne)
+    // Les squats : l'écart entre la vitesse de descente et celle de remontée. Sur les mesures de Kiki, ses vrais squats vont de 1,53 à 2,51 et ses petits mouvements
+    // de 0,59 à 0,96 ; un squat lent mais profond passe aussi, ce qu'une distance estimée ne permettait pas (un mouvement s'arrête en remontant : rien ne s'additionne)
     if (reglage.balance) {
       if (phase === 0) { if (vit < -s1) { phase = 1; vmin = vit; pic = vit; debutPhase = t; } }
       else if (phase === 1) {
