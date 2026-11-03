@@ -533,6 +533,14 @@ details.regles{color:#484838 !important}
 .detail-ami .cmp b{display:block;font-size:20px;font-weight:400;color:#C03028}
 .detail-ami .lot{display:flex;flex-wrap:wrap;gap:2px}.detail-ami .lot img{width:40px;height:40px;image-rendering:pixelated}
 .detail-ami .lot img.sh{filter:drop-shadow(0 0 2px #F8C838)}
+.joueur .tx small.plus{color:#C03028}.joueur .tx small.moins{color:#287838}.joueur .tx small i{font-style:normal;color:#686850}
+.ligne-amis{display:block;width:100%;text-align:left;cursor:pointer;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 10px;margin:0 0 12px;color:#383828;font-family:inherit;font-size:19px;line-height:1.15}
+.ligne-amis:before{content:"▶ ";color:#D83830;font-size:13px}.ligne-amis em{font-style:normal;color:#C03028}
+.ligne-amis small{display:block;font-size:15px;color:#686850;margin-top:2px}
+.nouvelles{margin-top:10px}.nouvelles .titre{margin-bottom:2px}
+.nouvelle{display:flex;align-items:center;gap:8px;padding:3px 2px;border-top:2px dashed #D8D4B8;color:#383828;font-size:16px;line-height:1.1}
+.nouvelle img{flex:0 0 34px;width:34px;height:34px;object-fit:contain;image-rendering:pixelated}.nouvelle img.sh{filter:drop-shadow(0 0 2px #F8C838)}
+.nouvelle span{flex:1;min-width:0}.nouvelle small{display:block;font-size:14px;color:#686850}
 .amis-note{margin-top:8px;font-size:14px;color:#686850;line-height:1.15}
 #mon-dresseur{border-radius:12px 5px 12px 5px;border:3px solid #484838;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .onglets{background:#141C38;border-radius:10px}.onglets button{color:#C9D3EA}.onglets button.on{background:#F8F8E8;color:#383828}
@@ -547,6 +555,7 @@ details.regles{color:#484838 !important}
   <section id="o-aventure">
     <div id="bandeau-voyage"></div>
     <div class="carte" id="voyage"></div>
+    <div id="ligne-amis"></div>
     <div id="prochains"></div>
     <div class="carte" id="aouvrir"></div>
     <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
@@ -3782,26 +3791,59 @@ function amisSurCarte(depuis = V.pos) {
       <span class="nom-ami">${noms}</span></div>`;
   }).join("");
 }
-// L'onglet Dresseur : tous les joueurs (toi avec tes chiffres en direct), du plus avancé au moins avancé ; toucher un ami =
-// son Pokédex comparé au tien et ses dernières captures
+// L'onglet Dresseur : tous les joueurs (toi avec tes chiffres en direct), classés au nombre de Pokémon (celui qui bouge tous les
+// jours) ; toucher un ami = son Pokédex comparé au tien et ses dernières captures
 let AMI_OUVERT = null;
+function texteNouvelle(n, j) {
+  const nom = (PAR_NUM[n.num] || {}).nom;
+  if (n.quoi === "badge") return n.n === 9 ? `${j.nom} a vaincu la Ligue Pokémon !` : `${j.nom} a battu ${CHAMPIONS[n.n].nom} !`;
+  if (n.quoi === "lieu") return `${j.nom} a atteint ${n.lieu}`;
+  if (n.quoi === "evo") return `Le starter de ${j.nom} évolue en ${nom} !`;
+  return `${j.nom} a attrapé ${nom}` + {legendaire: ", un légendaire !", shiny: " shiny !", rare: ", un rare !"}[n.quoi];
+}
+function imageNouvelle(n) {
+  if (n.quoi === "lieu") return `<img src="${IC.carte}" alt="">`;
+  if (n.quoi === "badge") return `<img src="${n.n === 9 ? IC.ligue : IMG.badge(n.n)}" alt="">`;
+  return `<img class="${n.shiny ? "sh" : ""}" src="${IMG.mini(n.num, n.shiny)}" alt="">`;
+}
+function nouvellesAmis(autres) {  // celles de tous les amis, la plus récente d'abord (le tri garde l'ordre du serveur à jour égal : le plus marquant)
+  return autres.flatMap(j => (j.nouvelles || []).map(n => [n, j])).sort((a, b) => b[0].jour.localeCompare(a[0].jour));
+}
+function dessinerLigneAmis(tous, autres) {  // sous la carte : le classement, toujours à l'œil, et la dernière nouvelle
+  const el = document.getElementById("ligne-amis");
+  if (!autres.length || TEST) { el.innerHTML = ""; return; }
+  const n = nouvellesAmis(autres)[0];
+  el.innerHTML = `<button class="ligne-amis">${tous.map(j => j.moi ? `<em>Toi ${j.especes.length}</em>` : `${j.nom} ${j.especes.length}`).join(" · ")}
+    ${n ? `<small>${texteNouvelle(...n)} · ${n[0].quand}</small>` : ""}</button>`;
+  el.firstChild.onclick = () => { montrerOnglet("dresseur"); requestAnimationFrame(() => document.getElementById("amis").scrollIntoView({behavior: "smooth", block: "start"})); };
+}
 function dessinerAmis() {
   const el = document.getElementById("amis"); if (!el) return;
   const col = collection(), mien = Object.keys(col).map(Number).filter(n => col[n].some(c => !c.rate));
-  const moi = {id: "moi", moi: true, nom: nomDresseur(), couleurs: DRESSEUR, pos: V.pos, lieu: LIEUX[V.ici].nom,
+  const premieres = {};
+  CAPTURES.filter(prise).forEach(c => { if (!premieres[c.num] || c.jour < premieres[c.num]) premieres[c.num] = c.jour; });
+  const moi = {id: "moi", moi: true, nom: nomDresseur(), couleurs: DRESSEUR, pos: V.pos, lieu: LIEUX[V.ici].nom, region: V.carte.region,
     badges: Object.keys(V.badges).map(Number), especes: mien, shiny: mien.filter(n => col[n].some(c => c.shiny && !c.rate)),
     starter: G.starter ? {num: G.starter.ligne[G.starter.niveau >= 36 ? 2 : G.starter.niveau >= 16 ? 1 : 0]} : null};
   const autres = (D.joueurs || []).filter(j => !j.moi);
   const titre = `<div class="titre" style="font-size:16px">Les dresseurs</div>`;
+  const lundi = (autres[0] || {}).lundi || "";
+  moi.semaine = Object.values(premieres).filter(j => j >= lundi).length;
+  // le Pokédex d'abord, puis les shiny ; à égalité sur les deux, même rang (la liste reste rangée par badges, puis par avancée)
+  const tous = [moi, ...autres].sort((a, b) => b.especes.length - a.especes.length || b.shiny.length - a.shiny.length
+    || b.badges.filter(n => n <= 8).length - a.badges.filter(n => n <= 8).length || b.pos - a.pos);
+  dessinerLigneAmis(tous, autres);
   if (!autres.length) { el.innerHTML = titre + `<div class="petit gris" style="margin-top:4px">Aucun autre dresseur pour l'instant.</div>`; return; }
-  const tous = [moi, ...autres].sort((a, b) => b.badges.filter(n => n <= 8).length - a.badges.filter(n => n <= 8).length
-    || b.especes.length - a.especes.length || b.shiny.length - a.shiny.length || b.pos - a.pos);
-  const lignes = tous.map((j, i) => {
-    const nb = j.badges.filter(n => n <= 8).length;
-    const ligne = `<div class="joueur ${j.moi ? "moi" : ""}" data-id="${j.id}"><span class="rg">${i + 1}</span>
+  const rang = j => tous.findIndex(x => x.especes.length === j.especes.length && x.shiny.length === j.shiny.length) + 1;
+  const lignes = tous.map(j => {
+    const nb = j.badges.filter(n => n <= 8).length, ecart = j.especes.length - mien.length;
+    const sem = j.semaine ? `+${j.semaine} cette semaine` : "";
+    const compare = j.moi ? "" : ecart > 0 ? `${ecart} de plus que toi` : ecart < 0 ? `${-ecart} de moins que toi` : "autant que toi";
+    const ligne = `<div class="joueur ${j.moi ? "moi" : ""}" data-id="${j.id}"><span class="rg">${rang(j)}</span>
       <div class="ph"><canvas width="14" height="19"></canvas></div>
-      <div class="tx"><b>${j.nom}${j.moi ? "<i>toi</i>" : ""}</b><small>${j.lieu.replace(" (retour)", "")}</small>
-        <small>Pokédex ${j.especes.length} · Badges ${nb}${j.shiny.length ? ` · ✨ ${j.shiny.length}` : ""}</small></div>
+      <div class="tx"><b>${j.nom}${j.moi ? "<i>toi</i>" : ""}</b><small>${j.region} · ${j.lieu.replace(" (retour)", "")}</small>
+        <small>Pokédex ${j.especes.length} · Shiny ${j.shiny.length} · Badges ${nb}</small>
+        ${compare || sem ? `<small class="${ecart > 0 && !j.moi ? "plus" : ecart < 0 && !j.moi ? "moins" : ""}">${compare}${compare && sem ? " · " : ""}${sem ? `<i>${sem}</i>` : ""}</small>` : ""}</div>
       ${j.starter ? `<img class="st" src="${IMG.mini(j.starter.num)}" alt="">` : ""}</div>`;
     if (j.moi || AMI_OUVERT !== j.id) return ligne;
     const a = new Set(mien), b = new Set(j.especes), lui = j.especes.filter(n => !a.has(n));
@@ -3811,7 +3853,10 @@ function dessinerAmis() {
       ${lui.length ? `<div>Ce que ${j.nom} a et pas toi :</div><div class="lot">${lui.map(n => `<img src="${IMG.mini(n, j.shiny.includes(n))}" title="${nom(n)}" alt="${nom(n)}">`).join("")}</div>` : ""}
       ${j.dernieres && j.dernieres.length ? `<div style="margin-top:6px">Ses dernières captures :</div><div class="lot">${j.dernieres.map(c => `<img class="${c.shiny ? "sh" : ""}" src="${IMG.mini(c.num, c.shiny)}" title="${nom(c.num)}" alt="${nom(c.num)}">`).join("")}</div>` : ""}</div>`;
   }).join("");
-  el.innerHTML = titre + lignes + `<div class="amis-note">Les autres voient ton pseudo, ton dresseur sur la carte, ton lieu, tes badges et ton Pokédex.
+  const fil = nouvellesAmis(autres).slice(0, 10);
+  const blocFil = fil.length ? `<div class="nouvelles"><div class="titre" style="font-size:16px">Les nouvelles</div>${fil.map(([n, j]) =>
+    `<div class="nouvelle">${imageNouvelle(n)}<span>${texteNouvelle(n, j)}<small>${n.quand}</small></span></div>`).join("")}</div>` : "";
+  el.innerHTML = titre + lignes + blocFil + `<div class="amis-note">Les autres voient ton pseudo, ton dresseur sur la carte, ton lieu, tes badges, ton Pokédex et tes belles captures.
     Jamais tes pas, ton sommeil, ton cœur ni ton poids.</div>`;
   el.querySelectorAll(".joueur").forEach((r, i) => {
     const j = tous.find(x => x.id === r.dataset.id);

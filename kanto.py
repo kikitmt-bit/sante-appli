@@ -90,7 +90,7 @@ LIEUX = [
 # par Claude avec des morceaux de la carte (Route 3 vers le Mont Sélénite, ponton de Céladopole à la Piste cyclable).
 # zoom = combien de fois l'écran la carte est affichée (on voit le coin du dresseur, on fait glisser pour le reste ;
 # « Toute la carte » = 1) : à régler pour chaque région, pour que villes et dresseur aient la même taille partout.
-CARTE = {"image": "cartes/kanto.webp?v=2", "largeur": 1448, "hauteur": 1086, "zoom": 2}
+CARTE = {"region": "Kanto", "image": "cartes/kanto.webp?v=2", "largeur": 1448, "hauteur": 1086, "zoom": 2}
 # Le chemin depuis l'étape d'avant suit les routes dessinées sur la carte : points de passage (pixels de l'image)
 VIA = {
     "Route 1": [(327, 745), (318, 700)],

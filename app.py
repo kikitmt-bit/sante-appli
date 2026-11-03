@@ -678,7 +678,7 @@ def accueil_ami():
                 "ta montre dans **Google Santé**.")
     st.markdown("- **Lu :** activité, pas, cardio, séances, sommeil, poids, à partir des 14 jours avant ton inscription. Rien d'autre.\n"
                 "- **Tes chiffres ne sont visibles que par toi** dans l'appli, jamais par les autres joueurs. Eux voient "
-                "seulement le jeu : ton pseudo, ton dresseur sur la carte, ton lieu, tes badges et ton Pokédex.\n"
+                "seulement le jeu : ton pseudo, ton dresseur sur la carte, ton lieu, tes badges, ton Pokédex et tes belles captures.\n"
                 "- **Bon à savoir :** ils sont rangés dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
                 "- **Date de naissance, taille et sexe** (facultatifs) : ils restent sur ton téléphone. Le jour de ton anniversaire, seule la trace de ton cadeau est enregistrée.\n"
                 "- **Tu peux tout arrêter** quand tu veux : ⚙️ → Supprimer mes données.")

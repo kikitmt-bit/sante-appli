@@ -1,7 +1,8 @@
 """Jouer à plusieurs (1re version, 02/11) : ce que chaque joueur voit des autres, et le suivi des amis pour Kiki.
 
-Visible par les autres joueurs : pseudo et couleurs du dresseur, place sur la carte, lieu, badges, Pokédex (espèces
-attrapées et ouvertes), shiny, légendaires, starter, 3 dernières captures. **Jamais** : pas, sommeil, cardio, poids.
+Visible par les autres joueurs : pseudo et couleurs du dresseur, région, place sur la carte, lieu, badges, Pokédex (espèces
+attrapées et ouvertes), shiny, légendaires, starter, 3 dernières captures, nouvelles (belles captures, badges, lieux atteints).
+**Jamais** : pas, sommeil, cardio, poids.
 Le pseudo et les couleurs viennent du téléphone de chacun (localStorage pkm_dresseur : seulement ces 5 champs, jamais la
 date de naissance, la taille ni le sexe) et sont publiés dans data/dresseurs/<id>.json (id = « kiki » ou celui de l'ami).
 """
@@ -10,6 +11,7 @@ import html
 import json
 
 import chiffres
+import kanto
 import pokemon
 from pokedex import LEGENDAIRES
 
@@ -36,10 +38,45 @@ def dresseur_du_telephone(texte):
             "pantalon": ok("pantalon", PANTALONS)}
 
 
-def resume(captures, etat, ouvertes):
-    """Ce que les autres voient d'une partie : seulement le jeu (captures ouvertes = son Pokédex)."""
-    vues = [c for c in captures if c["id"] in ouvertes and not c.get("rate")]
+def _quand(jour, aujourd):
+    d = dt.date.fromisoformat(jour)
+    if d == aujourd:
+        return "aujourd'hui"
+    return "hier" if d == aujourd - dt.timedelta(days=1) else f"{chiffres.JOURS[d.weekday()]} {jour[8:]}/{jour[5:7]}"
+
+
+def nouvelles(vues, v, frise, aujourd):
+    """Ce qui mérite d'être raconté aux autres (14 derniers jours, 12 au plus, le plus récent d'abord) : badges, légendaires,
+    shiny, évolution du starter, nouveau rare, lieux atteints. Pas les captures ordinaires : elles noieraient le reste."""
+    out, vus = [], set()
+    for c in sorted(vues, key=lambda c: c["jour"]):
+        num, nouveau = c["num"], c["num"] not in vus
+        vus.add(num)
+        quoi = ("evo" if "#evo" in c["id"] else "legendaire" if nouveau and num in LEGENDAIRES else "shiny" if c.get("shiny")
+                else "rare" if nouveau and num in kanto.RARES else None)
+        if quoi:
+            out.append({"quoi": quoi, "jour": c["jour"], "num": num, "shiny": bool(c.get("shiny"))})
+    out += [{"quoi": "badge", "jour": j, "n": int(k)} for k, j in v["badges"].items()]
+    for f in frise:
+        out += [{"quoi": "lieu", "jour": f["jour"], "lieu": l["nom"]} for l in v["lieux"]
+                if f["p0"] < l["dist"] <= f["p1"] and "(retour)" not in l["nom"]]
+    limite, ordre = str(aujourd - dt.timedelta(days=14)), ["badge", "legendaire", "shiny", "evo", "rare", "lieu"]
+    out = [n for n in out if n["jour"] >= limite]
+    out.sort(key=lambda n: ordre.index(n["quoi"]))
+    out.sort(key=lambda n: n["jour"], reverse=True)
+    return [n | {"quand": _quand(n["jour"], aujourd)} for n in out[:12]]
+
+
+def resume(captures, etat, ouvertes, aujourd):
+    """Ce que les autres voient d'une partie : seulement le jeu (captures ouvertes = son Pokédex). Une ball de plus de 14 jours
+    compte comme ouverte, comme sur le téléphone (la liste partagée ne garde que 20 jours : sinon le Pokédex rétrécirait)."""
+    limite = str(aujourd - dt.timedelta(days=14))
+    vues = [c for c in captures if (c["id"] in ouvertes or c["jour"] < limite) and not c.get("rate")]
     especes = sorted({c["num"] for c in vues})
+    premieres = {}
+    for c in vues:
+        premieres[c["num"]] = min(c["jour"], premieres.get(c["num"], c["jour"]))
+    lundi = str(aujourd - dt.timedelta(days=aujourd.weekday()))
     shiny = sorted({c["num"] for c in vues if c.get("shiny")})
     v, st_ = etat["voyage"], etat.get("starter")
     starter = None
@@ -47,10 +84,11 @@ def resume(captures, etat, ouvertes):
         ligne, niv = st_["ligne"], st_["niveau"]
         starter = {"num": ligne[2 if niv >= 36 else 1 if niv >= 16 else 0], "niveau": niv}
     dernieres = sorted(vues, key=lambda c: (c["jour"], str(c.get("c") or "")), reverse=True)[:3]
-    return {"pos": v["pos"], "ici": v["ici"], "lieu": v["lieux"][v["ici"]]["nom"], "carte": v["carte"]["image"],
+    return {"pos": v["pos"], "ici": v["ici"], "lieu": v["lieux"][v["ici"]]["nom"], "region": v["carte"]["region"], "carte": v["carte"]["image"],
             "badges": sorted(int(k) for k in v["badges"]), "especes": especes, "shiny": shiny,
             "legendaires": sum(n in LEGENDAIRES for n in especes), "starter": starter,
-            "dernieres": [{"num": c["num"], "shiny": bool(c.get("shiny")), "jour": c["jour"]} for c in dernieres]}
+            "dernieres": [{"num": c["num"], "shiny": bool(c.get("shiny")), "jour": c["jour"]} for c in dernieres],
+            "lundi": lundi, "semaine": sum(j >= lundi for j in premieres.values()), "nouvelles": nouvelles(vues, v, etat["frise"], aujourd)}
 
 
 def partie(lire_depot, ident, debut, aujourd):
@@ -60,7 +98,7 @@ def partie(lire_depot, ident, debut, aujourd):
     joueur = {"id": ami, "debut": debut} if ami else None
     captures, etat = pokemon.charger_jeu(lire, aujourd, joueur)
     ouvertes = (lire([pokemon.OUVERTES])[pokemon.OUVERTES] or {}).get("ouvertes", {})
-    return resume(captures, etat, set(ouvertes))
+    return resume(captures, etat, set(ouvertes), aujourd)
 
 
 def joueurs(registre):
