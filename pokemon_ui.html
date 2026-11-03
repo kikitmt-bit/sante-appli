@@ -4309,7 +4309,7 @@ const ENTR = {
     attaques: ["Poing-Karaté", "Balayage", "Frappe Atlas", "Sacrifice"],
     consigne: "Pose le téléphone <b>en paysage</b> au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
   squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
-    capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, descente: .25, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
+    capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, descente: .25, vitesse: .45, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte. Suis le rythme : 2 s pour descendre, 1 s pour remonter."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
@@ -4318,6 +4318,7 @@ const ENTR = {
 const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Soleil"], Feu: ["Griffe", "Flammèche", "Crocs Feu", "Lance-Flammes"], Eau: ["Charge", "Pistolet à O", "Morsure", "Hydrocanon"]};
 // Les décors du combat (images ChatGPT, scenes/PROMPT.md) : un au hasard à chaque série. Tant qu'il n'y en a pas : le décor du lieu, avec des ronds de sol dessinés.
 const DECORS_COMBAT = [];
+const VERSION_DETECTION = "squats v4";
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
 const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
@@ -4366,12 +4367,17 @@ const STYLE_ENTR = `
 // dans un sens puis dans l'autre (squat : descendre puis remonter ; traction : monter puis redescendre). Les mesures sont gardées pour régler les seuils.
 function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
   const haut = reglage.premier === "haut", s1 = reglage.s1 * facteur, s2 = reglage.s2 * facteur, tauG = reglage.tauG || .8, tauV = reglage.tauV || 1.2;
-  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0, biais = null, duree = 0;
-  const mesures = [];
+  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0, biais = null, duree = 0, plusVite = 0, vitDescente = 0, calme = 0;
+  const mesures = [], brut = [], evenements = [];
+  let prochainBrut = 0;
   const lire = e => {
     const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
     recus++;
     const t = e.timeStamp || performance.now(), dt = avant === null ? 0 : Math.min((t - avant) / 1000, .1); avant = t;
+    if (t >= prochainBrut && brut.length < 4000) {  // pour comprendre ce qui s'est passé pendant une vraie série
+      prochainBrut = t + 30; const rd = x => x == null ? null : Math.round(x * 100) / 100, b0 = e.acceleration || {}, r0 = e.rotationRate || {};
+      brut.push([Math.round(t), rd(a.x), rd(a.y), rd(a.z), rd(b0.x), rd(b0.y), rd(b0.z), rd(r0.alpha), rd(r0.beta), rd(r0.gamma)]);
+    }
     if (!g) g = {x: a.x, y: a.y, z: a.z};
     const k = Math.min(dt / tauG, 1); g.x += (a.x - g.x) * k; g.y += (a.y - g.y) * k; g.z += (a.z - g.z) * k;
     const n = Math.hypot(g.x, g.y, g.z) || 1, b = reglage.separe && e.acceleration && e.acceleration.x != null ? e.acceleration : null;
@@ -4384,7 +4390,12 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
     }
     vit = (vit + lin * dt) * Math.exp(-dt / tauV);
     // la distance descendue, estimée. Vraies mesures de Kiki (03/11) : ses vrais squats donnent 37 à 70, ses tout petits mouvements 8 à 20
-    if (vit < -.15) creux += -vit * dt; else if (vit > .1 && creux) { descendu = creux; creux = 0; }
+    // Une descente s'arrête dès que le téléphone ne descend plus : plusieurs petits mouvements à la suite ne s'additionnent jamais
+    if (vit < -.15) { creux += -vit * dt; plusVite = Math.min(plusVite, vit); calme = 0; }
+    else if (creux) {
+      calme += dt;
+      if (vit > .1 || calme > 1.5) { if (vit > .1) { descendu = creux; vitDescente = plusVite; } creux = 0; plusVite = 0; calme = 0; }
+    }
     choc += (Math.abs(Math.hypot(a.x, a.y, a.z) - n) - choc) * .25;
     if (t >= prochain && mesures.length < 4000) { prochain = t + 50; mesures.push(`${Math.round(t)},${lin.toFixed(2)},${vit.toFixed(2)},${choc.toFixed(1)}`); }
     if (reglage.impact && choc > reglage.impact) return surImpact && surImpact(t);  // on a lâché la barre, on marche : fini
@@ -4394,13 +4405,14 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
       if (t - debutPhase > 4000) phase = 0;
       else if (d2) {
         phase = 0;
-        if (reglage.descente && descendu < reglage.descente * facteur) { mesures.push(`${Math.round(t)},PEU,${descendu.toFixed(3)}`); if (surPeu) surPeu(); }
-        else if (t - derniere >= reglage.ecart) { const ecart = t - derniere; derniere = t; surRep(ecart, t); mesures.push(`${Math.round(t)},REP,${descendu.toFixed(3)}`); }
+        if (reglage.descente && (descendu < reglage.descente * facteur || -vitDescente < reglage.vitesse * Math.min(facteur, 1))) { evenements.push(["PEU", Math.round(t), +descendu.toFixed(3), +vitDescente.toFixed(2)]); mesures.push(`${Math.round(t)},PEU,${descendu.toFixed(3)}`); if (surPeu) surPeu(); }
+        else if (t - derniere >= reglage.ecart) { const ecart = t - derniere; derniere = t; surRep(ecart, t); evenements.push(["REP", Math.round(t), +descendu.toFixed(3), +vitDescente.toFixed(2)]); mesures.push(`${Math.round(t)},REP,${descendu.toFixed(3)}`); }
+        descendu = 0; vitDescente = 0;
       }
     }
   };
   PW.addEventListener("devicemotion", lire);
-  return {arreter: () => PW.removeEventListener("devicemotion", lire), recus: () => recus, mesures};
+  return {arreter: () => PW.removeEventListener("devicemotion", lire), recus: () => recus, mesures, brut, evenements};
 }
 
 function entrainement(type, {essai = false} = {}) {
@@ -4409,7 +4421,7 @@ function entrainement(type, {essai = false} = {}) {
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
-  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens || "normale", mesures = [];
+  let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens || "normale", mesures = [], sonde = null;
   const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
   let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
@@ -4459,7 +4471,7 @@ function entrainement(type, {essai = false} = {}) {
       <div class="boite"><small>Ton objectif pour cette série</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
         <small>${dit}${moi.record ? ` Ton record : ${moi.record}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
-        <div><small class="veille">${veille}</small></div></div>
+        <div><small class="veille">${veille}</small></div>${D.kiki && M.capteur ? `<div><small>Version : ${VERSION_DETECTION}</small></div>` : ""}</div>
       <button class="go">C'est parti</button><button class="sec retour">Retour</button>
       ${D.kiki && M.capteur ? `<button class="sec apprendre">🎓 Apprentissage : montrer mes vrais mouvements</button>` : ""}`;
     const appr = v.querySelector(".apprendre"); if (appr) appr.onclick = () => { fermer(); apprentissage(type); };
@@ -4504,7 +4516,7 @@ function entrainement(type, {essai = false} = {}) {
       if (n === cible && !koDit) { koDit = true; [[76, .2], [79, .32], [84, .44]].forEach(([k, d]) => ton(NOTE(k), d, .2, {type: "square", vol: .1})); apres(() => parler("Objectif atteint ! Encore une ?"), 600); msg.textContent = "Objectif atteint !"; }
       if (rec && n === rec + 1) { msg.textContent = "Nouveau record !"; apres(() => parler("Nouveau record !"), 900); }
     }, t => { if (n) fin(t - RETIRE_IMPACT); });  // on ne retire que ce qui suit le moment où on a lâché : un grand choc = les pieds au sol
-    mesures = c.mesures; arret = c.arreter;
+    mesures = c.mesures; arret = c.arreter; sonde = c;
     minuteurs.push(setInterval(() => { if (n && Date.now() - derniere > FIN_SANS_TRACTION) fin(0); }, 500));
     // Sortir le téléphone de la poche compte parfois une traction : le bouton retire ce qui vient juste avant lui
     const b = v.querySelector(".tenir"); let t = null;
@@ -4562,7 +4574,7 @@ function entrainement(type, {essai = false} = {}) {
       let plusBas = 0;
       const c = capteurMouvement(M.capteur, SENSIBILITES[sens], ecart => { rep(); if (ecart < 1500 && n > 1) dire("Plus lentement : contrôle la descente."); }, null,
         () => { if (Date.now() - plusBas < 1500) return; plusBas = Date.now(); dire("Pas assez bas : descends cuisses à l'horizontale !", 1400); ton(220, 0, .18, {type: "square", vol: .08}); });
-      arret = c.arreter; mesures = c.mesures;
+      arret = c.arreter; mesures = c.mesures; sonde = c;
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
       // Le rythme : 2 s pour descendre, 1 s pour remonter
       let bas = false;
@@ -4580,15 +4592,16 @@ function entrainement(type, {essai = false} = {}) {
         <small>${M.nom} comptées (corrige si le téléphone s'est trompé)</small><div class="regle"><button class="moins">−</button><b>${n}</b><button class="plus">+</button></div>
         <small class="veille">${veille}</small></div>
       <button class="go suite">Série suivante (repos ${REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
-      ${aMesures ? `<button class="sec copie">📋 Copier les mesures pour Claude</button><div class="zone-copie"></div>` : ""}
+      ${aMesures ? `<button class="sec envoi">📤 Envoyer cette série à Claude</button>` : ""}
       ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
     const c = v.querySelector(".regle b"), detecte = n;
     v.querySelector(".moins").onclick = () => { n = Math.max(n - 1, 0); c.textContent = n; };
     v.querySelector(".plus").onclick = () => { n++; c.textContent = n; };
-    if (aMesures) v.querySelector(".copie").onclick = async () => {
-      const texte = `${type};sens=${sens};detecte=${detecte};vrai=${n};t,lin,vit,choc\n${mesures.join(";")}`, b = v.querySelector(".copie");
-      try { await PW.navigator.clipboard.writeText(texte); b.textContent = "✅ Copié : colle-le à Claude"; }
-      catch (e) { v.querySelector(".zone-copie").innerHTML = `<textarea readonly></textarea>`; const z = v.querySelector("textarea"); z.value = texte; z.focus(); z.select(); b.textContent = "Copie ce texte et colle-le à Claude"; }
+    if (aMesures) v.querySelector(".envoi").onclick = () => {  // même chemin que l'apprentissage : l'appli se recharge et range tout dans le dépôt privé
+      let deja = []; try { deja = JSON.parse(localStorage.getItem("pkm_appr") || "[]"); } catch (e) {}
+      deja.push({type: `serie-${type}`, quand: new Date().toISOString(), version: VERSION_DETECTION, sens, detecte, fait: n, evenements: sonde ? sonde.evenements : [], colonnes: ["ms", "ax", "ay", "az", "bx", "by", "bz", "ra", "rb", "rg"], lignes: sonde ? sonde.brut : [], appareil: PW.navigator.userAgent.slice(0, 120)});
+      try { localStorage.setItem("pkm_appr", JSON.stringify(deja.slice(-3))); garder(); PW.location.reload(); }
+      catch (e) { v.querySelector(".envoi").textContent = "Série trop longue pour l'envoi : dis-le à Claude"; }
     };
     const garder = () => {
       if (n <= 0 || essai) return;
