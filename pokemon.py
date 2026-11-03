@@ -584,8 +584,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         p0 = voyage.pos
         g = (gestes or {}).get(str(jour)) or {}
         soir = ((missions_jours or {}).get(str(jour)) or {}).get("pas_soir") or 0
+        km = s.get("km") if s.get("km") == s.get("km") and s.get("km") else 0  # None ou NaN : pas de distance ce jour-là
         badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"], "force_min": m["force"],
-                                       "seance": m["seance_max"], "soir": soir, "pompes": g.get("pompes", 0), "tractions": g.get("tractions", 0),
+                                       "seance": m["seance_max"], "soir": soir, "km": km, "pompes": g.get("pompes", 0), "tractions": g.get("tractions", 0),
                                        "ok": ok, "double": double_ok(m), "hyper": exploit(m) is not None}, cumul)
         en_defi = voyage.arrivee is not None and voyage.arrivee < jour and not badges
         limite = jour - dt.timedelta(days=R["rend"] - 1)

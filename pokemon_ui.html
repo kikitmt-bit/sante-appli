@@ -2047,7 +2047,7 @@ const CHAMPIONS = {
       indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
       "Quelle montée ! Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
   2: {nom: "Ondine", sprite: "misty", arene: {image: "arene-azuria.webp", perso: "arene-azuria-ondine.webp", x: 395, y: 516, pw: 184, ph: 277, torches: [[56, 94], [878, 94]], feu: "255,240,190", taille: 22},
-      indice: "Dans mon arène, tout se passe dans l'eau ! Pas de rameur ? Alors montre-moi ce que valent tes bras !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
+      indice: "Dans mon arène, tout se passe dans l'eau ! Pas de rameur ? Alors montre-moi ton souffle, sur une longue distance !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
       "Hmpf… Tu as plus de souffle que je ne le pensais. Bien joué !"]},
   3: {nom: "Major Bob", sprite: "lt_surge", arene: {image: "arene-carmin.webp", largeur: 940, perso: "arene-carmin-major-bob.webp", x: 395, y: 518, pw: 151, ph: 252, torches: [[163, 78], [771, 78], [16, 560], [918, 560]], feu: "255,225,80", taille: 22},
       indice: "Hé, soldat ! Ici, il faut que ça chauffe sous le capot. Une bonne décharge, d'un seul coup !", lignes: ["Hé, petit ! Moi, c'est Major Bob, le Champion de Carmin-sur-Mer ! L'électricité, ça me connaît !",
@@ -4522,7 +4522,6 @@ const garderShiny = s => { if (s.essai) return; try { localStorage.setItem("pkm_
 // réparties entre ses Pokémon : tout se déduit des pompes déjà faites, rien à garder en plus, d'une série et d'un téléphone à l'autre. Le badge reste donné par le défi, comme avant.
 const DUELS = {
   Pierre: {equipe: [74, 95], vaincu: "vaincu", debut: "Ta tête est-elle aussi dure que mes rochers ?", fin: "Quelle tête dure ! Je m'incline."},
-  Ondine: {equipe: [120, 121], vaincu: "vaincue", debut: "Ici, on ne gagne pas sans se mouiller !", fin: "Hmpf… Tu as plus de bras que je ne pensais !"},
   Koga: {equipe: [109, 89, 110], vaincu: "vaincu", debut: "Un ninja ne se laisse jamais toucher !", fin: "Je ne t'ai pas vu venir…"},
   Giovanni: {equipe: [111, 31, 34, 112], vaincu: "vaincu", debut: "Voyons ce que tu as dans les bras.", fin: "Une telle force mérite le respect."},
   Aldo: {equipe: [107, 106, 68], vaincu: "vaincu", debut: "Montre-moi ce que valent tes muscles !", fin: "Ouah ! Tu t'entraînes aussi dur que moi !"},
