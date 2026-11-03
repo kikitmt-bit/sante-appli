@@ -4318,7 +4318,7 @@ const ENTR = {
 const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Soleil"], Feu: ["Griffe", "Flammèche", "Crocs Feu", "Lance-Flammes"], Eau: ["Charge", "Pistolet à O", "Morsure", "Hydrocanon"]};
 // Les décors du combat (images ChatGPT, scenes/PROMPT.md) : un au hasard à chaque série. Tant qu'il n'y en a pas : le décor du lieu, avec des ronds de sol dessinés.
 const DECORS_COMBAT = [];
-const VERSION_DETECTION = "squats v8";
+const VERSION_DETECTION = "squats v9";
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
 const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
@@ -4568,8 +4568,8 @@ function entrainement(type, {essai = false} = {}) {
       n++; nb.textContent = n; derniere = Date.now(); vibre(25); if (!M.capteur) parler(n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
       nb.classList.add("tape"); apres(() => nb.classList.remove("tape"), 110);
       C.classList.add("attaque"); apres(() => C.classList.remove("attaque"), 130);
-      if (!M.capteur) { E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on"); }
-      if (!M.capteur && n % 5 === 0) { S.classList.remove("secousse"); void S.offsetWidth; S.classList.add("secousse"); }
+      E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on");
+      if (n % 5 === 0) { S.classList.remove("secousse"); void S.offsetWidth; S.classList.add("secousse"); }
       ton(180 + Math.min(n, 30) * 10, 0, .08, {type: "square", vol: .12}); bruit(0, .09, {vol: .12, f: 900});
       const d = P.createElement("div"); d.className = "deg"; d.textContent = `-${1}`; S.appendChild(d); setTimeout(() => d.remove(), 650);
       if (sesAttaques && n % 3 === 1) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
