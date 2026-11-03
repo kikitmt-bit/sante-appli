@@ -701,8 +701,6 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     ici, passes = voyage.atteints()
     especes = {n for n, _ in possedees}
     plus_rien = [*ici, *passes] and not [n for n in reserves([*ici, *passes]) if n not in especes]
-    niv = niveau(cumul)
-    prochaine = next((s for s in R["evolutions"] if s > niv), None)
     return captures, {"pesees": {"semaine": semaine, "nb": len(pesees), "cible": R["pesees"],
                                  "avant": R["pesee_avant"], "derniere": derniere, "bonus": R["bonus_pesee"]},
                       "serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
@@ -717,8 +715,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
                       "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
-                      "starter": starter and {"ligne": LIGNES[starter], "niveau": niv, "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1),
-                                              "evolue_a": prochaine, "reste": round((prochaine - R["niveau_depart"]) * R["pts_niveau"] - cumul) if prochaine else None}}
+                      "starter": starter and {"ligne": LIGNES[starter], "niveau": niveau(cumul), "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1)}}
 
 
 def etat_mission(aujourd, stats, mission_du, gestes=None):

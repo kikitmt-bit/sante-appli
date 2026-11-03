@@ -377,11 +377,10 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
   background:linear-gradient(135deg,#2A3A63,#1C2740);font-family:Outfit,sans-serif;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.12)}
 .starter-carte .av{flex:0 0 58px;height:58px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.2),transparent 70%)}
 .starter-carte .av img{max-width:56px;max-height:56px;image-rendering:pixelated}
-.starter-carte .milieu{flex:1;min-width:0;display:block}.starter-carte .l1{display:flex;justify-content:space-between;align-items:baseline}
+.starter-carte .milieu{flex:1;min-width:0;display:block}.starter-carte .l1{display:flex;gap:8px;align-items:baseline}
 .starter-carte .l1 b{font-size:15px;font-weight:800}.starter-carte .l1 i{font-style:normal;font-weight:800;font-size:13px;color:#FFCB05}
 .starter-carte .barre-n{display:block;height:7px;border-radius:4px;background:#0D1322;overflow:hidden;margin:4px 0}.starter-carte .barre-n i{display:block;height:100%;background:linear-gradient(90deg,#4CD3A0,#FFE27A);border-radius:4px}
 .starter-carte small{display:block;font-size:11.5px;color:#9AA7C2}.starter-carte small b{color:#EEF2FA}
-.starter-carte .suite{flex:0 0 38px}.starter-carte .suite img{width:38px;height:38px;object-fit:contain;filter:brightness(0);opacity:.45;image-rendering:pixelated;display:block}
 .evo-attente{display:flex;align-items:center;gap:12px;width:100%;margin:0 0 10px;padding:10px 12px;border:0;border-radius:14px;cursor:pointer;text-align:left;color:#20391A;background:linear-gradient(135deg,#FFF3C4,#FFCB05);
   box-shadow:0 0 16px rgba(255,203,5,.55);animation:evo-pulse 1.3s ease-in-out infinite;font-family:Outfit,sans-serif}
 @keyframes evo-pulse{50%{box-shadow:0 0 26px rgba(255,255,255,.95)}}
@@ -3076,7 +3075,7 @@ function prochainsObjectifs() {
     liste.push(x.atteint ? {rang: r * 100, ic: ico("master"), t: "Sanctuaire", v: `encore ${r} jour${r > 1 ? "s" : ""} d'exploit`, va: "speciales"}
       : {rang: dist + 400, ic: ico("master"), t: "Un sanctuaire", v: `encore ${fr(route(dist))} pts de route`, va: "voyage"}); });
   if (J.serie >= R.master_jours / 2) { const r = R.master_jours - J.serie; liste.push({rang: r * 100, ic: ico("sball"), t: "Shiny Ball", v: `encore ${r} jour${r > 1 ? "s" : ""} d'objectif`, va: "speciales"}); }
-  // le champion est toujours là s'il existe (l'évolution a sa carte juste en dessous : pas de doublon) ; le reste complète, du plus proche au plus lointain
+  // le champion est toujours là s'il existe (l'évolution reste une surprise) ; le reste complète, du plus proche au plus lointain
   liste.sort((a, b) => a.rang - b.rang);
   return [...liste.filter(x => x.prio), ...liste.filter(x => !x.prio)].slice(0, 3).sort((a, b) => a.rang - b.rang);
 }
@@ -3089,15 +3088,25 @@ function dessinerProchains() {
     const c = document.getElementById(k); if (c) c.scrollIntoView({behavior: "smooth", block: "center"}); });
   rognerImages(el);
 }
+// Un niveau gagné se dit sur sa carte toute la journée où on le découvre ; l'évolution reste une surprise (Kiki, 03/11 : ni silhouette ni compte à rebours).
+function niveauDuJour(st) {
+  const cle = `pkm_niv_vu_${R.partie}`, jour = new Date().toDateString();
+  try {
+    const vu = JSON.parse(localStorage.getItem(cle) || "null");
+    if (vu && vu.niveau === st.niveau) return vu.jour === jour;
+    const monte = !!vu && st.niveau > vu.niveau;
+    localStorage.setItem(cle, JSON.stringify({niveau: st.niveau, jour: monte ? jour : ""}));
+    return monte;
+  } catch (e) { return false; }
+}
 function dessinerStarter() {
   const el = document.getElementById("starter"), st = G.starter, n = formeStarter();
   if (!st || !n) { el.innerHTML = ""; return; }
-  const suivant = st.ligne[st.ligne.indexOf(n) + 1], attend = aOuvrir().some(estEvo), plein = st.pts_niveau;
+  const attend = aOuvrir().some(estEvo), plein = st.pts_niveau;
   const pct = attend ? 100 : st.dans_niveau / plein * 100;
-  const objectif = attend ? "Il se passe quelque chose !" : suivant && st.evolue_a ? `encore <b>${fr(st.reste)} pts</b> pour évoluer` : `encore <b>${fr(plein - st.dans_niveau)} pts</b> pour le niveau ${st.niveau + 1}`;
+  const objectif = attend ? "Il se passe quelque chose !" : niveauDuJour(st) ? `<b>Monte au niveau ${st.niveau} !</b>` : `encore <b>${fr(plein - st.dans_niveau)} pts</b> pour le niveau ${st.niveau + 1}`;
   el.innerHTML = `<button class="starter-carte"><span class="av"><img src="${IMG.anim(n, false)}" ${repli(n, false)} alt=""></span>
-    <span class="milieu"><span class="l1"><b>${PAR_NUM[n].nom}</b><i>Niv. ${st.niveau}</i></span><span class="barre-n"><i style="width:${pct}%"></i></span><small>${objectif}</small></span>
-    ${suivant ? `<span class="suite"><img class="rogne" src="${IMG.mini(suivant, false)}" alt="?"></span>` : ""}</button>`;
+    <span class="milieu"><span class="l1"><b>${PAR_NUM[n].nom}</b><i>Niv. ${st.niveau}</i></span><span class="barre-n"><i style="width:${pct}%"></i></span><small>${objectif}</small></span></button>`;
   el.querySelector(".starter-carte").onclick = () => fiche(PAR_NUM[n]);
   rognerImages(el);
 }

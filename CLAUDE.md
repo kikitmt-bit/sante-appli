@@ -111,12 +111,12 @@ Servent au bilan : IMC (repère neutre, alerte seulement si perte de poids sous 
 les femmes), repères de masse grasse (Gallagher 2000), équilibre à 65 ans, tuile IMC. Ils ne changent pas les objectifs du jeu.
 **Le starter, vrai objectif (02/11, idée de Kiki)** : un niveau tous les 195 points d'effort (`pokemon.niveau`, part du niveau 1), évolue aux niveaux 16 et 36, sans autre condition
 (`evolutions`, 2 925 et 6 825 points : la 2e toujours avant la fin de la carte, à 7 000) ; ses évolutions ne sortent plus des balls (`reserves`), capture `#evo1/2`, ball `evo`, jamais montrée
-à la montre, scène `sceneEvolution`, carte `dessinerStarter` en haut de la barre (silhouette de la forme suivante), icône d'Aventure = sa forme du moment. Dans une autre région : icône = starter de cette région.
+à la montre, scène `sceneEvolution`, carte `dessinerStarter` en haut de la barre (niveau et points jusqu'au suivant, « Monte au niveau N ! » le jour où on le découvre, `niveauDuJour` ; **l'évolution reste une surprise** : ni silhouette ni compte à rebours, Kiki, 03/11), icône d'Aventure = sa forme du moment. Dans une autre région : icône = starter de cette région.
 **Shiny Ball d'anniversaire** (voulue par Kiki : 2e exception au « jamais de Pokémon offert », une par an, `pokemon.jours_anniversaire`) : l'appli voit
 que c'est le bon jour (profil du téléphone), la ball existe aussitôt, et le téléphone laisse `<jour>…#demande-anniv` dans la liste partagée
 (`ouvertes.json`, sans changer le script) pour que montre.py la fige. La date exacte n'est donc connue du dépôt que par ce jour-là.
 **Le coach Claude (crédits Claude) est retiré de l'écran pour l'instant** (Kiki, 02/11 : volet et bouton 📋 ; `coach()` reste prête, à remettre pour Kiki seul, `if not AMI`) ; il reste le bilan autonome, signé du professeur.
-**Tes prochains objectifs** (`prochainsObjectifs`, sous la carte) : les 3 buts les plus proches parmi ce qui existe déjà (champion, lieu, rang, sanctuaire, Shiny Ball), aucune règle en plus ; pas l'évolution, qui a sa carte juste en dessous (Kiki : pas de doublon). Poké Ball de la barre et Shiny Ball des objectifs **en pixels** comme la Super et l'Hyper Ball (`IC.sball` = la Poké Ball du jeu recolorée en or + étoile, dans le code).
+**Tes prochains objectifs** (`prochainsObjectifs`, sous la carte) : les 3 buts les plus proches parmi ce qui existe déjà (champion, lieu, rang, sanctuaire, Shiny Ball), aucune règle en plus ; jamais l'évolution (une surprise). Poké Ball de la barre et Shiny Ball des objectifs **en pixels** comme la Super et l'Hyper Ball (`IC.sball` = la Poké Ball du jeu recolorée en or + étoile, dans le code).
 **Récap du matin** (`sceneCentre`, `D.matin`) : première visite du jour, 3 bulles au plus de l'Infirmière Joëlle : la nuit, hier
 (`etat["hier"]`), puis le défi du champion ou `bilan.conseil_du_jour` ; la machine de soin seulement après une bonne nuit ;
 coupable dans Dresseur (`pkm_recap_non`).
