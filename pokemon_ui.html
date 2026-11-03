@@ -4316,8 +4316,11 @@ const ENTR = {
 };
 // Le combat se joue avec son starter (Kiki, 03/11 : il prend de l'importance, et l'écran change quand il évolue) ; ses attaques suivent son type
 const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Soleil"], Feu: ["Griffe", "Flammèche", "Crocs Feu", "Lance-Flammes"], Eau: ["Charge", "Pistolet à O", "Morsure", "Hydrocanon"]};
-// Les décors du combat (images ChatGPT, scenes/PROMPT.md) : un au hasard à chaque série. Tant qu'il n'y en a pas : le décor du lieu, avec des ronds de sol dessinés.
-const DECORS_COMBAT = [];
+// Les décors du combat, un par lieu (Kiki, 03/11 ; images ChatGPT, scenes/PROMPT.md). e et c = le milieu de chaque rond de sol, en % de l'image, mesuré sur l'image ; te et tc = largeur
+// des Pokémon, en % de l'image. Un lieu sans décor : l'image de capture du lieu, avec des ronds de sol dessinés.
+const DECORS_COMBAT = {
+  "Bourg Palette": {image: "combat-bourg-palette.webp", e: [72.7, 39.6], c: [28.5, 63.5], te: 18, tc: 24},
+};
 const VERSION_DETECTION = "squats v9";
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
@@ -4436,7 +4439,7 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
   return {arreter: () => PW.removeEventListener("devicemotion", lire), recus: () => recus, mesures, brut, evenements, debit, trou: () => Math.round(plusGrandTrou)};
 }
 
-function entrainement(type, {essai = false} = {}) {
+function entrainement(type, {essai = false, decorEssai = null} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR);
   const M = ENTR[type], mem = lireEntr(), moi = mem[type] || {}, g = gestesAuj(), mis = D.mission || {};
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
@@ -4552,10 +4555,10 @@ function entrainement(type, {essai = false} = {}) {
     let n = 0, derniere = 0, pv = cible, pvMax = cible, koDit = false, finie = false, iE = M.cibles.findIndex(s => cible <= s), attaque = 0;
     iE = iE < 0 ? M.cibles.length : iE;
     const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[acteur].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
-    const decor = DECORS_COMBAT.length ? DECORS_COMBAT[Math.floor(Math.random() * DECORS_COMBAT.length)] : null;
-    const image = decor || (FONDS[fond] || FONDS.prairie).image, ennemi = () => M.ennemis[Math.min(iE, M.ennemis.length - 1)];
+    const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null;
+    const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => M.ennemis[Math.min(iE, M.ennemis.length - 1)];
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
-          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne" src="${IMG.grand(ennemi())}" alt=""><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt=""></div>
+          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne" src="${IMG.grand(ennemi())}" alt="" ${decor ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" ${decor ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}></div>
         <div class="pv-e"><span class="nom-e">${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><div class="eclair"></div>
         <div class="sur">${M.nom}</div><div class="nb">0</div><div class="txt">${M.capteur ? "Prépare-toi…" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Touche l'écran avec le nez.`}</div>
         <button class="fin">Terminer</button></div>`;
@@ -4568,7 +4571,7 @@ function entrainement(type, {essai = false} = {}) {
       n++; nb.textContent = n; derniere = Date.now(); vibre(25); if (!M.capteur) parler(n);  // la voix bloque le téléphone un instant : pas pendant que les capteurs mesurent
       nb.classList.add("tape"); apres(() => nb.classList.remove("tape"), 110);
       C.classList.add("attaque"); apres(() => C.classList.remove("attaque"), 130);
-      E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on");
+      E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
       if (n % 5 === 0) { S.classList.remove("secousse"); void S.offsetWidth; S.classList.add("secousse"); }
       ton(180 + Math.min(n, 30) * 10, 0, .08, {type: "square", vol: .12}); bruit(0, .09, {vol: .12, f: 900});
       const d = P.createElement("div"); d.className = "deg"; d.textContent = `-${1}`; S.appendChild(d); setTimeout(() => d.remove(), 650);
@@ -4733,7 +4736,7 @@ function dessinerTests() {
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
     <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
-    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}</div>
+    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
@@ -4746,7 +4749,7 @@ function dessinerTests() {
   on(".t-arene", x => testScene(+x.dataset.n));
   on(".t-fond", x => apercuCapture(x.dataset.f));
   on(".t-centre", () => sceneCentre(true));
-  document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true}));
+  document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d}));
   on(".t-pantheon", () => scenePantheon());
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
   on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
