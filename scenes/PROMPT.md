@@ -131,3 +131,35 @@ Modèle commun : joindre la carte de la région (style + couleurs), une nouvelle
 Texte complet des 9 prompts : conversation du 29/10 (compte B) ; même structure que celui de Kanto :
 STYLE (carte jointe) / SCENE / CHARACTER (petit sprite chibi, 1/4 de la hauteur) + Pose / SUPPORT vide / COMPOSITION
 (bas 30 % libre) / STRICT RULES (pas de texte, pas de ball, pas de créature).
+
+## Décors du combat de l'entraînement (03/11) : `combat-<lieu>.webp`, à nommer dans `DECORS_COMBAT` de pokemon_ui.html
+
+Images **paysage 3:2** (1536 x 1024), deux ronds de sol vides toujours aux mêmes places : c'est ce qui pose chaque Pokémon au bon endroit, quel que soit le décor.
+Joindre une image de combat de Pokémon Rouge Feu / Vert Feuille si possible (style). Changer seulement `[PLACE]`. ChatGPT bloque après 2 ou 3 images par jour : pas de hâte.
+
+```
+16-bit pixel art like the battle backgrounds of Pokémon FireRed/LeafGreen on Game Boy Advance: same pixel size, same dark outlines, same soft shading, rich colors.
+
+Draw an empty Pokémon battle scene, seen from a slight top-down angle, in this place: [PLACE].
+
+Composition, very important, landscape format 3:2:
+- A flat oval patch of ground, clearly visible, centered at 72% of the width and 45% of the height (it is the far platform, about 28% of the image width).
+- A second, larger flat oval patch of ground, clearly visible, centered at 27% of the width and 68% of the height (the near platform, about 34% of the image width).
+- Both ovals are empty, flat, and lit evenly. Nothing stands on them or overlaps them.
+- The whole bottom 15% of the image is plain, simple ground. The top 20% is simple background.
+- Keep the decoration at the edges and in the background, so the two ovals stay very readable.
+
+Strict rules: no text, no letters, no numbers, no UI, no health bars, no dialogue box, no frame, no Pokémon, no creature, no person, no Poké Ball.
+```
+
+Les 10 lieux (`[PLACE]`) :
+1. `salle` : a modern gym with rowing machines, dumbbells and pull-up bars against the walls, wooden floor
+2. `foret` : a sunny forest clearing with tall trees and short grass
+3. `plage` : a tropical beach at sunset, sand, palm trees, calm sea in the background
+4. `montagne` : a rocky mountain path with cliffs and a wide blue sky
+5. `grotte` : a cave lit by glowing blue crystals, rocky floor
+6. `toit` : a city rooftop at dusk, skyscrapers and lit windows in the background
+7. `neige` : a snowy mountain plateau with pine trees, soft falling snow
+8. `pont` : a wooden bridge over a river, seen from the side, green hills around
+9. `dojo` : a traditional Japanese dojo with tatami mats, wooden walls and paper screens
+10. `stade` : a Pokémon League stadium at night, floodlights and empty stands in the background

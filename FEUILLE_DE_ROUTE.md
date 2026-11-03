@@ -69,6 +69,11 @@ Chaque nouveauté se construit en arrivant dans la région. Entre deux : thème 
 été Eau), week-ends spéciaux, objectifs qui suivent la forme de chacun. Après-jeu : retour à Kanto après Johto
 (champions plus durs, comme Or / Argent), Pokédex shiny.
 
+## Les combats de sport (idée validée par Kiki, 03/11)
+
+L'écran de combat de l'entraînement (ton starter contre un adversaire, chaque répétition = une attaque) lui plaît beaucoup : à reprendre pour les champions
+d'arène (Pierre : 30 pompes = son Onix à terre), la Ligue, peut-être les sanctuaires. À faire quand les détections seront réglées.
+
 ## Jouer avec les amis
 
 - **Comptes** : adresses Gmail dans `COMPTES` (connexion Google déjà en place), un joueur par adresse.

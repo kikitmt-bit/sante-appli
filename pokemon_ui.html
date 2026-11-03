@@ -4309,11 +4309,15 @@ const ENTR = {
     attaques: ["Poing-Karaté", "Balayage", "Frappe Atlas", "Sacrifice"],
     consigne: "Pose le téléphone <b>en paysage</b> au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
   squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
-    capteur: {premier: "bas", s1: .1, s2: .15, ecart: 1500}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
+    capteur: {premier: "bas", s1: .1, s2: .15, ecart: 1500, tauG: 2.5, tauV: 3, descente: .06}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte. Suis le rythme : 2 s pour descendre, 1 s pour remonter."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
 };
+// Le combat se joue avec son starter (Kiki, 03/11 : il prend de l'importance, et l'écran change quand il évolue) ; ses attaques suivent son type
+const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Soleil"], Feu: ["Griffe", "Flammèche", "Crocs Feu", "Lance-Flammes"], Eau: ["Charge", "Pistolet à O", "Morsure", "Hydrocanon"]};
+// Les décors du combat (images ChatGPT, scenes/PROMPT.md) : un au hasard à chaque série. Tant qu'il n'y en a pas : le décor du lieu, avec des ronds de sol dessinés.
+const DECORS_COMBAT = [];
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
 const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
@@ -4337,14 +4341,15 @@ const STYLE_ENTR = `
 .pkm-entr .poche b{font-size:128px;font-weight:400;line-height:.9}.pkm-entr .poche small{color:#C9D3EA}.pkm-entr .poche .msg{min-height:25px;font-size:20px;color:#F8C838}
 .pkm-entr .tenir{touch-action:none;padding:16px}.pkm-entr .tenir.appui{background:#F8C838}
 /* Le combat : un vrai écran de jeu, tout l'écran se touche (le nez n'a pas à viser) */
-.entr-scene{position:relative;flex:1;overflow:hidden;background-size:cover;background-position:center 60%;image-rendering:pixelated;touch-action:none}
+.entr-scene{position:relative;flex:1;overflow:hidden;background:#141C38;touch-action:none}
+.entr-scene .monde{position:absolute;left:50%;top:50%;width:100%;aspect-ratio:3/2;transform:translate(-50%,-50%);background-size:cover;background-position:center;image-rendering:pixelated}
 .entr-scene.secousse{animation:entr-secousse .22s}@keyframes entr-secousse{25%{transform:translate(-5px,3px)}50%{transform:translate(5px,-3px)}75%{transform:translate(-3px,-2px)}}
 .entr-scene .sol{position:absolute;border-radius:50%;background:rgba(0,0,0,.28)}
 .entr-scene .ennemi,.entr-scene .coach{position:absolute;image-rendering:pixelated;object-fit:contain;transition:opacity .45s,transform .12s}
-.entr-scene .ennemi{right:9%;top:13%;width:36vmin;height:36vmin}.entr-scene .sol.e{right:11%;top:calc(13% + 29vmin);width:32vmin;height:8vmin}
-.entr-scene .coach{left:7%;bottom:15%;width:44vmin;height:44vmin}.entr-scene .sol.c{left:9%;bottom:13%;width:40vmin;height:9vmin}
-.entr-scene .coach.attaque{transform:translate(9vmin,-4vmin) scale(1.06)}
-.entr-scene .ennemi.touche{filter:brightness(3) saturate(0);transform:translateX(3vmin)}.entr-scene .ennemi.ko{opacity:0;transform:translateY(9vmin)}.entr-scene .ennemi.entre{opacity:0;transform:translateX(16vmin)}
+.entr-scene .ennemi{left:72%;top:45%;width:21%;transform:translate(-50%,-100%)}.entr-scene .sol.e{left:72%;top:45%;width:28%;height:7%;transform:translate(-50%,-50%)}
+.entr-scene .coach{left:27%;top:68%;width:27%;transform:translate(-50%,-100%)}.entr-scene .sol.c{left:27%;top:68%;width:34%;height:8%;transform:translate(-50%,-50%)}
+.entr-scene .coach.attaque{transform:translate(-50%,-100%) translate(22%,-8%) scale(1.06)}
+.entr-scene .ennemi.touche{filter:brightness(3) saturate(0);transform:translate(-50%,-100%) translateX(10%)}.entr-scene .ennemi.ko{opacity:0;transform:translate(-50%,-100%) translateY(30%)}.entr-scene .ennemi.entre{opacity:0;transform:translate(-50%,-100%) translateX(50%)}
 .entr-scene .pv-e{position:absolute;left:3%;top:4%;width:min(46%,290px);background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:5px 9px;font-size:18px;color:#383828}
 .entr-scene .barre{height:12px;background:#484838;border:2px solid #484838;border-radius:7px;overflow:hidden;margin-top:2px}.entr-scene .barre i{display:block;height:100%;width:100%;background:#48C868;transition:width .2s}.entr-scene .barre i.moyen{background:#F8C838}.entr-scene .barre i.bas{background:#D83830}
 .entr-scene .nb{position:absolute;right:4%;bottom:21%;font-size:min(30vmin,190px);line-height:.85;color:#fff;text-shadow:5px 5px 0 #141C38,-2px -2px 0 #141C38,2px -2px 0 #141C38,-2px 2px 0 #141C38;transition:transform .1s}.entr-scene .nb.tape{transform:scale(1.22)}
@@ -4354,23 +4359,25 @@ const STYLE_ENTR = `
 .entr-scene .txt{position:absolute;left:2%;right:2%;bottom:2%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 11px;min-height:1.3em;font-size:21px;color:#383828;line-height:1.1}
 .entr-scene .txt.rythmee{color:#C03028}
 .entr-scene .fin{position:absolute;right:2%;top:3%;width:auto;padding:6px 12px;font-size:16px;background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:9px 4px;z-index:3}
-@media (orientation:landscape){.entr-scene .ennemi{top:7%;width:46vmin;height:46vmin}.entr-scene .sol.e{top:calc(7% + 38vmin);width:42vmin}.entr-scene .coach{width:58vmin;height:58vmin;bottom:13%}.entr-scene .sol.c{width:52vmin}.entr-scene .nb{right:36%;bottom:16%}.entr-scene .sur{right:36%}.entr-scene .pv-e{width:min(36%,300px)}}`;
+@media (orientation:landscape){.entr-scene .nb{right:38%;bottom:17%}.entr-scene .sur{right:38%}.entr-scene .pv-e{width:min(36%,300px)}}`;
 
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
 // vite. Elle voit les mouvements lents (un squat en 2 s secoue très peu le téléphone) et ignore les petites secousses de la marche. Une répétition = une vitesse
 // dans un sens puis dans l'autre (squat : descendre puis remonter ; traction : monter puis redescendre). Les mesures sont gardées pour régler les seuils.
-function capteurMouvement(reglage, facteur, surRep, surImpact) {
-  const haut = reglage.premier === "haut", s1 = reglage.s1 * facteur, s2 = reglage.s2 * facteur;
-  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0;
+function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
+  const haut = reglage.premier === "haut", s1 = reglage.s1 * facteur, s2 = reglage.s2 * facteur, tauG = reglage.tauG || .8, tauV = reglage.tauV || 1.2;
+  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0;
   const mesures = [];
   const lire = e => {
     const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
     recus++;
     const t = e.timeStamp || performance.now(), dt = avant === null ? 0 : Math.min((t - avant) / 1000, .1); avant = t;
     if (!g) g = {x: a.x, y: a.y, z: a.z};
-    const k = Math.min(dt / .8, 1); g.x += (a.x - g.x) * k; g.y += (a.y - g.y) * k; g.z += (a.z - g.z) * k;
+    const k = Math.min(dt / tauG, 1); g.x += (a.x - g.x) * k; g.y += (a.y - g.y) * k; g.z += (a.z - g.z) * k;
     const n = Math.hypot(g.x, g.y, g.z) || 1, lin = ((a.x - g.x) * g.x + (a.y - g.y) * g.y + (a.z - g.z) * g.z) / n;
-    vit = (vit + lin * dt) * Math.exp(-dt / 1.2);
+    vit = (vit + lin * dt) * Math.exp(-dt / tauV);
+    // la distance descendue, estimée : un mouvement de 1 cm n'est pas un squat (test : 15 cm réels donnent au moins 6,5 ; 5 cm jamais plus de 3,5)
+    if (vit < -.03) creux += -vit * dt; else if (vit > .02 && creux) { descendu = creux; creux = 0; }
     choc += (Math.abs(Math.hypot(a.x, a.y, a.z) - n) - choc) * .25;
     if (t >= prochain && mesures.length < 4000) { prochain = t + 50; mesures.push(`${Math.round(t)},${lin.toFixed(2)},${vit.toFixed(2)},${choc.toFixed(1)}`); }
     if (reglage.impact && choc > reglage.impact) return surImpact && surImpact(t);  // on a lâché la barre, on marche : fini
@@ -4378,7 +4385,11 @@ function capteurMouvement(reglage, facteur, surRep, surImpact) {
     if (d1) { phase = 1; debutPhase = t; }
     else if (phase === 1) {
       if (t - debutPhase > 4000) phase = 0;
-      else if (d2) { phase = 0; if (t - derniere >= reglage.ecart) { const ecart = t - derniere; derniere = t; surRep(ecart, t); mesures.push(`${Math.round(t)},REP`); } }
+      else if (d2) {
+        phase = 0;
+        if (reglage.descente && descendu < reglage.descente * facteur) { mesures.push(`${Math.round(t)},PEU,${descendu.toFixed(3)}`); if (surPeu) surPeu(); }
+        else if (t - derniere >= reglage.ecart) { const ecart = t - derniere; derniere = t; surRep(ecart, t); mesures.push(`${Math.round(t)},REP,${descendu.toFixed(3)}`); }
+      }
     }
   };
   PW.addEventListener("devicemotion", lire);
@@ -4392,6 +4403,7 @@ function entrainement(type, {essai = false} = {}) {
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
   let cible = resteMission || (moi.derniere ? moi.derniere + 1 : M.defaut), sens = moi.sens || "normale", mesures = [];
+  const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
   let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
   const apres = (f, ms) => { const t = setTimeout(f, ms); minuteurs.push(t); return t; };
@@ -4436,7 +4448,7 @@ function entrainement(type, {essai = false} = {}) {
     v.classList.remove("plein");
     const dit = resteMission ? `Pour ta mission du jour, il reste ${resteMission} ${M.un}${resteMission > 1 ? "s" : ""}${mis.geste === "series" ? " dans cette série" : ""}.`
       : moi.derniere ? `Dernière série : ${moi.derniere}. Vise un peu plus !` : "Première série : à toi de régler.";
-    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3></div><p>${M.consigne}</p></div>
+    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><h3>${M.nom}</h3></div><p>${M.consigne}</p></div>
       <div class="boite"><small>Ton objectif pour cette série</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
         <small>${dit}${moi.record ? ` Ton record : ${moi.record}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
@@ -4497,14 +4509,16 @@ function entrainement(type, {essai = false} = {}) {
     nettoyer(); v.classList.add("plein");
     let n = 0, derniere = 0, pv = cible, pvMax = cible, koDit = false, finie = false, iE = M.cibles.findIndex(s => cible <= s), attaque = 0;
     iE = iE < 0 ? M.cibles.length : iE;
-    const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[M.coach].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
-    const image = (FONDS[fond] || FONDS.prairie).image, ennemi = () => M.ennemis[Math.min(iE, M.ennemis.length - 1)];
-    v.innerHTML = `<div class="entr-scene" style="background-image:url('${D.scenes}${image}')">
-        <div class="sol e"></div><img class="ennemi" src="${IMG.grand(ennemi())}" alt=""><div class="sol c"></div><img class="coach" src="${D.images}/pokemon/back/${M.coach}.png" alt="">
+    const rec = moi.record || 0, debutSerie = Date.now(), nomC = PAR_NUM[acteur].nom, fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie";
+    const decor = DECORS_COMBAT.length ? DECORS_COMBAT[Math.floor(Math.random() * DECORS_COMBAT.length)] : null;
+    const image = decor || (FONDS[fond] || FONDS.prairie).image, ennemi = () => M.ennemis[Math.min(iE, M.ennemis.length - 1)];
+    v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
+          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne" src="${IMG.grand(ennemi())}" alt=""><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt=""></div>
         <div class="pv-e"><span class="nom-e">${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><div class="eclair"></div>
         <div class="sur">${M.nom}</div><div class="nb">0</div><div class="txt">${M.capteur ? "Prépare-toi…" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Touche l'écran avec le nez.`}</div>
         <button class="fin">Terminer</button></div>`;
     const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair");
+    rognerImages(S);
     let parole = 0;
     const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.classList.remove("rythmee"); txt.textContent = t; };
     const peindre = () => { const p = Math.max(pv / pvMax * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : ""; };
@@ -4517,7 +4531,7 @@ function entrainement(type, {essai = false} = {}) {
       if (n % 5 === 0) { S.classList.remove("secousse"); void S.offsetWidth; S.classList.add("secousse"); }
       ton(180 + Math.min(n, 30) * 10, 0, .08, {type: "square", vol: .12}); bruit(0, .09, {vol: .12, f: 900});
       const d = P.createElement("div"); d.className = "deg"; d.textContent = `-${1}`; S.appendChild(d); setTimeout(() => d.remove(), 650);
-      if (M.attaques && n % 3 === 1) dire(`${nomC} utilise ${M.attaques[attaque++ % M.attaques.length]} !`);
+      if (sesAttaques && n % 3 === 1) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
       pv--; peindre();
       if (rec && n === rec + 1) { dire("Coup critique ! Nouveau record !", 2200); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }
       if (pv <= 0) {
@@ -4527,7 +4541,7 @@ function entrainement(type, {essai = false} = {}) {
         if (!koDit) { koDit = true; apres(() => parler("Objectif atteint !"), 500); }
         dire(`${parti} est K.O. ! ${n === cible ? "Objectif atteint !" : ""}`, 1500);
         iE++; pvMax = pv = 5;  // le suivant : de quoi aller chercher quelques répétitions de plus
-        apres(() => { E.src = IMG.grand(ennemi()); S.querySelector(".nom-e").textContent = PAR_NUM[ennemi()].nom; E.classList.remove("ko"); E.classList.add("entre"); peindre();
+        apres(() => { rogne(IMG.grand(ennemi())).then(([src]) => { E.src = src; }); S.querySelector(".nom-e").textContent = PAR_NUM[ennemi()].nom; E.classList.remove("ko"); E.classList.add("entre"); peindre();
           requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre"))); dire(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Encore ${pv} ?`, 1800); }, 800);
       }
     };
@@ -4536,7 +4550,9 @@ function entrainement(type, {essai = false} = {}) {
     S.querySelector(".fin").onpointerdown = e => e.stopPropagation();
     peindre();
     if (M.capteur) {
-      const c = capteurMouvement(M.capteur, SENSIBILITES[sens], ecart => { rep(); if (ecart < 1500 && n > 1) dire("Plus lentement : contrôle la descente."); });
+      let plusBas = 0;
+      const c = capteurMouvement(M.capteur, SENSIBILITES[sens], ecart => { rep(); if (ecart < 1500 && n > 1) dire("Plus lentement : contrôle la descente."); }, null,
+        () => { if (Date.now() - plusBas < 1500) return; plusBas = Date.now(); dire("Pas assez bas : descends cuisses à l'horizontale !", 1400); ton(220, 0, .18, {type: "square", vol: .08}); });
       arret = c.arreter; mesures = c.mesures;
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
       // Le rythme : 2 s pour descendre, 1 s pour remonter
@@ -4551,7 +4567,7 @@ function entrainement(type, {essai = false} = {}) {
   function bilan(n, duree) {
     v.classList.remove("plein");
     const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.kiki && mesures.length;
-    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(M.coach)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
+    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
         <small>${M.nom} comptées (corrige si le téléphone s'est trompé)</small><div class="regle"><button class="moins">−</button><b>${n}</b><button class="plus">+</button></div>
         <small class="veille">${veille}</small></div>
       <button class="go suite">Série suivante (repos ${REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
