@@ -543,7 +543,6 @@ details.regles{color:#484838 !important}
 .nouvelle{display:flex;align-items:center;gap:8px;padding:3px 2px;border-top:2px dashed #D8D4B8;color:#383828;font-size:16px;line-height:1.1}
 .nouvelle img{flex:0 0 34px;width:34px;height:34px;object-fit:contain;image-rendering:pixelated}.nouvelle img.sh{filter:drop-shadow(0 0 2px #F8C838)}
 .nouvelle span{flex:1;min-width:0}.nouvelle small{display:block;font-size:14px;color:#686850}
-.amis-note{margin-top:8px;font-size:14px;color:#686850;line-height:1.15}
 #mon-dresseur{border-radius:12px 5px 12px 5px;border:3px solid #484838;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .onglets{background:#141C38;border-radius:10px}.onglets button{color:#C9D3EA}.onglets button.on{background:#F8F8E8;color:#383828}
 </style>
@@ -3812,6 +3811,7 @@ function texteNouvelle(n, j) {
   if (n.quoi === "badge") return n.n === 9 ? `${j.nom} a vaincu la Ligue Pokémon !` : `${j.nom} a battu ${CHAMPIONS[n.n].nom} !`;
   if (n.quoi === "lieu") return `${j.nom} a atteint ${n.lieu}`;
   if (n.quoi === "evo") return `Le starter de ${j.nom} évolue en ${nom} !`;
+  if (n.quoi === "starter") return `${j.nom} a obtenu ${nom}${n.shiny ? " shiny" : ""} auprès du Professeur Chen !`;
   return `${j.nom} a attrapé ${nom}` + {legendaire: ", un légendaire !", shiny: " shiny !", rare: ", un rare !"}[n.quoi];
 }
 function imageNouvelle(n) {
@@ -3869,8 +3869,7 @@ function dessinerAmis() {
   const fil = nouvellesAmis(autres).slice(0, 10);
   const blocFil = fil.length ? `<div class="nouvelles"><div class="titre" style="font-size:16px">Les nouvelles</div>${fil.map(([n, j]) =>
     `<div class="nouvelle">${imageNouvelle(n)}<span>${texteNouvelle(n, j)}<small>${n.quand}</small></span></div>`).join("")}</div>` : "";
-  el.innerHTML = titre + lignes + blocFil + `<div class="amis-note">Les autres voient ton pseudo, ton dresseur sur la carte, ton lieu, tes badges, ton Pokédex et tes belles captures.
-    Jamais tes pas, ton sommeil, ton cœur ni ton poids.</div>`;
+  el.innerHTML = titre + lignes + blocFil;
   el.querySelectorAll(".joueur").forEach((r, i) => {
     const j = tous.find(x => x.id === r.dataset.id);
     apercuDresseur(r.querySelector("canvas"), {...DRESSEUR, ...j.couleurs}, false, CADRE_DRESSEUR);
@@ -4403,8 +4402,8 @@ const STYLE_ENTR = `
 .entr-scene.boule .anneau{position:absolute;left:50%;top:50%;width:92vmin;height:92vmin;transform:translate(-50%,-50%) rotate(-90deg);pointer-events:none}
 .entr-scene.boule .anneau circle{fill:none;stroke-width:5}.entr-scene.boule .anneau .fond{stroke:rgba(20,28,56,.75)}.entr-scene.boule .anneau .pv{stroke:#48C868;transition:stroke-dashoffset .2s}
 .entr-scene.boule .anneau .pv.moyen{stroke:#F8C838}.entr-scene.boule .anneau .pv.bas{stroke:#D83830}.entr-scene.boule.chromatique .anneau .pv{stroke:#F8C838}
-.entr-scene.boule .coach{left:2%;top:auto;bottom:3%;width:24vmin;height:24vmin;transform:none;z-index:2}.entr-scene.boule .coach.attaque{transform:translateY(-18%) scale(1.12)}
-.entr-scene.boule .champ{position:absolute;left:13%;bottom:13vmin;width:20%;height:68vmin;object-fit:contain;object-position:50% 100%;image-rendering:pixelated;z-index:1;filter:drop-shadow(0 0 5px rgba(10,15,35,.7))}
+.entr-scene.boule .coach{left:3%;top:50%;bottom:auto;width:min(30vmin,18vw);height:min(30vmin,18vw);transform:translateY(-50%);z-index:2}.entr-scene.boule .coach.attaque{transform:translateY(-50%) translateX(18%) scale(1.12)}.entr-scene.boule.duel .coach{display:none}
+.entr-scene.boule .champ{position:absolute;left:0;top:50%;height:min(66vmin,30vw);width:auto;transform:translateY(-50%);image-rendering:pixelated;z-index:2}
 .entr-scene.boule .panneau{position:absolute;inset:0;padding:0;pointer-events:none;display:block}
 .entr-scene.boule .pv-e,.entr-scene.boule .moi,.entr-scene.boule .cpt small{display:none}
 .entr-scene.boule .cpt{position:absolute;right:3%;top:50%;transform:translateY(-50%);width:auto}.entr-scene.boule .nb{font-size:46vmin;text-shadow:5px 5px 0 #141C38,-2px -2px 0 #141C38}
@@ -4416,7 +4415,7 @@ const STYLE_ENTR = `
 .entr-scene.boule .etourdi{position:absolute;left:50%;top:50%;width:0;height:0;display:none;animation:entr-tourne 1s linear infinite;z-index:1}.entr-scene.boule.sonne .etourdi{display:block}
 .entr-scene.boule .etourdi i{position:absolute;font-style:normal;font-size:7vmin;color:#F8C838;text-shadow:1px 1px 0 #141C38}
 @keyframes entr-tourne{to{transform:rotate(360deg)}}
-@media (orientation:portrait){.entr-scene.boule .champ{left:4%;top:9%;bottom:auto;width:40%;height:24vh;object-position:0 0}.entr-scene.boule .cpt{top:10%;right:5%;transform:none}.entr-scene.boule .nb{font-size:30vmin}}
+@media (orientation:portrait){.entr-scene.boule .champ,.entr-scene.boule .coach{top:9%;transform:none}.entr-scene.boule .coach.attaque{transform:translateX(18%) scale(1.12)}.entr-scene.boule .champ{height:40vmin}.entr-scene.boule .coach{width:30vmin;height:30vmin}.entr-scene.boule .cpt{top:10%;right:5%;transform:none}.entr-scene.boule .nb{font-size:30vmin}}
 @media (orientation:landscape){.entr-scene.boule .txt{white-space:nowrap}.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
 
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
@@ -4524,8 +4523,8 @@ const DUELS = {
   Pierre: {equipe: [74, 95], vaincu: "vaincu", debut: "Ta tête est-elle aussi dure que mes rochers ?", fin: "Quelle tête dure ! Je m'incline."},
   Koga: {equipe: [109, 89, 110], vaincu: "vaincu", debut: "Un ninja ne se laisse jamais toucher !", fin: "Je ne t'ai pas vu venir…"},
   Giovanni: {equipe: [111, 31, 34, 112], vaincu: "vaincu", debut: "Voyons ce que tu as dans les bras.", fin: "Une telle force mérite le respect."},
-  Aldo: {equipe: [107, 106, 68], vaincu: "vaincu", debut: "Montre-moi ce que valent tes muscles !", fin: "Ouah ! Tu t'entraînes aussi dur que moi !"},
-  Agatha: {equipe: [93, 42, 94], vaincu: "vaincue", debut: "Hé hé… Approche, gamin.", fin: "Hmpf ! Tu as la tête dure, gamin."},
+  Aldo: {sprite: "bruno", equipe: [107, 106, 68], vaincu: "vaincu", debut: "Montre-moi ce que valent tes muscles !", fin: "Ouah ! Tu t'entraînes aussi dur que moi !"},
+  Agatha: {sprite: "agatha", equipe: [93, 42, 94], vaincu: "vaincue", debut: "Hé hé… Approche, gamin.", fin: "Hmpf ! Tu as la tête dure, gamin."},
 };
 function duelEnCours(essaiQui) {
   let a, ep;
@@ -4539,7 +4538,7 @@ function duelEnCours(essaiQui) {
   const restent = ep.filter(e => !e.fait && e.voies.some(o => o.defi === "pompes")); if (!restent.length) return null;
   const numero = a.image || 9, voie = restent[0].voies.find(o => o.defi === "pompes"), total = voie.cible, deja = Math.floor(voie.v);
   const equipe = restent.flatMap(e => { const qui = e.qui || a.champion, ch = e.qui ? CONSEIL.find(x => x.nom === e.qui) : CHAMPIONS[numero];  // la Ligue n'a pas de salle vide : on regarde le haut de la salle
-    return DUELS[qui].equipe.map(num => ({num, qui, ch, image: numero <= 8 ? FONDS[`arene${numero}`].image : ch.arene.image, haut: numero > 8})); });
+    return DUELS[qui].equipe.map(num => ({num, qui, ch, sprite: DUELS[qui].sprite || ch.sprite, image: numero <= 8 ? FONDS[`arene${numero}`].image : ch.arene.image, haut: numero > 8})); });
   const seuils = equipe.map((_, i) => Math.round(total * (i + 1) / equipe.length)), rang = seuils.findIndex(s => s > deja);
   return {equipe, seuils, total, deja, rang, pv: seuils[rang] - deja, pvMax: seuils[rang] - (seuils[rang - 1] || 0)};
 }
@@ -4669,13 +4668,14 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null, boule = type === "pompes";
     const image = duel ? duel.equipe[rangD].image : decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => adv;
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')${duel ? `;background-position:50% ${duel.equipe[rangD].haut ? 0 : 45}%` : ""}">
-          ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}>${duel ? `<img class="champ" src="${D.scenes}${duel.equipe[rangD].ch.arene.perso}" alt="">` : ""}<div class="eclair"></div>
+          ${decor || boule ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne ${sh ? "scintille" : ""}" src="${IMG.grand(ennemi(), !!sh)}" alt="" ${decor && !boule ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}>${boule ? `<svg class="anneau" viewBox="0 0 100 100"><circle class="fond" cx="50" cy="50" r="46"/><circle class="pv" cx="50" cy="50" r="46" pathLength="100" stroke-dasharray="100"/></svg><div class="etourdi"><i style="left:-30vmin;top:-30vmin">★</i><i style="left:25vmin;top:-25vmin">★</i><i style="left:-5vmin;top:27vmin">★</i></div>` : ""}<img class="coach rogne" src="${boule ? IMG.grand(acteur) : `${D.images}/pokemon/back/${acteur}.png`}" alt="" ${decor && !boule ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}>${duel ? `<canvas class="champ"></canvas>` : ""}<div class="eclair"></div>
           <div class="txt">${sh || duel ? "" : sansVeuve(`Un ${PAR_NUM[ennemi()].nom} sauvage apparaît !`)}</div></div>
         <div class="panneau"><div class="pv-e ${sh ? "brille" : ""}"><span class="nom-e">${sh ? "✨ " : ""}${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button>
           <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
           <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
     const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair"), anneau = S.querySelector(".anneau .pv");
-    S.classList.toggle("boule", boule); S.classList.toggle("chromatique", !!sh);
+    S.classList.toggle("boule", boule); S.classList.toggle("chromatique", !!sh); S.classList.toggle("duel", !!duel);
+    if (duel) championAnime(S.querySelector(".champ"), duel.equipe[rangD].sprite, true);
     rognerImages(S);
     let parole = 0;
     const dire = (t, ms = 1600) => { parole = Date.now() + ms; txt.textContent = sansVeuve(t);
@@ -4703,7 +4703,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       }
       adv = suivant.num; pvMax = pv = duel.seuils[rangD] - duel.seuils[rangD - 1];
       apres(() => { rogne(IMG.grand(adv)).then(([src]) => { E.src = src; });
-        if (suivant.ch !== q.ch) { S.querySelector(".champ").src = `${D.scenes}${suivant.ch.arene.perso}`; S.querySelector(".monde").style.backgroundImage = `url('${D.scenes}${suivant.image}')`; }
+        if (suivant.ch !== q.ch) { const neuf = P.createElement("canvas"); neuf.className = "champ"; S.querySelector(".champ").replaceWith(neuf); championAnime(neuf, suivant.sprite, true); S.querySelector(".monde").style.backgroundImage = `url('${D.scenes}${suivant.image}')`; }
         E.classList.remove("ko"); E.classList.add("entre"); peindre(); requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre")));
         dire(`${suivant.qui} envoie ${PAR_NUM[adv].nom} !`, 1800); crierAdv(); }, 800);
     };
@@ -4755,7 +4755,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       bFin.onpointerdown = e => { e.stopPropagation(); bFin.classList.add("appui"); tenu = setTimeout(fin, 700); };
       bFin.onpointerup = bFin.onpointercancel = e => { e.stopPropagation(); bFin.classList.remove("appui"); clearTimeout(tenu); }; }
     peindre();
-    minuteurs.push(setInterval(() => { if (Date.now() > parole && Date.now() - Math.max(derniere, debutSerie) > 5000) txt.textContent = sansVeuve(`Que doit faire ${nomC} ?`); }, 1000));
+    minuteurs.push(setInterval(() => { if (Date.now() > parole && Date.now() - Math.max(derniere, debutSerie) > 5000) txt.textContent = sansVeuve(duel && duel.equipe[rangD] ? `${duel.equipe[rangD].qui} t'attend !` : `Que doit faire ${nomC} ?`); }, 1000));
     if (M.capteur) (async () => {
       const fondImg = new PW.Image(); fondImg.src = `${D.scenes}${image}`;
       await Promise.race([fondImg.decode().catch(() => {}), new Promise(r => setTimeout(r, 2500))]);

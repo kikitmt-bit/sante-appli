@@ -47,12 +47,12 @@ def _quand(jour, aujourd):
 
 def nouvelles(vues, v, frise, aujourd):
     """Ce qui mérite d'être raconté aux autres (14 derniers jours, 12 au plus, le plus récent d'abord) : badges, légendaires,
-    shiny, évolution du starter, nouveau rare, lieux atteints. Pas les captures ordinaires : elles noieraient le reste."""
+    shiny, starter reçu du Professeur et son évolution, nouveau rare, lieux atteints. Pas les captures ordinaires : elles noieraient le reste."""
     out, vus = [], set()
     for c in sorted(vues, key=lambda c: c["jour"]):
         num, nouveau = c["num"], c["num"] not in vus
         vus.add(num)
-        quoi = ("evo" if "#evo" in c["id"] else "legendaire" if nouveau and num in LEGENDAIRES else "shiny" if c.get("shiny")
+        quoi = ("evo" if "#evo" in c["id"] else "starter" if c["id"].endswith("#chen") else "legendaire" if nouveau and num in LEGENDAIRES else "shiny" if c.get("shiny")
                 else "rare" if nouveau and num in kanto.RARES else None)
         if quoi:
             out.append({"quoi": quoi, "jour": c["jour"], "num": num, "shiny": bool(c.get("shiny"))})
@@ -60,7 +60,7 @@ def nouvelles(vues, v, frise, aujourd):
     for f in frise:
         out += [{"quoi": "lieu", "jour": f["jour"], "lieu": l["nom"]} for l in v["lieux"]
                 if f["p0"] < l["dist"] <= f["p1"] and "(retour)" not in l["nom"]]
-    limite, ordre = str(aujourd - dt.timedelta(days=14)), ["badge", "legendaire", "shiny", "evo", "rare", "lieu"]
+    limite, ordre = str(aujourd - dt.timedelta(days=14)), ["badge", "legendaire", "shiny", "evo", "starter", "rare", "lieu"]
     out = [n for n in out if n["jour"] >= limite]
     out.sort(key=lambda n: ordre.index(n["quoi"]))
     out.sort(key=lambda n: n["jour"], reverse=True)
