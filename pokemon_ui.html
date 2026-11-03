@@ -4319,9 +4319,9 @@ const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Sole
 // Les décors du combat, un par lieu (Kiki, 03/11 ; images ChatGPT, scenes/PROMPT.md). e et c = le milieu de chaque rond de sol, en % de l'image, mesuré sur l'image ; te et tc = largeur
 // des Pokémon, en % de l'image. Un lieu sans décor : l'image de capture du lieu, avec des ronds de sol dessinés.
 const DECORS_COMBAT = {
-  "Bourg Palette": {image: "combat-bourg-palette.webp", e: [72.7, 39.6], c: [28.5, 63.5], te: 18, tc: 24},
+  "Bourg Palette": {image: "combat-bourg-palette.webp", e: [72.7, 39.6], c: [28.5, 63.5], te: 22, tc: 30},
 };
-const VERSION_DETECTION = "squats v9";
+const VERSION_DETECTION = "squats v10";
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
 const garderEntr = x => { try { localStorage.setItem("pkm_entr", JSON.stringify(x)); } catch (e) {} };
@@ -4345,8 +4345,9 @@ const STYLE_ENTR = `
 .pkm-entr .poche b{font-size:128px;font-weight:400;line-height:.9}.pkm-entr .poche small{color:#C9D3EA}.pkm-entr .poche .msg{min-height:25px;font-size:20px;color:#F8C838}
 .pkm-entr .tenir{touch-action:none;padding:16px}.pkm-entr .tenir.appui{background:#F8C838}
 /* Le combat : un vrai écran de jeu, tout l'écran se touche (le nez n'a pas à viser) */
-.entr-scene{position:relative;flex:1;overflow:hidden;background:#141C38;touch-action:none}
-.entr-scene .monde{position:absolute;left:50%;top:50%;width:100%;aspect-ratio:3/2;transform:translate(-50%,-50%);background-size:cover;background-position:center;image-rendering:pixelated}
+.entr-scene{position:relative;flex:1;min-height:0;overflow:hidden;background:#22315A;touch-action:none;display:flex;flex-direction:column}
+.entr-scene .monde{position:relative;flex:none;width:100%;aspect-ratio:3/2;overflow:hidden;background-size:cover;background-position:center;image-rendering:pixelated}
+.entr-scene .panneau{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;gap:6px;padding:8px 10px;box-sizing:border-box}
 .entr-scene.secousse{animation:entr-secousse .22s}@keyframes entr-secousse{25%{transform:translate(-5px,3px)}50%{transform:translate(5px,-3px)}75%{transform:translate(-3px,-2px)}}
 .entr-scene .sol{position:absolute;border-radius:50%;background:rgba(0,0,0,.28)}
 .entr-scene .ennemi,.entr-scene .coach{position:absolute;image-rendering:pixelated;object-fit:contain;transition:opacity .45s,transform .12s}
@@ -4354,16 +4355,17 @@ const STYLE_ENTR = `
 .entr-scene .coach{left:27%;top:68%;width:27%;transform:translate(-50%,-100%)}.entr-scene .sol.c{left:27%;top:68%;width:34%;height:8%;transform:translate(-50%,-50%)}
 .entr-scene .coach.attaque{transform:translate(-50%,-100%) translate(22%,-8%) scale(1.06)}
 .entr-scene .ennemi.touche{filter:brightness(3) saturate(0);transform:translate(-50%,-100%) translateX(10%)}.entr-scene .ennemi.ko{opacity:0;transform:translate(-50%,-100%) translateY(30%)}.entr-scene .ennemi.entre{opacity:0;transform:translate(-50%,-100%) translateX(50%)}
-.entr-scene .pv-e{position:absolute;left:3%;top:4%;width:min(46%,290px);background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:5px 9px;font-size:18px;color:#383828}
+.entr-scene .pv-e{background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:5px 9px;font-size:18px;color:#383828}
 .entr-scene .barre{height:12px;background:#484838;border:2px solid #484838;border-radius:7px;overflow:hidden;margin-top:2px}.entr-scene .barre i{display:block;height:100%;width:100%;background:#48C868;transition:width .2s}.entr-scene .barre i.moyen{background:#F8C838}.entr-scene .barre i.bas{background:#D83830}
-.entr-scene .nb{position:absolute;right:4%;bottom:21%;font-size:min(30vmin,190px);line-height:.85;color:#fff;text-shadow:5px 5px 0 #141C38,-2px -2px 0 #141C38,2px -2px 0 #141C38,-2px 2px 0 #141C38;transition:transform .1s}.entr-scene .nb.tape{transform:scale(1.22)}
-.entr-scene .sur{position:absolute;right:5%;bottom:calc(21% + min(30vmin,190px));color:#fff;font-size:20px;text-shadow:1px 1px 0 #141C38}
-.entr-scene .deg{position:absolute;right:21%;top:12%;font-size:42px;color:#D83830;text-shadow:2px 2px 0 #fff;animation:entr-deg .6s forwards;pointer-events:none}@keyframes entr-deg{to{transform:translateY(-44px);opacity:0}}
+.entr-scene .cpt{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;line-height:1}.entr-scene .cpt small{color:#C9D3EA;font-size:19px}
+.entr-scene .nb{font-size:min(32vmin,150px);line-height:.9;color:#fff;text-shadow:4px 4px 0 #141C38;transition:transform .1s}.entr-scene .nb.tape{transform:scale(1.18)}
+.entr-scene .deg{position:absolute;left:78%;top:5%;font-size:42px;color:#D83830;text-shadow:2px 2px 0 #fff;animation:entr-deg .6s forwards;pointer-events:none}@keyframes entr-deg{to{transform:translateY(-44px);opacity:0}}
 .entr-scene .eclair{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}.entr-scene .eclair.on{animation:entr-eclair .28s}@keyframes entr-eclair{30%{opacity:.75}}
 .entr-scene .txt{position:absolute;left:2%;right:2%;bottom:2%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 11px;min-height:1.3em;font-size:21px;color:#383828;line-height:1.1}
 .entr-scene .txt.rythmee{color:#C03028}
-.entr-scene .fin{position:absolute;right:2%;top:3%;width:auto;padding:6px 12px;font-size:16px;background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:9px 4px;z-index:3}
-@media (orientation:landscape){.entr-scene .nb{right:38%;bottom:17%}.entr-scene .sur{right:38%}.entr-scene .pv-e{width:min(36%,300px)}}`;
+.entr-scene .moi{color:#C9D3EA;font-size:16px;text-align:center}.entr-scene .mesure{color:#8FA0C4;font-size:13px;text-align:center}
+.entr-scene .fin{align-self:center;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
+@media (orientation:landscape){.entr-scene{flex-direction:row}.entr-scene .monde{width:auto;height:100%;max-width:calc(100% - 200px)}}`;
 
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
 // vite. Elle voit les mouvements lents (un squat en 2 s secoue très peu le téléphone) et ignore les petites secousses de la marche. Une répétition = une vitesse
@@ -4558,10 +4560,11 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
     const decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")] || null;
     const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, ennemi = () => M.ennemis[Math.min(iE, M.ennemis.length - 1)];
     v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
-          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne" src="${IMG.grand(ennemi())}" alt="" ${decor ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" ${decor ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}></div>
-        <div class="pv-e"><span class="nom-e">${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div><div class="eclair"></div>
-        <div class="sur">${M.nom}</div><div class="nb">0</div><div class="txt">${M.capteur ? "Prépare-toi…" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Touche l'écran avec le nez.`}</div>
-        <button class="fin">Terminer</button></div>`;
+          ${decor ? "" : `<div class="sol e"></div><div class="sol c"></div>`}<img class="ennemi rogne" src="${IMG.grand(ennemi())}" alt="" ${decor ? `style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%"` : ""}><img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" ${decor ? `style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc}%"` : ""}><div class="eclair"></div>
+          <div class="txt">${M.capteur ? "Prépare-toi…" : `Un ${PAR_NUM[ennemi()].nom} sauvage apparaît ! Touche l'écran avec le nez.`}</div></div>
+        <div class="panneau"><div class="pv-e"><span class="nom-e">${PAR_NUM[ennemi()].nom}</span><div class="barre"><i></i></div></div>
+          <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small>objectif ${cible}</small></div>
+          <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div><button class="fin">${M.capteur ? "Terminer" : "Maintiens pour terminer"}</button></div></div>`;
     const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair");
     rognerImages(S);
     let parole = 0;
@@ -4574,7 +4577,7 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
       E.classList.add("touche"); apres(() => E.classList.remove("touche"), 120); eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on"); apres(() => eclair.classList.remove("on"), 300);
       if (n % 5 === 0) { S.classList.remove("secousse"); void S.offsetWidth; S.classList.add("secousse"); }
       ton(180 + Math.min(n, 30) * 10, 0, .08, {type: "square", vol: .12}); bruit(0, .09, {vol: .12, f: 900});
-      const d = P.createElement("div"); d.className = "deg"; d.textContent = `-${1}`; S.appendChild(d); setTimeout(() => d.remove(), 650);
+      const d = P.createElement("div"); d.className = "deg"; d.textContent = "-1"; S.querySelector(".monde").appendChild(d); setTimeout(() => d.remove(), 650);
       if (sesAttaques && n % 3 === 1) dire(`${nomC} utilise ${sesAttaques[attaque++ % sesAttaques.length]} !`);
       pv--; peindre();
       if (rec && n === rec + 1) { dire("Coup critique ! Nouveau record !", 2200); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }
@@ -4590,8 +4593,11 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
       }
     };
     const fin = () => { if (finie) return; finie = true; nettoyer(); bilan(n, Math.round((Date.now() - debutSerie) / 1000)); };
-    S.querySelector(".fin").onclick = e => { e.stopPropagation(); fin(); };
-    S.querySelector(".fin").onpointerdown = e => e.stopPropagation();
+    const bFin = S.querySelector(".fin");
+    if (M.capteur) { bFin.onclick = e => { e.stopPropagation(); fin(); }; bFin.onpointerdown = e => e.stopPropagation(); }
+    else { let tenu = null;
+      bFin.onpointerdown = e => { e.stopPropagation(); bFin.classList.add("appui"); tenu = setTimeout(fin, 700); };
+      bFin.onpointerup = bFin.onpointercancel = e => { e.stopPropagation(); bFin.classList.remove("appui"); clearTimeout(tenu); }; }
     peindre();
     if (M.capteur) (async () => {
       const fondImg = new PW.Image(); fondImg.src = `${D.scenes}${image}`;
@@ -4601,7 +4607,7 @@ function entrainement(type, {essai = false, decorEssai = null} = {}) {
       const c = capteurMouvement(M.capteur, SENSIBILITES[sens], ecart => { rep(); if (ecart < 1500 && n > 1) dire("Plus lentement : contrôle la descente."); }, null,
         () => { if (Date.now() - plusBas < 1500) return; plusBas = Date.now(); dire("Pas assez bas : descends cuisses à l'horizontale !", 1400); ton(220, 0, .18, {type: "square", vol: .08}); });
       arret = c.arreter; mesures = c.mesures; sonde = c;
-      if (D.kiki) { const m = P.createElement("small"); m.style.cssText = "position:absolute;left:3%;top:21%;color:#fff;font-size:14px;text-shadow:1px 1px 0 #141C38"; S.appendChild(m);
+      if (D.kiki) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".moi").after(m);
         minuteurs.push(setInterval(() => { m.textContent = `${VERSION_DETECTION} · ${c.debit()} mesures/s · trou ${c.trou()} ms`; }, 1000)); }
       apres(() => { if (!c.recus()) { dire("Capteurs indisponibles : touche l'écran à chaque répétition.", 4000); S.onpointerdown = e => { e.preventDefault(); rep(); }; } }, 2500);
       // Le rythme : 2 s pour descendre, 1 s pour remonter
