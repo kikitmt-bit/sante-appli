@@ -21,6 +21,7 @@ from streamlit_js_eval import streamlit_js_eval
 
 import amis
 import bilan
+import ecran_calibrage
 import ecran_pokemon
 import pokemon
 from pokedex import LEGENDAIRES, POIDS, POKEMON
@@ -1007,6 +1008,8 @@ def configuration():
                 st.caption(f"{'✅ relié le ' + info['debut'] if info else '⏳ montre pas encore reliée'} · {email}")
             if any(id_ami(e) in REGISTRE for e in copains) and st.toggle("🔧 Suivi des amis (récolte, erreurs de Google)", key="suivi"):
                 suivi_amis(sorted(e for e in copains if id_ami(e) in REGISTRE))
+        if st.toggle("📊 Calibrage du jeu (objectifs réussis, par qui, comment)", key="calibrage"):
+            ecran_calibrage.afficher(lire_depot, REGISTRE, dt.datetime.now(TZ).date(), graphique, ecrire_depot)
     else:
         st.markdown("**⌚ Ma montre** : reliée depuis le " + JOUEUR["debut"].strftime("%d/%m/%Y"))
         with st.expander("Supprimer mes données"):
