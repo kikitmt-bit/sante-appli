@@ -162,6 +162,7 @@ st.markdown("""<style>
 .nav-jeu{background:#141C38 !important;border-radius:10px !important}
 .nav-jeu button{color:#C9D3EA !important;font-size:12.5px !important;line-height:1.1 !important;border-radius:8px 4px 8px 4px !important;border:2px solid transparent !important}
 .nav-jeu button.on{background:#F8F8E8 !important;color:#383828 !important;border-color:#484838 !important;box-shadow:2px 2px 0 rgba(0,0,0,.4) !important}
+@media(max-width:380px){.nav-jeu button{font-size:11.5px !important}}
 .st-key-outils button,.st-key-page_sante [data-testid="stBaseButton-secondary"],.st-key-page_sante [data-testid="stDateInputField"],.st-key-page_sante [data-baseweb="input"],.st-key-periode button{
   background:#F8F8E8 !important;color:#383828 !important;border:2px solid #484838 !important;box-shadow:2px 2px 0 rgba(10,15,35,.45) !important;border-radius:8px 4px 8px 4px !important}
 .st-key-page_sante [data-testid="stBaseButton-secondary"] p,.st-key-periode p,.st-key-page_sante input{color:#383828 !important;-webkit-text-fill-color:#383828}
@@ -224,6 +225,7 @@ body:not(.page-sante) [data-testid="stLayoutWrapper"]:has(> .st-key-page_sante),
 NAV = f"""<div class="nav-jeu">
 <button class="on" data-o="aventure"><img src="data:image/png;base64,{PIKACHU}" alt=""><span class="nb" hidden></span>Aventure</button>
 <button data-o="dex"><img src="data:image/svg+xml;base64,{POKEDEX}" alt="">Pokédex</button>
+<button data-o="muscu"><img class="sprite" src="{pokemon.IMAGES}/pokemon/versions/generation-iii/emerald/68.png" alt="">Muscu</button>
 <button data-o="dresseur"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">Dresseur</button>
 <button data-o="sante"><img class="leveinard" src="{LEVEINARD}" alt="">Santé</button></div>"""
 

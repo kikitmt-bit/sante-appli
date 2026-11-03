@@ -399,17 +399,6 @@ section[hidden]{display:none}
 .carte.amis{margin-top:14px}
 .speciale.mission{grid-column:1/-1}
 .speciale.mission .m-pk{float:right;width:64px;height:64px;margin:-2px 0 2px 8px;object-fit:contain;image-rendering:pixelated}
-.petits{grid-column:1/-1;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
-.petit-obj{position:relative;border:0;border-radius:12px;padding:7px 6px 9px;background:#141C31;color:#C9D3EA;cursor:pointer;text-align:center;font-family:Outfit,sans-serif;min-width:0}
-.petit-obj.on{box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4);background:#1C2740}
-.petit-obj .hd{display:flex;align-items:center;justify-content:center;gap:3px;font-size:11px;font-weight:700;color:#9AA7C2;white-space:nowrap}
-.petit-obj .hd .ico,.petit-obj .hd .mini-ball{width:18px;height:18px;flex:0 0 18px;vertical-align:0;margin:0;--k:1}
-.petit-obj .val{display:block;font-size:13.5px;font-weight:800;margin-top:2px;color:#EEF2FA}
-.petit-obj .bar{display:block;height:3px;border-radius:2px;background:#0D1322;margin-top:5px;overflow:hidden}
-.petit-obj .bar i{display:block;height:100%;background:#6B8CFF}
-.petit-obj.ok .bar i{background:#4CD3A0}
-.petit-obj.ok .val{color:#4CD3A0}
-#detail-obj{grid-column:1/-1}#detail-obj:empty{display:none}
 .carte-zoom.discret{left:auto;right:8px;bottom:8px;width:34px;height:34px;padding:0;justify-content:center;background:rgba(16,35,58,.7);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
 .carte-zoom.discret svg{width:18px;height:18px}
 .reglage-recap{display:flex;gap:10px;align-items:flex-start;background:#1C2740;border-radius:14px;padding:11px 13px;margin-top:14px;cursor:pointer}
@@ -426,19 +415,19 @@ details.regles li{margin:5px 0;line-height:1.4}
    ================================================================================================ */
 *{font-family:'Jersey 15',Outfit,system-ui,sans-serif !important;font-size-adjust:.53 !important;font-synthesis:none;font-weight:400 !important;letter-spacing:.1px}
 html,body{color:#383828}
-.carte,.speciale,.sac,.mini,.prochains,.starter-carte,.reglage-recap,details.regles,#recherche,.petit-obj,.en-route,.bandeau-voyage{
+.carte,.speciale,.sac,.mini,.prochains,.starter-carte,.reglage-recap,details.regles,#recherche,.en-route,.bandeau-voyage{
   background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
 h2{color:#fff;font-size:21px;text-shadow:2px 2px 0 #141C38;margin:16px 2px 8px}
-.gris,.gain,.speciale .gain,#voyage .entete .ou,.infos-lieu .nom small,.mini .qd,.mini .lieu,.speciale .m-pourquoi,.sac small,.petit-obj .hd,.reglage-recap small,.starter-carte small,.prochains .titre-p,.semaine-pesee i,.pesee-comp,#rien{color:#686850 !important}
+.gris,.gain,.speciale .gain,#voyage .entete .ou,.infos-lieu .nom small,.mini .qd,.mini .lieu,.speciale .m-pourquoi,.sac small,.reglage-recap small,.starter-carte small,.prochains .titre-p,.semaine-pesee i,.pesee-comp,#rien{color:#686850 !important}
 .speciale .ligne,.pesee-der,.speciale.defi .conseil4 i,#barre .manque,.arene .q{color:#484838 !important}
 .speciale .ligne b,.speciale.defi .ligne b,.pesee-der b,.sac b{color:#383828 !important}
 #barre .manque b,.starter-carte small b{color:#C03028 !important}
 .bouton-ball .q{color:#585840 !important;font-size:12px}
 .speciale .reste,.speciale.mission .m-titre,.speciale.defi .garde-champ{color:#B05010 !important}
-.speciale.ok .reste,.petit-obj.ok .val{color:#2F8F4E !important}
+.speciale.ok .reste{color:#2F8F4E !important}
 .speciale .verrou{color:#C03028 !important}
 .speciale.defi .garde-champ{border-top:2px dashed #C8C8A8}
-.petit-obj .val,.mini .nm,.starter-carte .l1 b,.prochains .tx b,#voyage .entete .titre,#barre .titre,#aouvrir .titre,.infos-lieu .nom,.reglage-recap b,.speciale .tete{color:#383828 !important}
+.mini .nm,.starter-carte .l1 b,.prochains .tx b,#voyage .entete .titre,#barre .titre,#aouvrir .titre,.infos-lieu .nom,.reglage-recap b,.speciale .tete{color:#383828 !important}
 .starter-carte .l1 i{color:#C03028 !important}
 .prochains .tx small{color:#B05010 !important}
 .prochains button{color:#383828;border-top:2px dashed #D8D8B8 !important}
@@ -506,9 +495,6 @@ details.regles{color:#484838 !important}
 .badge-attente{border:3px solid #484838;border-radius:12px 5px 12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .evo-attente{border:3px solid #484838;border-radius:12px 5px 12px 5px;color:#383828}
 .reglage-recap b{font-size:15px}
-.petit-obj .hd{font-size:13px}
-.petit-obj .bar{height:7px;background:#484838;border-radius:4px;padding:1px}.petit-obj .bar i{background:#48C868;border-radius:3px}
-.petit-obj.on{background:#F8E8A0 !important}
 .bandeau-test{font-size:14px}
 /* le Pokédex garde son appareil rouge, avec le même bord */
 .dex-appareil{border:3px solid #484838;border-radius:14px 6px 14px 6px;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
@@ -538,9 +524,25 @@ details.regles{color:#484838 !important}
 .detail-ami .lot{display:flex;flex-wrap:wrap;gap:2px}.detail-ami .lot img{width:40px;height:40px;image-rendering:pixelated}
 .detail-ami .lot img.sh{filter:drop-shadow(0 0 2px #F8C838)}
 .joueur .tx small.plus{color:#C03028}.joueur .tx small.moins{color:#287838}.joueur .tx small i{font-style:normal;color:#686850}
-.ligne-amis{display:block;width:100%;text-align:left;cursor:pointer;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:6px 10px;margin:0 0 12px;color:#383828;font-family:inherit;font-size:19px;line-height:1.15}
-.ligne-amis:before{content:"▶ ";color:#D83830;font-size:13px}.ligne-amis em{font-style:normal;color:#C03028}
-.ligne-amis small{display:block;font-size:15px;color:#686850;margin-top:2px}
+.suivi{grid-column:1/-1;margin:0}
+.suivi button:before{display:inline-block;transition:transform .15s}.suivi button.on:before{transform:rotate(90deg)}
+.suivi .tx .bar{flex:0 0 100%;height:7px;border-radius:4px;background:#484838;padding:1px;margin-bottom:3px}.suivi .tx .bar i{display:block;height:100%;background:#48C868;border-radius:3px}
+.suivi .suivi-d .speciale{margin:2px 0 8px;box-shadow:none;border-width:2px}
+.muscu-points{background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:9px 12px;margin-bottom:12px;color:#383828;font-size:18px;line-height:1.15}
+.muscu-points .l1{display:flex;justify-content:space-between;gap:8px}.muscu-points .l1 b{font-weight:400;color:#C03028}
+.muscu-points .bar{height:10px;border-radius:5px;background:#484838;padding:2px;margin:5px 0 6px}.muscu-points .bar i{display:block;height:100%;background:#40A8F8;border-radius:3px}.muscu-points .bar i.ok{background:#F8C838}
+.muscu-points small{display:block;font-size:15px;color:#686850}
+.exos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.exo{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:10px 8px;color:#383828;text-align:center;line-height:1.1}
+.exo .pk{width:72px;height:72px;object-fit:contain;image-rendering:pixelated}
+.exo h3{margin:4px 0 0;font-size:24px;font-weight:400;color:#383828}
+.exo .nb-exo{font-size:40px;color:#C03028;line-height:1}.exo .nb-exo small{font-size:18px}
+.exo .d{font-size:15px;color:#686850;margin-bottom:8px}
+.exo .tag{position:absolute;top:6px;left:6px;padding:1px 6px;border-radius:6px 3px;background:#B05010;color:#F8F8E8;font-size:14px}
+.exo .go-exo{margin-top:auto;width:100%;padding:7px 4px;border:3px solid #484838;border-radius:10px 5px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;font:inherit;font-size:19px;cursor:pointer;box-shadow:2px 2px 0 rgba(10,15,35,.45)}
+.exo .go-exo:active{transform:translate(2px,2px);box-shadow:none}
+.exo .plus-moins{display:flex;gap:4px;width:100%;margin-top:6px}.exo .plus-moins button{flex:1;min-width:0;padding:4px 0;border:2px solid #484838;border-radius:7px 3px;background:#F8F8E8;color:#383828;font:inherit;font-size:16px;cursor:pointer}.exo .plus-moins button:disabled{opacity:.35}
+#starter-dresseur{margin-top:12px}#starter-dresseur .starter-carte{margin-bottom:0}
 .nouvelles{margin-top:10px}.nouvelles .titre{margin-bottom:2px}
 .nouvelle{display:flex;align-items:center;gap:8px;padding:3px 2px;border-top:2px dashed #D8D4B8;color:#383828;font-size:16px;line-height:1.1}
 .nouvelle img{flex:0 0 34px;width:34px;height:34px;object-fit:contain;image-rendering:pixelated}.nouvelle img.sh{filter:drop-shadow(0 0 2px #F8C838)}
@@ -558,7 +560,6 @@ details.regles{color:#484838 !important}
   <section id="o-aventure">
     <div id="bandeau-voyage"></div>
     <div class="carte" id="voyage"></div>
-    <div id="ligne-amis"></div>
     <div id="prochains"></div>
     <div class="carte" id="aouvrir"></div>
     <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
@@ -575,9 +576,14 @@ details.regles{color:#484838 !important}
     <div id="filtres-types"></div>
     <div id="grille"></div><div id="rien">Aucun Pokémon ici.</div>
   </section>
+  <section id="o-muscu" hidden>
+    <h2>Entraînement</h2>
+    <div id="muscu"></div>
+  </section>
   <section id="o-dresseur" hidden>
     <h2>Mon dresseur</h2>
     <div id="mon-dresseur"></div>
+    <div id="starter-dresseur"></div>
     <label class="reglage-recap"><input type="checkbox" id="recap-matin"><span><b>Récap du matin</b><small>L'Infirmière Joëlle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></span></label>
     <div class="carte amis" id="amis"></div>
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
@@ -3049,11 +3055,29 @@ function blocGestes(types = ["pompes", "tractions", "squats", "planche"]) {
   return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}<button class="lancer" data-compte="${t}">▶ Série</button></span><b>${g[t]}</b>${t === "tractions" ? `
     <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}` : ""}</div>`).join("")}</div>`;
 }
-function apresGeste() {  // tout redessiner, la petite tuile ouverte le reste
-  const ouvert = document.querySelector("#speciales .petit-obj.on"), cle = ouvert && ouvert.dataset.c;
-  dessinerSpeciales();
-  document.getElementById("detail-obj").innerHTML = "";
-  if (cle) { const t = document.querySelector(`#speciales .petit-obj[data-c="${cle}"]`); if (t) t.click(); }
+function apresGeste() {  // tout redessiner, le bonus ouvert le reste
+  const ouvert = document.querySelector("#speciales .suivi button.on"), cle = ouvert && ouvert.dataset.c;
+  dessinerSpeciales(); dessinerMuscu();
+  if (cle) { const t = document.querySelector(`#speciales .suivi button[data-c="${cle}"]`); if (t) t.click(); }
+}
+// La page Muscu (03/11, Kiki : pompes, tractions, squats et planche étaient cachés derrière une petite tuile) : un exercice, un toucher, le téléphone compte
+const EXOS = [["pompes", "10 = 5 pts"], ["squats", "10 = 2,5 pts"], ["tractions", "1 = 1 pt"], ["planche", "10 s = 1 pt"]];
+function dessinerMuscu() {
+  const el = document.getElementById("muscu"), g = gestesAuj(), mem = lireEntr(), mis = D.mission || {};
+  const points = Math.min(g.pompes * R.bonus_pompe + g.tractions * R.bonus_traction + g.squats * R.bonus_squat + g.planche * R.bonus_planche, R.bonus_gestes_max);
+  const pourMission = {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste];
+  const duel = duelEnCours();
+  el.innerHTML = `<div class="muscu-points"><div class="l1"><span>Points d'effort du jour</span><b>${String(Math.round(points * 10) / 10).replace(".", ",")} / ${R.bonus_gestes_max}</b></div>
+      <div class="bar"><i class="${points >= R.bonus_gestes_max ? "ok" : ""}" style="width:${points / R.bonus_gestes_max * 100}%"></i></div>
+      <small>La montre ne les compte pas : le téléphone s'en charge. Tes points arrivent à la prochaine actualisation.</small></div>
+    <div class="exos">${EXOS.map(([t, gain]) => { const M = ENTR[t], rec = (mem[t] || {}).record;
+      const tag = t === "pompes" && duel ? "Arène" : t === pourMission && mis.ok !== true ? "Mission" : "";
+      return `<div class="exo">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3>
+        <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
+        <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
+        <button class="go-exo" data-compte="${t}">▶ Lancer</button>
+        ${t === "tractions" ? `<div class="plus-moins"><button data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : ""}</div>`; }).join("")}</div>`;
+  brancherGestes(el); rognerImages(el);
 }
 function brancherGestes(racine) {
   racine.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { vibre(12); ton(1250, 0, .04, {type: "square", vol: .03});
@@ -3103,15 +3127,16 @@ function niveauDuJour(st) {
   } catch (e) { return false; }
 }
 function dessinerStarter() {
-  const el = document.getElementById("starter"), st = G.starter, n = formeStarter();
-  if (!st || !n) { el.innerHTML = ""; return; }
+  const el = document.getElementById("starter"), dr = document.getElementById("starter-dresseur"), st = G.starter, n = formeStarter();
+  if (!st || !n) { el.innerHTML = dr.innerHTML = ""; return; }
   const attend = aOuvrir().some(estEvo), plein = st.pts_niveau;
   const pct = attend ? 100 : st.dans_niveau / plein * 100;
   const objectif = attend ? "Il se passe quelque chose !" : niveauDuJour(st) ? `<b>Monte au niveau ${st.niveau} !</b>` : `encore <b>${fr(plein - st.dans_niveau)} pts</b> pour le niveau ${st.niveau + 1}`;
-  el.innerHTML = `<button class="starter-carte"><span class="av"><img src="${IMG.anim(n, false)}" ${repli(n, false)} alt=""></span>
+  const carte = `<button class="starter-carte"><span class="av"><img src="${IMG.anim(n, false)}" ${repli(n, false)} alt=""></span>
     <span class="milieu"><span class="l1"><b>${PAR_NUM[n].nom}</b><i>Niv. ${st.niveau}</i></span><span class="barre-n"><i style="width:${pct}%"></i></span><small>${objectif}</small></span></button>`;
-  el.querySelector(".starter-carte").onclick = () => fiche(PAR_NUM[n]);
-  rognerImages(el);
+  // sur Aventure, seulement le jour où il gagne un niveau (Kiki, 03/11 : pas tout le temps sous les yeux) ; toujours dans Dresseur
+  dr.innerHTML = carte; el.innerHTML = !attend && niveauDuJour(st) ? carte : "";
+  [el, dr].forEach(x => { const b = x.querySelector(".starter-carte"); if (b) b.onclick = () => fiche(PAR_NUM[n]); rognerImages(x); });
 }
 function dessinerBarre() {
   const b = D.barre, pct = b.points / b.taille, reste = b.taille - b.points;
@@ -3205,15 +3230,14 @@ function dessinerSpeciales() {
       <div class="ligne"><span>Cette nuit : ${J.sommeil ? h(J.sommeil) : "—"}</span><span>${h(R.nuit)}</span></div>${j(J.sommeil, R.nuit)}
       <div class="ligne"><span>${ico("shiny", "p brille")} Chance de shiny aujourd'hui</span><span>×${String(Math.round(J.shiny_bonus * 100) / 100).replace(".", ",")}</span></div>
       ${nuit ? `<div class="reste">Touche pour passer au Centre Pokémon.</div>` : `<div class="reste" style="color:#9AA7C2">Pas de souci si c'est raté : les balls sont gagnées quand même.</div>`}</div>`;
-  // Les petites tuiles (retour de Kiki, 02/11 : seules la mission, la Super et l'Hyper Ball comptent chaque jour) : on touche pour le détail
+  // Les bonus : une liste comme « Tes prochains objectifs » (Kiki, 03/11 : les petites tuiles n'étaient pas belles) ; on touche une ligne pour le détail
   const pct = (v, c) => Math.min(c ? v / c * 100 : 0, 100);
-  const petits = [
-    {cle: "shiny", ic: ico("sball"), nom: "Shiny", val: `${J.serie}/${R.master_jours}`, p: pct(J.serie, R.master_jours), ok: mas, detail: carteShiny},
-    {cle: "nuit", ic: ico("nuit"), nom: "Nuit", val: J.sommeil ? h(J.sommeil).replace(" h ", "h") : "—", p: pct(J.sommeil, R.nuit), ok: nuit, detail: carteNuit},
-    D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb}/${D.pesees.cible}`, p: pct(D.pesees.nb, D.pesees.cible), ok: D.pesees.nb >= D.pesees.cible, detail: cartePesee()} : null,
-    ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur}/${x.cible}`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
-    {cle: "gestes", ic: "<span>💪</span>", nom: "Pompes", val: `${gestesAuj().pompes + gestesAuj().tractions + gestesAuj().squats}`, p: pct(gestesAuj().pompes * R.bonus_pompe + gestesAuj().tractions * R.bonus_traction + gestesAuj().squats * R.bonus_squat + gestesAuj().planche * R.bonus_planche, R.bonus_gestes_max), detail: cartePompes()},
-    G.chasse && G.chasse.actif ? {cle: "chasse", ic: ico("radar"), nom: "Chasse", val: `${Math.round(G.chasse.chance * 100)} %`, p: G.chasse.chance * 100, detail: carteChasse()} : null,
+  const bonus = [
+    {cle: "shiny", ic: ico("sball"), nom: "Shiny Ball", val: `${J.serie} / ${R.master_jours} jours`, p: pct(J.serie, R.master_jours), detail: carteShiny},
+    {cle: "nuit", ic: ico("nuit"), nom: "Bonne nuit", val: `${J.sommeil ? h(J.sommeil) : "—"} / ${h(R.nuit)}`, p: pct(J.sommeil, R.nuit), detail: carteNuit},
+    D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb} / ${D.pesees.cible} cette semaine`, p: pct(D.pesees.nb, D.pesees.cible), detail: cartePesee()} : null,
+    ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur} / ${x.cible} jours`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
+    G.chasse && G.chasse.actif ? {cle: "chasse", ic: ico("radar"), nom: "Chasse aux shiny", val: `${Math.round(G.chasse.chance * 100)} %`, p: G.chasse.chance * 100, detail: carteChasse()} : null,
   ].filter(Boolean);
   document.getElementById("speciales").innerHTML = carteDefi() + carteMission(gris, champ, cadenas) + `
     <div class="speciale ${sup ? "ok" : ""} ${gris ? "grise" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
@@ -3227,16 +3251,15 @@ function dessinerSpeciales() {
       <div class="ligne"><span>🔥 sport ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
       <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}
       ${verrou("hyper") || `<div class="reste">${resteHyper}</div>`}</div>`
-    + `<div class="petits">${petits.map(x => `<button class="petit-obj ${x.ok ? "ok" : ""}" data-c="${x.cle}"><span class="hd">${x.ic}${x.nom}</span><span class="val">${x.val}</span><span class="bar"><i style="width:${x.p}%"></i></span></button>`).join("")}</div><div id="detail-obj"></div>`;
-  const detail = document.getElementById("detail-obj");
-  document.querySelectorAll("#speciales .petit-obj").forEach(b => b.onclick = () => {
+    + `<div class="prochains suivi"><b class="titre-p">Tes bonus</b>${bonus.map(x => `<button data-c="${x.cle}"><span class="ic">${x.ic}</span><span class="tx"><b>${x.nom}</b><small>${x.val}</small><span class="bar"><i style="width:${x.p}%"></i></span></span></button><div class="suivi-d" data-d="${x.cle}"></div>`).join("")}</div>`;
+  document.querySelectorAll("#speciales .suivi button").forEach(b => b.onclick = () => {
     const ouvert = b.classList.contains("on");
-    document.querySelectorAll("#speciales .petit-obj").forEach(x => x.classList.remove("on"));
-    detail.innerHTML = ""; vibre(10);
+    document.querySelectorAll("#speciales .suivi button").forEach(x => x.classList.remove("on"));
+    document.querySelectorAll("#speciales .suivi-d").forEach(x => x.innerHTML = ""); vibre(10);
     if (ouvert) return;
-    b.classList.add("on"); detail.innerHTML = petits.find(x => x.cle === b.dataset.c).detail; rognerImages(detail);
+    const detail = document.querySelector(`#speciales .suivi-d[data-d="${b.dataset.c}"]`);
+    b.classList.add("on"); detail.innerHTML = bonus.find(x => x.cle === b.dataset.c).detail; rognerImages(detail);
     const nc = detail.querySelector(".nuit-carte"); if (nc && nuit) { nc.style.cursor = "pointer"; nc.onclick = () => sceneCentre(); }
-    brancherGestes(detail);
   });
   brancherGestes(document.getElementById("speciales"));
   rognerImages(document.getElementById("speciales"));
@@ -3320,11 +3343,6 @@ function carteSanctuaire(s) {
       <div class="jauge"><div class="${s.valeur >= s.cible ? "ok" : ""}" style="width:${Math.min(s.valeur / s.cible * 100, 100)}%"></div></div></div>`;
 }
 // 3. Le défi de l'arène où l'on est arrivé, cumulé depuis l'arrivée (ou son plan B)
-function cartePompes() {
-  return `<div class="speciale"><div class="tete">💪 Pompes, tractions, squats</div>
-    <div class="gain">La montre ne sait pas les compter : lance une série, le téléphone compte pour toi. ${R.bonus_pompe * 10} points d'effort pour 10 pompes, ${R.bonus_traction} par traction, ${R.bonus_squat * 10} pour 10 squats, ${R.bonus_planche * 10} pour 10 s de planche, ${R.bonus_gestes_max} au plus par jour. Certains champions acceptent pompes et tractions, et certaines missions aussi.</div>
-    ${blocGestes()}<div class="petit gris" style="margin-top:6px">Tes points arrivent à la prochaine actualisation.</div></div>`;
-}
 function carteDefi() {
   const d = V.defi; if (!d || !d.arrive) return "";
   const a = LIEUX[d.lieu].arene, ch = CHAMPIONS[d.numero], ligue = !a.type;
@@ -3834,14 +3852,6 @@ function imageNouvelle(n) {
 function nouvellesAmis(autres) {  // celles de tous les amis, la plus récente d'abord (le tri garde l'ordre du serveur à jour égal : le plus marquant)
   return autres.flatMap(j => (j.nouvelles || []).map(n => [n, j])).sort((a, b) => b[0].jour.localeCompare(a[0].jour));
 }
-function dessinerLigneAmis(tous, autres) {  // sous la carte : le classement, toujours à l'œil, et la dernière nouvelle
-  const el = document.getElementById("ligne-amis");
-  if (!autres.length || TEST) { el.innerHTML = ""; return; }
-  const n = nouvellesAmis(autres)[0];
-  el.innerHTML = `<button class="ligne-amis">${tous.map(j => j.moi ? `<em>Toi ${j.especes.length}</em>` : `${j.nom} ${j.especes.length}`).join(" · ")}
-    ${n ? `<small>${texteNouvelle(...n)} · ${n[0].quand}</small>` : ""}</button>`;
-  el.firstChild.onclick = () => { montrerOnglet("dresseur"); requestAnimationFrame(() => document.getElementById("amis").scrollIntoView({behavior: "smooth", block: "start"})); };
-}
 function dessinerAmis() {
   const el = document.getElementById("amis"); if (!el) return;
   const col = collection(), mien = Object.keys(col).map(Number).filter(n => col[n].some(c => !c.rate));
@@ -3857,7 +3867,6 @@ function dessinerAmis() {
   // le Pokédex d'abord, puis les shiny ; à égalité sur les deux, même rang (la liste reste rangée par badges, puis par avancée)
   const tous = [moi, ...autres].sort((a, b) => b.especes.length - a.especes.length || b.shiny.length - a.shiny.length
     || b.badges.filter(n => n <= 8).length - a.badges.filter(n => n <= 8).length || b.pos - a.pos);
-  dessinerLigneAmis(tous, autres);
   if (!autres.length) { el.innerHTML = titre + `<div class="petit gris" style="margin-top:4px">Aucun autre dresseur pour l'instant.</div>`; return; }
   const rang = j => tous.findIndex(x => x.especes.length === j.especes.length && x.shiny.length === j.shiny.length) + 1;
   const lignes = tous.map(j => {
@@ -4283,7 +4292,7 @@ function dessinerRegles() {
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
     <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double, une petite journée moitié. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
-    <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis « Pompes », le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
+    <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis l'onglet Muscu, le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
@@ -4999,7 +5008,7 @@ function dessinerOnglets() {
     if (n && ic) { ic.src = `${D.images}/pokemon/versions/generation-iii/emerald/${n}.png`; ic.classList.add("sprite"); }
     return; }
   const el = document.getElementById("onglets");
-  el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["dex", "Pokédex"], ["dresseur", "Dresseur"]]
+  el.innerHTML = [["aventure", `Aventure${nb ? `<span class="nb">${nb}</span>` : ""}`], ["dex", "Pokédex"], ["muscu", "Muscu"], ["dresseur", "Dresseur"]]
     .map(([k, t]) => `<button class="${ONGLET === k ? "on" : ""}" data-k="${k}">${t}</button>`).join("");
   el.querySelectorAll("button").forEach(b => b.onclick = () => montrerOnglet(b.dataset.k));
 }
@@ -5010,8 +5019,9 @@ function montrerOnglet(k, defiler = true) {
   const nav = navP();
   if (nav) nav.querySelectorAll("[data-o]").forEach(b => b.classList.toggle("on", b.dataset.o === k));
   P.body.classList.toggle("page-sante", k === "sante");
-  if (k !== "sante") [["aventure", "o-aventure"], ["dex", "o-dex"], ["dresseur", "o-dresseur"]].forEach(([o, id]) => document.getElementById(id).hidden = o !== k);
+  if (k !== "sante") [["aventure", "o-aventure"], ["dex", "o-dex"], ["muscu", "o-muscu"], ["dresseur", "o-dresseur"]].forEach(([o, id]) => document.getElementById(id).hidden = o !== k);
   if (k === "dex") dessinerDex();
+  if (k === "muscu") dessinerMuscu();
   if (k === "aventure" && change) requestAnimationFrame(() => { if (CENTRER) CENTRER(); });
   dessinerOnglets();
   if (change && defiler) { const m = P.querySelector('[data-testid="stMain"]') || P.scrollingElement; if (m) m.scrollTo(0, 0); else scrollTo(0, 0); vibre(8); }
