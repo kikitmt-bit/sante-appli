@@ -3281,7 +3281,7 @@ function cartePesee() {  // une petite tuile (demi-largeur) : la moins important
   }
   return `<div class="speciale pesee ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
     <div class="tete">${ico("masse")}Pesée</div>
-    <div class="gain">+${p.bonus || 10} pts par pesée du matin (avant ${p.avant} h) · vise ${p.cible} / semaine</div>
+    <div class="gain">+${p.bonus || 10} pts par pesée du matin (avant ${p.avant} h), ${p.cible} par semaine au plus</div>
     <div class="semaine-pesee">${p.semaine.map((x, i) => `<i class="${x === 1 ? "on" : x === 0 ? "rate" : i === p.semaine.indexOf(null) ? "auj" : ""}">${jours[i]}</i>`).join("")}</div>
     <div class="reste">${ok ? "Objectif de la semaine atteint !" : `Encore <b>${reste}</b> cette semaine`}</div>${comp}</div>`;
 }

@@ -454,7 +454,10 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
     les sait : rien ne change après coup (sinon les Poké Balls déjà gagnées se décaleraient)."""
     b = []
     if pesee_matin(resumes.get(str(jour))):
-        b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
+        # 3 par semaine pour avoir des stats fiables : au-delà, rien de plus (depuis le 04/11, Kiki : 30 points par semaine au plus)
+        avant = sum(pesee_matin(resumes.get(str(jour - dt.timedelta(days=k)))) for k in range(1, jour.weekday() + 1))
+        if avant < REGLAGES["pesees"] or jour < missions.NOUVELLES:
+            b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
     g = (gestes or {}).get(str(jour)) or {}
     pts = min(g.get("pompes", 0) * REGLAGES["bonus_pompe"] + g.get("tractions", 0) * REGLAGES["bonus_traction"] + g.get("squats", 0) * REGLAGES["bonus_squat"],
               REGLAGES["bonus_gestes_max"])
