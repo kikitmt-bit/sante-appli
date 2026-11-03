@@ -4312,7 +4312,7 @@ const ENTR = {
     capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, balance: 1.15, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte, à ton rythme."},
   planche: {nom: "Planche", un: "seconde", coach: 76, defaut: 30, decompte: 8, paysage: true, chrono: true, pas: 5, repos: 45,
-    consigne: "Pose le téléphone au sol, en paysage, devant toi. Sur les avant-bras, coudes sous les épaules, <b>corps bien droit de la tête aux talons</b>, sans creuser le dos. Ton starter porte une planche, et des Pokémon vont s'y empiler. Tu n'as que ton honneur comme arbitre : touche l'écran quand tu arrêtes, et tout s'écroule !"},
+    consigne: "Pose le téléphone au sol, en paysage, devant toi. Sur les avant-bras, coudes sous les épaules, <b>corps bien droit de la tête aux talons</b>, sans creuser le dos. Des Pokémon vont venir te regarder. Tu n'as que ton honneur comme arbitre : touche l'écran quand tu arrêtes."},
   tractions: {nom: "Tractions", un: "traction", coach: 16, defaut: 5, decompte: 12, poche: true, capteur: {premier: "haut", s1: .3, s2: .25, ecart: 1300, impact: 7},
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
 };
@@ -4389,27 +4389,18 @@ const STYLE_ENTR = `
 .entr-scene .moi{color:#C9D3EA;font-size:16px;text-align:center}.entr-scene .mesure{color:#8FA0C4;font-size:13px;text-align:center}
 .entr-scene .fin{align-self:flex-end;padding:3px 12px;font-size:15px;background:none;color:#C9D3EA;border:0;text-decoration:underline;touch-action:none}.entr-scene .fin.appui{color:#F8C838}
 /* Le Coup d'Boule (pompes) : façon Punch-Out, le téléphone au sol, l'adversaire remplit l'écran et le nez frappe. Tout se lit bras tendus */
-/* La Pile (la planche) */
-.pile-scene{position:relative;flex:1;min-height:0;overflow:hidden;background-size:cover;background-position:center;touch-action:none;image-rendering:pixelated}
-.pile-voile{position:absolute;inset:0;background:rgba(20,28,56,.28)}
-.pile-monde{position:absolute;left:0;right:0;bottom:0;top:0;transform-origin:50% 100%;transition:transform .6s}
-.pile-porteur{position:absolute;left:50%;bottom:13vmin;height:30vmin;transform:translateX(-50%);image-rendering:pixelated;z-index:3}
-.pile-bois{position:absolute;left:50%;bottom:30vmin;width:92vmin;height:14vmin;transform:translateX(-50%);overflow:visible;z-index:4}
-.pile-bois path{fill:none;vector-effect:non-scaling-stroke}.pile-bois .bord{stroke:#3A2410;stroke-width:4.4vmin}.pile-bois .bois{stroke:#B8803C;stroke-width:3vmin}
-.pile-tas{position:absolute;inset:0;z-index:5;transform-origin:50% 45vmin;transform:translateY(var(--plie,0));animation:pile-penche 1.7s ease-in-out infinite}
-@keyframes pile-penche{0%,100%{rotate:calc(var(--penche,0deg) * -1)}50%{rotate:var(--penche,0deg)}}
-.pile-poke{position:absolute;transform:translateX(-50%);image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(0,0,0,.35))}
-.pile-poke.silhouette{filter:brightness(0)}.pile-poke.tombe{transition:bottom .35s cubic-bezier(.55,0,1,.6)}
-.pile-goutte{position:absolute;left:calc(50% + 15vmin);bottom:34vmin;font-size:6vmin;opacity:0;z-index:6}.pile-scene.lourd .pile-goutte{opacity:1;animation:pile-goutte 1s infinite}
-@keyframes pile-goutte{from{transform:translateY(0);opacity:1}to{transform:translateY(7vmin);opacity:0}}
-.pile-scene.lourd .pile-porteur{animation:pile-tremble .25s infinite}.pile-scene.ecrasant .pile-porteur{animation:pile-tremble .12s infinite;height:25vmin}
-@keyframes pile-tremble{25%{transform:translateX(calc(-50% - 2px))}75%{transform:translateX(calc(-50% + 2px))}}
-.pile-scene.boum .pile-monde{animation:entr-secousse .22s}
-.pile-scene.ecroule .pile-bois{transform:translateX(-50%) rotate(14deg) translateY(10vmin);transition:transform .35s;opacity:.85}.pile-scene.ecroule .pile-tas{animation:none}.pile-scene.ecroule .pile-porteur{animation:none;height:18vmin}
-.pile-score{position:absolute;right:3%;top:3%;text-align:right;color:#fff;z-index:7;line-height:1;text-shadow:3px 3px 0 #141C38,-1px -1px 0 #141C38}.pile-score b{font-size:25vmin;font-weight:400;display:inline-block;transition:transform .12s;transform-origin:100% 50%}.pile-score b.tape{transform:scale(1.15)}
-.pile-score span{font-size:8vmin;margin-left:1vmin}.pile-score small{display:block;margin-top:1vmin;font-size:max(17px,5vmin);color:#fff}.pile-score small.atteint{color:#F8C838}
-.pile-aide{position:absolute;left:3%;top:3%;color:#fff;font-size:15px;text-shadow:1px 1px 0 #141C38;z-index:7}
-.pile-txt{position:absolute;left:3%;right:24%;bottom:2.5%;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:5px 11px;font-size:20px;color:#383828;line-height:1.1;white-space:nowrap;text-align:center;z-index:7}
+/* Les Spectateurs (la planche) */
+.spect,.spect-moi{position:absolute;transform:translate(-50%,-100%);image-rendering:pixelated}
+.spect-moi{z-index:64;filter:drop-shadow(0 2px 0 rgba(0,0,0,.2))}.spect-moi.content{animation:spect-saute .45s 2}
+.spect-ombre{position:absolute;height:2.6%;transform:translate(-50%,-50%);border-radius:50%;background:rgba(0,0,0,.28)}
+.spect.tourne{scale:-1 1}
+.spect.arrive-d{animation:spect-entre-d 1.1s ease-out}.spect.arrive-g{animation:spect-entre-g 1.1s ease-out}
+@keyframes spect-entre-d{0%{opacity:0;translate:90px 0}20%{opacity:1;translate:70px -10px}40%{translate:48px 0}60%{translate:28px -10px}80%{translate:10px 0}90%{translate:4px -5px}100%{translate:0 0}}
+@keyframes spect-entre-g{0%{opacity:0;translate:-90px 0}20%{opacity:1;translate:-70px -10px}40%{translate:-48px 0}60%{translate:-28px -10px}80%{translate:-10px 0}90%{translate:-4px -5px}100%{translate:0 0}}
+@keyframes spect-saute{50%{translate:0 -14%}}
+.entr-scene .monde .txt{z-index:90}.entr-scene .monde .eclair{z-index:95}
+.entr-scene .public{color:#F8C838 !important;margin-top:6px;min-height:22px}
+.pkm-entr .spect-photo{display:flex;flex-wrap:wrap;gap:2px;margin:2px 0 6px}.pkm-entr .spect-photo img{width:44px;height:44px;object-fit:contain;image-rendering:pixelated}
 .entr-scene.boule{display:block}
 .entr-scene.boule .monde{position:absolute;inset:0;width:100%;height:100%;max-width:none;aspect-ratio:auto;background-position:center}
 .entr-scene.boule .monde:before{content:"";position:absolute;inset:0;background:radial-gradient(circle,rgba(20,28,56,.45) 25%,rgba(20,28,56,.92) 75%)}
@@ -4539,7 +4530,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   const pourMission = mis.geste && {pompes: "pompes", series: "pompes", squats: "squats"}[mis.geste] === type;
   const resteMission = !pourMission ? 0 : mis.geste === "series" ? 10 : Math.max(mis.seuil - (g[mis.geste] || 0), 0);
   // un peu plus que la dernière fois : c'est comme ça qu'on progresse ; la mission du jour d'abord, s'il en reste
-  let cible = resteMission || (moi.derniere ? (M.chrono ? Math.max(M.defaut, moi.derniere + (M.pas || 1)) : moi.derniere + 1) : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "", kgSerie = 0;
+  let cible = resteMission || (moi.derniere ? (M.chrono ? Math.max(M.defaut, moi.derniere + (M.pas || 1)) : moi.derniere + 1) : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "";
   const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
   let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
@@ -4589,7 +4580,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       : moi.derniere ? `Dernière série : ${moi.derniere}${M.chrono ? " s" : ""}. Vise un peu plus !` : "Première série : à toi de régler.";
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><h3>${M.nom}</h3></div><p>${M.consigne}</p></div>
       <div class="boite"><small>Ton objectif pour cette série${M.chrono ? " (en secondes)" : ""}</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
-        <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? ` s${moi.recordKg ? `, ${fr(moi.recordKg)} kg` : ""}` : ""}.` : ""}</small>
+        <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? " s" : ""}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
         <div><small class="veille">${veille}</small></div>${D.kiki && M.capteur ? `<div><small>Version : ${VERSION_DETECTION}</small></div>` : ""}</div>
       <button class="go">C'est parti</button><button class="sec retour">Retour</button>
@@ -4613,7 +4604,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     v.querySelector(".passer").onclick = fermer;
     const el = v.querySelector(".gros");
     const t = setInterval(() => { n--; if (n > 0) { el.textContent = n; ton(660, 0, .1, {type: "square", vol: .08}); if (n <= 3) parler(n); }
-      else { clearInterval(t); ton(990, 0, .3, {type: "square", vol: .1}); parler("Go !"); M.poche ? seriePoche() : M.chrono ? pile() : combat(); } }, 1000);
+      else { clearInterval(t); ton(990, 0, .3, {type: "square", vol: .1}); parler("Go !"); M.poche ? seriePoche() : M.chrono ? spectateurs() : combat(); } }, 1000);
     minuteurs.push(t);
   }
 
@@ -4735,74 +4726,56 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     }
   }
 
-  // La Pile (la planche, idée de Kiki : l'exercice est ennuyeux, il faut un spectacle) : son starter soutient une planche de bois, et toutes les 5 s un Pokémon
-  // tombe dessus, d'abord en silhouette (« qui arrive ? »). Le score, c'est le poids porté, en vrais kilos. Toucher l'écran : tout s'écroule.
-  function pile() {
+  // Les Spectateurs (la planche, 03/11, Kiki) : rien de dessiné par-dessus le décor. Le starter te regarde depuis le rond de sol, et des Pokémon du coin viennent s'installer pour te voir.
+  function spectateurs() {
     nettoyer(); v.classList.add("plein");
     const fond = LIEU_FOND[LIEUX[V.ici].nom] || "prairie", decor = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")];
-    const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, recKg = moi.recordKg || 0;
-    v.innerHTML = `<div class="pile-scene" style="background-image:url('${D.scenes}${image}')"><div class="pile-voile"></div>
-        <div class="pile-monde"><div class="pile-tas"></div>
-          <svg class="pile-bois" viewBox="0 0 100 14" preserveAspectRatio="none"><path class="bord" d="M0 4 Q50 4 100 4"/><path class="bois" d="M0 4 Q50 4 100 4"/></svg>
-          <img class="pile-porteur rogne" src="${IMG.grand(acteur)}" alt=""><div class="pile-goutte">💦</div></div>
-        <div class="pile-score"><b class="kg">0</b><span>kg</span><small class="temps">0 s · objectif ${cible} s</small>${recKg ? `<small>record ${fr(recKg)} kg</small>` : ""}${D.kiki ? "" : ""}</div>
-        <div class="pile-aide">Touche l'écran quand tu arrêtes</div><div class="txt pile-txt">Tiens bon !</div></div>`;
-    const S = v.querySelector(".pile-scene"), monde = S.querySelector(".pile-monde"), tas = S.querySelector(".pile-tas"), kgEl = S.querySelector(".kg"), temps = S.querySelector(".temps"), txt = S.querySelector(".pile-txt");
-    const chemins = S.querySelectorAll(".pile-bois path"), porteur = S.querySelector(".pile-porteur");
+    const image = decor ? decor.image : (FONDS[fond] || FONDS.prairie).image, e = decor ? decor.e : [72, 45], c = decor ? decor.c : [27, 68], nomC = PAR_NUM[acteur].nom;
+    // où ils s'installent, en % de l'image : d'abord les meilleures places, jamais sur le rond du starter
+    const places = [e, [50, 47], [89, 56], [58, 66], [6, 34], [80, 74], [38, 37], [93, 40], [55, 80], [70, 54]];
+    v.innerHTML = `<div class="entr-scene"><div class="monde" style="background-image:url('${D.scenes}${image}')">
+          ${decor ? "" : `<div class="sol c"></div>`}<div class="spect-ombre" style="left:${c[0]}%;top:${c[1]}%;width:17%"></div>
+          <img class="spect-moi rogne" src="${IMG.grand(acteur)}" alt="" style="left:${c[0]}%;top:${c[1]}%;width:${decor ? 22 : 20}%">
+          <div class="eclair"></div><div class="txt">${sansVeuve(`${nomC} te regarde. Tiens bon !`)}</div></div>
+        <div class="panneau"><button class="fin">Touche l'écran pour arrêter</button>
+          <div class="cpt"><small>${M.nom}</small><div class="nb">0</div><small class="temps">objectif ${cible} s</small><small class="public"></small></div>
+          <div class="moi">${nomC}${G.starter && G.starter.niveau ? ` · N. ${G.starter.niveau}` : ""}</div></div></div>`;
+    const S = v.querySelector(".entr-scene"), monde = S.querySelector(".monde"), nb = S.querySelector(".nb"), txt = S.querySelector(".txt"), pub = S.querySelector(".public"), moiPk = S.querySelector(".spect-moi"), eclair = S.querySelector(".eclair");
     rognerImages(S);
-    const u = Math.min(S.clientWidth, S.clientHeight) / 100, colonnes = [0, 0, 0], X = [-27, 0, 27], BASE = 41;  // en centièmes du petit côté de l'écran
-    const pris = new Set([acteur]), debut = Date.now();
-    let kg = 0, n = 0, finie = false, chute = 0, recordDit = false, vus = [];
-    const dire = t => { txt.textContent = sansVeuve(t); txt.style.fontSize = ""; if (txt.scrollWidth > txt.clientWidth) txt.style.fontSize = `${Math.floor(20 * txt.clientWidth / txt.scrollWidth)}px`; };
-    // de plus en plus lourds : la pile doit devenir absurde
-    const prochain = () => {
-      const [mini, maxi] = chute < 2 ? [0, 25] : chute < 4 ? [10, 80] : chute < 7 ? [40, 220] : [100, 1000];
-      let lot = DEX.filter(p => !LEG.has(p.num) && !pris.has(p.num) && D.poids[p.num] >= mini && D.poids[p.num] <= maxi);
-      if (!lot.length) lot = DEX.filter(p => !LEG.has(p.num) && !pris.has(p.num));
-      const p = lot[Math.floor(Math.random() * lot.length)]; if (!p) return null;
-      pris.add(p.num); return p;
-    };
-    const plier = () => {
-      const b = Math.min(kg / 90, 9), d = `M0 4 Q50 ${4 + b * 1.1} 100 4`; chemins.forEach(c => c.setAttribute("d", d));
-      tas.style.setProperty("--plie", `${b * .55}vmin`); tas.style.setProperty("--penche", `${Math.min(.4 + kg / 260, 4)}deg`);
-      S.classList.toggle("lourd", kg >= 150); S.classList.toggle("ecrasant", kg >= 450);
-      const haut = Math.max(...colonnes) + BASE + 36;  // la caméra recule quand la pile monte
-      monde.style.transform = `scale(${Math.min(1, 92 / haut)})`;
-    };
-    const faireTomber = () => {
-      const p = prochain(); if (!p) return;
-      chute++; const poids = D.poids[p.num], h = Math.max(17, Math.min(40, 14 + Math.sqrt(poids) * 1.45)), col = colonnes.indexOf(Math.min(...colonnes));
-      const im = P.createElement("img"); im.className = "pile-poke silhouette"; im.alt = "";
-      rogne(IMG.grand(p.num)).then(([src]) => { im.src = src; }).catch(() => { im.src = IMG.grand(p.num); });
-      const bas = BASE + colonnes[col]; colonnes[col] += h * .78;
-      im.style.cssText = `left:calc(50% + ${X[col] + (Math.random() - .5) * 5}vmin);bottom:${bas + 120}vmin;height:${h}vmin`; tas.appendChild(im); vus.push(im);
-      dire("Qui arrive ?"); ton(880, 0, .35, {type: "sine", vol: .05, f2: 300});
-      apres(() => { if (finie) return; im.classList.add("tombe"); im.style.bottom = `${bas}vmin`; }, 1100);
-      apres(() => { if (finie) return;
-        im.classList.remove("silhouette"); kg += poids; kgEl.textContent = fr(kg); kgEl.classList.add("tape"); apres(() => kgEl.classList.remove("tape"), 150); plier();
-        S.classList.remove("boum"); void S.offsetWidth; S.classList.add("boum");
-        const lourd = poids >= 200; ton(lourd ? 70 : 150, 0, lourd ? .5 : .2, {type: "square", vol: .16, f2: 45}); bruit(0, lourd ? .4 : .15, {vol: lourd ? .3 : .15, f: 400}); vibre(lourd ? [120, 40, 120] : 40);
-        try { const a = new PW.Audio(CRI(p.num)); a.volume = .3; a.play().catch(() => {}); } catch (e) {}
-        if (lourd) { dire(`Oh non, c'est ${p.nom} ! +${fr(poids)} kg !`); parler(`Oh non, ${p.nom} !`); } else dire(`${p.nom} s'installe ! +${String(Math.round(poids * 10) / 10).replace(".", ",")} kg`);
-        if (recKg && kg > recKg && !recordDit) { recordDit = true; apres(() => { dire("Nouveau record de poids !"); [[84, 0], [88, .1], [91, .2], [96, .3]].forEach(([k, t]) => ton(NOTE(k), t, .18, {type: "triangle", vol: .12})); }, 1200); }
-      }, 1450);
+    const venus = [], debut = Date.now();
+    let n = 0, finie = false, parole = 0;
+    const dire = (t, ms = 2500) => { parole = Date.now() + ms; txt.textContent = sansVeuve(t); };
+    const arrive = () => {
+      if (venus.length >= places.length) return;
+      let num = adversaireDuLieu(), essais = 0;
+      while ((venus.includes(num) || num === acteur) && essais++ < 12) num = adversaireDuLieu();
+      if (venus.includes(num) || num === acteur) { const lot = DEX.filter(p => !LEG.has(p.num) && !venus.includes(p.num) && p.num !== acteur); num = lot[Math.floor(Math.random() * lot.length)].num; }
+      const [x, y] = places[venus.length], l = Math.max(9, Math.min(17, 7 + (y - 35) * .27)), gauche = x < 50;  // plus loin = plus petit ; ceux de gauche se tournent vers le milieu
+      venus.push(num);
+      const om = P.createElement("div"); om.className = "spect-ombre"; om.style.cssText = `left:${x}%;top:${y}%;width:${l * .8}%;z-index:${Math.round(y)}`;
+      const im = P.createElement("img"); im.className = `spect ${gauche ? "tourne" : ""} arrive-${gauche ? "g" : "d"}`; im.alt = ""; im.style.cssText = `left:${x}%;top:${y}%;width:${l}%;z-index:${Math.round(y) + 1}`;
+      rogne(IMG.grand(num)).then(([src]) => { im.src = src; }).catch(() => { im.src = IMG.grand(num); });
+      monde.append(om, im);
+      const rare = RARES.has(num), nom = PAR_NUM[num].nom; dire(rare ? `Oh ! Un ${nom} vient te voir !` : `Un ${nom} vient te voir !`);
+      if (rare) { SONS.shiny(); }
+      try { const a = new PW.Audio(CRI(num)); a.volume = .28; a.play().catch(() => {}); } catch (err) {}
+      pub.textContent = `${venus.length} spectateur${venus.length > 1 ? "s" : ""}`;
     };
     const fin = () => { if (finie) return; finie = true; nettoyer(); S.onpointerdown = null;
-      // tout s'écroule
-      kg = Math.round(kg * 10) / 10; kgSerie = kg; S.classList.add("ecroule"); bruit(0, .7, {vol: .35, f: 300}); ton(90, 0, .6, {type: "square", vol: .16, f2: 35}); vibre([160, 50, 200]);
-      vus.forEach(im => { const a = (Math.random() - .5) * 110, c = (Math.random() - .5) * 720; im.classList.remove("silhouette"); im.style.transition = "transform .9s cubic-bezier(.4,0,1,1),opacity .9s"; im.style.transform = `translate(calc(-50% + ${a}vmin),${40 + Math.random() * 60}vmin) rotate(${c}deg)`; im.style.opacity = 0; });
-      const mot = kg > recKg && recKg ? ` <b>Nouveau record !</b>` : "", cmp = D.poids[143] && kg >= D.poids[143] ? ` Autant que ${String(Math.round(kg / D.poids[143] * 10) / 10).replace(".", ",")} Ronflex.` : "";
-      motShiny = `<p>Ta planche a porté <b>${fr(kg)} kg</b> de Pokémon.${cmp}${mot}</p>`;
-      dire(`Tout s'écroule ! ${fr(kg)} kg !`); apres(() => bilan(n, n), 1300);
+      // la photo souvenir
+      eclair.classList.add("on"); ton(1400, 0, .06, {type: "square", vol: .1}); ton(1000, .07, .08, {type: "square", vol: .08});
+      dire(venus.length ? "Photo souvenir !" : `${nomC} applaudit !`, 2000); moiPk.classList.add("content");
+      const lignes = venus.map(k => `<img src="${IMG.mini(k)}" alt="" title="${PAR_NUM[k].nom}">`).join("");
+      motShiny = venus.length ? `<p>${venus.length > 1 ? `${venus.length} Pokémon sont venus` : "Un Pokémon est venu"} te voir :</p><div class="spect-photo">${lignes}</div>` : "";
+      apres(() => bilan(n, n), 1400);
     };
-    S.onpointerdown = e => { e.preventDefault(); fin(); };
-    plier();
+    S.onpointerdown = ev => { ev.preventDefault(); fin(); };
     minuteurs.push(setInterval(() => { if (finie) return;
-      const s = Math.floor((Date.now() - debut) / 1000); if (s === n) return; n = s;
-      temps.textContent = `${n} s · objectif ${cible} s`;
+      const s = Math.floor((Date.now() - debut) / 1000); if (s === n) return; n = s; nb.textContent = n;
       if (cible - n === 10) parler("Plus que 10 secondes !"); else if (cible - n === 5) parler("Tiens bon !");
-      if (n === cible) { parler("Objectif atteint !"); [[76, 0], [79, .12], [84, .24]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .09})); temps.classList.add("atteint"); dire("Objectif atteint ! Encore un peu ?"); }
-      if (n % 5 === 1) faireTomber();
+      if (n === cible) { parler("Objectif atteint !"); [[76, 0], [79, .12], [84, .24]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .09})); dire("Objectif atteint ! Encore un peu ?", 3000); }
+      if (moi.record && n === moi.record + 1) dire("Nouveau record !", 2000);
+      if (n === 3 || (n > 3 && (n - 3) % 8 === 0)) arrive();
     }, 200));
   }
 
@@ -4830,7 +4803,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const garder = () => {
       if (n <= 0 || essai) return;
       memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n}_${Date.now()}`);
-      moi.derniere = n; moi.record = Math.max(moi.record || 0, n); if (M.chrono) moi.recordKg = Math.max(moi.recordKg || 0, kgSerie); mem[type] = moi; garderEntr(mem);
+      moi.derniere = n; moi.record = Math.max(moi.record || 0, n); mem[type] = moi; garderEntr(mem);
     };
     v.querySelector(".suite").onclick = () => { garder(); if (!M.chrono) cible = Math.max(n, 1); repos(M.repos || REPOS_SERIE); };
     v.querySelector(".fini").onclick = () => { garder(); fermer(); };
