@@ -156,6 +156,20 @@ class Danse(unittest.TestCase):
         self.assertEqual(pokemon.meilleurs_scores(pokemon.gestes_du(ancien, [], None, DEBUT)), {"red_Hard": 900})
 
 
+class Annuler(unittest.TestCase):
+    def test_une_serie_annulee_ne_compte_plus(self):
+        pokemon.REGLAGES["debut"], pokemon.REGLAGES["partie"] = DEBUT, 99
+        p = pokemon.ident(DEBUT, "", None)
+        g = pokemon.gestes_du(None, [f"{p}geste-planche_33_1000", f"{p}geste-planche_-33_2000"], None, DEBUT)[str(DEBUT)]
+        self.assertEqual(g["planche"], 0)
+        self.assertEqual(pokemon.points_gestes(g, DEBUT), 0)
+
+    def test_une_serie_de_pompes_annulee_bien_plus_tard_ne_compte_plus(self):
+        h = 60 * 60 * 1000
+        self.assertEqual(pokemon.series_de([(0, 10), (h, 10), (9 * h, -10)]), 1)
+        self.assertEqual(pokemon.series_de([(0, 10), (h, 10), (2 * h, 10)]), 3)
+
+
 class Roue(unittest.TestCase):
     def tirages(self, nb=210, ami=None, valeurs=None, gestes=None):
         jours, stat = {}, stats_de(valeurs or {})

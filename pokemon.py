@@ -434,9 +434,10 @@ def series_de(touches):
     """Le nombre de séries d'au moins 10 pompes à 30 min d'écart, depuis les touchers [(moment, nombre)] sur le bouton."""
     series, total, dernier = 0, 0, None
     for moment, n in sorted(touches):
-        if dernier is not None and moment - dernier >= SERIE_ECART:
+        if n >= 0 and dernier is not None and moment - dernier >= SERIE_ECART:  # une annulation se déduit de la dernière série, même bien plus tard
             series, total = series + (total >= SERIE_POMPES), 0
-        total, dernier = total + n, moment
+        total += n
+        dernier = moment if n >= 0 else dernier
     return series + (total >= SERIE_POMPES)
 
 

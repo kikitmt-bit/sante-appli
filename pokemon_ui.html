@@ -549,6 +549,7 @@ details.regles{color:#484838 !important}
 .exo h3{margin:4px 0 0;font-size:24px;font-weight:400;color:#383828}
 .exo .nb-exo{font-size:40px;color:#C03028;line-height:1}.exo .nb-exo small{font-size:18px}
 .exo .d{font-size:15px;color:#686850;margin-bottom:8px}
+.exo .annule-exo{margin:-4px 0 8px;padding:2px 4px;background:none;border:0;color:#686850;font:inherit;font-size:14px;line-height:1.05;text-decoration:underline;cursor:pointer}
 .exo .tag{position:absolute;top:6px;left:6px;padding:1px 6px;border-radius:6px 3px;background:#B05010;color:#F8F8E8;font-size:14px}
 .exo .go-exo,.speciale .go-exo{margin-top:auto;width:100%;padding:7px 4px;border:3px solid #484838;border-radius:10px 5px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;font:inherit;font-size:19px;cursor:pointer;box-shadow:2px 2px 0 rgba(10,15,35,.45)}
 .exo .go-exo:active,.speciale .go-exo:active{transform:translate(2px,2px);box-shadow:none}
@@ -3085,15 +3086,15 @@ function resteDefi() {
 // Les pompes, tractions et squats (la montre ne sait pas les compter) : un bouton, et chaque toucher part dans la liste partagée
 const GESTES = {pompes: {nom: "Pompes", pas: [5, 10]}, tractions: {nom: "Tractions", pas: [1, 5]}, squats: {nom: "Squats", pas: [10, 25]}, planche: {nom: "Planche", pas: []}};
 function gestesAuj() {
-  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0, squats: 0, planche: 0, danse: 0, series: 0}, touches = [];
-  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions|squats|planche|danse)_(-?\d+)_(\d+)/); if (m) { g[m[1]] += +m[2]; if (m[1] === "pompes") touches.push([+m[3], +m[2]]); } });
-  g.pompes = Math.max(g.pompes, 0); g.tractions = Math.max(g.tractions, 0); g.squats = Math.max(g.squats, 0);
+  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0, squats: 0, planche: 0, danse: 0, series: 0}, touches = [], neuf = {};
+  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions|squats|planche|danse)_(-?\d+)_(\d+)/); if (m) { g[m[1]] += +m[2]; if (+m[2] < 0 && !serveur.has(id)) neuf[m[1]] = (neuf[m[1]] || 0) + +m[2]; if (m[1] === "pompes") touches.push([+m[3], +m[2]]); } });
+  g.pompes = Math.max(g.pompes, 0); g.tractions = Math.max(g.tractions, 0); g.squats = Math.max(g.squats, 0); g.planche = Math.max(g.planche, 0);
   // les séries : au moins 10 pompes, à 30 min d'écart (même calcul que pokemon.series_de)
   let total = 0, dernier = null;
-  touches.sort((a, b) => a[0] - b[0]).forEach(([t, n]) => { if (dernier !== null && t - dernier >= 18e5) { if (total >= 10) g.series++; total = 0; } total += n; dernier = t; });
+  touches.sort((a, b) => a[0] - b[0]).forEach(([t, n]) => { if (n >= 0 && dernier !== null && t - dernier >= 18e5) { if (total >= 10) g.series++; total = 0; } total += n; if (n >= 0) dernier = t; });
   if (total >= 10) g.series++;
   // ce que le serveur sait déjà, s'il en sait plus (autre téléphone, liste pas encore revenue)
-  if (!TEST) Object.keys(g).forEach(k => { g[k] = Math.max(g[k], (D.gestes_jour || {})[k] || 0); });
+  if (!TEST) Object.keys(g).forEach(k => { g[k] = Math.max(g[k], ((D.gestes_jour || {})[k] || 0) + (neuf[k] || 0)); });
   return g;
 }
 function blocGestes(types = ["pompes", "tractions", "squats", "planche"]) {
@@ -3122,9 +3123,32 @@ function dessinerMuscu() {
       return `<div class="exo">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3>
         <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
         <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
+        ${t !== "tractions" && derniereSerie(t) ? `<button class="annule-exo" data-annule="${t}">Annuler ma dernière série (${derniereSerie(t).n}${M.chrono ? " s" : ""})</button>` : ""}
         ${t === "tractions" ? `<div class="plus-moins"><button class="go-exo" data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button class="go-exo" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : `<button class="go-exo" data-compte="${t}">▶ Lancer</button>`}</div>`; }).join("")}
       ${(D.danse || []).length ? `<div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(formeStarter() || 25)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques pour s'amuser · 1 point par jour pour le premier morceau fini</div><button class="go-exo" data-danse>▶ Essayer</button></div>` : ""}</div>`;
   brancherGestes(el); rognerImages(el);
+  el.querySelectorAll("[data-annule]").forEach(b => confirmerDeuxFois(b, "Sûr ? Touche encore pour annuler", () => annulerSerie(b.dataset.annule)));
+}
+// Un bouton qui agit au deuxième toucher : assez sûr pour ne rien perdre par erreur, sans rester appuyé
+function confirmerDeuxFois(b, question, faire) {
+  const texte = b.textContent; let arme = null;
+  b.onclick = e => { e.stopPropagation(); if (arme) { clearTimeout(arme); arme = null; return faire(); }
+    vibre(10); b.textContent = question; arme = setTimeout(() => { arme = null; b.textContent = texte; }, 3000); };
+}
+// La dernière série du jour qui compte encore : les corrections et annulations (nombres négatifs) se déduisent des dernières séries
+function derniereSerie(type) {
+  const debut = `${D.prefixe}geste-${type}_`, pile = [];
+  [...ouvertes].filter(id => id.startsWith(debut)).map(id => id.slice(debut.length).split("_").map(Number)).sort((a, b) => a[1] - b[1]).forEach(([n]) => {
+    if (n >= 0) { if (n) pile.push(n); return; }
+    let reste = -n; while (reste > 0 && pile.length) { const x = pile.pop(); if (x > reste) pile.push(x - reste); reste -= x; } });
+  return pile.length ? {n: pile[pile.length - 1]} : null;
+}
+function annulerSerie(type) {
+  const s = derniereSerie(type); if (!s) return;
+  memoriser(`${D.prefixe}geste-${type}_${-s.n}_${Date.now()}`);
+  const mem = lireEntr(), moi = mem[type];
+  if (moi && moi.avant) { moi.derniere = moi.avant.derniere; moi.record = moi.avant.record; delete moi.avant; garderEntr(mem); }  // le record d'un essai ne reste pas
+  apresGeste(); dessinerMuscu();
 }
 function brancherGestes(racine) {
   racine.querySelectorAll("[data-g]").forEach(b => b.onclick = () => { vibre(12); ton(1250, 0, .04, {type: "square", vol: .03});
@@ -4400,7 +4424,7 @@ const ENTR = {
   pompes: {nom: "Pompes", un: "pompe", coach: 68, defaut: 10, decompte: 5, paysage: true, ennemis: [74, 75, 95, 76], cibles: [10, 25],
     attaques: ["Poing-Karaté", "Balayage", "Frappe Atlas", "Sacrifice"],
     consigne: "Pose le téléphone <b>en paysage</b> au sol, sous ton visage. Corps bien droit, descends jusqu'à <b>toucher l'écran avec le nez</b>, puis remonte bras tendus."},
-  squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 5, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
+  squats: {nom: "Squats", un: "squat", coach: 115, defaut: 20, decompte: 8, paysage: true, ennemis: [27, 28, 76, 112], cibles: [20, 50],
     capteur: {premier: "bas", s1: .15, s2: .15, ecart: 1200, tauG: 2.5, tauV: 3, balance: 1.15, separe: true}, attaques: ["Écrasement", "Séisme", "Coup d'Boule", "Mawashi Geri"],
     consigne: "Tiens le téléphone <b>en paysage</b>, bras fléchis devant toi. Pieds à plat, descends <b>cuisses à l'horizontale</b>, puis remonte, à ton rythme."},
   planche: {nom: "Planche", un: "seconde", coach: 11, defaut: 30, decompte: 8, paysage: true, chrono: true, pas: 5, repos: 45,
@@ -4434,7 +4458,7 @@ const DECORS_COMBAT = {
   "Route Victoire": {image: "combat-route-victoire.webp", e: [67.7, 41.7], c: [27.7, 63.3], te: 22, tc: 30},
   "Plateau Indigo": {image: "combat-plateau-indigo.webp", e: [68.4, 42], c: [27, 63], te: 22, tc: 30},
 };
-const VERSION_DETECTION = "squats v11";
+const VERSION_DETECTION = "squats v12";
 const CORRECTION_MAX = 5;
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
 const lireEntr = () => { try { return JSON.parse(localStorage.getItem("pkm_entr") || "{}"); } catch (e) { return {}; } };
@@ -4514,9 +4538,9 @@ const STYLE_ENTR = `
 // Le mouvement vertical du téléphone : on retire la pesanteur (estimée en continu), on garde l'accélération vers le haut et on en tire une vitesse qui s'oublie
 // vite. Elle voit les mouvements lents (un squat en 2 s secoue très peu le téléphone) et ignore les petites secousses de la marche. Une répétition = une vitesse
 // dans un sens puis dans l'autre (squat : descendre puis remonter ; traction : monter puis redescendre). Les mesures sont gardées pour régler les seuils.
-function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
+function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu, depart = {}) {
   const haut = reglage.premier === "haut", s1 = reglage.s1 * facteur, s2 = reglage.s2 * facteur, tauG = reglage.tauG || .8, tauV = reglage.tauV || 1.2;
-  let g = null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0, biais = 0, duree = 0, plusVite = 0, vitDescente = 0, calme = 0, linAvant = 0, plusGrandTrou = 0, vmin = 0, pic = 0;
+  let g = depart.g || null, vit = 0, avant = null, phase = 0, debutPhase = 0, derniere = -1e9, recus = 0, choc = 0, prochain = 0, creux = 0, descendu = 0, biais = depart.biais || 0, duree = 0, plusVite = 0, vitDescente = 0, calme = 0, linAvant = 0, plusGrandTrou = 0, vmin = 0, pic = 0;
   const mesures = [], brut = [], evenements = [], debutMesures = performance.now();
   let prochainBrut = 0;
   const lire = e => {
@@ -4538,7 +4562,7 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
       const hx = a.x - b.x, hy = a.y - b.y, hz = a.z - b.z, hn = Math.hypot(hx, hy, hz) || 1; lin = (b.x * hx + b.y * hy + b.z * hz) / hn;
       // le capteur a un petit décalage : on l'apprend seulement quand le téléphone est calme. Apprendre vite au départ (v7) prenait un vrai squat pour un décalage : la
       // vitesse restait bloquée ~10 s, d'où « au début rien, puis ça marche » (série de Kiki, 03/11)
-      if (Math.abs(lin - biais) < .4) biais += (lin - biais) * Math.min(dt / 4, 1);
+      if (Math.abs(lin - biais) < .4) biais += (lin - biais) * Math.min(dt / (depart.rapide ? 1 : 4), 1);
       lin -= biais;
     }
     // la moyenne des deux dernières mesures : le calcul reste juste même à 6 mesures par seconde (rejoué sur les mesures de Kiki)
@@ -4582,7 +4606,7 @@ function capteurMouvement(reglage, facteur, surRep, surImpact, surPeu) {
   };
   PW.addEventListener("devicemotion", lire);
   const debit = () => Math.round(recus / Math.max((performance.now() - debutMesures) / 1000, .001));
-  return {arreter: () => PW.removeEventListener("devicemotion", lire), recus: () => recus, mesures, brut, evenements, debit, trou: () => Math.round(plusGrandTrou)};
+  return {arreter: () => PW.removeEventListener("devicemotion", lire), etat: () => ({g, biais}), recus: () => recus, mesures, brut, evenements, debit, trou: () => Math.round(plusGrandTrou)};
 }
 
 // L'adversaire : comme les balls, un Pokémon des lieux atteints, jamais d'un lieu à venir ; 8 fois sur 10 le lieu actuel, les rares moins souvent. C'est visuel : combattre n'attrape pas.
@@ -4644,7 +4668,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   let cible = resteMission || (moi.derniere ? (M.chrono ? Math.max(M.defaut, moi.derniere + (M.pas || 1)) : moi.derniere + 1) : M.defaut), sens = moi.sens2 || "normale", mesures = [], sonde = null, motShiny = "";
   const acteur = formeStarter() || M.coach, sesAttaques = (PAR_NUM[acteur].types || []).map(t => ATTAQUES[t]).find(Boolean) || M.attaques;
   const v = P.createElement("div"); v.className = "pkm-entr"; P.body.appendChild(v);
-  let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false;
+  let minuteurs = [], arret = () => {}, verrou = null, video = null, veille = "…", ferme = false, avance = null;
   const apres = (f, ms) => { const t = setTimeout(f, ms); minuteurs.push(t); return t; };
   const nettoyer = () => { minuteurs.forEach(t => { clearTimeout(t); clearInterval(t); }); minuteurs = []; arret(); arret = () => {}; };
   const parler = t => { try { if (!son) return; const s = PW.speechSynthesis; s.cancel(); const u = new PW.SpeechSynthesisUtterance(String(t)); u.lang = "fr-FR"; u.rate = 1.15; s.speak(u); } catch (e) {} };
@@ -4714,7 +4738,10 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
 
   function decompte(n) {
     nettoyer(); v.classList.remove("plein");
-    v.innerHTML = `<div class="gros">${n}</div><div class="rythme">${M.poche ? "Téléphone dans la poche !" : "En position !"}</div><button class="sec passer">Annuler</button>`;
+    v.innerHTML = `<div class="gros">${n}</div><div class="rythme">${M.poche ? "Téléphone dans la poche !" : M.capteur ? "En position, puis ne bouge plus jusqu'au Go !" : "En position !"}</div><button class="sec passer">Annuler</button>`;
+    // Le capteur a un petit décalage, qu'il n'apprend que téléphone calme : autant profiter du décompte, sans rien compter (Kiki, 04/11 : pas encore en place au Go, rien n'était compté au début)
+    avance = M.capteur && !M.poche ? capteurMouvement(M.capteur, SENSIBILITES[sens], () => {}, null, null, {rapide: true}) : null;
+    if (avance) arret = avance.arreter;
     v.querySelector(".passer").onclick = fermer;
     const el = v.querySelector(".gros");
     const t = setInterval(() => { n--; if (n > 0) { el.textContent = n; ton(660, 0, .1, {type: "square", vol: .08}); if (n <= 3) parler(n); }
@@ -4855,7 +4882,7 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       if (finie || !v.isConnected) return;
       let plusBas = 0;
       const c = capteurMouvement(M.capteur, SENSIBILITES[sens], () => rep(), null,
-        () => { if (Date.now() - plusBas < 1500) return; plusBas = Date.now(); dire("Pas assez bas : descends cuisses à l'horizontale !", 1400); ton(220, 0, .18, {type: "square", vol: .08}); });
+        () => { if (Date.now() - plusBas < 1500) return; plusBas = Date.now(); dire("Pas assez bas : descends cuisses à l'horizontale !", 1400); ton(220, 0, .18, {type: "square", vol: .08}); }, avance ? avance.etat() : {});
       arret = c.arreter; mesures = c.mesures; sonde = c;
       if (D.essais) { const m = P.createElement("small"); m.className = "mesure"; S.querySelector(".cpt").appendChild(m);
         minuteurs.push(setInterval(() => { m.textContent = `${VERSION_DETECTION} · ${c.debit()} mesures/s · trou ${c.trou()} ms`; }, 1000)); }
@@ -4911,11 +4938,12 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
 
   function bilan(n, duree) {
     v.classList.remove("plein");
-    const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.essais && mesures.length;
+    const nouveau = n > (moi.record || 0) && n > 0, aMesures = D.essais && mesures.length, avantSerie = {derniere: moi.derniere, record: moi.record};
     v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><div><h3>Série terminée !</h3><small>${duree} secondes${nouveau && moi.record ? " · nouveau record !" : ""}</small></div></div>
         <small>${M.chrono ? "Secondes tenues" : `${M.nom} comptées${M.poche ? " (corrige si le téléphone s'est trompé)" : ` (corrige une petite erreur, ${CORRECTION_MAX} au plus)`}`}</small><div class="regle">${M.chrono ? "" : '<button class="moins">−</button>'}<b>${n}</b>${M.chrono ? "" : '<button class="plus">+</button>'}</div>
         ${motShiny}<small class="veille">${veille}</small>${aMesures && sonde ? `<div><small>${VERSION_DETECTION} · ${sonde.debit()} mesures/s · plus grand trou ${sonde.trou()} ms</small></div>` : ""}</div>
       <button class="go suite">Série suivante (repos ${M.repos || REPOS_SERIE} s)</button><button class="sec fini">J'ai fini</button>
+      ${essai ? "" : `<button class="sec essai-non">C'était un essai : ne pas compter</button>`}
       ${aMesures ? `<button class="sec envoi">📤 Envoyer cette série à Claude</button>` : ""}
       ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
     const c = v.querySelector(".regle b"), detecte = n, bm = v.querySelector(".moins"), bp = v.querySelector(".plus");
@@ -4938,9 +4966,11 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const garder = () => {
       if (essai) return;
       if (n !== sauve) { memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n - sauve}_${Date.now()}`); sauve = n; }
-      if (n > 0) { moi.derniere = n; moi.record = Math.max(moi.record || 0, n); mem[type] = moi; garderEntr(mem); }
+      if (n > 0) { moi.derniere = n; moi.record = Math.max(moi.record || 0, n); moi.avant = avantSerie; mem[type] = moi; garderEntr(mem); }
     };
     garder();
+    const essaiNon = v.querySelector(".essai-non");
+    if (essaiNon) confirmerDeuxFois(essaiNon, "Sûr ? Touche encore pour ne pas la compter", () => { n = 0; garder(); Object.assign(moi, avantSerie); delete moi.avant; mem[type] = moi; garderEntr(mem); fermer(); });
     v.querySelector(".suite").onclick = () => { garder(); if (!M.chrono) cible = Math.max(n, 1); repos(M.repos || REPOS_SERIE); };
     v.querySelector(".fini").onclick = () => { garder(); fermer(); };
   }
