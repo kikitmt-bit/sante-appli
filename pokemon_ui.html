@@ -399,6 +399,12 @@ section[hidden]{display:none}
 .carte.amis{margin-top:14px}
 .speciale.mission{grid-column:1/-1}
 .speciale.mission .m-pk{float:right;width:64px;height:64px;margin:-2px 0 2px 8px;object-fit:contain;image-rendering:pixelated}
+.speciale.mission.vive{display:grid;grid-template-columns:92px 1fr;column-gap:10px;align-items:center;padding:8px 10px}
+.speciale.mission.vive .m-pk{float:none;width:92px;height:92px;margin:0;grid-row:1}.speciale.mission.vive .m-corps{min-width:0;grid-row:1}
+.speciale.mission.vive .m-haut{display:flex;justify-content:space-between;gap:6px;font-size:15px;color:#686850}.speciale.mission.vive .m-haut b{font-weight:400;color:#B05010}
+.speciale.mission.vive .m-titre{margin-top:0;font-size:21px;line-height:1}.speciale.mission.vive .gain{margin:1px 0 3px;font-size:16px;color:#383828}
+.speciale.mission.vive .ligne{margin-top:0}.speciale.mission.vive .m-action{grid-column:1/-1;margin-top:7px}
+.speciale.mission.vive .m-pourquoi{grid-column:1/-1;margin-top:4px;font-size:14px;line-height:1.05;text-align:center}
 .carte-zoom.discret{left:auto;right:8px;bottom:8px;width:34px;height:34px;padding:0;justify-content:center;background:rgba(16,35,58,.7);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
 .carte-zoom.discret svg{width:18px;height:18px}
 .reglage-recap{display:flex;gap:10px;align-items:flex-start;background:#1C2740;border-radius:14px;padding:11px 13px;margin-top:14px;cursor:pointer}
@@ -459,7 +465,7 @@ details.regles{color:#484838 !important}
 .gestes{margin-top:8px;display:grid;gap:6px}
 .geste{display:flex;align-items:center;gap:5px}.geste .nm{flex:1;font-size:16px;color:#383828}.geste b{min-width:30px;text-align:right;font-size:20px;color:#383828;margin-right:4px}
 .geste button{min-width:38px;padding:5px 6px;border:2px solid #484838;border-radius:7px 3px 7px 3px;background:#F8F8E8;color:#383828;font-size:15px;cursor:pointer}
-.geste .lancer{display:block;margin-top:3px;min-width:0;padding:3px 7px;background:#40A8F8;color:#fff;text-shadow:1px 1px 0 #1C5C94;font-size:14px}
+.geste .lancer{display:block;margin-top:3px;min-width:0;padding:4px 9px;border-width:3px;border-radius:10px 5px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;font-size:15px;box-shadow:2px 2px 0 rgba(10,15,35,.45)}
 .geste button.plus{background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712}.geste button:disabled{opacity:.35}
 .epreuve+.epreuve{margin-top:7px;padding-top:6px;border-top:2px dashed #D8D8B8}.epreuve.faite{opacity:.6}.qui-e{font-size:15px;color:#B05010;margin-bottom:1px}
 .ou-e{font-size:13px;color:#686850;margin-top:4px}
@@ -539,9 +545,9 @@ details.regles{color:#484838 !important}
 .exo .nb-exo{font-size:40px;color:#C03028;line-height:1}.exo .nb-exo small{font-size:18px}
 .exo .d{font-size:15px;color:#686850;margin-bottom:8px}
 .exo .tag{position:absolute;top:6px;left:6px;padding:1px 6px;border-radius:6px 3px;background:#B05010;color:#F8F8E8;font-size:14px}
-.exo .go-exo{margin-top:auto;width:100%;padding:7px 4px;border:3px solid #484838;border-radius:10px 5px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;font:inherit;font-size:19px;cursor:pointer;box-shadow:2px 2px 0 rgba(10,15,35,.45)}
-.exo .go-exo:active{transform:translate(2px,2px);box-shadow:none}
-.exo .plus-moins{display:flex;gap:4px;width:100%;margin-top:auto}.exo .plus-moins .go-exo{flex:1;width:auto;min-width:0;margin-top:0}.exo .plus-moins .go-exo:disabled{opacity:.45;cursor:default}
+.exo .go-exo,.speciale .go-exo{margin-top:auto;width:100%;padding:7px 4px;border:3px solid #484838;border-radius:10px 5px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;font:inherit;font-size:19px;cursor:pointer;box-shadow:2px 2px 0 rgba(10,15,35,.45)}
+.exo .go-exo:active,.speciale .go-exo:active{transform:translate(2px,2px);box-shadow:none}
+.exo .plus-moins,.speciale .plus-moins{display:flex;gap:4px;width:100%;margin-top:auto}.exo .plus-moins .go-exo,.speciale .plus-moins .go-exo{flex:1;width:auto;min-width:0;margin-top:0}.exo .plus-moins .go-exo:disabled,.speciale .plus-moins .go-exo:disabled{opacity:.45;cursor:default}
 #starter-dresseur{margin-top:12px}#starter-dresseur .starter-carte{margin-bottom:0}
 .bouton-param{display:block;width:100%;margin-top:12px;padding:10px 12px;text-align:left;cursor:pointer;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);color:#383828;font:inherit;font-size:19px}
 .nouvelles{margin-top:10px}.nouvelles .titre{margin-bottom:2px}
@@ -3087,7 +3093,7 @@ function gestesAuj() {
 }
 function blocGestes(types = ["pompes", "tractions", "squats", "planche"]) {
   const g = gestesAuj();
-  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}${t === "tractions" ? "" : `<button class="lancer" data-compte="${t}">▶ Série</button>`}</span><b>${g[t]}</b>${t === "tractions" ? `
+  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}${t === "tractions" ? "" : `<button class="lancer" data-compte="${t}">▶ Lancer</button>`}</span><b>${g[t]}</b>${t === "tractions" ? `
     <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}` : ""}</div>`).join("")}</div>`;
 }
 function apresGeste() {  // tout redessiner, le bonus ouvert le reste
@@ -3249,7 +3255,7 @@ function dessinerSpeciales() {
   // Ce qui reste à faire pour chaque ball
   const manque = (v, s, u) => v < s ? (u ? `${Math.ceil(s - v)} ${u}` : `${fr(Math.ceil((s - v) / 10) * 10)} pas`) : null;
   const mPas = manque(J.pas, R.objectif_pas), mZone = manque(J.zone, R.objectif_zone, "min de sport");
-  const resteSuper = sup ? "Gagnée aujourd'hui !" : `Il te manque <b>${[mPas, mZone].filter(Boolean).join("</b> et <b>")}</b>, ou un exploit.`;
+  const resteSuper = sup ? "Gagnée aujourd'hui !" : `Il te manque <b>${[mPas, mZone].filter(Boolean).join("</b> et <b>")}</b>. Ou fais l'Hyper Ball : elle donne aussi celle-ci.`;
   const resteHyper = hyp ? "Gagnée aujourd'hui !" : `Au choix, encore <b>${manque(J.pas, R.exploit_pas)}</b>, ou <b>${manque(J.zone, R.exploit_zone, "min de sport")}</b>,
     ou une séance de <b>${R.exploit_seance} min</b>${J.seance ? ` (ta plus longue : ${Math.round(J.seance)} min)` : ""}.`;
   const resteMaster = mas ? "Gagnée aujourd'hui ! Un nouveau compte commence demain."
@@ -3284,12 +3290,12 @@ function dessinerSpeciales() {
   ].filter(Boolean);
   document.getElementById("speciales").innerHTML = carteDefi() + carteMission(gris, champ, cadenas) + `
     <div class="speciale ${sup ? "ok" : ""} ${gris ? "grise" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ico("super")}Super Ball</div><div class="gain">Objectif double, ou un exploit · shiny ×2</div>
+      <div class="tete">${ico("super")}Super Ball</div><div class="gain">${fr(R.objectif_pas)} pas et ${R.objectif_zone} min de sport · shiny ×2</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
       <div class="ligne"><span>🔥 sport ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}
       ${verrou("super") || `<div class="reste">${resteSuper}</div>`}</div>
     <div class="speciale ${hyp ? "ok" : ""} ${gris ? "grise" : ""}">${hyp ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ico("hyper")}Hyper Ball</div><div class="gain">Un exploit au choix · shiny ×4, donne aussi la Super Ball</div>
+      <div class="tete">${ico("hyper")}Hyper Ball</div><div class="gain">Un seul des trois suffit · shiny ×4, donne aussi la Super Ball</div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}
       <div class="ligne"><span>🔥 sport ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
       <div class="ligne"><span>💪 séance ${Math.round(J.seance)} min</span><span>${R.exploit_seance} min</span></div>${j(J.seance, R.exploit_seance)}
@@ -3343,6 +3349,15 @@ function carteMission(gris = false, champ = "", cadenas = "") {
     : `<div class="ligne"><span>${m.unite === "pas" ? fr(val) : val} ${u(val)}</span><span>${m.unite === "pas" ? fr(m.seuil) : m.seuil}</span></div>${j}
       <div class="reste">${ok ? `Réussie : <b>+${m.bonus} pts</b> !` : `Encore <b>${m.unite === "pas" ? fr(m.seuil - val) : m.unite === "km" ? String(Math.round((m.seuil - val) * 10) / 10).replace(".", ",") : Math.ceil(m.seuil - val)} ${u(m.seuil - val)}</b> · +${m.bonus} pts`}</div>
       ${m.geste && !ok ? blocGestes([types]) : ""}`;
+  // Une mission du téléphone (pompes, squats, tractions) : tout tient en un coup d'œil, avec le même bouton que dans Muscu (Kiki, 04/11)
+  if (m.geste && m.num && !gris) {
+    const g = gestesAuj()[types] || 0;
+    const action = ok ? "" : types === "tractions" ? `<div class="plus-moins m-action"><button class="go-exo" data-g="tractions" data-n="-1" ${g < 1 ? "disabled" : ""}>−1</button>${GESTES.tractions.pas.map(n => `<button class="go-exo" data-g="tractions" data-n="${n}">+${n}</button>`).join("")}</div>`
+      : `<button class="go-exo m-action" data-compte="${types}">▶ Lancer</button>`;
+    return `<div class="speciale mission vive ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}<img class="m-pk rogne" src="${IMG.mini(m.num)}" alt="">
+      <div class="m-corps"><div class="m-haut"><span>Mission du jour</span><b>${ok ? "Réussie : " : ""}+${m.bonus} pts</b></div><div class="m-titre">${m.titre}</div><div class="gain">${m.texte}</div>
+        <div class="ligne"><span>${val} ${u(val)}</span><span>${m.seuil}</span></div>${j}</div>${action}<div class="m-pourquoi">${m.raison}</div></div>`;
+  }
   return `<div class="speciale mission ${ok ? "ok" : ""} ${gris ? "grise" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
     ${m.num ? `<img class="m-pk" src="${IMG.mini(m.num)}" alt="">` : ""}<div class="tete">${ico("radar")}Mission du jour</div>
     <div class="m-titre">${m.titre}</div><div class="gain">${m.texte}</div>${gris ? `<div class="verrou">${cadenas}${ok ? `Réussie ! ${champ} garde tes <b>+${m.bonus} pts</b> : bats-le pour les récupérer.` : `Bats ${champ} pour la débloquer.`}</div>` : ligne}
