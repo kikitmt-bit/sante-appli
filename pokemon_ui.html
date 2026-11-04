@@ -541,7 +541,7 @@ details.regles{color:#484838 !important}
 .exo .tag{position:absolute;top:6px;left:6px;padding:1px 6px;border-radius:6px 3px;background:#B05010;color:#F8F8E8;font-size:14px}
 .exo .go-exo{margin-top:auto;width:100%;padding:7px 4px;border:3px solid #484838;border-radius:10px 5px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;font:inherit;font-size:19px;cursor:pointer;box-shadow:2px 2px 0 rgba(10,15,35,.45)}
 .exo .go-exo:active{transform:translate(2px,2px);box-shadow:none}
-.exo .plus-moins{display:flex;gap:4px;width:100%;margin-top:6px}.exo .plus-moins button{flex:1;min-width:0;padding:4px 0;border:2px solid #484838;border-radius:7px 3px;background:#F8F8E8;color:#383828;font:inherit;font-size:16px;cursor:pointer}.exo .plus-moins button:disabled{opacity:.35}
+.exo .plus-moins{display:flex;gap:4px;width:100%;margin-top:auto}.exo .plus-moins .go-exo{flex:1;width:auto;min-width:0;margin-top:0}.exo .plus-moins .go-exo:disabled{opacity:.45;cursor:default}
 #starter-dresseur{margin-top:12px}#starter-dresseur .starter-carte{margin-bottom:0}
 .bouton-param{display:block;width:100%;margin-top:12px;padding:10px 12px;text-align:left;cursor:pointer;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);color:#383828;font:inherit;font-size:19px}
 .nouvelles{margin-top:10px}.nouvelles .titre{margin-bottom:2px}
@@ -3087,7 +3087,7 @@ function gestesAuj() {
 }
 function blocGestes(types = ["pompes", "tractions", "squats", "planche"]) {
   const g = gestesAuj();
-  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}<button class="lancer" data-compte="${t}">▶ Série</button></span><b>${g[t]}</b>${t === "tractions" ? `
+  return `<div class="gestes">${types.map(t => `<div class="geste"><span class="nm">${GESTES[t].nom}${t === "tractions" ? "" : `<button class="lancer" data-compte="${t}">▶ Série</button>`}</span><b>${g[t]}</b>${t === "tractions" ? `
     <button data-g="${t}" data-n="${-GESTES[t].pas[0]}" ${g[t] < GESTES[t].pas[0] ? "disabled" : ""}>−${GESTES[t].pas[0]}</button>${GESTES[t].pas.map(n => `<button class="plus" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}` : ""}</div>`).join("")}</div>`;
 }
 function apresGeste() {  // tout redessiner, le bonus ouvert le reste
@@ -3111,8 +3111,7 @@ function dessinerMuscu() {
       return `<div class="exo">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3>
         <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
         <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
-        <button class="go-exo" data-compte="${t}">▶ Lancer</button>
-        ${t === "tractions" ? `<div class="plus-moins"><button data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : ""}</div>`; }).join("")}
+        ${t === "tractions" ? `<div class="plus-moins"><button class="go-exo" data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button class="go-exo" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : `<button class="go-exo" data-compte="${t}">▶ Lancer</button>`}</div>`; }).join("")}
       ${D.kiki ? EXOS_MONTRE.map(([k, nom, num, cle, gain]) => `<div class="exo">${mis.cle === cle && mis.ok !== true ? `<span class="tag">Mission</span>` : ""}<img class="pk rogne" src="${IMG.mini(num)}" alt=""><h3>${nom}</h3>
         <div class="nb-exo">${(G.seances_jour || {})[k] || 0}<small> min</small></div>
         <div class="d">aujourd'hui · ${gain}<br>Lance l'exercice sur ta montre : il compte tout seul.</div></div>`).join("") : ""}
