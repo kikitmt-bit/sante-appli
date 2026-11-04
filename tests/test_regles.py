@@ -176,6 +176,29 @@ class Roue(unittest.TestCase):
         self.assertTrue(missions.reussite("tournee", DEBUT, stat, info))
         self.assertTrue(missions.reussite("pinces", DEBUT, stat, info, {str(DEBUT): {"tractions": 5}}))
 
+    def test_la_premiere_fois_on_commence_doucement(self):
+        stat = stats_de({})
+        self.assertEqual(missions.possible("defi", jour(0), stat), 10)
+        self.assertEqual(missions.possible("cuisses", jour(0), stat), 20)
+        self.assertEqual(missions.possible("pinces", jour(0), stat), 2)
+        self.assertIsNone(missions.possible("serie", jour(0), stat))
+
+    def test_la_mission_monte_avec_ce_qui_a_ete_fait(self):
+        stat = stats_de({})
+        self.assertEqual(missions.possible("defi", jour(0), stat, {str(jour(-3)): {"pompes": 10}}), 15)
+        self.assertEqual(missions.possible("defi", jour(0), stat, {str(jour(-3)): {"pompes": 15}}), 20)
+        self.assertEqual(missions.possible("defi", jour(0), stat, {str(jour(-3)): {"pompes": 60}}), 20)
+        self.assertEqual(missions.possible("serie", jour(0), stat, {str(jour(-3)): {"pompes": 20}}), 3)
+
+    def test_apres_une_longue_pause_on_repart_doucement(self):
+        self.assertEqual(missions.possible("defi", jour(0), stats_de({}), {str(jour(-29)): {"pompes": 40}}), 10)
+
+    def test_le_seuil_du_jour_est_celui_qui_est_affiche_et_verifie(self):
+        info = lambda j: {"seuil": 10}  # noqa: E731
+        stat = stats_de({})
+        self.assertTrue(missions.reussite("defi", DEBUT, stat, info, {str(DEBUT): {"pompes": 10}}))
+        self.assertFalse(missions.reussite("defi", DEBUT, stat, info, {str(DEBUT): {"pompes": 9}}))
+
     def test_jours_vides_sans_erreur(self):
         self.assertEqual(missions.familles_du({"pas": float("nan"), "zone_sport": None}), set())
 

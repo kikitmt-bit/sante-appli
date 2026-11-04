@@ -30,6 +30,11 @@ TOUS_LES_JOURS = set(range(7))
 FAMILLES = ("marche", "cardio", "pousser", "tirer", "jambes")
 FORCE = ("pousser", "tirer", "jambes")  # jamais deux jours de suite sur les mêmes muscles
 PART = {"marche": 2, "cardio": 1.5, "pousser": 1, "tirer": 1, "jambes": 1}  # la place de chaque famille dans la semaine
+# On part de ce que le joueur a vraiment fait (Kiki, 04/11 : 30 pompes d'un coup après des années sans, c'est trop) : la mission demande le premier palier
+# au-dessus de sa meilleure journée de ces 28 jours. Après une longue pause, on repart donc doucement. Tygnon n'arrive qu'une fois 20 pompes faites en un jour.
+PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50)), "pinces": ("tractions", (2, 3, 5))}
+TYGNON_APRES = 20
+MEMOIRE = 28                     # jours regardés pour la meilleure journée
 # cle -> titre, texte, seuil, jours possibles (0 = lundi), unité ; num = son Pokémon, bonus = points, phrase = sa petite phrase,
 # geste = ce que le téléphone compte lui-même (pompes, squats, series : boutons) ; famille = la roue (tirer) ; materiel = il faut le matériel de Kiki (pas proposé aux amis, en attendant « Mon matériel »)
 MISSIONS = {
@@ -58,11 +63,11 @@ MISSIONS = {
     "course": {"famille": "marche", "titre": "La course de Rattata", "texte": "20 % de plus que ta moyenne : {seuil} pas", "seuil": PAS_FANTOME, "jours": TOUS_LES_JOURS, "unite": "pas",
                "num": 19, "bonus": 25, "phrase": "Petit, vif, et jamais satisfait de sa moyenne."},
     # Sans matériel, en un toucher, sur l'honneur
-    "defi": {"famille": "pousser", "titre": "Le défi de Mackogneur", "texte": "20 pompes dans la journée", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "pompes", "geste": "pompes",
+    "defi": {"famille": "pousser", "titre": "Le défi de Mackogneur", "texte": "{seuil} pompes dans la journée", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "pompes", "geste": "pompes",
              "num": 68, "bonus": 20, "phrase": "Il en fait autant avec chaque bras. Lui en a quatre."},
     "serie": {"famille": "pousser", "titre": "La série de Tygnon", "texte": "3 fois 10 pompes, à 30 min d'écart au moins", "seuil": 3, "jours": TOUS_LES_JOURS, "unite": "séries", "geste": "series",
               "num": 107, "bonus": 30, "phrase": "Une série, une pause, et on remet ça."},
-    "cuisses": {"famille": "jambes", "titre": "Les cuisses de Kangourex", "texte": "50 squats dans la journée", "seuil": 50, "jours": TOUS_LES_JOURS, "unite": "squats", "geste": "squats",
+    "cuisses": {"famille": "jambes", "titre": "Les cuisses de Kangourex", "texte": "{seuil} squats dans la journée", "seuil": 50, "jours": TOUS_LES_JOURS, "unite": "squats", "geste": "squats",
                 "num": 115, "bonus": 20, "phrase": "Avec un petit dans la poche, en plus."},
     # Seulement si la montre mesure le sport
     "galop": {"famille": "cardio", "titre": "Le galop de Ponyta", "texte": "15 min de sport en zone jaune", "seuil": 15, "jours": TOUS_LES_JOURS, "unite": "min",
@@ -70,7 +75,7 @@ MISSIONS = {
     "charge": {"famille": "cardio", "titre": "La charge de Tauros", "texte": "Une séance de 20 min", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "min",
                "num": 128, "bonus": 25, "phrase": "Tête baissée, et sans s'arrêter avant la fin."},
     # Avec le matériel de Kiki (audit du 03/11) : le dos, le rameur, le tapis de danse, le vélo
-    "pinces": {"famille": "tirer", "materiel": True, "titre": "Les pinces de Scarabrute", "texte": "5 tractions dans la journée", "seuil": 5, "jours": TOUS_LES_JOURS, "unite": "tractions", "geste": "tractions",
+    "pinces": {"famille": "tirer", "materiel": True, "titre": "Les pinces de Scarabrute", "texte": "{seuil} tractions dans la journée", "seuil": 5, "jours": TOUS_LES_JOURS, "unite": "tractions", "geste": "tractions",
                "num": 127, "bonus": 30, "phrase": "Une fois agrippé, il ne lâche plus."},
     "traversee": {"famille": "tirer", "materiel": True, "titre": "La traversée d'Otaria", "texte": "10 min de rameur", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
                   "num": 86, "bonus": 35, "phrase": "Il nage à contre-courant, et il adore ça."},
@@ -173,10 +178,21 @@ def reussite(cle, jour, stats, info, gestes=None):
     return None
 
 
-def possible(cle, jour, stats):
+def meilleure_journee(geste, jour, gestes):
+    """Le plus de pompes (ou squats, tractions) faites en un jour, sur les MEMOIRE jours d'avant."""
+    return max((((gestes or {}).get(str(jour - dt.timedelta(days=k))) or {}).get(geste, 0) for k in range(1, MEMOIRE + 1)), default=0)
+
+
+def possible(cle, jour, stats, gestes=None):
     """Cette mission peut-elle être tirée pour ce joueur, ce jour-là ? -> son seuil du jour (celui de MISSIONS le plus souvent), ou None."""
     m = MISSIONS[cle]
     if jour.weekday() not in m["jours"]:
+        return None
+    if cle in PALIERS:
+        geste, paliers = PALIERS[cle]
+        record = meilleure_journee(geste, jour, gestes)
+        return next((p for p in paliers if p > record), paliers[-1])
+    if cle == "serie" and meilleure_journee("pompes", jour, gestes) < TYGNON_APRES:
         return None
     avant = [stats(jour - dt.timedelta(days=k)) for k in range(1, 29)]  # du plus récent au plus ancien
     pas = [s["pas"] for s in avant if s.get("pas") and s["pas"] == s["pas"]][:HISTOIRE]
@@ -222,7 +238,7 @@ def tirer(jour, stats, jours, ami=None, gestes=None):
     proposee = lambda j: MISSIONS.get((jours.get(str(j)) or {}).get("cle"), {}).get("famille")  # noqa: E731
     fait = lambda j: familles_du(stats(j), (gestes or {}).get(str(j)))  # noqa: E731
     recentes = {(jours.get(str(jour - dt.timedelta(days=k))) or {}).get("cle") for k in range(1, PAS_REVENIR + 1)}
-    seuils = {c: s for c in TIRAGE if (not ami or not MISSIONS[c].get("materiel")) and (s := possible(c, jour, stats)) is not None}
+    seuils = {c: s for c in TIRAGE if (not ami or not MISSIONS[c].get("materiel")) and (s := possible(c, jour, stats, gestes)) is not None}
     choix = [c for c in seuils if c not in recentes] or list(seuils)
     hier = fait(avant[0]) | {proposee(avant[0])}
     repos = [c for c in choix if not (MISSIONS[c]["famille"] in FORCE and MISSIONS[c]["famille"] in hier)]
