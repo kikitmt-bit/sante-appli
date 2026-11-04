@@ -557,17 +557,16 @@ details.regles{color:#484838 !important}
   <!-- 3 onglets (02/11, carte blanche de Kiki) : ce qu'on fait chaque jour, sa collection, soi et ses amis -->
   <nav class="onglets" id="onglets"></nav>
   <!-- Aventure (01/11, Kiki : la carte toujours en haut) : ton aventure et le replay de ta journée, ce qui t'attend, ton
-       compteur du jour, tes objectifs du jour -->
+       compteur du jour, tes objectifs du jour (04/11, Kiki : remontés, ils étaient au 3e écran), puis la suite et ta collection -->
   <section id="o-aventure">
     <div id="bandeau-voyage"></div>
     <div class="carte" id="voyage"></div>
-    <div id="aujourdhui"></div>
-    <div id="prochains"></div>
     <div class="carte" id="aouvrir"></div>
-    <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
     <div class="carte" id="barre"></div>
     <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
     <div class="grille2" id="speciales"></div>
+    <div id="prochains"></div>
+    <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
   </section>
   <section id="o-dex" hidden>
     <div id="stats"></div>
@@ -3093,7 +3092,7 @@ function blocGestes(types = ["pompes", "tractions", "squats", "planche"]) {
 }
 function apresGeste() {  // tout redessiner, le bonus ouvert le reste
   const ouvert = document.querySelector("#speciales .suivi button.on"), cle = ouvert && ouvert.dataset.c;
-  dessinerSpeciales(); dessinerMuscu(); dessinerAujourdhui();
+  dessinerSpeciales(); dessinerMuscu();
   if (cle) { const t = document.querySelector(`#speciales .suivi button[data-c="${cle}"]`); if (t) t.click(); }
 }
 // La page Muscu (03/11, Kiki : pompes, tractions, squats et planche étaient cachés derrière une petite tuile) : un exercice, un toucher, le téléphone compte
@@ -3145,27 +3144,6 @@ function prochainsObjectifs() {
   // le champion est toujours là s'il existe (l'évolution reste une surprise) ; le reste complète, du plus proche au plus lointain
   liste.sort((a, b) => a.rang - b.rang);
   return [...liste.filter(x => x.prio), ...liste.filter(x => !x.prio)].slice(0, 3).sort((a, b) => a.rang - b.rang);
-}
-// Aujourd'hui (audit du 03/11) : ce qu'il y a à faire aujourd'hui, sans descendre au 3e écran : le champion, la mission, la prochaine ball spéciale
-function dessinerAujourdhui() {
-  const el = document.getElementById("aujourdhui"), l = [], d = V.defi, m = D.mission, g = gestesAuj();
-  const gagnee = cle => CAPTURES.some(c => c.jour === D.aujourdhui && c.id.split("#")[1].startsWith(cle));
-  if (d && d.arrive) l.push({ic: LIEUX[d.lieu].arene.image ? ico(IMG.badge(LIEUX[d.lieu].arene.image)) : ico("ligue"), t: `Battre ${CHAMPIONS[d.numero].nom}`, v: resteDefi(), va: "speciales"});
-  if (m && m.cle && m.cle !== "coucher") {
-    const val = Math.max(m.valeur == null ? 0 : m.valeur, m.geste ? g[m.geste] || 0 : 0), ok = m.ok === true || (!!m.geste && val >= m.seuil);
-    l.push({ic: m.num ? ico(IMG.mini(m.num)) : ico("radar"), t: m.titre, v: ok ? `Réussie : +${m.bonus} pts` : m.texte, va: !ok && (m.geste || ["traversee", "danse"].includes(m.cle)) ? "muscu" : "speciales"});
-  }
-  if (!G.defi_grise) {
-    const reste = (v, s, u) => v < s ? (u ? `${Math.ceil(s - v)} ${u}` : `${fr(Math.ceil((s - v) / 10) * 10)} pas`) : null;
-    if (!gagnee("super")) l.push({ic: ico("super"), t: "Super Ball", v: `encore ${[reste(J.pas, R.objectif_pas), reste(J.zone, R.objectif_zone, "min de sport")].filter(Boolean).join(" et ")}`, va: "speciales"});
-    else if (!gagnee("hyper")) l.push({ic: ico("hyper"), t: "Hyper Ball", v: `encore ${reste(J.pas, R.exploit_pas)} ou ${reste(J.zone, R.exploit_zone, "min de sport")}`, va: "speciales"});
-  }
-  if (!l.length) { el.innerHTML = ""; return; }
-  el.innerHTML = `<div class="prochains"><b class="titre-p">Aujourd'hui</b>${l.map((x, i) => `<button data-i="${i}"><span class="ic">${x.ic}</span><span class="tx"><b>${x.t}</b><small>${x.v}</small></span></button>`).join("")}</div>`;
-  el.querySelectorAll("button").forEach(b => b.onclick = () => { const k = l[b.dataset.i].va; vibre(8);
-    if (k === "muscu") return montrerOnglet("muscu");
-    const c = document.getElementById(k); if (c) c.scrollIntoView({behavior: "smooth", block: "start"}); });
-  rognerImages(el);
 }
 function dessinerProchains() {
   const el = document.getElementById("prochains"), l = prochainsObjectifs();
@@ -5137,7 +5115,7 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
   if (PW.__ongletJeu && PW.__ongletJeu !== "aventure") montrerOnglet(PW.__ongletJeu, false);
   else P.body.classList.remove("page-sante");
 }
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerAujourdhui(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
