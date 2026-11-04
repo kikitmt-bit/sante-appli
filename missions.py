@@ -34,6 +34,7 @@ PART = {"marche": 2, "cardio": 1.5, "pousser": 1, "tirer": 1, "jambes": 1}  # la
 # au-dessus de sa meilleure journée de ces 28 jours. Après une longue pause, on repart donc doucement. Tygnon n'arrive qu'une fois 20 pompes faites en un jour.
 PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50)), "pinces": ("tractions", (2, 3, 5))}
 TYGNON_APRES = 20
+PALIER_BONUS = (20, 25, 30)      # les points de chaque palier (Kiki, 04/11) : la première reste bien payée, et progresser rapporte plus
 MEMOIRE = 28                     # jours regardés pour la meilleure journée
 # cle -> titre, texte, seuil, jours possibles (0 = lundi), unité ; num = son Pokémon, bonus = points, phrase = sa petite phrase,
 # geste = ce que le téléphone compte lui-même (pompes, squats, series : boutons) ; famille = la roue (tirer) ; materiel = il faut le matériel de Kiki (pas proposé aux amis, en attendant « Mon matériel »)
@@ -64,11 +65,11 @@ MISSIONS = {
                "num": 19, "bonus": 25, "phrase": "Petit, vif, et jamais satisfait de sa moyenne."},
     # Sans matériel, en un toucher, sur l'honneur
     "defi": {"famille": "pousser", "titre": "Le défi de Mackogneur", "texte": "{seuil} pompes dans la journée", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "pompes", "geste": "pompes",
-             "num": 68, "bonus": 20, "phrase": "Il en fait autant avec chaque bras. Lui en a quatre."},
+             "num": 68, "bonus": 30, "phrase": "Il en fait autant avec chaque bras. Lui en a quatre."},
     "serie": {"famille": "pousser", "titre": "La série de Tygnon", "texte": "3 fois 10 pompes, à 30 min d'écart au moins", "seuil": 3, "jours": TOUS_LES_JOURS, "unite": "séries", "geste": "series",
-              "num": 107, "bonus": 30, "phrase": "Une série, une pause, et on remet ça."},
+              "num": 107, "bonus": 40, "phrase": "Une série, une pause, et on remet ça."},
     "cuisses": {"famille": "jambes", "titre": "Les cuisses de Kangourex", "texte": "{seuil} squats dans la journée", "seuil": 50, "jours": TOUS_LES_JOURS, "unite": "squats", "geste": "squats",
-                "num": 115, "bonus": 20, "phrase": "Avec un petit dans la poche, en plus."},
+                "num": 115, "bonus": 30, "phrase": "Avec un petit dans la poche, en plus."},
     # Seulement si la montre mesure le sport
     "galop": {"famille": "cardio", "titre": "Le galop de Ponyta", "texte": "15 min de sport en zone jaune", "seuil": 15, "jours": TOUS_LES_JOURS, "unite": "min",
               "num": 77, "bonus": 40, "phrase": "Marcher vite ne suffira pas : la crinière doit s'enflammer."},
@@ -154,6 +155,13 @@ def valeur(cle, jour, stats, info, gestes=None):
 def seuil_de(cle, e):
     """Le seuil du jour : le fantôme et Rattata ont le leur, calculé quand la mission est tirée et gardé avec elle."""
     return (e or {}).get("seuil") or MISSIONS[cle]["seuil"]
+
+
+def bonus_de(cle, e):
+    """Les points de la mission ce jour-là : avec des paliers, selon le palier demandé ; sinon, ceux de MISSIONS."""
+    m, paliers = MISSIONS[cle], PALIERS.get(cle, (None, ()))[1]
+    seuil = seuil_de(cle, e)
+    return PALIER_BONUS[paliers.index(seuil)] if seuil in paliers else m.get("bonus", BONUS)
 
 
 def reussite(cle, jour, stats, info, gestes=None):

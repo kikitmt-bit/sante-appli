@@ -199,6 +199,14 @@ class Roue(unittest.TestCase):
         self.assertTrue(missions.reussite("defi", DEBUT, stat, info, {str(DEBUT): {"pompes": 10}}))
         self.assertFalse(missions.reussite("defi", DEBUT, stat, info, {str(DEBUT): {"pompes": 9}}))
 
+    def test_progresser_rapporte_plus(self):
+        self.assertEqual([missions.bonus_de("defi", {"seuil": s}) for s in (10, 15, 20)], [20, 25, 30])
+        self.assertEqual([missions.bonus_de("cuisses", {"seuil": s}) for s in (20, 35, 50)], [20, 25, 30])
+        self.assertEqual([missions.bonus_de("pinces", {"seuil": s}) for s in (2, 3, 5)], [20, 25, 30])
+        self.assertEqual(missions.bonus_de("serie", {"seuil": 3}), 40)
+        self.assertEqual(missions.bonus_de("doduo", {}), 30)
+        self.assertEqual(missions.bonus_de("zone", {}), missions.BONUS)
+
     def test_jours_vides_sans_erreur(self):
         self.assertEqual(missions.familles_du({"pas": float("nan"), "zone_sport": None}), set())
 

@@ -480,7 +480,7 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
             continue
         if missions.reussite(e["cle"], j, st, mission_du, gestes):
             m = missions.MISSIONS[e["cle"]]
-            b.append(("🎯", f"Mission : {m['titre']}", m.get("bonus", missions.BONUS)))
+            b.append(("🎯", f"Mission : {m['titre']}", missions.bonus_de(e["cle"], e)))
     return b
 
 
@@ -764,7 +764,7 @@ def etat_mission(aujourd, stats, mission_du, gestes=None):
         sortie = {"cle": e["cle"], "titre": m["titre"], "texte": m["texte"].replace("{seuil}", chiffres.nombre(seuil)), "seuil": seuil, "unite": m["unite"],
                   "raison": m.get("phrase") or e.get("raison", ""), "valeur": None if valeur is None or valeur != valeur else round(valeur, 1 if m["unite"] == "km" else None),
                   "ok": missions.reussite(e["cle"], aujourd, st, mission_du, gestes) if e["cle"] != "coucher" else None,
-                  "bonus": m.get("bonus", missions.BONUS), "num": m.get("num"), "geste": m.get("geste")}
+                  "bonus": missions.bonus_de(e["cle"], e), "num": m.get("num"), "geste": m.get("geste")}
     if hier and hier.get("cle") == "coucher":
         c = st(aujourd).get("coucher")
         sortie = (sortie or {}) | {"hier_coucher": None if c is None or c != c else round(c),
