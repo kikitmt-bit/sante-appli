@@ -750,9 +750,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
 
 
 def etat_mission(aujourd, stats, mission_du, gestes=None):
-    """Ce que l'écran montre de la mission du jour (et du coucher d'hier soir)."""
+    """Ce que l'écran montre de la mission du jour."""
     st = lambda j: stats.loc[j].to_dict() if j in stats.index else {}  # noqa: E731
-    e, hier = mission_du(aujourd), mission_du(aujourd - dt.timedelta(days=1))
+    e = mission_du(aujourd)
     sortie = None
     if e and e.get("cle"):
         m, s = missions.MISSIONS[e["cle"]], st(aujourd)
@@ -765,10 +765,6 @@ def etat_mission(aujourd, stats, mission_du, gestes=None):
                   "raison": m.get("phrase") or e.get("raison", ""), "valeur": None if valeur is None or valeur != valeur else round(valeur, 1 if m["unite"] == "km" else None),
                   "ok": missions.reussite(e["cle"], aujourd, st, mission_du, gestes) if e["cle"] != "coucher" else None,
                   "bonus": missions.bonus_de(e["cle"], e), "num": m.get("num"), "geste": m.get("geste")}
-    if hier and hier.get("cle") == "coucher":
-        c = st(aujourd).get("coucher")
-        sortie = (sortie or {}) | {"hier_coucher": None if c is None or c != c else round(c),
-                                   "hier_ok": missions.reussite("coucher", aujourd - dt.timedelta(days=1), st, mission_du)}
     return sortie
 
 

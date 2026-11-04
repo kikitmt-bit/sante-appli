@@ -565,7 +565,6 @@ details.regles{color:#484838 !important}
     <div id="prochains"></div>
     <div class="carte" id="aouvrir"></div>
     <div id="bloc-dernieres"><h2><img class="ico g" id="ic-der" alt="">Dernières captures</h2><div id="dernieres"></div></div>
-    <div id="starter"></div>
     <div class="carte" id="barre"></div>
     <h2><img class="ico g" id="ic-spe" alt="">Tes objectifs du jour</h2>
     <div class="grille2" id="speciales"></div>
@@ -3189,16 +3188,15 @@ function niveauDuJour(st) {
   } catch (e) { return false; }
 }
 function dessinerStarter() {
-  const el = document.getElementById("starter"), dr = document.getElementById("starter-dresseur"), st = G.starter, n = formeStarter();
-  if (!st || !n) { el.innerHTML = dr.innerHTML = ""; return; }
+  const dr = document.getElementById("starter-dresseur"), st = G.starter, n = formeStarter();
+  if (!st || !n) { dr.innerHTML = ""; return; }
   const attend = aOuvrir().some(estEvo), plein = st.pts_niveau;
   const pct = attend ? 100 : st.dans_niveau / plein * 100;
   const objectif = attend ? "Il se passe quelque chose !" : niveauDuJour(st) ? `<b>Monte au niveau ${st.niveau} !</b>` : `encore <b>${fr(plein - st.dans_niveau)} pts</b> pour le niveau ${st.niveau + 1}`;
-  const carte = `<button class="starter-carte"><span class="av"><img src="${IMG.anim(n, false)}" ${repli(n, false)} alt=""></span>
+  // dans Dresseur seulement (Kiki, 04/11 : plus jamais sur Aventure, même le jour où il gagne un niveau)
+  dr.innerHTML = `<button class="starter-carte"><span class="av"><img src="${IMG.anim(n, false)}" ${repli(n, false)} alt=""></span>
     <span class="milieu"><span class="l1"><b>${PAR_NUM[n].nom}</b><i>Niv. ${st.niveau}</i></span><span class="barre-n"><i style="width:${pct}%"></i></span><small>${objectif}</small></span></button>`;
-  // sur Aventure, seulement le jour où il gagne un niveau (Kiki, 03/11 : pas tout le temps sous les yeux) ; toujours dans Dresseur
-  dr.innerHTML = carte; el.innerHTML = !attend && niveauDuJour(st) ? carte : "";
-  [el, dr].forEach(x => { const b = x.querySelector(".starter-carte"); if (b) b.onclick = () => fiche(PAR_NUM[n]); rognerImages(x); });
+  dr.querySelector(".starter-carte").onclick = () => fiche(PAR_NUM[n]); rognerImages(dr);
 }
 function dessinerBarre() {
   const b = D.barre, pct = b.points / b.taille, reste = b.taille - b.points;
@@ -3359,10 +3357,8 @@ function comparerPokemon(kg, graine) {
 // La mission du jour (refaite le 03/11) : un Pokémon, un défi, 20 à 40 points d'effort ; les pompes et les squats se comptent ici même
 function carteMission(gris = false, champ = "", cadenas = "") {
   const m = D.mission;
-  const h = v => `${Math.floor(v / 60) % 24} h ${String(Math.round(v % 60)).padStart(2, "0")}`;
-  const hier = m && m.hier_coucher != null ? `<div class="pesee-der">Hier soir : couché à <b>${h(m.hier_coucher)}</b> ${m.hier_ok ? "✅ +" + (m.bonus || 25) : "· raté"}</div>` : "";
   if (!m || !m.cle) return `<div class="speciale mission"><div class="tete">${ico("radar")}Mission du jour</div>
-    <div class="gain">${hier ? "Pas de nouvelle mission ce soir." : "Elle arrive dans l'heure."}</div>${hier}</div>`;
+    <div class="gain">Elle arrive dans l'heure.</div></div>`;
   const coucher = m.cle === "coucher", types = {pompes: "pompes", series: "pompes", squats: "squats", tractions: "tractions"}[m.geste];
   const val = Math.max(m.valeur == null ? 0 : m.valeur, m.geste ? gestesAuj()[m.geste] || 0 : 0), ok = m.ok === true || (!!m.geste && val >= m.seuil);
   const u = n => n < 2 && m.unite !== "pas" ? m.unite.replace(/s$/, "") : m.unite;  // « 1 série », mais « 1 pas »
@@ -3374,7 +3370,7 @@ function carteMission(gris = false, champ = "", cadenas = "") {
   return `<div class="speciale mission ${ok ? "ok" : ""} ${gris ? "grise" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
     ${m.num ? `<img class="m-pk" src="${IMG.mini(m.num)}" alt="">` : ""}<div class="tete">${ico("radar")}Mission du jour</div>
     <div class="m-titre">${m.titre}</div><div class="gain">${m.texte}</div>${gris ? `<div class="verrou">${cadenas}${ok ? `Réussie ! ${champ} garde tes <b>+${m.bonus} pts</b> : bats-le pour les récupérer.` : `Bats ${champ} pour la débloquer.`}</div>` : ligne}
-    <div class="m-pourquoi">${m.raison}</div>${hier}</div>`;
+    <div class="m-pourquoi">${m.raison}</div></div>`;
 }
 function cartePesee() {  // une petite tuile (demi-largeur) : la moins importante des balls spéciales
   const p = D.pesees; if (!p) return "";
