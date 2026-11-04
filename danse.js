@@ -1,11 +1,11 @@
-// La danse au doigt (04/11, carte blanche de Kiki) : un clin d'œil dans l'onglet Muscu, 4 musiques, pour s'amuser et donner envie d'un vrai tapis. Elle ne rapporte aucun point : le jeu se gagne
-// en faisant du sport. Musiques et pas (fichiers StepMania) : dépôt privé, branche « danse », jamais ce dépôt public (danse.py). Inclus dans pokemon_ui.html par ecran_pokemon.py.
+// La danse au doigt (04/11, carte blanche de Kiki) : un clin d'œil dans l'onglet Muscu, 4 musiques, pour s'amuser et donner envie d'un vrai tapis. 1 point d'effort par jour, pour le premier morceau fini (trace geste-danse) :
+// le jeu se gagne en faisant du sport. Classement entre joueurs par morceau et difficulté (trace danse-<morceau>-<difficulté>_<millièmes>_<moment>, pokemon.meilleurs_scores). Musiques et pas (fichiers StepMania) : dépôt privé, branche « danse », jamais ce dépôt public (danse.py). Inclus dans pokemon_ui.html par ecran_pokemon.py.
 // Adversaires et décors : seulement des lieux déjà atteints, comme aux autres combats (le reste du jeu doit rester une surprise).
 const DANSE_CHANSONS = {
-  zinnia: {titre: "La Danse du Dragon", phrase: "Un vent furieux souffle sur la piste.", types: ["Dragon", "Vol"], decors: ["Route Victoire", "Mont Sélénite", "Route 3", "Route 1"]},
-  skull: {titre: "La Bande des Ruelles", phrase: "Ils ont le rythme dans la peau, et aucune manière.", types: ["Poison", "Normal"], decors: ["Céladopole", "Lavanville", "Jadielle"]},
-  colress: {titre: "Le Savant Fou", phrase: "Il a tout calculé, sauf toi.", types: ["Électrik", "Acier"], decors: ["Grotte et Centrale", "Safrania", "Carmin-sur-Mer", "Argenta"]},
-  red: {titre: "L'Ultime Combat", phrase: "Au sommet, quelqu'un t'attend sans dire un mot.", types: ["Feu", "Combat"], decors: ["Plateau Indigo", "Cramois'Île", "Forêt de Jade", "Bourg Palette"]},
+  zinnia: {court: "Dragon", titre: "La Danse du Dragon", phrase: "Un vent furieux souffle sur la piste.", types: ["Dragon", "Vol"], decors: ["Route Victoire", "Mont Sélénite", "Route 3", "Route 1"]},
+  skull: {court: "Ruelles", titre: "La Bande des Ruelles", phrase: "Ils ont le rythme dans la peau, et aucune manière.", types: ["Poison", "Normal"], decors: ["Céladopole", "Lavanville", "Jadielle"]},
+  colress: {court: "Savant", titre: "Le Savant Fou", phrase: "Il a tout calculé, sauf toi.", types: ["Électrik", "Acier"], decors: ["Grotte et Centrale", "Safrania", "Carmin-sur-Mer", "Argenta"]},
+  red: {court: "Ultime", titre: "L'Ultime Combat", phrase: "Au sommet, quelqu'un t'attend sans dire un mot.", types: ["Feu", "Combat"], decors: ["Plateau Indigo", "Cramois'Île", "Forêt de Jade", "Bourg Palette"]},
 };
 const DANSE_NIVEAUX = [["Beginner", "Tranquille"], ["Easy", "Facile"], ["Medium", "Costaud"], ["Hard", "Expert"]];
 const DANSE_VITESSES = [["Lente", 1.7], ["Normale", 1.3], ["Rapide", .95]];  // secondes pour traverser la piste
@@ -85,6 +85,8 @@ const STYLE_DANSE = `
 .pkm-entr .d-credit{color:#8FA0C4;font-size:13px;text-align:center}
 .pkm-entr .d-gros{font-size:84px;line-height:1;text-align:center;color:#C03028}
 .pkm-entr .d-lignes{display:grid;grid-template-columns:1fr auto;gap:0 10px;font-size:20px}.pkm-entr .d-lignes span:nth-child(even){text-align:right}
+.pkm-entr .d-classe{display:grid;gap:3px;margin-top:6px}.pkm-entr .d-classe div{display:grid;grid-template-columns:26px 1fr auto 24px;gap:6px;align-items:center;padding:3px 7px;font-size:19px;line-height:1;border-radius:7px 3px}
+.pkm-entr .d-classe div.toi{background:#F8E8A0}.pkm-entr .d-classe .n{color:#B05010}.pkm-entr .d-classe .r{text-align:center;color:#C03028}.pkm-entr .d-vide{margin:8px 0 2px;text-align:center;color:#686850;font-size:16px}
 .pkm-entr .d-saut{animation:d-saut .5s steps(3) infinite alternate}@keyframes d-saut{to{transform:translateY(-8px)}}
 .pkm-entr .d-bip{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;font-size:24px;touch-action:none;min-height:240px}
 .pkm-entr .d-bip img{width:120px;height:120px;object-fit:contain;image-rendering:pixelated;transition:transform .07s}.pkm-entr .d-bip img.tape{transform:translateY(-14px) scale(1.08)}
@@ -114,17 +116,35 @@ function danse(ouvrirSur = null) {
 
   function menu() {
     fin(); v.className = "pkm-entr danse-menu"; mem.niveau = mem.niveau || "Beginner"; mem.vitesse = mem.vitesse || "Normale";
-    v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(acteur)}" ${repli(acteur)} alt=""><div><h3>Danse au doigt</h3><small>${sansVeuve("Pour le plaisir, sans aucun point. Sur un vrai tapis de danse, ce sera du vrai sport !")}</small></div></div>
+    v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(acteur)}" ${repli(acteur)} alt=""><div><h3>Danse au doigt</h3><small>${sansVeuve("Pour le plaisir : 1 point par jour pour le premier morceau fini. Sur un vrai tapis de danse, ce sera du vrai sport !")}</small></div></div>
       ${chansons.map(ch => { const r = rang(ch, mem.niveau); return `<button class="d-ch" data-ch="${ch.cle}"><i style="background-image:url('${D.scenes}${decorDe(ch).image}')"></i><span><b>${ch.titre}</b><small>${sansVeuve(ch.phrase)}</small></span><span class="rg">${r ? danseRang(r) : ""}</span></button>`; }).join("")}
       <div class="d-reg">Difficulté<div class="choix" data-reg="niveau">${DANSE_NIVEAUX.map(([k, n]) => `<button class="${mem.niveau === k ? "on" : ""}" data-v="${k}">${n}</button>`).join("")}</div>
         Vitesse des flèches<div class="choix" data-reg="vitesse">${DANSE_VITESSES.map(([n]) => `<button class="${mem.vitesse === n ? "on" : ""}" data-v="${n}">${n}</button>`).join("")}</div></div>
+      <button class="sec" data-cl>Classement</button>
       <button class="sec" data-bip>Régler le son${mem.calage == null ? "" : ` (réglé : ${Math.round(mem.calage * 1000)} ms)`}</button>
       <button class="sec retour">Retour</button>`;
     v.querySelector(".retour").onclick = fermer;
     v.querySelector("[data-bip]").onclick = () => reglerSon(menu);
+    v.querySelector("[data-cl]").onclick = () => { fin(); v.innerHTML = `<div class="boite"><h3>Classement</h3><div class="d-zone"></div></div><button class="sec retour">Retour</button>`;
+      v.querySelector(".retour").onclick = menu; dessinerClassement(v.querySelector(".d-zone"), chansons[0].cle, mem.niveau); };
     v.querySelectorAll(".choix button").forEach(b => b.onclick = () => { mem[b.parentElement.dataset.reg] = b.dataset.v; danseMem.garder(mem); menu(); });
     v.querySelectorAll("[data-ch]").forEach(b => b.onclick = () => { const ch = chansons.find(x => x.cle === b.dataset.ch); audio();
       if (mem.calage == null) reglerSon(() => preparer(ch), true); else preparer(ch); });
+  }
+
+  // Le classement d'un morceau dans une difficulté : le meilleur score de chacun (millièmes), le mien en direct. Les scores des autres arrivent à l'actualisation.
+  function dessinerClassement(zone, cle, diff) {
+    const k = `${cle}_${diff}`, moi = (D.joueurs || []).find(j => j.moi), s = (((moi || {}).danse || {})[k] || 0) / 1000, mien = Math.max(s, (mem.best || {})[k] || 0);
+    const lignes = (D.joueurs || []).filter(j => !j.moi && (j.danse || {})[k]).map(j => ({nom: j.nom, s: j.danse[k] / 1000}));
+    if (mien) lignes.push({nom: (moi && moi.nom) || "Toi", s: mien, toi: true});
+    lignes.sort((a, b) => b.s - a.s || !!b.toi - !!a.toi);
+    let place = 0;
+    const rangees = lignes.map((l, i) => { if (!i || l.s < lignes[i - 1].s) place = i + 1;
+      return `<div class="${l.toi ? "toi" : ""}"><span class="n">${place}.</span><span>${l.nom}</span><span>${String(Math.round(l.s * 1000) / 10).replace(".", ",")} %</span><span class="r">${danseRang(l.s)}</span></div>`; }).join("");
+    zone.innerHTML = `<div class="choix" data-q="cle">${chansons.map(c => `<button class="${c.cle === cle ? "on" : ""}" data-v="${c.cle}">${c.court}</button>`).join("")}</div>
+      <div class="choix" style="margin-top:4px" data-q="diff">${DANSE_NIVEAUX.map(([d, n]) => `<button class="${d === diff ? "on" : ""}" data-v="${d}">${n}</button>`).join("")}</div>
+      ${rangees ? `<div class="d-classe">${rangees}</div>` : `<div class="d-vide">Personne n'a encore de score ici. À toi !</div>`}`;
+    zone.querySelectorAll("button").forEach(b => b.onclick = () => dessinerClassement(zone, b.parentElement.dataset.q === "cle" ? b.dataset.v : cle, b.parentElement.dataset.q === "diff" ? b.dataset.v : diff));
   }
 
   // Le réglage du son : un bip régulier, sans rien à regarder, et on touche l'écran dessus. L'écart moyen dit tout : retard du son du téléphone (énorme en Bluetooth), de l'écran tactile, et le sien.
@@ -295,18 +315,26 @@ function danse(ouvrirSur = null) {
   }
 
   function resultat(ch, chart, J, max, equipe) {
-    const pct = J.points / max, r = danseRang(pct), gagne = J.rangE >= equipe.length, cle = `${ch.cle}_${chart.diff}`;
-    mem.best = mem.best || {}; const record = pct > (mem.best[cle] || 0); if (record) mem.best[cle] = pct; danseMem.garder(mem);
+    const pct = max ? J.points / max : 0, r = danseRang(pct), gagne = J.rangE >= equipe.length, cle = `${ch.cle}_${chart.diff}`;
+    // Le morceau est fini : le point du jour (le premier seulement), et le score pour le classement quand il bat le meilleur connu (ce téléphone ou le serveur)
+    mem.best = mem.best || {}; const score = Math.round(pct * 1000), servi = (((D.joueurs || []).find(j => j.moi) || {}).danse || {})[cle] || 0;
+    const record = pct > Math.max(mem.best[cle] || 0, servi / 1000), maintenant = Date.now(), premierDuJour = !TEST && !gestesAuj().danse;
+    if (pct > (mem.best[cle] || 0)) mem.best[cle] = pct;
+    danseMem.garder(mem);
+    if (premierDuJour) memoriser(`${TEST ? "test#" : D.prefixe}geste-danse_1_${maintenant}`);
+    if (!TEST && record && score > 0) memoriser(`${D.prefixe}danse-${ch.cle}-${chart.diff}_${score}_${maintenant}`);
     if (gagne) EPIQUE.fanfare();
     const moy = J.ecarts.length ? J.ecarts.reduce((x, y) => x + y, 0) / J.ecarts.length : 0, affiner = J.ecarts.length >= 20 && Math.abs(moy) > .025;
     v.className = "pkm-entr danse-menu";
     v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])}" ${repli(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])} alt=""><div><h3>${gagne ? "Victoire !" : `${PAR_NUM[equipe[Math.min(J.rangE, equipe.length - 1)]].nom} s'est enfui…`}</h3><small>${ch.titre}</small></div></div>
-      <div class="boite"><div class="d-gros">${r}</div><div class="d-lignes"><span>Score${record ? " (record !)" : ""}</span><span>${Math.round(pct * 100)} %</span>${Object.entries(J.compte).map(([k, n]) => `<span>${k}</span><span>${n}</span>`).join("")}<span>Meilleure suite</span><span>${J.meilleur}</span></div></div>
+      <div class="boite"><div class="d-gros">${r}</div><div class="d-lignes"><span>Score${record ? " (record !)" : ""}</span><span>${Math.round(pct * 100)} %</span>${Object.entries(J.compte).map(([k, n]) => `<span>${k}</span><span>${n}</span>`).join("")}<span>Meilleure suite</span><span>${J.meilleur}</span>${premierDuJour ? "<span>Point du jour</span><span>+1</span>" : ""}</div></div>
+      <div class="boite"><h3>Classement</h3><div class="d-zone"></div></div>
       ${affiner ? `<button class="sec" data-affine>Tes touches arrivent ${Math.round(Math.abs(moy) * 1000)} ms ${moy > 0 ? "en retard" : "en avance"} : corriger</button>` : ""}
       <button class="go" data-re>Rejouer</button><button class="sec retour">Autre morceau</button>
       <div class="boite d-promo">${sansVeuve("Au doigt, c'est pour rire. <b>Sur un vrai tapis de danse USB</b>, le même jeu se jouera avec les pieds, avec bien plus de musiques, et là, tes minutes de sport compteront pour de bon. Bientôt !")}</div>
       <div class="d-credit">Pas : Starmen91 · Musiques : Game Freak</div>`;
     v.querySelector("[data-re]").onclick = () => preparer(ch); v.querySelector(".retour").onclick = menu;
+    dessinerClassement(v.querySelector(".d-zone"), ch.cle, chart.diff);
     const af = v.querySelector("[data-affine]"); if (af) af.onclick = () => { mem.calage = Math.max(-.1, Math.min((mem.calage || 0) + moy, .6)); danseMem.garder(mem); af.textContent = "Corrigé !"; af.disabled = true; };
   }
   menu();

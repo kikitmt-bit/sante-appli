@@ -131,6 +131,31 @@ class Gestes(unittest.TestCase):
         self.assertEqual(pokemon.gestes_du(None, traces, None, DEBUT)[str(DEBUT)]["squats"], 28)
 
 
+class Danse(unittest.TestCase):
+    def setUp(self):
+        pokemon.REGLAGES["debut"], pokemon.REGLAGES["partie"] = DEBUT, 99
+        self.p = pokemon.ident(DEBUT, "", None)
+
+    def test_un_seul_point_par_jour(self):
+        traces = [f"{self.p}geste-danse_1_1000", f"{self.p}geste-danse_1_2000"]
+        g = pokemon.gestes_du(None, traces, None, DEBUT)[str(DEBUT)]
+        self.assertEqual(pokemon.points_gestes(g, DEBUT), 1)
+
+    def test_le_meilleur_score_de_chaque_morceau(self):
+        traces = [f"{self.p}danse-zinnia-Beginner_700_1", f"{self.p}danse-zinnia-Beginner_873_2", f"{self.p}danse-red-Hard_500_3"]
+        g = pokemon.gestes_du(None, traces, None, DEBUT)
+        self.assertEqual(pokemon.meilleurs_scores(g), {"zinnia_Beginner": 873, "red_Hard": 500})
+        self.assertEqual(pokemon.points_gestes(g[str(DEBUT)], DEBUT), 0)  # un score seul ne donne aucun point
+
+    def test_le_score_d_un_autre_joueur_est_ignore(self):
+        autre = pokemon.ident(DEBUT, "", "aaaaaaaaaaaa")
+        self.assertEqual(pokemon.meilleurs_scores(pokemon.gestes_du(None, [f"{autre}danse-red-Hard_500_3"], None, DEBUT)), {})
+
+    def test_les_scores_restent_apres_20_jours(self):
+        ancien = {"jours": {str(jour(-40)): {"pompes": 0, "scores": {"red_Hard": 900}}}}
+        self.assertEqual(pokemon.meilleurs_scores(pokemon.gestes_du(ancien, [], None, DEBUT)), {"red_Hard": 900})
+
+
 class Roue(unittest.TestCase):
     def tirages(self, nb=210, ami=None, valeurs=None, gestes=None):
         jours, stat = {}, stats_de(valeurs or {})

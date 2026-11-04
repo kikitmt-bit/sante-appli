@@ -3085,8 +3085,8 @@ function resteDefi() {
 // Les pompes, tractions et squats (la montre ne sait pas les compter) : un bouton, et chaque toucher part dans la liste partagée
 const GESTES = {pompes: {nom: "Pompes", pas: [5, 10]}, tractions: {nom: "Tractions", pas: [1, 5]}, squats: {nom: "Squats", pas: [10, 25]}, planche: {nom: "Planche", pas: []}};
 function gestesAuj() {
-  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0, squats: 0, planche: 0, series: 0}, touches = [];
-  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions|squats|planche)_(-?\d+)_(\d+)/); if (m) { g[m[1]] += +m[2]; if (m[1] === "pompes") touches.push([+m[3], +m[2]]); } });
+  const debut = (TEST ? "test#" : D.prefixe) + "geste-", g = {pompes: 0, tractions: 0, squats: 0, planche: 0, danse: 0, series: 0}, touches = [];
+  ouvertes.forEach(id => { if (!id.startsWith(debut)) return; const m = id.slice(debut.length).match(/^(pompes|tractions|squats|planche|danse)_(-?\d+)_(\d+)/); if (m) { g[m[1]] += +m[2]; if (m[1] === "pompes") touches.push([+m[3], +m[2]]); } });
   g.pompes = Math.max(g.pompes, 0); g.tractions = Math.max(g.tractions, 0); g.squats = Math.max(g.squats, 0);
   // les séries : au moins 10 pompes, à 30 min d'écart (même calcul que pokemon.series_de)
   let total = 0, dernier = null;
@@ -3111,7 +3111,7 @@ function apresGeste() {  // tout redessiner, le bonus ouvert le reste
 const EXOS = [["pompes", "10 = 5 pts"], ["squats", "10 = 2,5 pts"], ["tractions", "1 = 1 pt"], ["planche", "10 s = 1 pt"]];
 function dessinerMuscu() {
   const el = document.getElementById("muscu"), g = gestesAuj(), mem = lireEntr(), mis = D.mission || {};
-  const points = Math.min(g.pompes * R.bonus_pompe + g.tractions * R.bonus_traction + g.squats * R.bonus_squat + g.planche * R.bonus_planche, R.bonus_gestes_max);
+  const points = Math.min(g.pompes * R.bonus_pompe + g.tractions * R.bonus_traction + g.squats * R.bonus_squat + g.planche * R.bonus_planche + Math.min(g.danse, 1) * R.bonus_danse, R.bonus_gestes_max);
   const pourMission = {pompes: "pompes", series: "pompes", squats: "squats", tractions: "tractions"}[mis.geste];
   const duel = duelEnCours();
   el.innerHTML = `<div class="muscu-points"><div class="l1"><span>Points d'effort du jour</span><b>${String(Math.round(points * 10) / 10).replace(".", ",")} / ${R.bonus_gestes_max}</b></div>
@@ -3123,7 +3123,7 @@ function dessinerMuscu() {
         <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
         <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
         ${t === "tractions" ? `<div class="plus-moins"><button class="go-exo" data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button class="go-exo" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : `<button class="go-exo" data-compte="${t}">▶ Lancer</button>`}</div>`; }).join("")}
-      ${(D.danse || []).length ? `<div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(formeStarter() || 25)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques, juste pour s'amuser · aucun point</div><button class="go-exo" data-danse>▶ Essayer</button></div>` : ""}</div>`;
+      ${(D.danse || []).length ? `<div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(formeStarter() || 25)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques pour s'amuser · 1 point par jour pour le premier morceau fini</div><button class="go-exo" data-danse>▶ Essayer</button></div>` : ""}</div>`;
   brancherGestes(el); rognerImages(el);
 }
 function brancherGestes(racine) {

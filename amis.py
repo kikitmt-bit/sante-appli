@@ -1,7 +1,7 @@
 """Jouer à plusieurs (1re version, 02/11) : ce que chaque joueur voit des autres, et le suivi des amis pour Kiki.
 
 Visible par les autres joueurs : pseudo et couleurs du dresseur, région, place sur la carte, lieu, badges, Pokédex (espèces
-attrapées et ouvertes), shiny, légendaires, starter, 3 dernières captures, nouvelles (belles captures, badges, lieux atteints).
+attrapées et ouvertes), shiny, légendaires, starter, 3 dernières captures, nouvelles (belles captures, badges, lieux atteints), meilleurs scores de la danse au doigt.
 **Jamais** : pas, sommeil, cardio, poids.
 Le pseudo et les couleurs viennent du téléphone de chacun (localStorage pkm_dresseur : seulement ces 5 champs, jamais la
 date de naissance, la taille ni le sexe) et sont publiés dans data/dresseurs/<id>.json (id = « kiki » ou celui de l'ami).
@@ -88,7 +88,7 @@ def resume(captures, etat, ouvertes, aujourd):
             "badges": sorted(int(k) for k in v["badges"]), "especes": especes, "shiny": shiny,
             "legendaires": sum(n in LEGENDAIRES for n in especes), "starter": starter,
             "dernieres": [{"num": c["num"], "shiny": bool(c.get("shiny")), "jour": c["jour"]} for c in dernieres],
-            "lundi": lundi, "semaine": sum(j >= lundi for j in premieres.values()), "nouvelles": nouvelles(vues, v, etat["frise"], aujourd)}
+            "lundi": lundi, "semaine": sum(j >= lundi for j in premieres.values()), "nouvelles": nouvelles(vues, v, etat["frise"], aujourd), "danse": etat.get("danse") or {}}
 
 
 def partie(lire_depot, ident, debut, aujourd):

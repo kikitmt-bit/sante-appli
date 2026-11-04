@@ -60,7 +60,7 @@ REGLAGES = {
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
     "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
-    "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_planche": .1, "bonus_gestes_max": 40, "ancien_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour (25 avant le 04/11)
+    "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_planche": .1, "bonus_danse": 1, "bonus_gestes_max": 40, "ancien_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour (25 avant le 04/11)
     "objectif_gestes": 15, "bonus_famille": 15, "familles_semaine": 4, "hebdo_jours": 4,  # audit du 03/11, depuis le 04/11 : 15 points de muscu dans la journée (30 pompes, 15 tractions, 60 squats) = l'objectif du jour est atteint ; chaque famille de sport travaillée dans la semaine : +15 ; 4 familles : une Super Ball ; 4 jours d'objectif sur 7 : une Super Ball
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
@@ -424,7 +424,8 @@ def ident(jour, cle, ami=None):
 
 
 GESTES = "data/pokemon/gestes.json"  # pompes, tractions et squats, jour par jour (la montre ne sait pas les compter)
-_GESTE = re.compile(r"#geste-(pompes|tractions|squats|planche|combatshiny)_(-?\d+)_(\d+)$")
+_GESTE = re.compile(r"#geste-(pompes|tractions|squats|planche|combatshiny|danse)_(-?\d+)_(\d+)$")
+_SCORE = re.compile(r"#danse-([a-z]+)-([A-Za-z]+)_(\d+)_\d+$")  # la danse au doigt : morceau, difficulté, score en millièmes (danse.js)
 SERIE_ECART = 30 * 60 * 1000  # une nouvelle série de pompes : 30 min après la précédente (en millisecondes, comme les traces)
 SERIE_POMPES = 10
 
@@ -443,11 +444,15 @@ def gestes_du(ancien, ouvertes, ami, aujourd):
     """Les pompes, tractions et squats de chaque jour : {jour: {"pompes", "tractions", "squats", "series"}}. Le téléphone laisse chaque toucher sur le bouton dans
     la liste partagée (« …#geste-pompes_10_1234 »), qui ne garde que 20 jours : le calcul de chaque heure (montre.py) les recopie dans
     gestes.json ; aujourd'hui et les jours récents viennent de la liste, les plus vieux du fichier."""
-    jours, traces = {j: dict(v) for j, v in ((ancien or {}).get("jours") or {}).items()}, {}
+    jours, traces, scores = {j: dict(v) for j, v in ((ancien or {}).get("jours") or {}).items()}, {}, {}
     for i in ouvertes or ():
-        m = _GESTE.search(i)
-        if m and i.startswith(ident(i[:10], "geste", ami).split("geste")[0]):
-            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "planche": 0, "combatshiny": 0, "_touches": []})
+        m, s = _GESTE.search(i), _SCORE.search(i)
+        if (m or s) and i.startswith(ident(i[:10], "geste", ami).split("geste")[0]):
+            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "planche": 0, "combatshiny": 0, "danse": 0, "_touches": []})
+            if s:
+                du_jour, cle = scores.setdefault(i[:10], {}), f"{s[1]}_{s[2]}"
+                du_jour[cle] = max(du_jour.get(cle, 0), int(s[3]))
+                continue
             t[m[1]] += int(m[2])
             if m[1] == "pompes":
                 t["_touches"].append((int(m[3]), int(m[2])))
@@ -455,14 +460,23 @@ def gestes_du(ancien, ouvertes, ami, aujourd):
     for j, t in traces.items():
         if j >= limite:
             touches = t.pop("_touches")
-            jours[j] = {k: max(v, 0) for k, v in t.items()} | {"series": series_de(touches)}
+            jours[j] = {k: max(v, 0) for k, v in t.items()} | {"series": series_de(touches)} | ({"scores": scores[j]} if j in scores else {})
     return jours
+
+
+def meilleurs_scores(gestes):
+    """Les meilleurs scores de la danse au doigt, tous jours confondus : {"zinnia_Beginner": 873} (en millièmes). Visibles par les autres joueurs."""
+    out = {}
+    for g in (gestes or {}).values():
+        for cle, s in (g.get("scores") or {}).items():
+            out[cle] = max(out.get(cle, 0), s)
+    return out
 
 
 def points_gestes(g, jour):
     """Les points d'effort des pompes, tractions, squats et planche d'un jour."""
     R = REGLAGES
-    return min(g.get("pompes", 0) * R["bonus_pompe"] + g.get("tractions", 0) * R["bonus_traction"] + g.get("squats", 0) * R["bonus_squat"] + g.get("planche", 0) * R["bonus_planche"],
+    return min(g.get("pompes", 0) * R["bonus_pompe"] + g.get("tractions", 0) * R["bonus_traction"] + g.get("squats", 0) * R["bonus_squat"] + g.get("planche", 0) * R["bonus_planche"] + min(g.get("danse", 0), 1) * R["bonus_danse"],
                R["bonus_gestes_max"] if equitable(jour) else R["ancien_gestes_max"])
 
 
@@ -751,7 +765,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "semaine": sem, "semaine_passee": semaine_passee,
+                      "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores(gestes),
                       "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
                       "starter": starter and {"ligne": LIGNES[starter], "niveau": niveau(cumul), "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1)}}
 
