@@ -1,11 +1,20 @@
 // La danse au doigt (04/11, carte blanche de Kiki) : un clin d'œil dans l'onglet Muscu, 4 musiques, pour s'amuser et donner envie d'un vrai tapis. 1 point d'effort par jour, pour le premier morceau fini (trace geste-danse) :
 // le jeu se gagne en faisant du sport. Classement entre joueurs par morceau et difficulté (trace danse-<morceau>-<difficulté>_<millièmes>_<moment>, pokemon.meilleurs_scores). Musiques et pas (fichiers StepMania) : dépôt privé, branche « danse », jamais ce dépôt public (danse.py). Inclus dans pokemon_ui.html par ecran_pokemon.py.
-// Adversaires et décors : seulement des lieux déjà atteints, comme aux autres combats (le reste du jeu doit rester une surprise).
+// Chaque musique est un vrai combat : son dresseur, son décor, son équipe (noms ici : le Pokédex du jeu ne connaît que Kanto), un effet animé. Ces images ne vont pas dans le Pokédex et ne nomment jamais de région.
+const DANSE_DECOR = n => ({image: `combat-danse-${n}.webp`, e: [71.2, 44.7], c: [29.3, 65.7], te: 22, tc: 30});
 const DANSE_CHANSONS = {
-  zinnia: {court: "Dragon", titre: "La Danse du Dragon", phrase: "Un vent furieux souffle sur la piste.", types: ["Dragon", "Vol"], decors: ["Route Victoire", "Mont Sélénite", "Route 3", "Route 1"]},
-  skull: {court: "Ruelles", titre: "La Bande des Ruelles", phrase: "Ils ont le rythme dans la peau, et aucune manière.", types: ["Poison", "Normal"], decors: ["Céladopole", "Lavanville", "Jadielle"]},
-  colress: {court: "Savant", titre: "Le Savant Fou", phrase: "Il a tout calculé, sauf toi.", types: ["Électrik", "Acier"], decors: ["Grotte et Centrale", "Safrania", "Carmin-sur-Mer", "Argenta"]},
-  red: {court: "Ultime", titre: "L'Ultime Combat", phrase: "Au sommet, quelqu'un t'attend sans dire un mot.", types: ["Feu", "Combat"], decors: ["Plateau Indigo", "Cramois'Île", "Forêt de Jade", "Bourg Palette"]},
+  skull: {court: "Skull", titre: "Vs Team Skull", phrase: "Ils ont le rythme dans la peau, et aucune manière.", decor: DANSE_DECOR("skull"), effet: "pluie",
+    qui: "Le Sbire", sprite: "skull_grunt_m", equipe: [[734, "Manglouton"], [42, "Nosferalto"], [757, "Tritox"]],
+    debut: "Yo ! T'as cru pouvoir danser sur NOTRE bitume ?", fin: "Pfff… c'était même pas mon vrai niveau, yo.", perdu: "Yo ! Retourne t'entraîner, petit !"},
+  colress: {court: "Nikolaï", titre: "Vs Nikolaï", phrase: "Il a tout calculé, sauf toi.", decor: DANSE_DECOR("colress"), effet: "machines",
+    qui: "Nikolaï", sprite: "colress", equipe: [[82, "Magnéton"], [437, "Archéodong"], [601, "Cliticlic"]],
+    debut: "Voyons ce que ton rythme révèle sur ton Pokémon.", fin: "Fascinant ! Des données inestimables.", perdu: "Intéressant… mais insuffisant."},
+  zinnia: {court: "Zinnia", titre: "Vs Zinnia", phrase: "Un vent furieux souffle sur la piste.", decor: DANSE_DECOR("zinnia"), effet: "vent",
+    qui: "Zinnia", image: "https://play.pokemonshowdown.com/sprites/trainers/zinnia.png", equipe: [[334, "Altaria"], [373, "Drattak"], [384, "Rayquaza"]],
+    debut: "Le vent t'a porté jusqu'ici. Danse, si tu l'oses.", fin: "Haha ! Tu danses comme une tempête.", perdu: "Le ciel attendra encore un peu."},
+  red: {court: "Red", titre: "Vs Red", phrase: "Au sommet, quelqu'un t'attend sans dire un mot.", decor: DANSE_DECOR("red"), effet: "neige",
+    qui: "Red", sprite: "red", equipe: [[25, "Pikachu"], [143, "Ronflex"], [6, "Dracaufeu"]],
+    debut: "…", fin: "…!", perdu: "…"},
 };
 const DANSE_NIVEAUX = [["Beginner", "Tranquille"], ["Easy", "Facile"], ["Medium", "Costaud"], ["Hard", "Expert"]];
 const DANSE_VITESSES = [["Lente", 1.7], ["Normale", 1.3], ["Rapide", .95]];  // secondes pour traverser la piste
@@ -72,6 +81,42 @@ function danseFleche(couleur, clair) {
   return danseSprites[cle] = c;
 }
 
+// Ce qui doit bouger n'est jamais dans l'image (Kiki, 04/11 : de la pluie figée, c'est moche) : pluie et éclairs, bulles et voyants, vent et feuilles, neige et rafales.
+function danseEffet(type, toile) {
+  const c = toile.getContext("2d"), H = () => toile.height, W = () => toile.width, A = (a, b) => a + Math.random() * (b - a);
+  let t = 0, eclair = 0, prochain = A(5, 10), rafale = 0;
+  const gouttes = Array.from({length: 46}, () => ({x: Math.random(), y: Math.random(), v: A(.9, 1.5)}));
+  const ronds = Array.from({length: 9}, () => ({x: Math.random(), y: A(.4, 1), r: Math.random()}));
+  const flocons = Array.from({length: 70}, () => ({x: Math.random(), y: Math.random(), v: A(.07, .22), g: A(0, 6), s: Math.random() < .25 ? 3 : 2}));
+  const traits = Array.from({length: 9}, () => ({x: Math.random(), y: A(.05, .9), v: A(.5, 1), l: A(.05, .13)}));
+  const feuilles = Array.from({length: 9}, () => ({x: Math.random(), y: A(.2, .85), v: A(.12, .3), g: A(0, 6), o: Math.random() < .5 ? "#7CC860" : "#B8D860"}));
+  const bulles = Array.from({length: 22}, (_, i) => ({tube: i % 3, y: Math.random(), v: A(.1, .28), g: Math.random()}));
+  const TUBES = [[.007, .083, .17, .33], [.095, .155, .17, .32], [.905, .985, .19, .25]];
+  const VOYANTS = [[.513, .041, "#F85848"], [.797, .041, "#F85848"], [.476, .072, "#58E0F8"], [.848, .072, "#58E0F8"], [.263, .258, "#F85848"], [.34, .329, "#F85848"], [.897, .315, "#F85848"], [.98, .315, "#F85848"]];
+  return dt => {
+    t += dt; const w = W(), h = H(); c.clearRect(0, 0, w, h);
+    if (type === "pluie") {
+      c.fillStyle = "rgba(190,205,255,.55)";
+      gouttes.forEach(g => { g.y += g.v * dt * 1.5; g.x -= g.v * dt * .18; if (g.y > 1) { g.y = 0; g.x = Math.random() * 1.15; } c.fillRect(Math.round(g.x * w), Math.round(g.y * h), 1, 6); c.fillRect(Math.round(g.x * w) - 1, Math.round(g.y * h) + 5, 1, 5); });
+      c.fillStyle = "rgba(200,215,255,.5)";
+      ronds.forEach(r => { r.r += dt * 1.4; if (r.r > 1) { r.r = 0; r.x = Math.random(); r.y = A(.42, 1); } const x = r.x * w, y = r.y * h, l = 2 + r.r * 12; c.globalAlpha = 1 - r.r; c.fillRect(x - l, y, l * 2, 1); c.fillRect(x - l * .6, y - 2, l * 1.2, 1); c.fillRect(x - l * .6, y + 2, l * 1.2, 1); });
+      c.globalAlpha = 1; prochain -= dt;
+      if (prochain < 0) { eclair = 1; prochain = A(7, 15); }
+      if (eclair > 0) { c.fillStyle = `rgba(220,225,255,${eclair * .42 * (eclair > .7 || eclair < .4 ? 1 : .3)})`; c.fillRect(0, 0, w, h); eclair -= dt * 2.4; }
+    } else if (type === "neige") {
+      rafale = Math.max(0, rafale - dt * .5); prochain -= dt; if (prochain < 0) { rafale = 1; prochain = A(5, 10); }
+      flocons.forEach(f => { f.y += f.v * dt * (1 + rafale); f.x += (.02 + rafale * .5) * dt + Math.sin(t + f.g) * .0008; if (f.y > 1) { f.y = 0; f.x = Math.random(); } if (f.x > 1) f.x = 0; c.fillStyle = "rgba(255,255,255,.9)"; c.fillRect(Math.round(f.x * w), Math.round(f.y * h), f.s, f.s); });
+      if (rafale > 0) { c.fillStyle = `rgba(235,242,255,${rafale * .16})`; c.fillRect(0, 0, w, h); }
+    } else if (type === "vent") {
+      traits.forEach(l => { l.x += l.v * dt; if (l.x > 1.2) { l.x = -l.l; l.y = A(.05, .9); } c.fillStyle = "rgba(235,255,245,.35)"; c.fillRect(Math.round(l.x * w), Math.round(l.y * h), Math.round(l.l * w), 1); });
+      feuilles.forEach(f => { f.x += f.v * dt; if (f.x > 1.02) { f.x = -.02; f.y = A(.2, .85); } const y = f.y + Math.sin(t * 2 + f.g) * .025; c.fillStyle = f.o; c.fillRect(Math.round(f.x * w), Math.round(y * h), 3, 2); });
+    } else if (type === "machines") {
+      bulles.forEach(b => { const [x0, x1, y0, y1] = TUBES[b.tube]; b.y -= b.v * dt; if (b.y < 0) { b.y = 1; b.g = Math.random(); } c.fillStyle = "rgba(225,255,255,.85)"; c.fillRect(Math.round((x0 + (x1 - x0) * b.g) * w), Math.round((y0 + (y1 - y0) * b.y) * h), 2, 2); });
+      VOYANTS.forEach(([x, y, co], i) => { c.globalAlpha = Math.max(0, Math.sin(t * (1.1 + i * .23) + i * 1.7)); c.fillStyle = co; c.fillRect(Math.round(x * w) - 2, Math.round(y * h) - 1, 5, 3); }); c.globalAlpha = 1;
+    }
+  };
+}
+
 const STYLE_DANSE = `
 .pkm-entr.danse-menu{gap:8px}
 .pkm-entr .d-ch{display:flex;align-items:center;gap:10px;width:100%;padding:7px;text-align:left;background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
@@ -92,6 +137,8 @@ const STYLE_DANSE = `
 .pkm-entr .d-bip img{width:120px;height:120px;object-fit:contain;image-rendering:pixelated;transition:transform .07s}.pkm-entr .d-bip img.tape{transform:translateY(-14px) scale(1.08)}
 .pkm-entr .d-bip b{font-size:54px;font-weight:400;color:#F8C838;text-shadow:2px 2px 0 #141C38}
 .entr-scene.danse .piste{position:relative;flex:1;min-height:0;min-width:0;background:#141C38;touch-action:none;overflow:hidden}
+.entr-scene.danse canvas.c-effet{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;pointer-events:none;z-index:1}
+.entr-scene.danse .d-dresseur{position:absolute;transform:translate(-50%,-100%);height:40%;image-rendering:pixelated;object-fit:contain;transition:transform .5s,opacity .5s;z-index:1}.entr-scene.danse .d-dresseur.part{transform:translate(90%,-100%);opacity:0}
 .entr-scene.danse canvas.c-piste{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;display:block}
 .entr-scene.danse .ennemi,.entr-scene.danse .coach{transition:opacity .45s}
 .entr-scene.danse .pv-e{position:absolute;left:2%;top:3%;width:46%;font-size:15px;padding:2px 7px;z-index:2}.entr-scene.danse .barre{height:9px}
@@ -109,15 +156,13 @@ function danse(ouvrirSur = null) {
   const mem = danseMem.lire();
   let chargement = 0, fin = () => {}, verrou = null;
   const chansons = (D.danse || []).filter(c => DANSE_CHANSONS[c.cle]).map(c => ({...c, ...DANSE_CHANSONS[c.cle]}));
-  const atteints = () => LIEUX.slice(0, V.ici + 1).map(l => l.nom.replace(" (retour)", ""));
-  const decorDe = ch => { const a = atteints(); const nom = ch.decors.find(d => a.includes(d) && DECORS_COMBAT[d]) || a.slice().reverse().find(d => DECORS_COMBAT[d]) || "Bourg Palette"; return DECORS_COMBAT[nom]; };
   const rang = (ch, d) => (mem.best || {})[`${ch.cle}_${d}`];
   const fermer = () => { chargement++; fin(); try { if (verrou) verrou.release(); } catch (e) {} v.remove(); try { dessinerMuscu(); } catch (e) {} };
 
   function menu() {
     fin(); v.className = "pkm-entr danse-menu"; mem.niveau = mem.niveau || "Beginner"; mem.vitesse = mem.vitesse || "Normale";
     v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(acteur)}" ${repli(acteur)} alt=""><div><h3>Danse au doigt</h3><small>${sansVeuve("Pour le plaisir : 1 point par jour pour le premier morceau fini. Sur un vrai tapis de danse, ce sera du vrai sport !")}</small></div></div>
-      ${chansons.map(ch => { const r = rang(ch, mem.niveau); return `<button class="d-ch" data-ch="${ch.cle}"><i style="background-image:url('${D.scenes}${decorDe(ch).image}')"></i><span><b>${ch.titre}</b><small>${sansVeuve(ch.phrase)}</small></span><span class="rg">${r ? danseRang(r) : ""}</span></button>`; }).join("")}
+      ${chansons.map(ch => { const r = rang(ch, mem.niveau); return `<button class="d-ch" data-ch="${ch.cle}"><i style="background-image:url('${D.scenes}${ch.decor.image}')"></i><span><b>${ch.titre}</b><small>${sansVeuve(ch.phrase)}</small></span><span class="rg">${r ? danseRang(r) : ""}</span></button>`; }).join("")}
       <div class="d-reg">Difficulté<div class="choix" data-reg="niveau">${DANSE_NIVEAUX.map(([k, n]) => `<button class="${mem.niveau === k ? "on" : ""}" data-v="${k}">${n}</button>`).join("")}</div>
         Vitesse des flèches<div class="choix" data-reg="vitesse">${DANSE_VITESSES.map(([n]) => `<button class="${mem.vitesse === n ? "on" : ""}" data-v="${n}">${n}</button>`).join("")}</div></div>
       <button class="sec" data-cl>Classement</button>
@@ -179,16 +224,6 @@ function danse(ouvrirSur = null) {
     accueil();
   }
 
-  // Les 3 adversaires : de préférence aux types du morceau, toujours des lieux atteints, jamais son starter
-  function equipeDe(ch) {
-    const lieux = LIEUX.slice(0, V.ici + 1), pool = [...new Set(lieux.flatMap(l => l.pokemon || []))].filter(n => !(G.starter && G.starter.ligne.includes(n)));
-    const melange = a => a.map(n => [Math.random(), n]).sort((x, y) => x[0] - y[0]).map(x => x[1]);
-    const dansType = melange(pool.filter(n => (PAR_NUM[n].types || []).some(t => ch.types.includes(t)))), autres = melange(pool.filter(n => !dansType.includes(n)));
-    const eq = [...dansType, ...autres].slice(0, 3);
-    while (eq.length < 3) { const n = adversaireDuLieu(eq[eq.length - 1] || null); eq.push(n); }
-    return eq.sort((a, b) => RARES.has(a) - RARES.has(b));  // le plus rare en dernier
-  }
-
   async function preparer(ch) {
     const jeton = ++chargement; fin(); v.className = "pkm-entr danse-menu";
     v.innerHTML = `<div class="d-bip"><img class="d-saut" src="${IMG.grand(acteur)}" alt=""><span>${ch.titre}…</span></div><button class="sec retour">Retour</button>`;
@@ -210,18 +245,22 @@ function danse(ouvrirSur = null) {
   }
 
   function combatDanse(ch, lu, chart, tampon) {
-    const a = ctx(), decor = decorDe(ch), equipe = equipeDe(ch), notes = chart.notes.map(n => ({...n, fait: null}));
+    const a = ctx(), decor = ch.decor, equipe = ch.equipe.map(x => x[0]), nomE = n => ch.equipe.find(x => x[0] === n)[1], notes = chart.notes.map(n => ({...n, fait: null}));
     const tenues = notes.filter(n => n.finT !== undefined).length, max = notes.length + tenues, duree = (DANSE_VITESSES.find(([n]) => n === mem.vitesse) || DANSE_VITESSES[1])[1];
     const dernier = Math.max(...notes.map(n => n.finT || n.t)), finJeu = Math.min(dernier + 1.8, tampon.duration + .3);
     v.className = "pkm-entr plein";
     v.innerHTML = `<div class="entr-scene danse"><div class="monde" style="background-image:url('${D.scenes}${decor.image}')">
-        <img class="ennemi rogne" src="${IMG.grand(equipe[0])}" alt="" style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%">
+        <img class="ennemi rogne entre" src="${IMG.grand(equipe[0])}" alt="" style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te}%">
+        ${ch.image ? `<img class="d-dresseur" src="${ch.image}" alt="" style="left:${decor.e[0]}%;top:${decor.e[1]}%">` : `<canvas class="d-dresseur" style="left:${decor.e[0]}%;top:${decor.e[1]}%"></canvas>`}
         <img class="coach rogne" src="${D.images}/pokemon/back/${acteur}.png" alt="" style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc * .72}%">
-        <div class="pv-e"><span class="equipe"></span><span class="nom-e"></span><div class="barre"><i></i></div></div><div class="eclair"></div><div class="txt"></div></div>
+        <div class="pv-e"><span class="equipe"></span><span class="nom-e"></span><div class="barre"><i></i></div></div><canvas class="c-effet"></canvas><div class="eclair"></div><div class="txt"></div></div>
       <div class="piste"><canvas class="c-piste"></canvas><button class="quitter retour">✕</button></div></div>`;
-    const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair"), piste = S.querySelector(".piste"), toile = S.querySelector("canvas"), c = toile.getContext("2d");
+    const S = v.querySelector(".entr-scene"), E = S.querySelector(".ennemi"), C = S.querySelector(".coach"), txt = S.querySelector(".txt"), barre = S.querySelector(".barre i"), eclair = S.querySelector(".eclair"), piste = S.querySelector(".piste"), toile = S.querySelector(".c-piste"), c = toile.getContext("2d");
     rognerImages(S);
-    const R0 = 3;
+    const R0 = 4;  // le dresseur parle, envoie son Pokémon, et la musique part
+    const Dr = S.querySelector(".d-dresseur"), M = S.querySelector(".monde"), te = S.querySelector(".c-effet"), effet = danseEffet(ch.effet, te);
+    const rde = () => { const r = M.getBoundingClientRect(); te.width = Math.round(r.width / 2); te.height = Math.round(r.height / 2); }; rde();
+    if (!ch.image) championAnime(Dr, ch.sprite, true);
     const src = a.createBufferSource(); src.buffer = tampon; src.connect(a.destination);
     const debut = a.currentTime + R0; src.start(debut);
     const temps = () => a.currentTime - debut - (mem.calage || 0);
@@ -231,19 +270,20 @@ function danse(ouvrirSur = null) {
     const part = DANSE_VICTOIRE * max / equipe.length;
     const dire = (t, ms = 1300) => { parole = performance.now() + ms; txt.textContent = sansVeuve(t); };
     const peindre = () => { const r = J.rangE < equipe.length ? 1 - (J.points - J.rangE * part) / part : 0, p = Math.max(r * 100, 0); barre.style.width = `${p}%`; barre.className = p < 25 ? "bas" : p < 55 ? "moyen" : "";
-      S.querySelector(".nom-e").textContent = J.rangE < equipe.length ? PAR_NUM[equipe[J.rangE]].nom : "K.O. !"; S.querySelector(".equipe").textContent = `${Math.min(J.rangE + 1, equipe.length)}/${equipe.length}`; };
+      S.querySelector(".nom-e").textContent = J.rangE < equipe.length ? nomE(equipe[J.rangE]) : "K.O. !"; S.querySelector(".equipe").textContent = `${Math.min(J.rangE + 1, equipe.length)}/${equipe.length}`; };
     const crier = n => { try { const x = new PW.Audio(CRI(n)); x.volume = .3; x.play().catch(() => {}); } catch (e) {} };
     const flash = () => { eclair.classList.remove("on"); void eclair.offsetWidth; eclair.classList.add("on"); S.classList.remove("fort"); void S.offsetWidth; S.classList.add("fort"); };
-    dire(`${ch.titre} : un ${PAR_NUM[equipe[0]].nom} approche !`, 2500); peindre(); setTimeout(() => crier(equipe[0]), 500);
+    dire(`${ch.qui} : ${ch.debut}`, 2200); peindre();
+    setTimeout(() => { if (finie) return; Dr.classList.add("part"); E.classList.remove("entre"); dire(`${ch.qui} envoie ${nomE(equipe[0])} !`, 1500); crier(equipe[0]); }, 2200);
     try { PAGE_HAUTE().navigator.wakeLock.request("screen").then(l => { verrou = l; }).catch(() => {}); } catch (e) {}
 
     const gagne = pts => {
       J.points += pts;
       while (J.rangE < equipe.length && J.points >= (J.rangE + 1) * part) {
         const parti = equipe[J.rangE++]; E.classList.add("ko"); flash(); vibre(60); crier(parti);
-        if (J.rangE === equipe.length) { dire("Victoire ! Finis le morceau pour le panache !", 3000); [[76, 0], [79, .12], [84, .24], [88, .36]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .06})); }
-        else { const n = equipe[J.rangE]; dire(`${PAR_NUM[parti].nom} est K.O. !`, 1000);
-          setTimeout(() => { if (finie) return; rogne(IMG.grand(n)).then(([s]) => { E.src = s; }); E.classList.remove("ko"); E.classList.add("entre"); requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre"))); dire(`Un ${PAR_NUM[n].nom} prend le relais !`, 1200); crier(n); }, 800); }
+        if (J.rangE === equipe.length) { Dr.classList.remove("part"); dire(`${ch.qui} : ${ch.fin}`, 3500); [[76, 0], [79, .12], [84, .24], [88, .36]].forEach(([k, t]) => ton(NOTE(k), t, .2, {type: "square", vol: .06})); }
+        else { const n = equipe[J.rangE]; dire(`${nomE(parti)} est K.O. !`, 1000);
+          setTimeout(() => { if (finie) return; rogne(IMG.grand(n)).then(([s]) => { E.src = s; }); E.classList.remove("ko"); E.classList.add("entre"); requestAnimationFrame(() => requestAnimationFrame(() => E.classList.remove("entre"))); dire(`${ch.qui} envoie ${nomE(n)} !`, 1200); crier(n); }, 800); }
       }
       peindre();
     };
@@ -262,7 +302,7 @@ function danse(ouvrirSur = null) {
       gagne(f[2]);
     };
     const redim = () => { const r = piste.getBoundingClientRect(), d = Math.min(PW.devicePixelRatio || 1, 2); toile.width = Math.round(r.width * d); toile.height = Math.round(r.height * d); return d; };
-    let dpr = redim(); const surRedim = () => { dpr = redim(); }; PW.addEventListener("resize", surRedim);
+    let dpr = redim(); const surRedim = () => { dpr = redim(); rde(); }; PW.addEventListener("resize", surRedim);
     const instant = e => a.currentTime - Math.max(PW.performance.now() - e.timeStamp, 0) / 1000 - debut - (mem.calage || 0);
     piste.onpointerdown = e => { if (e.target.closest(".quitter")) return; e.preventDefault(); const r = piste.getBoundingClientRect(), col = Math.max(0, Math.min(3, Math.floor((e.clientX - r.left) / r.width * 4)));
       doigts.set(e.pointerId, col); tenu[col]++; try { piste.setPointerCapture(e.pointerId); } catch (x) {} appui(col, instant(e)); };
@@ -279,6 +319,7 @@ function danse(ouvrirSur = null) {
     const image = () => {
       if (finie) return;
       const W = toile.width / dpr, H = toile.height / dpr, t = temps(), beat = lu.beatDe(t), pas = W / 4, tp = Math.min(pas * .88, 120), ry = H - 64 - tp / 2 - 4, now = performance.now(), dt = Math.min((now - avant) / 1000, .1); avant = now;
+      effet(dt);
       const parBeat = ry / duree * 60 / lu.bpmMax, frac = beat - Math.floor(beat), bat = t > -1 ? Math.max(0, 1 - frac * 3) : 0;
       if (attaqueFin && now > attaqueFin) { C.classList.remove("attaque"); attaqueFin = 0; }
       if (parole && now > parole) { parole = 0; txt.textContent = sansVeuve(J.rangE < equipe.length ? `Que doit faire ${nomA} ?` : `${nomA} danse de joie !`); }
@@ -326,7 +367,7 @@ function danse(ouvrirSur = null) {
     if (gagne) EPIQUE.fanfare();
     const moy = J.ecarts.length ? J.ecarts.reduce((x, y) => x + y, 0) / J.ecarts.length : 0, affiner = J.ecarts.length >= 20 && Math.abs(moy) > .025;
     v.className = "pkm-entr danse-menu";
-    v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])}" ${repli(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])} alt=""><div><h3>${gagne ? "Victoire !" : `${PAR_NUM[equipe[Math.min(J.rangE, equipe.length - 1)]].nom} s'est enfui…`}</h3><small>${ch.titre}</small></div></div>
+    v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])}" ${repli(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])} alt=""><div><h3>${gagne ? "Victoire !" : "Défaite…"}</h3><small>${ch.titre} · ${ch.qui} : ${gagne ? ch.fin : ch.perdu}</small></div></div>
       <div class="boite"><div class="d-gros">${r}</div><div class="d-lignes"><span>Score${record ? " (record !)" : ""}</span><span>${Math.round(pct * 100)} %</span>${Object.entries(J.compte).map(([k, n]) => `<span>${k}</span><span>${n}</span>`).join("")}<span>Meilleure suite</span><span>${J.meilleur}</span>${premierDuJour ? "<span>Point du jour</span><span>+1</span>" : ""}</div></div>
       <div class="boite"><h3>Classement</h3><div class="d-zone"></div></div>
       ${affiner ? `<button class="sec" data-affine>Tes touches arrivent ${Math.round(Math.abs(moy) * 1000)} ms ${moy > 0 ? "en retard" : "en avance"} : corriger</button>` : ""}

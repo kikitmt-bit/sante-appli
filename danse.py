@@ -3,7 +3,7 @@ protégés. L'appli les lit avec son jeton et ne les sert qu'aux personnes conne
 import requests
 import streamlit as st
 
-CHANSONS = ("zinnia", "skull", "colress", "red")
+CHANSONS = ("skull", "colress", "zinnia", "red")  # du plus facile au plus dur
 BRANCHE = "danse"
 
 
