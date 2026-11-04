@@ -1,6 +1,6 @@
 # Pokémon Sport — feuille de route (décidée avec Kiki le 01/11/2026)
 
-Rien de tout ça n'est construit : ce sont les idées validées, à faire dans l'ordre qu'on choisira.
+Rien de tout ça n'est construit : ce sont les idées validées, à faire dans l'ordre qu'on choisira. Johto (région, passage, jour et nuit) : construit le 04/11, voir CLAUDE.md.
 
 ## Durée
 
@@ -56,7 +56,7 @@ retard s'accumule (38 Master Balls au plus en 2 ans pour 100 légendaires ou plu
 | Région | Nouveauté | Lien avec le sport |
 |---|---|---|
 | Kanto | la base : voyage, arènes, shiny | — |
-| Johto | jour et nuit : Pokémon du matin / du soir selon l'heure où on a bougé | varier les moments |
+| Johto | jour et nuit : Pokémon du matin / du soir selon l'heure où on a bougé (**construit le 04/11**, voir CLAUDE.md) | varier les moments |
 | Hoenn | vraie météo (Open-Meteo) : pluie = Eau, soleil = Feu | sortir sous la pluie |
 | Sinnoh | fossiles déterrés avec les séances de force (tractions, pompes, rameur) | la muscu |
 | Unys | saisons réelles : la région change chaque mois | l'été : paddle, kayak |

@@ -44,9 +44,10 @@ from pathlib import Path
 import pandas as pd
 
 import chiffres
-import kanto
 import missions
+import regions
 from pokedex import LEGENDAIRES, POKEMON
+from region import Voyage
 
 REGLAGES = {
     # Partie en cours : premier jour et numéro. Recommencer à zéro = nouvelle date + nouveau numéro (les identifiants
@@ -62,6 +63,8 @@ REGLAGES = {
     "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
     "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_planche": .1, "bonus_danse": 1, "bonus_gestes_max": 40, "ancien_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour (25 avant le 04/11)
     "objectif_gestes": 15, "bonus_famille": 15, "familles_semaine": 4, "hebdo_jours": 4,  # audit du 03/11, depuis le 04/11 : 15 points de muscu dans la journée (30 pompes, 15 tractions, 60 squats) = l'objectif du jour est atteint ; chaque famille de sport travaillée dans la semaine : +15 ; 4 familles : une Super Ball ; 4 jours d'objectif sur 7 : une Super Ball
+    "rattrapage": .25, "rattrapage_garde": 8,  # dans une nouvelle région : 25 % de chances d'un Pokémon manquant des régions d'avant, et à coup sûr après 8 balls sans (Kiki, 29/10)
+    "pas_moment": 2000, "poids_moment": 3,  # Johto : 2 000 pas le matin ou le soir rendent ses Pokémon 3 fois plus fréquents ce jour-là
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
     "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
     "barre": 100,                    # points d'effort pour une Poké Ball
@@ -115,8 +118,7 @@ FORCE_TYPES = ("ROWING", "STRENGTH", "WEIGHT", "CALISTHENIC", "CIRCUIT", "HIIT",
 FORCE_NOMS = ("muscu", "renfo", "force", "poids", "haltère", "pompe", "traction", "gainage", "circuit", "hiit",
               "crossfit", "fractionné", "rameur", "strength", "weight", "rowing")
 
-STARTERS = [1, 4, 7]  # Bulbizarre, Salamèche, Carapuce : le cadeau du Professeur Chen
-LIGNES = {n: [n, n + 1, n + 2] for n in STARTERS}  # ses évolutions
+LIGNES = {n: [n, n + 1, n + 2] for r in regions.REGIONS for n in r.starters}  # le cadeau du professeur de chaque région et ses évolutions
 
 
 def niveau(points):
@@ -124,8 +126,6 @@ def niveau(points):
     return REGLAGES["niveau_depart"] + int(points // REGLAGES["pts_niveau"])
 
 NOMS_FAMILLES = {"marche": "la marche", "cardio": "le cardio", "pousser": "les bras", "tirer": "le dos", "jambes": "les jambes"}
-OISEAUX = [144, 145, 146]  # ce que la chance peut donner avant les sanctuaires
-TOTAL_ESPECES = len(POKEMON) - len(LEGENDAIRES)  # les 146 du diplôme
 
 # Les images (dépôt public PokeAPI/sprites)
 IMAGES = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites"
@@ -236,10 +236,16 @@ def exploit(m):
     return None
 
 
-def tirer(graine, possedees, ici, passes, types=None, shiny=0.03, p_nouvelle=0.0, seul_type=None):
+def moments_du_jour(ligne):
+    """La nouveauté de Johto, le jour et la nuit : d'après la journée (missions.json), ['matin'] si on a bien bougé avant 13 h, ['soir'] après 20 h, ou les deux."""
+    ligne, R = ligne or {}, REGLAGES
+    return [m for m, pas in (("matin", ligne.get("pas_matin")), ("soir", ligne.get("pas_soir"))) if (pas or 0) >= R["pas_moment"]]
+
+
+def tirer(graine, possedees, ici, passes, types=None, shiny=0.03, p_nouvelle=0.0, seul_type=None, moment=None):
     """Une capture dans les lieux atteints (ici = lieu actuel, passes = lieux traversés), jamais de doublon, ou None s'il
     n'y a plus d'espèce nouvelle (la ball attend ou part en chasse). types = types favoris de la barre (×3) ; seul_type =
-    ball d'arène (ce type s'il en reste)."""
+    ball d'arène (ce type s'il en reste) ; moment = {numéro: multiplicateur} (Johto : Pokémon du matin ou du soir)."""
     rng = random.Random(graine)
     especes = {n for n, _ in possedees}
     neufs = [n for n in [*ici, *passes] if n not in especes]
@@ -254,7 +260,7 @@ def tirer(graine, possedees, ici, passes, types=None, shiny=0.03, p_nouvelle=0.0
     lieu, autres = [n for n in pool if n in ici], [n for n in pool if n not in ici]
     if lieu and autres:
         pool = lieu if rng.random() < REGLAGES["part_lieu"] else autres
-    poids = [(1 / 3 if n in kanto.RARES else 1) * (3 if types and set(types) & set(POKEMON[n]["types"]) else 1) for n in pool]
+    poids = [(1 / 3 if n in regions.RARES else 1) * (3 if types and set(types) & set(POKEMON[n]["types"]) else 1) * (moment or {}).get(n, 1) for n in pool]
     num = rng.choices(pool, weights=poids)[0]
     return {"num": num, "shiny": est_shiny, "nouvelle": num not in especes}
 
@@ -362,20 +368,20 @@ def objectif_ok(m):
     return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= seuils_zone(m)[1]
 
 
-def balls_du_jour(jour, m, avant, apres, shiny_ball=None, badges=(), debut=None, sanctuaires=()):
+def balls_du_jour(jour, m, avant, apres, shiny_ball=None, badges=(), debut=None, sanctuaires=(), region=None):
     """Les Poké Balls gagnées un jour : avant / apres = points d'effort cumulés depuis le début du jeu ; shiny_ball = numéro
     de la Shiny Ball gagnée ce jour-là (25 jours sur 30), ou None ; badges = [(numéro, lieu)] des arènes gagnées ce jour-là ;
-    sanctuaires = les balls des sanctuaires réussis ce jour-là ; debut = le premier jour du joueur (par défaut, celui de la
-    partie de Kiki)."""
-    dues = []
-    if jour == (debut or REGLAGES["debut"]):  # le premier jour : le Professeur Chen offre un des 3 starters, au hasard
-        dues.append({"cle": "chen", "ball": "poke", "raison": "🎁 Cadeau du Professeur Chen", "types": None,
-                     "parmi": STARTERS})
+    sanctuaires = les balls des sanctuaires réussis ce jour-là ; debut = le premier jour du joueur dans la région (par défaut, celui de la
+    partie de Kiki) ; region = la région en cours (par défaut, la première)."""
+    dues, region = [], region or regions.REGIONS[0]
+    if jour == (debut or REGLAGES["debut"]):  # le premier jour de la région : le professeur offre un des 3 starters, au hasard
+        dues.append({"cle": region.cadeau[0], "ball": "poke", "raison": region.cadeau[1], "types": None,
+                     "parmi": region.starters})
     for k, lieu in badges:
         a = lieu["arene"]
-        if a["type"] is None:  # la Ligue : Mewtwo
+        if a["type"] is None:  # la Ligue : son légendaire
             dues.append({"cle": "ligue", "ball": "master", "raison": "🏆 Champion de la Ligue Pokémon !",
-                         "types": None, "fixe": 150})
+                         "types": None, "fixe": region.ligue})
         else:
             dues.append({"cle": f"badge{k}", "ball": "hyper", "types": None, "seul_type": a["type"], "nouvelle": 1,
                          "raison": f"🏅 {a['badge']} ({a['champion']}, {lieu['nom']})"})
@@ -424,7 +430,7 @@ def ident(jour, cle, ami=None):
 
 
 GESTES = "data/pokemon/gestes.json"  # pompes, tractions et squats, jour par jour (la montre ne sait pas les compter)
-_GESTE = re.compile(r"#geste-(pompes|tractions|squats|planche|combatshiny|danse)_(-?\d+)_(\d+)$")
+_GESTE = re.compile(r"#geste-(pompes|tractions|squats|planche|combatshiny|danse|appel)_(-?\d+)_(\d+)$")
 _SCORE = re.compile(r"#danse-([a-z]+)-([A-Za-z]+)_(\d+)_\d+$")  # la danse au doigt : morceau, difficulté, score en millièmes (danse.js)
 SERIE_ECART = 30 * 60 * 1000  # une nouvelle série de pompes : 30 min après la précédente (en millisecondes, comme les traces)
 SERIE_POMPES = 10
@@ -449,7 +455,7 @@ def gestes_du(ancien, ouvertes, ami, aujourd):
     for i in ouvertes or ():
         m, s = _GESTE.search(i), _SCORE.search(i)
         if (m or s) and i.startswith(ident(i[:10], "geste", ami).split("geste")[0]):
-            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "planche": 0, "combatshiny": 0, "danse": 0, "_touches": []})
+            t = traces.setdefault(i[:10], {"pompes": 0, "tractions": 0, "squats": 0, "planche": 0, "combatshiny": 0, "danse": 0, "appel": 0, "_touches": []})
             if s:
                 du_jour, cle = scores.setdefault(i[:10], {}), f"{s[1]}_{s[2]}"
                 du_jour[cle] = max(du_jour.get(cle, 0), int(s[3]))
@@ -519,7 +525,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     captures, possedees, cumul = [], set(), 0.0
     debut, ami = joueur["debut"] if joueur else R["debut"], joueur["id"] if joueur else None
     jours_ok, shiny_balls, depuis_master = [], 0, debut  # Shiny Ball : jours avec l'objectif dans la fenêtre
-    voyage = kanto.Voyage()
+    reg_i, region, debut_region, depart = 0, regions.REGIONS[0], debut, False  # la région en cours ; depart = l'appel du professeur est accepté : la suivante commence demain
+    voyage = Voyage(region)
+    carnet = nouveau_carnet()  # les chiffres du voyage dans la région en cours, pour le Carnet de fin de région
     jour, m, ok, shiny_bonus = debut, {}, False, 1
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
     sem, semaine_passee = None, None  # la semaine en cours et celle d'avant (bilan du dimanche)
@@ -528,14 +536,17 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     retenues, en_attente, missions_gardees = [], [], []  # gardées par le champion ; sac et balls sans rien de nouveau
     chaine, chance_prise, perdues, en_defi = 0, False, 0, False
     avant, chrono, hier = 0.0, None, None
-    starter = None  # le Pokémon du cadeau du Professeur
-    reserves = lambda noms: [n for n in noms if not starter or n not in LIGNES[starter][1:]]  # ses évolutions ne sortent pas des balls  # noqa: E731
+    starter, mes_starters, sans_rattrapage = None, [], 0  # le Pokémon du cadeau du professeur de la région, et ceux des régions d'avant
+    reserves = lambda noms: [n for n in noms if not any(n in LIGNES[x][1:] for x in mes_starters)]  # leurs évolutions ne sortent pas des balls  # noqa: E731
 
     def noter(c):
-        nonlocal chaine, chance_prise, starter
+        nonlocal chaine, chance_prise, starter, sans_rattrapage
         captures.append(c)
-        if c["id"].endswith("#chen"):
+        if c["id"].endswith("#" + region.cadeau[0]):
             starter = c["num"]
+            mes_starters.append(starter)
+        elif reg_i and c.get("ball") in ("poke", "super", "hyper") and not c.get("chasse"):
+            sans_rattrapage = 0 if c.get("rattrapage") else sans_rattrapage + 1
         if not c.get("rate"):
             possedees.add((c["num"], c["shiny"]))
         if c.get("chasse"):
@@ -550,7 +561,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             return
         mi["tentee"] = True
         rng = random.Random(f"{mi['id']}#legende")
-        manquent = [n for n in OISEAUX if n not in {x for x, _ in possedees}]
+        manquent = [n for n in region.legendes_chance if n not in {x for x, _ in possedees}]
         if rng.random() < p and manquent:
             mi["fixe"], mi["chance"] = rng.choice(manquent), True
             chance_prise = True
@@ -573,7 +584,18 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 return None
             c = {"num": rng.choice(sorted(pool)), "shiny": True, "nouvelle": False}
         else:
-            c = tirer(i, possedees, reserves(ici), reserves(passes), mi["types"], p, mi.get("nouvelle", ball["nouvelle"]), mi.get("seul_type"))
+            # dans une nouvelle région, une chance de tomber sur ce qui manque aux régions d'avant (les balls d'arène gardent le type du champion)
+            manquants = [] if mi.get("seul_type") else sorted(n for r in regions.REGIONS[:reg_i] for n in r.especes if n not in {x for x, _ in possedees})
+            hasard = bool(manquants) and (random.Random(f"{i}#rattrapage").random() < R["rattrapage"] or sans_rattrapage >= R["rattrapage_garde"])
+            c = tirer(i, possedees, reserves(manquants), [], mi["types"], p, 1) if hasard else None
+            if not c:
+                bonus_moment = {n: R["poids_moment"] for k in moments_du_jour((missions_jours or {}).get(str(mi["jour"]))) for n in region.moments.get(k, ())}
+                c = tirer(i, possedees, reserves(ici), reserves(passes), mi["types"], p, mi.get("nouvelle", ball["nouvelle"]), mi.get("seul_type"), bonus_moment)
+                if c:
+                    return c
+                c = tirer(i, possedees, reserves(manquants), [], mi["types"], p, 1)  # plus rien de nouveau ici : d'abord ce qui manque aux régions d'avant
+            if c:
+                c["rattrapage"] = True
         return c
 
     def finaliser(c, mi, lieu):
@@ -582,7 +604,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         c |= {"id": mi["id"], "jour": str(mi["jour"]), "ball": mi["ball"], "raison": mi["raison"], "lieu": lieu}
         if cle.startswith("poke") and cle[4:].isdigit():
             c["c"] = int(cle[4:]) * R["barre"]
-        elif cle == "chen":
+        elif cle == region.cadeau[0]:
             c["c"] = round(avant, 1)
         elif cle in ("super", "hyper") and mi["jour"] == jour:
             if chrono is None:
@@ -594,6 +616,10 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         return c
 
     while jour <= aujourd:
+        if depart:  # l'appel a été accepté hier : la nouvelle région commence à minuit, sac vide et barre à zéro
+            reg_i, region, debut_region, depart = reg_i + 1, regions.REGIONS[reg_i + 1], jour, False
+            voyage, cumul, avant, frise, starter, chance_prise, sans_rattrapage = Voyage(region), 0.0, 0.0, [], None, False, 0
+            carnet = nouveau_carnet()
         s = stats.loc[jour].to_dict() if jour in stats.index else {}
         m = mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []], jour)
         g = (gestes or {}).get(str(jour)) or {}
@@ -628,6 +654,15 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         bonus += [("🧩", f"Variété : {NOMS_FAMILLES[f]}", R["bonus_famille"]) for f in nouvelles_familles]
         avant, cumul = cumul, cumul + sum(m["points"].values()) + sum(p for _, _, p in bonus)
         sem["points"] += round(cumul - avant)
+        km_jour = s.get("km") if s.get("km") == s.get("km") and s.get("km") else 0
+        carnet["jours"] += 1
+        carnet["pas"] += round(m["pas"])
+        carnet["km"] += float(km_jour)
+        carnet["sport"] += round(m["zone"])
+        for k in ("pompes", "tractions", "squats"):
+            carnet[k] += max(g.get(k, 0), 0)
+        if m["pas"] > carnet["record"]["pas"]:
+            carnet["record"] = {"pas": round(m["pas"]), "jour": str(jour)}
         p0 = voyage.pos
         soir = ((missions_jours or {}).get(str(jour)) or {}).get("pas_soir") or 0
         km = s.get("km") if s.get("km") == s.get("km") and s.get("km") else 0  # None ou NaN : pas de distance ce jour-là
@@ -647,7 +682,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         if not en_defi:
             missions_gardees = []
         ici, passes = voyage.atteints()
-        lieu = kanto.LIEUX[voyage.ici()]["nom"]
+        lieu = region.lieux[voyage.ici()]["nom"]
         frise.append({"jour": str(jour), "c0": round(avant, 1), "c1": round(cumul, 1), "p0": round(p0, 1),
                       "p1": round(voyage.pos, 1)})
         if jour.weekday() == 0:
@@ -656,15 +691,15 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             pesees.add(jour)
         sanct = []
         for k in voyage.sanct_du_jour:
-            num = kanto.SANCT_INDEX[k]
+            num = region.sanct_index[k]
             nom = POKEMON[num]["nom"]
             if num in {n for n, _ in possedees}:  # déjà attrapé par chance : le sanctuaire donne une Shiny Ball
                 sanct.append({"cle": f"sanct{num}", "ball": "shiny", "types": None,
-                              "raison": f"🏛️ Sanctuaire de {kanto.LIEUX[k]['nom']} ({nom} déjà attrapé)"})
+                              "raison": f"🏛️ Sanctuaire de {region.lieux[k]['nom']} ({nom} déjà attrapé)"})
             else:
                 sanct.append({"cle": f"sanct{num}", "ball": "master", "types": None, "fixe": num,
-                              "raison": f"🏛️ Sanctuaire de {kanto.LIEUX[k]['nom']} : {nom}"})
-        dues = balls_du_jour(jour, m, avant, cumul, shiny_ball, badges, debut, sanct)
+                              "raison": f"🏛️ Sanctuaire de {region.lieux[k]['nom']} : {nom}"})
+        dues = balls_du_jour(jour, m, avant, cumul, shiny_ball, badges, debut_region, sanct, region)
         if equitable(jour) and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
             sem["hebdo"] = True
             dues.append({"cle": "hebdo", "ball": "super", "types": None, "raison": f"📅 {R['hebdo_jours']} jours d'objectif dans la semaine"})
@@ -726,11 +761,14 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                     mi = {"cle": f"evo{stade}", "ball": "evo", "types": None, "fixe": num, "jour": jour, "shiny_bonus": 1,
                           "raison": f"✨ {POKEMON[LIGNES[starter][stade - 1]]['nom']} évolue en {POKEMON[num]['nom']}", "id": ident(jour, f"evo{stade}", ami)}
                     noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
-        # le Pokédex est complet (les 146) : le diplôme du Professeur Chen, avec Mew
-        if len({n for n, _ in possedees if n not in LEGENDAIRES}) >= TOTAL_ESPECES and 151 not in {n for n, _ in possedees}:
-            mi = {"cle": "diplome", "ball": "master", "types": None, "fixe": 151, "jour": jour, "shiny_bonus": shiny_bonus,
-                  "raison": "🎓 Diplôme du Professeur Chen", "id": ident(jour, "diplome", ami)}
-            noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
+        # le Pokédex d'une région est complet : son diplôme, avec son légendaire (Kanto : les 146, puis Mew)
+        for r in regions.REGIONS[:reg_i + 1]:
+            if r.especes <= {n for n, _ in possedees} and r.diplome not in {n for n, _ in possedees}:
+                mi = {"cle": r.cle_diplome, "ball": "master", "types": None, "fixe": r.diplome, "jour": jour, "shiny_bonus": shiny_bonus,
+                      "raison": r.raison_diplome, "id": ident(jour, r.cle_diplome, ami)}
+                noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
+        if fini and g.get("appel") and reg_i + 1 < len(regions.REGIONS):  # l'appel du professeur est accepté (trace du téléphone) : départ demain matin
+            depart = True
         jour += dt.timedelta(days=1)
     b = R["barre"]
     # La fenêtre de la Shiny Ball : un état par jour (1 = objectif, 0 = raté, None = aujourd'hui pas encore), du plus
@@ -766,9 +804,24 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores(gestes),
-                      "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
+                      "carnet": carnet, "moments": moments_du_jour((missions_jours or {}).get(str(aujourd))) if region.moments else None, "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores(gestes),
+                      "fini": 9 in voyage.badges, "hier": hier, "region": {"index": reg_i, "nom": region.nom, "debut": str(debut_region), "depart": depart,
+                                                                           "suivante": regions.REGIONS[reg_i + 1].nom if reg_i + 1 < len(regions.REGIONS) else None}, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
                       "starter": starter and {"ligne": LIGNES[starter], "niveau": niveau(cumul), "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1)}}
+
+
+def nouveau_carnet():
+    return {"jours": 0, "pas": 0, "km": 0.0, "sport": 0, "pompes": 0, "tractions": 0, "squats": 0, "record": {"pas": 0, "jour": None}}
+
+
+def apercu_region(etat, index, pos):
+    """L'aperçu d'une région sans y être (Kiki seul, onglet Tester) : sa carte, ses champions, aucune capture. Rien n'est enregistré."""
+    region = regions.REGIONS[index]
+    v = Voyage(region)
+    v.pos = pos
+    sans_arene = {**etat, "voyage": v.etat(dt.date.today()), "frise": [], "cumul": pos, "barre": 0, "fini": False, "defi_grise": False, "sac": [], "retenues": [], "starter": None, "perdues": 0,
+                  "region": {"index": index, "nom": region.nom, "debut": str(dt.date.today()), "depart": False, "suivante": None}, "chasse": {"actif": False, "chaine": 0, "chance": 0}, "moments": []}
+    return [], sans_arene
 
 
 def etat_mission(aujourd, stats, mission_du, gestes=None):

@@ -11,7 +11,7 @@ import html
 import json
 
 import chiffres
-import kanto
+import regions
 import pokemon
 from pokedex import LEGENDAIRES
 
@@ -52,11 +52,12 @@ def nouvelles(vues, v, frise, aujourd):
     for c in sorted(vues, key=lambda c: c["jour"]):
         num, nouveau = c["num"], c["num"] not in vus
         vus.add(num)
-        quoi = ("evo" if "#evo" in c["id"] else "starter" if c["id"].endswith("#chen") else "legendaire" if nouveau and num in LEGENDAIRES else "shiny" if c.get("shiny")
-                else "rare" if nouveau and num in kanto.RARES else None)
+        quoi = ("evo" if "#evo" in c["id"] else "starter" if c["id"].endswith(("#chen", "#orme")) else "legendaire" if nouveau and num in LEGENDAIRES else "shiny" if c.get("shiny")
+                else "rare" if nouveau and num in regions.RARES else None)
         if quoi:
             out.append({"quoi": quoi, "jour": c["jour"], "num": num, "shiny": bool(c.get("shiny"))})
-    out += [{"quoi": "badge", "jour": j, "n": int(k)} for k, j in v["badges"].items()]
+    arenes = [l["arene"] for l in v["lieux"] if l["arene"]]
+    out += [{"quoi": "badge", "jour": j, "n": int(k), "champion": arenes[int(k) - 1]["champion"], "image": arenes[int(k) - 1]["image"]} for k, j in v["badges"].items()]
     for f in frise:
         out += [{"quoi": "lieu", "jour": f["jour"], "lieu": l["nom"]} for l in v["lieux"]
                 if f["p0"] < l["dist"] <= f["p1"] and "(retour)" not in l["nom"]]

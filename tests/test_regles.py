@@ -268,5 +268,109 @@ class Roue(unittest.TestCase):
         self.assertEqual(missions.familles_du({"pas": float("nan"), "zone_sport": None}), set())
 
 
+class Regions(unittest.TestCase):
+    """Le passage de Kanto à Johto : la nouvelle région commence le lendemain de l'appel accepté, sac vide et barre à zéro."""
+
+    gardees = {}
+
+    def partie_complete(self, nb=400, appel_apres=True):
+        """Un joueur très sportif : la Ligue de Kanto bien avant la fin, puis l'appel 2 jours après. Le jeu est long à rejouer : gardé pour tous les tests."""
+        cle = (nb, appel_apres)
+        if cle not in self.gardees:
+            g = {str(jour(k)): {"pompes": 80, "tractions": 25, "squats": 0, "series": 0} for k in range(nb)}
+            s = stats(nb, pas=14000, zone_sport=40, zone=40, km=9, etages=45, sommeil=430)
+            quand = None
+            if appel_apres:
+                _, e = pokemon.jouer(s, {}, jour(nb - 1), (), None, None, None, (), g)
+                quand = dt.date.fromisoformat(e["voyage"]["badges"][9]) + dt.timedelta(days=2)
+                g[str(quand)]["appel"] = 1
+            self.gardees[cle] = (*pokemon.jouer(s, {}, jour(nb - 1), (), None, None, None, (), g), quand, s, g)
+        captures, e, self.jour_appel, self.s, self.g = self.gardees[cle]
+        return captures, e
+
+    def test_sans_appel_on_reste_dans_l_ancienne_region(self):
+        captures, e = self.partie_complete(appel_apres=False)
+        self.assertEqual(e["region"]["nom"], "Kanto")
+        self.assertEqual(e["region"]["suivante"], "Johto")
+        self.assertFalse(any(c["num"] > 151 for c in captures))
+
+    def test_l_appel_ouvre_la_region_le_lendemain(self):
+        captures, e = self.partie_complete()
+        self.assertEqual(e["region"]["nom"], "Johto")
+        demain = str(self.jour_appel + dt.timedelta(days=1))
+        self.assertEqual(e["region"]["debut"], demain)
+        cadeau = [c for c in captures if c["id"].endswith("#orme")]
+        self.assertEqual(len(cadeau), 1)
+        self.assertEqual(cadeau[0]["jour"], demain)
+        self.assertIn(cadeau[0]["num"], (152, 155, 158))
+        self.assertFalse([c for c in captures if c["num"] > 151 and c["jour"] < demain])
+        self.assertEqual(e["voyage"]["carte"]["region"], "Johto")
+
+    def test_la_nouvelle_region_repart_de_zero(self):
+        self.partie_complete()
+        demain = self.jour_appel + dt.timedelta(days=1)
+        _, e = pokemon.jouer(self.s, {}, demain, (), None, None, None, (), self.g)
+        self.assertEqual(e["region"]["nom"], "Johto")
+        self.assertLess(e["cumul"], 500)  # les points d'une seule journée
+        self.assertLess(e["voyage"]["pos"], 500)
+        self.assertEqual(e["voyage"]["badges"], {})
+        self.assertEqual([f["jour"] for f in e["frise"]], [str(demain)])
+
+    def test_l_appel_ne_change_rien_avant_le_lendemain(self):
+        self.partie_complete()
+        _, e = pokemon.jouer(self.s, {}, self.jour_appel, (), None, None, None, (), self.g)
+        self.assertEqual(e["region"]["nom"], "Kanto")
+        self.assertTrue(e["region"]["depart"])
+
+    def test_johto_va_jusqu_au_bout(self):
+        captures, e = self.partie_complete()
+        self.assertEqual(e["region"]["nom"], "Johto")
+        self.assertIn(9, e["voyage"]["badges"])
+        nums = {c["num"] for c in captures if not c.get("rate")}
+        self.assertIn(250, nums)  # Ho-Oh, à la Ligue
+        self.assertEqual({243, 244, 245, 249} - nums, set())  # les sanctuaires
+        self.assertIn(251, nums)  # Celebi, le diplôme
+        self.assertIn(151, nums)  # Mew : le diplôme de Kanto
+        self.assertEqual(sum(c["id"].endswith("#ligue") for c in captures), 2)
+
+    def test_le_starter_de_johto_evolue(self):
+        captures, e = self.partie_complete()
+        ligne = e["starter"]["ligne"]
+        self.assertEqual(ligne[0] in (152, 155, 158), True)
+        self.assertEqual({ligne[1], ligne[2]} - {c["num"] for c in captures}, set())
+
+    def test_chaque_id_de_ball_est_unique(self):
+        captures, _ = self.partie_complete()
+        ids = [c["id"] for c in captures]
+        self.assertEqual(len(ids), len(set(ids)))
+
+    def test_le_rattrapage_donne_ce_qui_manque_a_kanto(self):
+        captures, _ = self.partie_complete()
+        self.assertTrue(all(c["num"] <= 151 for c in captures if c.get("rattrapage")))
+
+    def test_le_jour_et_la_nuit(self):
+        self.assertEqual(pokemon.moments_du_jour({"pas_matin": 2500, "pas_soir": 100}), ["matin"])
+        self.assertEqual(pokemon.moments_du_jour({"pas_matin": 2500, "pas_soir": 2000}), ["matin", "soir"])
+        self.assertEqual(pokemon.moments_du_jour(None), [])
+        # un Pokémon du moment sort plus souvent, à poids égaux
+        ici = [163, 161]
+        favori = sum(pokemon.tirer(f"g{k}", set(), ici, [], moment={163: 3})["num"] == 163 for k in range(600))
+        normal = sum(pokemon.tirer(f"g{k}", set(), ici, [])["num"] == 163 for k in range(600))
+        self.assertGreater(favori, normal + 100)
+
+    def test_chaque_pokemon_a_sa_fiche(self):
+        from pokedex import CATEGORIES, DESCRIPTIONS, FEMELLES, POIDS, POKEMON, TAILLES
+        for table in (CATEGORIES, DESCRIPTIONS, FEMELLES, POIDS, TAILLES):
+            self.assertEqual(set(table) & set(POKEMON), set(POKEMON))
+
+
+    def test_la_trace_d_appel_est_lue_et_gardee(self):
+        pokemon.REGLAGES["debut"], pokemon.REGLAGES["partie"] = DEBUT, 99
+        p = pokemon.ident(DEBUT, "", None)
+        g = pokemon.gestes_du(None, [f"{p}geste-appel_1_1000"], None, DEBUT)
+        self.assertEqual(g[str(DEBUT)]["appel"], 1)
+        self.assertEqual(pokemon.gestes_du({"jours": g}, [], None, jour(40))[str(DEBUT)]["appel"], 1)
+
+
 if __name__ == "__main__":
     unittest.main()

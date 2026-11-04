@@ -13,6 +13,7 @@ import streamlit as st
 
 import chiffres
 import pokemon
+import regions
 from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, FEMELLES, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
 UI = Path(__file__).with_name("pokemon_ui.html")
@@ -55,6 +56,16 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
     with st.spinner("Ouverture du Pokédex…"):
         captures, etat = pokemon.charger_jeu(lire, aujourd, joueur, anniversaire)
         f = lire([pokemon.OUVERTES])
+    # l'aperçu de Johto (Kiki seul, ?essais=1&johto=1) : la carte et les champions de la région, sans aucune capture ni rien d'enregistré
+    apercu = joueur is None and st.query_params.get("essais") == "1" and st.query_params.get("johto") == "1"
+    if apercu:
+        captures, etat = pokemon.apercu_region(etat, 1, float(st.query_params.get("pos", 830)))
+    index = etat["region"]["index"]
+    nums = {n for r in regions.REGIONS[:index + 1] for n in r.lieux_et_legendes}  # rien de la région suivante n'arrive sur le téléphone : la suite reste une surprise
+    for j in joueurs:  # sauf ce qu'un ami en avance a déjà attrapé : ses captures doivent pouvoir s'afficher
+        nums |= set(j.get("especes") or ()) | {x["num"] for x in (j.get("dernieres") or ())} | {x["num"] for x in (j.get("nouvelles") or ()) if x.get("num")}
+        if j.get("starter"):
+            nums.add(j["starter"]["num"])
 
     m, R = etat["mesures"], pokemon.REGLAGES
     ic, nom, types = etat["origine"]
@@ -66,7 +77,10 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "ouvertes": list((f[pokemon.OUVERTES] or {}).get("ouvertes", {})),
         "prefixe": pokemon.ident(aujourd, "", joueur["id"] if joueur else None),
         "gestes_jour": etat["gestes_jour"],
-        "jeu": _acces_jeu(joueur),
+        "jeu": None if apercu else _acces_jeu(joueur),
+        "region": etat["region"],
+        "carnet": etat["carnet"],
+        "moments": etat["moments"],
         "kiki": joueur is None,
         # les tests, les aperçus et les réglages des capteurs : Kiki seul, avec ?essais=1 dans l'adresse (le reste du jeu doit rester une surprise, pour lui aussi)
         "essais": joueur is None and st.query_params.get("essais") == "1",
@@ -78,17 +92,17 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
                      f"{chiffres.JOURS[dt.date.fromisoformat(c['jour']).weekday()]} {c['jour'][8:]}/{c['jour'][5:7]}",
         } for c in captures],
         "images": pokemon.IMAGES,
-        "dex": [[n, p["nom"], p["types"]] for n, p in POKEMON.items()],
+        "dex": [[n, p["nom"], p["types"]] for n, p in POKEMON.items() if n in nums],
         "voyage": etat["voyage"] | {"frise": etat["frise"], "cumul": etat["cumul"]},
         "pesees": etat["pesees"],
-        "poids": POIDS,
-        "tailles": TAILLES,
-        "femelles": FEMELLES,
-        "categories": CATEGORIES,
-        "descriptions": DESCRIPTIONS,
+        "poids": {n: v for n, v in POIDS.items() if n in nums},
+        "tailles": {n: v for n, v in TAILLES.items() if n in nums},
+        "femelles": {n: v for n, v in FEMELLES.items() if n in nums},
+        "categories": {n: v for n, v in CATEGORIES.items() if n in nums},
+        "descriptions": {n: v for n, v in DESCRIPTIONS.items() if n in nums},
         "carte": f"https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/{etat['voyage']['carte']['image']}",
         "scenes": "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
-        "legendaires": LEGENDAIRES,
+        "legendaires": [n for n in LEGENDAIRES if n in nums],
         "couleurs": COULEURS_TYPES,
         "conseils": _conseils(),
         "barre": {"points": round(etat["barre"], 1), "taille": R["barre"],
@@ -108,5 +122,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"
+    if index or apercu:  # chaque région a ses points : le voyage déjà vu repart de zéro
+        donnees["regles"]["partie"] = f"{donnees['regles']['partie']}-r{index}" + ("-apercu" if apercu else "")
     page = UI.read_text(encoding="utf-8").replace("/*__DANSE_JS__*/", DANSE.read_text(encoding="utf-8"))
     st.iframe(page.replace("__DONNEES__", _js(donnees)), height=900)

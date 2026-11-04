@@ -18,7 +18,6 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import chiffres
-import kanto
 import missions
 import pokemon
 from pokedex import LEGENDAIRES, POKEMON
@@ -106,11 +105,11 @@ def pronos(donnees, maintenant):
 def voyage(v):
     """Le voyage dans Kanto, en bref (pas encore affiché par la montre)."""
     d = v["defi"]
-    a = kanto.LIEUX[d["lieu"]]["arene"] if d else None
+    a = v["lieux"][d["lieu"]]["arene"] if d else None
     return {"lieu": v["lieux"][v["ici"]]["nom"], "badges": len([k for k in v["badges"] if int(k) <= 8]),
             "champion": 9 in v["badges"] or "9" in v["badges"],
             "defi": f"{a['champion']} : {a['texte']}" if a and d["arrive"] else None,
-            "prochain": f"{kanto.LIEUX[d['lieu']]['nom']} dans {d['reste']} pts" if d and not d["arrive"] else None}
+            "prochain": f"{v['lieux'][d['lieu']]['nom']} dans {d['reste']} pts" if d and not d["arrive"] else None}
 
 
 def image(num, shiny):

@@ -599,7 +599,7 @@ details.regles{color:#484838 !important}
     <label class="reglage-recap"><input type="checkbox" id="recap-matin"><span><b>Récap du matin</b><small>L'Infirmière Joëlle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></span></label>
     <div class="carte amis" id="amis"></div>
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
-    <details class="regles tests"><summary>🧪 Tester Kanto (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
+    <details class="regles tests"><summary>🧪 Tester le jeu (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
     <button class="bouton-param" id="ouvrir-param">⚙️ Paramètres</button>
     <button class="bouton-param" id="synchroniser">🔄 Synchroniser mes données</button>
   </section>
@@ -616,7 +616,8 @@ const COUL = {...D.couleurs, Normal: "#9FA19F", Combat: "#FF8000", Vol: "#81B9EF
 const DEX = D.dex.map(([num, nom, types]) => ({num, nom, types}));
 // Le Pokédex montre seulement les régions ouvertes : finir Kanto doit laisser croire que le jeu est fini. Une nouvelle région
 // (Johto : de 152 à 251) s'ajoute ici le jour où elle s'ouvre, et les boutons de région n'apparaissent qu'à partir de deux.
-const REGIONS = [{nom: "Kanto", de: 1, a: 151}];
+const REG = D.region, EN_JOHTO = REG.nom === "Johto", CADEAU = EN_JOHTO ? "orme" : "chen";  // la région en cours ; les données de chaque région sont plus bas (CHAMPIONS_…, FONDS, PROFESSEURS…)
+const REGIONS = [{nom: "Kanto", de: 1, a: 151}, {nom: "Johto", de: 152, a: 251}].slice(0, REG.index + 1);
 let regionVue = null, typesOuverts = false, triDex = "recent";  // regionVue null : toutes les régions (un seul Pokédex)
 const dexRegion = () => DEX.filter(p => (regionVue ? [regionVue] : REGIONS).some(x => p.num >= x.de && p.num <= x.a));
 const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
@@ -718,12 +719,14 @@ const icoType = t => TYPE_ID[t] ? `<img class="ty" src="${IMG.type(t)}" alt="">`
 function titreBall(c) {
   const cle = (c.id || "").split("#")[1] || "", nom = BALLS[c.ball] || "Poké Ball", lieu = (c.lieu || "").replace(" (retour)", "");
   if (cle === "chen") return "Cadeau du Professeur Chen";
+  if (cle === "orme") return "Cadeau du Professeur Orme";
   const b = /^badge(\d)$/.exec(cle); if (b) return `${nom} de ${CHAMPIONS[b[1]].nom}`;
-  if (c.fond && c.fond.startsWith("arene")) return `${nom} de ${CHAMPIONS[c.fond.slice(5)].nom}`;
+  if (c.fond && /arene\d$/.test(c.fond)) return `${nom} de ${CHAMPIONS[c.fond.slice(-1)].nom}`;
   if (cle === "ligue" || /Ligue/.test(c.raison || "")) return `${nom} de la Ligue`;
   if (cle.startsWith("anniv")) return `${nom} · Joyeux anniversaire !`;
   if (cle.startsWith("sanct")) return `${nom} · Sanctuaire`;
   if (cle === "diplome") return `${nom} · Diplôme du Professeur Chen`;
+  if (cle === "diplome-johto") return `${nom} · Diplôme du Professeur Orme`;
   if (cle.startsWith("shinyball")) return `${nom} · ${R.master_jours} jours sur ${R.master_fenetre}`;
   if (c.chasse) return `${nom} · Chasse aux shiny`;
   if (cle === "hebdo") return `${nom} · ${R.hebdo_jours} jours sur 7`;
@@ -1117,32 +1120,62 @@ const FONDS = {
   // le starter : le labo du Professeur, sans les Poké Balls ; le Pokémon apparaît devant la table
   labo: {image: "labo-chen-vide.webp", largeur: 940, ovale: [337, 738], rayon: 210, taille: 1, ombre: "30,40,70", jet: ["#FFFFFF", "#9ED8FF", "#FFE27A"],
     air: [{type: "poussiere", coul: ["#FFFFFF"], n: 12}]},
+  // Johto (ChatGPT, 04/11) : ce qui bouge n'est jamais dans l'image (Kiki) ; c'est air qui l'anime
+  jprairie: {image: "fond-j-prairie.webp", ovale: [470, 770], rayon: 370, ombre: "50,40,10", jet: ["#E8C860", "#FFB040", "#FFF6C8"], air: [{type: "vent", coul: ["#E8A030", "#D85030", "#E8C860"], pollen: "#FFF0B8"}]},
+  jforet: {image: "fond-j-foret.webp", ovale: [470, 770], rayon: 370, ombre: "50,10,0", jet: ["#FF6A20", "#FFB040", "#FFE08A"], air: [{type: "vent", coul: ["#D83020", "#E86020", "#F0A030"], pollen: "#FFD8A0"}]},
+  jgrotte: {image: "fond-j-grotte.webp", ovale: [470, 770], rayon: 370, ombre: "10,8,6", jet: ["#9EE8C8", "#E2F4FF", "#B8A27A"], air: [{type: "poussiere", coul: ["#D8C9A8", "#9EE8C8"], n: 24}]},
+  jville: {image: "fond-j-ville.webp", ovale: [470, 770], rayon: 370, ombre: "30,20,30", jet: ["#FFB7D0", "#FFE08A", "#FFFFFF"], air: [{type: "vent", coul: ["#D85030", "#E8A030"], n: 12, pollen: "#FFE8C0"}]},
+  jruines: {image: "fond-j-ruines.webp", ovale: [470, 770], rayon: 370, ombre: "40,20,10", jet: ["#E8C890", "#FFB040", "#FFFFFF"], air: [{type: "poussiere", coul: ["#E8DCC0", "#D8A070"], n: 22, vent: .5}]},
+  jtemple: {image: "fond-j-temple.webp", ovale: [470, 770], rayon: 370, ombre: "10,10,40", jet: ["#FFE08A", "#C9A8FF", "#FFFFFF"], air: [{type: "lucioles", coul: ["#FFE8A8", "#FFFFFF"], n: 12}]},
+  jmer: {image: "fond-j-mer.webp", ovale: [470, 770], rayon: 370, ombre: "60,40,10", jet: ["#FFFFFF", "#A8E4FF", "#F2D8A0"], air: [{type: "reflets", coul: ["#FFFFFF", "#CFF2FF"], n: 16, haut: [.1, .3]}, {type: "embruns", coul: ["#FFFFFF"], n: 8}]},
+  jtourbillons: {image: "fond-j-tourbillons.webp", ovale: [470, 770], rayon: 370, ombre: "5,15,25", jet: ["#FFFFFF", "#7FD4D8", "#A8E4FF"], air: [{type: "embruns", coul: ["#FFFFFF"], n: 14}]},
+  jlac: {image: "fond-j-lac.webp", ovale: [470, 770], rayon: 370, ombre: "30,30,40", jet: ["#FFFFFF", "#A8E4FF", "#C8B48A"], air: [{type: "reflets", coul: ["#FFFFFF", "#CFF2FF"], n: 14, haut: [.14, .3]}, {type: "brume", coul: ["#E8ECF8"], n: 4}]},
+  jglace: {image: "fond-j-glace.webp", ovale: [470, 770], rayon: 370, ombre: "0,30,70", jet: ["#FFFFFF", "#BFE8FF", "#7FC8FF"], air: [{type: "neige", coul: ["#FFFFFF", "#DDF2FF"], n: 36}]},
+  jmontagne: {image: "fond-j-montagne.webp", ovale: [470, 770], rayon: 370, ombre: "15,5,20", jet: ["#D8C9A8", "#FF8A50", "#FFFFFF"], air: [{type: "poussiere", coul: ["#C8B48A", "#E8A070"], n: 20, vent: .5}]},
+  raikou: {image: "fond-j-raikou.webp", ovale: [470, 770], rayon: 380, ombre: "10,10,0", jet: ["#FFF27A", "#FFFFFF", "#FFD000"], air: [{type: "etincelles", coul: ["#FFF27A", "#FFFFFF", "#FFD000"], n: 8}, {type: "poussiere", coul: ["#FFE8A0"], n: 14}]},
+  entei: {image: "fond-j-entei.webp", ovale: [470, 770], rayon: 380, ombre: "10,0,0", jet: ["#FFB040", "#FF6A20", "#FFE08A"], air: [{type: "braises", coul: ["#FFB040", "#FF6A20", "#FFE08A"], n: 40}]},
+  suicune: {image: "fond-j-suicune.webp", ovale: [470, 770], rayon: 380, ombre: "0,30,60", jet: ["#FFFFFF", "#BFE8FF", "#7FE8E8"], air: [{type: "brume", coul: ["#E8F8FF"], n: 6}, {type: "orbes", coul: ["#BFF0FF", "#FFFFFF"], n: 12}]},
+  lugia: {image: "fond-j-lugia.webp", ovale: [470, 770], rayon: 380, ombre: "0,15,40", jet: ["#FFFFFF", "#C8D8F0", "#7FA8E8"], air: [{type: "embruns", coul: ["#FFFFFF"], n: 14}, {type: "orbes", coul: ["#DCE8FF"], n: 10}]},
+  "ho-oh": {image: "fond-j-ho-oh.webp", ovale: [470, 770], rayon: 380, ombre: "50,20,0", jet: ["#FFE08A", "#FF6A20", "#FFFFFF"], air: [{type: "braises", coul: ["#FFE08A", "#FFB040"], n: 22}, {type: "orbes", coul: ["#FFF0B0"], n: 8}]},
+  celebi: {image: "fond-j-celebi.webp", ovale: [470, 770], rayon: 380, ombre: "10,40,10", jet: ["#A6E85A", "#FFFFFF", "#F4FF9A"], air: [{type: "lucioles", coul: ["#F4FF9A", "#FFFFFF"], n: 18}, {type: "orbes", coul: ["#C8F8A0"], n: 8}]},
+  laboOrme: {image: "labo-orme-vide.webp", ovale: [575, 765], rayon: 150, taille: 1, ombre: "60,30,10", jet: ["#FFFFFF", "#9ED8FF", "#FFE27A"], air: [{type: "poussiere", coul: ["#FFFFFF"], n: 10}]},
 };
 // Les Hyper Balls des badges s'ouvrent dans l'arène du champion, sans lui (rempli par Claude) : là où il se tenait
 const AIR_TYPE = {Roche: {type: "poussiere", coul: ["#D8C9A8", "#B8A27A"], n: 24}, Eau: {type: "bulles", coul: ["#A8E4FF", "#E2F6FF"], n: 18},
   Électrik: {type: "etincelles", coul: ["#FFF27A", "#FFFFFF", "#7FD4FF"], n: 6}, Plante: {type: "petales", coul: ["#FF9EC4", "#FFD1E3", "#9BE07A"], n: 16},
   Poison: {type: "bulles", coul: ["#C77DFF", "#E2B8FF"], n: 14}, Psy: {type: "orbes", coul: ["#FF8AD8", "#FFC4EE", "#B8A8FF"], n: 16},
-  Feu: {type: "braises", coul: ["#FFB040", "#FF6A20", "#FFE08A"], n: 30}, Sol: {type: "poussiere", coul: ["#D9B77A", "#B08A4E"], n: 26, vent: .4}};
+  Feu: {type: "braises", coul: ["#FFB040", "#FF6A20", "#FFE08A"], n: 30}, Sol: {type: "poussiere", coul: ["#D9B77A", "#B08A4E"], n: 26, vent: .4},
+  Vol: {type: "vent", coul: ["#FFFFFF", "#CFE8FF"], n: 14, pollen: "#FFFFFF"}, Insecte: {type: "lucioles", coul: ["#F4FF9A", "#FFF6C8"], n: 16}, Normal: {type: "petales", coul: ["#FFB7D0", "#FFFFFF"], n: 12},
+  Spectre: {type: "brume", coul: ["#B89CFF"], n: 6}, Acier: {type: "etincelles", coul: ["#E8F0FF", "#FFFFFF"], n: 5}, Combat: {type: "poussiere", coul: ["#E8DCC0", "#C8B48A"], n: 20}, Glace: {type: "neige", coul: ["#FFFFFF", "#DDF2FF"], n: 30}, Dragon: {type: "braises", coul: ["#FFB040", "#FF6A20"], n: 22}};
 [["argenta", "Roche", 469, 815], ["azuria", "Eau", 468, 786], ["carmin", "Électrik", 469, 763], ["celadopole", "Plante", 470, 791],
  ["parmanie", "Poison", 471, 777], ["safrania", "Psy", 463, 801], ["cramoisile", "Feu", 471, 798], ["jadielle", "Sol", 469, 804]]
   .forEach(([v, t, x, y], i) => FONDS["arene" + (i + 1)] = {image: `arene-${v}-vide.webp`, ovale: [x, y], rayon: 300, taille: 1.3, ombre: "0,0,0",
     jet: AIRS_COUL(t), air: [AIR_TYPE[t]]});
+// Johto : les salles vidées par Claude le 04/11 (jarene1 = Albert… ; 5 = Jasmine, 6 = Chuck)
+[["mauville", "Vol", 470, 834], ["ecorcia", "Insecte", 468, 801], ["doublonville", "Normal", 457, 804], ["rosalia", "Spectre", 473, 804], ["oliville", "Acier", 466, 808], ["irisia", "Combat", 465, 805], ["acajou", "Glace", 463, 811], ["ebenelle", "Dragon", 451, 820]]
+  .forEach(([v, t, x, y], i) => FONDS["jarene" + (i + 1)] = {image: `arene-${v}-vide.webp`, ovale: [x, y], rayon: 300, taille: 1.3, ombre: "0,0,0",
+    jet: AIRS_COUL(t), air: [AIR_TYPE[t]]});
 function AIRS_COUL(t) { return {Roche: ["#D8C9A8", "#B8A27A", "#FFFFFF"], Eau: ["#A8E4FF", "#FFFFFF", "#4FA8E8"], Électrik: ["#FFF27A", "#FFFFFF", "#FFD000"],
   Plante: ["#9BE07A", "#FF9EC4", "#FFFFFF"], Poison: ["#C77DFF", "#E2B8FF", "#FFFFFF"], Psy: ["#FF8AD8", "#FFC4EE", "#FFFFFF"],
-  Feu: ["#FFB040", "#FF6A20", "#FFE08A"], Sol: ["#D9B77A", "#B08A4E", "#FFFFFF"]}[t]; }
+  Feu: ["#FFB040", "#FF6A20", "#FFE08A"], Sol: ["#D9B77A", "#B08A4E", "#FFFFFF"], Vol: ["#FFFFFF", "#CFE8FF", "#9EC8F0"], Insecte: ["#A6D84B", "#F4FF9A", "#FFFFFF"], Normal: ["#FFB7D0", "#FFFFFF", "#E8C8A0"],
+  Spectre: ["#B89CFF", "#FFFFFF", "#7A5CC0"], Acier: ["#D8E0F0", "#FFFFFF", "#8898B0"], Combat: ["#E8A070", "#FFFFFF", "#C85030"], Glace: ["#FFFFFF", "#BFE8FF", "#7FC8FF"], Dragon: ["#FFB040", "#7FA8FF", "#FFFFFF"]}[t]; }
 Object.values(FONDS).forEach(f => { f.largeur = f.largeur || 941; f.hauteur = f.hauteur || 1672; });
 // Le décor de chaque lieu du voyage (kanto.LIEUX) ; Bourg Palette n'a pas de sauvage (prairie par défaut)
 const LIEU_FOND = {"Bourg Palette": "prairie", "Route 1": "prairie", "Jadielle": "ville", "Forêt de Jade": "foret", "Argenta": "montagne",
   "Route 3": "prairie", "Mont Sélénite": "grotte", "Azuria": "riviere", "Route 5 et Cave Taupiqueur": "grotte", "Carmin-sur-Mer": "mer",
   "Grotte et Centrale": "centrale", "Lavanville": "tour", "Céladopole": "ville", "Piste cyclable": "prairie",
   "Parmanie et Parc Safari": "safari", "Safrania": "ville", "Îles Écume": "mer", "Cramois'Île": "volcan", "Route Victoire": "grotte",
-  "Plateau Indigo": "montagne"};
-const LEG_FOND = {144: "artikodin", 145: "electhor", 146: "sulfura", 150: "mewtwo", 151: "mew"};
+  "Plateau Indigo": "montagne",
+  // Johto
+  "Bourg Geon": "jprairie", "Route 29": "jprairie", "Ville Griotte": "jville", "Mauville": "jville", "Ruines d'Alpha": "jruines", "Caves Jumelles": "jgrotte", "Écorcia": "jtemple",
+  "Bois aux Chênes": "jforet", "Doublonville": "jville", "Parc Naturel": "jprairie", "Ferme de la Route 39": "jprairie", "Rosalia": "jtemple", "Oliville": "jmer", "Irisia": "jmer",
+  "Tourb'Îles": "jtourbillons", "Mont Creuset": "jgrotte", "Acajou": "jglace", "Lac Colère": "jlac", "Route de Glace": "jglace", "Ébènelle": "jmontagne", "Plateau de la Ligue": "jmontagne"};
+const LEG_FOND = {144: "artikodin", 145: "electhor", 146: "sulfura", 150: "mewtwo", 151: "mew", 243: "raikou", 244: "entei", 245: "suicune", 249: "lugia", 250: "ho-oh", 251: "celebi"};
 // Le décor d'une capture : le cadeau du Professeur = le labo ; un badge = l'arène ; un légendaire (Master Ball, Ligue) = son
 // sanctuaire ; sinon le lieu où l'on était sur la carte. c.fond force un décor (aperçus).
 function fondDe(c) {
   const cle = (c.id || "").split("#")[1] || "";
-  const k = c.fond || (cle === "chen" ? "labo" : /^badge\d$/.test(cle) ? "arene" + cle.slice(5) : (!c.chance && LEG_FOND[c.num])
+  const k = c.fond || (cle === "chen" ? "labo" : cle === "orme" ? "laboOrme" : /^badge\d$/.test(cle) ? (EN_JOHTO && c.jour >= REG.debut ? "jarene" : "arene") + cle.slice(5) : (!c.chance && LEG_FOND[c.num])
     || LIEU_FOND[(c.lieu || "").replace(" (retour)", "")]);
   return FONDS[k] || null;
 }
@@ -1753,7 +1786,9 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
 // Le laboratoire : image pixel art générée par Kiki avec ChatGPT (même style que la carte, dossier scenes/), position des
 // 3 Poké Balls dessinées sur la table (pixels de l'image). Plus tard : orme (Johto), seko (Hoenn)…
 const PROFESSEURS = {chen: {prof: "Chen", region: "Kanto", image: "labo-chen-vide.webp", ball: "pokeball-labo.png", largeur: 940, hauteur: 1672,
-  balls: [[207, 745], [337, 745], [467, 745]], rayon: 39, starters: [1, 4, 7]}};
+  balls: [[207, 745], [337, 745], [467, 745]], rayon: 39, starters: [1, 4, 7]},
+  orme: {prof: "Orme", region: "Johto", image: "labo-orme-vide.webp", ball: "pokeball-labo.png", largeur: 941, hauteur: 1672,
+    balls: [[485, 775], [575, 775], [665, 775]], rayon: 39, starters: [152, 155, 158], suite: true}};
 // image = le labo v3 (30/10) avec la table vide ; les 3 Poké Balls (ball validée par Kiki le 30/10, contour rouge sombre /
 // ardoise) sont de vraies images transparentes posées par-dessus : balls = milieu du bas de chaque ball (pixels de l'image),
 // rayon = demi-largeur. Plus de morceau d'image qui saute (on voyait le carré autour de la ball, Kiki 01/11).
@@ -2020,7 +2055,10 @@ function intro(c, p, rejouer = false) {
   const labo = v.querySelector(".labo"), D1 = dialogue(v, ".pkm-passer, .zone");
   const dire = (html, attendSuite = true) => D1.dire(html, p.prof, attendSuite);
   // le début reprend celui de Pokémon Rouge / Bleu
-  const L = ["Bienvenue dans le monde magique des Pokémon !", `Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`,
+  const L = p.suite ? [`Ah, ${nomDresseur()} ! Te voilà enfin à ${p.region} ! Je suis le Professeur ${p.prof}.`, "Le Professeur Chen m'a tout raconté : les badges, la Ligue… et surtout tous ces kilomètres à pied !",
+    "J'étudie la façon dont les Pokémon grandissent, et j'ai besoin de quelqu'un qui n'a pas peur de marcher.", "Ici, à " + p.region + ", tout est à refaire : de nouveaux Pokémon, de nouveaux champions, une nouvelle carte.",
+    `Sur ce chariot, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais je ne sais plus qui est dans laquelle !`,
+    "Choisis-en une. Le Pokémon qu'elle contient partira avec toi !", "Ah ! Celle-ci ? Parfait. Allez, ouvre-la vite !"] : ["Bienvenue dans le monde magique des Pokémon !", `Mon nom est ${p.prof} ! Les gens m'appellent souvent le Prof Pokémon !`,
     `Enchanté, ${nomDresseur()} ! Ton aventure Pokémon commence aujourd'hui !`, "Ici, à " + p.region + ", chaque pas que tu fais te rapproche de nouveaux Pokémon !",
     `Sur cette table, il y a trois Poké Balls : ${noms[0]}, ${noms[1]} et ${noms[2]}… Mais j'ai oublié qui est dans laquelle !`,
     "Choisis-en une. Le Pokémon qu'elle contient sera le tien !", "Ah ! Tu as choisi celle-ci ? Excellent choix ! Allez, ouvre-la vite !"];
@@ -2065,7 +2103,7 @@ function intro(c, p, rejouer = false) {
 // ================================================================================================
 // Les champions : images animées du jeu PokéRogue (projet public pagefaultgames/pokerogue-assets, version figée)
 const ROGUE = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/trainer/";
-const CHAMPIONS = {
+const CHAMPIONS_KANTO = {
   1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", perso: "arene-argenta-pierre.webp", x: 400, y: 557, pw: 141, ph: 265, torches: [[220, 235], [721, 235]]},
       indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
       "Quelle montée ! Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
@@ -2095,7 +2133,7 @@ const CHAMPIONS = {
       "Quoi ?! Tout ce chemin… Tu es vraiment devenu le plus fort !"]},
 };
 // Le Conseil 4 : les 4 salles qu'on traverse à la Ligue avant Régis (ChatGPT, 30/10), une réplique d'accueil et une de défaite
-const CONSEIL = [
+const CONSEIL_KANTO = [
   {nom: "Olga", type: "Glace", arene: {image: "arene-conseil-olga.webp", perso: "arene-conseil-olga-olga.webp", x: 399, y: 522, pw: 131, ph: 261,
     torches: [[300, 250], [640, 250]], feu: "170,220,255", taille: 40},
    lignes: ["Bienvenue à la Ligue Pokémon ! Je suis Olga du Conseil 4. Personne ne passe sans affronter le grand froid !",
@@ -2113,6 +2151,47 @@ const CONSEIL = [
    lignes: ["Je suis Peter, le dernier du Conseil 4. Les Dragons sont des créatures légendaires… comme ta persévérance ?",
      "Incroyable… Tu as tenu jusqu'au bout. Le Maître de la Ligue t'attend, là-haut."]},
 ];
+// Johto (ChatGPT, 30/10 et 04/11 ; personnages détourés par Claude). Numérotés dans l'ordre du voyage : 5 = Jasmine, 6 = Chuck.
+const CHAMPIONS_JOHTO = {
+  1: {nom: "Albert", sprite: "falkner", arene: {image: "arene-mauville.webp", perso: "arene-mauville-albert.webp", x: 395, y: 568, pw: 150, ph: 272, torches: [[181, 470], [749, 470]], feu: "255,220,150", taille: 24},
+      indice: "Pour voler haut, il faut d'abord savoir monter. Des marches, ou une longue marche : prends de la hauteur !", lignes: ["Je suis Albert, le Champion de Mauville ! Les Pokémon Vol sont la fierté de ma famille.",
+      "Tu as du souffle… Mes oiseaux n'ont rien pu faire. Mon père serait impressionné."]},
+  2: {nom: "Hector", sprite: "bugsy", arene: {image: "arene-ecorcia.webp", perso: "arene-ecorcia-hector.webp", x: 408, y: 575, pw: 120, ph: 232, torches: [[174, 314], [756, 314]], feu: "255,240,150", taille: 22},
+      indice: "J'observe les insectes toute la journée, et ils ne s'arrêtent jamais. Marche longtemps, comme eux !", lignes: ["Moi, c'est Hector, le Champion d'Écorcia ! J'en sais plus que personne sur les Pokémon Insecte.",
+      "Quelle endurance ! Je vais devoir noter ça dans mes recherches."]},
+  3: {nom: "Blanche", sprite: "whitney", arene: {image: "arene-doublonville.webp", perso: "arene-doublonville-blanche.webp", x: 381, y: 566, pw: 152, ph: 244, torches: [[42, 227], [906, 227], [190, 345], [760, 345]], feu: "255,190,220", taille: 22},
+      indice: "Tout le monde me croit gentille, hein ? Viens donc me montrer si ton cœur sait s'emballer !", lignes: ["Salut ! Je suis Blanche, la Championne de Doublonville ! Tu verras, je suis très forte, et très mignonne !",
+      "Ouin ! Tu n'es pas gentil ! … Bon, d'accord, tu as gagné. Tiens, ton badge."]},
+  4: {nom: "Mortimer", sprite: "morty", arene: {image: "arene-rosalia.webp", perso: "arene-rosalia-mortimer.webp", x: 414, y: 561, pw: 118, ph: 249, torches: [[122, 470], [836, 470]], feu: "200,130,255", taille: 26},
+      indice: "Les esprits sortent quand la ville s'endort. Marche à la nuit tombée… ou offre-moi une longue séance.", lignes: ["Je suis Mortimer, le Champion de Rosalia. Ici, on voit ce que les autres ne voient pas.",
+      "Je l'avais pressenti : tu vas loin. Bien plus loin que cette ville."]},
+  5: {nom: "Jasmine", sprite: "jasmine", arene: {image: "arene-oliville.webp", perso: "arene-oliville-jasmine.webp", x: 400, y: 565, pw: 133, ph: 249, torches: [[139, 523], [801, 523]], feu: "230,240,255", taille: 24},
+      indice: "L'acier se forge lentement… Une seule longue séance, sans te presser, et tu seras prêt.", lignes: ["Euh… Bonjour. Je m'appelle Jasmine, je suis la Championne d'Oliville. Mes Pokémon sont solides, vous savez.",
+      "Vous êtes fort, et vous n'avez rien lâché. C'est… très beau à voir."]},
+  6: {nom: "Chuck", sprite: "chuck", arene: {image: "arene-irisia.webp", perso: "arene-irisia-chuck.webp", x: 381, y: 563, pw: 169, ph: 248, torches: [[226, 505], [715, 505]], feu: "255,220,150", taille: 22},
+      indice: "Pas de discours ! Des pompes, des tractions ou de la fonte. Le corps ne ment jamais !", lignes: ["WAHAHA ! Je suis Chuck, le Champion d'Irisia ! Ici, on s'entraîne sous les vagues, et on ne se plaint pas !",
+      "Ça, c'est de l'entraînement ! Allez, un dernier pour la route !"]},
+  7: {nom: "Frédo", sprite: "pryce", arene: {image: "arene-acajou.webp", perso: "arene-acajou-fredo.webp", x: 403, y: 572, pw: 121, ph: 245, torches: [[244, 470], [700, 470]], feu: "170,220,255", taille: 24},
+      indice: "Cinquante ans dans le froid m'ont appris une chose : l'eau use tout. Rame, nage, ou marche longtemps.", lignes: ["Je suis Frédo, le Champion d'Acajou. J'ai vu passer bien des hivers, et bien des dresseurs.",
+      "Hum… Tu as la patience de la glace qui fend la roche. Prends ce badge."]},
+  8: {nom: "Sandra", sprite: "clair", arene: {image: "arene-ebenelle.webp", perso: "arene-ebenelle-sandra.webp", x: 367, y: 552, pw: 169, ph: 274, torches: [[209, 453], [732, 453], [899, 627]], feu: "255,150,50", taille: 26},
+      indice: "Un dragon ne s'essouffle pas. Fais monter ton cœur longtemps, ou marche jusqu'au bout de la journée !", lignes: ["Je suis Sandra, la Championne d'Ébènelle, et la meilleure dresseuse de Dragons au monde !",
+      "Bon… Je reconnais que tu es fort. Mais ne va pas croire que ce sera facile, là-haut !"]},
+  9: {nom: "Peter", sprite: "lance", arene: {image: "arene-ligue-johto.webp", perso: "arene-ligue-johto-peter.webp", x: 386, y: 561, pw: 161, ph: 266, torches: [[181, 540], [756, 540]], feu: "255,220,120", taille: 24},
+      indice: "Cinq épreuves, cinq adversaires, dans l'ordre que tu veux. Je t'attendrai au bout.", lignes: ["On se retrouve ! Depuis Kanto, j'ai pris la place de Maître de la Ligue. Je savais que tu viendrais jusqu'ici.",
+      "Quel chemin depuis notre dernier combat… Tu as dépassé tout ce que j'imaginais."]},
+};
+const CONSEIL_JOHTO = [
+  {nom: "Clément", type: "Psy", arene: {image: "arene-conseil-j-clement.webp", perso: "arene-conseil-j-clement-clement.webp", x: 383, y: 578, pw: 151, ph: 254, torches: [[199, 470], [739, 470]], feu: "255,130,230", taille: 24},
+   lignes: ["Bienvenue à la Ligue ! Je suis Clément du Conseil 4. Mon esprit a tout prévu, même ta défaite.", "Je n'avais pas prévu ça… Quelle concentration ! Passe."]},
+  {nom: "Koga", type: "Poison", sprite: "koga", arene: {image: "arene-conseil-j-koga.webp", perso: "arene-conseil-j-koga-koga.webp", x: 345, y: 580, pw: 195, ph: 260, torches: [[164, 505], [767, 505]], feu: "200,130,255", taille: 24},
+   lignes: ["Fwahahaha ! Encore toi ! Depuis Parmanie, j'ai rejoint le Conseil 4. Le ninja, lui, n'a jamais cessé de s'entraîner.", "Tu m'as encore eu… Ma fille Jeannine a raison : tu n'es plus le même dresseur."]},
+  {nom: "Aldo", type: "Combat", sprite: "bruno", arene: {image: "arene-conseil-j-aldo.webp", perso: "arene-conseil-j-aldo-aldo.webp", x: 384, y: 578, pw: 168, ph: 265, torches: [[220, 470], [732, 470]], feu: "255,150,50", taille: 26},
+   lignes: ["Ça alors, te revoilà ! Je n'ai pas arrêté de m'entraîner depuis Kanto, et toi non plus, on dirait !", "Encore battu ! Allez, je retourne à la salle. On se reverra !"]},
+  {nom: "Marion", type: "Ténèbres", sprite: "karen", arene: {image: "arene-conseil-j-marion.webp", perso: "arene-conseil-j-marion-marion.webp", x: 370, y: 570, pw: 156, ph: 231, torches: [[164, 488], [749, 488]], feu: "220,230,255", taille: 20},
+   lignes: ["Je suis Marion, la dernière du Conseil 4. Les vrais dresseurs savent aimer tous les Pokémon, pas seulement les plus forts.", "Tu as un vrai cœur de dresseur. Peter t'attend, là-haut."]},
+];
+const CHAMPIONS = EN_JOHTO ? CHAMPIONS_JOHTO : CHAMPIONS_KANTO, CONSEIL = EN_JOHTO ? CONSEIL_JOHTO : CONSEIL_KANTO;
 [...Object.values(CHAMPIONS), ...CONSEIL].forEach(ch => { if (ch.arene) { ch.arene.largeur = ch.arene.largeur || 941; ch.arene.hauteur = 1672; } });
 // Champion dessiné dans son arène (ChatGPT, 30/10) : arene = image de la salle (champion compris, dossier scenes/),
 // perso = le champion seul, détouré (posé exactement par-dessus : x, y = son coin en pixels de l'image, pw × ph) ;
@@ -2795,7 +2874,7 @@ const STYLE_TITRE = `
 `;
 function ecranTitre(essai = false) {
   installerStyle("pkm2-titre-style", STYLE_TITRE);
-  const E = ecran("pkm-titre", "titre-kanto.webp", 941, 1672), v = E.v;
+  const E = ecran("pkm-titre", EN_JOHTO ? "titre-johto.webp" : "titre-kanto.webp", 941, 1672), v = E.v;
   v.insertAdjacentHTML("beforeend", `<div class="logo"><b>POKÉMON</b><i>SPORT</i></div>
     <div class="touche">TOUCHE L'ÉCRAN${essai ? "<small>Aperçu : rien n'est enregistré</small>" : ""}</div>`);
   ambiance(v.querySelector("canvas.air"), [{type: "oiseaux", coul: ["#3A3050"], n: 5, haut: [.08, .26]}, {...VERTS, n: 20}], () => !v.isConnected);
@@ -2826,11 +2905,11 @@ async function demarrerAventure(chen, essai = false) {
   } else lancer(chen);
 }
 // --- Le Panthéon : après la Ligue, ton équipe entre dans la légende (6 socles), puis la Master Ball s'ouvre ---
-const SOCLES = [[127, 722], [200, 830], [350, 905], [588, 905], [740, 830], [812, 722]];  // dessus de chaque socle (pixels)
+const SOCLES = EN_JOHTO ? [[107, 778], [190, 868], [342, 955], [600, 955], [748, 868], [833, 778]] : [[127, 722], [200, 830], [350, 905], [588, 905], [740, 830], [812, 722]];  // dessus de chaque socle (pixels)
 function equipePantheon() {  // le starter, les Pokémon des badges (du plus récent), puis les plus belles captures récentes
   const vus = new Set(), equipe = [], ouv = CAPTURES.filter(c => prise(c) || c.id.startsWith("test"));
   const prendre = c => { if (c && !vus.has(c.num) && equipe.length < 6) { vus.add(c.num); equipe.push({num: c.num, shiny: c.shiny}); } };
-  prendre(ouv.find(c => c.id.endsWith("#chen")));
+  prendre(ouv.find(c => c.id.endsWith("#" + CADEAU)));
   for (let k = 8; k >= 1; k--) prendre(ouv.find(c => c.id.endsWith("#badge" + k)));
   [...ouv].reverse().filter(c => c.shiny || c.ball === "hyper").forEach(prendre);
   [...ouv].reverse().forEach(prendre);
@@ -2839,16 +2918,16 @@ function equipePantheon() {  // le starter, les Pokémon des badges (du plus ré
 }
 function scenePantheon(suite = null) {
   const L = 941, H = 1672, eq = equipePantheon(), ordre = [0, 5, 1, 4, 2, 3];  // du fond vers l'avant
-  const {v, salle, fin: finE} = ecran("pkm-pantheon", "pantheon-kanto.webp", L, H,
+  const {v, salle, fin: finE} = ecran("pkm-pantheon", EN_JOHTO ? "pantheon-johto.webp" : "pantheon-kanto.webp", L, H,
     SOCLES.map(([x, y], i) => `<div class="eclair" style="left:${pcI(x, L)};top:${pcI(y - 60, H)}"></div>
       <div class="socle ${eq[i].shiny ? "shiny" : ""}" style="left:${pcI(x, L)};top:${pcI(y + 6, H)};z-index:${y};
         width:${pcI(i === 2 || i === 3 ? 200 : i === 1 || i === 4 ? 170 : 145, L)}">
         <img src="${IMG.anim(eq[i].num, eq[i].shiny)}" ${repli(eq[i].num, eq[i].shiny)} alt=""></div>`).join(""));
-  v.insertAdjacentHTML("beforeend", `<div class="titre-p">PANTHÉON<small>LIGUE POKÉMON · KANTO</small></div>`);
+  v.insertAdjacentHTML("beforeend", `<div class="titre-p">PANTHÉON<small>LIGUE POKÉMON · ${REG.nom.toUpperCase()}</small></div>`);
   const maj = () => v.style.setProperty("--h", PW.innerHeight + "px"); maj(); PW.addEventListener("resize", maj);
   const air = airAnime(v.querySelector("canvas.air"), "Ligue");
   const DP = dialogue(v), nb = Object.keys(collection()).length, nom = nomDresseur();
-  const lignes = ["Félicitations ! Tu as vaincu la Ligue Pokémon de Kanto !", `${nom} et ses Pokémon entrent au <b>Panthéon</b> !`,
+  const lignes = [`Félicitations ! Tu as vaincu la Ligue Pokémon de ${REG.nom} !`, `${nom} et ses Pokémon entrent au <b>Panthéon</b> !`,
     `Ton équipe : ${eq.map(e => `<b>${PAR_NUM[e.num].nom}</b>`).join(", ")}.`,
     `${nb} Pokémon attrapés, 8 badges, des milliers de pas… Ce voyage restera gravé ici pour toujours.`,
     suite ? "Et maintenant… ouvre ta Master Ball : un Pokémon légendaire t'attend !" : "Mais qui sait ce qui t'attend, au-delà des montagnes…"];
@@ -2876,13 +2955,150 @@ function scenePantheon(suite = null) {
   })().catch(() => {});
 }
 
+// --- Le passage d'une région à l'autre (décidé avec Kiki le 04/11) : le Carnet, le générique, le coup de téléphone ; le lendemain, le voyage, le titre et le labo.
+// Les scènes servent à toutes les régions : seuls les images (PASSAGES), les textes et les chiffres changent. Aucun texte « Fin » ni « À suivre ».
+const PASSAGES = {Kanto: {cle: "kanto-johto", suivante: "Johto", appel: "On m'a parlé d'une région où l'automne ne finit jamais, et d'un collègue qui a besoin d'un dresseur qui n'a pas peur de marcher."}};
+const JOUEUR_DE = "pkm_passage_vu_";
+function appelDu() { return !!(REG.suivante && G.fini && !REG.depart && !departAccepte() && (() => { const l = CAPTURES.find(c => c.id.endsWith("#ligue") && c.jour >= REG.debut); return l && estOuverte(l); })()); }
+function departAccepte() { return !!REG.depart || [...ouvertes].some(id => id.startsWith(D.prefixe) && id.includes("geste-appel_")); }
+const STYLE_PASSAGE = `
+.pkm-ecran .carnet{position:absolute;left:5%;right:5%;bottom:max(70px,9vh);z-index:22;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);color:#383828;padding:10px 12px;font-size:18px;line-height:1.25}
+.pkm-ecran .carnet h3{margin:0 0 6px;font:700 20px 'Jersey 15',monospace;color:#C03028}
+.pkm-ecran .carnet .ligne{display:flex;justify-content:space-between;gap:10px;opacity:0;transform:translateY(5px);transition:opacity .3s,transform .3s}
+.pkm-ecran .carnet .ligne.vu{opacity:1;transform:none}
+.pkm-ecran .carnet .ligne b{color:#B05010;font-weight:400;white-space:nowrap}
+.pkm-ecran .carnet .bout{margin-top:8px;color:#686850;font-size:16px;opacity:0;transition:opacity .5s}.pkm-ecran .carnet .bout.vu{opacity:1}
+.pkm-ecran.panorama .salle{transition:none;transform:none;left:0}
+.pkm-ecran .defile{position:absolute;bottom:24%;left:0;right:0;height:120px;pointer-events:none;z-index:18}
+.pkm-ecran .defile img{position:absolute;bottom:0;height:72px;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3))}
+.pkm-ecran .defile img.haut{bottom:46px}
+.pkm-ecran .marcheur{position:absolute;bottom:9%;left:14%;width:110px;z-index:19;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3));animation:pkp-pas .5s steps(2,start) infinite}
+@keyframes pkp-pas{50%{transform:translateY(-4px)}}
+.pkm-ecran .deDos{position:absolute;bottom:17%;left:50%;display:flex;align-items:flex-end;gap:10px;transform:translateX(-50%);z-index:19;opacity:0;transition:opacity 1.6s}
+.pkm-ecran .deDos.vu{opacity:1}.pkm-ecran .deDos img{height:96px;image-rendering:pixelated}
+.pkm-ecran .deDos .sacha{width:56px !important;background-repeat:no-repeat;image-rendering:pixelated}
+.pkm-ecran .accepter{position:absolute;left:50%;bottom:36%;transform:translateX(-50%);z-index:44;white-space:nowrap;background:#D83830;color:#fff;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);padding:8px 18px;font:400 22px 'Jersey 15',monospace}
+.pkm-ecran .nom-region{position:absolute;left:0;right:0;top:12%;text-align:center;z-index:22;font:700 clamp(40px,14vw,68px)/1 'Pixelify Sans',monospace;color:#FFCB05;letter-spacing:4px;text-shadow:4px 4px 0 #8A2A10,-2px -2px 0 #8A2A10,2px -2px 0 #8A2A10,-2px 2px 0 #8A2A10;opacity:0;transform:translateY(-14px);transition:opacity 1.2s,transform 1.2s}
+.pkm-ecran .nom-region.vu{opacity:1;transform:none}
+`;
+const attendre = ms => new Promise(r => setTimeout(r, ms));
+// Une image large qui défile doucement, de gauche à droite, à la hauteur de l'écran
+function defiler(salle, duree) { const w = salle.offsetWidth - PW.innerWidth; if (w <= 0) return;
+  salle.style.transition = `margin-left ${duree}ms linear`; salle.style.marginLeft = "0px"; requestAnimationFrame(() => requestAnimationFrame(() => salle.style.marginLeft = -w + "px")); }
+function parlante(km) {  // une distance qu'on se représente
+  const l = [[3000, "plus que Paris-Moscou"], [1400, "plus que Paris-Rome"], [775, "plus que Paris-Marseille"], [465, "plus que Paris-Lyon"], [225, "plus que Paris-Lille"], [100, "plus que Paris-Reims"]];
+  const x = l.find(([d]) => km >= d); return x ? x[1] : null; }
+function lignesCarnet() {
+  const c = D.carnet || {}, vues = CAPTURES.filter(x => prise(x) && x.jour >= REG.debut), esp = new Set(vues.map(x => x.num)), nb = x => fr(Math.round(x)), L = [];
+  const ajoute = (t, v, ok = true) => { if (ok) L.push([t, v]); };
+  ajoute("Jours de voyage", nb(c.jours || 0)); ajoute("Badges", "8 + la Ligue");
+  ajoute("Pas", nb(c.pas || 0), c.pas > 0);
+  const p = parlante(c.km || 0); ajoute("Kilomètres", nb(c.km || 0) + (p ? ` · ${p}` : ""), c.km > 0);
+  ajoute("Minutes de sport", nb(c.sport || 0), c.sport > 0); ajoute("Pompes", nb(c.pompes || 0), c.pompes > 0); ajoute("Tractions", nb(c.tractions || 0), c.tractions > 0); ajoute("Squats", nb(c.squats || 0), c.squats > 0);
+  ajoute("Pokémon attrapés", nb(esp.size)); ajoute("Shiny", nb(new Set(vues.filter(x => x.shiny).map(x => x.num)).size));
+  if (c.record && c.record.pas) ajoute("Plus grosse journée", `${nb(c.record.pas)} pas`);
+  const prem = vues.find(x => !x.id.endsWith("#" + CADEAU)); if (prem) ajoute("Première capture", PAR_NUM[prem.num].nom);
+  const rare = vues.filter(x => x.legendaire)[0] || vues.find(x => V.rares.includes(x.num)); if (rare) ajoute("La plus belle prise", PAR_NUM[rare.num].nom);
+  return L;
+}
+async function sceneCarnet(cle, prof) {
+  installerStyle("pkm2-passage-style", STYLE_PASSAGE);
+  const E = ecran("pkm-carnet", `passage-${cle}-1.webp`, 940, 1672), v = E.v, L = lignesCarnet(), DP = dialogue(v);
+  let coupe = false; const fin = new Promise(ok => v.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); });
+  const jouer = (async () => {
+    await attendre(300); v.querySelector(".noir").style.opacity = 0; await attendre(1100);
+    const intro = [`Ah, te voilà sur la terrasse, ${nomDresseur()} ! Regarde ce soleil… Tu l'as bien mérité.`, "Tiens, j'ai noté quelque chose dans mon carnet. Tout ton voyage, depuis le premier jour."];
+    DP.prevoir(intro.map(l => [l, prof]));
+    for (const l of intro) { if (coupe) return; await DP.dire(l, prof); }
+    DP.fin(); v.querySelector(".pkm-dial") && v.querySelector(".pkm-dial").remove();
+    v.insertAdjacentHTML("beforeend", `<div class="carnet"><h3>Le Carnet de ${REG.nom}</h3>${L.map(([t, x]) => `<div class="ligne"><span>${t}</span><b>${x}</b></div>`).join("")}<div class="bout">Touche l'écran</div></div>`);
+    const ls = v.querySelectorAll(".carnet .ligne");
+    for (const l of ls) { if (coupe) return; await attendre(520); l.classList.add("vu"); EPIQUE.clic(); vibre(8); }
+    await attendre(500); v.querySelector(".bout").classList.add("vu");
+    await new Promise(ok => v.addEventListener("pointerdown", ok, {once: true}));
+  })().catch(() => {});
+  await Promise.race([jouer, fin]); E.fin(); v.style.transition = "opacity .6s"; v.style.opacity = 0; await attendre(600); v.remove(); return !coupe;
+}
+async function sceneGenerique(cle) {
+  installerStyle("pkm2-passage-style", STYLE_PASSAGE);
+  const E = ecran("pkm-generique", `passage-${cle}-2.webp`, 1536, 1024), v = E.v;
+  v.classList.add("panorama");
+  const st = CAPTURES.filter(x => prise(x) && x.jour >= REG.debut && !x.id.includes("#evo")), vus = [...new Map(st.map(x => [x.num, x])).values()], depart = (G.starter && G.starter.ligne) || [25];
+  const forme = depart[G.starter && G.starter.niveau >= 36 ? 2 : G.starter && G.starter.niveau >= 16 ? 1 : 0] || depart[0];
+  const duree = Math.min(Math.max(vus.length * 350, 22000), 60000);  // tous les Pokémon attrapés passent, sur deux files : une minute au plus
+  v.insertAdjacentHTML("beforeend", `<img class="marcheur" src="${IMG.anim(forme, false)}" ${repli(forme, false)} alt=""><div class="defile"></div>`);
+  const air = airAnime(v.querySelector("canvas.air"), "Ligue"); let coupe = false;
+  const fin = new Promise(ok => { v.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); }; });
+  const jouer = (async () => {
+    await attendre(200); v.querySelector(".noir").style.opacity = 0; EPIQUE.fanfare(); defiler(v.querySelector(".salle"), duree);
+    const piste = v.querySelector(".defile"), W = PW.innerWidth, pas = Math.min(900, (duree - 3000) / Math.max(vus.length, 1));
+    let k = 0;
+    for (const x of vus) { if (coupe) return; const im = P.createElement("img"); im.src = IMG.anim(x.num, x.shiny); im.className = k++ % 2 ? "haut" : ""; im.style.left = W + "px"; im.style.transition = "left 3.4s linear"; piste.appendChild(im);
+      requestAnimationFrame(() => requestAnimationFrame(() => im.style.left = "-140px")); setTimeout(() => im.remove(), 3600); await attendre(pas); }
+    await attendre(3500);
+  })().catch(() => {});
+  await Promise.race([jouer, fin]); air.stop(); E.fin();
+  if (coupe) { v.remove(); return false; }
+  v.querySelector(".noir").style.opacity = 1; await attendre(1000); v.remove();
+  // le dernier plan : le dresseur et son starter, de dos, devant le coucher de soleil
+  const E2 = ecran("pkm-falaise", `passage-${cle}-3.webp`, 940, 1672), v2 = E2.v;
+  v2.insertAdjacentHTML("beforeend", `<div class="deDos"><div class="dos-d">${sacha("red_normal", "haut", false)}</div><img src="${IMG.dos ? IMG.dos(forme) : `${D.images}/pokemon/back/${forme}.png`}" alt=""></div>`);
+  await attendre(200); v2.querySelector(".noir").style.opacity = 0; await attendre(900); v2.querySelector(".deDos").classList.add("vu");
+  await attendre(5500); v2.querySelector(".noir").style.opacity = 1; await attendre(1100); E2.fin(); v2.remove(); return true;
+}
+function sonnerie(n = 3) { let k = 0; const f = () => { if (k++ >= n) return; ton(880, 0, .12, {type: "square", vol: .05}); ton(740, .16, .12, {type: "square", vol: .05}); setTimeout(f, 1400); }; f(); }
+async function sceneAppel(cle, prof, suivante, phrase, essai) {
+  installerStyle("pkm2-passage-style", STYLE_PASSAGE);
+  const E = ecran("pkm-chambre", `passage-${cle}-4.webp`, 940, 1672), v = E.v; let coupe = false;
+  v.querySelector(".pkm-passer").onclick = () => { coupe = true; E.fin(); v.remove(); };
+  await attendre(900); if (coupe) return false; sonnerie(); vibre([40, 80, 40]); v.querySelector(".noir").style.transition = "opacity 3s"; v.querySelector(".noir").style.opacity = 0; await attendre(3200); if (coupe) return false;
+  E.fin(); v.remove();
+  const E2 = ecran("pkm-chen", `passage-${cle}-5.webp`, 940, 1672), v2 = E2.v, DP = dialogue(v2);
+  const L = [`Allô, ${nomDresseur()} ? C'est le Professeur ${prof} ! Je ne te réveille pas, j'espère.`, "Je voulais te le dire encore une fois : je n'ai jamais vu quelqu'un marcher autant. Ton Carnet est le plus beau de ma collection !", phrase, "Je sais, tu viens à peine de rentrer… Alors, qu'en dis-tu ?"];
+  const Fin = ["Je le savais ! C'est d'accord, tu pars demain matin."];
+  DP.prevoir([...L, ...Fin].map(l => [l, prof]));
+  v2.querySelector(".pkm-passer").onclick = () => { coupe = true; DP.fin(); E2.fin(); v2.remove(); };
+  await attendre(300); v2.querySelector(".noir").style.opacity = 0; await attendre(1000);
+  for (const l of L) { if (coupe) return false; await DP.dire(l, prof); }
+  v2.insertAdjacentHTML("beforeend", `<button class="accepter">▶ C'est d'accord !</button>`);
+  await new Promise(ok => v2.querySelector(".accepter").onclick = ok); v2.querySelector(".accepter").remove(); SONS.version(); vibre(25);
+  if (!essai) memoriser(`${D.prefixe}geste-appel_1_${Date.now()}`);
+  await DP.dire(Fin[0], prof); DP.fin(); E2.fin(); v2.style.transition = "opacity .6s"; v2.style.opacity = 0; await attendre(600); v2.remove();
+  return true;
+}
+async function scenePassage(essai = false) {
+  const p = PASSAGES[essai ? "Kanto" : REG.nom], prof = essai ? "Chen" : PROFESSEURS[CADEAU].prof; if (!p) return;
+  try { if (!essai) localStorage.setItem(JOUEUR_DE + REG.nom, "1"); } catch (e) {}
+  preparerScene(); ouverture = true;
+  if (await sceneCarnet(p.cle, prof) && await sceneGenerique(p.cle)) await sceneAppel(p.cle, prof, p.suivante, p.appel, essai);
+  ouverture = false; if (!essai) dessiner();
+}
+// Le lendemain : le départ à l'aube, la route, la première vue de la nouvelle région, puis son écran titre et le labo
+async function sceneVoyageRegion(cadeau, essai = false) {
+  installerStyle("pkm2-passage-style", STYLE_PASSAGE); preparerScene(); ouverture = true;
+  const cle = "kanto-johto", nom = essai ? "Johto" : REG.nom;
+  const scene = async (id, n, l, h, duree, fait) => { const E = ecran(id, `passage-${cle}-${n}.webp`, l, h), v = E.v; let coupe = false; const air = fait && fait(v);
+    const fin = new Promise(ok => { v.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); }; });
+    await attendre(250); v.querySelector(".noir").style.opacity = 0;
+    await Promise.race([attendre(duree), fin]); if (air && air.stop) air.stop(); E.fin();
+    if (!coupe) { v.querySelector(".noir").style.opacity = 1; await attendre(1000); } v.remove(); return !coupe; };
+  const suite = await scene("pkm-aube", 6, 940, 1672, 4200) && await scene("pkm-route", 7, 1536, 1024, 9500, v => { v.classList.add("panorama"); defiler(v.querySelector(".salle"), 9200); SONS.version(); })
+    && await scene("pkm-vue", 8, 940, 1672, 5200, v => { v.insertAdjacentHTML("beforeend", `<div class="nom-region">${nom.toUpperCase()}</div>`); setTimeout(() => { v.querySelector(".nom-region").classList.add("vu"); EPIQUE.fanfare(); }, 900); });
+  ouverture = false;
+  if (!suite) { if (!essai && cadeau) lancer(cadeau); return; }
+  const t = ecranTitre(essai); await t.touche; t.fermer();
+  if (essai) { const q = PROFESSEURS.orme, n = q.starters[Math.floor(Math.random() * 3)];
+    intro({...PAR_NUM[n], num: n, id: "test#orme", apercu: true, ball: "poke", shiny: false, legendaire: false, lieu: "Bourg Geon", fond: "laboOrme", raison: "🎁 Cadeau du Professeur Orme", quand: "aujourd'hui", jour: D.aujourdhui}, q); }
+  else if (cadeau) lancer(cadeau);
+}
+
 // --- Le Centre Pokémon de nuit : une bonne nuit (Bonne nuit validée) = l'Infirmière Joëlle soigne tes Pokémon ---
-const ALVEOLES = [[410, 518], [472, 518], [535, 518], [410, 553], [472, 553], [535, 553]];
+const ALVEOLES = EN_JOHTO ? [[341, 549], [411, 549], [482, 549], [338, 586], [411, 586], [486, 586]] : [[410, 518], [472, 518], [535, 518], [410, 553], [472, 553], [535, 553]];
+const IMG_CENTRE = EN_JOHTO ? "centre-nuit-johto.webp" : "centre-nuit-kanto.webp", LAMPES = EN_JOHTO ? [[200, 190], [738, 190], [145, 710], [795, 710]] : [[325, 490], [620, 490], [75, 40], [716, 40]];
 function sceneCentre(apercu = false) {
   const L = 941, H = 1672, h = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}`;
-  const {v, salle, fin: finE} = ecran("pkm-centre", "centre-nuit-kanto.webp", L, H,
-    `<div class="lampe" style="left:${pcI(325, L)};top:${pcI(490, H)}"></div><div class="lampe" style="left:${pcI(620, L)};top:${pcI(490, H)}"></div>
-     <div class="lampe" style="left:${pcI(75, L)};top:${pcI(40, H)}"></div><div class="lampe" style="left:${pcI(716, L)};top:${pcI(40, H)}"></div>` +
+  const {v, salle, fin: finE} = ecran("pkm-centre", IMG_CENTRE, L, H,
+    LAMPES.map(([x, y]) => `<div class="lampe" style="left:${pcI(x, L)};top:${pcI(y, H)}"></div>`).join("") +
     ALVEOLES.map(([x, y]) => `<div class="alveole" style="left:${pcI(x, L)};top:${pcI(y, H)}"></div>`).join("") + `<div class="voile-rose"></div>`);
   const air = ambiance(v.querySelector("canvas.air"), [{type: "reflets", coul: ["#FFFFFF", "#FFF3C4"], n: 22, haut: [0, .2]}], () => !v.isConnected);
   // Le récap du matin (02/11) : la nuit, hier, ce qui compte aujourd'hui. Trois bulles au plus : ça doit rester rapide.
@@ -2940,7 +3156,7 @@ function bilanSemaineDu() {
   try { return (localStorage.getItem(`pkm_bilan_sem_${R.partie}`) || "") >= s.lundi ? null : s; } catch (e) { return null; }
 }
 function sceneSemaine(s, apercu = false) {
-  const {v, salle, fin: finE} = ecran("pkm-centre", "centre-nuit-kanto.webp", 941, 1672, `<div class="voile-rose"></div>`);
+  const {v, salle, fin: finE} = ecran("pkm-centre", IMG_CENTRE, 941, 1672, `<div class="voile-rose"></div>`);
   ambiance(v.querySelector("canvas.air"), [{type: "reflets", coul: ["#FFFFFF", "#FFF3C4"], n: 22, haut: [0, .2]}], () => !v.isConnected);
   const DC = dialogue(v), noms = {marche: "la marche", cardio: "le cardio", pousser: "les bras", tirer: "le dos", jambes: "les jambes"};
   const liste = a => a.length > 1 ? `${a.slice(0, -1).join(", ")} et ${a[a.length - 1]}` : a[0];
@@ -3035,7 +3251,7 @@ function fiche(p) {
   const grande = f.querySelector(".grande");
   const peindre = () => { if (!a) return;
     const c = vue ? shiny : normal, k = c.id.split("#")[1] || "", t = .85 + hasard(c, "taille") * .3;  // ±15 % autour de la taille du Pokédex
-    const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
+    const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : k === "orme" ? [ico("poke", "p"), "Cadeau du Prof. Orme"] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
     const note = t < .9 ? "Un tout petit spécimen !" : t > 1.1 ? "Un spécimen impressionnant !" : "";
     f.querySelector(".sx").innerHTML = signeSexe(sexeDe(c));
     f.querySelector(".sous").textContent = D.categories[p.num] || "";
@@ -3261,7 +3477,7 @@ function dessinerAOuvrir() {
       <div class="petit gris" style="margin-top:4px">Remplis ta barre d'effort, ou décroche une Super / Hyper Ball !</div>`;
     return;
   }
-  el.innerHTML = blocBadges + rappel + (G.fini ? `<div class="petit" style="margin-bottom:8px"><b>Professeur Chen :</b> « Quel voyage ! Il te reste des Poké Balls : ouvre-les toutes, il manque peut-être encore des Pokémon à ton Pokédex ! »</div>` : "") + blocSac() + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
+  el.innerHTML = blocBadges + rappel + (G.fini ? `<div class="petit" style="margin-bottom:8px"><b>Professeur ${PROFESSEURS[CADEAU].prof} :</b> « Quel voyage ! Il te reste des Poké Balls : ouvre-les toutes, il manque peut-être encore des Pokémon à ton Pokédex ! »</div>` : "") + blocSac() + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
     <div class="rang">${liste.slice(0, 12).map((c, i) => `<button class="bouton-ball" data-i="${CAPTURES.indexOf(c)}"
       style="animation-delay:${i * .25}s">${ballSVG(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
@@ -3413,7 +3629,7 @@ function carteChasse() {
   const c = G.chasse; if (!c || !c.actif) return "";
   const pct = Math.round(c.chance * 100);
   return `<div class="speciale chasse"><div class="tete">${ico("radar")}Chasse aux shiny</div>
-    <div class="gain">${G.fini ? "Tu as attrapé tout Kanto : tes balls cherchent des shiny." : `Tu as attrapé tous les Pokémon du coin ! Dès que ton sac est plein (${R.sac} balls), les suivantes cherchent des shiny.`} Un raté n'est jamais perdu : le Poké Radar s'affole.</div>
+    <div class="gain">${G.fini ? `Tu as attrapé tout ${REG.nom} : tes balls cherchent des shiny.` : `Tu as attrapé tous les Pokémon du coin ! Dès que ton sac est plein (${R.sac} balls), les suivantes cherchent des shiny.`} Un raté n'est jamais perdu : le Poké Radar s'affole.</div>
     <div class="ligne"><span>${ico("shiny", "p brille")} Prochaine ball</span><span>${pct} % de shiny</span></div>
     <div class="jauge"><div style="width:${Math.min(pct, 100)}%;background:linear-gradient(90deg,#FFCB05,#E8382F)"></div></div></div>`;
 }
@@ -3780,7 +3996,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
     <div class="corps"><div class="photo"><canvas width="14" height="19"></canvas></div>
       <div class="infos"><div class="boite"><span>NOM</span><input maxlength="12" placeholder="${accueil ? "Ton pseudo" : "Sacha"}" value="${d.nom.replace(/"/g, "")}" autocomplete="off" enterkeyhint="done"></div>
         <div class="boite"><span>POKÉDEX</span><b>${nb}</b></div><div class="boite"><span>BADGES</span><b>${badges}</b></div>
-        <div class="boite region"><span>RÉGION</span><b>Kanto</b></div></div></div>
+        <div class="boite region"><span>RÉGION</span><b>${REG.nom}</b></div></div></div>
     <div class="profil"><label class="boite"><span>NAISSANCE</span><input class="naissance" type="date" max="${D.aujourdhui}" min="1920-01-01" value="${/^\d{4}-\d{2}-\d{2}$/.test(d.naissance || "") ? d.naissance : ""}" enterkeyhint="done"></label>
       <label class="boite"><span>TAILLE</span><span class="av-unite"><input class="taille" type="number" inputmode="numeric" min="100" max="250" placeholder="175" value="${+d.taille || ""}" enterkeyhint="done"><i>cm</i></span></label>
       <div class="boite sexe"><span>SEXE</span><span class="choix-sexe"><button type="button" data-s="M" class="${d.sexe === "M" ? "on" : ""}">Masculin</button><button type="button" data-s="F" class="${d.sexe === "F" ? "on" : ""}">Féminin</button></span></div>
@@ -3922,15 +4138,15 @@ function amisSurCarte(depuis = V.pos) {
 let AMI_OUVERT = null;
 function texteNouvelle(n, j) {
   const nom = (PAR_NUM[n.num] || {}).nom;
-  if (n.quoi === "badge") return n.n === 9 ? `${j.nom} a vaincu la Ligue Pokémon !` : `${j.nom} a battu ${CHAMPIONS[n.n].nom} !`;
+  if (n.quoi === "badge") return n.n === 9 ? `${j.nom} a vaincu la Ligue Pokémon !` : `${j.nom} a battu ${n.champion || CHAMPIONS[n.n].nom} !`;
   if (n.quoi === "lieu") return `${j.nom} a atteint ${n.lieu}`;
   if (n.quoi === "evo") return `Le starter de ${j.nom} évolue en ${nom} !`;
-  if (n.quoi === "starter") return `${j.nom} a obtenu ${nom}${n.shiny ? " shiny" : ""} auprès du Professeur Chen !`;
+  if (n.quoi === "starter") return `${j.nom} a obtenu ${nom}${n.shiny ? " shiny" : ""} auprès du ${n.num > 151 ? "Professeur Orme" : "Professeur Chen"} !`;
   return `${j.nom} a attrapé ${nom}` + {legendaire: ", un légendaire !", shiny: " shiny !", rare: ", un rare !"}[n.quoi];
 }
 function imageNouvelle(n) {
   if (n.quoi === "lieu") return `<img src="${IC.carte}" alt="">`;
-  if (n.quoi === "badge") return `<img src="${n.n === 9 ? IC.ligue : IMG.badge(n.n)}" alt="">`;
+  if (n.quoi === "badge") return `<img src="${n.n === 9 ? IC.ligue : IMG.badge(n.image || n.n)}" alt="">`;
   return `<img class="${n.shiny ? "sh" : ""}" src="${IMG.mini(n.num, n.shiny)}" alt="">`;
 }
 function nouvellesAmis(autres) {  // celles de tous les amis, la plus récente d'abord (le tri garde l'ordre du serveur à jour égal : le plus marquant)
@@ -4069,7 +4285,7 @@ function infosLieu(k) {
 
 function blocArene() {
   const d = V.defi;
-  if (!d) return `<div class="arene"><div class="bdg ligue">${ico("ligue", "g")}</div><div class="q"><div class="t">Champion de Kanto !</div>
+  if (!d) return `<div class="arene"><div class="bdg ligue">${ico("ligue", "g")}</div><div class="q"><div class="t">Champion de ${REG.nom} !</div>
       Les 8 badges et la Ligue sont à toi.</div></div>`;
   return "";  // 01/11 : le défi est dans « Tes objectifs du jour » (carteDefi) ; le champion attend sur la carte
 }
@@ -4141,6 +4357,15 @@ function dessinerBandeauVoyage() {
     b.innerHTML = `<button class="bandeau-voyage or"><img class="ico g" ${a.image ? `data-badge="${IMG.badge(a.image)}"` : ""} src="${a.image ? IMG.badge(a.image) : IC.ligue}"><span>
       <b>${a.image ? `Tu as gagné le ${a.badge} !` : "Tu as conquis la Ligue !"}</b><small>${CHAMPIONS[n].nom} t'attend pour te le remettre · touche ici</small></span><i></i></button>`;
     b.querySelector("button").onclick = () => lancer(badge); badgesPropres(b);
+    return;
+  }
+  if (departAccepte()) {  // l'appel est accepté : la nouvelle région commence à minuit
+    b.innerHTML = `<div class="bandeau-voyage or">${ico("carte", "g")}<span><b>Départ demain matin !</b><small>Le Professeur ${PROFESSEURS[CADEAU].prof} t'a tout expliqué. Prépare ton sac.</small></span></div>`;
+    return;
+  }
+  if (appelDu()) {  // le téléphone sonne encore : rien n'est perdu, rien ne presse
+    b.innerHTML = `<button class="bandeau-voyage or">${ico("tele", "g")}<span><b>Ton téléphone sonne…</b><small>Le Professeur ${PROFESSEURS[CADEAU].prof} essaie de te joindre · touche ici</small></span><i></i></button>`;
+    b.querySelector("button").onclick = () => scenePassage();
     return;
   }
   b.innerHTML = ""; return;  // 01/11 : la carte est en haut de l'onglet, son bouton ▶ suffit
@@ -4242,7 +4467,7 @@ function dessinerVoyage() {
     return l.arene.image ? `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="${l.arene.badge}"><img data-badge="${IMG.badge(l.arene.image)}" src="${IMG.badge(l.arene.image)}"></div>`
       : `<div class="${quand ? "oui" : "non"}" data-n="${n}" title="Ligue"><img src="${IC.ligue}" style="image-rendering:pixelated"></div>`;
   }).join("");
-  el.innerHTML = `<div class="entete"><span class="titre">${ico("carte")} Voyage dans Kanto</span>
+  el.innerHTML = `<div class="entete"><span class="titre">${ico("carte")} Voyage dans ${REG.nom}</span>
       <span class="ou">Étape ${V.ici + 1} / ${LIEUX.length} · ${Math.floor(V.pos / V.total * 100)} %</span></div>
     <div class="avance"><div style="width:0"></div></div>
     ${blocArene()}<div class="carte-cadre" style="--ar:${V.carte.largeur}/${V.carte.hauteur}"><div class="carte-vue" style="aspect-ratio:${V.carte.largeur}/${V.carte.hauteur}">
@@ -4305,7 +4530,7 @@ function dessinerVoyage() {
   };
   // toucher un badge gagné : revoir la scène de l'arène (sans rien changer)
   el.querySelectorAll(".boite-badges .oui").forEach(b => b.onclick = () => {
-    const n = +b.dataset.n; sceneBadge(n, CAPTURES.find(c => c.id.endsWith(n === 9 ? "#ligue" : `#badge${n}`)), true); });
+    const n = +b.dataset.n; sceneBadge(n, CAPTURES.find(c => c.jour >= REG.debut && c.id.endsWith(n === 9 ? "#ligue" : `#badge${n}`)), true); });
 }
 
 // ---------- Mode test des arènes (29/10, pour Kiki) : un faux état, en mémoire seulement ----------
@@ -4369,34 +4594,37 @@ function dessinerRegles() {
     <li>${ico("effort", "p")} <b>Ton starter</b> : il gagne un niveau tous les ${(G.starter || {}).pts_niveau || 195} points d'effort et évolue en grandissant. Ses évolutions ne sortent jamais d'une ball : c'est ton sport qui les fait naître.</li>
     <li>${ico("shiny", "p brille")} <b>Shiny Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ton objectif (${fr(R.objectif_pas)} pas, ${R.objectif_zone} min de sport, ou ${R.objectif_gestes} points de muscu, soit ${R.objectif_gestes * 2} pompes) = un shiny garanti.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
-    <li>${ico("master", "p")} <b>Légendaires</b> : Artikodin, Électhor et Sulfura dans leurs sanctuaires sur la route (5 jours d'exploit, jamais bloquant), Mewtwo à la Ligue, Mew quand tu as les 146 autres. Et une toute petite chance de croiser un oiseau plus tôt, dans n'importe quelle ball.</li>
+    <li>${ico("master", "p")} <b>Légendaires</b> : ${EN_JOHTO ? "Raikou, Entei, Suicune et Lugia" : "Artikodin, Électhor et Sulfura"} dans leurs sanctuaires sur la route (5 jours d'exploit, jamais bloquant), ${EN_JOHTO ? "Ho-Oh à la Ligue, Celebi quand tu as les 94 autres. Et une toute petite chance d'en croiser un plus tôt" : "Mewtwo à la Ligue, Mew quand tu as les 146 autres. Et une toute petite chance de croiser un oiseau plus tôt"}, dans n'importe quelle ball.</li>
     <li>${ico("nuit", "p")} Une nuit de ${R.nuit / 60} h ne donne pas de ball, mais rend les shiny 1,5 fois plus fréquents ce jour-là.</li>
-    <li>${ico("carte", "p")} <b>Voyage dans Kanto</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de Bourg Palette
+    <li>${ico("carte", "p")} <b>Voyage dans ${REG.nom}</b> : les mêmes points te font avancer tout seul sur la carte, dans l'ordre des jeux, de ${LIEUX[0].nom}
       au Plateau Indigo (de 3 à 7 mois selon ton rythme). Rien à choisir : bouge, tu avances.</li>
     <li>${ico("poke", "p")} Les balls ne donnent que des Pokémon des lieux où tu es déjà passé : surtout ici, parfois ceux que tu as ratés plus tôt, et plus souvent ceux des types de ta journée.
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
-    <li>${ico(IMG.badge(1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double, une petite journée moitié. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
+    ${EN_JOHTO ? `<li>${ico("carte", "p")} <b>Le jour et la nuit</b> : à ${REG.nom}, certains Pokémon sortent plutôt tôt ou tard. 2 000 pas le matin ou après 20 h les rendent trois fois plus fréquents ce jour-là.</li>` : ""}
+    <li>${ico(IMG.badge(EN_JOHTO ? 9 : 1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double, une petite journée moitié. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
     <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis l'onglet Muscu, le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
       Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
     <li>${ico("radar", "p")} <b>Mission du jour</b> : chaque jour, un Pokémon te lance un défi, parmi ce que ta montre sait mesurer. Réussie = 20 à 40 points d'effort selon la difficulté.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
-    ${CAPTURES.some(c => c.id.endsWith("#chen") && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur Chen</button></li>` : ""}
+    ${CAPTURES.some(c => c.id.endsWith("#" + CADEAU) && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur ${PROFESSEURS[CADEAU].prof}</button></li>` : ""}
     ${V.badges[1] || !D.essais ? "" : `<li><button class="filtre apercu">${ico("tele", "p")} Aperçu de la scène du badge (sans récompense)</button></li>`}
 `;
   const ap = document.querySelector("#regles .apercu");
   if (ap) ap.onclick = () => sceneBadge(1, null, true);
   const r = document.querySelector("#regles .revoir");
-  if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#chen")), PROFESSEURS.chen, true);
+  if (r) r.onclick = () => intro(CAPTURES.find(c => c.id.endsWith("#" + CADEAU)), PROFESSEURS[CADEAU], true);
 }
 
 // ---------- 🧪 Tester Kanto : chaque scène et chaque décor, sans rien enregistrer (demande de Kiki, 01/11) ----------
 const POKE_FOND = {prairie: [16, 19, 21, 39], foret: [10, 13, 25, 12], grotte: [41, 74, 46, 35], riviere: [54, 60, 118, 43],
   mer: [72, 98, 129, 90], ville: [133, 52, 137, 122], montagne: [74, 95, 66, 27], centrale: [81, 100, 125, 26], tour: [92, 93, 104, 105],
-  safari: [111, 115, 128, 123], volcan: [58, 77, 126, 37], artikodin: [144], electhor: [145], sulfura: [146], mewtwo: [150], mew: [151], labo: [1, 4, 7]};
-const NOM_FOND = {prairie: "Hautes herbes", foret: "Forêt", grotte: "Grotte", riviere: "Rivière", mer: "Plage", ville: "Ville", montagne: "Montagne",
+  safari: [111, 115, 128, 123], volcan: [58, 77, 126, 37], artikodin: [144], electhor: [145], sulfura: [146], mewtwo: [150], mew: [151], labo: [1, 4, 7],
+  jprairie: [161, 163, 165], jforet: [190, 166, 168, 175], jgrotte: [194, 174, 231], jville: [209, 241, 235], jruines: [201, 177, 206], jtemple: [200, 197, 198], jmer: [170, 183, 222], jtourbillons: [199, 226, 230], jlac: [202, 181, 212], jglace: [215, 225, 238], jmontagne: [232, 246, 227], raikou: [243], entei: [244], suicune: [245], lugia: [249], "ho-oh": [250], celebi: [251], laboOrme: [152, 155, 158]};
+const NOM_FOND = {jprairie: "Route d'automne", jforet: "Forêt rouge", jgrotte: "Grotte", jville: "Rue traditionnelle", jruines: "Ruines", jtemple: "Temple", jmer: "Plage", jtourbillons: "Tourbillons", jlac: "Lac", jglace: "Glace", jmontagne: "Montagne",
+  raikou: "Raikou", entei: "Entei", suicune: "Suicune", lugia: "Lugia", "ho-oh": "Ho-Oh", celebi: "Celebi", laboOrme: "Labo d'Orme", prairie: "Hautes herbes", foret: "Forêt", grotte: "Grotte", riviere: "Rivière", mer: "Plage", ville: "Ville", montagne: "Montagne",
   centrale: "Centrale", tour: "Tour Pokémon", safari: "Parc Safari", volcan: "Volcan", artikodin: "Artikodin", electhor: "Électhor",
   sulfura: "Sulfura", mewtwo: "Mewtwo", mew: "Mew", labo: "Labo de Chen"};
 const auHasard = l => l[Math.floor(Math.random() * l.length)];
@@ -4407,15 +4635,15 @@ function captureEssai(num, extra = {}) {
     lieu: "", raison: "⚡ Aperçu", quand: "aujourd'hui", jour: D.aujourdhui, ...extra};
 }
 function apercuCapture(fond = "prairie") {
-  const k = fond.startsWith("arene") ? +fond.slice(5) : 0, type = k ? LIEUX.filter(l => l.arene)[k - 1].arene.type : null;
+  const k = /arene\d$/.test(fond) ? +fond.slice(-1) : 0, type = k ? LIEUX.filter(l => l.arene)[k - 1].arene.type : null;
   const num = type ? pokeDuType(type) : auHasard(POKE_FOND[fond]);
   ouvrir(captureEssai(num, {fond, ball: k ? "hyper" : POKE_FOND[fond].length === 1 ? "master" : fond === "labo" ? "poke" : "poke",
     raison: `⚡ Aperçu : ${k ? "arène de " + CHAMPIONS[k].nom : NOM_FOND[fond]}`}));
 }
 function testScene(n) {  // la scène du badge (ou de la Ligue : Conseil 4, Régis, Panthéon), puis la ball qui s'ouvre dans l'arène
   const ar = LIEUX.filter(l => l.arene)[n - 1].arene;
-  const c = n === 9 ? captureEssai(auHasard([144, 145, 146, 150, 151]), {ball: "master", shiny: false, raison: "🏆 Ligue Pokémon"})
-    : captureEssai(pokeDuType(ar.type), {ball: "hyper", fond: "arene" + n, raison: `🏅 ${ar.badge} (${CHAMPIONS[n].nom})`});
+  const c = n === 9 ? captureEssai(auHasard(EN_JOHTO ? [243, 244, 245, 249, 250, 251] : [144, 145, 146, 150, 151]), {ball: "master", shiny: false, raison: "🏆 Ligue Pokémon"})
+    : captureEssai(pokeDuType(ar.type), {ball: "hyper", fond: (EN_JOHTO ? "jarene" : "arene") + n, raison: `🏅 ${ar.badge} (${CHAMPIONS[n].nom})`});
   sceneBadge(n, c);
 }
 // ---------- L'entraînement (03/11, idée de Kiki) : le téléphone compte pompes, squats et tractions, façon combat, sans rien de plus à
@@ -4433,7 +4661,7 @@ const ENTR = {
     consigne: "Mets le téléphone au fond de ta poche. <b>Menton au-dessus de la barre</b>, puis redescends bras tendus. Tu as 12 s pour t'installer. La voix compte pour toi ; quand tu lâches la barre, la série se termine toute seule."},
 };
 // Le combat se joue avec son starter (Kiki, 03/11 : il prend de l'importance, et l'écran change quand il évolue) ; ses attaques suivent son type
-const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Soleil"], Feu: ["Griffe", "Flammèche", "Crocs Feu", "Lance-Flammes"], Eau: ["Charge", "Pistolet à O", "Morsure", "Hydrocanon"]};
+const ATTAQUES = {Plante: ["Fouet Lianes", "Charge", "Tranch'Herbe", "Lance-Soleil"], Feu: ["Griffe", "Flammèche", "Crocs Feu", "Lance-Flammes"], Eau: ["Charge", "Pistolet à O", "Morsure", "Hydrocanon"]};  // les starters de Johto ont les mêmes types
 // Les décors du combat, un par lieu (Kiki, 03/11 ; images ChatGPT, scenes/PROMPT.md). e et c = le milieu de chaque rond de sol, en % de l'image, mesuré sur l'image ; te et tc = largeur
 // des Pokémon, en % de l'image. Un lieu sans décor : l'image de capture du lieu, avec des ronds de sol dessinés.
 const DECORS_COMBAT = {
@@ -4458,6 +4686,10 @@ const DECORS_COMBAT = {
   "Route Victoire": {image: "combat-route-victoire.webp", e: [67.7, 41.7], c: [27.7, 63.3], te: 22, tc: 30},
   "Plateau Indigo": {image: "combat-plateau-indigo.webp", e: [68.4, 42], c: [27, 63], te: 22, tc: 30},
 };
+Object.entries({"Bourg Geon": "bourg-geon", "Route 29": "route-29", "Ville Griotte": "ville-griotte", "Mauville": "mauville", "Ruines d'Alpha": "ruines-alpha", "Caves Jumelles": "caves-jumelles", "Écorcia": "ecorcia",
+  "Bois aux Chênes": "bois-aux-chenes", "Doublonville": "doublonville", "Parc Naturel": "parc-naturel", "Ferme de la Route 39": "ferme-route-39", "Rosalia": "rosalia", "Oliville": "oliville", "Irisia": "irisia", "Tourb'Îles": "tourbiles",
+  "Mont Creuset": "mont-creuset", "Acajou": "acajou", "Lac Colère": "lac-colere", "Route de Glace": "route-de-glace", "Ébènelle": "ebenelle", "Plateau de la Ligue": "plateau-ligue"})
+  .forEach(([l, f]) => DECORS_COMBAT[l] = {image: `combat-${f}.webp`, e: [70, 47], c: [28, 67], te: 22, tc: 30});
 const VERSION_DETECTION = "squats v12";
 const CORRECTION_MAX = 5;
 const SENSIBILITES = {douce: 1.4, normale: 1, forte: .7}, REPOS_SERIE = 90, ECART_POMPE = 700, FIN_SANS_TRACTION = 12000, RETIRE_APPUI = 5000, RETIRE_IMPACT = 1000;
@@ -4636,7 +4868,11 @@ function shinyDuJour(cible, essai) {
 const garderShiny = s => { if (s.essai) return; try { localStorage.setItem("pkm_shiny", JSON.stringify(s)); } catch (e) {} };
 // Le combat d'arène (Kiki, 03/11) : arrivé chez un champion qui accepte les pompes, chaque série se joue dans son arène, contre ses Pokémon, avec lui à côté. Ses PV = les pompes de son défi,
 // réparties entre ses Pokémon : tout se déduit des pompes déjà faites, rien à garder en plus, d'une série et d'un téléphone à l'autre. Le badge reste donné par le défi, comme avant.
-const DUELS = {
+const DUELS = EN_JOHTO ? {
+  Chuck: {equipe: [57, 62], vaincu: "vaincu", debut: "WAHAHA ! Montre-moi tes pompes !", fin: "Ça, c'est de l'entraînement !"},
+  Koga: {sprite: "koga", equipe: [168, 49, 169], vaincu: "vaincu", debut: "Tu ne me toucheras pas deux fois !", fin: "Tu m'as encore eu…"},
+  Aldo: {sprite: "bruno", equipe: [237, 106, 107, 68], vaincu: "vaincu", debut: "Tu t'es entraîné ? Moi aussi !", fin: "Encore battu ! Quelle force !"},
+} : {
   Pierre: {equipe: [74, 95], vaincu: "vaincu", debut: "Ta tête est-elle aussi dure que mes rochers ?", fin: "Quelle tête dure ! Je m'incline."},
   Koga: {equipe: [109, 89, 110], vaincu: "vaincu", debut: "Un ninja ne se laisse jamais toucher !", fin: "Je ne t'ai pas vu venir…"},
   Giovanni: {equipe: [111, 31, 34, 112], vaincu: "vaincu", debut: "Voyons ce que tu as dans les bras.", fin: "Une telle force mérite le respect."},
@@ -4653,9 +4889,9 @@ function duelEnCours(essaiQui) {
     a = LIEUX[d.lieu].arene; ep = voiesDefi();
   }
   const restent = ep.filter(e => !e.fait && e.voies.some(o => o.defi === "pompes")); if (!restent.length) return null;
-  const numero = a.image || 9, voie = restent[0].voies.find(o => o.defi === "pompes"), total = voie.cible, deja = Math.floor(voie.v);
+  const numero = LIEUX.filter(l => l.arene).findIndex(l => l.arene === a) + 1, voie = restent[0].voies.find(o => o.defi === "pompes"), total = voie.cible, deja = Math.floor(voie.v);
   const equipe = restent.flatMap(e => { const qui = e.qui || a.champion, ch = e.qui ? CONSEIL.find(x => x.nom === e.qui) : CHAMPIONS[numero];  // la Ligue n'a pas de salle vide : on regarde le haut de la salle
-    return DUELS[qui].equipe.map(num => ({num, qui, ch, sprite: DUELS[qui].sprite || ch.sprite, image: numero <= 8 ? FONDS[`arene${numero}`].image : ch.arene.image, haut: numero > 8})); });
+    return DUELS[qui].equipe.map(num => ({num, qui, ch, sprite: DUELS[qui].sprite || ch.sprite, image: numero <= 8 ? FONDS[`${EN_JOHTO ? "jarene" : "arene"}${numero}`].image : ch.arene.image, haut: numero > 8})); });
   const seuils = equipe.map((_, i) => Math.round(total * (i + 1) / equipe.length)), rang = seuils.findIndex(s => s > deja);
   return {equipe, seuils, total, deja, rang, pv: seuils[rang] - deja, pvMax: seuils[rang] - (seuils[rang - 1] || 0)};
 }
@@ -5058,14 +5294,16 @@ function dessinerTests() {
   const b = (cls, html) => `<button class="filtre ${cls}">${html}</button>`;
   const ext = ["prairie", "foret", "grotte", "riviere", "mer", "ville", "montagne", "centrale", "tour", "safari", "volcan"];
   document.getElementById("tests").innerHTML = `
+    <div class="groupe">Le passage vers Johto<small>Le Carnet, le générique et l'appel du Professeur Chen ; puis, le lendemain, le voyage, le titre de Johto et le labo d'Orme. Rien n'est enregistré.</small></div>
+    <div class="boutons-t">${b("t-passage", `${ico("tele", "p")} La fin de Kanto`)}${b("t-voyage-r", `${ico("carte", "p")} L'arrivée à Johto`)}${b("t-johto", `${ico("carte", "p")} ${EN_JOHTO ? "Revenir à la vraie partie" : "Voir Johto (champions, carte, décors)"}`)}</div>
     <div class="groupe">Le début de l'aventure<small>Écran titre, carte du nouveau dresseur, labo du Professeur Chen, puis le starter s'ouvre dans le labo.</small></div>
     <div class="boutons-t">${b("t-debut", "🎬 Écran titre → dresseur → labo")}${b("t-labo", `${ico("poke", "p")} Labo seul`)}</div>
     <div class="groupe">Les arènes<small>La scène du badge avec le champion dans son arène, puis l'Hyper Ball qui s'ouvre dans l'arène vide. La Ligue : les 4 salles du Conseil 4, Régis, le Panthéon et la Master Ball.</small></div>
     <div class="boutons-t">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => b(`t-arene" data-n="${n}`, `${portraitChamp(CHAMPIONS[n])}${n === 9 ? "Ligue" : n + ". " + CHAMPIONS[n].nom}`)).join("")}</div>
     <div class="groupe">Les décors de capture<small>Un Pokémon du coin s'ouvre dans le décor (1 chance sur 5 d'être shiny).</small></div>
-    <div class="boutons-t">${ext.map(f => b(`t-fond" data-f="${f}`, NOM_FOND[f])).join("")}</div>
-    <div class="boutons-t">${["artikodin", "electhor", "sulfura", "mewtwo", "mew"].map(f => b(`t-fond" data-f="${f}`, `${ico("master", "p")} ${NOM_FOND[f]}`)).join("")}</div>
-    <div class="boutons-t">${b(`t-fond" data-f="labo`, "Labo (starter)")}${[1, 2, 3, 4, 5, 6, 7, 8].map(n => b(`t-fond" data-f="arene${n}`, `${ico(IMG.badge(n), "p")} ${CHAMPIONS[n].nom}`)).join("")}</div>
+    <div class="boutons-t">${(EN_JOHTO ? ["jprairie", "jforet", "jgrotte", "jville", "jruines", "jtemple", "jmer", "jtourbillons", "jlac", "jglace", "jmontagne"] : ext).map(f => b(`t-fond" data-f="${f}`, NOM_FOND[f])).join("")}</div>
+    <div class="boutons-t">${(EN_JOHTO ? ["raikou", "entei", "suicune", "lugia", "ho-oh", "celebi"] : ["artikodin", "electhor", "sulfura", "mewtwo", "mew"]).map(f => b(`t-fond" data-f="${f}`, `${ico("master", "p")} ${NOM_FOND[f]}`)).join("")}</div>
+    <div class="boutons-t">${b(`t-fond" data-f="${EN_JOHTO ? "laboOrme" : "labo"}`, "Labo (starter)")}${[1, 2, 3, 4, 5, 6, 7, 8].map(n => b(`t-fond" data-f="${EN_JOHTO ? "jarene" : "arene"}${n}`, `${ico(IMG.badge(LIEUX.filter(l => l.arene)[n - 1].arene.image), "p")} ${CHAMPIONS[n].nom}`)).join("")}</div>
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
     <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
@@ -5077,8 +5315,11 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
-  on(".t-labo", () => { const p = PROFESSEURS.chen; intro(captureEssai(auHasard(p.starters), {id: "test#chen", shiny: false, lieu: "Bourg Palette",
-    raison: "🎁 Cadeau du Professeur Chen"}), p); });
+  on(".t-passage", () => scenePassage(true));
+  on(".t-voyage-r", () => sceneVoyageRegion(null, true));
+  on(".t-johto", () => { const u = new URL(PW.location.href); if (EN_JOHTO) u.searchParams.delete("johto"); else u.searchParams.set("johto", "1"); u.searchParams.set("essais", "1"); PW.location.href = u.href; });
+  on(".t-labo", () => { const p = PROFESSEURS[CADEAU]; intro(captureEssai(auHasard(p.starters), {id: "test#" + CADEAU, shiny: false, lieu: LIEUX[0].nom,
+    raison: `🎁 Cadeau du Professeur ${p.prof}`}), p); });
   on(".t-arene", x => testScene(+x.dataset.n));
   on(".t-fond", x => apercuCapture(x.dataset.f));
   on(".t-centre", () => sceneCentre(true));
@@ -5167,8 +5408,11 @@ function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessine
   if (ONGLET === "dex") dessinerDex(); }
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
-  const chen = CAPTURES.find(c => c.id.endsWith("#chen"));
-  if (chen && !estOuverte(chen)) setTimeout(() => demarrerAventure(chen), 400);
+  const chen = CAPTURES.find(c => c.id.endsWith("#" + CADEAU));
+  if (chen && !estOuverte(chen)) setTimeout(() => REG.index ? sceneVoyageRegion(chen) : demarrerAventure(chen), 400);
+  // la Ligue est finie et sa Master Ball ouverte : le Carnet, le générique, puis le coup de téléphone (une fois ; ensuite, une carte en haut d'Aventure)
+  else if (appelDu() && (() => { try { return localStorage.getItem("pkm_passage_vu_" + REG.nom) !== "1"; } catch (e) { return false; } })())
+    setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) scenePassage(); }, 1200);
   // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur) ; ou le bilan de la semaine quand il est dû
   else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);

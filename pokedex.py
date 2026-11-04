@@ -1,4 +1,4 @@
-"""Les 151 Pokémon de la 1re génération : numéro, nom français, types (types actuels : Mélofée est Fée, Magnéti Acier…).
+"""Les Pokémon des régions du jeu (Kanto : 1 à 151, Johto : 152 à 251) : numéro, nom français, types (types actuels : Mélofée est Fée, Magnéti Acier…).
 Les images sont dans le dépôt privé (branche « sprites »), jamais ici."""
 
 _LISTE = """
@@ -26,15 +26,32 @@ Tauros:Normal Magicarpe:Eau Léviator:Eau/Vol Lokhlass:Eau/Glace Métamorph:Norm
 Voltali:Électrik Pyroli:Feu Porygon:Normal Amonita:Roche/Eau Amonistar:Roche/Eau Kabuto:Roche/Eau Kabutops:Roche/Eau
 Ptéra:Roche/Vol Ronflex:Normal Artikodin:Glace/Vol Électhor:Électrik/Vol Sulfura:Feu/Vol Minidraco:Dragon
 Draco:Dragon Dracolosse:Dragon/Vol Mewtwo:Psy Mew:Psy
+Germignon:Plante Macronium:Plante Méganium:Plante Héricendre:Feu Feurisson:Feu Typhlosion:Feu Kaiminus:Eau
+Crocrodil:Eau Aligatueur:Eau Fouinette:Normal Fouinar:Normal Hoothoot:Normal/Vol Noarfang:Normal/Vol
+Coxy:Insecte/Vol Coxyclaque:Insecte/Vol Mimigal:Insecte/Poison Migalos:Insecte/Poison Nostenfer:Poison/Vol
+Loupio:Eau/Électrik Lanturn:Eau/Électrik Pichu:Électrik Mélo:Fée Toudoudou:Normal/Fée Togepi:Fée
+Togetic:Fée/Vol Natu:Psy/Vol Xatu:Psy/Vol Wattouat:Électrik Lainergie:Électrik Pharamp:Électrik
+Joliflor:Plante Marill:Eau/Fée Azumarill:Eau/Fée Simularbre:Roche Tarpaud:Eau Granivol:Plante/Vol
+Floravol:Plante/Vol Cotovol:Plante/Vol Capumain:Normal Tournegrin:Plante Héliatronc:Plante Yanma:Insecte/Vol
+Axoloto:Eau/Sol Maraiste:Eau/Sol Mentali:Psy Noctali:Ténèbres Cornèbre:Ténèbres/Vol Roigada:Eau/Psy
+Feuforêve:Spectre Zarbi:Psy Qulbutoké:Psy Girafarig:Normal/Psy Pomdepik:Insecte Foretress:Insecte/Acier
+Insolourdo:Normal Scorplane:Sol/Vol Steelix:Acier/Sol Snubbull:Fée Granbull:Fée Qwilfish:Eau/Poison
+Cizayox:Insecte/Acier Caratroc:Insecte/Roche Scarhino:Insecte/Combat Farfuret:Ténèbres/Glace Teddiursa:Normal
+Ursaring:Normal Limagma:Feu Volcaropod:Feu/Roche Marcacrin:Glace/Sol Cochignon:Glace/Sol Corayon:Eau/Roche
+Rémoraid:Eau Octillery:Eau Cadoizo:Glace/Vol Démanta:Eau/Vol Airmure:Acier/Vol Malosse:Ténèbres/Feu
+Démolosse:Ténèbres/Feu Hyporoi:Eau/Dragon Phanpy:Sol Donphan:Sol Porygon2:Normal Cerfrousse:Normal
+Queulorior:Normal Debugant:Combat Kapoera:Combat Lippouti:Glace/Psy Élekid:Électrik Magby:Feu Écrémeuh:Normal
+Leuphorie:Normal Raikou:Électrik Entei:Feu Suicune:Eau Embrylex:Roche/Sol Ymphect:Roche/Sol
+Tyranocif:Roche/Ténèbres Lugia:Psy/Vol Ho-Oh:Feu/Vol Celebi:Psy/Plante
 """
 
 POKEMON = {}  # numéro -> {"nom", "types"}
 for _i, _p in enumerate(_LISTE.split(), 1):
     _nom, _types = _p.split(":")
     POKEMON[_i] = {"nom": _nom.replace("_", " "), "types": _types.split("/")}
-assert len(POKEMON) == 151
+assert len(POKEMON) == 251
 
-LEGENDAIRES = [144, 145, 146, 150, 151]  # seulement dans les Master Balls
+LEGENDAIRES = [144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251]  # seulement dans les Master Balls
 
 COULEURS_TYPES = {
     "Normal": "#A8A77A", "Feu": "#EE8130", "Eau": "#6390F0", "Électrik": "#F7D02C", "Plante": "#7AC74C",
@@ -204,3 +221,111 @@ DESCRIPTIONS = {
     150: "Créé pour être le plus fort, et ne connaît que ça. Aucune séance ne lui suffit : n'a jamais trouvé d'adversaire à sa mesure.",
     151: "Si rare que beaucoup doutent de son existence. Seuls les plus patients finissent par le croiser, et ce n'est jamais par hasard.",
 }
+
+# Johto (données officielles : PokeAPI ; descriptions : nos propres textes, jamais ceux des jeux, dépôt public)
+POIDS.update({152: 6.4, 153: 15.8, 154: 100.5, 155: 7.9, 156: 19, 157: 79.5, 158: 9.5, 159: 25, 160: 88.8, 161: 6, 162: 32.5, 163: 21.2, 164: 40.8, 165: 10.8, 166: 35.6, 167: 8.5, 168: 33.5, 169: 75, 170: 12, 171: 22.5, 172: 2, 173: 3, 174: 1, 175: 1.5, 176: 3.2, 177: 2, 178: 15, 179: 7.8, 180: 13.3, 181: 61.5, 182: 5.8, 183: 8.5, 184: 28.5, 185: 38, 186: 33.9, 187: 0.5, 188: 1, 189: 3, 190: 11.5, 191: 1.8, 192: 8.5, 193: 38, 194: 8.5, 195: 75, 196: 26.5, 197: 27, 198: 2.1, 199: 79.5, 200: 1, 201: 5, 202: 28.5, 203: 41.5, 204: 7.2, 205: 125.8, 206: 14, 207: 64.8, 208: 400, 209: 7.8, 210: 48.7, 211: 3.9, 212: 118, 213: 20.5, 214: 54, 215: 28, 216: 8.8, 217: 125.8, 218: 35, 219: 55, 220: 6.5, 221: 55.8, 222: 5, 223: 12, 224: 28.5, 225: 16, 226: 220, 227: 50.5, 228: 10.8, 229: 35, 230: 152, 231: 33.5, 232: 120, 233: 32.5, 234: 71.2, 235: 58, 236: 21, 237: 48, 238: 6, 239: 23.5, 240: 21.4, 241: 75.5, 242: 46.8, 243: 178, 244: 198, 245: 187, 246: 72, 247: 152, 248: 202, 249: 216, 250: 199, 251: 5})
+TAILLES.update({152: 0.9, 153: 1.2, 154: 1.8, 155: 0.5, 156: 0.9, 157: 1.7, 158: 0.6, 159: 1.1, 160: 2.3, 161: 0.8, 162: 1.8, 163: 0.7, 164: 1.6, 165: 1, 166: 1.4, 167: 0.5, 168: 1.1, 169: 1.8, 170: 0.5, 171: 1.2, 172: 0.3, 173: 0.3, 174: 0.3, 175: 0.3, 176: 0.6, 177: 0.2, 178: 1.5, 179: 0.6, 180: 0.8, 181: 1.4, 182: 0.4, 183: 0.4, 184: 0.8, 185: 1.2, 186: 1.1, 187: 0.4, 188: 0.6, 189: 0.8, 190: 0.8, 191: 0.3, 192: 0.8, 193: 1.2, 194: 0.4, 195: 1.4, 196: 0.9, 197: 1, 198: 0.5, 199: 2, 200: 0.7, 201: 0.5, 202: 1.3, 203: 1.5, 204: 0.6, 205: 1.2, 206: 1.5, 207: 1.1, 208: 9.2, 209: 0.6, 210: 1.4, 211: 0.5, 212: 1.8, 213: 0.6, 214: 1.5, 215: 0.9, 216: 0.6, 217: 1.8, 218: 0.7, 219: 0.8, 220: 0.4, 221: 1.1, 222: 0.6, 223: 0.6, 224: 0.9, 225: 0.9, 226: 2.1, 227: 1.7, 228: 0.6, 229: 1.4, 230: 1.8, 231: 0.5, 232: 1.1, 233: 0.6, 234: 1.4, 235: 1.2, 236: 0.7, 237: 1.4, 238: 0.4, 239: 0.6, 240: 0.7, 241: 1.2, 242: 1.5, 243: 1.9, 244: 2.1, 245: 2, 246: 0.6, 247: 1.2, 248: 2, 249: 5.2, 250: 3.8, 251: 0.6})
+FEMELLES.update({152: 1, 153: 1, 154: 1, 155: 1, 156: 1, 157: 1, 158: 1, 159: 1, 160: 1, 161: 4, 162: 4, 163: 4, 164: 4, 165: 4, 166: 4, 167: 4, 168: 4, 169: 4, 170: 4, 171: 4, 172: 4, 173: 6, 174: 6, 175: 1, 176: 1, 177: 4, 178: 4, 179: 4, 180: 4, 181: 4, 182: 4, 183: 4, 184: 4, 185: 4, 186: 4, 187: 4, 188: 4, 189: 4, 190: 4, 191: 4, 192: 4, 193: 4, 194: 4, 195: 4, 196: 1, 197: 1, 198: 4, 199: 4, 200: 4, 201: -1, 202: 4, 203: 4, 204: 4, 205: 4, 206: 4, 207: 4, 208: 4, 209: 6, 210: 6, 211: 4, 212: 4, 213: 4, 214: 4, 215: 4, 216: 4, 217: 4, 218: 4, 219: 4, 220: 4, 221: 4, 222: 6, 223: 4, 224: 4, 225: 4, 226: 4, 227: 4, 228: 4, 229: 4, 230: 4, 231: 4, 232: 4, 233: -1, 234: 4, 235: 4, 236: 0, 237: 0, 238: 8, 239: 2, 240: 2, 241: 8, 242: 8, 243: -1, 244: -1, 245: -1, 246: 4, 247: 4, 248: 4, 249: -1, 250: -1, 251: -1})
+CATEGORIES.update({152: "Pokémon Feuille", 153: "Pokémon Feuille", 154: "Pokémon Herbe", 155: "Pokémon Souris Feu", 156: "Pokémon Volcan", 157: "Pokémon Volcan", 158: "Pokémon Mâchoire", 159: "Pokémon Mâchoire", 160: "Pokémon Mâchoire", 161: "Pokémon Espion", 162: "Pokémon Allongé", 163: "Pokémon Hibou", 164: "Pokémon Hibou", 165: "Pokémon 5 Étoiles", 166: "Pokémon 5 Étoiles", 167: "Pokémon Crache Fil", 168: "Pokémon Long-Patte", 169: "Pokémon Chovsouris", 170: "Pokémon Poisson", 171: "Pokémon Lumière", 172: "Pokémon Minisouris", 173: "Pokémon Étoile", 174: "Pokémon Bouboule", 175: "Pokémon Balle Pic", 176: "Pokémon Bonheur", 177: "Pokémon Minoiseau", 178: "Pokémon Mystique", 179: "Pokémon Laine", 180: "Pokémon Laine", 181: "Pokémon Lumière", 182: "Pokémon Fleur", 183: "Pokémon Aquasouris", 184: "Pokémon Aqualapin", 185: "Pokémon Imitation", 186: "Pokémon Grenouille", 187: "Pokémon Pissenlit", 188: "Pokémon Pissenlit", 189: "Pokémon Pissenlit", 190: "Pokémon Longqueue", 191: "Pokémon Graine", 192: "Pokémon Soleil", 193: "Pokémon Translaile", 194: "Pokémon Poisson", 195: "Pokémon Poisson", 196: "Pokémon Soleil", 197: "Pokémon Lune", 198: "Pokémon Obscurité", 199: "Pokémon Royal", 200: "Pokémon Strident", 201: "Pokémon Symbolique", 202: "Pokémon Patient", 203: "Pokémon Long-Cou", 204: "Pokémon Ver Caché", 205: "Pokémon Ver Caché", 206: "Pokémon Serpent", 207: "Pokémon Scorpivol", 208: "Pokémon Serpenfer", 209: "Pokémon Fée", 210: "Pokémon Fée", 211: "Pokémon Bouboule", 212: "Pokémon Pince", 213: "Pokémon Pourri", 214: "Pokémon Unicorne", 215: "Pokémon Grifacérée", 216: "Pokémon Mini Ours", 217: "Pokémon Hibernant", 218: "Pokémon Lave", 219: "Pokémon Lave", 220: "Pokémon Cochon", 221: "Pokémon Porc", 222: "Pokémon Corail", 223: "Pokémon Jet", 224: "Pokémon Jet", 225: "Pokémon Livraison", 226: "Pokémon Cervolant", 227: "Pokémon Armoiseau", 228: "Pokémon Sombre", 229: "Pokémon Sombre", 230: "Pokémon Dragon", 231: "Pokémon Long-Nez", 232: "Pokémon Armure", 233: "Pokémon Virtuel", 234: "Pokémon Maxi Corne", 235: "Pokémon Peintre", 236: "Pokémon Bagarreur", 237: "Pokémon Poirier", 238: "Pokémon Bisou", 239: "Pokémon Électrique", 240: "Pokémon Charbon", 241: "Pokémon Vachalait", 242: "Pokémon Bonheur", 243: "Pokémon Foudre", 244: "Pokémon Volcan", 245: "Pokémon Aurore", 246: "Pokémon Peaupierre", 247: "Pokémon Carapadure", 248: "Pokémon Armure", 249: "Pokémon Plongeon", 250: "Pokémon Arcenciel", 251: "Pokémon Temporel"})
+DESCRIPTIONS.update({
+    152: "La feuille sur sa tête capte le moindre rayon de soleil. Aime les pauses au parc, surtout celles qui durent.",
+    153: "Les bourgeons de son cou embaument l'air autour de lui. Une marche à ses côtés, et la mauvaise humeur reste en chemin.",
+    154: "Son parfum calme les plus agités. Dans un groupe de randonnée, c'est celui qui empêche tout le monde de se disputer sur le chemin à prendre.",
+    155: "Sa flamme jaillit du dos dès qu'on le surprend. Le reste du temps, il préfère rester roulé en boule, ce qui n'a jamais fait gagner une course.",
+    156: "Les flammes de son cou font fuir les curieux. Rapide et vif, il esquive mieux qu'il n'attaque.",
+    157: "Une crinière de feu qui s'embrase quand il se fâche. L'air tremble autour de lui, et ce n'est pas seulement à cause de la chaleur.",
+    158: "Mord tout ce qui bouge, sans méchanceté, par simple curiosité. Ses dresseurs apprennent vite à garder leurs distances.",
+    159: "Une fois ses crocs plantés, il ne lâche plus. Une ténacité qui ferait merveille sur une barre de traction.",
+    160: "Malgré son gabarit, il démarre comme une flèche. Sa mâchoire en a découragé plus d'un avant même le début du combat.",
+    161: "Se dresse sur sa queue pour surveiller les environs. Une sentinelle infatigable, à condition qu'il reste quelque chose à grignoter.",
+    162: "Si long et si fin qu'il se faufile partout. Son nid est un vrai labyrinthe, et lui seul en connaît la sortie.",
+    163: "Toujours sur une seule patte, l'autre bien au chaud. Son horloge interne ne se trompe jamais d'une minute.",
+    164: "Tourne la tête presque en entier sans bouger le corps. Rien ne lui échappe dans la nuit, pas même un souffle.",
+    165: "Vit en essaim et panique dès qu'il se retrouve seul. La preuve qu'il vaut mieux s'entraîner à plusieurs.",
+    166: "Les étoiles de son dos brillent à la tombée de la nuit. Il sort quand les autres rentrent, et dessine des constellations en volant.",
+    167: "Patiente des heures sur sa toile sans bouger d'un millimètre. Un gainage que personne d'autre ne tiendrait.",
+    168: "Son fil est assez solide pour le porter partout, et il rentre à la maison en le suivant. Jamais perdu, même sans carte.",
+    169: "Quatre ailes, et aucun bruit. Ses vols de nuit sont si silencieux qu'on ne découvre son passage qu'au matin.",
+    170: "Ses antennes clignotent pour discuter avec ses semblables au fond de l'eau. Une conversation qu'on devine sans jamais la comprendre.",
+    171: "Sa lumière guide les marins par nuit noire. Vu du rivage, on le prendrait pour une étoile tombée à la mer.",
+    172: "Encore incapable de maîtriser son électricité, il se décharge dès qu'il rit. Ses camarades de jeu ont les cheveux dressés.",
+    173: "On dit qu'il descend sur Terre les nuits d'étoiles filantes. Tout petit, et déjà du mal à garder les pieds au sol.",
+    174: "Tout rond, tout mou, et très fier de ses rebonds. Sa carrière en saut en hauteur s'arrête là où commence le vent.",
+    175: "Sa coquille renferme, dit-on, tout ce qu'il y a de bon. Il suffit de le voir sourire pour avoir envie de le croire.",
+    176: "Ne se montre qu'auprès de ceux qui se montrent gentils. Ses ailes répandent une poudre qui donne le sourire.",
+    177: "Trop petit pour voler loin, il sautille de branche en branche. Son regard fixe finit toujours par mettre mal à l'aise.",
+    178: "Reste immobile face au soleil toute la journée. On raconte qu'il voit l'avenir d'un œil et le passé de l'autre.",
+    179: "Sa laine accumule l'électricité à chaque frottement. Mieux vaut éviter les câlins par temps sec.",
+    180: "Sa toison a laissé place à une peau lisse, qui encaisse mieux la tension. Une transformation physique bien visible, sans régime particulier.",
+    181: "La boule au bout de sa queue se voit depuis l'espace, paraît-il. En mer, on l'a longtemps pris pour un phare.",
+    182: "Danse dès que le soleil revient. Après une longue pluie, on peut en voir des dizaines se trémousser au même rythme.",
+    183: "Sa queue flotte à la surface comme une bouée et lui évite de couler. Le meilleur moyen de rendre la natation sans effort.",
+    184: "De longues oreilles qui entendent tout sous l'eau, et une force étonnante dans les pattes. Ne pas se fier à son air de peluche.",
+    185: "Se fait passer pour un arbre, alors qu'il n'aime pas l'eau. La plus mauvaise cachette du monde dès que l'arrosoir sort.",
+    186: "Son cri fait accourir tous les Ptitard des environs. Un vrai entraîneur de groupe, qui gonfle les joues pour se faire entendre.",
+    187: "Si léger qu'une petite brise l'emporte. Il s'accroche aux autres pour rester sur place, comme quoi la légèreté a ses limites.",
+    188: "Sa fleur s'ouvre dès qu'il fait beau et lui sert de thermomètre. Il flotte juste assez haut pour regarder les autres marcher.",
+    189: "Se laisse porter par les vents d'une région à l'autre. Un tour du monde complet, sans un seul pas au compteur.",
+    190: "Sa queue fait tout : attraper, grimper, ouvrir les fruits. À force, ses vraies mains ont presque oublié à quoi elles servent.",
+    191: "Tombe du ciel sans prévenir et reste planté là où il atterrit. Une entrée dans le monde assez peu glorieuse.",
+    192: "Suit le soleil toute la journée, puis s'arrête net au coucher. Personne ne respecte mieux son rythme de sommeil.",
+    193: "Peut virer à angle droit en plein vol sans ralentir. Ses battements d'ailes font vibrer les vitres jusqu'à les briser.",
+    194: "Sort de l'eau quand le froid arrive et avance à son rythme sur la berge. Une marche lente, mais qui ne s'arrête jamais.",
+    195: "Toujours le même sourire tranquille, même quand il se cogne contre les rochers. On lui envierait presque cette sérénité.",
+    196: "Son pelage sent la moindre variation de l'air, et il devine ce que va faire son adversaire. Pas besoin d'échauffement quand on sait tout à l'avance.",
+    197: "Ses anneaux s'allument les nuits de pleine lune. Il préfère ses sorties au clair de lune, loin de la foule.",
+    198: "Sa présence passe pour un mauvais présage, ce qui l'amuse beaucoup. Il préfère les balades de nuit, quand personne ne le voit passer.",
+    199: "Le coquillage sur sa tête a libéré une intelligence hors du commun. Il réfléchit tant qu'il oublie parfois de bouger.",
+    200: "Adore les cris de surprise. Ses plaisanteries de minuit en ont fait se lever plus d'un, bien avant le réveil.",
+    201: "Vingt-huit formes différentes, et personne ne sait encore ce qu'elles veulent dire. Les archéologues y ont laissé leurs meilleures années.",
+    202: "Encaisse tout sans jamais frapper le premier. Il se cache dans le noir, et sa queue, elle, garde un secret bien gardé.",
+    203: "Sa seconde tête, au bout de la queue, ne dort jamais. Un partenaire d'entraînement toujours là pour surveiller ses arrières.",
+    204: "Accroché à sa branche, il attend sans bouger qu'on l'approche de trop près. La sieste la plus dangereuse de la forêt.",
+    205: "Une coquille d'acier qui ne s'ouvre presque jamais. Pour savoir ce qu'il y a dedans, il faudra se lever de bonne heure.",
+    206: "Creuse des galeries très compliquées avec sa queue, puis s'enfuit à reculons dès qu'on le regarde. Bon courage pour le suivre.",
+    207: "Plane sans un bruit et se pose droit sur le visage de sa proie. Sa technique de vol est bien plus travaillée que son atterrissage.",
+    208: "Son corps a durci sous des pressions énormes, bien plus bas que les plus profondes galeries. Une transformation qui force le respect.",
+    209: "Cette grosse mâchoire fait fuir les passants, alors qu'il cherche seulement de la compagnie. Quand on le connaît, c'est une vraie crème.",
+    210: "Ses crocs sont si lourds qu'il doit pencher la tête en arrière. Timide au fond, il ne mord qu'en cas de frayeur.",
+    211: "Avale de l'eau pour se gonfler et projette ses épines dans toutes les directions. Sa respiration est son point fort.",
+    212: "Ses pinces d'acier écrasent tout. Ses ailes ne servent presque plus à voler, mais elles règlent parfaitement sa température pendant l'effort.",
+    213: "Conserve des baies au fond de sa coquille jusqu'à ce qu'elles fermentent. Une boisson d'après-séance à éviter absolument.",
+    214: "Soulève cent fois son poids avec sa corne et projette ses adversaires au loin. Aucun autre insecte ne passe autant de temps à la salle.",
+    215: "Griffes acérées et regard en coin. Il escalade les arbres pour voler les œufs, et son record ne risque pas d'être homologué.",
+    216: "Se lèche les pattes couvertes de miel à longueur de journée. Son programme d'entraînement commence toujours demain.",
+    217: "Le matin, il suit le même sentier forestier pour chercher sa nourriture. Sa régularité finit par laisser des traces dans le sol.",
+    218: "De la lave à la place du sang : s'il s'arrête de bouger, il refroidit et durcit. Une excellente raison de ne jamais rester assis.",
+    219: "Sa coquille est si chaude qu'elle fait fondre la pluie avant qu'elle ne le touche. Le rêve par mauvais temps, pour sortir sans parapluie.",
+    220: "Fouille la terre gelée de son nez à la recherche de champignons. Le froid ne l'arrête jamais, et il en sort tout content.",
+    221: "Son épaisse fourrure lui cache complètement les yeux. Il charge droit devant lui, et le terrain se chargera du reste.",
+    222: "Ses branches repoussent quand elles se brisent. Les récifs où il vit sont un bon exemple de récupération après l'effort.",
+    223: "Vise juste, même à plusieurs mètres, d'un jet d'eau bien placé. Son entraînement à la cible dure depuis des générations.",
+    224: "S'installe dans un trou de rocher et n'en sort que pour attraper ce qui passe. Ses huit bras sont aussi utiles qu'encombrants.",
+    225: "Traîne toute l'année un sac rempli de cadeaux pour qui s'est perdu en montagne. Ses journées à porter sa charge valent bien une randonnée.",
+    226: "Glisse au-dessus des vagues comme s'il volait. Par beau temps, il saute hors de l'eau pour le seul plaisir.",
+    227: "Son corps d'acier cache des ailes aussi fines qu'un couteau. Une carapace très lourde, qui ne l'empêche pas de voler à toute vitesse.",
+    228: "Chasse en meute, et ses aboiements se répondent d'une colline à l'autre. Une sortie de groupe qu'on préfère éviter la nuit.",
+    229: "Son hurlement glace le sang de quiconque l'entend. Il fume un peu quand il s'énerve : mieux vaut lui laisser de l'avance.",
+    230: "Dort au fond des mers et ne remonte que pour les tempêtes. On dit que ses bâillements font naître les tourbillons.",
+    231: "Trop petit pour porter ses oreilles sans trébucher. Son nez se lève pour dire bonjour, ou pour vous arroser sans prévenir.",
+    232: "Roule en boule à toute allure et ne sait pas très bien freiner. Très fort en descente, nettement moins au moment de s'arrêter.",
+    233: "Mise à jour de la version précédente, et ça se voit. Il a appris tout seul quelques gestes qu'on ne lui a jamais montrés.",
+    234: "Ses bois donnent le vertige à ceux qui les regardent trop longtemps. Les passants le croisent souvent sans se souvenir de l'avoir vu.",
+    235: "Trace sa signature partout où il passe, avec la peinture de sa queue. Chaque Queulorior a la sienne, et aucun ne veut en changer.",
+    236: "Toujours à provoquer le premier venu, surtout s'il est plus grand. Il perd souvent, recommence aussitôt, et finit par progresser.",
+    237: "Se bat sur la tête en tournant sur lui-même. Ses cours de gym ont dû être très particuliers.",
+    238: "Passe son temps à tout tester avec ses lèvres. Elle balance ses bras en marchant, comme si elle comptait les pas.",
+    239: "Fait tourner ses bras pour charger son électricité. Quand il s'arrête, il se vide : la meilleure raison au monde de continuer à bouger.",
+    240: "Sa température monte très haut dès qu'il s'agite, et il crache de petites étincelles. Un vrai petit échauffement à lui tout seul.",
+    241: "Son lait est tellement bon que tout le monde vient en demander. Une boisson de récupération que les sportifs de la région connaissent bien.",
+    242: "Sent la tristesse à des kilomètres et accourt avec un œuf pour réconforter. Personne n'a encore réussi à finir une mauvaise journée près d'elle.",
+    243: "On dit qu'il est né de la foudre tombée sur une tour en flammes. Il traverse la région à toute vitesse, et le tonnerre arrive après lui.",
+    244: "Chaque fois qu'un volcan se réveille, il en naîtrait un nouveau. Ceux qui l'ont croisé parlent surtout de la chaleur, jamais du reste.",
+    245: "Il court sur l'eau sans la troubler, porté par le vent du nord. Là où il passe, même la mare la plus sale redevient claire.",
+    246: "Naît sous terre et doit manger toute une montagne avant de voir le jour. Pour un début d'entraînement, on a vu plus simple.",
+    247: "Enfermé dans sa carapace, il s'agite et creuse sous pression. On l'entend gronder d'en bas : quelque chose se prépare.",
+    248: "Ses pas font trembler le sol, et les montagnes changent de forme sur son passage. Il cherche sans cesse un adversaire à sa hauteur.",
+    249: "Dort au fond d'une fosse marine, car le moindre battement de ses ailes déclenche une tempête. Il préfère éviter de s'entraîner en public.",
+    250: "Ses plumes laissent un arc-en-ciel derrière lui. Il ne se montre qu'à ceux qui ont le cœur pur et de bonnes jambes pour monter jusqu'en haut de la tour.",
+    251: "Voyage dans le temps pour veiller sur les forêts. Là où il passe, l'herbe repousse ; et certains assurent l'avoir vu demain.",
+})

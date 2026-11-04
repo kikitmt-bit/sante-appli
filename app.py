@@ -555,7 +555,7 @@ def curiosite_denivele(metres):
 def poids_en_pokemon(kg, jour):
     """Ton poids en Pokémon (poids officiels du Pokédex), une combinaison différente à chaque pesée."""
     rng = random.Random(str(jour))
-    candidats = [(n, w) for n, w in POIDS.items() if 1 <= w <= kg and n in POKEMON and n not in LEGENDAIRES]
+    candidats = [(n, w) for n, w in POIDS.items() if 1 <= w <= kg and n in POKEMON and n <= 151 and n not in LEGENDAIRES]
     for _ in range(400):
         reste, choix = kg, {}
         for _ in range(3):

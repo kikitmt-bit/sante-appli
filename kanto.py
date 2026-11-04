@@ -1,44 +1,6 @@
-"""Le voyage dans Kanto : les points de la barre d'effort font avancer sur la carte, de Bourg Palette au Plateau Indigo
-(7 000 points, environ 3 mois avec les arrêts aux arènes : réglages de l'audit du 02/11). Chaque lieu a ses Pokémon : on
-n'attrape que dans les lieux déjà atteints (jamais ceux à venir), surtout celui où l'on est (pokemon.tirer). Dans une ville à
-arène, on s'arrête jusqu'à réussir le défi du champion ou son plan B (refonte du 02/11, Kiki) : un exploit à son thème, faisable vite,
-avec une autre voie quand il faut du matériel ou un escalier (pompes, tractions) ; jamais de sommeil ni d'horaire de coucher (travail de
-nuit, horaires décalés). Le plan B, plus long, reste pour tous : un jour d'exploit y compte double, une petite journée moitié. Pendant le défi, le dresseur reste à l'arène : les points gagnés
-ne font pas avancer la carte. Un badge = une Hyper Ball du type du champion ; la Ligue = la Master Ball de Mewtwo.
-Trois sanctuaires (oiseaux légendaires) se débloquent sur la route : un petit défi qui ne bloque jamais.
-
-Tout est rejoué depuis le premier jour du jeu avec les vraies données (comme les balls) : rien n'est enregistré."""
-import datetime as dt
-
-from pokedex import POKEMON
-
-_NUM = {p["nom"]: n for n, p in POKEMON.items()}
-
-
-def _n(noms):
-    return [_NUM[x] for x in noms.split(", ")] if noms else []
-
-
-PAS_PETIT = 3000  # une petite journée compte pour moitié au plan B : à 4 000 pas sans sport, on restait bloqué à vie chez Pierre (03/11)
-
-
-def _plan_b(jours):
-    """Le plan B d'une arène : la difficulté monte d'arène en arène, un jour d'exploit compte pour deux, une petite journée pour moitié."""
-    return "objectif", jours, f"{jours} jours avec ton objectif du jour (un exploit compte double, une journée à {PAS_PETIT // 1000} 000 pas compte moitié)"
-
-
-def _o(defi, cible, texte):
-    """Une voie pour réussir une épreuve (voir DEFIS)."""
-    return {"defi": defi, "cible": cible, "texte": texte}
-
-
-def _arene(champion, type_, badge, image, voies, plan_b, epreuves=None):
-    """voies : une seule suffit. epreuves (la Ligue) : [(adversaire, voies)], toutes à réussir, dans l'ordre qu'on veut."""
-    ep = [{"qui": q, "voies": v} for q, v in epreuves] if epreuves else [{"qui": None, "voies": voies}]
-    return {"champion": champion, "type": type_, "badge": badge, "image": image, "epreuves": ep,
-            "texte": " ou ".join(o["texte"] for o in voies) if voies else f"{len(ep)} épreuves",
-            "b": dict(zip(("defi", "cible", "texte"), plan_b))}
-
+"""Kanto, la première région : de Bourg Palette au Plateau Indigo (7 000 points, environ 3 mois avec les arrêts aux arènes : réglages de
+l'audit du 02/11). Les règles du voyage sont dans region.py. Mewtwo : la Ligue ; Mew : le diplôme, quand on a les 146 autres ; trois sanctuaires (oiseaux)."""
+from region import arene as _arene, numeros, plan_b as _plan_b, Region, voie as _o
 
 # (nom, points depuis l'étape d'avant, x, y en pixels sur l'image de la carte (CARTE), Pokémon du lieu, arène ou None)
 # Les badges : images n° 1 à 8 du dépôt PokeAPI/sprites (sprites/badges/N.png), dans l'ordre des jeux.
@@ -116,131 +78,14 @@ VIA = {
 # sous la montagne (tirets) ; même nombre de points, seul le dessin change
 MODES = {"Azuria": "grotte", "Grotte et Centrale": "vol", "Safrania": "vol", "Îles Écume": "vol", "Cramois'Île": "surf",
          "Jadielle (retour)": "vol"}
-LIEUX = [{"nom": nom, "x": x, "y": y, "pokemon": _n(pk), "arene": ar, "pas": d, "via": VIA.get(nom, []),
-          "mode": MODES.get(nom, "route")} for nom, d, x, y, pk, ar in LIEUX]
-DIST = []  # points cumulés pour atteindre chaque lieu
-for _l in LIEUX:
-    DIST.append((DIST[-1] if DIST else 0) + _l["pas"])
-ARENES = [i for i, l in enumerate(LIEUX) if l["arene"]]  # la dernière = la Ligue
-
-_hors = set(POKEMON) - {n for l in LIEUX for n in l["pokemon"]} - {144, 145, 146, 150, 151}
-assert not _hors, f"Pokémon sans lieu : {_hors}"
 
 # Les sanctuaires (oiseaux légendaires), lieu -> Pokémon : un défi cumulé depuis qu'on l'a atteint, qui ne bloque jamais.
-# Mewtwo : la Ligue ; Mew : le diplôme, quand on a les 146 autres (pokemon.jouer).
 SANCTUAIRES = {"Grotte et Centrale": 145, "Îles Écume": 144, "Route Victoire": 146}
-SANCTUAIRE_CIBLE = 5  # jours d'exploit
-SANCT_INDEX = {i: SANCTUAIRES[l["nom"]] for i, l in enumerate(LIEUX) if l["nom"] in SANCTUAIRES}
-
 # Les Pokémon rares (⭐) : 3 fois moins de chances que les autres Pokémon de leur lieu
-RARES = set(_n("Pikachu, Évoli, Porygon, Minidraco, Draco, Dracolosse, Lokhlass, Ronflex, Insécateur, Scarabrute, "
-               "Leveinard, Kangourex, Tauros, Métamorph, Ptéra, Amonita, Kabuto, Lippoutou, M. Mime, Élektek, Magmar, "
-               "Kicklee, Tygnon, Excelangue, Onix, Saquedeneu, Noadkoko, Léviator, Bulbizarre, Salamèche, Carapuce"))
+_RARES = ("Pikachu, Évoli, Porygon, Minidraco, Draco, Dracolosse, Lokhlass, Ronflex, Insécateur, Scarabrute, "
+          "Leveinard, Kangourex, Tauros, Métamorph, Ptéra, Amonita, Kabuto, Lippoutou, M. Mime, Élektek, Magmar, "
+          "Kicklee, Tygnon, Excelangue, Onix, Saquedeneu, Noadkoko, Léviator, Bulbizarre, Salamèche, Carapuce")
 
-DEFIS = {  # défi -> (valeur d'une journée, unité, « somme » = cumulé depuis l'arrivée ou « jour » = la meilleure journée depuis l'arrivée)
-    "etages": (lambda j: j["etages"], "étages", "jour"),  # en une journée : cumulés, ils venaient tout seuls (11 par jour chez Kiki, 03/11)
-    "eau": (lambda j: j["eau"], "min", "somme"),
-    "pompes": (lambda j: j["pompes"], "pompes", "somme"),
-    "tractions": (lambda j: j["tractions"], "tractions", "somme"),
-    "sport_jour": (lambda j: j["zone"], "min", "jour"),
-    "pas_jour": (lambda j: j["pas"], "pas", "jour"),
-    "soir": (lambda j: j["soir"], "pas", "jour"),
-    "km": (lambda j: j["km"], "km", "jour"),
-    "seance": (lambda j: j["seance"], "min", "jour"),
-    "force": (lambda j: j["force_min"], "min", "jour"),
-    "complet": (lambda j: j["double"], "jour", "jour"),
-    "objectif": (lambda j: 2 if j["hyper"] else 1 if j["ok"] else .5 if j["pas"] >= PAS_PETIT else 0, "jours", "somme"),  # un jour d'exploit compte double, une petite journée moitié
-}
-for _l in LIEUX:  # l'écran a besoin de l'unité et du mode de chaque voie
-    for _e in (_l["arene"] or {}).get("epreuves", []):
-        for _v in _e["voies"]:
-            _v["unite"], _v["mode"] = DEFIS[_v["defi"]][1:]
-
-
-class Voyage:
-    """L'état du voyage, mis à jour jour après jour par pokemon.jouer."""
-
-    def __init__(self):
-        self.badges = {}      # numéro d'arène (1 à 9, 9 = Ligue) -> date du badge
-        self.arrivee = None   # date d'arrivée à l'arène en cours
-        self.histo = []       # (date, chiffres du jour) depuis l'arrivée à l'arène : pour les défis
-        self.pos = 0.0
-        self.cumul = 0.0      # les points d'effort vus jusqu'ici (pour n'ajouter que ceux du jour)
-        self.exploits = {}    # lieu d'un sanctuaire atteint -> jours d'exploit depuis
-        self.sanct_faits = {}  # lieu d'un sanctuaire réussi -> date
-        self.sanct_du_jour = []  # les sanctuaires réussis aujourd'hui
-
-    def arene_suivante(self):
-        """Index (dans LIEUX) de la prochaine arène à gagner, ou None (Ligue gagnée)."""
-        return next((i for k, i in enumerate(ARENES, 1) if k not in self.badges), None)
-
-    def valeur(self, d, jour):
-        """Où en est une voie (ou le plan B), depuis l'arrivée à l'arène."""
-        f, _, mode = DEFIS[d["defi"]]
-        vals = [float(f(j)) for x, j in self.histo if x <= jour]
-        return (sum(vals) if mode == "somme" else max(vals, default=0)) if vals else 0
-
-    def defi(self, jour):
-        """(les valeurs de chaque voie de chaque épreuve, la valeur du plan B) de l'arène où l'on est arrivé."""
-        a = LIEUX[self.arene_suivante()]["arene"]
-        return [[self.valeur(v, jour) for v in e["voies"]] for e in a["epreuves"]], self.valeur(a["b"], jour)
-
-    def reussi(self, jour):
-        a = LIEUX[self.arene_suivante()]["arene"]
-        ep, b = self.defi(jour)
-        return b >= a["b"]["cible"] or all(any(x >= v["cible"] for x, v in zip(vals, e["voies"])) for vals, e in zip(ep, a["epreuves"]))
-
-    def avancer(self, jour, j, cumul):
-        """Un jour de plus : j = chiffres du jour, cumul = points d'effort depuis le début. -> [(numéro, arène)] des
-        badges gagnés ce jour-là ; self.sanct_du_jour = les sanctuaires réussis ce jour-là."""
-        gagnes, gain, self.cumul = [], max(cumul - self.cumul, 0), cumul
-        while True:
-            i = self.arene_suivante()
-            if i is None:
-                self.pos = min(self.pos + gain, DIST[-1])
-                break
-            # on avance, mais jamais au-delà de l'arène tant que son badge n'est pas gagné (le reste est perdu pour la carte)
-            self.pos, gain = min(self.pos + gain, DIST[i]), 0
-            if self.pos < DIST[i]:
-                break
-            if not self.arrivee:
-                self.arrivee, self.histo = jour, []
-            if not self.histo or self.histo[-1][0] != jour:
-                self.histo.append((jour, j))
-            if not self.reussi(jour):
-                break
-            k = ARENES.index(i) + 1
-            self.badges[k], self.arrivee, self.histo = jour, None, []
-            gagnes.append((k, LIEUX[i]))
-        self.sanct_du_jour = []
-        for i in SANCT_INDEX:
-            if self.pos >= DIST[i] and i not in self.sanct_faits:
-                self.exploits[i] = self.exploits.get(i, 0) + (1 if j["hyper"] else 0)
-                if self.exploits[i] >= SANCTUAIRE_CIBLE:
-                    self.sanct_faits[i] = jour
-                    self.sanct_du_jour.append(i)
-        return gagnes
-
-    def ici(self):
-        return max(i for i, d in enumerate(DIST) if d <= self.pos)
-
-    def atteints(self):
-        """(Pokémon du lieu actuel, Pokémon des lieux déjà traversés) : jamais ceux des lieux à venir."""
-        i = self.ici()
-        return LIEUX[i]["pokemon"], [n for l in LIEUX[:i] for n in l["pokemon"]]
-
-    def etat(self, jour):
-        """Ce que l'écran montre : la carte, où l'on est, les badges, le défi en cours."""
-        i, a = self.ici(), self.arene_suivante()
-        defi = None
-        if a is not None:
-            arrive = self.pos >= DIST[a]
-            ep, b = self.defi(jour) if arrive else ([], 0)
-            defi = {"lieu": a, "numero": ARENES.index(a) + 1, "epreuves": [[round(x, 1) for x in vals] for vals in ep], "valeur_b": round(b, 1),
-                    "arrive": arrive, "depuis": str(self.arrivee) if self.arrivee else None, "reste": round(DIST[a] - self.pos)}
-        sanct = [{"lieu": i, "num": n, "nom": LIEUX[i]["nom"], "valeur": self.exploits.get(i, 0), "cible": SANCTUAIRE_CIBLE,
-                  "atteint": self.pos >= DIST[i], "fait": i in self.sanct_faits} for i, n in SANCT_INDEX.items()]
-        return {"lieux": [{k: l[k] for k in ("nom", "x", "y", "pokemon", "arene", "via", "mode")} | {"dist": d}
-                          for l, d in zip(LIEUX, DIST)],
-                "pos": round(self.pos, 1), "ici": i, "badges": {k: str(d) for k, d in self.badges.items()},
-                "defi": defi, "sanctuaires": sanct, "total": DIST[-1], "rares": sorted(RARES), "carte": CARTE}
+REGION = Region("Kanto", range(1, 152), [144, 145, 146, 150, 151], LIEUX, CARTE, VIA, MODES, SANCTUAIRES, _RARES, [1, 4, 7], 150, 151,
+                ("chen", "🎁 Cadeau du Professeur Chen"), "diplome", "🎓 Diplôme du Professeur Chen")
+LIEUX, DIST, ARENES, SANCT_INDEX, RARES = REGION.lieux, REGION.dist, REGION.arenes, REGION.sanct_index, REGION.rares
