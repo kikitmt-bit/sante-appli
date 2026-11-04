@@ -199,7 +199,7 @@ def stats_jour(r, j=None):
 # clé: (libellé, agrégation sur une période, format)
 METRIQUES = {
     "pas": ("Pas", "total", "n"), "km": ("Distance", "total", "km"), "zone_sport": ("Minutes de sport", "total", "min"), "zone": ("Zones Google", "total", "min"),
-    "actives": ("Minutes actives", "total", "min"), "min_sport": ("Temps d'exercice", "total", "min"),
+    "actives": ("Minutes actives", "total", "min"), "min_sport": ("Temps d'exercice", "total", "min"), "min_rameur": ("Rameur", "total", "min"), "min_danse": ("Tapis de danse", "total", "min"),
     "seances": ("Séances", "total", "n"), "kcal": ("Calories totales", "total", "n"),
     "kcal_act": ("Calories actives", "total", "n"), "etages": ("Étages", "total", "n"),
     "denivele": ("Dénivelé positif", "total", "m"),

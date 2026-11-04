@@ -67,7 +67,7 @@ REGLAGES = {
     "barre": 100,                    # points d'effort pour une Poké Ball
     "pas_offerts": 1000,             # les pas de la vie à la maison ne comptent pas
     "seance_min": 10,                # une séance compte à partir de 10 min
-    "force": 2, "force_depuis": dt.date(2026, 10, 27),  # points par minute de musculation / rameur (avant : 1)
+    "force": 2, "force_depuis": dt.date(2026, 10, 27), "rameur_simple": dt.date(2026, 11, 5),  # points par minute de musculation (avant le 27/10 : 1) ; le rameur compte double jusqu'au 04/11, puis comme les autres sports : il fait monter le cœur, ses minutes de sport le récompensent déjà (Kiki, 04/11)
     "master_jours": 25, "master_fenetre": 30,  # jours avec l'objectif sur les 30 derniers pour un légendaire
     "objectif_pas": 5000, "objectif_zone": chiffres.OBJECTIFS["zone_sport"],
     "exploit_pas": 10000, "exploit_zone": 25, "exploit_seance": 45,
@@ -168,9 +168,15 @@ def points_par_source(pas, zone, etages, sport, force=0.0, par_min=None):
 
 
 def est_force(c):
-    """Séance de musculation (pompes, tractions, poids…) ou de rameur, d'après son type ou son nom."""
+    """Séance de musculation (pompes, tractions, poids…) ou de rameur, d'après son type ou son nom (les défis de force les acceptent tous)."""
     t, nom = (c.get("exerciseType") or "").upper(), (c.get("displayName") or "").lower()
     return any(f in t for f in FORCE_TYPES) or any(f in nom for f in FORCE_NOMS)
+
+
+def compte_double(c, jour=None):
+    """Cette séance vaut-elle double ? La muscu, qui fait peu monter le cœur ; plus le rameur depuis REGLAGES["rameur_simple"]."""
+    rameur = "ROWING" in (c.get("exerciseType") or "").upper() or "rameur" in (c.get("displayName") or "").lower()
+    return est_force(c) and not (rameur and (jour is None or jour >= REGLAGES["rameur_simple"]))
 
 
 def mesures(s, exercices, jour=None):
@@ -182,6 +188,7 @@ def mesures(s, exercices, jour=None):
     elif pd.notna(s.get("zone_cardio_x2")):  # l'ancien calcul, à l'identique (cardio et pic comptés 4 fois)
         m["zone"] += s["zone_cardio_x2"]
     m["sports"], m["seance_max"], m["force"], m["nb_force"], m["eau"] = {}, 0, 0, 0, 0
+    double = 0
     for c in exercices:
         minutes = chiffres.duree(c.get("activeDuration")) / 60
         if minutes >= REGLAGES["seance_min"] and not (equitable(jour) and chiffres.est_marche(c)):
@@ -191,12 +198,13 @@ def mesures(s, exercices, jour=None):
             if est_force(c):
                 m["force"] += minutes
                 m["nb_force"] += 1
+                double += minutes if compte_double(c, jour) else 0
             if t not in SPORTS and (est_force(c) or "ROWING" in t or "SWIM" in t):  # musculation : ses types (Combat, Acier), voir sport_principal
                 t = "FORCE"
             m["sports"][t] = m["sports"].get(t, 0) + minutes
             m["seance_max"] = max(m["seance_max"], minutes)
     m["sport"] = sum(m["sports"].values())
-    force = m["force"] if jour is None or jour >= REGLAGES["force_depuis"] else 0
+    force = double if jour is None or jour >= REGLAGES["force_depuis"] else 0
     m["points"] = points_par_source(m["pas"], m["zone"], 0 if equitable(jour) else m["etages"], m["sport"], force, seuils_zone(m)[0])
     return m
 
@@ -312,7 +320,7 @@ def chronologie(fichier, resume, jour):
             continue
         a = debut.hour * 60 + debut.minute
         b = min(fin.hour * 60 + fin.minute if fin.date() == jour else 1439, 1439)
-        pts = minutes * (REGLAGES["force"] if est_force(c) and jour >= REGLAGES["force_depuis"] else 1)
+        pts = minutes * (REGLAGES["force"] if compte_double(c, jour) and jour >= REGLAGES["force_depuis"] else 1)
         for i in range(a, b + 1):
             sport[i] += pts / (b - a + 1)
         fin_seance[b] = max(fin_seance[b], minutes)
@@ -744,7 +752,6 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
                       "semaine": sem, "semaine_passee": semaine_passee,
-                      "seances_jour": {k: round(float(s.get(f"min_{k}") or 0)) for k in ("rameur", "danse", "velo")} if m else {},
                       "fini": 9 in voyage.badges, "hier": hier, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
                       "starter": starter and {"ligne": LIGNES[starter], "niveau": niveau(cumul), "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1)}}
 

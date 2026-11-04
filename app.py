@@ -467,7 +467,7 @@ def carte_bilan(b):
 
 
 # Le sens d'une évolution : plus = mieux (1), moins = mieux (-1), ni l'un ni l'autre (0)
-SENS = {"pas": 1, "zone_sport": 1, "zone": 1, "km": 1, "etages": 1, "denivele": 1, "actives": 1, "min_sport": 1, "seances": 1, "kcal_act": 1, "assis": -1, "sommeil": 1,
+SENS = {"pas": 1, "zone_sport": 1, "zone": 1, "km": 1, "etages": 1, "denivele": 1, "actives": 1, "min_sport": 1, "min_rameur": 1, "min_danse": 1, "seances": 1, "kcal_act": 1, "assis": -1, "sommeil": 1,
         "profond": 1, "paradoxal": 1, "eveil": -1, "fc_repos": -1, "vfc": 1, "spo2": 1, "spo2_min": 1}
 
 
@@ -487,7 +487,7 @@ def tuiles(cles, df, avant, un_jour, legende_avant, couleur=BLEU, histoire=None)
     html = []
     for cle in cles:
         v = agrege(df, cle)
-        if v is None or (cle in ("seances", "min_sport") and not v):
+        if v is None or (cle in ("seances", "min_sport", "min_rameur", "min_danse") and not v):
             continue
         nom, agg, fmt = METRIQUES[cle]
         sous, barre, puce = "", "", ""
@@ -930,7 +930,7 @@ with page_sante:
     # ----- Activité -----
     with st.container(key="rub_activite"):
         rubrique(128, "Activité", BLEU)  # Tauros, toujours lancé
-        tuiles(["pas", "zone_sport", "km", "etages", "denivele", "actives", "zone", "min_sport", "seances", "kcal", "kcal_act", "assis"],
+        tuiles(["pas", "zone_sport", "km", "etages", "denivele", "actives", "zone", "min_sport", "min_rameur", "min_danse", "seances", "kcal", "kcal_act", "assis"],
                df, avant, un_jour, legende_avant, BLEU, histoire)
         curiosite_denivele(agrege(df, "denivele"))
         if un_jour:

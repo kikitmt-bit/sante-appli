@@ -50,6 +50,13 @@ class Types(unittest.TestCase):
         self.assertEqual(self.types("OUTDOOR_BIKE")[2], ["Vol", "Normal"])
         self.assertIsNone(self.types("SPORT", "Padel")[2])
 
+    def test_le_rameur_vaut_comme_les_autres_sports(self):
+        vide = {"pas": 0, "zone": 0, "zone_sport": 0, "etages": 0, "sommeil": 0}
+        rameur, muscu, velo = [pokemon.mesures(vide, [seance(t, 20)["exercise"]], DEBUT)["points"]["sport"] for t in ("ROWING_MACHINE", "WEIGHTS", "OUTDOOR_BIKE")]
+        self.assertEqual((rameur, muscu, velo), (20, 40, 20))
+        avant = pokemon.mesures(vide, [seance("ROWING_MACHINE", 20)["exercise"]], dt.date(2026, 11, 4))["points"]["sport"]
+        self.assertEqual(avant, 40)  # les jours passés ne bougent pas
+
     def test_le_rameur_compte_toujours_pour_ondine(self):
         m = pokemon.mesures({"pas": 0, "zone": 0, "zone_sport": 0, "etages": 0, "sommeil": 0}, [seance("ROWING", 20)["exercise"]], DEBUT)
         self.assertEqual(m["eau"], 20)

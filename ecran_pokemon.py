@@ -99,7 +99,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "joueurs": list(joueurs),
         "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
         "matin": {"hier": etat["hier"], "conseil": conseil},
-        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "seances_jour")},
+        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},

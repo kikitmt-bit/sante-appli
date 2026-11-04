@@ -3096,7 +3096,7 @@ function apresGeste() {  // tout redessiner, le bonus ouvert le reste
   if (cle) { const t = document.querySelector(`#speciales .suivi button[data-c="${cle}"]`); if (t) t.click(); }
 }
 // La page Muscu (03/11, Kiki : pompes, tractions, squats et planche étaient cachés derrière une petite tuile) : un exercice, un toucher, le téléphone compte
-const EXOS_MONTRE = [["rameur", "Rameur", 86, "traversee", "1 min = 2 pts"], ["danse", "Tapis de danse", 35, "danse", "1 min = 1 pt"]];  // ceux que la montre mesure, avec le matériel de Kiki
+
 const EXOS = [["pompes", "10 = 5 pts"], ["squats", "10 = 2,5 pts"], ["tractions", "1 = 1 pt"], ["planche", "10 s = 1 pt"]];
 function dessinerMuscu() {
   const el = document.getElementById("muscu"), g = gestesAuj(), mem = lireEntr(), mis = D.mission || {};
@@ -3112,9 +3112,6 @@ function dessinerMuscu() {
         <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
         <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
         ${t === "tractions" ? `<div class="plus-moins"><button class="go-exo" data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button class="go-exo" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : `<button class="go-exo" data-compte="${t}">▶ Lancer</button>`}</div>`; }).join("")}
-      ${D.kiki ? EXOS_MONTRE.map(([k, nom, num, cle, gain]) => `<div class="exo">${mis.cle === cle && mis.ok !== true ? `<span class="tag">Mission</span>` : ""}<img class="pk rogne" src="${IMG.mini(num)}" alt=""><h3>${nom}</h3>
-        <div class="nb-exo">${(G.seances_jour || {})[k] || 0}<small> min</small></div>
-        <div class="d">aujourd'hui · ${gain}<br>Lance l'exercice sur ta montre : il compte tout seul.</div></div>`).join("") : ""}
       ${(D.danse || []).length ? `<div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(formeStarter() || 25)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques, juste pour s'amuser · aucun point</div><button class="go-exo" data-danse>▶ Essayer</button></div>` : ""}</div>`;
   brancherGestes(el); rognerImages(el);
 }
@@ -3184,7 +3181,7 @@ function dessinerBarre() {
   document.getElementById("barre").innerHTML = `<div class="hud-barre"><span class="ball"><img class="rogne" src="${IC.poke}" alt=""></span><div>
       <div class="l1"><span style="color:#383828;font-size:19px">Prochaine Poké Ball</span><span>${Math.floor(b.points)} / ${b.taille}</span></div>
       <div class="pv"><b>EXP</b><div><i style="width:0"></i></div></div></div></div>
-    <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min de sport</b>, ou <b>${muscu} min de muscu / rameur</b>, ou <b>${sport} min d'un autre sport</b>.</div>
+    <div class="manque">Encore <b>${fr(pas)} pas</b>, ou <b>${zone} min de sport</b>, ou <b>${muscu} min de muscu</b>, ou <b>${sport} min d'un autre sport</b>.</div>
     <div class="puces">${b.sources.length || (b.bonus || []).length ? b.sources.map(([i, n, p]) => `<span class="puce">${i} ${n} <b>+${p}</b></span>`).join("")
         + (b.bonus || []).map(([i, n, p]) => `<span class="puce bonus">${i} ${n} <b>+${p}</b></span>`).join("")
       : `<span class="puce">Rien encore aujourd'hui : bouge !</span>`}</div>
@@ -4319,7 +4316,7 @@ function dessinerRegles() {
   document.getElementById("regles").innerHTML = `
     <li>${ico("effort", "p")} <b>Barre d'effort</b> (${D.barre.taille} points = une Poké Ball, elle ne se vide jamais) : 1 point par 100 pas au-delà de
       ${fr(D.barre.pas_offerts)} (la vie à la maison ne compte pas), ${R.zone_points || 5} points par minute de sport (zone cardio intense ou maximum, jaune ou rouge sur la montre ; la zone modérée, atteinte en marchant, ne compte pas ; si ta montre ne donne pas ces minutes, elles sont estimées d'après ton cœur), 1 par minute de séance de sport
-      (au moins ${R.seance_min} min, pas la marche : tes pas comptent déjà), ${R.force} par minute de musculation, pompes, tractions ou rameur.</li>
+      (au moins ${R.seance_min} min, pas la marche : tes pas comptent déjà), ${R.force} par minute de musculation, pompes ou tractions.</li>
     <li>${ico("radar", "p")} Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes de sport → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
       🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 💪 pompes et squats → Combat, Acier ; 👟 pas → tous les types.</li>
