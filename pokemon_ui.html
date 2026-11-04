@@ -532,7 +532,7 @@ details.regles{color:#484838 !important}
 .muscu-points .l1{display:flex;justify-content:space-between;gap:8px}.muscu-points .l1 b{font-weight:400;color:#C03028}
 .muscu-points .bar{height:10px;border-radius:5px;background:#484838;padding:2px;margin:5px 0 6px}.muscu-points .bar i{display:block;height:100%;background:#40A8F8;border-radius:3px}.muscu-points .bar i.ok{background:#F8C838}
 .muscu-points small{display:block;font-size:15px;color:#686850}
-.exos{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.exos{display:grid;grid-template-columns:1fr 1fr;gap:10px}.exo-danse{grid-column:1/-1}
 .exo{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:10px 8px;color:#383828;text-align:center;line-height:1.1}
 .exo .pk{width:72px;height:72px;object-fit:contain;image-rendering:pixelated}
 .exo h3{margin:4px 0 0;font-size:24px;font-weight:400;color:#383828}
@@ -3115,7 +3115,8 @@ function dessinerMuscu() {
         ${t === "tractions" ? `<div class="plus-moins"><button data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : ""}</div>`; }).join("")}
       ${D.kiki ? EXOS_MONTRE.map(([k, nom, num, cle, gain]) => `<div class="exo">${mis.cle === cle && mis.ok !== true ? `<span class="tag">Mission</span>` : ""}<img class="pk rogne" src="${IMG.mini(num)}" alt=""><h3>${nom}</h3>
         <div class="nb-exo">${(G.seances_jour || {})[k] || 0}<small> min</small></div>
-        <div class="d">aujourd'hui · ${gain}<br>Lance l'exercice sur ta montre : il compte tout seul.</div></div>`).join("") : ""}</div>`;
+        <div class="d">aujourd'hui · ${gain}<br>Lance l'exercice sur ta montre : il compte tout seul.</div></div>`).join("") : ""}
+      ${(D.danse || []).length ? `<div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(formeStarter() || 25)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques, juste pour s'amuser · aucun point</div><button class="go-exo" data-danse>▶ Essayer</button></div>` : ""}</div>`;
   brancherGestes(el); rognerImages(el);
 }
 function brancherGestes(racine) {
@@ -3124,6 +3125,7 @@ function brancherGestes(racine) {
     apresGeste();
   });
   racine.querySelectorAll("[data-compte]").forEach(b => b.onclick = () => entrainement(b.dataset.compte));
+  racine.querySelectorAll("[data-danse]").forEach(b => b.onclick = () => danse());
 }
 // Tes prochains objectifs (02/11, idée de Kiki) : aucune règle en plus, juste les 3 buts les plus proches parmi ce qui existe déjà, pour
 // avoir toujours quelque chose à viser. Classés par points à faire (une espèce ou un jour ≈ 100 points : une barre). Rien sur ce qui viendra après.
@@ -5083,6 +5085,7 @@ function relierBulles() {
   PW.__bullesJeu = {defile: () => fermerBulles(), touche: e => { if (!(e.target.closest && e.target.closest(".vega-embed"))) fermerBulles(); }};
   P.addEventListener("scroll", PW.__bullesJeu.defile, true); P.addEventListener("pointerdown", PW.__bullesJeu.touche, true);
 }
+/*__DANSE_JS__*/
 // Le bouton retour d'Android (audit du 03/11) : il ferme ce qui est ouvert, puis revient à Aventure, et seulement ensuite quitte l'appli. Jamais de ball perdue : une ouverture ou une scène de badge ne se quitte pas.
 function relierRetour() {
   if (PW.__retourJeu) { PW.removeEventListener("popstate", PW.__retourJeu); P.removeEventListener("pointerdown", PW.__gardeJeu, true); }

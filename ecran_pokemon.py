@@ -16,6 +16,7 @@ import pokemon
 from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, FEMELLES, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
 UI = Path(__file__).with_name("pokemon_ui.html")
+DANSE = Path(__file__).with_name("danse.js")
 
 
 def _js(objet):
@@ -46,10 +47,11 @@ def _acces_jeu(joueur):
     return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
 
 
-def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=()):
+def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=(), chansons=()):
     """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki ; conseil = la phrase utile du
     récap du matin (bilan.conseil_du_jour) ; anniversaire = c'est son anniversaire aujourd'hui (date gardée sur son téléphone) ;
-    joueurs = tous les joueurs résumés pour le jeu (amis.public, soi compris : « moi »), pour la carte et l'onglet Dresseur."""
+    joueurs = tous les joueurs résumés pour le jeu (amis.public, soi compris : « moi »), pour la carte et l'onglet Dresseur ;
+    chansons = les musiques de la danse au doigt (danse.charger)."""
     with st.spinner("Ouverture du Pokédex…"):
         captures, etat = pokemon.charger_jeu(lire, aujourd, joueur, anniversaire)
         f = lire([pokemon.OUVERTES])
@@ -95,6 +97,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
                   "bonus": [list(b) for b in etat["bonus"]]},
         "mission": etat["mission"],
         "joueurs": list(joueurs),
+        "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
         "matin": {"hier": etat["hier"], "conseil": conseil},
         "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "seances_jour")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
@@ -105,4 +108,5 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"
-    st.iframe(UI.read_text(encoding="utf-8").replace("__DONNEES__", _js(donnees)), height=900)
+    page = UI.read_text(encoding="utf-8").replace("/*__DANSE_JS__*/", DANSE.read_text(encoding="utf-8"))
+    st.iframe(page.replace("__DONNEES__", _js(donnees)), height=900)

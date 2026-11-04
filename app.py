@@ -22,6 +22,7 @@ from streamlit_js_eval import streamlit_js_eval
 
 import amis
 import bilan
+import danse
 import ecran_calibrage
 import ecran_pokemon
 import pokemon
@@ -210,7 +211,7 @@ st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
 .st-key-nouvelles{{position:fixed;left:10px;bottom:12px;z-index:50;width:auto !important}}
 .st-key-nouvelles button{{background:#F8F8E8 !important;color:#383828 !important;border:2px solid #484838 !important;box-shadow:2px 2px 0 rgba(10,15,35,.45) !important;border-radius:8px 4px 8px 4px !important}}
-[data-testid="stLayoutWrapper"]:has(> .st-key-outils){{display:none !important}}
+[data-testid="stLayoutWrapper"]:has(> .st-key-outils),[data-testid="stLayoutWrapper"]:has(> .st-key-danse){{display:none !important}}
 [data-testid="stElementContainer"]:has(iframe[height="0"]),
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
 .nav-jeu{{display:flex;gap:3px;background:#0A101D;border-radius:14px;padding:3px}}
@@ -1037,9 +1038,11 @@ with page_sante:
                 with g2:
                     graphique(courbe, "gras", "Masse grasse (%)", type_="ligne", couleur="#FF9E80", hauteur=150, reperes=2)
 
+CHANSONS = danse.charger()
+danse.lecteurs(CHANSONS)
 with page_jeu:
     ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL), PROFIL["anniversaire"],
-                           les_joueurs(aujourd))
+                           les_joueurs(aujourd), CHANSONS)
 
 
 def suivi_amis(emails):
