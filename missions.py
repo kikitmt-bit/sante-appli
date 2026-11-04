@@ -36,6 +36,8 @@ PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50))
 TYGNON_APRES = 20
 PALIER_BONUS = (20, 25, 30)      # les points de chaque palier (Kiki, 04/11) : la première reste bien payée, et progresser rapporte plus
 MEMOIRE = 28                     # jours regardés pour la meilleure journée
+DISTANCE_FIABLE = .65            # mètres par pas (médiane) : en dessous, Lokhlass n'est pas proposé
+SEANCES_VUES = 3                 # séances de 10 min sur 28 jours : en dessous, Tauros n'est pas proposé
 # cle -> titre, texte, seuil, jours possibles (0 = lundi), unité ; num = son Pokémon, bonus = points, phrase = sa petite phrase,
 # geste = ce que le téléphone compte lui-même (pompes, squats, series : boutons) ; famille = la roue (tirer) ; materiel = il faut le matériel de Kiki (pas proposé aux amis, en attendant « Mon matériel »)
 MISSIONS = {
@@ -211,13 +213,13 @@ def possible(cle, jour, stats, gestes=None):
         return None if not p or p != p else max(round(p) + 1, PAS_FANTOME)
     if cle == "course":
         return max(round(sum(pas) / len(pas) * 1.2, -2), PAS_FANTOME)
-    if cle == "voyage":  # distance fiable : au moins 40 cm par pas les jours de marche (certaines montres ne la donnent qu'en partie)
+    if cle == "voyage":  # distance fiable : au moins 65 cm par pas les jours de marche (certaines montres ne la donnent qu'en partie : 57 cm chez un ami, 76 cm chez ceux dont elle est juste)
         r = [s["km"] * 1000 / s["pas"] for s in avant[:HISTOIRE] if (s.get("pas") or 0) >= 3000 and s.get("km") and s["km"] == s["km"]]
-        return m["seuil"] if r and sorted(r)[len(r) // 2] >= .4 else None
+        return m["seuil"] if r and sorted(r)[len(r) // 2] >= DISTANCE_FIABLE else None
     if cle == "galop":  # la montre donne les zones ?
         return m["seuil"] if any(s.get("zone_sport") is not None and s["zone_sport"] == s["zone_sport"] for s in avant[:HISTOIRE]) else None
-    if cle == "charge":  # la montre enregistre les séances ?
-        return m["seuil"] if any((s.get("seance_max") or 0) >= 10 for s in avant) else None
+    if cle == "charge":  # la montre enregistre vraiment les séances ? (une seule peut être un hasard)
+        return m["seuil"] if sum((s.get("seance_max") or 0) >= 10 for s in avant) >= SEANCES_VUES else None
     return m["seuil"]
 
 

@@ -207,6 +207,17 @@ class Roue(unittest.TestCase):
         self.assertEqual(missions.bonus_de("doduo", {}), 30)
         self.assertEqual(missions.bonus_de("zone", {}), missions.BONUS)
 
+    def test_lokhlass_seulement_si_la_distance_est_fiable(self):
+        juste = stats_de({}, {"pas": 5000, "km": 3.8})
+        douteuse = stats_de({}, {"pas": 5000, "km": 2.85})
+        self.assertEqual(missions.possible("voyage", jour(0), juste), 6)
+        self.assertIsNone(missions.possible("voyage", jour(0), douteuse))
+
+    def test_tauros_seulement_si_les_seances_sont_enregistrees(self):
+        vues = lambda n: {jour(-k): {"seance_max": 15} for k in range(1, n + 1)}  # noqa: E731
+        self.assertIsNone(missions.possible("charge", jour(0), stats_de(vues(2))))
+        self.assertEqual(missions.possible("charge", jour(0), stats_de(vues(3))), 20)
+
     def test_jours_vides_sans_erreur(self):
         self.assertEqual(missions.familles_du({"pas": float("nan"), "zone_sport": None}), set())
 
