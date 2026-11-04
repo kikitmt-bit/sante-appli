@@ -3349,14 +3349,14 @@ function carteMission(gris = false, champ = "", cadenas = "") {
     : `<div class="ligne"><span>${m.unite === "pas" ? fr(val) : val} ${u(val)}</span><span>${m.unite === "pas" ? fr(m.seuil) : m.seuil}</span></div>${j}
       <div class="reste">${ok ? `Réussie : <b>+${m.bonus} pts</b> !` : `Encore <b>${m.unite === "pas" ? fr(m.seuil - val) : m.unite === "km" ? String(Math.round((m.seuil - val) * 10) / 10).replace(".", ",") : Math.ceil(m.seuil - val)} ${u(m.seuil - val)}</b> · +${m.bonus} pts`}</div>
       ${m.geste && !ok ? blocGestes([types]) : ""}`;
-  // Une mission du téléphone (pompes, squats, tractions) : tout tient en un coup d'œil, avec le même bouton que dans Muscu (Kiki, 04/11)
-  if (m.geste && m.num && !gris) {
+  // Tout tient en un coup d'œil ; une mission du téléphone (pompes, squats, tractions) a le même bouton que dans Muscu (Kiki, 04/11)
+  if (m.num && !gris) {
     const g = gestesAuj()[types] || 0;
-    const action = ok ? "" : types === "tractions" ? `<div class="plus-moins m-action"><button class="go-exo" data-g="tractions" data-n="-1" ${g < 1 ? "disabled" : ""}>−1</button>${GESTES.tractions.pas.map(n => `<button class="go-exo" data-g="tractions" data-n="${n}">+${n}</button>`).join("")}</div>`
+    const action = ok || !types ? "" : types === "tractions" ? `<div class="plus-moins m-action"><button class="go-exo" data-g="tractions" data-n="-1" ${g < 1 ? "disabled" : ""}>−1</button>${GESTES.tractions.pas.map(n => `<button class="go-exo" data-g="tractions" data-n="${n}">+${n}</button>`).join("")}</div>`
       : `<button class="go-exo m-action" data-compte="${types}">▶ Lancer</button>`;
     return `<div class="speciale mission vive ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}<img class="m-pk rogne" src="${IMG.mini(m.num)}" alt="">
       <div class="m-corps"><div class="m-haut"><span>Mission du jour</span><b>${ok ? "Réussie : " : ""}+${m.bonus} pts</b></div><div class="m-titre">${m.titre}</div><div class="gain">${m.texte}</div>
-        <div class="ligne"><span>${val} ${u(val)}</span><span>${m.seuil}</span></div>${j}</div>${action}<div class="m-pourquoi">${m.raison}</div></div>`;
+        <div class="ligne"><span>${m.unite === "pas" ? fr(val) : val} ${u(val)}</span><span>${m.unite === "pas" ? fr(m.seuil) : m.seuil}</span></div>${j}</div>${action}<div class="m-pourquoi">${m.raison}</div></div>`;
   }
   return `<div class="speciale mission ${ok ? "ok" : ""} ${gris ? "grise" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
     ${m.num ? `<img class="m-pk" src="${IMG.mini(m.num)}" alt="">` : ""}<div class="tete">${ico("radar")}Mission du jour</div>
