@@ -7,6 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import bilan  # noqa: E402
 import johto  # noqa: E402
 import kanto  # noqa: E402
 import missions  # noqa: E402
@@ -451,6 +452,37 @@ class PreludeEtFilet(unittest.TestCase):
     def test_une_montre_oubliee_ne_declenche_pas_la_relance(self):
         self.assertIsNone(partie(12, pas=0)[1]["relance"])
         self.assertIsNone(partie(12, pas=[3000] * 4 + [0] * 8)[1]["relance"])
+
+
+class Bilan(unittest.TestCase):
+    """Le bilan santé nomme la grosse séance de la veille, et s'en sert pour expliquer la récupération (Kiki, 05/11)."""
+
+    def stats(self, sport=86, vfc=28, fc=65):
+        lignes = {jour(k): {"pas": 3000, "zone_sport": 0, "seance_max": 0, "min_sport": 0, "fc_repos": 62, "vfc": 45, "sommeil": 450, "coucher": 1400} for k in range(40)}
+        lignes[jour(38)] |= {"zone_sport": sport, "seance_max": 89, "min_sport": 89, "pas": 4900}
+        lignes[jour(39)] |= {"fc_repos": fc, "vfc": vfc}
+        return pd.DataFrame(lignes).T
+
+    def cartes(self, **k):
+        b = bilan.analyser(self.stats(**k), "Jour", jour(39), jour(39), jour(39))
+        return {c["theme"]: c for c in b["cartes"]}, b["phrase"]
+
+    def test_la_grosse_seance_de_la_veille_est_nommee(self):
+        c, _ = self.cartes()
+        self.assertIn("Grosse séance", c["sport"]["titre"])
+        self.assertIn("plus grosse journée", c["sport"]["texte"])
+
+    def test_la_recuperation_est_reliee_a_la_seance(self):
+        c, phrase = self.cartes()
+        self.assertEqual(c["recup"]["ton"], "neutre")
+        self.assertIn("séance", c["recup"]["titre"])
+        self.assertNotIn("lève le pied", phrase)
+
+    def test_sans_seance_l_alerte_reste(self):
+        c, phrase = self.cartes(sport=0, fc=67)
+        self.assertEqual(c["recup"]["ton"], "alerte")
+        self.assertEqual(c["recup"]["titre"], "Ton corps demande du calme")
+        self.assertIn("lève le pied", phrase)
 
 
 class Regions(unittest.TestCase):

@@ -109,7 +109,7 @@ bilan Soporifik, Hypnomade, Mélodelfe, Rattata, Machoc, Psykokwak, Ramoloss, Ma
 données : observations par thème (sommeil, coucher, récup, pas, sport, assis, poids, oxygène, habitudes personnelles sur 90 jours),
 comparées aux repères et à la moyenne du joueur ; 3 cartes au plus (4 pour une période), un thème chacune, ce qui vient d'être dit
 s'efface (`_choisir`) sauf l'important, habitudes un jour sur 4, un conseil qui pousse saute si le cœur dit le contraire ; un
-Pokémon par thème. Affiché dans Santé (`carte_bilan`), l'ancien coach Claude reste en plus pour Kiki seul. À affiner ici, pas dans une IA.
+Pokémon par thème. Affiché dans Santé (`carte_bilan`), l'ancien coach Claude reste en plus pour Kiki seul. Une journée à 25 min d'effort intense ou plus est nommée (« Grosse séance », jamais noyée dans le total sur 7 jours) ; une récupération moins bonne la nuit d'après est reliée à cette séance, sans alerte (Kiki, 05/11). La montre ne dit pas quel sport c'était (son paddle = « Sport ») : on dit « séance ». À affiner ici, pas dans une IA.
 **Profil du joueur (date de naissance, taille, sexe, carte du dresseur, facultatifs)** : **gardés sur le téléphone seulement** (localStorage
 `pkm_dresseur`), relus à l'ouverture par `streamlit_js_eval` (`bilan.lire_profil`), jamais écrits sur un serveur (autre téléphone = à ressaisir).
 Servent au bilan : IMC (repère neutre, alerte seulement si perte de poids sous 18,5), maximum cardiaque théorique (Tanaka, ou Gulati pour

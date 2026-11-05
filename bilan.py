@@ -27,6 +27,7 @@ PERSONNAGES = {"sommeil": (96, "Soporifik"), "coucher": (97, "Hypnomade"), "recu
                "habitude": (65, "Alakazam")}
 BON, NEUTRE, ALERTE = "bon", "neutre", "alerte"
 SEMAINE_INTENSE = 75  # minutes d'effort intense par semaine : le repère de l'OMS (75 à 150)
+GROSSE_SEANCE = 25  # minutes d'effort intense en un jour : la journée mérite d'être nommée
 
 
 def lire_profil(texte, aujourd):
@@ -152,6 +153,11 @@ def _recup(d, jour, nuit):
     ecart_f = fc - bf.median() if fc is not None and len(bf) >= 7 else None
     ecart_v = (vfc - bv.median()) / bv.median() if vfc is not None and len(bv) >= 7 and bv.median() else None
     mauvais_f, mauvais_v = ecart_f is not None and ecart_f >= 4, ecart_v is not None and ecart_v <= -.2
+    effort = _val(d, nuit - dt.timedelta(days=1), "zone_sport") or 0  # la veille de la nuit mesurée
+    if effort >= GROSSE_SEANCE and (mauvais_f or mauvais_v):  # l'explication la plus probable : pas la peine d'inquiéter
+        chiffres_ = " et ".join(x for x in (f"cœur au repos à {fc:.0f} bpm (+{ecart_f:.0f})" if mauvais_f else "", f"variabilité en baisse de {-ecart_v * 100:.0f} %" if mauvais_v else "") if x)
+        return [_carte("recup", 74, NEUTRE, "Ton corps digère ta séance", f"Après {hm(effort)} d'effort intense, Mélodelfe n'est pas surprise : {chiffres_}. C'est souvent le signe d'une récupération en cours, et c'est là que le corps progresse.",
+                       "Aujourd'hui, marche plutôt qu'effort intense, et bois bien. Si ça dure plus de 2 ou 3 jours, ou si tu te sens mal, lève vraiment le pied.")]
     if mauvais_f and mauvais_v:
         return [_carte("recup", 86, ALERTE, "Ton corps demande du calme", f"Cœur au repos à {fc:.0f} bpm (+{ecart_f:.0f}) et variabilité en baisse de {-ecart_v * 100:.0f} %. Mélodelfe voit ça après un manque de sommeil, du stress, de l'alcool, une grosse séance, ou un début de maladie.",
                        "Aujourd'hui, marche plutôt qu'effort intense, et bois bien. Si tu te sens mal, repos complet : les points attendront.")]
@@ -197,6 +203,13 @@ def _sport(d, jour, nuit, profil=None):
         return []
     total, seances = float(z.sum()), float(sc.sum())
     v = _val(d, jour, "zone_sport") or 0
+    if v >= GROSSE_SEANCE:  # le fait du jour d'abord : un total sur 7 jours ne doit pas le noyer
+        avant = _avant(d, jour, "zone_sport", 90)
+        record = len(avant) >= 14 and v > avant.max()
+        seance = _val(d, jour, "seance_max") or 0
+        duree = f"Une séance de {hm(seance)}, dont " if seance >= v else ""
+        comparaison = " Ta plus grosse journée de sport depuis 3 mois !" if record else ""
+        return [_carte("sport", 84 if record else 72, BON, f"Grosse séance : {hm(v)} d'effort intense", f"Machoc t'applaudit debout. {duree}{hm(v)} en zone intense : le repère de l'OMS pour la semaine est de {SEMAINE_INTENSE} min.{comparaison}", "Le corps progresse au repos : demain, une marche suffit.")]
     if len(z) >= 4 and total >= SEMAINE_INTENSE:
         return [_carte("sport", 60, BON, f"{hm(total)} d'effort intense en 7 jours", f"Machoc applaudit : tu dépasses le repère de l'OMS ({SEMAINE_INTENSE} min d'effort intense par semaine). Le cœur et le moral en profitent.", "Pense à garder au moins un jour plus calme par semaine.")]
     if len(z) >= 5 and total == 0 and seances == 0:
