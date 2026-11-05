@@ -1588,7 +1588,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   const touche = () => new Promise((ok, ko) => { const f = ev => { if (ev.target.closest("button")) return;
     v.removeEventListener("pointerdown", f); fini ? ko("fermé") : ok(); }; v.addEventListener("pointerdown", f); });
   const fermer = () => { if (fini) return; fini = true; ouverture = false; v.classList.add("fin"); PW.removeEventListener("resize", redim);
-    setTimeout(() => { B.fin(); v.remove(); }, 320); dessiner(); };
+    setTimeout(() => { B.fin(); v.remove(); if (!rejouer && /#chen$/.test(c.id)) scenePokedex(); }, 320); dessiner(); };
   $(".x").onclick = fermer;
   $(".son").onclick = e => { son = !son; e.target.textContent = son ? "🔊" : "🔇"; try { localStorage.setItem("pkm_son", son ? "1" : "0"); } catch (x) {} };
 
@@ -2897,12 +2897,87 @@ async function demarrerAventure(chen, essai = false) {
   const ok = await editerDresseur(true, {surTitre: true, essai});
   t.fermer();
   if (!ok) return;
+  await sceneDebut();
   if (essai) {
     const p = PROFESSEURS.chen, n = p.starters[Math.floor(Math.random() * 3)];
     intro({...PAR_NUM[n], num: n, id: `test#chen`, apercu: true, ball: "poke", shiny: false, legendaire: false, lieu: "Bourg Palette",
       raison: "🎁 Cadeau du Professeur Chen", quand: "aujourd'hui", jour: D.aujourdhui}, p);
     DRESSEUR_ESSAI = null;  // le labo a déjà écrit son texte avec le pseudo de l'aperçu
   } else lancer(chen);
+}
+// --- Le début du jeu (Kiki, 05/11) : la chambre au matin, le village, « Attends ! » au bord des hautes herbes, puis le labo ; après le starter, le Pokédex qui lit la montre.
+// Chaque plan se passe : ✕ saute tout ce qui reste jusqu'au labo.
+const STYLE_DEBUT = `
+.pkm-ecran .marche-d{position:absolute;left:50%;top:60%;width:9%;transform:translate(-50%,-100%);transition:left 7s linear,top 7s linear,width 7s linear;z-index:6}
+.pkm-ecran .marche-d .sacha{width:100% !important;background-repeat:no-repeat;image-rendering:pixelated}
+.pkm-ecran .ecran-dex{position:absolute;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5vh;color:#203818;font-family:'Jersey 15',monospace;text-align:center;opacity:0;transition:opacity .5s}
+.pkm-ecran .ecran-dex.vu{opacity:1}
+.pkm-ecran .ecran-dex small{font-size:2.2vh;letter-spacing:.3vh}
+.pkm-ecran .ecran-dex b{font-size:5.5vh;line-height:1;font-weight:400}
+.pkm-ecran .ecran-dex span{font-size:2.4vh}
+.pkm-ecran .ecran-dex .bar{flex:none;width:80%;height:1.6vh;border:.3vh solid #203818;border-radius:.6vh;overflow:hidden;background:#D8F0B8}
+.pkm-ecran .ecran-dex .bar i{display:block;height:100%;width:0;background:#40A8F8;transition:width 1.6s ease-out}
+`;
+const attente = ms => new Promise(r => setTimeout(r, ms));
+async function sceneDebut() {
+  installerStyle("pkm2-passage-style", STYLE_PASSAGE); installerStyle("pkm2-debut-style", STYLE_DEBUT); preparerScene(); ouverture = true;
+  const nom = nomDresseur();
+  const plan = async (id, image, lignes, qui, fait) => {
+    const E = ecran(id, image, 941, 1672, ""), v = E.v, DS = dialogue(v); let coupe = false, arret = null;
+    const fin = new Promise(ok => { v.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); }; });
+    DS.prevoir(lignes.map(l => [l, qui]));
+    const jouer = (async () => {
+      await attente(250); v.querySelector(".noir").style.opacity = 0;
+      if (fait) arret = fait(v);
+      await attente(900);
+      for (const l of lignes) await DS.dire(l, qui);
+    })().catch(() => {});
+    await Promise.race([jouer, fin]);
+    if (arret) arret(); DS.fin(); E.fin();
+    if (!coupe) { v.querySelector(".noir").style.opacity = 1; await attente(800); }
+    v.remove(); return !coupe;
+  };
+  const reveil = () => { [0, .22, .44].forEach(t => ton(1320, t, .12, {type: "square", vol: .05})); vibre([30, 60, 30]); return null; };
+  const marche = v => {  // le dresseur, à ses couleurs, remonte le chemin
+    v.querySelector(".salle").insertAdjacentHTML("beforeend", `<div class="marche-d">${sacha("red_normal", "haut", false)}</div>`);
+    colorerDresseur(v);
+    const d = v.querySelector(".marche-d"), e = d.querySelector(".sacha"), f = PAS.haut; let k = 0;
+    const pas = setInterval(() => { e.style.backgroundPosition = `${f[k++ % f.length] / 8 * 100}% 0`; }, 190);
+    requestAnimationFrame(() => requestAnimationFrame(() => { d.style.left = "68%"; d.style.top = "41%"; d.style.width = "6%"; }));
+    return () => clearInterval(pas);
+  };
+  const suite = await plan("pkm-chambre", "debut-chambre.webp", [`Ce matin, ${nom}, c'est le grand jour.`, "Ton sac est prêt, tes chaussures aussi. Dehors, tout un monde t'attend !"], null, reveil)
+    && await plan("pkm-bourg", "debut-bourg.webp", ["Bourg Palette. Un petit village tranquille… et, au bout du chemin, les hautes herbes."], null, marche)
+    && await plan("pkm-herbes", "debut-herbes-chen.webp", ["Attends ! Ne va pas dans les hautes herbes sans Pokémon, c'est dangereux !", "Viens avec moi, j'ai quelque chose pour toi. Mon laboratoire est juste là !"], "???", () => { SONS.version(); vibre(25); return null; });
+  ouverture = false; return suite;
+}
+function scenePokedex() {
+  installerStyle("pkm2-passage-style", STYLE_PASSAGE); installerStyle("pkm2-debut-style", STYLE_DEBUT); preparerScene();
+  const L = 941, H = 1672, pas = Math.round(J.pas || 0), nom = nomDresseur(), qui = "Professeur Chen";
+  const {v, fin: finE} = ecran("pkm-pokedex", "debut-pokedex.webp", L, H,
+    `<div class="ecran-dex" style="left:${pcI(225, L)};top:${pcI(580, H)};width:${pcI(440, L)};height:${pcI(285, H)}"><small>POKÉDEX</small><b>0</b><span>pas aujourd'hui</span><div class="bar"><i></i></div></div>`);
+  const DP = dialogue(v), ec = v.querySelector(".ecran-dex"), nb = ec.querySelector("b");
+  const lignes = ["Une dernière chose : prends ce Pokédex. Il note tous les Pokémon que tu attrapes.", "Et celui-ci est un peu spécial : il lit ta montre !",
+    pas ? `Regarde : tu as déjà fait <b>${fr(pas)}</b> pas aujourd'hui !` : "Ta montre n'a encore rien envoyé aujourd'hui. Dès qu'elle parlera, tes pas apparaîtront ici.",
+    "Chaque pas, chaque minute de sport remplit cette barre. Pleine, elle te donne une Poké Ball, et tu avances sur la carte.",
+    `Allez, ${nom}, le monde des Pokémon t'attend. Bonne route !`];
+  DP.prevoir(lignes.map(l => [l, qui]));
+  let fini = false;
+  const fermer = () => { if (fini) return; fini = true; DP.fin(); finE(); v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); };
+  v.querySelector(".pkm-passer").onclick = fermer;
+  const compter = () => new Promise(ok => { const t0 = performance.now(), d = 1300, f = t => { if (fini) return ok(); const x = Math.min((t - t0) / d, 1); nb.textContent = fr(Math.round(pas * x)); if (x < 1) requestAnimationFrame(f); else ok(); }; requestAnimationFrame(f); });
+  (async () => {
+    await attente(250); v.querySelector(".noir").style.opacity = 0; await attente(900);
+    await DP.dire(lignes[0], qui);
+    SONS.version(); ec.classList.add("vu");
+    await DP.dire(lignes[1], qui);
+    compter(); EPIQUE.clic(); vibre(15);
+    await DP.dire(lignes[2], qui);
+    ec.querySelector(".bar i").style.width = `${Math.max(Math.min(D.barre.points / D.barre.taille * 100, 100), 4)}%`;
+    await DP.dire(lignes[3], qui);
+    await DP.dire(lignes[4], qui);
+    fermer();
+  })().catch(() => {});
 }
 // --- Le Panthéon : après la Ligue, ton équipe entre dans la légende (6 socles), puis la Master Ball s'ouvre ---
 const SOCLES = EN_JOHTO ? [[107, 778], [190, 868], [342, 955], [600, 955], [748, 868], [833, 778]] : [[127, 722], [200, 830], [350, 905], [588, 905], [740, 830], [812, 722]];  // dessus de chaque socle (pixels)
@@ -3042,7 +3117,7 @@ async function sceneGenerique(cle) {
   v.querySelector(".noir").style.opacity = 1; await attendre(1000); v.remove();
   // le dernier plan : le dresseur et son starter, de dos, devant le coucher de soleil
   const E2 = ecran("pkm-falaise", `passage-${cle}-3.webp`, 940, 1672), v2 = E2.v;
-  v2.insertAdjacentHTML("beforeend", `<div class="deDos"><div class="dos-d">${sacha("red_normal", "haut", false)}</div><img src="${IMG.dos ? IMG.dos(forme) : `${D.images}/pokemon/back/${forme}.png`}" alt=""></div>`);
+  v2.insertAdjacentHTML("beforeend", `<div class="deDos"><div class="dos-d">${sacha("red_normal", "haut", false)}</div><img src="${IMG.dos ? IMG.dos(forme) : `${D.images}/pokemon/back/${forme}.png`}" alt=""></div>`); colorerDresseur(v2);
   await attendre(200); v2.querySelector(".noir").style.opacity = 0; await attendre(900); v2.querySelector(".deDos").classList.add("vu");
   await attendre(5500); v2.querySelector(".noir").style.opacity = 1; await attendre(1100); E2.fin(); v2.remove(); return true;
 }
@@ -3153,9 +3228,8 @@ function sceneCentre(apercu = false) {
 // Le vélo : le joker du joueur en retard, offert par le professeur (05/11). Une image neuve est à faire sur ChatGPT, quand Kiki aura du crédit.
 function sceneVelo(apercu = false) {
   const q = PROFESSEURS[CADEAU];
-  const {v, salle, fin: finE} = ecran("pkm-centre", q.image, q.largeur, q.hauteur, "");
+  const {v, salle, fin: finE} = ecran("pkm-centre", `velo-${CADEAU}.webp`, 941, 1672, "");
   ambiance(v.querySelector("canvas.air"), [{type: "reflets", coul: ["#FFFFFF", "#FFF3C4"], n: 16, haut: [0, .2]}], () => !v.isConnected);
-  v.insertAdjacentHTML("beforeend", `<img class="velo-cadeau" src="${D.images}/items/bicycle.png" alt="" style="position:absolute;left:50%;top:38%;width:96px;transform:translateX(-50%);image-rendering:pixelated;z-index:3;opacity:0;transition:opacity .6s">`);
   const DC = dialogue(v), qui = `Professeur ${q.prof}`;
   const lignes = [`Ah, ${nomDresseur()} ! La route est longue, et ce vélo ne sert à rien dans mon laboratoire.`, "Il est à toi ! Il faut juste continuer à bouger : <b>chaque jour à 2 000 pas ou plus compte double sur la carte</b>.", "En selle, tes amis ne sont pas si loin !"];
   DC.prevoir(lignes.map(l => [l, qui]));
@@ -3167,7 +3241,7 @@ function sceneVelo(apercu = false) {
   (async () => {
     await pause(200); v.querySelector(".noir").style.opacity = 0; await pause(900);
     await DC.dire(lignes[0], qui);
-    v.querySelector(".velo-cadeau").style.opacity = 1; EPIQUE.fanfare(); vibre([40, 60, 80]);
+    EPIQUE.fanfare(); vibre([40, 60, 80]);
     for (const l of lignes.slice(1)) await DC.dire(l, qui);
     fermer();
   })().catch(() => {});
@@ -5369,8 +5443,8 @@ function dessinerTests() {
   document.getElementById("tests").innerHTML = `
     <div class="groupe">Le passage vers Johto<small>Le Carnet, le générique et l'appel du Professeur Chen ; puis, le lendemain, le voyage, le titre de Johto et le labo d'Orme. Rien n'est enregistré.</small></div>
     <div class="boutons-t">${b("t-passage", `${ico("tele", "p")} La fin de Kanto`)}${b("t-voyage-r", `${ico("carte", "p")} L'arrivée à Johto`)}${b("t-johto", `${ico("carte", "p")} ${EN_JOHTO ? "Revenir à la vraie partie" : "Voir Johto (champions, carte, décors)"}`)}</div>
-    <div class="groupe">Le début de l'aventure<small>Écran titre, carte du nouveau dresseur, labo du Professeur Chen, puis le starter s'ouvre dans le labo.</small></div>
-    <div class="boutons-t">${b("t-debut", "🎬 Écran titre → dresseur → labo")}${b("t-labo", `${ico("poke", "p")} Labo seul`)}</div>
+    <div class="groupe">Le début de l'aventure<small>Écran titre, carte du nouveau dresseur, chambre, village, hautes herbes, labo du Professeur Chen, le starter, puis le Pokédex.</small></div>
+    <div class="boutons-t">${b("t-debut", "🎬 Écran titre → dresseur → labo")}${b("t-labo", `${ico("poke", "p")} Labo seul`)}${b("t-pokedex", `${ico("poke", "p")} Le Pokédex`)}</div>
     <div class="groupe">Les arènes<small>La scène du badge avec le champion dans son arène, puis l'Hyper Ball qui s'ouvre dans l'arène vide. La Ligue : les 4 salles du Conseil 4, Régis, le Panthéon et la Master Ball.</small></div>
     <div class="boutons-t">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => b(`t-arene" data-n="${n}`, `${portraitChamp(CHAMPIONS[n])}${n === 9 ? "Ligue" : n + ". " + CHAMPIONS[n].nom}`)).join("")}</div>
     <div class="groupe">Les décors de capture<small>Un Pokémon du coin s'ouvre dans le décor (1 chance sur 5 d'être shiny).</small></div>
@@ -5388,6 +5462,7 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
+  on(".t-pokedex", () => scenePokedex());
   on(".t-passage", () => scenePassage(true));
   on(".t-voyage-r", () => sceneVoyageRegion(null, true));
   on(".t-johto", () => { const u = new URL(PW.location.href); if (EN_JOHTO) u.searchParams.delete("johto"); else u.searchParams.set("johto", "1"); u.searchParams.set("essais", "1"); PW.location.href = u.href; });
