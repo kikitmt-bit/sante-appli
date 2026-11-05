@@ -53,6 +53,22 @@ class Types(unittest.TestCase):
         self.assertEqual(self.types("OUTDOOR_BIKE")[2], ["Vol", "Normal"])
         self.assertIsNone(self.types("SPORT", "Padel")[2])
 
+    def test_le_sport_pratique_passe_avant_les_minutes_de_sport(self):
+        jour_ = {"pas": 3000, "zone": 20, "zone_sport": 30, "etages": 0, "sommeil": 0}
+        for type_, attendu in (("ROWING_MACHINE", ["Eau", "Glace"]), ("OUTDOOR_BIKE", ["Vol", "Normal"]), ("WEIGHTS", ["Combat", "Acier"])):
+            m = pokemon.mesures(jour_, [seance(type_, 20)["exercise"]], DEBUT)
+            self.assertEqual(pokemon.origine_barre(m)[2], attendu)
+            self.assertEqual(pokemon.exploit(m)[2], attendu)  # l'Hyper Ball des 25 min de sport aussi
+
+    def test_un_sport_sans_type_garde_ceux_des_minutes_de_sport(self):
+        zone = ["Feu", "Électrik", "Combat", "Dragon"]
+        m = pokemon.mesures({"pas": 3000, "zone": 20, "zone_sport": 30, "etages": 0, "sommeil": 0}, [seance("SPORT", 60, "Padel")["exercise"]], DEBUT)
+        self.assertEqual(pokemon.origine_barre(m)[2], zone)
+        self.assertEqual(pokemon.exploit(m)[2], None)  # une séance de 45 min sans type : tous les types, comme avant
+        m = pokemon.mesures({"pas": 3000, "zone": 20, "zone_sport": 30, "etages": 0, "sommeil": 0}, [], DEBUT)
+        self.assertEqual(pokemon.origine_barre(m)[2], zone)
+        self.assertEqual(pokemon.exploit(m)[2], zone)
+
     def test_le_rameur_vaut_comme_les_autres_sports(self):
         vide = {"pas": 0, "zone": 0, "zone_sport": 0, "etages": 0, "sommeil": 0}
         rameur, muscu, velo = [pokemon.mesures(vide, [seance(t, 20)["exercise"]], DEBUT)["points"]["sport"] for t in ("ROWING_MACHINE", "WEIGHTS", "OUTDOOR_BIKE")]

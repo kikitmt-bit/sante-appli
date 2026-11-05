@@ -225,8 +225,11 @@ def sport_principal(m):
 
 def origine_barre(m):
     """(icône, libellé, types) de ce qui a le plus rempli la barre ce jour-là, sans compter les pas (ils sont là presque
-    tous les jours) : zone, étages, séances, pompes et squats dès 10 points, sinon les pas (tous les types)."""
+    tous les jours) : zone, étages, séances, pompes et squats dès 10 points, sinon les pas (tous les types). Une séance d'un sport qui a ses
+    types passe avant les minutes de sport, qui valent 5 fois plus : sinon le rameur ne donnerait jamais Eau et Glace (Kiki, 05/11)."""
     autres = {k: v for k, v in {**m["points"], "gestes": m.get("gestes_pts", 0)}.items() if k != "pas" and v >= 10}
+    if sport_principal(m)[2]:
+        autres.pop("zone", None)
     cle = max(autres, key=autres.get) if autres else "pas"
     return MUSCU if cle == "gestes" else sport_principal(m) if cle == "sport" else SOURCES[cle]
 
@@ -237,7 +240,7 @@ def exploit(m):
         ic, nom, types = sport_principal(m)
         return ic, f"Séance de {m['seance_max']:.0f} min ({nom})", types
     if m["zone"] >= seuils_zone(m)[2]:
-        return "🔥", f"{m['zone']:.0f} min {'de sport' if m.get('nouveau', True) else 'en zone'}", SOURCES["zone"][2]
+        return "🔥", f"{m['zone']:.0f} min {'de sport' if m.get('nouveau', True) else 'en zone'}", sport_principal(m)[2] or SOURCES["zone"][2]
     if m["pas"] >= REGLAGES["exploit_pas"]:
         return "👟", f"{chiffres.nombre(m['pas'])} pas", None
     return None
