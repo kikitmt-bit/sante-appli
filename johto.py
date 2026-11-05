@@ -80,3 +80,4 @@ _DE_KANTO = numeros("Goupix, Feunard, Caninos, Arcanin, Insécateur, Lippoutou, 
 
 REGION = Region("Johto", [*range(152, 252), *_DE_KANTO], [243, 244, 245, 249, 250, 251], LIEUX, CARTE, VIA, MODES, SANCTUAIRES, _RARES, [152, 155, 158], 250, 251,
                 ("orme", "🎁 Cadeau du Professeur Orme"), "diplome-johto", "🎓 Diplôme du Professeur Orme", MOMENTS, arene_max=4)
+REGION.rival = {"Mauville": "rival-j1-mauville", "Bois aux Chênes": "rival-j2-bois", "Rosalia": "rival-j3-rosalia", "Ébènelle": "rival-j4-antre"}

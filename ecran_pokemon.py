@@ -14,6 +14,7 @@ import streamlit as st
 import chiffres
 import pokemon
 import regions
+import rival
 from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, FEMELLES, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
 UI = Path(__file__).with_name("pokemon_ui.html")
@@ -81,6 +82,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "jeu": None if apercu else _acces_jeu(joueur),
         "region": etat["region"],
         "carnet": etat["carnet"],
+        "rival": rival.pour_ecran(etat, aujourd),
         "moments": etat["moments"],
         "kiki": joueur is None,
         # les tests, les aperçus et les réglages des capteurs : Kiki seul, avec ?essais=1 dans l'adresse (le reste du jeu doit rester une surprise, pour lui aussi)

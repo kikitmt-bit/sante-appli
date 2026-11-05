@@ -539,6 +539,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     graine_lieux = f"{R['partie']}-{ami or 'kiki'}"  # ses Pokémon dans chaque lieu : pas exactement les mêmes que ceux des autres joueurs
     voyage = Voyage(region, graine_lieux)
     listes = {region.nom: voyage.especes()}  # les Pokémon de chaque région pour ce joueur
+    derniers = []  # les 14 derniers jours, pour les moqueries de Régis (rival.py)
     carnet = nouveau_carnet()  # les chiffres du voyage dans la région en cours, pour le Carnet de fin de région
     jour, m, ok, shiny_bonus = debut, {}, False, 1
     relance, sans_objectif, pas_recents = None, 0, []  # la relance en cours ou la dernière ; les jours de suite sans objectif ; les pas des derniers jours avec des données
@@ -672,6 +673,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         avant, cumul = cumul, cumul + sum(m["points"].values()) + sum(p for _, _, p in bonus)
         sem["points"] += round(cumul - avant)
         km_jour = s.get("km") if s.get("km") == s.get("km") and s.get("km") else 0
+        derniers = derniers[-13:] + [{"jour": str(jour), "pas": round(m["pas"]), "zone": round(m["zone"]), "sommeil": round(m["sommeil"]), "pompes": g.get("pompes", 0), "tractions": g.get("tractions", 0), "squats": g.get("squats", 0)}]
         carnet["jours"] += 1
         carnet["pas"] += round(m["pas"])
         carnet["km"] += float(km_jour)
@@ -830,7 +832,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "carnet": carnet, "moments": moments_du_jour((missions_jours or {}).get(str(aujourd))) if region.moments else None, "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores(gestes),
+                      "carnet": carnet, "derniers": derniers, "moments": moments_du_jour((missions_jours or {}).get(str(aujourd))) if region.moments else None, "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores(gestes),
                       "fini": 9 in voyage.badges, "hier": hier, "region": {"index": reg_i, "nom": region.nom, "debut": str(debut_region), "depart": depart,
                                                                            "suivante": regions.REGIONS[reg_i + 1].nom if reg_i + 1 < len(regions.REGIONS) else None}, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
                       "relance": {"cible": relance["cible"], "sport": R["relance_sport"], "fait": relance["fait"], "debut": str(relance["debut"]), "fin": str(relance["fin"])} if relance and relance["debut"] <= aujourd <= relance["fin"] else None,

@@ -136,3 +136,4 @@ def variante(graine):
 REGION = Region("Kanto", range(1, 152), [144, 145, 146, 150, 151], LIEUX, CARTE, VIA, MODES, SANCTUAIRES, _RARES, [1, 4, 7], 150, 151,
                 ("chen", "🎁 Cadeau du Professeur Chen"), "diplome", "🎓 Diplôme du Professeur Chen", arene_max=3, reportes=REPORTES, variante=variante)
 LIEUX, DIST, ARENES, SANCT_INDEX, RARES = REGION.lieux, REGION.dist, REGION.arenes, REGION.sanct_index, REGION.rares
+REGION.rival = {"Route 3": "rival-k1-route", "Azuria": "rival-k2-pont", "Carmin-sur-Mer": "rival-k3-navire", "Route Victoire": "rival-k4-victoire"}

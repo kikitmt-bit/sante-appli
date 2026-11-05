@@ -2979,6 +2979,29 @@ function scenePokedex() {
     fermer();
   })().catch(() => {});
 }
+// --- Régis, le rival (Kiki, 05/11 : détestable) : 4 rencontres par région, une fois chacune, en atteignant le lieu. Le texte vient de rival.py, avec les pires chiffres de la semaine.
+const rivalVu = r => { try { return localStorage.getItem(`pkm_rival_${R.partie}_${r.image}`) === "1"; } catch (e) { return true; } };
+function rivalDu() {  // la dernière rencontre atteinte, pas encore vue ; celles d'avant sont passées (on ne les enchaîne pas)
+  const l = (D.rival || []).filter(r => r.lignes && r.dist <= V.pos && !rivalVu(r));
+  l.slice(0, -1).forEach(r => { try { localStorage.setItem(`pkm_rival_${R.partie}_${r.image}`, "1"); } catch (e) {} });
+  return l[l.length - 1] || null;
+}
+function sceneRival(r, essai = false) {
+  if (!essai) try { localStorage.setItem(`pkm_rival_${R.partie}_${r.image}`, "1"); } catch (e) {}
+  preparerScene();
+  const {v, fin: finE} = ecran("pkm-rival", `${r.image}.webp`, 941, 1672, ""), DR = dialogue(v), qui = "Régis";
+  const lignes = (r.lignes || ["Pas assez de jours pour me moquer de toi. Reviens quand ta montre aura quelque chose à raconter."]).map(l => l.replace("{nom}", nomDresseur()));
+  DR.prevoir(lignes.map(l => [l, qui]));
+  let fini = false;
+  const fermer = () => { if (fini) return; fini = true; DR.fin(); finE(); v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); };
+  v.querySelector(".pkm-passer").onclick = fermer;
+  (async () => {
+    await new Promise(ok => setTimeout(ok, 250)); v.querySelector(".noir").style.opacity = 0; SONS.version(); vibre(20);
+    await new Promise(ok => setTimeout(ok, 900));
+    for (const l of lignes) await DR.dire(l, qui);
+    fermer();
+  })().catch(() => {});
+}
 // --- Le Panthéon : après la Ligue, ton équipe entre dans la légende (6 socles), puis la Master Ball s'ouvre ---
 const SOCLES = EN_JOHTO ? [[107, 778], [190, 868], [342, 955], [600, 955], [748, 868], [833, 778]] : [[127, 722], [200, 830], [350, 905], [588, 905], [740, 830], [812, 722]];  // dessus de chaque socle (pixels)
 function equipePantheon() {  // le starter, les Pokémon des badges (du plus récent), puis les plus belles captures récentes
@@ -5443,6 +5466,8 @@ function dessinerTests() {
   document.getElementById("tests").innerHTML = `
     <div class="groupe">Le passage vers Johto<small>Le Carnet, le générique et l'appel du Professeur Chen ; puis, le lendemain, le voyage, le titre de Johto et le labo d'Orme. Rien n'est enregistré.</small></div>
     <div class="boutons-t">${b("t-passage", `${ico("tele", "p")} La fin de Kanto`)}${b("t-voyage-r", `${ico("carte", "p")} L'arrivée à Johto`)}${b("t-johto", `${ico("carte", "p")} ${EN_JOHTO ? "Revenir à la vraie partie" : "Voir Johto (champions, carte, décors)"}`)}</div>
+    <div class="groupe">Régis, le rival<small>Ses 4 rencontres de la région, avec tes vrais chiffres de la semaine.</small></div>
+    <div class="boutons-t">${(D.rival || []).map((r, i) => b(`t-rival" data-i="${i}`, r.lieu)).join("")}</div>
     <div class="groupe">Le début de l'aventure<small>Écran titre, carte du nouveau dresseur, chambre, village, hautes herbes, labo du Professeur Chen, le starter, puis le Pokédex.</small></div>
     <div class="boutons-t">${b("t-debut", "🎬 Écran titre → dresseur → labo")}${b("t-labo", `${ico("poke", "p")} Labo seul`)}${b("t-pokedex", `${ico("poke", "p")} Le Pokédex`)}</div>
     <div class="groupe">Les arènes<small>La scène du badge avec le champion dans son arène, puis l'Hyper Ball qui s'ouvre dans l'arène vide. La Ligue : les 4 salles du Conseil 4, Régis, le Panthéon et la Master Ball.</small></div>
@@ -5463,6 +5488,7 @@ function dessinerTests() {
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
   on(".t-pokedex", () => scenePokedex());
+  document.querySelectorAll(".t-rival").forEach(x => x.onclick = () => sceneRival(D.rival[+x.dataset.i], true));
   on(".t-passage", () => scenePassage(true));
   on(".t-voyage-r", () => sceneVoyageRegion(null, true));
   on(".t-johto", () => { const u = new URL(PW.location.href); if (EN_JOHTO) u.searchParams.delete("johto"); else u.searchParams.set("johto", "1"); u.searchParams.set("essais", "1"); PW.location.href = u.href; });
@@ -5564,6 +5590,7 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur) ; ou le bilan de la semaine quand il est dû
   else if (V.velo && (() => { try { return localStorage.getItem(`pkm_velo_vu_${R.partie}`) !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneVelo(); }, 1200);
+  else if (rivalDu()) { const r = rivalDu(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneRival(r); }, 1200); }
   else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);
   else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())

@@ -589,5 +589,43 @@ class Regions(unittest.TestCase):
         self.assertEqual(pokemon.gestes_du({"jours": g}, [], None, jour(40))[str(DEBUT)]["appel"], 1)
 
 
+class Rival(unittest.TestCase):
+    def jours(self, nb, **v):
+        base = {"pas": 8000, "zone": 20, "sommeil": 450, "pompes": 10, "tractions": 0, "squats": 0}
+        return [base | {"jour": str(jour(k))} | v for k in range(nb)]
+
+    def dit(self, derniers):
+        import rival
+        return " ".join(rival.repliques(derniers, jour(30), "rival-k1-route"))
+
+    def test_il_lui_faut_quelques_jours(self):
+        import rival
+        self.assertIsNone(rival.repliques(self.jours(2), jour(30), "rival-k1-route"))
+
+    def test_il_prend_le_pire_chiffre(self):
+        d = self.jours(7, zone=0)
+        self.assertIn("Zéro minute de sport", self.dit(d))
+        d = self.jours(7)
+        d[3]["pas"] = 900
+        self.assertIn("900 pas", self.dit(d))
+
+    def test_une_montre_oubliee_ne_compte_pas(self):
+        d = self.jours(7)
+        d[3]["pas"] = 0
+        self.assertNotIn(" 0 pas", self.dit(d))
+
+    def test_un_sommeil_inconnu_n_est_pas_moque(self):
+        self.assertNotIn("sommeil", self.dit(self.jours(7, sommeil=0, zone=0, pas=2000)))
+
+    def test_il_trouve_toujours_quelque_chose(self):
+        self.assertGreaterEqual(len(self.dit(self.jours(7, pas=20000, zone=60))), 40)
+
+    def test_chaque_region_a_quatre_rencontres(self):
+        import regions
+        for r in regions.REGIONS:
+            self.assertEqual(len(r.rival), 4)
+            self.assertLessEqual(set(r.rival), {l["nom"] for l in r.lieux})
+
+
 if __name__ == "__main__":
     unittest.main()
