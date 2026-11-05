@@ -518,7 +518,6 @@ details.regles{color:#484838 !important}
 .carte-wrap .ami-carte .sacha{width:23%!important}
 .carte-wrap .ami-carte .nom-ami{font:400 11px/1 'Jersey 15',monospace;color:#fff;white-space:nowrap;margin-bottom:1px;padding:0 3px;border-radius:3px;background:rgba(20,28,56,.72)}
 .carte-wrap .ami-carte.etiquette{width:auto;z-index:3}
-.carte-wrap .ami-carte .nom-ami em{font-style:normal;color:#FFCB05}
 .joueur{display:flex;align-items:center;gap:9px;padding:7px 2px;border-top:2px dashed #D8D4B8;cursor:pointer}
 .joueur:first-of-type{border-top:0}
 .joueur .rg{flex:0 0 18px;font-size:20px;color:#686850;text-align:center}
@@ -4170,6 +4169,11 @@ const NAVIRE = SACHA.replace("/people/", "/misc/") + "ss_anne.png";
 const AUTRES = () => (D.joueurs || []).filter(j => !j.moi && j.carte === V.carte.image && !TEST);
 // Les autres dresseurs sur la carte, avec leur pseudo. Au même endroit (tous à Bourg Palette au début) : côte à côte, jamais
 // les uns sur les autres ; ton dresseur reste au milieu, les autres se rangent à droite puis à gauche.
+// Sur la carte, l'étiquette est sombre : le ton clair de la casquette (le noir serait illisible : un gris clair)
+function couleurPseudoCarte(j) {
+  const t = (COULEURS_TISSU[({...DRESSEUR, ...j.couleurs}).casquette] || COULEURS_TISSU.Rouge)[2];
+  return t[0] * .3 + t[1] * .59 + t[2] * .11 < 120 ? "rgb(200,200,215)" : `rgb(${t.join(",")})`;
+}
 function amisSurCarte(depuis = V.pos) {
   const autres = AUTRES(); if (!autres.length) return "";
   const moi = poseA(depuis), ECART = 12, groupes = [{x: moi.x, y: moi.y, gens: [{moi: true, nom: nomDresseur()}]}];
@@ -4185,8 +4189,8 @@ function amisSurCarte(depuis = V.pos) {
       return `<div class="ami-carte" style="left:${(g.x + dx) / LARG * 100}%;top:${g.y / HC * 100}%">
         ${sacha("red_normal", "bas", false).replace('<div class="sacha', `<div data-d='${d}' class="sacha`)}</div>`; }).join("");
     if (g.gens.length === 1 && g.gens[0].moi) return "";
-    // une seule étiquette par groupe, les pseudos dans l'ordre des dresseurs de gauche à droite (le tien en rouge)
-    const noms = places.map(({j}) => j.moi ? `<em>${j.nom}</em>` : j.nom).join(" · ");
+    // une seule étiquette par groupe, les pseudos dans l'ordre des dresseurs de gauche à droite, chacun à la couleur de sa casquette
+    const noms = places.map(({j}) => `<span style="color:${couleurPseudoCarte(j)}">${j.nom}</span>`).join(" · ");
     return corps + `<div class="ami-carte etiquette ${g.gens.some(j => j.moi) ? "toi" : ""}" style="left:${g.x / LARG * 100}%;top:${(g.y - 21) / HC * 100}%">
       <span class="nom-ami">${noms}</span></div>`;
   }).join("");

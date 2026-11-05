@@ -27,7 +27,7 @@ avec son jeton GitHub, une fois par visite, seulement si ça a changé). `les_jo
 `pokemon.charger_jeu` dans son dossier, gardée 10 min ; un joueur en panne est absent) et n'envoie que le jeu (`amis.resume` : position, lieu, badges,
 espèces ouvertes, shiny, légendaires, starter, 3 dernières captures ; **jamais** pas, sommeil, cœur, poids) dans `D.joueurs` (soi = `moi`).
 Carte : `amisSurCarte` (les autres dresseurs à leurs couleurs, `data-d` lu par `colorerDresseur`) ; **au même endroit** (tout le monde part de Bourg
-Palette) : regroupés, côte à côte (toi au milieu, puis droite, gauche…), une seule étiquette par groupe avec les pseudos dans l'ordre (le tien en jaune).
+Palette) : regroupés, côte à côte (toi au milieu, puis droite, gauche…), une seule étiquette par groupe avec les pseudos dans l'ordre, chacun à la couleur de sa casquette, sur la carte comme dans le classement (Kiki, 05/11).
 Onglet Dresseur : « Les dresseurs » (`dessinerAmis`, classement badges → espèces → shiny → avancée ; toi avec tes chiffres en direct ; toucher un ami =
 Pokédex comparé + ce qu'il a et pas toi + ses dernières captures ; ce que les autres voient est dit sur `accueil_ami`, plus dans cet onglet : Kiki, 03/11). ⚙️ (Kiki) :
 « 🔧 Suivi des amis » (`suivi_amis`, `amis.suivi` : dernière récolte, erreurs de Google par message, pas / sport / sommeil des 14 derniers jours).
