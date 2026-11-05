@@ -393,7 +393,7 @@ def balls_du_jour(jour, m, avant, apres, shiny_ball=None, badges=(), debut=None,
             dues.append({"cle": "ligue", "ball": "master", "raison": "🏆 Champion de la Ligue Pokémon !",
                          "types": None, "fixe": region.ligue})
         else:
-            dues.append({"cle": f"badge{k}", "ball": "hyper", "types": None, "seul_type": a["type"], "nouvelle": 1,
+            dues.append({"cle": f"badge{k}", "ball": "hyper", "types": None, "seul_type": a["type"], "nouvelle": 1, "champion": a.get("pokemon"),
                          "raison": f"🏅 {a['badge']} ({a['champion']}, {lieu['nom']})"})
     dues += list(sanctuaires)
     if shiny_ball:
@@ -552,7 +552,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     chaine, chance_prise, perdues, en_defi = 0, False, 0, False
     avant, chrono, hier = 0.0, None, None
     starter, mes_starters, sans_rattrapage = None, [], 0  # le Pokémon du cadeau du professeur de la région, et ceux des régions d'avant
-    reserves = lambda noms: [n for n in noms if not any(n in LIGNES[x][1:] for x in mes_starters)]  # leurs évolutions ne sortent pas des balls  # noqa: E731
+    # les évolutions du starter et les Pokémon des champions de la région ne sortent pas des balls ordinaires
+    reserves = lambda noms: [n for n in noms if n not in region.champions and not any(n in LIGNES[x][1:] for x in mes_starters)]  # noqa: E731
 
     def noter(c):
         nonlocal chaine, chance_prise, starter, sans_rattrapage
@@ -586,7 +587,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         i, ball = mi["id"], BALLS[mi["ball"]]
         p = min(R["shiny"] * ball["shiny"] * mi["shiny_bonus"], R["shiny_max"])
         rng = random.Random(i)
-        if mi.get("fixe"):
+        if mi.get("champion") and mi["champion"] not in {n for n, _ in possedees}:  # le Pokémon du champion, confié avec le badge
+            c = {"num": mi["champion"], "shiny": rng.random() < p, "nouvelle": True, "champion": True}
+        elif mi.get("fixe"):
             c = {"num": mi["fixe"], "shiny": rng.random() < p, "nouvelle": True}
             if mi.get("chance"):
                 c["chance"] = True

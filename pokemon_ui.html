@@ -1770,7 +1770,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
-      <div class="phrase">${(sx => r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
+      <div class="phrase">${(sx => c.champion && CHAMPIONS[(/#badge(\d)$/.exec(c.id || "") || [])[1]] ? `${CHAMPIONS[/#badge(\d)$/.exec(c.id)[1]].nom} te confie son <b>${c.nom}</b>${sx} !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
       <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${genAffichee(c.num) ? `Génération ${genDe(c.num)} · ` : ""}Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);

@@ -36,12 +36,13 @@ def voie(defi, cible, texte):
     return {"defi": defi, "cible": cible, "texte": texte}
 
 
-def arene(champion, type_, badge, image, voies, plan_b_, epreuves=None):
-    """voies : une seule suffit. epreuves (la Ligue) : [(adversaire, voies)], toutes à réussir, dans l'ordre qu'on veut."""
+def arene(champion, type_, badge, image, voies, plan_b_, epreuves=None, pokemon=None):
+    """voies : une seule suffit. epreuves (la Ligue) : [(adversaire, voies)], toutes à réussir, dans l'ordre qu'on veut. pokemon = le Pokémon du
+    champion (Kiki, 05/11) : il le confie avec le badge, et il ne sort jamais d'une ball ordinaire de la région."""
     ep = [{"qui": q, "voies": v} for q, v in epreuves] if epreuves else [{"qui": None, "voies": voies}]
     return {"champion": champion, "type": type_, "badge": badge, "image": image, "epreuves": ep,
             "texte": " ou ".join(o["texte"] for o in voies) if voies else f"{len(ep)} épreuves",
-            "b": dict(zip(("defi", "cible", "texte"), plan_b_))}
+            "b": dict(zip(("defi", "cible", "texte"), plan_b_)), "pokemon": numeros(pokemon)[0] if pokemon else None}
 
 
 DEFIS = {  # défi -> (valeur d'une journée, unité, « somme » = cumulé depuis l'arrivée ou « jour » = la meilleure journée depuis l'arrivée)
@@ -79,7 +80,8 @@ class Region:
         self.arene_max = arene_max  # après tant de jours actifs à une arène, le champion laisse passer
         self.rival = {}  # lieu -> image de la rencontre avec le rival de la région (rival.py)
         self.especes = set(numeros_) - set(legendaires) - set(reportes)  # les Pokémon du diplôme ; reportes = gardés pour les régions suivantes, à étaler sur tout le jeu
-        self.lieux_et_legendes = (set(numeros_) - set(reportes)) | {n + k for n in starters for k in range(3)}  # le starter et ses évolutions, même s'ils sortent des balls bien plus tard
+        self.champions = {lieu["arene"]["pokemon"] for lieu in self.lieux if lieu["arene"] and lieu["arene"].get("pokemon")}  # jamais dans une ball ordinaire
+        self.lieux_et_legendes = (set(numeros_) - set(reportes)) | self.champions | {n + k for n in starters for k in range(3)}  # le starter et ses évolutions, même s'ils sortent des balls bien plus tard
         vus = [n for lieu in self.lieux for n in lieu["pokemon"]]
         assert set(vus) == self.especes and len(vus) == len(self.especes), f"{nom} : Pokémon sans lieu ou en double : {self.especes ^ set(vus)}"
         self.sanct_index = {i: sanctuaires[lieu["nom"]] for i, lieu in enumerate(self.lieux) if lieu["nom"] in sanctuaires}
@@ -186,7 +188,7 @@ class Voyage:
 
     def especes(self):
         """Tous les Pokémon de la région pour ce joueur (son diplôme)."""
-        return {n for liste in self.pokemon for n in liste}
+        return {n for liste in self.pokemon for n in liste} | self.r.champions
 
     def etat(self, jour):
         """Ce que l'écran montre : la carte, où l'on est, les badges, le défi en cours."""
@@ -200,7 +202,7 @@ class Voyage:
                     "actifs": self.jours_actifs(jour) if arrive else 0, "max": r.arene_max}
         sanct = [{"lieu": k, "num": n, "nom": r.lieux[k]["nom"], "valeur": self.exploits.get(k, 0), "cible": SANCTUAIRE_CIBLE,
                   "atteint": self.pos >= r.dist[k], "fait": k in self.sanct_faits} for k, n in r.sanct_index.items()]
-        return {"lieux": [{k: lieu[k] for k in ("nom", "x", "y", "arene", "via", "mode")} | {"dist": d, "pokemon": liste}
+        return {"lieux": [{k: lieu[k] for k in ("nom", "x", "y", "arene", "via", "mode")} | {"dist": d, "pokemon": [n for n in liste if n not in r.champions]}  # le Pokémon du champion n'est pas « du coin »
                           for lieu, d, liste in zip(r.lieux, r.dist, self.pokemon)],
                 "pos": round(self.pos, 1), "ici": i, "badges": {k: str(d) for k, d in self.badges.items()},
                 "defi": defi, "sanctuaires": sanct, "velo": str(self.velo) if self.velo else None, "total": r.dist[-1], "rares": sorted(r.rares), "carte": r.carte}

@@ -505,6 +505,18 @@ class Regions(unittest.TestCase):
         captures, e, self.jour_appel, self.s, self.g = self.gardees[cle]
         return captures, e
 
+    def test_chaque_champion_confie_son_pokemon(self):
+        """Kiki, 05/11 : le Pokémon du champion vient avec le badge, jamais d'une ball ordinaire de sa région."""
+        captures, e = self.partie_complete()
+        for r in (kanto.REGION, johto.REGION):
+            self.assertEqual(len(r.champions), 8)
+            for k, i in enumerate(r.arenes[:-1], 1):
+                num = r.lieux[i]["arene"]["pokemon"]
+                donne = [c for c in captures if c["num"] == num and not c.get("rate")]
+                self.assertTrue(donne, (r.nom, num))
+                self.assertTrue(donne[0]["id"].endswith(f"#badge{k}"), (r.nom, num, donne[0]["id"]))
+            self.assertLessEqual(max(r.champions), 251)
+
     def test_sans_appel_on_reste_dans_l_ancienne_region(self):
         captures, e = self.partie_complete(appel_apres=False)
         self.assertEqual(e["region"]["nom"], "Kanto")

@@ -90,7 +90,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "captures": [{
             "id": c["id"], "jour": c["jour"], "num": c["num"], "ball": c.get("ball", "poke"),
             "shiny": c["shiny"], "raison": c["raison"], "lieu": c.get("lieu", ""), "legendaire": c["num"] in LEGENDAIRES,
-            "c": c.get("c"), "rate": bool(c.get("rate")), "chasse": bool(c.get("chasse")), "chance": bool(c.get("chance")),
+            "c": c.get("c"), "rate": bool(c.get("rate")), "chasse": bool(c.get("chasse")), "chance": bool(c.get("chance")), "champion": bool(c.get("champion")),
             "quand": "aujourd'hui" if c["jour"] == str(aujourd) else
                      f"{chiffres.JOURS[dt.date.fromisoformat(c['jour']).weekday()]} {c['jour'][8:]}/{c['jour'][5:7]}",
         } for c in captures],
