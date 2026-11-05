@@ -1020,7 +1020,7 @@ CHANSONS = danse.charger()
 danse.lecteurs(CHANSONS)
 with page_jeu:
     ecran_pokemon.afficher(lire_vite, aujourd, JOUEUR, bilan.conseil_du_jour(charger(lire_vite, "Jour", aujourd, aujourd)["stats"], aujourd, PROFIL), PROFIL["anniversaire"],
-                           les_joueurs(aujourd), CHANSONS)
+                           les_joueurs(aujourd), CHANSONS, profil=PROFIL)
 
 
 def suivi_amis(emails):

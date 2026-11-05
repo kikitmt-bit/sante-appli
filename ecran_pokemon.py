@@ -49,7 +49,7 @@ def _acces_jeu(joueur):
     return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
 
 
-def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=(), chansons=()):
+def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=(), chansons=(), profil=None):
     """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki ; conseil = la phrase utile du
     récap du matin (bilan.conseil_du_jour) ; anniversaire = c'est son anniversaire aujourd'hui (date gardée sur son téléphone) ;
     joueurs = tous les joueurs résumés pour le jeu (amis.public, soi compris : « moi »), pour la carte et l'onglet Dresseur ;
@@ -82,7 +82,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "jeu": None if apercu else _acces_jeu(joueur),
         "region": etat["region"],
         "carnet": etat["carnet"],
-        "rival": rival.pour_ecran(etat, aujourd),
+        "rival": rival.pour_ecran(etat, aujourd, profil),
         "moments": etat["moments"],
         "kiki": joueur is None,
         # les tests, les aperçus et les réglages des capteurs : Kiki seul, avec ?essais=1 dans l'adresse (le reste du jeu doit rester une surprise, pour lui aussi)

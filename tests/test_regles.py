@@ -620,6 +620,29 @@ class Rival(unittest.TestCase):
     def test_il_trouve_toujours_quelque_chose(self):
         self.assertGreaterEqual(len(self.dit(self.jours(7, pas=20000, zone=60))), 40)
 
+    def test_pas_de_vanne_sur_le_sport_sans_historique(self):
+        import rival
+        d = self.jours(7, zone=0, pas=9000)
+        self.assertNotIn("sport", " ".join(rival.repliques(d, jour(30), "rival-k1-route", False)))
+        self.assertIn("sport", " ".join(rival.repliques(d, jour(30), "rival-k1-route", True)))
+
+    def test_le_sport_vu_vient_de_tout_l_historique(self):
+        self.assertFalse(partie(5, zone_sport=0)[1]["sport_vu"])
+        self.assertTrue(partie(5, zone_sport=[12, 0, 0, 0, 0])[1]["sport_vu"])
+
+    def test_le_coeur_de_70_ans(self):
+        self.assertIn("70 ans", self.dit(self.jours(7, fc_repos=78)))
+        self.assertNotIn("70 ans", self.dit(self.jours(7, fc_repos=58, vfc=50)))
+
+    def test_la_masse_grasse(self):
+        import rival
+        d = self.jours(7, gras=30.0)
+        self.assertIn("masse grasse", " ".join(rival.repliques(d, jour(30), "rival-k1-route", True, 24)))
+        self.assertNotIn("masse grasse", " ".join(rival.repliques(d, jour(30), "rival-k1-route", True, None)))  # sans âge ni sexe : pas de jugement
+        for k, x in enumerate(d):
+            x["gras"] = 20 + k / 3
+        self.assertIn("masse grasse", " ".join(rival.repliques(d, jour(30), "rival-k1-route", True, None)))  # sa hausse, oui
+
     def test_chaque_region_a_quatre_rencontres(self):
         import regions
         for r in regions.REGIONS:
