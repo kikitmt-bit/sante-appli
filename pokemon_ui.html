@@ -2033,6 +2033,8 @@ function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur et les b
   if (estEvo(c)) return sceneEvolution(c);
   if (/^badge\d$/.test(cle)) return sceneBadge(+cle.slice(5), c);
   if (cle === "ligue") return sceneBadge(9, c);
+  if (/^anniv\d{4}$/.test(cle)) return sceneAnniversaire(() => ouvrir(c));
+  if (c.ball === "master" && !c.chance && SANCT_TEXTE[c.num] && !c.apercu) return sceneSanctuaire(c.num, () => ouvrir(c));
   ouvrir(c);
 }
 function intro(c, p, rejouer = false) {
@@ -2697,7 +2699,7 @@ function sceneBadge(n, c, rejouer = false) {
   const fin = suite => { if (fini) return; fini = true; stop();
     if (!suite || !c) { v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); return; }
     SONS.montee(.7); v.querySelector(".blanc").style.opacity = 1;
-    setTimeout(() => { if (ligue) scenePantheon(() => ouvrir(c, rejouer, true)); else ouvrir(c, rejouer, true);
+    setTimeout(() => { if (ligue) scenePantheon(() => rejouer || !SANCT_TEXTE[c.num] ? ouvrir(c, rejouer, true) : sceneSanctuaire(c.num, () => ouvrir(c, rejouer, true))); else ouvrir(c, rejouer, true);
       v.style.transition = "opacity .45s"; v.style.opacity = 0; setTimeout(() => v.remove(), 450); }, 650); };
   v.querySelector(".pkm-passer").onclick = () => fin(false);
   const eclats = (x, y, nb, cols = ["#FFE27A", "#fff", couleur]) => { for (let i = 0; i < nb; i++) { const e = P.createElement("div"); e.className = "eclat";
@@ -3001,6 +3003,87 @@ function sceneRival(r, essai = false) {
     for (const l of lignes) await DR.dire(l, qui);
     fermer();
   })().catch(() => {});
+}
+// --- Les petites scènes (Kiki, 05/11) : une image, quelques répliques, ✕ pour passer. Ni points ni récompense : elles racontent.
+function sceneRecit(image, lignes, {qui = null, fin = null, debut = null} = {}, extra = "") {
+  preparerScene();
+  const {v, fin: finE} = ecran("pkm-recit", image, 941, 1672, extra), DS = dialogue(v);
+  DS.prevoir(lignes.map(l => [l, qui]));
+  let fini = false;
+  const fermer = () => { if (fini) return; fini = true; DS.fin(); finE(); v.style.transition = "opacity .5s"; v.style.opacity = 0;
+    if (fin) setTimeout(fin, fin.lent ? 450 : 0); setTimeout(() => v.remove(), 500); };
+  v.querySelector(".pkm-passer").onclick = fermer;
+  (async () => {
+    await new Promise(ok => setTimeout(ok, 250)); v.querySelector(".noir").style.opacity = 0;
+    await new Promise(ok => setTimeout(ok, 900));
+    if (debut) await debut(v, DS);
+    for (const l of lignes) await DS.dire(l, qui);
+    fermer();
+  })().catch(() => {});
+}
+// L'entrée dans une arène : le champion nous tourne le dos, puis se retourne. À la Ligue, il reste de dos : le Conseil 4 passe avant.
+const entreeVue = n => { try { return localStorage.getItem(`pkm_entree_${R.partie}_${n}`) === "1"; } catch (e) { return true; } };
+function sceneEntree(n, suite = null, essai = false) {
+  const ch = CHAMPIONS[n]; if (!ch || !ch.arene) return suite && suite();
+  if (!essai) try { localStorage.setItem(`pkm_entree_${R.partie}_${n}`, "1"); } catch (e) {}
+  const face = ch.arene.image, dos = face.replace("arene-", "entree-"), ligue = n === 9;
+  const lignes = ligue ? ["Tout au fond de la grande salle, le Maître de la Ligue te tourne le dos.", "Il ne se retournera pas tout de suite. Avant lui, il y a le Conseil 4."] : ["La porte s'ouvre. Au fond de la salle, quelqu'un te tourne le dos.", "Tu fais un pas. Le sol résonne."];
+  preparerScene();
+  const {v, fin: finE} = ecran("pkm-entree", dos, 941, 1672, `<img class="face" src="${D.scenes}${face}" alt="" style="position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;opacity:0;transition:opacity .35s">`), DE = dialogue(v);
+  DE.prevoir([...lignes.map(l => [l, null]), [ch.lignes[0], ch.nom]]);
+  let fini = false;
+  const fermer = () => { if (fini) return; fini = true; DE.fin(); finE(); v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => { v.remove(); if (suite) suite(); }, 500); };
+  v.querySelector(".pkm-passer").onclick = fermer;
+  (async () => {
+    await new Promise(ok => setTimeout(ok, 250)); v.querySelector(".noir").style.opacity = 0; await new Promise(ok => setTimeout(ok, 900));
+    for (const l of lignes) await DE.dire(l, null);
+    if (!ligue) { v.querySelector(".face").style.opacity = 1; EPIQUE.clic(); vibre(20); await new Promise(ok => setTimeout(ok, 500)); await DE.dire(ch.lignes[0], ch.nom); }
+    fermer();
+  })().catch(() => {});
+}
+// La rencontre aux sanctuaires : l'approche du légendaire, avant la ball qui s'ouvre
+const SANCT_TEXTE = {
+  145: ["La porte de la vieille centrale est restée grande ouverte.", "Dedans, tout est éteint. Et pourtant, l'air grésille."],
+  144: ["Le tunnel de glace n'en finit pas. Tes pas sont le seul bruit, ici.", "Au bout, une lumière bleue. Le froid vient de là."],
+  146: ["Le pont de pierre est étroit. Sous toi, la montagne rougeoie.", "Plus tu avances, plus l'air brûle. Quelque chose respire, là-bas."],
+  150: ["Personne ne vient jamais jusqu'ici. Il y a sûrement une raison.", "Les cristaux s'allument un à un, à ton passage. On t'a déjà vu."],
+  151: ["Ta collection est complète. Pourtant, cette lumière rose, sur les vieilles marches, tu ne l'avais jamais vue.", "Quelque chose a envie de jouer."],
+  243: ["La vieille tour a brûlé il y a longtemps. Le sol craque sous tes pieds.", "En bas, une lueur jaune. Elle court d'un mur à l'autre."],
+  244: ["Au bout de ce chemin, la forêt ne repousse plus.", "Le sol est chaud. La lueur rouge, là-bas, semble t'attendre."],
+  245: ["L'eau du lac est si claire qu'on n'ose pas y toucher.", "Les pierres mènent à l'île. Une à une, sans bruit."],
+  249: ["L'escalier descend dans le noir, marche après marche. Tes cuisses les comptent.", "Tout en bas, sur l'eau noire, une lumière d'argent bouge doucement."],
+  250: ["Neuf étages. Tu n'as pas pris l'ascenseur : il n'y en a pas.", "En haut, la lumière devient dorée. Quelque chose est en train de se poser."],
+  251: ["Ta collection est complète. Pourtant, ce petit sanctuaire, tu ne l'avais jamais remarqué.", "La forêt retient son souffle. Toi, tu as encore le tien."],
+};
+function sceneSanctuaire(num, suite) {
+  const f = () => suite(); f.lent = true;
+  sceneRecit(`sanct-${LEG_FOND[num]}.webp`, SANCT_TEXTE[num], {fin: f});
+}
+// Une petite histoire par lieu : à l'arrivée, une fois, sans rien bloquer
+const HISTOIRES = {
+  Kanto: [
+    {lieu: "Mont Sélénite", image: "histoire-k-fossiles.webp", lignes: ["Au fond du Mont Sélénite, quelqu'un a laissé une pioche et une lanterne.", "Sur deux socles de pierre, des traces rondes. Des fossiles dormaient là, il y a très longtemps.", "Tu ne touches à rien. Enfin, tu regardes. C'est déjà du cardio, avec cette montée."]},
+    {lieu: "Lavanville", image: "histoire-k-tour.webp", lignes: ["Dans la Tour Pokémon, les bougies tremblent sans le moindre courant d'air.", "On dit que les Pokémon d'ici veillent encore sur ceux qui montent les voir.", "Tu grimpes en silence. Personne ne te demande rien. Tes jambes, si, un peu."]},
+    {lieu: "Céladopole", image: "histoire-k-rocket.webp", lignes: ["Derrière le casino de Céladopole, un escalier descend là où aucun client ne va.", "Des écrans, des caisses scellées, des lumières rouges. La Team Rocket a bien rangé son bazar.", "« Qui a laissé la porte ouverte ? » Tu remontes sans courir. Enfin, presque."]},
+  ],
+  Johto: [
+    {lieu: "Écorcia", image: "histoire-j-puits.webp", lignes: ["Le vieux puits d'Écorcia sent la mousse et le Ramoloss mouillé.", "On y a chassé ceux qui s'en prenaient aux Ramoloss. Depuis, ils dorment en paix.", "L'échelle, elle, est toujours là. Trente barreaux à remonter : ça compte comme des tractions, non ?"]},
+    {lieu: "Doublonville", image: "histoire-j-radio.webp", lignes: ["Au dernier étage de la Tour Radio, la porte a été forcée. Les papiers traînent par terre.", "Quelqu'un a voulu prendre l'antenne, et il est parti en courant.", "Le micro est resté ouvert. Toute la ville t'entend reprendre ton souffle."]},
+    {lieu: "Lac Colère", image: "histoire-j-lac.webp", lignes: ["Ce soir, le Lac Colère n'a pas envie d'être tranquille. L'eau tourne, au milieu, sans raison.", "Un pêcheur jure avoir vu quelque chose de rouge là-dessous. Il jure aussi qu'il a arrêté de boire."]},
+  ],
+};
+const histoireVue = h => { try { return localStorage.getItem(`pkm_histoire_${R.partie}_${h.image}`) === "1"; } catch (e) { return true; } };
+const noterHistoire = h => { try { localStorage.setItem(`pkm_histoire_${R.partie}_${h.image}`, "1"); } catch (e) {} };
+const distDe = nom => { const l = LIEUX.find(x => x.nom === nom); return l ? l.dist : Infinity; };
+function histoireDue() {
+  const l = (HISTOIRES[REG.nom] || []).filter(h => distDe(h.lieu) <= V.pos && !histoireVue(h));
+  l.slice(0, -1).forEach(noterHistoire);
+  return l[l.length - 1] || null;
+}
+function sceneHistoire(h, essai = false) { if (!essai) noterHistoire(h); sceneRecit(h.image, h.lignes); }
+function sceneAnniversaire(suite) {
+  const f = () => suite(); f.lent = true;
+  sceneRecit("anniversaire-centre.webp", [`Joyeux anniversaire, ${nomDresseur()} !`, "Toute l'équipe du Centre a préparé un gâteau. Bon, surtout moi.", "Une année de plus, et tu bouges encore. Tiens, ça, c'est pour toi !"], {qui: "Infirmière Joëlle", fin: f, debut: async () => { EPIQUE.fanfare(); vibre([40, 60, 80]); }});
 }
 // --- Le Panthéon : après la Ligue, ton équipe entre dans la légende (6 socles), puis la Master Ball s'ouvre ---
 const SOCLES = EN_JOHTO ? [[107, 778], [190, 868], [342, 955], [600, 955], [748, 868], [833, 778]] : [[127, 722], [200, 830], [350, 905], [588, 905], [740, 830], [812, 722]];  // dessus de chaque socle (pixels)
@@ -4616,7 +4699,8 @@ function voyagerDepuis(el, v, centrer, immediat) {
     // arrivé à une arène pendant ce voyage : le champion se présente et lance son défi
     const d = V.defi;
     if (d && d.arrive && p0 < LIEUX[d.lieu].dist) setTimeout(() => { const ch = el.querySelector(".chef");
-      if (ch && document.body.contains(ch)) { suivre && centrer(P); ch.click(); } }, 1200);
+      const presente = () => { if (ch && document.body.contains(ch)) { suivre && centrer(P); ch.click(); } };
+      entreeVue(d.numero) ? presente() : sceneEntree(d.numero, presente); }, 1200);
   };
   requestAnimationFrame(pas);
 }
@@ -5468,6 +5552,10 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-passage", `${ico("tele", "p")} La fin de Kanto`)}${b("t-voyage-r", `${ico("carte", "p")} L'arrivée à Johto`)}${b("t-johto", `${ico("carte", "p")} ${EN_JOHTO ? "Revenir à la vraie partie" : "Voir Johto (champions, carte, décors)"}`)}</div>
     <div class="groupe">Régis, le rival<small>Ses 4 rencontres de la région, avec tes vrais chiffres de la semaine.</small></div>
     <div class="boutons-t">${(D.rival || []).map((r, i) => b(`t-rival" data-i="${i}`, r.lieu)).join("")}</div>
+    <div class="groupe">Les petites scènes<small>Entrées d'arène, sanctuaires, histoires, anniversaire : aperçus, sans rien d'enregistré.</small></div>
+    <div class="boutons-t">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => b(`t-entree" data-n="${n}`, `Entrée : ${n === 9 ? "Ligue" : CHAMPIONS[n].nom}`)).join("")}</div>
+    <div class="boutons-t">${(EN_JOHTO ? [243, 244, 245, 249, 250, 251] : [145, 144, 146, 150, 151]).map(x => b(`t-sanct" data-n="${x}`, `Sanctuaire : ${PAR_NUM[x].nom}`)).join("")}</div>
+    <div class="boutons-t">${(HISTOIRES[REG.nom] || []).map((h, i) => b(`t-hist" data-i="${i}`, `Histoire : ${h.lieu}`)).join("")}${b("t-anniv", "Anniversaire")}</div>
     <div class="groupe">Le début de l'aventure<small>Écran titre, carte du nouveau dresseur, chambre, village, hautes herbes, labo du Professeur Chen, le starter, puis le Pokédex.</small></div>
     <div class="boutons-t">${b("t-debut", "🎬 Écran titre → dresseur → labo")}${b("t-labo", `${ico("poke", "p")} Labo seul`)}${b("t-pokedex", `${ico("poke", "p")} Le Pokédex`)}</div>
     <div class="groupe">Les arènes<small>La scène du badge avec le champion dans son arène, puis l'Hyper Ball qui s'ouvre dans l'arène vide. La Ligue : les 4 salles du Conseil 4, Régis, le Panthéon et la Master Ball.</small></div>
@@ -5488,6 +5576,10 @@ function dessinerTests() {
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
   on(".t-debut", () => demarrerAventure(null, true));
   on(".t-pokedex", () => scenePokedex());
+  on(".t-entree", x => sceneEntree(+x.dataset.n, null, true));
+  on(".t-sanct", x => sceneSanctuaire(+x.dataset.n, () => ouvrir(captureEssai(+x.dataset.n, {ball: "master", shiny: false, fond: LEG_FOND[+x.dataset.n], raison: "🏛️ Aperçu : sanctuaire"}))));
+  on(".t-hist", x => sceneHistoire(HISTOIRES[REG.nom][+x.dataset.i], true));
+  on(".t-anniv", () => sceneAnniversaire(() => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "shiny", shiny: true, fond: "ville", raison: "🎂 Aperçu : anniversaire"}))));
   document.querySelectorAll(".t-rival").forEach(x => x.onclick = () => sceneRival(D.rival[+x.dataset.i], true));
   on(".t-passage", () => scenePassage(true));
   on(".t-voyage-r", () => sceneVoyageRegion(null, true));
@@ -5591,6 +5683,8 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   else if (V.velo && (() => { try { return localStorage.getItem(`pkm_velo_vu_${R.partie}`) !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneVelo(); }, 1200);
   else if (rivalDu()) { const r = rivalDu(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneRival(r); }, 1200); }
+  else if (histoireDue()) { const h = histoireDue(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneHistoire(h); }, 1200); }
+  else if (V.defi && V.defi.arrive && !entreeVue(V.defi.numero) && !etatVoyage().attente) { const n = V.defi.numero; setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneEntree(n); }, 1200); }
   else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);
   else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())
