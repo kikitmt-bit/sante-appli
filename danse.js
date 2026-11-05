@@ -304,7 +304,8 @@ function danse(ouvrirSur = null) {
     const redim = () => { const r = piste.getBoundingClientRect(), d = Math.min(PW.devicePixelRatio || 1, 2); toile.width = Math.round(r.width * d); toile.height = Math.round(r.height * d); return d; };
     let dpr = redim(); const surRedim = () => { dpr = redim(); rde(); }; PW.addEventListener("resize", surRedim);
     const instant = e => a.currentTime - Math.max(PW.performance.now() - e.timeStamp, 0) / 1000 - debut - (mem.calage || 0);
-    piste.onpointerdown = e => { if (e.target.closest(".quitter")) return; e.preventDefault(); const r = piste.getBoundingClientRect(), col = Math.max(0, Math.min(3, Math.floor((e.clientX - r.left) / r.width * 4)));
+    piste.onpointerdown = e => { if (e.target.closest(".quitter")) return; e.preventDefault(); if (doigts.size >= 2) return;  // 2 doigts au plus, comme les 2 pieds sur un vrai tapis (Kiki, 05/11)
+      const r = piste.getBoundingClientRect(), col = Math.max(0, Math.min(3, Math.floor((e.clientX - r.left) / r.width * 4)));
       doigts.set(e.pointerId, col); tenu[col]++; try { piste.setPointerCapture(e.pointerId); } catch (x) {} appui(col, instant(e)); };
     const lache = e => { if (!doigts.has(e.pointerId)) return; tenu[doigts.get(e.pointerId)]--; doigts.delete(e.pointerId); };
     piste.onpointerup = lache; piste.onpointercancel = lache; piste.oncontextmenu = e => e.preventDefault();
