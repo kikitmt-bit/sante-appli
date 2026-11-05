@@ -256,7 +256,7 @@ def ecrire_github(session, texte, chemin=MONTRE, pareil=lambda a, b: sans_heure(
     raise RuntimeError("GitHub refuse l'écriture (409 trois fois)")
 
 
-def calculer_missions(lire, aujourd, ami=None):
+def calculer_missions(lire, aujourd, ami=None, materiel=None):
     """La mission de chaque jour (missions.py) : choisie une fois, puis gardée ; pas d'avant 13 h relus (fichiers du jour)."""
     annees = range(missions.DEPUIS.year - 1, aujourd.year + 1)
     f = lire([f"data/resume/{y}.json" for y in annees] + [missions.FICHIER])
@@ -274,7 +274,7 @@ def calculer_missions(lire, aujourd, ami=None):
         chemins = {j: f"data/jour/{j.year}/{j}.json" for j in jours}
         lu = lire(list(chemins.values()))
         return {j: lu[c] for j, c in chemins.items()}
-    return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour, ami, calculer_gestes(lire, aujourd, ami)["jours"])
+    return missions.calculer(f.get(missions.FICHIER), aujourd, stats, lire_jour, ami, calculer_gestes(lire, aujourd, ami)["jours"], materiel)
 
 
 def calculer_gestes(lire, aujourd, ami=None):
@@ -292,7 +292,8 @@ def calculer_amis(session, aujourd):
         try:
             prefixe = chiffres.dossier_ami(ami)
             lire = chiffres.chez(lecteur_github(session), prefixe)
-            texte = json.dumps(calculer_missions(lire, aujourd, ami), ensure_ascii=False, indent=0)
+            dresseur = lecteur_github(session)([f"data/dresseurs/{ami}.json"])[f"data/dresseurs/{ami}.json"]  # hors de son dossier : le fichier public de sa carte
+            texte = json.dumps(calculer_missions(lire, aujourd, ami, missions.materiel_de(dresseur, ami)), ensure_ascii=False, indent=0)
             ecrire_github(session, texte, prefixe + missions.FICHIER, pareil)
             ecrire_github(session, json.dumps(calculer_gestes(lire, aujourd, ami), ensure_ascii=False, indent=0), prefixe + pokemon.GESTES, pareil)
             lire = chiffres.chez(lecteur_github(session), prefixe)  # relire (la mission vient d'être écrite)
@@ -312,7 +313,8 @@ def main(args):
         session = _api(os.environ["SANTE_TOKEN"])
         lire = lecteur_github(session)
         # La mission du jour d'abord : le jeu (montre.json, captures figées) en tient compte (bonus de points)
-        texte_m = json.dumps(calculer_missions(lire, maintenant.date()), ensure_ascii=False, indent=0)
+        mon_materiel = missions.materiel_de(lire(["data/dresseurs/kiki.json"])["data/dresseurs/kiki.json"])
+        texte_m = json.dumps(calculer_missions(lire, maintenant.date(), None, mon_materiel), ensure_ascii=False, indent=0)
         print("missions :", ecrire_github(session, texte_m, missions.FICHIER, lambda a, b: json.loads(a) == json.loads(b)))
         texte_g = json.dumps(calculer_gestes(lire, maintenant.date()), ensure_ascii=False, indent=0)
         print("pompes et tractions :", ecrire_github(session, texte_g, pokemon.GESTES, lambda a, b: json.loads(a) == json.loads(b)))

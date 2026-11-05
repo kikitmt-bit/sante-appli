@@ -225,6 +225,40 @@ class Roue(unittest.TestCase):
         ligne = missions.tirer(jour(0), stats_de(avant), {}, None, g)
         self.assertNotEqual(missions.MISSIONS[ligne["cle"]]["famille"], "jambes")
 
+    def test_le_materiel_coche_ouvre_les_missions(self):
+        stat = stats_de({jour(-k): {"pas": 3000, "km": 2, "zone_sport": 0, "seance_max": 25} for k in range(1, 29)})
+        vues = {c: missions.tirer(jour(n), stat, {}, "a1b2c3d4e5f6", None, {"rameur", "velo"})["cle"] for n, c in enumerate(range(150))}
+        self.assertIn("traversee", vues.values())
+        self.assertIn("tournee", vues.values())
+        self.assertNotIn("danse", vues.values())
+        self.assertNotIn("pinces", vues.values())
+
+    def test_une_montre_sans_seances_n_a_pas_les_missions_de_seance(self):
+        stat = stats_de({})
+        vues = {missions.tirer(jour(n), stat, {}, "a1b2c3d4e5f6", None, {"rameur", "velo", "tapis", "barre"})["cle"] for n in range(150)}
+        self.assertFalse(vues & {"traversee", "tournee", "danse"})
+        self.assertIn("pinces", vues)  # compter ses tractions ne dépend pas de la montre
+
+    def test_kiki_a_tout_tant_qu_il_n_a_rien_decoche(self):
+        self.assertEqual(missions.materiel_de(None), set(missions.MATERIELS))
+        self.assertEqual(missions.materiel_de({"materiel": ["rameur"]}), {"rameur"})
+        self.assertEqual(missions.materiel_de(None, "a1b2"), set())
+        self.assertEqual(missions.materiel_de({"materiel": []}), set())
+
+    def test_le_velo_se_valide_en_temps_ou_en_distance(self):
+        info = lambda j: {"cle": "tournee"}  # noqa: E731
+        fait = lambda s: missions.reussite("tournee", DEBUT, stats_de({DEBUT: s}), info)  # noqa: E731
+        self.assertTrue(fait({"min_velo": 20, "km_velo": 0}))
+        self.assertTrue(fait({"min_velo": 12, "km_velo": 6}))
+        self.assertFalse(fait({"min_velo": 12, "km_velo": 3}))
+
+    def test_la_carte_publie_le_materiel_et_rien_d_autre(self):
+        import amis
+        d = amis.dresseur_du_telephone('{"nom": "Ash", "naissance": "1990-01-01", "materiel": ["rameur", "piscine"]}')
+        self.assertEqual(d["materiel"], ["rameur"])
+        self.assertNotIn("naissance", d)
+        self.assertNotIn("materiel", amis.dresseur_du_telephone('{"nom": "Ash"}'))
+
     def test_un_ami_n_a_pas_les_missions_de_materiel(self):
         self.assertFalse(any(m.get("materiel") for m in self.tirages(ami="a1b2c3d4e5f6")))
 

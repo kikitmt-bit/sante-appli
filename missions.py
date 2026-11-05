@@ -39,7 +39,7 @@ MEMOIRE = 28                     # jours regardés pour la meilleure journée
 DISTANCE_FIABLE = .65            # mètres par pas (médiane) : en dessous, Lokhlass n'est pas proposé
 SEANCES_VUES = 3                 # séances de 10 min sur 28 jours : en dessous, Tauros n'est pas proposé
 # cle -> titre, texte, seuil, jours possibles (0 = lundi), unité ; num = son Pokémon, bonus = points, phrase = sa petite phrase,
-# geste = ce que le téléphone compte lui-même (pompes, squats, series : boutons) ; famille = la roue (tirer) ; materiel = il faut le matériel de Kiki (pas proposé aux amis, en attendant « Mon matériel »)
+# geste = ce que le téléphone compte lui-même (pompes, squats, series : boutons) ; famille = la roue (tirer) ; materiel = ce qu'il faut avoir (cases « Mon matériel » de la carte du dresseur, MATERIELS)
 MISSIONS = {
     # Les anciennes (jusqu'au 03/11)
     "matinee": {"titre": "Matinée active", "texte": "2 000 pas avant 13 h", "seuil": 2000, "jours": {0, 1, 2, 3, 4},
@@ -78,16 +78,24 @@ MISSIONS = {
     "charge": {"famille": "cardio", "titre": "La charge de Tauros", "texte": "Une séance de 20 min", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "min",
                "num": 128, "bonus": 25, "phrase": "Tête baissée, et sans s'arrêter avant la fin."},
     # Avec le matériel de Kiki (audit du 03/11) : le dos, le rameur, le tapis de danse, le vélo
-    "pinces": {"famille": "tirer", "materiel": True, "titre": "Les pinces de Scarabrute", "texte": "{seuil} tractions dans la journée", "seuil": 5, "jours": TOUS_LES_JOURS, "unite": "tractions", "geste": "tractions",
+    "pinces": {"famille": "tirer", "materiel": "barre", "titre": "Les pinces de Scarabrute", "texte": "{seuil} tractions dans la journée", "seuil": 5, "jours": TOUS_LES_JOURS, "unite": "tractions", "geste": "tractions",
                "num": 127, "bonus": 30, "phrase": "Une fois agrippé, il ne lâche plus."},
-    "traversee": {"famille": "tirer", "materiel": True, "titre": "La traversée d'Otaria", "texte": "10 min de rameur", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
+    "traversee": {"famille": "tirer", "materiel": "rameur", "titre": "La traversée d'Otaria", "texte": "10 min de rameur", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
                   "num": 86, "bonus": 35, "phrase": "Il nage à contre-courant, et il adore ça."},
-    "danse": {"famille": "cardio", "materiel": True, "titre": "La danse de Mélofée", "texte": "10 min de tapis de danse", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
+    "danse": {"famille": "cardio", "materiel": "tapis", "titre": "La danse de Mélofée", "texte": "10 min de tapis de danse", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
               "num": 35, "bonus": 30, "phrase": "Elle danse sous la lune. Toi, dans le salon."},
-    "tournee": {"famille": "jambes", "materiel": True, "titre": "La tournée de Roucoups", "texte": "20 min de vélo", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "min",
+    "tournee": {"famille": "jambes", "materiel": "velo", "titre": "La tournée de Roucoups", "texte": "20 min de vélo ou 6 km", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "min",
                 "num": 17, "bonus": 20, "phrase": "Il connaît tous les raccourcis, vus d'en haut."},
 }
 TIRAGE = [c for c, m in MISSIONS.items() if not m.get("ancienne")]
+MATERIELS = ("rameur", "tapis", "velo", "barre")
+VELO_KM = 6  # 6 km de vélo valent les 20 min de la tournée : un trajet rapide compte autant qu'une balade (la montre ne donne pas toujours la distance : les minutes restent)
+
+
+def materiel_de(dresseur, ami=None):
+    """Ce que le joueur a coché (data/dresseurs/<id>.json). Rien de publié encore : tout pour Kiki, l'appli est faite avec son matériel ; rien pour un ami."""
+    liste = (dresseur or {}).get("materiel")
+    return set(MATERIELS) if liste is None and not ami else set(liste or ())
 
 
 ZONE_SPORT = dt.date(2026, 11, 1)  # depuis : minutes de sport (zone jaune / rouge) au lieu des minutes en zone
@@ -151,6 +159,8 @@ def valeur(cle, jour, stats, info, gestes=None):
         return ((gestes or {}).get(str(jour)) or {}).get(m["geste"], 0)
     v = {"doduo": e.get("max60"), "trio": e.get("h1000"), "ronde": e.get("pas_soir"), "voyage": s.get("km"), "sortie": s.get("pas"), "fantome": s.get("pas"),
          "course": s.get("pas"), "galop": s.get(cle_zone(jour)), "charge": s.get("seance_max"), "traversee": s.get("min_rameur"), "danse": s.get("min_danse"), "tournee": s.get("min_velo")}[cle]
+    if cle == "tournee" and v is not None and v == v:  # le premier atteint des deux : 20 min ou 6 km, ramenés en minutes
+        v = max(v, (s.get("km_velo") or 0) * m["seuil"] / VELO_KM)
     return None if v is None or v != v else v
 
 
@@ -240,7 +250,7 @@ def familles_du(s, g=None):
     return f
 
 
-def tirer(jour, stats, jours, ami=None, gestes=None):
+def tirer(jour, stats, jours, ami=None, gestes=None, materiel=None):
     """La mission du jour : dans la famille la moins travaillée ces 7 jours (ce qui a vraiment été fait, plus un peu ce qui a déjà été proposé,
     pour que ça tourne même les jours où la mission est ratée), jamais la même famille de force que la veille ; pas une mission des 5 derniers
     jours ; chacun la sienne. -> sa ligne."""
@@ -248,7 +258,11 @@ def tirer(jour, stats, jours, ami=None, gestes=None):
     proposee = lambda j: MISSIONS.get((jours.get(str(j)) or {}).get("cle"), {}).get("famille")  # noqa: E731
     fait = lambda j: familles_du(stats(j), (gestes or {}).get(str(j)))  # noqa: E731
     recentes = {(jours.get(str(jour - dt.timedelta(days=k))) or {}).get("cle") for k in range(1, PAS_REVENIR + 1)}
-    seuils = {c: s for c in TIRAGE if (not ami or not MISSIONS[c].get("materiel")) and (s := possible(c, jour, stats, gestes)) is not None}
+    materiel = materiel_de(None, ami) if materiel is None else materiel
+    # chez un ami, la montre doit aussi voir ses séances, sinon une mission de rameur ne se validerait jamais (Apple Santé n'en donne pas) ; Kiki : toujours, il peut corriger le type de sa séance après coup
+    seances_vues = not ami or possible("charge", jour, stats, gestes) is not None
+    faisable = lambda m: not m.get("materiel") or (m["materiel"] in materiel and (m.get("geste") or seances_vues))  # noqa: E731
+    seuils = {c: s for c in TIRAGE if faisable(MISSIONS[c]) and (s := possible(c, jour, stats, gestes)) is not None}
     choix = [c for c in seuils if c not in recentes] or list(seuils)
     hier = fait(avant[0]) | {proposee(avant[0])}
     repos = [c for c in choix if not (MISSIONS[c]["famille"] in FORCE and MISSIONS[c]["famille"] in hier)]
@@ -283,7 +297,7 @@ def choisir(jour, stats, pas_du_matin, hier=None):
     return cle, raison
 
 
-def calculer(ancien, aujourd, stats, lire_jour, ami=None, gestes=None):
+def calculer(ancien, aujourd, stats, lire_jour, ami=None, gestes=None, materiel=None):
     """Le contenu de missions.json : {"jours": {jour: {cle, seuil, raison, pas_matin, pas_soir, max60, h1000}}}. Les missions déjà
     choisies ne changent plus ; les pas sont relus pour les 3 derniers jours (une montre peut arriver en retard ; le reste est gardé)."""
     jours = dict((ancien or {}).get("jours", {}))
@@ -302,7 +316,7 @@ def calculer(ancien, aujourd, stats, lire_jour, ami=None, gestes=None):
         e = jours.setdefault(str(j), {})
         if "cle" not in e:
             if j >= NOUVELLES:
-                e.update(tirer(j, lambda x: avec_coeur(dict(stats(x)), jours.get(str(x)), x), jours, ami, gestes))
+                e.update(tirer(j, lambda x: avec_coeur(dict(stats(x)), jours.get(str(x)), x), jours, ami, gestes, materiel))
             else:
                 e["cle"], e["raison"] = choisir(j, stats, pm, (jours.get(str(j - dt.timedelta(days=1))) or {}).get("cle"))
         j += dt.timedelta(days=1)

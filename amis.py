@@ -11,6 +11,7 @@ import html
 import json
 
 import chiffres
+import missions
 import regions
 import pokemon
 from pokedex import LEGENDAIRES
@@ -25,7 +26,7 @@ DEFAUT = {"nom": "", "peau": "Claire", "casquette": "Rouge", "veste": "Rouge", "
 
 
 def dresseur_du_telephone(texte):
-    """Le pseudo et les couleurs (et rien d'autre) de la carte du dresseur gardée sur le téléphone ; None si rien de réglé."""
+    """Le pseudo, les couleurs et le matériel coché (et rien d'autre) de la carte du dresseur gardée sur le téléphone ; None si rien de réglé."""
     try:
         d = json.loads(texte or "")
     except (TypeError, ValueError):
@@ -34,8 +35,11 @@ def dresseur_du_telephone(texte):
         return None
     nom = " ".join(str(d["nom"]).split())[:16]
     ok = lambda k, permis: d.get(k) if d.get(k) in permis else DEFAUT[k]  # noqa: E731
-    return {"nom": nom, "peau": ok("peau", PEAUX), "casquette": ok("casquette", TISSUS), "veste": ok("veste", TISSUS),
-            "pantalon": ok("pantalon", PANTALONS)}
+    sortie = {"nom": nom, "peau": ok("peau", PEAUX), "casquette": ok("casquette", TISSUS), "veste": ok("veste", TISSUS),
+              "pantalon": ok("pantalon", PANTALONS)}
+    if isinstance(d.get("materiel"), list):  # pas de liste : rien de coché encore (missions.materiel_de décide)
+        sortie["materiel"] = [m for m in missions.MATERIELS if m in d["materiel"]]
+    return sortie
 
 
 def _quand(jour, aujourd):

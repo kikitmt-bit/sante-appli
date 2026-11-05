@@ -3315,7 +3315,9 @@ const formeStarter = () => { const st = G.starter; if (!st) return null; const c
 function voiesDefi() {  // chaque épreuve du défi en cours : ses voies avec où on en est (les pompes et tractions du jour pas encore comptées par le serveur comprises)
   const d = V.defi, a = LIEUX[d.lieu].arene, g = gestesAuj();
   return a.epreuves.map((e, i) => { const voies = e.voies.map((o, k) => ({...o, v: ((d.epreuves[i] || [])[k] || 0) + (g[o.defi] !== undefined ? Math.max(g[o.defi] - ((D.gestes_jour || {})[o.defi] || 0), 0) : 0)}));
-    return {qui: e.qui, voies, fait: voies.some(o => o.v >= o.cible)}; });
+    // une voie sans son matériel n'est pas proposée (sauf si elle est déjà commencée, ou si c'est la seule) : le plan B et les autres voies restent
+    const mat = materielDe(), montrees = voies.filter(o => !DEFI_MATERIEL[o.defi] || mat.includes(DEFI_MATERIEL[o.defi]) || o.v > 0);
+    return {qui: e.qui, voies: montrees.length ? montrees : voies, fait: voies.some(o => o.v >= o.cible)}; });
 }
 function resteDefi() {
   const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = Math.min(Math.max(a.b.cible - d.valeur_b, 0), d.max ? Math.max(d.max - d.actifs, 0) : 99), ouB = `, ou ${String(resteB).replace(".", ",")} jour${resteB >= 2 ? "s" : ""} d'objectif`;
@@ -3358,7 +3360,7 @@ function dessinerMuscu() {
   el.innerHTML = `<div class="muscu-points"><div class="l1"><span>Points d'effort du jour</span><b>${String(Math.round(points * 10) / 10).replace(".", ",")} / ${R.bonus_gestes_max}</b></div>
       <div class="bar"><i class="${points >= R.bonus_gestes_max ? "ok" : ""}" style="width:${points / R.bonus_gestes_max * 100}%"></i></div>
       <small>La montre ne les compte pas : le téléphone s'en charge. Tes points arrivent à la prochaine actualisation.</small></div>
-    <div class="exos">${EXOS.map(([t, gain]) => { const M = ENTR[t], rec = (mem[t] || {}).record;
+    <div class="exos">${EXOS.filter(([t]) => t !== "tractions" || materielDe().includes("barre") || g.tractions || mis.geste === "tractions").map(([t, gain]) => { const M = ENTR[t], rec = (mem[t] || {}).record;
       const tag = t === "pompes" && duel ? "Arène" : t === pourMission && mis.ok !== true ? "Mission" : "";
       return `<div class="exo">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3>
         <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
@@ -3892,6 +3894,10 @@ let DRESSEUR = {nom: "", peau: "Claire", casquette: "Rouge", veste: "Rouge", pan
 try { DRESSEUR = {...DRESSEUR, ...JSON.parse(localStorage.getItem("pkm_dresseur") || "{}")}; } catch (e) {}
 let DRESSEUR_ESSAI = null;  // le pseudo tapé pendant l'aperçu de l'accueil (jamais gardé)
 const nomDresseur = () => DRESSEUR_ESSAI || DRESSEUR.nom || "Sacha";
+// Mon matériel : pour que personne n'ait une mission ou un défi impossible. Tant que rien n'est réglé : tout pour Kiki, rien pour un ami (comme missions.materiel_de).
+const MATERIELS = [["rameur", "Rameur"], ["tapis", "Tapis de danse"], ["velo", "Vélo"], ["barre", "Barre de traction"]];
+const materielDe = (d = DRESSEUR) => Array.isArray(d.materiel) ? d.materiel : D.kiki ? MATERIELS.map(m => m[0]) : [];
+const DEFI_MATERIEL = {eau: "rameur", tractions: "barre"};  // une voie de défi qui demande du matériel
 const IMAGES_DRESSEUR = new Map();  // feuille + couleurs -> image recoloriée (data URL)
 function feuilleColoree(feuille, d = DRESSEUR) {
   const cle = [feuille, d.peau, d.casquette, d.veste, d.pantalon].join("|");
@@ -3955,6 +3961,8 @@ const STYLE_DRESSEUR = `
 .carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 20.4px 'Jersey 15',Outfit,monospace;color:#283048;outline:none;
   text-align:right;padding:0}
 .carte-dresseur .profil{margin-top:8px;display:grid;grid-template-columns:1fr;gap:5px}
+.carte-dresseur .profil .materiel{cursor:default;flex-wrap:wrap}.carte-dresseur .choix-mat{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto;justify-content:flex-end}
+.carte-dresseur .choix-mat button{font:400 16px 'Jersey 15',monospace;padding:2px 6px;background:#F8F8E8;border:2px solid #484838;border-radius:5px;color:#383828;cursor:pointer}.carte-dresseur .choix-mat button.on{background:#D83830;color:#fff}
 .carte-dresseur .profil .boite{cursor:text;min-width:0;gap:4px}.carte-dresseur .profil .boite>span:first-child{flex:0 0 auto;font-size:15px}
 .carte-dresseur .profil input{font:400 18px 'Jersey 15',Outfit,monospace;min-height:24px;background:none}
 .carte-dresseur .profil input[type=date]{min-width:0;flex:1;max-width:180px;margin-left:auto}
@@ -4030,7 +4038,9 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
     <div class="profil"><label class="boite"><span>NAISSANCE</span><input class="naissance" type="date" max="${D.aujourdhui}" min="1920-01-01" value="${/^\d{4}-\d{2}-\d{2}$/.test(d.naissance || "") ? d.naissance : ""}" enterkeyhint="done"></label>
       <label class="boite"><span>TAILLE</span><span class="av-unite"><input class="taille" type="number" inputmode="numeric" min="100" max="250" placeholder="175" value="${+d.taille || ""}" enterkeyhint="done"><i>cm</i></span></label>
       <div class="boite sexe"><span>SEXE</span><span class="choix-sexe"><button type="button" data-s="M" class="${d.sexe === "M" ? "on" : ""}">Masculin</button><button type="button" data-s="F" class="${d.sexe === "F" ? "on" : ""}">Féminin</button></span></div>
-      <small>Facultatif. Rend ton bilan santé plus juste. Ça reste sur ton téléphone.</small></div>
+      <small>Facultatif. Rend ton bilan santé plus juste. Ça reste sur ton téléphone.</small>
+      <div class="boite materiel"><span>MATÉRIEL</span><span class="choix-mat">${MATERIELS.map(([k, n]) => `<button type="button" data-m="${k}" class="${materielDe(d).includes(k) ? "on" : ""}">${n}</button>`).join("")}</span></div>
+      <small>Coche ce que tu as : tes missions et les défis des champions s'adaptent, à partir de demain.</small></div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
     <div class="boutons">${accueil ? `<button class="ok go">COMMENCER L'AVENTURE</button>`
@@ -4052,10 +4062,12 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   f.querySelectorAll("input").forEach(i => i.onkeydown = e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); i.blur(); } });
   f.querySelectorAll(".choix-sexe button").forEach(b => b.onclick = () => { const deja = b.classList.contains("on");
     f.querySelectorAll(".choix-sexe button").forEach(x => x.classList.remove("on")); if (!deja) b.classList.add("on"); vibre(8); });
+  f.querySelectorAll(".choix-mat button").forEach(b => b.onclick = () => { b.classList.toggle("on"); vibre(8); });
   const avant = JSON.stringify([d.naissance || "", +d.taille || 0, d.sexe || ""]);
   const lireProfil = () => { const n = f.querySelector(".naissance").value, t = Math.round(+f.querySelector(".taille").value);
     d.naissance = /^\d{4}-\d{2}-\d{2}$/.test(n) && n >= "1920-01-01" && n <= D.aujourdhui ? n : ""; d.taille = t >= 100 && t <= 250 ? t : 0;
-    const sx = f.querySelector(".choix-sexe button.on"); d.sexe = sx ? sx.dataset.s : ""; };
+    const sx = f.querySelector(".choix-sexe button.on"); d.sexe = sx ? sx.dataset.s : "";
+    d.materiel = [...f.querySelectorAll(".choix-mat button.on")].map(b => b.dataset.m); };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
       if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
