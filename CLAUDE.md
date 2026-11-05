@@ -130,7 +130,7 @@ nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de touche
 
 - `app.py` : une seule page qui défile, sans la barre Streamlit du haut ni titre (CSS) ; la barre d'onglets est décrite plus
   haut (Interface) ; conteneur `outils` caché, ses boutons touchés depuis le bas de Dresseur : **« ⚙️ Paramètres »** (fenêtre Configuration : données brutes, oublier ce téléphone)
-  et **« 🔄 Synchroniser mes données »** (le « 🔄 » de ces notes). **Récolte à chaque ouverture, pour tout le monde** (Kiki, 03/11 ; `recolte_ouverture` : une par session, 5 min au moins entre deux par joueur, 30 s d'attente au plus). **Mobile d'abord** : jamais de défilement horizontal (tout passe à la ligne), et rien
+  ; **« 🔄 Synchroniser »** (le « 🔄 » de ces notes) : un seul bouton, toujours en bas à gauche (`bouton_synchroniser`, Kiki, 05/11), un point quand de nouvelles données attendent. Le récap du matin se règle sur la carte du dresseur. **Récolte à chaque ouverture, pour tout le monde** (Kiki, 03/11 ; `recolte_ouverture` : une par session, 5 min au moins entre deux par joueur, 30 s d'attente au plus). **Mobile d'abord** : jamais de défilement horizontal (tout passe à la ligne), et rien
   d'utile dans le coin en bas à droite (bouton « Manage app » de Streamlit, ~1 cm) : marge de 64 px en bas des calques. Filtre en haut : Jour / 7 jours
   / Semaine / Mois / Année + date et ◀ ▶. En haut, l'analyse du coach (repliée) et un bouton 📋 qui copie
   le dossier du coach sans l'afficher ; puis Activité, Séances, Sommeil, Cœur, Poids. Les chiffres viennent des **résumés annuels** (`data/resume/AAAA.json`,

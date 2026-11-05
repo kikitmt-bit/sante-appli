@@ -111,7 +111,6 @@ h3{margin-top:1.4rem !important}
 .bilan .obs b{display:block;font-size:.95rem;line-height:1.25;color:#EEF2FA}
 .bilan .obs p{margin:2px 0 0 !important;font-size:.84rem;line-height:1.35;color:#C9D3EA}
 .bilan .obs .cs{margin-top:4px !important;color:#FFE27A}
-.bilan .note{font-size:.7rem;color:#7C8AA8;margin-top:8px}
 .prof-tete{display:flex;align-items:center;gap:11px}
 .prof-portrait{flex:0 0 60px;width:60px;height:60px;border-radius:50%;border:3px solid #FFE27A;background-repeat:no-repeat;box-shadow:0 2px 8px rgba(0,0,0,.45)}
 [data-testid="stExpander"] h4{font-size:1.05rem !important;padding:.6rem 0 .2rem !important}
@@ -143,6 +142,10 @@ st.markdown("""<style>
 [role="dialog"] button[aria-label="Close"]{background:none !important;border:0 !important}
 [role="dialog"] button[aria-label="Close"] svg{fill:#383828}
 [role="dialog"] hr{border-color:#C8C8A8 !important}
+[role="dialog"] :is(p,span,li,label,small,h1,h2,h3,h4,strong,em,summary,td,th),[role="dialog"] [data-testid="stCaptionContainer"],[role="dialog"] [data-testid="stCaptionContainer"] *,[role="dialog"] [data-testid="stMetricValue"] *,[role="dialog"] [data-testid="stMetricLabel"] *{color:#383828 !important;-webkit-text-fill-color:#383828}
+[role="dialog"] [data-testid="stCaptionContainer"]{opacity:1 !important}
+[role="dialog"] label[data-rac]>div:first-of-type{background:#A8A890 !important}[role="dialog"] label[data-rac][data-selected]>div:first-of-type{background:#D83830 !important}
+[role="dialog"] [data-testid="stExpander"] details,[role="dialog"] [data-testid="stExpander"] summary{background:#F0F0DC !important;border-color:#484838 !important}
 [role="dialog"] label[data-baseweb="checkbox"] > div:first-child{background:#A8A890 !important}
 [role="dialog"] label[data-baseweb="checkbox"]:has(input:checked) > div:first-child{background:#D83830 !important}
 .fresh{color:#D8E0F0 !important;font-size:.84rem !important;white-space:nowrap}
@@ -161,7 +164,7 @@ st.markdown("""<style>
 .st-key-bloc_coach summary *,.st-key-bloc_coach [data-testid="stMarkdownContainer"] *{color:#383828 !important}
 /* les boîtes */
 .tile,.bilan,.nuit,.pouls,.curieux,div:has(> .vega-embed){background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
-.tile .l,.tile .s,.curieux,.pouls .s,.bilan .phrase,.bilan .note{color:#686850 !important}
+.tile .l,.tile .s,.curieux,.pouls .s,.bilan .phrase{color:#686850 !important}
 .tile .l{font-size:.86rem !important}.tile .s{font-size:.8rem !important}
 .tile .v,.pouls .v,.bilan .tete,.curieux b{color:#383828 !important}
 .tile .v{font-size:1.5rem !important}
@@ -189,7 +192,7 @@ div:has(> .vega-embed){padding:6px 4px 2px !important}
 .curieux{font-size:.92rem !important}
 [data-testid="stCaptionContainer"] *{color:#D8E0F0 !important}
 </style>""", unsafe_allow_html=True)
-# Le conteneur « outils » est caché : ce sont « Paramètres » et « Synchroniser », tout en bas de Dresseur, qui touchent ses boutons (pokemon_ui.html).
+# Le conteneur « outils » est caché : c'est « Paramètres », tout en bas de Dresseur, qui touche son bouton (pokemon_ui.html).
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
 .st-key-nouvelles{{position:fixed;left:10px;bottom:12px;z-index:50;width:auto !important}}
@@ -269,18 +272,26 @@ def lancer_recolte():
 
 @st.fragment(run_every=5)
 def suivi_recolte():
-    """Quand Google répond après l'affichage : un petit bouton propose les nouvelles données. On ne recharge jamais le jeu tout seul : il peut y avoir une ball ou une série en cours."""
+    """Quand Google répond après l'affichage : un point sur le bouton dit que de nouvelles données attendent. On ne recharge jamais le jeu tout seul : il peut y avoir une ball ou une série en cours."""
     etat = st.session_state.get("recolte")
-    if not etat or not etat["fini"]:
-        return
-    rep = etat["rep"] or {}
-    if not rep.get("ok") or rep.get("frais"):
-        del st.session_state["recolte"]
-        st.rerun()
-    oublier_fichiers()
-    if st.button("🔄 Nouvelles données", key="nouvelles"):
-        del st.session_state["recolte"]
-        st.rerun()
+    if not etat:
+        return bouton_synchroniser()
+    if etat["fini"]:
+        rep = etat["rep"] or {}
+        if not rep.get("ok") or rep.get("frais"):
+            del st.session_state["recolte"]
+            st.rerun()
+        oublier_fichiers()
+    bouton_synchroniser(etat["fini"])
+
+
+def bouton_synchroniser(nouveau=False):
+    """Le seul bouton de synchronisation, toujours en bas à gauche. Des données viennent d'arriver : on les affiche ; sinon, une récolte tout de suite."""
+    if st.button("🔄 Synchroniser" + (" •" if nouveau else ""), key="nouvelles"):
+        st.session_state.pop("recolte", None)
+        if nouveau:
+            st.rerun()
+        actualiser()
 
 
 def oublier_fichiers():
@@ -291,7 +302,7 @@ def oublier_fichiers():
 
 
 def actualiser():
-    """« Synchroniser » (Dresseur) : récolte immédiate de l'essentiel d'aujourd'hui, puis relit les fichiers."""
+    """« Synchroniser » : récolte immédiate de l'essentiel d'aujourd'hui, puis relit les fichiers."""
     if st.secrets.get("SCRIPT_URL"):
         rep = demander_recolte()
         st.session_state["message_maj"] = ("✅ Données à jour" if rep.get("ok")
@@ -430,7 +441,7 @@ def carte_bilan(b):
     portrait = (f'<div class="prof-portrait" style="background-image:url({PROFESSEUR["image"]});background-size:{PROFESSEUR["largeur"] * k:.0f}px auto;'
                 f'background-position:-{x * k:.0f}px -{y * k:.0f}px"></div>')
     st.markdown(f'<div class="bilan"><div class="prof-tete">{portrait}<div><div class="tete">{b["titre"]} du {PROFESSEUR["nom"]}{statut}</div><div class="phrase">{b["phrase"]}</div></div></div>{obs}'
-                '<div class="note">Calculé sur tes données : des repères utiles, pas un avis médical.</div></div>', unsafe_allow_html=True)
+                '</div>', unsafe_allow_html=True)
 
 
 # Le sens d'une évolution : plus = mieux (1), moins = mieux (-1), ni l'un ni l'autre (0)
@@ -822,13 +833,10 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
 if "message_maj" in st.session_state:
     st.toast(st.session_state.pop("message_maj"))
 with st.container(key="outils", horizontal=True):
-    synchroniser = st.button("Synchroniser", key="maj")
     st.button("⚙️", key="cfg", on_click=lambda: st.session_state.update(config=True))
-if synchroniser:  # hors du conteneur, qui est caché : son message d'attente doit se voir
-    actualiser()
 st.markdown(NAV, unsafe_allow_html=True)
 # Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois en 5 min
-# par joueur. 5 s d'attente au plus, en tâche de fond ensuite : le jeu s'affiche, et un petit bouton propose les nouvelles données (suivi_recolte).
+# par joueur. 5 s d'attente au plus, en tâche de fond ensuite : le jeu s'affiche, et un point sur le bouton Synchroniser dit qu'elles sont là (suivi_recolte).
 if st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
     st.session_state["recolte_ouverture"] = True
     recoltes, maintenant_s = _recoltes_ouverture(), time.time()
@@ -1114,8 +1122,10 @@ def configuration():
         st.success("C'est oublié : le mot de passe sera redemandé à la prochaine ouverture.")
 
 
-if st.session_state.get("recolte"):
-    with st.container(key="bandeau_recolte"):
+with st.container(key="bandeau_recolte"):
+    if st.session_state.get("recolte"):
         suivi_recolte()
+    else:
+        bouton_synchroniser()
 if st.session_state.pop("config", False):  # « Paramètres », en bas de Dresseur
     configuration()

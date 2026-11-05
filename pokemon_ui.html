@@ -412,9 +412,6 @@ section[hidden]{display:none}
 .speciale.balle .lien{align-self:center;margin-top:3px;font-size:14px;line-height:1;color:#686850}.speciale.balle .lien+.ligne{margin-top:1px}.speciale.balle .lien.centre{margin:auto 0}.speciale.balle .verrou{margin-top:6px}
 .carte-zoom.discret{left:auto;right:8px;bottom:8px;width:34px;height:34px;padding:0;justify-content:center;background:rgba(16,35,58,.7);box-shadow:0 0 0 1px rgba(255,255,255,.4)}
 .carte-zoom.discret svg{width:18px;height:18px}
-.reglage-recap{display:flex;gap:10px;align-items:flex-start;background:#1C2740;border-radius:14px;padding:11px 13px;margin-top:14px;cursor:pointer}
-.reglage-recap input{width:19px;height:19px;margin:1px 0 0;accent-color:#4CD3A0;flex:0 0 19px}
-.reglage-recap b{display:block;font-size:13.5px}.reglage-recap small{display:block;color:#9AA7C2;font-size:11.5px;line-height:1.3;margin-top:1px}
 details.regles{background:#1C2740;border-radius:14px;padding:10px 14px;margin:14px 0 4px;font-size:13px;color:#C9D3EA}
 details.regles summary{cursor:pointer;font-weight:700;color:#EEF2FA}
 details.regles li{margin:5px 0;line-height:1.4}
@@ -426,10 +423,10 @@ details.regles li{margin:5px 0;line-height:1.4}
    ================================================================================================ */
 *{font-family:'Jersey 15',Outfit,system-ui,sans-serif !important;font-size-adjust:.53 !important;font-synthesis:none;font-weight:400 !important;letter-spacing:.1px}
 html,body{color:#383828}
-.carte,.speciale,.sac,.mini,.prochains,.starter-carte,.reglage-recap,details.regles,#recherche,.en-route,.bandeau-voyage{
+.carte,.speciale,.sac,.mini,.prochains,.starter-carte,details.regles,#recherche,.en-route,.bandeau-voyage{
   background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
 h2{color:#fff;font-size:21px;text-shadow:2px 2px 0 #141C38;margin:16px 2px 8px}
-.gris,.gain,.speciale .gain,#voyage .entete .ou,.infos-lieu .nom small,.mini .qd,.mini .lieu,.speciale .m-pourquoi,.sac small,.reglage-recap small,.starter-carte small,.prochains .titre-p,.semaine-pesee i,.pesee-comp,#rien{color:#686850 !important}
+.gris,.gain,.speciale .gain,#voyage .entete .ou,.infos-lieu .nom small,.mini .qd,.mini .lieu,.speciale .m-pourquoi,.sac small,.starter-carte small,.prochains .titre-p,.semaine-pesee i,.pesee-comp,#rien{color:#686850 !important}
 .speciale .ligne,.pesee-der,.speciale.defi .conseil4 i,#barre .manque,.arene .q{color:#484838 !important}
 .speciale .ligne b,.speciale.defi .ligne b,.pesee-der b,.sac b{color:#383828 !important}
 #barre .manque b,.starter-carte small b{color:#C03028 !important}
@@ -438,7 +435,7 @@ h2{color:#fff;font-size:21px;text-shadow:2px 2px 0 #141C38;margin:16px 2px 8px}
 .speciale.ok .reste{color:#2F8F4E !important}
 .speciale .verrou{color:#C03028 !important}
 .speciale.defi .garde-champ{border-top:2px dashed #C8C8A8}
-.mini .nm,.starter-carte .l1 b,.prochains .tx b,#voyage .entete .titre,#barre .titre,#aouvrir .titre,.infos-lieu .nom,.reglage-recap b,.speciale .tete{color:#383828 !important}
+.mini .nm,.starter-carte .l1 b,.prochains .tx b,#voyage .entete .titre,#barre .titre,#aouvrir .titre,.infos-lieu .nom,.speciale .tete{color:#383828 !important}
 .starter-carte .l1 i{color:#C03028 !important}
 .prochains .tx small{color:#B05010 !important}
 .prochains button{color:#383828;border-top:2px dashed #D8D8B8 !important}
@@ -505,7 +502,6 @@ details.regles{color:#484838 !important}
 .bandeau-voyage{animation:none}
 .badge-attente{border:3px solid #484838;border-radius:12px 5px 12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .evo-attente{border:3px solid #484838;border-radius:12px 5px 12px 5px;color:#383828}
-.reglage-recap b{font-size:15px}
 .bandeau-test{font-size:14px}
 /* le Pokédex garde son appareil rouge, avec le même bord */
 .dex-appareil{border:3px solid #484838;border-radius:14px 6px 14px 6px;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
@@ -595,12 +591,10 @@ details.regles{color:#484838 !important}
     <h2>Mon dresseur</h2>
     <div id="mon-dresseur"></div>
     <div id="starter-dresseur"></div>
-    <label class="reglage-recap"><input type="checkbox" id="recap-matin"><span><b>Récap du matin</b><small>L'Infirmière Joëlle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></span></label>
     <div class="carte amis" id="amis"></div>
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
     <details class="regles tests"><summary>🧪 Tester le jeu (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
     <button class="bouton-param" id="ouvrir-param">⚙️ Paramètres</button>
-    <button class="bouton-param" id="synchroniser">🔄 Synchroniser mes données</button>
   </section>
 </div>
 
@@ -4053,7 +4047,9 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
       <div class="boite sexe"><span>SEXE</span><span class="choix-sexe"><button type="button" data-s="M" class="${d.sexe === "M" ? "on" : ""}">Masculin</button><button type="button" data-s="F" class="${d.sexe === "F" ? "on" : ""}">Féminin</button></span></div>
       <small>Facultatif. Rend ton bilan santé plus juste. Ça reste sur ton téléphone.</small>
       <div class="boite materiel"><span>MATÉRIEL</span><span class="choix-mat">${MATERIELS.map(([k, n]) => `<button type="button" data-m="${k}" class="${materielDe(d).includes(k) ? "on" : ""}">${n}</button>`).join("")}</span></div>
-      <small>Coche ce que tu as : tes missions et les défis des champions s'adaptent, à partir de demain.</small></div>
+      <small>Coche ce que tu as : tes missions et les défis des champions s'adaptent, à partir de demain.</small>
+      <div class="boite materiel"><span>RÉCAP DU MATIN</span><span class="choix-mat choix-recap"><button type="button" class="${(() => { try { return localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return true; } })() ? "on" : ""}">Infirmière Joëlle</button></span></div>
+      <small>Elle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
     <div class="boutons">${accueil ? `<button class="ok go">COMMENCER L'AVENTURE</button>`
@@ -4080,7 +4076,8 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   const lireProfil = () => { const n = f.querySelector(".naissance").value, t = Math.round(+f.querySelector(".taille").value);
     d.naissance = /^\d{4}-\d{2}-\d{2}$/.test(n) && n >= "1920-01-01" && n <= D.aujourdhui ? n : ""; d.taille = t >= 100 && t <= 250 ? t : 0;
     const sx = f.querySelector(".choix-sexe button.on"); d.sexe = sx ? sx.dataset.s : "";
-    d.materiel = [...f.querySelectorAll(".choix-mat button.on")].map(b => b.dataset.m); };
+    d.materiel = [...f.querySelectorAll(".choix-mat:not(.choix-recap) button.on")].map(b => b.dataset.m);
+    try { localStorage.setItem("pkm_recap_non", f.querySelector(".choix-recap button.on") ? "0" : "1"); } catch (e) {} };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
       if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
@@ -4339,7 +4336,7 @@ function infosLieu(k) {
                : enMer(k + 1) ? `<br>${ico("bateau", "p")} Pas encore de Pokémon Vol : tu prends le bateau jusqu'à ${suite.nom}.`
                : `<br>${ico("velo", "p")} Pas encore de Pokémon Vol : tu y vas à vélo.`)
           : `<br>${ico(IMG.mini(m ? m.num : 131, m ? m.shiny : false), "rogne")} En mer : ${m ? `<b>${m.nom}</b> te fait traverser` : "un Lokhlass sauvage te fait traverser"} jusqu'à ${suite.nom}.`; })();
-  return `<div class="infos-lieu"><div class="nom">${ico("carte")} ${l.nom}<small>${ici ? "tu es ici" : passe ? "déjà traversé" :
+  return `<div class="infos-lieu"><div class="nom">${ico("carte")} ${l.nom}<small>${ici ? "" : passe ? "déjà traversé" :
       `dans ${fr(l.dist - V.pos)} pts`}</small></div>
     ${(() => { const sa = (V.sanctuaires || []).find(x => x.lieu === k); if (!sa) return "";
       return `<div class="petit" style="margin-top:3px">${ico("master", "p")} ${sa.fait ? "Sanctuaire visité." : sa.atteint ? "Un sanctuaire est ouvert ici : regarde tes objectifs du jour." : "Un sanctuaire se cache ici."}</div>`; })()}
@@ -5470,10 +5467,6 @@ function relierRetour() {
 function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut être recréé par Streamlit)
   // les boutons de Streamlit, cachés (conteneur « outils » d'app.py)
   document.getElementById("ouvrir-param").onclick = () => { const b = P.querySelector(".st-key-cfg button"); if (b) b.click(); };
-  const sync = document.getElementById("synchroniser");
-  sync.onclick = () => { const b = P.querySelector(".st-key-maj button"); if (!b) return; const texte = sync.textContent; vibre(10);
-    sync.textContent = "🔄 Synchronisation en cours…"; sync.disabled = true; b.click();
-    setTimeout(() => { sync.textContent = texte; sync.disabled = false; }, 45000); };  // la page se recharge d'elle-même si des données changent
   const nav = navP(); if (!nav) return;
   relierBulles(); relierRetour();
   if (PW.__navJeu) P.removeEventListener("click", PW.__navJeu);
@@ -5509,9 +5502,6 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   const depuis = new Date(Date.now() - 20 * 864e5).toISOString().slice(0, 10);
   partager([...ouvertes].filter(id => !serveur.has(id) && id.slice(0, 10) >= depuis));
 }
-{ const c = document.getElementById("recap-matin");
-  try { c.checked = localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { c.checked = true; }
-  c.onchange = () => { try { localStorage.setItem("pkm_recap_non", c.checked ? "0" : "1"); } catch (e) {} }; }
 document.getElementById("recherche").addEventListener("input", e => { texte = e.target.value; dessinerDex(); });
 document.getElementById("recherche").addEventListener("keydown", e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); e.target.blur(); } });
 
