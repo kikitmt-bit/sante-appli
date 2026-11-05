@@ -730,6 +730,7 @@ function titreBall(c) {
   if (cle.startsWith("shinyball")) return `${nom} · ${R.master_jours} jours sur ${R.master_fenetre}`;
   if (c.chasse) return `${nom} · Chasse aux shiny`;
   if (cle === "hebdo") return `${nom} · ${R.hebdo_jours} jours sur 7`;
+  if (cle === "reprise") return `${nom} de la reprise`;
   if (cle === "variete") return `${nom} · ${R.familles_semaine} sports dans la semaine`;
   if (c.ball === "hyper") return `${nom} · exploit du jour`;
   if (c.ball === "super") return `${nom} · objectif double`;
@@ -1771,7 +1772,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
       <div class="phrase">${(sx => r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
-      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Pokédex ${especes} · Shiny ${shinys}</span></div>
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${REG.index ? `Originaire de ${REGIONS.find(x => c.num >= x.de && c.num <= x.a)?.nom || REG.nom} · ` : ""}Pokédex ${especes} · Shiny ${shinys}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
@@ -3120,6 +3121,7 @@ function sceneCentre(apercu = false) {
   }
   let jourL = M.conseil || null;
   if (V.defi && V.defi.arrive) jourL = `${CHAMPIONS[V.defi.numero].nom} t'attend : ${resteDefi()}.`;
+  if (G.relance && !G.relance.fait) jourL = `Ces derniers jours ont été plus calmes, ça arrive à tout le monde. Pour repartir en douceur : <b>${fr(G.relance.cible)} pas</b> ou ${G.relance.sport} min de sport, et une <b>Poké Ball</b> t'attend !`;
   const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()} !${cadeau ? " Tous les Pokémon du centre t'offrent une <b>Shiny Ball</b> : elle t'attend avec tes balls à ouvrir !" : " Tous les Pokémon du centre te le souhaitent."}` : null,
     anniv ? nuitL.replace(/^Bon(jour|soir) [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
@@ -3146,6 +3148,28 @@ function sceneCentre(apercu = false) {
       await pause(300);
     }
     for (const l of lignes.slice(debut)) await DC.dire(l, "Infirmière Joëlle");
+    fermer();
+  })().catch(() => {});
+}
+// Le vélo : le joker du joueur en retard, offert par le professeur (05/11). Une image neuve est à faire sur ChatGPT, quand Kiki aura du crédit.
+function sceneVelo(apercu = false) {
+  const q = PROFESSEURS[CADEAU];
+  const {v, salle, fin: finE} = ecran("pkm-centre", q.image, q.largeur, q.hauteur, "");
+  ambiance(v.querySelector("canvas.air"), [{type: "reflets", coul: ["#FFFFFF", "#FFF3C4"], n: 16, haut: [0, .2]}], () => !v.isConnected);
+  v.insertAdjacentHTML("beforeend", `<img class="velo-cadeau" src="${D.images}/items/bicycle.png" alt="" style="position:absolute;left:50%;top:38%;width:96px;transform:translateX(-50%);image-rendering:pixelated;z-index:3;opacity:0;transition:opacity .6s">`);
+  const DC = dialogue(v), qui = `Professeur ${q.prof}`;
+  const lignes = [`Ah, ${nomDresseur()} ! La route est longue, et ce vélo ne sert à rien dans mon laboratoire.`, "Il est à toi ! Il faut juste continuer à bouger : <b>chaque jour à 2 000 pas ou plus compte double sur la carte</b>.", "En selle, tes amis ne sont pas si loin !"];
+  DC.prevoir(lignes.map(l => [l, qui]));
+  let fini = false;
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  const fermer = () => { if (fini) return; fini = true; DC.fin(); finE(); v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); };
+  v.querySelector(".pkm-passer").onclick = fermer;
+  if (!apercu) try { localStorage.setItem(`pkm_velo_vu_${R.partie}`, "1"); } catch (e) {}
+  (async () => {
+    await pause(200); v.querySelector(".noir").style.opacity = 0; await pause(900);
+    await DC.dire(lignes[0], qui);
+    v.querySelector(".velo-cadeau").style.opacity = 1; EPIQUE.fanfare(); vibre([40, 60, 80]);
+    for (const l of lignes.slice(1)) await DC.dire(l, qui);
     fermer();
   })().catch(() => {});
 }
@@ -3294,7 +3318,7 @@ function voiesDefi() {  // chaque épreuve du défi en cours : ses voies avec o�
     return {qui: e.qui, voies, fait: voies.some(o => o.v >= o.cible)}; });
 }
 function resteDefi() {
-  const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = Math.max(a.b.cible - d.valeur_b, 0), ouB = `, ou ${String(resteB).replace(".", ",")} jour${resteB >= 2 ? "s" : ""} d'objectif`;
+  const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = Math.min(Math.max(a.b.cible - d.valeur_b, 0), d.max ? Math.max(d.max - d.actifs, 0) : 99), ouB = `, ou ${String(resteB).replace(".", ",")} jour${resteB >= 2 ? "s" : ""} d'objectif`;
   if (ep.length > 1) { const n = ep.filter(e => !e.fait).length; return `encore ${n} épreuve${n > 1 ? "s" : ""}${ouB}`; }
   const o = ep[0].voies[0];
   return o.mode === "jour" ? `${o.texte.replace(/^Une /, "une ")}${ouB}` : `encore ${o.unite === "pas" ? fr(Math.max(o.cible - o.v, 0)) : Math.ceil(Math.max(o.cible - o.v, 0))} ${o.unite}${ouB}`;
@@ -3530,7 +3554,12 @@ function dessinerSpeciales() {
     ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur} / ${x.cible} jours`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
     G.chasse && G.chasse.actif ? {cle: "chasse", ic: ico("radar"), nom: "Chasse aux shiny", val: `${Math.round(G.chasse.chance * 100)} %`, p: G.chasse.chance * 100, detail: carteChasse()} : null,
   ].filter(Boolean);
-  document.getElementById("speciales").innerHTML = carteDefi() + carteMission(gris, champ, cadenas) + `
+  const rel = G.relance, carteRelance = rel && !rel.fait ? `<div class="speciale mission">
+      <div class="tete">${ico("poke")}Objectif de reprise</div><div class="gain">Pour repartir en douceur : une Poké Ball, et ta journée compte comme un jour d'objectif.</div>
+      <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(rel.cible)}</span></div>${j(J.pas, rel.cible)}
+      <div class="lien">ou</div>
+      <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${rel.sport} min</span></div>${j(J.zone, rel.sport)}</div>` : "";
+  document.getElementById("speciales").innerHTML = carteRelance + carteDefi() + carteMission(gris, champ, cadenas) + `
     <div class="speciale balle ${sup ? "ok" : ""} ${gris ? "grise" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}<span>Super Ball<small>shiny ×2</small></span></div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
@@ -3647,7 +3676,7 @@ function carteDefi() {
   const d = V.defi; if (!d || !d.arrive) return "";
   const a = LIEUX[d.lieu].arene, ch = CHAMPIONS[d.numero], ligue = !a.type;
   const j = (v, c) => `<div class="jauge"><div class="${v >= c ? "ok" : ""}" style="width:${Math.min(v / c * 100, 100)}%"></div></div>`;
-  const ep = voiesDefi(), ok = ep.every(e => e.fait) || d.valeur_b >= a.b.cible, restent = ep.filter(e => !e.fait).length;
+  const ep = voiesDefi(), ok = ep.every(e => e.fait) || d.valeur_b >= a.b.cible || (d.max && d.actifs >= d.max), restent = ep.filter(e => !e.fait).length;
   const val = o => o.mode === "jour" && o.unite === "jour" ? (o.v >= o.cible ? "fait" : "à faire") : `${o.unite === "pas" ? fr(o.v) : Math.round(o.v * 10) / 10} / ${o.unite === "pas" ? fr(o.cible) : o.cible}`;
   const voie = o => `<div class="ligne"><span><b>${o.texte}</b></span><span>${val(o)}</span></div>${j(o.v, o.cible)}`;
   const types = [...new Set(ep.flatMap(e => e.fait ? [] : e.voies.map(o => o.defi)))].filter(t => GESTES[t]);
@@ -3664,6 +3693,7 @@ function carteDefi() {
     ${ep.map(e => `<div class="epreuve ${e.fait ? "faite" : ""}">${e.qui ? `<div class="qui-e">${e.qui}${e.fait ? " ✅" : ""}</div>` : ""}${e.voies.map(voie).join(`<div class="ou-e">ou</div>`)}</div>`).join("")}
     ${types.length && !ok ? blocGestes(types) : ""}
     <div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span style="white-space:nowrap">${String(d.valeur_b).replace(".", ",")} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}
+    ${d.max ? `<div class="ou-e">ou</div><div class="ligne"><span>${d.max} jours à 2 000 pas : ${ch.nom} te laisse passer</span><span style="white-space:nowrap">${d.actifs} / ${d.max}</span></div>${j(d.actifs, d.max)}` : ""}
     ${ep.some(e => e.voies.some(o => o.defi === "soir")) ? `<div class="petit gris" style="margin-top:4px">Les pas du soir sont comptés une fois par heure.</div>` : ""}
     <div class="reste">${ok ? "Défi réussi : ton badge arrive !" : ep.length > 1 ? `Encore <b>${restent} épreuve${restent > 1 ? "s" : ""}</b>, dans l'ordre que tu veux.` : ep[0].voies.length > 1 ? "Une seule de ces voies suffit." : ""}</div>${garde_txt}</div>`;
 }
@@ -4103,6 +4133,8 @@ function heros(P = POSE) {  // le dresseur à la pose P (poseA) ; .suit = ce qui
       return `<div class="heros navire suit" style="${pos}"><img class="${dir === "droite" ? "miroir" : ""}" src="${NAVIRE}"></div>`;
     return `${ombre}<div class="heros suit" style="${pos}">${sacha(mode === "vol" ? "red_bike" : "red_surf", dir, mode === "vol", 2)}</div>`;
   }
+  // à vélo, s'il l'a reçu (le joueur en retard : region.py) ; même dessin, mêmes couleurs que le dresseur
+  if (V.velo) return `${ombre}<div class="heros suit" style="${pos};z-index:2">${sacha("red_bike", arrete ? "haut" : dir, !arrete, 2)}</div>`;
   // à pied : il marche (de dos, immobile, devant une arène dont il attend le badge)
   return `${ombre}<div class="heros suit" style="${pos};z-index:2">${sacha("red_normal", arrete ? "haut" : dir, !arrete)}</div>`;
 }
@@ -5305,7 +5337,7 @@ function dessinerTests() {
     <div class="boutons-t">${(EN_JOHTO ? ["raikou", "entei", "suicune", "lugia", "ho-oh", "celebi"] : ["artikodin", "electhor", "sulfura", "mewtwo", "mew"]).map(f => b(`t-fond" data-f="${f}`, `${ico("master", "p")} ${NOM_FOND[f]}`)).join("")}</div>
     <div class="boutons-t">${b(`t-fond" data-f="${EN_JOHTO ? "laboOrme" : "labo"}`, "Labo (starter)")}${[1, 2, 3, 4, 5, 6, 7, 8].map(n => b(`t-fond" data-f="${EN_JOHTO ? "jarene" : "arene"}${n}`, `${ico(IMG.badge(LIEUX.filter(l => l.arene)[n - 1].arene.image), "p")} ${CHAMPIONS[n].nom}`)).join("")}</div>
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
-    <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
+    <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-relance", `${ico("nuit", "p")} Récap de relance`)}${b("t-velo", `${ico("velo", "p")} Recevoir le vélo`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
     <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DUELS).map(q => b(`t-entr" data-e="pompes" data-c="${q}`, `Arène : ${q}`)).join("")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
@@ -5323,6 +5355,8 @@ function dessinerTests() {
   on(".t-arene", x => testScene(+x.dataset.n));
   on(".t-fond", x => apercuCapture(x.dataset.f));
   on(".t-centre", () => sceneCentre(true));
+  on(".t-relance", () => { const avant = G.relance; G.relance = {cible: 3400, sport: 5, fait: false}; sceneCentre(true); G.relance = avant; });
+  on(".t-velo", () => { sceneVelo(true); V.velo = V.velo || "essai"; dessinerVoyage(); });
   document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d, shinyEssai: !!x.dataset.s, duelEssai: x.dataset.c || null}));
   on(".t-pantheon", () => scenePantheon());
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
@@ -5414,6 +5448,8 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   else if (appelDu() && (() => { try { return localStorage.getItem("pkm_passage_vu_" + REG.nom) !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) scenePassage(); }, 1200);
   // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur) ; ou le bilan de la semaine quand il est dû
+  else if (V.velo && (() => { try { return localStorage.getItem(`pkm_velo_vu_${R.partie}`) !== "1"; } catch (e) { return false; } })())
+    setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneVelo(); }, 1200);
   else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);
   else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())

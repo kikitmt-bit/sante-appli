@@ -62,6 +62,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         captures, etat = pokemon.apercu_region(etat, 1, float(st.query_params.get("pos", 830)))
     index = etat["region"]["index"]
     nums = {n for r in regions.REGIONS[:index + 1] for n in r.lieux_et_legendes}  # rien de la région suivante n'arrive sur le téléphone : la suite reste une surprise
+    nums |= {c["num"] for c in captures}  # ce qui est déjà attrapé doit toujours s'afficher
     for j in joueurs:  # sauf ce qu'un ami en avance a déjà attrapé : ses captures doivent pouvoir s'afficher
         nums |= set(j.get("especes") or ()) | {x["num"] for x in (j.get("dernieres") or ())} | {x["num"] for x in (j.get("nouvelles") or ()) if x.get("num")}
         if j.get("starter"):
@@ -113,7 +114,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "joueurs": list(joueurs),
         "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
         "matin": {"hier": etat["hier"], "conseil": conseil},
-        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee")},
+        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},

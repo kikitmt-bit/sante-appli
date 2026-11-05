@@ -7,8 +7,11 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import johto  # noqa: E402
+import kanto  # noqa: E402
 import missions  # noqa: E402
 import pokemon  # noqa: E402
+import region as region_  # noqa: E402
 
 DEBUT = dt.date(2026, 11, 9)  # un lundi, après le changement de règles du 04/11
 
@@ -268,6 +271,100 @@ class Roue(unittest.TestCase):
         self.assertEqual(missions.familles_du({"pas": float("nan"), "zone_sport": None}), set())
 
 
+class PreludeEtFilet(unittest.TestCase):
+    """Le plan du 05/11 : Kanto en prélude, Pokémon étalés sur tout le jeu, jamais bloqué sur une carte."""
+
+    def test_les_tailles_des_regions(self):
+        self.assertEqual(kanto.REGION.dist[-1], 2000)
+        self.assertEqual(johto.REGION.dist[-1], 2500)
+        self.assertEqual(len(kanto.REGION.especes), 74)
+        self.assertEqual(len(johto.REGION.especes), 113)
+
+    def test_un_pokemon_garde_ne_sort_pas_a_kanto(self):
+        self.assertEqual(len(kanto.REPORTES), 72)
+        self.assertFalse(set(kanto.REPORTES) & kanto.REGION.especes)
+        self.assertEqual(set(kanto.REPORTES) | kanto.REGION.especes | {144, 145, 146, 150, 151}, set(range(1, 152)))
+        vus = {n for lieu in kanto.REGION.lieux for n in lieu["pokemon"]}
+        self.assertFalse(set(kanto.REPORTES) & vus)
+
+    def test_johto_a_ses_pokemon_de_kanto(self):
+        pour_johto = region_.numeros(kanto.POUR_PLUS_TARD["Johto"])
+        self.assertEqual(len(pour_johto), 19)
+        self.assertLessEqual(set(pour_johto), johto.REGION.especes)
+
+    def test_chaque_lieu_a_des_pokemon(self):
+        for r in (kanto.REGION, johto.REGION):
+            for lieu in r.lieux[1:]:
+                self.assertGreaterEqual(len(lieu["pokemon"]), 2, lieu["nom"])
+
+    def test_la_forme_finale_arrive_avant_la_fin_de_la_carte(self):
+        for r in (kanto.REGION, johto.REGION):
+            self.assertLess(35 * pokemon.pts_niveau(r), r.dist[-1])
+            self.assertEqual(pokemon.niveau(r.dist[-1], r) >= 36, True)
+
+    def test_le_vainqueur_de_la_ligue_a_la_forme_finale_du_starter(self):
+        for pas in (2500, 4000, 8000):
+            captures, e = partie(300, pas=pas)
+            self.assertIn(9, e["voyage"]["badges"], pas)
+            ligue = e["voyage"]["badges"][9]
+            evo2 = [c for c in captures if c["id"].endswith("#evo2")]
+            self.assertTrue(evo2, pas)
+            self.assertLessEqual(evo2[0]["jour"], ligue, pas)
+
+    def test_le_champion_laisse_passer_apres_3_jours_actifs(self):
+        v = region_.Voyage(kanto.REGION)
+        j = {"pas": 2500, "zone": 0, "etages": 0, "eau": 0, "force_min": 0, "seance": 0, "soir": 0, "km": 1, "pompes": 0, "tractions": 0, "ok": False, "double": False, "hyper": False}
+        arene = kanto.REGION.dist[kanto.REGION.arenes[0]]
+        for k in range(3):
+            self.assertEqual(v.badges, {})
+            badges = v.avancer(jour(k), j, arene + k)
+        self.assertEqual([b[0] for b in badges], [1])
+
+    def test_un_jour_sans_activite_ne_compte_pas_pour_le_champion(self):
+        v = region_.Voyage(kanto.REGION)
+        j = {"pas": 500, "zone": 0, "etages": 0, "eau": 0, "force_min": 0, "seance": 0, "soir": 0, "km": 0, "pompes": 0, "tractions": 0, "ok": False, "double": False, "hyper": False}
+        arene = kanto.REGION.dist[kanto.REGION.arenes[0]]
+        for k in range(10):
+            v.avancer(jour(k), j, arene + k)
+        self.assertEqual(v.badges, {})
+
+    def test_le_velo_arrive_au_30e_jour_seulement_si_on_est_en_retard(self):
+        self.assertIsNone(partie(29, pas=2500)[1]["voyage"]["velo"])
+        self.assertEqual(partie(31, pas=2500)[1]["voyage"]["velo"], str(jour(29)))
+        self.assertIsNone(partie(31, pas=14000, zone_sport=30, zone=30, km=9)[1]["voyage"]["velo"])
+
+    def test_le_velo_ne_donne_aucune_ball_en_plus(self):
+        captures, e = partie(60, pas=2500)
+        self.assertIsNotNone(e["voyage"]["velo"])
+        self.assertGreater(e["voyage"]["pos"], e["cumul"])  # la carte avance plus vite que les points
+        barre = sum(c["id"].split("#")[1].startswith("poke") for c in captures)
+        self.assertEqual(barre, int(e["cumul"] // 100))  # les Poké Balls suivent les vrais points
+
+    def test_la_relance_arrive_apres_5_jours_sans_objectif(self):
+        self.assertIsNone(partie(5, pas=3000)[1]["relance"])
+        rel = partie(6, pas=3000)[1]["relance"]
+        self.assertEqual(rel["cible"], 3600)
+        self.assertFalse(rel["fait"])
+
+    def test_la_relance_reussie_donne_une_ball_et_compte(self):
+        captures, e = partie(7, pas=[3000] * 6 + [3700])
+        self.assertEqual(sum(c["id"].endswith("#reprise") for c in captures), 1)
+        self.assertEqual(e["serie"], 1)
+        self.assertTrue(e["relance"]["fait"])
+
+    def test_la_relance_ne_revient_pas_avant_14_jours(self):
+        captures, _ = partie(60, pas=3000, zone_sport=[0] * 60)
+        self.assertEqual(sum(c["id"].endswith("#reprise") for c in captures), 0)
+        pas = [3000] * 6 + [3700] + [3000] * 53
+        captures, _ = partie(60, pas=pas)
+        jours = [c["jour"] for c in captures if c["id"].endswith("#reprise")]
+        self.assertEqual(len(jours), 1)
+
+    def test_une_montre_oubliee_ne_declenche_pas_la_relance(self):
+        self.assertIsNone(partie(12, pas=0)[1]["relance"])
+        self.assertIsNone(partie(12, pas=[3000] * 4 + [0] * 8)[1]["relance"])
+
+
 class Regions(unittest.TestCase):
     """Le passage de Kanto à Johto : la nouvelle région commence le lendemain de l'appel accepté, sac vide et barre à zéro."""
 
@@ -313,7 +410,7 @@ class Regions(unittest.TestCase):
         self.assertEqual(e["region"]["nom"], "Johto")
         self.assertLess(e["cumul"], 500)  # les points d'une seule journée
         self.assertLess(e["voyage"]["pos"], 500)
-        self.assertEqual(e["voyage"]["badges"], {})
+        self.assertLessEqual(len(e["voyage"]["badges"]), 1)  # les cartes sont courtes : un très grand sportif peut battre le premier champion dès le premier jour
         self.assertEqual([f["jour"] for f in e["frise"]], [str(demain)])
 
     def test_l_appel_ne_change_rien_avant_le_lendemain(self):

@@ -21,6 +21,9 @@ def numeros(noms):
 
 PAS_PETIT = 3000  # une petite journée compte pour moitié au plan B : à 4 000 pas sans sport, on restait bloqué à vie chez Pierre (03/11)
 SANCTUAIRE_CIBLE = 5  # jours d'exploit
+# Le filet (05/11, Kiki : une région se finit en 2 mois environ, plus de 3 mois sur une carte doit être presque impossible). Un jour actif = 2 000 pas au moins.
+JOUR_ACTIF = 2000
+VELO_JOUR, VELO_RYTHME, VELO_MIN = 30, 60, 45  # à partir du 30e jour, en retard sur une carte faite en 60 jours : le vélo, chaque jour actif compte double sur la carte, 45 points au moins
 
 
 def plan_b(jours):
@@ -63,7 +66,7 @@ class Region:
     faite (même nombre de points, seul le dessin change) ; sanctuaires = lieu -> légendaire ; ligue = le légendaire de la Ligue ; diplome = celui du
     Pokédex complet de la région ; cadeau = (clé de la ball, raison) du starter du professeur ; suivante = le texte de l'appel de fin de région."""
 
-    def __init__(self, nom, numeros_, legendaires, lieux, carte, via, modes, sanctuaires, rares, starters, ligue, diplome, cadeau, cle_diplome, raison_diplome, moments=None):
+    def __init__(self, nom, numeros_, legendaires, lieux, carte, via, modes, sanctuaires, rares, starters, ligue, diplome, cadeau, cle_diplome, raison_diplome, moments=None, arene_max=None, reportes=()):
         self.nom, self.carte, self.starters, self.ligue, self.diplome = nom, carte, starters, ligue, diplome
         self.cadeau, self.cle_diplome, self.raison_diplome = cadeau, cle_diplome, raison_diplome
         self.lieux = [{"nom": n, "x": x, "y": y, "pokemon": numeros(pk), "arene": ar, "pas": d, "via": via.get(n, []),
@@ -72,8 +75,9 @@ class Region:
         for lieu in self.lieux:
             self.dist.append((self.dist[-1] if self.dist else 0) + lieu["pas"])
         self.arenes = [i for i, lieu in enumerate(self.lieux) if lieu["arene"]]  # la dernière = la Ligue
-        self.especes = set(numeros_) - set(legendaires)  # les Pokémon du diplôme
-        self.lieux_et_legendes = set(numeros_)
+        self.arene_max = arene_max  # après tant de jours actifs à une arène, le champion laisse passer
+        self.especes = set(numeros_) - set(legendaires) - set(reportes)  # les Pokémon du diplôme ; reportes = gardés pour les régions suivantes, à étaler sur tout le jeu
+        self.lieux_et_legendes = (set(numeros_) - set(reportes)) | {n + k for n in starters for k in range(3)}  # le starter et ses évolutions, même s'ils sortent des balls bien plus tard
         vus = [n for lieu in self.lieux for n in lieu["pokemon"]]
         assert set(vus) == self.especes and len(vus) == len(self.especes), f"{nom} : Pokémon sans lieu ou en double : {self.especes ^ set(vus)}"
         self.sanct_index = {i: sanctuaires[lieu["nom"]] for i, lieu in enumerate(self.lieux) if lieu["nom"] in sanctuaires}
@@ -99,6 +103,9 @@ class Voyage:
         self.exploits = {}    # lieu d'un sanctuaire atteint -> jours d'exploit depuis
         self.sanct_faits = {}  # lieu d'un sanctuaire réussi -> date
         self.sanct_du_jour = []  # les sanctuaires réussis aujourd'hui
+        self.debut = None     # le premier jour dans la région
+        self.velo = None      # le jour où le joueur en retard a reçu le vélo
+        self.bonus = 0.0      # les points de carte que le vélo a ajoutés (le niveau du starter les compte, pour rester en avance sur la carte)
 
     def arene_suivante(self):
         """Index (dans les lieux) de la prochaine arène à gagner, ou None (Ligue gagnée)."""
@@ -110,6 +117,10 @@ class Voyage:
         vals = [float(f(j)) for x, j in self.histo if x <= jour]
         return (sum(vals) if mode == "somme" else max(vals, default=0)) if vals else 0
 
+    def jours_actifs(self, jour):
+        """Les jours actifs depuis l'arrivée à l'arène."""
+        return sum(1 for x, j in self.histo if x <= jour and j["pas"] >= JOUR_ACTIF)
+
     def defi(self, jour):
         """(les valeurs de chaque voie de chaque épreuve, la valeur du plan B) de l'arène où l'on est arrivé."""
         a = self.r.lieux[self.arene_suivante()]["arene"]
@@ -118,6 +129,8 @@ class Voyage:
     def reussi(self, jour):
         a = self.r.lieux[self.arene_suivante()]["arene"]
         ep, b = self.defi(jour)
+        if self.r.arene_max and self.jours_actifs(jour) >= self.r.arene_max:
+            return True
         return b >= a["b"]["cible"] or all(any(x >= v["cible"] for x, v in zip(vals, e["voies"])) for vals, e in zip(ep, a["epreuves"]))
 
     def avancer(self, jour, j, cumul):
@@ -125,6 +138,14 @@ class Voyage:
         badges gagnés ce jour-là ; self.sanct_du_jour = les sanctuaires réussis ce jour-là."""
         dist = self.r.dist
         gagnes, gain, self.cumul = [], max(cumul - self.cumul, 0), cumul
+        self.debut = self.debut or jour
+        n = (jour - self.debut).days + 1
+        if self.velo is None and self.arene_suivante() is not None and n >= VELO_JOUR and self.pos < dist[-1] * n / VELO_RYTHME:
+            self.velo = jour
+        if self.velo and j["pas"] >= JOUR_ACTIF:
+            en_plus = max(gain, VELO_MIN - gain, 0)
+            gain += en_plus
+            self.bonus += en_plus
         while True:
             i = self.arene_suivante()
             if i is None:
@@ -168,10 +189,11 @@ class Voyage:
             arrive = self.pos >= r.dist[a]
             ep, b = self.defi(jour) if arrive else ([], 0)
             defi = {"lieu": a, "numero": r.arenes.index(a) + 1, "epreuves": [[round(x, 1) for x in vals] for vals in ep], "valeur_b": round(b, 1),
-                    "arrive": arrive, "depuis": str(self.arrivee) if self.arrivee else None, "reste": round(r.dist[a] - self.pos)}
+                    "arrive": arrive, "depuis": str(self.arrivee) if self.arrivee else None, "reste": round(r.dist[a] - self.pos),
+                    "actifs": self.jours_actifs(jour) if arrive else 0, "max": r.arene_max}
         sanct = [{"lieu": k, "num": n, "nom": r.lieux[k]["nom"], "valeur": self.exploits.get(k, 0), "cible": SANCTUAIRE_CIBLE,
                   "atteint": self.pos >= r.dist[k], "fait": k in self.sanct_faits} for k, n in r.sanct_index.items()]
         return {"lieux": [{k: lieu[k] for k in ("nom", "x", "y", "pokemon", "arene", "via", "mode")} | {"dist": d}
                           for lieu, d in zip(r.lieux, r.dist)],
                 "pos": round(self.pos, 1), "ici": i, "badges": {k: str(d) for k, d in self.badges.items()},
-                "defi": defi, "sanctuaires": sanct, "total": r.dist[-1], "rares": sorted(r.rares), "carte": r.carte}
+                "defi": defi, "sanctuaires": sanct, "velo": str(self.velo) if self.velo else None, "total": r.dist[-1], "rares": sorted(r.rares), "carte": r.carte}

@@ -4,7 +4,7 @@ Rien de tout ça n'est construit : ce sont les idées validées, à faire dans l
 
 ## Durée
 
-- 7 000 points d'effort par région (comme Kanto, audit du 02/11) : ~3 à 5 mois en jouant normalement, ~2 mois à fond,
+- (Dépassé le 05/11 : Kanto 2 000 points, Johto 2 500, une région en 2 mois environ, voir CLAUDE.md.) 7 000 points d'effort par région (comme Kanto, audit du 02/11) : ~3 à 5 mois en jouant normalement, ~2 mois à fond,
   arrêts aux arènes compris.
 - 9 régions = **~2 ans** d'aventure (voulu par Kiki : « un truc vraiment peaufiné »).
 - Contre la lassitude : **9 petits jeux qui se suivent**, chacun avec sa nouveauté (plus bas).

@@ -60,7 +60,9 @@ REGLAGES = {
     "part_lieu": 0.8,                # chance de tirer dans le lieu actuel plutôt qu'en rattrapage (s'il reste des deux)
     "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
     "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
-    "pts_niveau": 195, "niveau_depart": 1, "evolutions": (16, 36),  # le starter : 1re évolution à 2 925 points, 2e à 6 825 (toujours avant les 7 000 de la carte)
+    "niveau_depart": 1, "evolutions": (16, 36),  # le starter : niveaux réglés sur la carte de sa région (pts_niveau), forme finale toujours avant la fin de la carte (Kiki, 05/11)
+    # La relance (idée de Kiki, 05/11) : 5 jours de suite sans objectif = pendant 7 jours un objectif à sa portée (sa moyenne de pas + 20 %, entre 2 000 et 5 000, ou 5 min de sport) ; réussi, le jour compte et donne une Poké Ball. Une fois tous les 14 jours au plus : s'arrêter ne doit pas devenir une astuce.
+    "relance_jours": 5, "relance_duree": 7, "relance_ecart": 14, "relance_min": 2000, "relance_max": 5000, "relance_sport": 5,
     "bonus_pompe": .5, "bonus_traction": 1, "bonus_squat": .25, "bonus_planche": .1, "bonus_danse": 1, "bonus_gestes_max": 40, "ancien_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour (25 avant le 04/11)
     "objectif_gestes": 15, "bonus_famille": 15, "familles_semaine": 4, "hebdo_jours": 4,  # audit du 03/11, depuis le 04/11 : 15 points de muscu dans la journée (30 pompes, 15 tractions, 60 squats) = l'objectif du jour est atteint ; chaque famille de sport travaillée dans la semaine : +15 ; 4 familles : une Super Ball ; 4 jours d'objectif sur 7 : une Super Ball
     "rattrapage": .25, "rattrapage_garde": 8,  # dans une nouvelle région : 25 % de chances d'un Pokémon manquant des régions d'avant, et à coup sûr après 8 balls sans (Kiki, 29/10)
@@ -121,9 +123,14 @@ FORCE_NOMS = ("muscu", "renfo", "force", "poids", "haltère", "pompe", "traction
 LIGNES = {n: [n, n + 1, n + 2] for r in regions.REGIONS for n in r.starters}  # le cadeau du professeur de chaque région et ses évolutions
 
 
-def niveau(points):
-    """Le niveau du starter, d'après les points d'effort depuis le début."""
-    return REGLAGES["niveau_depart"] + int(points // REGLAGES["pts_niveau"])
+def pts_niveau(region=None):
+    """Les points d'un niveau du starter : un 36e de la carte, pour qu'il soit au niveau 36 (sa forme finale) avant d'arriver au bout."""
+    return int((region or regions.REGIONS[0]).dist[-1] // REGLAGES["evolutions"][-1])
+
+
+def niveau(points, region=None):
+    """Le niveau du starter, d'après les points depuis le début de la région (ceux du vélo compris : la carte ne doit jamais passer devant)."""
+    return REGLAGES["niveau_depart"] + int(points // pts_niveau(region))
 
 NOMS_FAMILLES = {"marche": "la marche", "cardio": "le cardio", "pousser": "les bras", "tirer": "le dos", "jambes": "les jambes"}
 
@@ -529,6 +536,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     voyage = Voyage(region)
     carnet = nouveau_carnet()  # les chiffres du voyage dans la région en cours, pour le Carnet de fin de région
     jour, m, ok, shiny_bonus = debut, {}, False, 1
+    relance, sans_objectif, pas_recents = None, 0, []  # la relance en cours ou la dernière ; les jours de suite sans objectif ; les pas des derniers jours avec des données
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
     sem, semaine_passee = None, None  # la semaine en cours et celle d'avant (bilan du dimanche)
     mission_du = lambda j: (missions_jours or {}).get(str(j)) if j >= missions.DEPUIS else None  # noqa: E731
@@ -625,6 +633,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         g = (gestes or {}).get(str(jour)) or {}
         m["gestes_pts"] = points_gestes(g, jour)
         ok, chrono = objectif_ok(m) or (equitable(jour) and m["gestes_pts"] >= R["objectif_gestes"]), None
+        reprise = bool(relance and relance["debut"] <= jour <= relance["fin"] and not relance["fait"] and (m["pas"] >= relance["cible"] or m["zone"] >= R["relance_sport"]))
+        if reprise:
+            relance["fait"], ok = True, True
         debut_fenetre = max(depuis_master, jour - dt.timedelta(days=R["master_fenetre"] - 1))
         jours_ok = [j for j in jours_ok if j >= debut_fenetre] + ([jour] if ok else [])
         if ((gestes or {}).get(str(jour)) or {}).get("combatshiny"):  # un shiny battu à l'entraînement : un jour de plus sur la barre (un seul par jour)
@@ -700,6 +711,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 sanct.append({"cle": f"sanct{num}", "ball": "master", "types": None, "fixe": num,
                               "raison": f"🏛️ Sanctuaire de {region.lieux[k]['nom']} : {nom}"})
         dues = balls_du_jour(jour, m, avant, cumul, shiny_ball, badges, debut_region, sanct, region)
+        if reprise:
+            dues.append({"cle": "reprise", "ball": "poke", "types": None, "raison": "🔄 Poké Ball de la reprise"})
         if equitable(jour) and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
             sem["hebdo"] = True
             dues.append({"cle": "hebdo", "ball": "super", "types": None, "raison": f"📅 {R['hebdo_jours']} jours d'objectif dans la semaine"})
@@ -757,7 +770,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         if starter:
             for stade, seuil in enumerate(R["evolutions"], 1):
                 num = LIGNES[starter][stade]
-                if niveau(cumul) >= seuil and not any(n == num for n, _ in possedees):
+                if niveau(cumul + voyage.bonus, region) >= seuil and not any(n == num for n, _ in possedees):
                     mi = {"cle": f"evo{stade}", "ball": "evo", "types": None, "fixe": num, "jour": jour, "shiny_bonus": 1,
                           "raison": f"✨ {POKEMON[LIGNES[starter][stade - 1]]['nom']} évolue en {POKEMON[num]['nom']}", "id": ident(jour, f"evo{stade}", ami)}
                     noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
@@ -767,6 +780,13 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 mi = {"cle": r.cle_diplome, "ball": "master", "types": None, "fixe": r.diplome, "jour": jour, "shiny_bonus": shiny_bonus,
                       "raison": r.raison_diplome, "id": ident(jour, r.cle_diplome, ami)}
                 noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
+        if m["pas"] > 0 and jour < aujourd:  # montre oubliée, jour pas fini : ça ne compte pas pour la relance
+            sans_objectif = 0 if ok else sans_objectif + 1
+            pas_recents = (pas_recents + [m["pas"]])[-7:]
+            libre = relance is None or jour >= relance["debut"] - dt.timedelta(days=1) + dt.timedelta(days=R["relance_ecart"])
+            if sans_objectif >= R["relance_jours"] and libre:
+                cible = min(max(round(sum(pas_recents) / len(pas_recents) * 1.2, -2), R["relance_min"]), R["relance_max"])
+                relance = {"debut": jour + dt.timedelta(days=1), "fin": jour + dt.timedelta(days=R["relance_duree"]), "cible": int(cible), "fait": False}
         if fini and g.get("appel") and reg_i + 1 < len(regions.REGIONS):  # l'appel du professeur est accepté (trace du téléphone) : départ demain matin
             depart = True
         jour += dt.timedelta(days=1)
@@ -807,7 +827,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "carnet": carnet, "moments": moments_du_jour((missions_jours or {}).get(str(aujourd))) if region.moments else None, "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores(gestes),
                       "fini": 9 in voyage.badges, "hier": hier, "region": {"index": reg_i, "nom": region.nom, "debut": str(debut_region), "depart": depart,
                                                                            "suivante": regions.REGIONS[reg_i + 1].nom if reg_i + 1 < len(regions.REGIONS) else None}, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
-                      "starter": starter and {"ligne": LIGNES[starter], "niveau": niveau(cumul), "pts_niveau": R["pts_niveau"], "dans_niveau": round(cumul % R["pts_niveau"], 1)}}
+                      "relance": {"cible": relance["cible"], "sport": R["relance_sport"], "fait": relance["fait"], "debut": str(relance["debut"]), "fin": str(relance["fin"])} if relance and relance["debut"] <= aujourd <= relance["fin"] else None,
+                      "starter": starter and {"ligne": LIGNES[starter], "niveau": niveau(cumul + voyage.bonus, region), "pts_niveau": pts_niveau(region), "dans_niveau": round((cumul + voyage.bonus) % pts_niveau(region), 1)}}
 
 
 def nouveau_carnet():
@@ -819,7 +840,7 @@ def apercu_region(etat, index, pos):
     region = regions.REGIONS[index]
     v = Voyage(region)
     v.pos = pos
-    sans_arene = {**etat, "voyage": v.etat(dt.date.today()), "frise": [], "cumul": pos, "barre": 0, "fini": False, "defi_grise": False, "sac": [], "retenues": [], "starter": None, "perdues": 0,
+    sans_arene = {**etat, "voyage": v.etat(dt.date.today()), "frise": [], "cumul": pos, "barre": 0, "fini": False, "defi_grise": False, "sac": [], "retenues": [], "starter": None, "relance": None, "perdues": 0,
                   "region": {"index": index, "nom": region.nom, "debut": str(dt.date.today()), "depart": False, "suivante": None}, "chasse": {"actif": False, "chaine": 0, "chance": 0}, "moments": []}
     return [], sans_arene
 
