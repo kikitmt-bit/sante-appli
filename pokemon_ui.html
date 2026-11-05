@@ -342,9 +342,9 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
 .dex-appareil{background:linear-gradient(180deg,#E8382F,#B81F1A);border-radius:18px;padding:10px 12px 12px;box-shadow:0 5px 14px rgba(0,0,0,.45),inset 0 2px 0 rgba(255,255,255,.3)}
 .haut-dex{display:flex;align-items:center;gap:6px;margin-bottom:9px}
 .haut-dex b{margin-left:auto;font:400 22px 'Jersey 15',monospace;letter-spacing:2px;color:#fff;text-shadow:2px 2px 0 #7A1712}
-.lentille{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#CFF3FF,#39A6E8 45%,#0E5C9E);box-shadow:0 0 0 3px #fff,0 0 0 5px #7A1712}
-.led{width:10px;height:10px;border-radius:50%;margin-left:3px;box-shadow:0 0 0 1.5px rgba(0,0,0,.35),inset 0 1px 1px rgba(255,255,255,.7)}
-.led.r{background:#FF5D5D;margin-left:9px}.led.j{background:#FFD84A}.led.v{background:#5BE07A}
+.lentille{width:30px;height:30px;border-radius:50%;background:radial-gradient(circle at 36% 34%,#F0FBFF 0 14%,#7CCBF0 14% 38%,#3C96DC 38% 68%,#1E66AE 68%);box-shadow:0 0 0 3px #F8F8E8,0 0 0 5px #484838}
+.led{width:9px;height:9px;margin-left:4px;box-shadow:0 0 0 2px #484838,inset 2px 2px 0 rgba(255,255,255,.65),inset -2px -2px 0 rgba(0,0,0,.2)}
+.led.r{background:#E04038;margin-left:11px}.led.j{background:#F8C838}.led.v{background:#48C868}
 .ecran-dex{display:flex;align-items:center;gap:12px;min-height:88px;border-radius:10px;padding:6px 14px;background:repeating-linear-gradient(0deg,rgba(0,0,0,.05) 0 2px,transparent 2px 4px),linear-gradient(160deg,#BDEB9B,#86CC6E);box-shadow:inset 0 0 0 3px #3F6B33}
 .ecran-dex img{height:76px;width:76px;object-fit:contain;image-rendering:pixelated;flex:0 0 76px}
 .ecran-dex .chiffre{flex:1;color:#20391A;font-family:'Jersey 15',monospace;line-height:1}
@@ -361,8 +361,7 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
 #mon-dresseur{display:flex;align-items:center;gap:12px;border-radius:12px;padding:10px 12px;font-family:'Jersey 15',Outfit,monospace;
   background:repeating-linear-gradient(0deg,rgba(255,255,255,.07) 0 2px,transparent 2px 6px),linear-gradient(180deg,#5AA8E6,#3577C6);
   border:3px solid #F8F8F8;box-shadow:0 0 0 3px #283048}
-#mon-dresseur .photo{width:52px;height:74px;flex:0 0 52px;border-radius:6px;border:2px solid #F8F8F8;position:relative;
-  background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/12px 12px}
+#mon-dresseur .photo{width:52px;height:74px;flex:0 0 52px;position:relative}
 #mon-dresseur canvas{position:absolute;left:50%;bottom:2px;width:49px;height:66px;transform:translateX(-50%);image-rendering:pixelated}
 #mon-dresseur .txt{flex:1;min-width:0;color:#fff;text-shadow:2px 2px 0 #1F4E9A}
 #mon-dresseur .nom{font-size:25px;font-weight:400}#mon-dresseur .id,#mon-dresseur .chiffres{font-size:16px;opacity:.95}
@@ -522,7 +521,7 @@ details.regles{color:#484838 !important}
 .joueur{display:flex;align-items:center;gap:9px;padding:7px 2px;border-top:2px dashed #D8D4B8;cursor:pointer}
 .joueur:first-of-type{border-top:0}
 .joueur .rg{flex:0 0 18px;font-size:20px;color:#686850;text-align:center}
-.joueur .ph{flex:0 0 34px;width:34px;height:46px;border-radius:5px;border:2px solid #484838;position:relative;background:repeating-conic-gradient(#E9DCAE 0 25%,#D9CA92 0 50%) 0 0/10px 10px}
+.joueur .ph{flex:0 0 34px;width:34px;height:46px;position:relative}
 .joueur .ph canvas{position:absolute;left:50%;bottom:1px;width:31px;height:42px;transform:translateX(-50%);image-rendering:pixelated}
 .joueur .tx{flex:1;min-width:0;color:#383828;line-height:1.15}
 .joueur .tx b{font-size:19px;font-weight:400}.joueur .tx b i{font-style:normal;color:#C03028;font-size:15px;margin-left:5px}
@@ -543,14 +542,14 @@ details.regles{color:#484838 !important}
 .muscu-points .l1{display:flex;justify-content:space-between;gap:8px}.muscu-points .l1 b{font-weight:400;color:#C03028}
 .muscu-points .bar{height:10px;border-radius:5px;background:#484838;padding:2px;margin:5px 0 6px}.muscu-points .bar i{display:block;height:100%;background:#40A8F8;border-radius:3px}.muscu-points .bar i.ok{background:#F8C838}
 .muscu-points small{display:block;font-size:15px;color:#686850}
-.exos{display:grid;grid-template-columns:1fr 1fr;gap:10px}.exo-danse{grid-column:1/-1}
+.exos{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;margin-top:14px}.exo-danse{grid-column:1/-1}
 .exo{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:10px 8px;color:#383828;text-align:center;line-height:1.1}
 .exo .pk{width:72px;height:72px;object-fit:contain;image-rendering:pixelated}
 .exo h3{margin:4px 0 0;font-size:24px;font-weight:400;color:#383828}
 .exo .nb-exo{font-size:40px;color:#C03028;line-height:1}.exo .nb-exo small{font-size:18px}
 .exo .d{font-size:15px;color:#686850;margin-bottom:8px}
 .exo .annule-exo{margin:-4px 0 8px;padding:2px 4px;background:none;border:0;color:#686850;font:inherit;font-size:14px;line-height:1.05;text-decoration:underline;cursor:pointer}
-.exo .tag{position:absolute;top:6px;left:6px;padding:1px 6px;border-radius:6px 3px;background:#B05010;color:#F8F8E8;font-size:14px}
+.exo .tag{position:absolute;top:-11px;left:50%;transform:translateX(-50%);z-index:1;white-space:nowrap;padding:0 7px;border:2px solid #484838;border-radius:6px 3px;background:#B05010;color:#F8F8E8;font-size:14px;line-height:15px}
 .exo .go-exo,.speciale .go-exo{margin-top:auto;width:100%;padding:7px 4px;border:3px solid #484838;border-radius:10px 5px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;font:inherit;font-size:19px;cursor:pointer;box-shadow:2px 2px 0 rgba(10,15,35,.45)}
 .exo .go-exo:active,.speciale .go-exo:active{transform:translate(2px,2px);box-shadow:none}
 .exo .plus-moins,.speciale .plus-moins{display:flex;gap:4px;width:100%;margin-top:auto}.exo .plus-moins .go-exo,.speciale .plus-moins .go-exo{flex:1;width:auto;min-width:0;margin-top:0}.exo .plus-moins .go-exo:disabled,.speciale .plus-moins .go-exo:disabled{opacity:.45;cursor:default}
@@ -2204,9 +2203,15 @@ const CHAMPIONS = EN_JOHTO ? CHAMPIONS_JOHTO : CHAMPIONS_KANTO, CONSEIL = EN_JOH
 // points de peau = le nez, à peu près ; les cheveux orange, roses… n'en sont pas) ; le carré fait 2,1 × la largeur du visage. Sans peau
 // trouvée (masque, armure) : l'ancienne mesure, par la largeur de la tête. Calcul fait une fois par image (TETES), posée en % dans un cadre qui coupe.
 const TETES = new Map();
+// Le milieu du visage (entre les yeux et le nez) et la largeur du visage de chaque champion, mesurés sur son image (Kiki, 05/11 : les yeux et le nez au centre du rond, même s'il faut
+// couper un peu les cheveux ; une couette ou des mèches trompaient toutes les règles automatiques). Nouveau champion : à mesurer ici ; sans mesure, la règle automatique de cadreTete.
+const VISAGES = {"arene-argenta-pierre.webp": [68,91,86], "arene-azuria-ondine.webp": [74,105,92], "arene-carmin-major-bob.webp": [74,70,88], "arene-celadopole-erika.webp": [56,81,62], "arene-parmanie-koga.webp": [67,104,90], "arene-safrania-morgane.webp": [66,82,58], "arene-cramoisile-auguste.webp": [57,64,90], "arene-jadielle-giovanni.webp": [62,71,85], "arene-ligue-regis.webp": [65,94,78], "arene-conseil-olga-olga.webp": [70,85,78], "arene-conseil-aldo-aldo.webp": [77,37,64], "arene-conseil-agatha-agatha.webp": [60,78,68], "arene-conseil-peter-peter.webp": [85,82,72], "arene-mauville-albert.webp": [85,85,60], "arene-ecorcia-hector.webp": [67,72,62], "arene-doublonville-blanche.webp": [93,84,58], "arene-rosalia-mortimer.webp": [59,84,58], "arene-oliville-jasmine.webp": [72,100,70], "arene-irisia-chuck.webp": [96,65,76], "arene-acajou-fredo.webp": [80,76,72], "arene-ebenelle-sandra.webp": [120,97,62], "arene-ligue-johto-peter.webp": [96,92,72], "arene-conseil-j-clement-clement.webp": [100,77,72], "arene-conseil-j-koga-koga.webp": [135,90,75], "arene-conseil-j-aldo-aldo.webp": [100,92,78], "arene-conseil-j-marion-marion.webp": [110,84,62]};
+const CADRE_VISAGE = 1.42;  // la largeur du rond, en largeurs de visage
 function cadreTete(img) {
   const src = img.currentSrc || img.src;
   if (!TETES.has(src)) TETES.set(src, (() => { try {
+    const mesure = VISAGES[src.split("/").pop().split(/[?#]/)[0]];
+    if (mesure) { const c = mesure[2] * CADRE_VISAGE; return {x: mesure[0] - c / 2, y: mesure[1] - c / 2, c, w: img.naturalWidth}; }
     const w = img.naturalWidth, h = img.naturalHeight, c = document.createElement("canvas"); c.width = w; c.height = h;
     const g = c.getContext("2d"); g.drawImage(img, 0, 0); const d = g.getImageData(0, 0, w, h).data;
     const plein = (x, y) => d[(y * w + x) * 4 + 3] > 128;
@@ -2223,8 +2228,8 @@ function cadreTete(img) {
     for (let y = haut; y < haut + H * .34; y++) for (let x = 0; x < w; x++) { const i = (y * w + x) * 4, a = d[i], b = d[i + 1], e = d[i + 2];
       if (d[i + 3] > 128 && a > 110 && a - b >= 12 && a - b <= 85 && b - e >= 8 && b - e <= 80) { xp.push(x); yp.push(y); } }
     if (xp.length >= 20) { const tx = xp.slice().sort((a, b) => a - b), n = tx.length, large = tx[n * 9 / 10 | 0] - tx[n / 10 | 0];
-      const k = Math.min(Math.max(large * 2.1, H * .3), H * .55);
-      return {x: med(xp) - k / 2, y: med(yp) - k / 2, c: k, w}; }
+      const k = Math.min(Math.max(large * 1.6, H * .3), H * .55);
+      return {x: med(xp) - k / 2, y: med(yp) + large * .12 - k / 2, c: k, w}; }  // le milieu de la peau du haut est sur le front : le visage est un peu plus bas
     const lt = larg.length ? med(larg) : H * .4, hc = mil.length ? med(mil) : cx;
     const k = Math.max(Math.min(lt * 1.45, H * .57), H * .5);
     return {x: hc - k / 2, y: haut - k * .04, c: k, w};
@@ -4205,7 +4210,7 @@ function dessinerAmis() {
     badges: Object.keys(V.badges).map(Number), especes: mien, shiny: mien.filter(n => col[n].some(c => c.shiny && !c.rate)),
     starter: G.starter ? {num: G.starter.ligne[G.starter.niveau >= 36 ? 2 : G.starter.niveau >= 16 ? 1 : 0]} : null};
   const autres = (D.joueurs || []).filter(j => !j.moi);
-  const titre = `<div class="titre" style="font-size:16px">Les dresseurs</div>`;
+  const titre = `<div class="titre" style="font-size:16px">Classement des dresseurs</div>`;
   const lundi = (autres[0] || {}).lundi || "";
   moi.semaine = Object.values(premieres).filter(j => j >= lundi).length;
   // le Pokédex d'abord, puis les shiny ; à égalité sur les deux, même rang (la liste reste rangée par badges, puis par avancée)

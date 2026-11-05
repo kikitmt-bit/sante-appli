@@ -112,21 +112,6 @@ h3{margin-top:1.4rem !important}
 .bilan .obs p{margin:2px 0 0 !important;font-size:.84rem;line-height:1.35;color:#C9D3EA}
 .bilan .obs .cs{margin-top:4px !important;color:#FFE27A}
 .bilan .note{font-size:.7rem;color:#7C8AA8;margin-top:8px}
-.combat{background:linear-gradient(180deg,#5FAE6E 0,#7CC47F 42%,#E6D9A5 42%,#D9C98F 100%);border-radius:18px;padding:10px;margin:6px 0 14px;box-shadow:inset 0 0 0 3px rgba(0,0,0,.18);font-family:'Jersey 15',Outfit,monospace}
-.combat .rang{display:flex;align-items:center;gap:6px;margin-top:6px}.combat .rang:first-child{margin-top:0}
-.combat .poke{position:relative;flex:0 0 66px;height:58px;display:flex;align-items:flex-end;justify-content:center}
-.combat .poke:before{content:"";position:absolute;left:3px;right:3px;bottom:1px;height:15px;border-radius:50%;background:rgba(60,70,30,.42)}
-.combat .poke img{position:relative;max-width:64px;max-height:56px;object-fit:contain;image-rendering:pixelated;margin-bottom:4px}
-.combat .hud{flex:1;min-width:0;background:#F8F8E8;border:3px solid #484838;border-radius:10px 4px 10px 4px;box-shadow:3px 3px 0 rgba(40,40,30,.4);padding:3px 9px 4px;color:#383828}
-.combat .l1{display:flex;justify-content:space-between;align-items:baseline;gap:6px;font-size:1.28rem;line-height:1}
-.combat .l1 span{font-size:1.05rem;color:#585840;white-space:nowrap}
-.combat .pv{display:flex;align-items:center;gap:4px;margin-top:3px;background:#484838;border-radius:7px;padding:2px 4px}
-.combat .pv b{font-size:.82rem;font-weight:400;color:#F8C838;line-height:1}
-.combat .pv div{flex:1;height:8px;border-radius:4px;background:#F0F0E0;overflow:hidden}
-.combat .pv i{display:block;height:100%;border-radius:4px;background:var(--pv)}
-.combat .val{text-align:right;font-size:1.28rem;line-height:1;margin-top:2px}
-.combat .val small{font-size:.95rem;color:#686850}
-.combat .gagne{color:#2F8F4E}
 .prof-tete{display:flex;align-items:center;gap:11px}
 .prof-portrait{flex:0 0 60px;width:60px;height:60px;border-radius:50%;border:3px solid #FFE27A;background-repeat:no-repeat;box-shadow:0 2px 8px rgba(0,0,0,.45)}
 [data-testid="stExpander"] h4{font-size:1.05rem !important;padding:.6rem 0 .2rem !important}
@@ -202,8 +187,6 @@ div:has(> .vega-embed){padding:6px 4px 2px !important}
 .nuit .tot{font-size:1.6rem !important}
 .pouls .v{font-size:1.5rem !important}.pouls .s{font-size:.84rem !important}
 .curieux{font-size:.92rem !important}
-.combat{background:rgba(12,18,44,.55) !important;border:3px solid #484838 !important;border-radius:14px 6px 14px 6px !important;box-shadow:none !important;padding:8px !important}
-.combat .poke:before{display:none}
 [data-testid="stCaptionContainer"] *{color:#D8E0F0 !important}
 </style>""", unsafe_allow_html=True)
 # Le conteneur « outils » est caché : ce sont « Paramètres » et « Synchroniser », tout en bas de Dresseur, qui touchent ses boutons (pokemon_ui.html).
@@ -429,22 +412,6 @@ def lire_depot(paths, recents=()):
 def rubrique(num, titre, couleur=None):
     """Le titre d'une rubrique, illustré par un Pokémon (num)."""
     st.markdown(f'<div class="rubrique"><img src="{FIXE.format(num)}" alt="">{titre}</div>', unsafe_allow_html=True)
-
-
-def ecran_combat(df, un_jour):
-    """Les 3 objectifs de la journée, à la façon d'un écran de combat Pokémon : ta barre de PV se remplit vers l'objectif. Vert à partir
-    de la moitié, jaune avant, rouge au début, comme dans les jeux. Doduo court, Ponyta est un cheval de feu, Ronflex dort."""
-    html = []
-    for cle, num, nom in (("pas", 84, "PAS"), ("zone_sport", 77, "SPORT"), ("sommeil", 143, "SOMMEIL")):
-        v, obj = par_jour(df, cle), OBJECTIFS.get(cle)
-        v = 0 if v is None or v != v else v
-        pct = min(v / obj * 100, 100) if obj else 0
-        pv = "#48C868" if pct >= 50 else "#F8C838" if pct >= 20 else "#E85038"
-        fait = v >= obj
-        html.append(f'<div class="rang"><div class="poke"><img src="{ANIME.format(num)}" alt=""></div><div class="hud"><div class="l1">{nom}<span>{"moyenne / jour" if not un_jour else "objectif atteint !" if fait else ""}</span></div>'
-                    f'<div class="pv"><b>PV</b><div><i style="width:{pct:.0f}%;--pv:{pv}"></i></div></div>'
-                    f'<div class="val {"gagne" if fait else ""}">{joli(cle, v) if v else "0"}<small> / {joli(cle, obj)}</small></div></div></div>')
-    st.markdown(f'<div class="combat">{"".join(html)}</div>', unsafe_allow_html=True)
 
 
 def carte_bilan(b):
@@ -894,7 +861,7 @@ page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sant
 with page_sante:
     aujourd = dt.datetime.now(TZ).date()
     st.session_state.setdefault("ref", aujourd)
-    periode = st.segmented_control("Période", PERIODES, default="Jour", key="periode",
+    periode = st.segmented_control("Période", PERIODES, default="Jour", key="periode", width="stretch",
                                    label_visibility="collapsed") or "Jour"
     fin_affichee = bornes(periode, st.session_state["ref"])[1]
     c1, c2, c3 = st.columns([1, 4, 1], vertical_alignment="center")
@@ -921,7 +888,6 @@ with page_sante:
                 f' · {debut:%d/%m}{f" → {fin:%d/%m}" if fin != debut else ""}</div>', unsafe_allow_html=True)
 
     histoire = stats.loc[fin - dt.timedelta(days=20):fin]  # les 3 dernières semaines, pour les mini-courbes de la vue Jour
-    ecran_combat(df, un_jour)
     jour_bilan = aujourd - dt.timedelta(days=1) if un_jour and fin == aujourd else fin
     fichier_bilan = f"data/jour/{jour_bilan.year}/{jour_bilan}.json"
     carte_bilan(bilan.analyser(stats, periode, debut, fin, aujourd, lire_vite([fichier_bilan])[fichier_bilan] if un_jour else None, PROFIL))

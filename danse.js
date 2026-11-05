@@ -132,7 +132,6 @@ const STYLE_DANSE = `
 .pkm-entr .d-lignes{display:grid;grid-template-columns:1fr auto;gap:0 10px;font-size:20px}.pkm-entr .d-lignes span:nth-child(even){text-align:right}
 .pkm-entr .d-classe{display:grid;gap:3px;margin-top:6px}.pkm-entr .d-classe div{display:grid;grid-template-columns:26px 1fr auto 24px;gap:6px;align-items:center;padding:3px 7px;font-size:19px;line-height:1;border-radius:7px 3px}
 .pkm-entr .d-classe div.toi{background:#F8E8A0}.pkm-entr .d-classe .n{color:#B05010}.pkm-entr .d-classe .r{text-align:center;color:#C03028}.pkm-entr .d-vide{margin:8px 0 2px;text-align:center;color:#686850;font-size:16px}
-.pkm-entr .d-saut{animation:d-saut .5s steps(3) infinite alternate}@keyframes d-saut{to{transform:translateY(-8px)}}
 .pkm-entr .d-bip{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;font-size:24px;touch-action:none;min-height:240px}
 .pkm-entr .d-bip img{width:120px;height:120px;object-fit:contain;image-rendering:pixelated;transition:transform .07s}.pkm-entr .d-bip img.tape{transform:translateY(-14px) scale(1.08)}
 .pkm-entr .d-bip b{font-size:54px;font-weight:400;color:#F8C838;text-shadow:2px 2px 0 #141C38}
