@@ -611,8 +611,14 @@ const DEX = D.dex.map(([num, nom, types]) => ({num, nom, types}));
 // (Johto : de 152 à 251) s'ajoute ici le jour où elle s'ouvre, et les boutons de région n'apparaissent qu'à partir de deux.
 const REG = D.region, EN_JOHTO = REG.nom === "Johto", CADEAU = EN_JOHTO ? "orme" : "chen";  // la région en cours ; les données de chaque région sont plus bas (CHAMPIONS_…, FONDS, PROFESSEURS…)
 const REGIONS = [{nom: "Kanto", de: 1, a: 151}, {nom: "Johto", de: 152, a: 251}].slice(0, REG.index + 1);
-let regionVue = null, typesOuverts = false, triDex = "recent";  // regionVue null : toutes les régions (un seul Pokédex)
-const dexRegion = () => DEX.filter(p => (regionVue ? [regionVue] : REGIONS).some(x => p.num >= x.de && p.num <= x.a));
+let typesOuverts = false, triDex = "recent";
+const dexRegion = () => DEX.filter(p => REGIONS.some(x => p.num >= x.de && p.num <= x.a));
+// La génération (Kiki, 05/11) : rien n'en dit l'existence tant que le joueur n'a pas son premier Pokémon d'une 2e génération, pour garder la surprise.
+const FIN_GEN = [151, 251, 386, 493, 649, 721, 809, 905, 1025];
+const genDe = num => FIN_GEN.findIndex(x => num <= x) + 1;
+const gensVues = () => [...new Set(Object.keys(collection()).map(n => genDe(+n)))].sort((a, b) => a - b);
+const genAffichee = num => genDe(num) > 1 || gensVues().length > 1;
+const filtreGens = new Set();  // vide : toutes
 const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
 // Les images, directement dans le dépôt public PokeAPI/sprites
 const IMG = {
@@ -1765,7 +1771,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
       <div class="phrase">${(sx => r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
-      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${REG.index ? `Originaire de ${REGIONS.find(x => c.num >= x.de && c.num <= x.a)?.nom || REG.nom} · ` : ""}Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${genAffichee(c.num) ? `Génération ${genDe(c.num)} · ` : ""}Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
@@ -3444,7 +3450,7 @@ function fiche(p) {
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
     <div class="tete">
       <img class="grande ${a ? "" : "non"}" src="${IMG.grand(p.num, a ? vue : false)}">
-      <div><div class="no">N° ${N3(p.num)}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}<span class="sx"></span></h3>
+      <div><div class="no">N° ${N3(p.num)}${a && genAffichee(p.num) ? ` · Génération ${genDe(p.num)}` : ""}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}<span class="sx"></span></h3>
         <div>${typesHTML(p.types, "pkm-type")}</div><div class="sous"></div></div></div>
     ${normal && shiny ? `<div class="onglets-f"><button data-s="0">Normal</button><button data-s="1">${ico("shiny", "p brille")} Shiny</button></div>` : ""}
     ${a ? `<div class="corps"></div><div class="desc"></div>`
@@ -3908,7 +3914,9 @@ function rangDex(n) {
   return {nom: RANGS[i][1], suivant: sv && sv[1], reste: sv ? sv[0] - n : 0, pct: sv ? (n - RANGS[i][0]) / (sv[0] - RANGS[i][0]) * 100 : 100};
 }
 function dessinerDex() {
-  const tout = collection(), dexR = dexRegion().filter(p => tout[p.num]);
+  const tout = collection(), gens = gensVues();
+  [...filtreGens].forEach(g => { if (!gens.includes(g)) filtreGens.delete(g); });
+  const dexR = dexRegion().filter(p => tout[p.num] && (!filtreGens.size || filtreGens.has(genDe(p.num))));
   const col = {}; dexR.forEach(p => col[p.num] = tout[p.num]);
   const nbTotal = Object.keys(tout).length, rg = rangDex(nbTotal);
   const sh = dexR.filter(p => col[p.num].some(c => c.shiny)).length, leg = dexR.filter(p => LEG.has(p.num)).length;
@@ -3921,8 +3929,12 @@ function dessinerDex() {
       <div class="barre-r"><i style="width:${rg.pct}%"></i></div></div>
     <div class="trois"><div>${ico("shiny", "p brille")}<b>${sh}</b>shiny</div><div>${ico("master", "p")}<b>${leg}</b>légendaire${leg > 1 ? "s" : ""}</div><div><span class="ronds">${typesVus.slice(0, 3).map(icoType).join("")}</span><b>${typesVus.length}</b>type${typesVus.length > 1 ? "s" : ""}</div></div></div>`;
   const blocR = document.getElementById("regions");
-  blocR.innerHTML = REGIONS.length > 1 ? [`<button class="filtre ${!regionVue ? "on" : ""}" data-i="">Toutes</button>`, ...REGIONS.map((x, i) => `<button class="filtre ${x === regionVue ? "on" : ""}" data-i="${i}">${x.nom}</button>`)].join("") : "";
-  blocR.querySelectorAll(".filtre").forEach(b => b.onclick = () => { regionVue = b.dataset.i === "" ? null : REGIONS[b.dataset.i]; dessinerDex(); });
+  // une pastille par génération attrapée : on en touche une ou plusieurs ; Toutes remet tout
+  blocR.innerHTML = gens.length > 1 ? [`<button class="filtre ${!filtreGens.size ? "on" : ""}" data-g="">Toutes</button>`, ...gens.map(g => `<button class="filtre ${filtreGens.has(g) ? "on" : ""}" data-g="${g}">Gén. ${g}</button>`)].join("") : "";
+  blocR.querySelectorAll(".filtre").forEach(b => b.onclick = () => { const g = +b.dataset.g;
+    if (!g) filtreGens.clear(); else if (filtreGens.has(g)) filtreGens.delete(g); else filtreGens.add(g);
+    if (filtreGens.size === gens.length) filtreGens.clear();
+    dessinerDex(); });
   const filtres = [["tous", "Tous"], ["shiny", `${ico("shiny", "p brille")} Shiny`], ["leg", `${ico("master", "p")} Légendaires`]];
   document.getElementById("filtres").innerHTML = filtres.map(([k, l]) => `<button class="filtre ${filtre === k ? "on" : ""}" data-k="${k}">${l}</button>`).join("")
     + `<button class="filtre plus-types ${typesOuverts || filtreTypes.size ? "on" : ""}">Types${filtreTypes.size ? ` (${filtreTypes.size})` : ""}</button>`
