@@ -823,7 +823,7 @@ function rognerImages(racine) {
 
 // ---------- Dessin d'une Poké Ball (SVG) ----------
 let idSvg = 0;
-// Les petites balls de l'écran (à ouvrir, sac, route) : une image de la vraie ball, faite une fois par type ; le dessin SVG seulement sans three.js
+// Le repli de l'ouverture sans three.js : une image de la vraie ball, faite une fois par type ; sinon le dessin SVG
 const IMG_BALL = {};
 function imageBall(type) {
   if (type in IMG_BALL) return IMG_BALL[type];
@@ -841,6 +841,8 @@ function imageBall(type) {
   } catch (e) {}
   return IMG_BALL[type];
 }
+// Les balls à ouvrir et celles de la route : le sprite du jeu, comme partout ailleurs sur la page (Kiki, 05/11). La ball 3D reste pour l'ouverture elle-même.
+const spriteBall = type => `<img class="ball-pix rogne" src="${IC[type === "shiny" ? "sball" : type] || IC.poke}" alt="">`;
 function ballSVG(type) {
   const im = imageBall(type);
   if (im) return `<img class="ball-pix" src="${im}" alt="">`;
@@ -3511,8 +3513,9 @@ function dessinerAOuvrir() {
   }
   el.innerHTML = blocBadges + rappel + (G.fini ? `<div class="petit" style="margin-bottom:8px"><b>Professeur ${PROFESSEURS[CADEAU].prof} :</b> « Quel voyage ! Il te reste des Poké Balls : ouvre-les toutes, il manque peut-être encore des Pokémon à ton Pokédex ! »</div>` : "") + blocSac() + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
     <div class="rang">${liste.slice(0, 12).map((c, i) => `<button class="bouton-ball" data-i="${CAPTURES.indexOf(c)}"
-      style="animation-delay:${i * .25}s">${ballSVG(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
+      style="animation-delay:${i * .25}s">${spriteBall(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
+  rognerImages(el);
   el.querySelectorAll(".bouton-ball").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
   el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir().filter(c => !estBadge(c) && !estEvo(c))[0]);
   brancherRappel();
@@ -4438,7 +4441,8 @@ function sortirBall(el, c) {
   if (!h || !cadre) { EN_ROUTE.delete(c.id); return; }
   const rh = h.getBoundingClientRect(), rc = cadre.getBoundingClientRect(), spe = c.ball !== "poke";
   const b = document.createElement("div"); b.className = "ball-route" + (spe ? " spe" : "");
-  b.innerHTML = `${ballSVG(c.ball)}${spe ? `<span>${BALLS[c.ball]} !</span>` : ""}`;
+  b.innerHTML = `${spriteBall(c.ball)}${spe ? `<span>${BALLS[c.ball]} !</span>` : ""}`;
+  rognerImages(b);
   b.style.left = rh.left + rh.width / 2 - rc.left + "px"; b.style.top = rh.top - rc.top + "px";
   cadre.appendChild(b);
   vibre(spe ? [20, 40, 20] : 12);
