@@ -62,7 +62,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         captures, etat = pokemon.apercu_region(etat, 1, float(st.query_params.get("pos", 830)))
     index = etat["region"]["index"]
     nums = {n for r in regions.REGIONS[:index + 1] for n in r.lieux_et_legendes}  # rien de la région suivante n'arrive sur le téléphone : la suite reste une surprise
-    nums |= {c["num"] for c in captures}  # ce qui est déjà attrapé doit toujours s'afficher
+    nums |= {c["num"] for c in captures} | {n for lieu in etat["voyage"]["lieux"] for n in lieu["pokemon"]}  # ce qui est déjà attrapé et les Pokémon de ses lieux à lui doivent toujours s'afficher
     for j in joueurs:  # sauf ce qu'un ami en avance a déjà attrapé : ses captures doivent pouvoir s'afficher
         nums |= set(j.get("especes") or ()) | {x["num"] for x in (j.get("dernieres") or ())} | {x["num"] for x in (j.get("nouvelles") or ()) if x.get("num")}
         if j.get("starter"):

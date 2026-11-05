@@ -297,6 +297,44 @@ class PreludeEtFilet(unittest.TestCase):
             for lieu in r.lieux[1:]:
                 self.assertGreaterEqual(len(lieu["pokemon"]), 2, lieu["nom"])
 
+    def test_chaque_joueur_a_sa_liste_de_kanto(self):
+        a, b = kanto.variante("4-kiki"), kanto.variante("4-abc")
+        self.assertEqual(a, kanto.variante("4-kiki"))  # toujours la même pour lui
+        self.assertNotEqual(a, b)
+        for liste in (a, b):
+            tous = {n for x in liste for n in x}
+            self.assertEqual(len(tous), 74)
+            self.assertEqual(len(tous & kanto.REGION.especes), 74 - kanto.NB_SURPRISES)
+            self.assertFalse(tous & set(range(1, 10)))  # jamais les starters
+            for lieu, x in zip(kanto.REGION.lieux[1:], liste[1:]):
+                self.assertGreaterEqual(len(x), 2, lieu["nom"])
+
+    def test_jamais_un_pokemon_d_une_generation_future(self):
+        for graine in range(200):
+            self.assertLessEqual(max(n for x in kanto.variante(f"essai{graine}") for n in x), 151)
+        self.assertLessEqual(max(johto.REGION.especes), 251)
+
+    def test_un_pokemon_absent_de_kanto_revient_ensuite(self):
+        v = region_.Voyage(kanto.REGION, "4-kiki")
+        retires = kanto.REGION.especes - v.especes()
+        self.assertEqual(len(retires), kanto.NB_SURPRISES)
+        pokemon.REGLAGES["debut"], pokemon.REGLAGES["partie"] = DEBUT, 4
+        g = {str(jour(k)): {"pompes": 80, "tractions": 25, "squats": 0, "series": 0} for k in range(300)}
+        s = stats(300, pas=14000, zone_sport=40, zone=40, km=9, etages=45, sommeil=430)
+        _, e = pokemon.jouer(s, {}, jour(299), (), None, None, None, (), g)
+        quand = str(dt.date.fromisoformat(e["voyage"]["badges"][9]) + dt.timedelta(days=2))
+        g[quand]["appel"] = 1
+        captures, _ = pokemon.jouer(s, {}, jour(299), (), None, None, None, (), g)
+        vus = {c["num"] for c in captures if not c.get("rate")}
+        self.assertLessEqual(retires, vus)
+        pokemon.REGLAGES["partie"] = 99
+
+    def test_le_diplome_de_kanto_suit_la_liste_du_joueur(self):
+        pokemon.REGLAGES["debut"], pokemon.REGLAGES["partie"] = DEBUT, 99
+        g = {str(jour(k)): {"pompes": 80, "tractions": 25, "squats": 0, "series": 0} for k in range(120)}
+        captures, _ = pokemon.jouer(stats(120, pas=14000, zone_sport=40, zone=40, km=9, etages=45, sommeil=430), {}, jour(119), (), None, None, None, (), g)
+        self.assertTrue([c for c in captures if c["id"].endswith("#diplome") and c["num"] == 151])
+
     def test_la_forme_finale_arrive_avant_la_fin_de_la_carte(self):
         for r in (kanto.REGION, johto.REGION):
             self.assertLess(35 * pokemon.pts_niveau(r), r.dist[-1])

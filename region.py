@@ -66,7 +66,7 @@ class Region:
     faite (même nombre de points, seul le dessin change) ; sanctuaires = lieu -> légendaire ; ligue = le légendaire de la Ligue ; diplome = celui du
     Pokédex complet de la région ; cadeau = (clé de la ball, raison) du starter du professeur ; suivante = le texte de l'appel de fin de région."""
 
-    def __init__(self, nom, numeros_, legendaires, lieux, carte, via, modes, sanctuaires, rares, starters, ligue, diplome, cadeau, cle_diplome, raison_diplome, moments=None, arene_max=None, reportes=()):
+    def __init__(self, nom, numeros_, legendaires, lieux, carte, via, modes, sanctuaires, rares, starters, ligue, diplome, cadeau, cle_diplome, raison_diplome, moments=None, arene_max=None, reportes=(), variante=None):
         self.nom, self.carte, self.starters, self.ligue, self.diplome = nom, carte, starters, ligue, diplome
         self.cadeau, self.cle_diplome, self.raison_diplome = cadeau, cle_diplome, raison_diplome
         self.lieux = [{"nom": n, "x": x, "y": y, "pokemon": numeros(pk), "arene": ar, "pas": d, "via": via.get(n, []),
@@ -75,6 +75,7 @@ class Region:
         for lieu in self.lieux:
             self.dist.append((self.dist[-1] if self.dist else 0) + lieu["pas"])
         self.arenes = [i for i, lieu in enumerate(self.lieux) if lieu["arene"]]  # la dernière = la Ligue
+        self.variante = variante  # variante(graine) -> les Pokémon de chaque lieu pour ce joueur : tout le monde n'a pas exactement les mêmes
         self.arene_max = arene_max  # après tant de jours actifs à une arène, le champion laisse passer
         self.especes = set(numeros_) - set(legendaires) - set(reportes)  # les Pokémon du diplôme ; reportes = gardés pour les régions suivantes, à étaler sur tout le jeu
         self.lieux_et_legendes = (set(numeros_) - set(reportes)) | {n + k for n in starters for k in range(3)}  # le starter et ses évolutions, même s'ils sortent des balls bien plus tard
@@ -93,8 +94,9 @@ class Region:
 class Voyage:
     """L'état du voyage dans une région, mis à jour jour après jour par pokemon.jouer."""
 
-    def __init__(self, region):
+    def __init__(self, region, graine=None):
         self.r = region
+        self.pokemon = region.variante(graine) if graine and region.variante else [lieu["pokemon"] for lieu in region.lieux]  # les Pokémon de chaque lieu pour ce joueur
         self.badges = {}      # numéro d'arène (1 à 9, 9 = Ligue) -> date du badge
         self.arrivee = None   # date d'arrivée à l'arène en cours
         self.histo = []       # (date, chiffres du jour) depuis l'arrivée à l'arène : pour les défis
@@ -179,7 +181,11 @@ class Voyage:
     def atteints(self):
         """(Pokémon du lieu actuel, Pokémon des lieux déjà traversés) : jamais ceux des lieux à venir."""
         i = self.ici()
-        return self.r.lieux[i]["pokemon"], [n for lieu in self.r.lieux[:i] for n in lieu["pokemon"]]
+        return self.pokemon[i], [n for liste in self.pokemon[:i] for n in liste]
+
+    def especes(self):
+        """Tous les Pokémon de la région pour ce joueur (son diplôme)."""
+        return {n for liste in self.pokemon for n in liste}
 
     def etat(self, jour):
         """Ce que l'écran montre : la carte, où l'on est, les badges, le défi en cours."""
@@ -193,7 +199,7 @@ class Voyage:
                     "actifs": self.jours_actifs(jour) if arrive else 0, "max": r.arene_max}
         sanct = [{"lieu": k, "num": n, "nom": r.lieux[k]["nom"], "valeur": self.exploits.get(k, 0), "cible": SANCTUAIRE_CIBLE,
                   "atteint": self.pos >= r.dist[k], "fait": k in self.sanct_faits} for k, n in r.sanct_index.items()]
-        return {"lieux": [{k: lieu[k] for k in ("nom", "x", "y", "pokemon", "arene", "via", "mode")} | {"dist": d}
-                          for lieu, d in zip(r.lieux, r.dist)],
+        return {"lieux": [{k: lieu[k] for k in ("nom", "x", "y", "arene", "via", "mode")} | {"dist": d, "pokemon": liste}
+                          for lieu, d, liste in zip(r.lieux, r.dist, self.pokemon)],
                 "pos": round(self.pos, 1), "ici": i, "badges": {k: str(d) for k, d in self.badges.items()},
                 "defi": defi, "sanctuaires": sanct, "velo": str(self.velo) if self.velo else None, "total": r.dist[-1], "rares": sorted(r.rares), "carte": r.carte}

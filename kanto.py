@@ -1,6 +1,8 @@
 """Kanto, la première région, un prélude (Kiki, 05/11) : de Bourg Palette au Plateau Indigo en 2 000 points, 2 mois au plus en jouant normalement. On y attrape le
 moins de Pokémon possible : 74 sauvages, les 72 autres sont gardés pour les régions suivantes (POUR_PLUS_TARD), pour qu'il reste de quoi se faire plaisir sur toute
 l'aventure. Les règles du voyage sont dans region.py. Mewtwo : la Ligue ; Mew : le diplôme, quand on a les 74 ; trois sanctuaires (oiseaux)."""
+import random
+
 from region import arene as _arene, numeros, plan_b as _plan_b, Region, voie as _o
 
 # (nom, points depuis l'étape d'avant, x, y en pixels sur l'image de la carte (CARTE), Pokémon du lieu, arène ou None)
@@ -98,6 +100,39 @@ POUR_PLUS_TARD = {
 }
 REPORTES = [n for noms in POUR_PLUS_TARD.values() for n in numeros(noms)]
 
+# Pour que deux joueurs ne finissent pas Kanto avec exactement les mêmes Pokémon (Kiki, 05/11) : chacun a 6 Pokémon de plus, pris parmi ceux gardés pour plus tard (jamais
+# les starters), et 6 de moins, propres à lui, tirés sur son identifiant. Ceux qu'il n'a pas ici reviennent ensuite : à Johto (rattrapage) ou dans leur région. Aucun n'est perdu.
+# Là où chacun apparaît alors à Kanto, lieu -> Pokémon (sa place d'origine dans la région).
+SURPRISES = {
+    "Route 3": "Sabelette", "Mont Sélénite": "Mélofée, Mélodelfe", "Azuria": "Mystherbe, Abra, Psykokwak, Ptitard", "Route 5 et Cave Taupiqueur": "Mimitoss",
+    "Carmin-sur-Mer": "Magicarpe, Kokiyas", "Grotte et Centrale": "Magnéti, Magnéton, Élektek, Machoc", "Lavanville": "Fantominus, Spectrum",
+    "Céladopole": "Évoli, Aquali, Voltali, Pyroli, Ortide, Rafflesia", "Piste cyclable": "Ronflex",
+    "Parmanie et Parc Safari": "Rhinocorne, Kangourex, Tauros, Leveinard, Insécateur, Scarabrute, Minidraco, Draco, Aéromite", "Safrania": "Lippoutou, M. Mime, Lokhlass, Kadabra",
+    "Îles Écume": "Stari, Staross, Crustabri, Akwakwak, Têtarte, Ramoloss", "Cramois'Île": "Ponyta, Galopa, Goupix, Feunard, Caninos, Arcanin, Magmar, Smogo, Smogogo, Métamorph, Ptéra",
+    "Jadielle (retour)": "Rhinoféros, Sablaireau", "Route Victoire": "Machopeur, Mackogneur, Tartard, Alakazam", "Plateau Indigo": "Dracolosse, Léviator, Ectoplasma, Flagadoss",
+}
+NB_SURPRISES = 6
+_MINI_LIEU = 2  # un lieu garde au moins 2 Pokémon
+
+
+def variante(graine):
+    """Les Pokémon de chaque lieu de Kanto pour ce joueur : toujours les mêmes pour lui, différents d'un joueur à l'autre."""
+    rng = random.Random(f"kanto-{graine}")
+    listes = [list(lieu["pokemon"]) for lieu in REGION.lieux]
+    index = {lieu["nom"]: i for i, lieu in enumerate(REGION.lieux)}
+    possibles = sorted((n, index[nom]) for nom, noms in SURPRISES.items() for n in numeros(noms))
+    for n, i in rng.sample(possibles, NB_SURPRISES):
+        listes[i].append(n)
+    retirables = sorted((n, i) for i, liste in enumerate(listes) for n in liste if n in REGION.especes)
+    rng.shuffle(retirables)
+    retires = 0
+    for n, i in retirables:
+        if retires < NB_SURPRISES and len(listes[i]) > _MINI_LIEU:
+            listes[i].remove(n)
+            retires += 1
+    return listes
+
+
 REGION = Region("Kanto", range(1, 152), [144, 145, 146, 150, 151], LIEUX, CARTE, VIA, MODES, SANCTUAIRES, _RARES, [1, 4, 7], 150, 151,
-                ("chen", "🎁 Cadeau du Professeur Chen"), "diplome", "🎓 Diplôme du Professeur Chen", arene_max=3, reportes=REPORTES)
+                ("chen", "🎁 Cadeau du Professeur Chen"), "diplome", "🎓 Diplôme du Professeur Chen", arene_max=3, reportes=REPORTES, variante=variante)
 LIEUX, DIST, ARENES, SANCT_INDEX, RARES = REGION.lieux, REGION.dist, REGION.arenes, REGION.sanct_index, REGION.rares

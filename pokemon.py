@@ -533,7 +533,9 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     debut, ami = joueur["debut"] if joueur else R["debut"], joueur["id"] if joueur else None
     jours_ok, shiny_balls, depuis_master = [], 0, debut  # Shiny Ball : jours avec l'objectif dans la fenêtre
     reg_i, region, debut_region, depart = 0, regions.REGIONS[0], debut, False  # la région en cours ; depart = l'appel du professeur est accepté : la suivante commence demain
-    voyage = Voyage(region)
+    graine_lieux = f"{R['partie']}-{ami or 'kiki'}"  # ses Pokémon dans chaque lieu : pas exactement les mêmes que ceux des autres joueurs
+    voyage = Voyage(region, graine_lieux)
+    listes = {region.nom: voyage.especes()}  # les Pokémon de chaque région pour ce joueur
     carnet = nouveau_carnet()  # les chiffres du voyage dans la région en cours, pour le Carnet de fin de région
     jour, m, ok, shiny_bonus = debut, {}, False, 1
     relance, sans_objectif, pas_recents = None, 0, []  # la relance en cours ou la dernière ; les jours de suite sans objectif ; les pas des derniers jours avec des données
@@ -593,7 +595,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             c = {"num": rng.choice(sorted(pool)), "shiny": True, "nouvelle": False}
         else:
             # dans une nouvelle région, une chance de tomber sur ce qui manque aux régions d'avant (les balls d'arène gardent le type du champion)
-            manquants = [] if mi.get("seul_type") else sorted(n for r in regions.REGIONS[:reg_i] for n in r.especes if n not in {x for x, _ in possedees})
+            manquants = [] if mi.get("seul_type") else sorted(n for r in regions.REGIONS[:reg_i] for n in r.especes | listes[r.nom] if n not in {x for x, _ in possedees})
             hasard = bool(manquants) and (random.Random(f"{i}#rattrapage").random() < R["rattrapage"] or sans_rattrapage >= R["rattrapage_garde"])
             c = tirer(i, possedees, reserves(manquants), [], mi["types"], p, 1) if hasard else None
             if not c:
@@ -626,7 +628,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     while jour <= aujourd:
         if depart:  # l'appel a été accepté hier : la nouvelle région commence à minuit, sac vide et barre à zéro
             reg_i, region, debut_region, depart = reg_i + 1, regions.REGIONS[reg_i + 1], jour, False
-            voyage, cumul, avant, frise, starter, chance_prise, sans_rattrapage = Voyage(region), 0.0, 0.0, [], None, False, 0
+            voyage, cumul, avant, frise, starter, chance_prise, sans_rattrapage = Voyage(region, graine_lieux), 0.0, 0.0, [], None, False, 0
+            listes[region.nom] = voyage.especes()
             carnet = nouveau_carnet()
         s = stats.loc[jour].to_dict() if jour in stats.index else {}
         m = mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []], jour)
@@ -776,7 +779,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                     noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
         # le Pokédex d'une région est complet : son diplôme, avec son légendaire (Kanto : les 146, puis Mew)
         for r in regions.REGIONS[:reg_i + 1]:
-            if r.especes <= {n for n, _ in possedees} and r.diplome not in {n for n, _ in possedees}:
+            if listes[r.nom] <= {n for n, _ in possedees} and r.diplome not in {n for n, _ in possedees}:
                 mi = {"cle": r.cle_diplome, "ball": "master", "types": None, "fixe": r.diplome, "jour": jour, "shiny_bonus": shiny_bonus,
                       "raison": r.raison_diplome, "id": ident(jour, r.cle_diplome, ami)}
                 noter(figees.get(mi["id"]) or finaliser(capture(mi, ici, passes), mi, lieu))
