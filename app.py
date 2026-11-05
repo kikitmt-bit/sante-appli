@@ -804,6 +804,10 @@ GOOGLE = "auth" in st.secrets  # connexion Google ; sinon l'ancien mot de passe 
 JETON = connexion_google() if GOOGLE else verrou()
 AMI = identifiant_ami()  # None : Kiki
 PREFIXE = dossier_ami(AMI) if AMI else ""
+if st.query_params.get("frais"):  # un défi vient d'être gagné avec des pompes : on relit tout de suite ce que le téléphone a envoyé, sans attendre les 2 min du cache
+    for p in (pokemon.OUVERTES, pokemon.GESTES, pokemon.FIGEES):
+        _cache().pop(PREFIXE + p, None)
+    del st.query_params["frais"]
 try:
     REGISTRE = lire_depot([JOUEURS], {JOUEURS})[JOUEURS] or {}
 except Panne:

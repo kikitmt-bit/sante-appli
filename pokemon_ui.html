@@ -3325,6 +3325,12 @@ function voiesDefi() {  // chaque épreuve du défi en cours : ses voies avec o�
     const mat = materielDe(), montrees = voies.filter(o => !DEFI_MATERIEL[o.defi] || mat.includes(DEFI_MATERIEL[o.defi]) || o.v > 0);
     return {qui: e.qui, voies: montrees.length ? montrees : voies, fait: voies.some(o => o.v >= o.cible)}; });
 }
+// Le défi est gagné d'après ce que le téléphone vient de compter (pompes, tractions) : le serveur ne le sait qu'en relisant. Le badge vient de lui : on recharge, et la scène se lance toute seule.
+const defiGagne = () => { const d = V.defi; if (!d || !d.arrive) return false; const ep = voiesDefi(); return ep.length > 0 && ep.every(e => e.fait); };
+function recevoirBadge() {
+  try { localStorage.setItem("pkm_badge_auto", "1"); } catch (e) {}
+  const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href;
+}
 function resteDefi() {
   const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = Math.min(Math.max(a.b.cible - d.valeur_b, 0), d.max ? Math.max(d.max - d.actifs, 0) : 99), ouB = `, ou ${String(resteB).replace(".", ",")} jour${resteB >= 2 ? "s" : ""} d'objectif`;
   if (ep.length > 1) { const n = ep.filter(e => !e.fait).length; return `encore ${n} épreuve${n > 1 ? "s" : ""}${ouB}`; }
@@ -3592,6 +3598,7 @@ function dessinerSpeciales() {
     b.classList.add("on"); detail.innerHTML = bonus.find(x => x.cle === b.dataset.c).detail; rognerImages(detail);
     const nc = detail.querySelector(".nuit-carte"); if (nc && nuit) { nc.style.cursor = "pointer"; nc.onclick = () => sceneCentre(); }
   });
+  { const rb = document.querySelector("#speciales .recevoir-badge"); if (rb) rb.onclick = recevoirBadge; }
   brancherGestes(document.getElementById("speciales"));
   rognerImages(document.getElementById("speciales"));
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
@@ -3704,7 +3711,7 @@ function carteDefi() {
     <div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span style="white-space:nowrap">${String(d.valeur_b).replace(".", ",")} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}
     ${d.max ? `<div class="ou-e">ou</div><div class="ligne"><span>${d.max} jours à 2 000 pas : ${ch.nom} te laisse passer</span><span style="white-space:nowrap">${d.actifs} / ${d.max}</span></div>${j(d.actifs, d.max)}` : ""}
     ${ep.some(e => e.voies.some(o => o.defi === "soir")) ? `<div class="petit gris" style="margin-top:4px">Les pas du soir sont comptés une fois par heure.</div>` : ""}
-    <div class="reste">${ok ? "Défi réussi : ton badge arrive !" : ep.length > 1 ? `Encore <b>${restent} épreuve${restent > 1 ? "s" : ""}</b>, dans l'ordre que tu veux.` : ep[0].voies.length > 1 ? "Une seule de ces voies suffit." : ""}</div>${garde_txt}</div>`;
+    <div class="reste">${ok ? "Défi réussi : ton badge arrive !" : ep.length > 1 ? `Encore <b>${restent} épreuve${restent > 1 ? "s" : ""}</b>, dans l'ordre que tu veux.` : ep[0].voies.length > 1 ? "Une seule de ces voies suffit." : ""}</div>${ok && !TEST ? `<button class="go-exo recevoir-badge">Recevoir mon badge</button>` : ""}${garde_txt}</div>`;
 }
 
 function dessinerDernieres() {
@@ -5264,7 +5271,11 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const essaiNon = v.querySelector(".essai-non");
     if (essaiNon) confirmerDeuxFois(essaiNon, "Sûr ? Touche encore pour ne pas la compter", () => { n = 0; garder(); Object.assign(moi, avantSerie); delete moi.avant; mem[type] = moi; garderEntr(mem); fermer(); });
     v.querySelector(".suite").onclick = () => { garder(); if (!M.chrono) cible = Math.max(n, 1); repos(M.repos || REPOS_SERIE); };
-    v.querySelector(".fini").onclick = () => { garder(); fermer(); };
+    v.querySelector(".fini").onclick = () => { garder();
+      if (essai || TEST || !defiGagne()) return fermer();
+      const qui = (CHAMPIONS[V.defi.numero] || {}).nom || "Le champion";  // la série a le temps de partir : le serveur doit la voir au rechargement
+      v.innerHTML = `<div class="rythme">${qui} s'incline !</div><div class="rythme">Ton badge arrive…</div>`;
+      apres(recevoirBadge, 5000); };
   }
 
   function repos(s) {  // récupérer entre deux séries, c'est ce qui permet d'en refaire une vraie
@@ -5467,7 +5478,9 @@ function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessine
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#" + CADEAU));
-  if (chen && !estOuverte(chen)) setTimeout(() => REG.index ? sceneVoyageRegion(chen) : demarrerAventure(chen), 400);
+  const badgeAuto = (() => { try { const f = localStorage.getItem("pkm_badge_auto"); localStorage.removeItem("pkm_badge_auto"); return f; } catch (e) { return null; } })() && aOuvrir().find(estBadge);
+  if (badgeAuto) setTimeout(() => lancer(badgeAuto), 900);  // le défi vient d'être gagné : la scène du badge, tout de suite
+  else if (chen && !estOuverte(chen)) setTimeout(() => REG.index ? sceneVoyageRegion(chen) : demarrerAventure(chen), 400);
   // la Ligue est finie et sa Master Ball ouverte : le Carnet, le générique, puis le coup de téléphone (une fois ; ensuite, une carte en haut d'Aventure)
   else if (appelDu() && (() => { try { return localStorage.getItem("pkm_passage_vu_" + REG.nom) !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) scenePassage(); }, 1200);
