@@ -686,6 +686,25 @@ function dessinMonture(k, x, y, t) {  // le Pokémon (ou le vélo, le bateau) qu
 const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball", shiny: "Shiny Ball", honor: "Honor Ball"};
 // le Pokémon d'un champion (Kiki, 05/11) : il le confie dans son Honor Ball, blanche à bande rouge (une vraie ball des jeux, celle qu'on offre)
 const typeBall = c => c.champion ? "honor" : c.ball;
+// ce que chaque champion dit en confiant son Pokémon fétiche (Kiki, 05/11) : jamais son nom, on le découvre quand la ball s'ouvre
+const CONFIE = {
+  "Pierre": "Tiens, je te confie mon <b>Pokémon fétiche</b>. Solide comme le roc : il ne te lâchera jamais.",
+  "Ondine": "Prends mon <b>Pokémon fétiche</b>. Il rêve de voir le monde… et toi, tu as l'air de savoir où tu vas !",
+  "Major Bob": "Hé, soldat ! Je te confie mon <b>Pokémon fétiche</b>. Attention, ça pique !",
+  "Erika": "Je te confie mon <b>Pokémon fétiche</b>. Prends-en soin comme d'une fleur rare.",
+  "Koga": "Un ninja ne donne jamais rien… sauf aujourd'hui. Voici mon <b>Pokémon fétiche</b>.",
+  "Morgane": "Je l'avais vu venir : tu allais gagner. Alors je te confie mon <b>Pokémon fétiche</b>.",
+  "Auguste": "Ha ha ! Tu as le feu sacré ! Tiens, mon <b>Pokémon fétiche</b> : il va te réchauffer !",
+  "Giovanni": "Prends mon <b>Pokémon fétiche</b>. Ne me fais pas regretter ce choix.",
+  "Albert": "Tiens, je te confie mon <b>Pokémon fétiche</b>. Avec lui, tu iras haut !",
+  "Hector": "Les insectes, c'est ma passion. Je te confie mon <b>Pokémon fétiche</b> : traite-le bien !",
+  "Blanche": "Snif… Bon, d'accord : tu as gagné. Je te confie mon <b>Pokémon fétiche</b> !",
+  "Mortimer": "Je l'ai vu en rêve : c'est à toi que je devais le confier. Mon <b>Pokémon fétiche</b>.",
+  "Jasmine": "Tu as été formidable… Je te confie mon <b>Pokémon fétiche</b>. Il est solide, tu verras.",
+  "Chuck": "OUAH ! Quelle force ! Je te confie mon <b>Pokémon fétiche</b> : on s'entraîne ensemble depuis des années !",
+  "Frédo": "À mon âge, on sait reconnaître un vrai dresseur. Je te confie mon <b>Pokémon fétiche</b>.",
+  "Sandra": "… Bon. Tu le mérites. Je te confie mon <b>Pokémon fétiche</b>. Ne me déçois pas !",
+};
 const champDe = c => c.champion ? (EN_JOHTO && c.jour < REG.debut ? CHAMPIONS_KANTO : CHAMPIONS)[(/#badge(\d)$/.exec(c.id || "") || [])[1] || c.champN] : null;  // le champion qui l'a confié (de sa région)
 // Les icônes du jeu (objets, rubans, marques et types de PokeAPI/sprites) à la place des émojis
 const OBJ = n => `${D.images}/items/${n}.png`;
@@ -2403,21 +2422,6 @@ const STYLE_BADGE = `
 #pkm-badge.spot-on .salle .lueur{opacity:.55}
 #pkm-badge.revele .salle .lueur{opacity:0}
 #pkm-badge .pkm-passer{z-index:45}
-/* le Pokémon du champion : sa salle se rallume, la ball lancée devant lui, le Pokémon qui sort au sol */
-#pkm-badge.confie .cine.h{transform:translateY(-101%)}#pkm-badge.confie .cine.b{transform:translateY(101%)}#pkm-badge.confie .titre-arene{opacity:0}
-#pkm-badge.confie .salle .fond{filter:none}#pkm-badge.confie .salle .perso{opacity:1}#pkm-badge.confie .badge{opacity:0}
-#pkm-badge .salle .honor{position:absolute;width:7%;aspect-ratio:1;transform:translate(-50%,-50%);transition:opacity .15s;z-index:3}
-#pkm-badge .salle .honor>*{width:100%;height:100%;display:block;image-rendering:pixelated}
-#pkm-badge .salle .confie-pk{position:absolute;transform:translate(-50%,-100%) scale(.15);transform-origin:50% 100%;opacity:0;image-rendering:pixelated;z-index:4;
-  filter:brightness(0) invert(1) drop-shadow(0 0 8px #fff);transition:transform .55s cubic-bezier(.2,1.5,.4,1),opacity .2s,filter .7s}
-#pkm-badge .salle .confie-pk.sort{transform:translate(-50%,-100%) scale(1);opacity:1}
-#pkm-badge .salle .confie-pk.couleur{filter:drop-shadow(0 0 0 transparent)}
-#pkm-badge .salle .confie-ombre{position:absolute;aspect-ratio:3.2;transform:translate(-50%,-50%);border-radius:50%;background:rgba(0,0,0,.35);z-index:2;opacity:0;transition:opacity .6s}
-#pkm-badge .salle .confie-ombre.vu{opacity:1}
-#pkm-badge .salle .confie-eclair{position:absolute;width:40%;aspect-ratio:1;transform:translate(-50%,-50%) scale(.1);border-radius:50%;opacity:0;pointer-events:none;z-index:5;
-  background:radial-gradient(closest-side,#fff,rgba(255,255,255,.7) 40%,transparent 72%)}
-#pkm-badge .salle .confie-eclair.go{animation:pkb-confie .7s ease-out forwards}
-@keyframes pkb-confie{0%{opacity:0;transform:translate(-50%,-50%) scale(.1)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-50%) scale(1.6)}}
 #pkm-badge .noir{position:absolute;inset:0;background:#000;z-index:42;opacity:1;transition:opacity .9s;pointer-events:none}
 #pkm-badge.allume .noir{opacity:0}
 #pkm-badge .blanc{position:absolute;inset:0;background:#fff;opacity:0;transition:opacity .45s;pointer-events:none;z-index:44}
@@ -2720,10 +2724,10 @@ function sceneBadge(n, c, rejouer = false) {
     [ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom],
     [ligue ? `${nomJ} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomJ} obtient le <b>${a.badge}</b> !`],
     [ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
-      : recompense(), ch.nom], [`${ch.nom} te confie son <b>Ectoplasma</b> ♂ ! Et en plus, c'est un <b>shiny</b> !`]]);
+      : recompense(), ch.nom]]);
   let fini = false;
   function recompense() {  // jamais le nom du Pokémon : on le découvre quand la ball s'ouvre (Kiki, 05/11)
-    return c && c.champion ? "Et prends aussi ceci : mon <b>Honor Ball</b>. Un de mes Pokémon a envie de partir à l'aventure avec toi. Prends-en soin !"
+    return c && c.champion ? CONFIE[ch.nom] || "Tiens, je te confie mon <b>Pokémon fétiche</b>. Prends-en soin !"
       : `Et prends aussi ceci : une <b>Hyper Ball</b> ! Un Pokémon de type ${a.type} t'attend à l'intérieur.`;
   }
   const stop = () => { anim.stop(); air.stop(); DB.fin(); PW.removeEventListener("resize", tailleSalle); };
@@ -2744,46 +2748,6 @@ function sceneBadge(n, c, rejouer = false) {
     s.style.left = r.left + r.width / 2 + Math.cos(ang) * d + "px"; s.style.top = r.top + r.height / 2 + Math.sin(ang) * d + "px";
     v.appendChild(s); setTimeout(() => s.remove(), 1150); setTimeout(scintille, 260 + Math.random() * 380);
   };
-
-  // Le Pokémon du champion (Kiki, 05/11 : « c'est la même qu'avant ») : on reste dans la salle, le champion lance son Honor Ball devant lui,
-  // elle s'ouvre au sol et son Pokémon apparaît, en blanc puis en couleurs, avec son cri. Son nom n'est dit qu'une fois qu'on le voit.
-  async function confier() {
-    const pkImg = rogne(IMG.grand(c.num, c.shiny));  // chargé pendant qu'il parle
-    const etui = v.querySelector(".etui"); if (etui) etui.classList.remove("vu");
-    v.classList.remove("range", "revele", "boom"); v.classList.add("confie"); camera(1.06);
-    await pause(700);
-    await dire(recompense(), ch.nom);
-    cacher();
-    const main = [sc.x + sc.pw * .72, sc.y + sc.ph * .42], sol = [sc.x + sc.pw / 2, Math.min(sc.y + sc.ph * 1.75, sc.hauteur * .72)];
-    const at = (el, x, y) => { el.style.left = pc(x, sc.largeur); el.style.top = pc(y, sc.hauteur); };
-    const ball = P.createElement("div"); ball.className = "honor"; ball.innerHTML = ballSVG("honor"); at(ball, ...main); salleEl.appendChild(ball);
-    // le lancer : une courbe vers le sol devant lui, puis un petit rebond
-    const haut = Math.min(main[1], sol[1]) - sc.ph * .35, pts = 12, kf = [];
-    for (let i = 0; i <= pts; i++) { const t = i / pts, x = main[0] + (sol[0] - main[0]) * t, y = main[1] + (sol[1] - main[1]) * t - 4 * (main[1] - haut) * t * (1 - t) * .9;
-      kf.push({left: pc(x, sc.largeur), top: pc(y, sc.hauteur), transform: `translate(-50%,-50%) rotate(${t * 720}deg)`}); }
-    SONS.chute(); vibre(10);
-    await ball.animate(kf, {duration: 750, easing: "linear", fill: "forwards"}).finished;
-    SONS.rebond(); vibre(25);
-    await ball.animate([{transform: "translate(-50%,-50%)"}, {transform: "translate(-50%,-110%)"}, {transform: "translate(-50%,-50%)"}],
-      {duration: 380, easing: "ease-out", fill: "forwards"}).finished;
-    await pause(350);
-    // elle s'ouvre : un éclair blanc au sol, la ball disparaît, le Pokémon sort en blanc et grandit
-    const [src, w, h] = await pkImg, k = sc.pw * 1.7 / Math.max(w, h, 48);
-    const pk = P.createElement("img"); pk.className = "confie-pk"; pk.src = src;
-    pk.style.width = pc(w * k, sc.largeur); at(pk, sol[0], sol[1] + sc.ph * .04);
-    const ombre = P.createElement("div"); ombre.className = "confie-ombre"; ombre.style.width = pc(w * k * .8, sc.largeur); at(ombre, sol[0], sol[1] + sc.ph * .04);
-    const eclair = P.createElement("div"); eclair.className = "confie-eclair"; at(eclair, sol[0], sol[1] - sc.ph * .1);
-    salleEl.append(ombre, pk, eclair);
-    SONS.ouverture(); vibre(60); eclair.classList.add("go"); ball.style.opacity = 0;
-    await pause(120); pk.classList.add("sort"); ombre.classList.add("vu"); SONS.materialise();
-    await pause(650); pk.classList.add("couleur"); crier(c.num); vibre([40, 60, 80]);
-    const r = pk.getBoundingClientRect();
-    eclats(r.left + r.width / 2, r.top + r.height / 2, c.shiny ? 30 : 18, c.shiny ? ["#FFE27A", "#FFCB05", "#fff"] : ["#fff", "#F8C838", couleur]);
-    await pause(900);
-    await dire(`${ch.nom} te confie son <b>${c.nom}</b>${signeSexe(sexeDe(c))} !${c.shiny ? " Et en plus, c'est un <b>shiny</b> !" : ""}`);
-    if (!rejouer && !c.apercu) { memoriser(c.id); dessiner(); }
-    fin(false);
-  }
 
   (async () => {
     // 1. Le noir, le titre de l'arène, le décor qui s'allume
@@ -2859,7 +2823,6 @@ function sceneBadge(n, c, rejouer = false) {
     await pause(400);
     await dire(ligue ? `${nomDresseur()} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomDresseur()} obtient le <b>${a.badge}</b> !`);
     if (!c) return fin(false);
-    if (c.champion && sc && !ligue) return confier();
     await dire(ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
       : recompense(), ch.nom);
     fin(true);
