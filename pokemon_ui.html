@@ -1068,7 +1068,6 @@ const STYLE_VOILE = `
 #pkm-voile .carte.jeu.vu{transform:none;opacity:1}
 #pkm-voile .carte.jeu .l1{display:flex;align-items:center;gap:6px;min-height:20px}
 #pkm-voile .carte.jeu .et{font-size:16px;font-weight:400;letter-spacing:1px;padding:1px 7px;border-radius:4px;color:#fff;display:inline-flex;align-items:center;gap:3px}
-#pkm-voile .carte.jeu .et-nouveau{background:#E8382F;box-shadow:0 2px 0 #7A1712}
 #pkm-voile .carte.jeu .et-shiny{background:#D9A400;box-shadow:0 2px 0 #7A5A00}
 #pkm-voile .carte.jeu .et-leg{background:#8A4FD8;box-shadow:0 2px 0 #4A2280}
 #pkm-voile .carte.jeu .no{margin-left:auto;font-size:16px;color:#7A8095}
@@ -1766,15 +1765,14 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
   }
 
   function montrerCarte() {  // le résultat : une boîte de dialogue façon jeu en bas (le décor reste visible), Kiki 01/11
-    const col = collection(), especes = Object.keys(col).length, reste = aOuvrir();
-    const shinys = Object.values(col).filter(l => l.some(x => x.shiny)).length;
-    const etiq = [r.nouveau ? `<b class="et et-nouveau">NOUVEAU !</b>` : "", r.shiny ? `<b class="et et-shiny">${ico("shiny", "p brille")} SHINY</b>` : "",
+    const reste = aOuvrir();
+    const etiq = [r.shiny ? `<b class="et et-shiny">${ico("shiny", "p brille")} SHINY</b>` : "",
                   r.leg ? `<b class="et et-leg">LÉGENDAIRE</b>` : ""].join("");
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
       <div class="phrase">${(sx => r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
-      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${REG.index ? `Originaire de ${REGIONS.find(x => c.num >= x.de && c.num <= x.a)?.nom || REG.nom} · ` : ""}Pokédex ${especes} · Shiny ${shinys}</span></div>
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${REG.index ? `Originaire de ${REGIONS.find(x => c.num >= x.de && c.num <= x.a)?.nom || REG.nom} · ` : ""}Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
