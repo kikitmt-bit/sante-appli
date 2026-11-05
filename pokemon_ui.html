@@ -4210,6 +4210,11 @@ function imageNouvelle(n) {
 function nouvellesAmis(autres) {  // celles de tous les amis, la plus récente d'abord (le tri garde l'ordre du serveur à jour égal : le plus marquant)
   return autres.flatMap(j => (j.nouvelles || []).map(n => [n, j])).sort((a, b) => b[0].jour.localeCompare(a[0].jour));
 }
+// Le pseudo à la couleur de la casquette ; le ton foncé pour les couleurs claires, sinon illisibles sur le fond crème
+function couleurPseudo(j) {
+  const tons = COULEURS_TISSU[({...DRESSEUR, ...j.couleurs}).casquette] || COULEURS_TISSU.Rouge, [r, v, b] = tons[1];
+  return `rgb(${(r * .3 + v * .59 + b * .11 > 150 ? tons[0] : tons[1]).join(",")})`;
+}
 function dessinerAmis() {
   const el = document.getElementById("amis"); if (!el) return;
   const col = collection(), mien = Object.keys(col).map(Number).filter(n => col[n].some(c => !c.rate));
@@ -4233,7 +4238,7 @@ function dessinerAmis() {
     const compare = j.moi ? "" : ecart > 0 ? `${ecart} de plus que toi` : ecart < 0 ? `${-ecart} de moins que toi` : "autant que toi";
     const ligne = `<div class="joueur ${j.moi ? "moi" : ""}" data-id="${j.id}"><span class="rg">${rang(j)}</span>
       <div class="ph"><canvas width="14" height="19"></canvas></div>
-      <div class="tx"><b>${j.nom}${j.moi ? "<i>toi</i>" : ""}</b><small>${j.region} · ${j.lieu.replace(" (retour)", "")}</small>
+      <div class="tx"><b style="color:${couleurPseudo(j)}">${j.nom}${j.moi ? "<i>toi</i>" : ""}</b><small>${j.region} · ${j.lieu.replace(" (retour)", "")}</small>
         <small>Pokédex ${j.especes.length} · Shiny ${j.shiny.length} · Badges ${nb}</small>
         ${compare || sem ? `<small class="${ecart > 0 && !j.moi ? "plus" : ecart < 0 && !j.moi ? "moins" : ""}">${compare}${compare && sem ? " · " : ""}${sem ? `<i>${sem}</i>` : ""}</small>` : ""}</div>
       ${j.starter ? `<img class="st" src="${IMG.mini(j.starter.num)}" alt="">` : ""}</div>`;
