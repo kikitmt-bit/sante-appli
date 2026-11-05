@@ -683,7 +683,10 @@ function dessinMonture(k, x, y, t) {  // le Pokémon (ou le vélo, le bateau) qu
   if (mode === "vol" && enMer(k)) return img(IC.bateau);
   return img(mode === "vol" ? `${D.images}/items/bicycle.png` : IMG.anim(131, false));
 }
-const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball", shiny: "Shiny Ball"};
+const BALLS = {poke: "Poké Ball", super: "Super Ball", hyper: "Hyper Ball", master: "Master Ball", shiny: "Shiny Ball", honor: "Honor Ball"};
+// le Pokémon d'un champion (Kiki, 05/11) : il le confie dans son Honor Ball, blanche à bande rouge (une vraie ball des jeux, celle qu'on offre)
+const typeBall = c => c.champion ? "honor" : c.ball;
+const champDe = c => c.champion ? (EN_JOHTO && c.jour < REG.debut ? CHAMPIONS_KANTO : CHAMPIONS)[(/#badge(\d)$/.exec(c.id || "") || [])[1] || c.champN] : null;  // le champion qui l'a confié (de sa région)
 // Les icônes du jeu (objets, rubans, marques et types de PokeAPI/sprites) à la place des émojis
 const OBJ = n => `${D.images}/items/${n}.png`;
 const ROGUE_UI = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets/8250b23677d4918801fc6fc1e95b6dd1c30ef6c4/images/";
@@ -716,7 +719,7 @@ const icoType = t => TYPE_ID[t] ? `<img class="ty" src="${IMG.type(t)}" alt="">`
 // La raison d'une ball (écrite avec un émoji pour la montre) : l'icône du jeu à la place de l'émoji du début
 // Le titre en haut de l'ouverture : d'où vient la ball (Kiki, 01/11 : « Hyper Ball » seul ne dit rien, on la voit)
 function titreBall(c) {
-  const cle = (c.id || "").split("#")[1] || "", nom = BALLS[c.ball] || "Poké Ball", lieu = (c.lieu || "").replace(" (retour)", "");
+  const cle = (c.id || "").split("#")[1] || "", nom = BALLS[typeBall(c)] || "Poké Ball", lieu = (c.lieu || "").replace(" (retour)", "");
   if (cle === "chen") return "Cadeau du Professeur Chen";
   if (cle === "orme") return "Cadeau du Professeur Orme";
   const b = /^badge(\d)$/.exec(cle); if (b) return `${nom} de ${CHAMPIONS[b[1]].nom}`;
@@ -845,7 +848,7 @@ const spriteBall = type => `<img class="ball-pix rogne" src="${IC[type === "shin
 function ballSVG(type) {
   const im = imageBall(type);
   if (im) return `<img class="ball-pix" src="${im}" alt="">`;
-  const i = ++idSvg, haut = {poke: "#E3262E", super: "#2F6FD6", hyper: "#2A2A2E", master: "#6A3FB0", shiny: "#E8B923"}[type];
+  const i = ++idSvg, haut = {poke: "#E3262E", super: "#2F6FD6", hyper: "#2A2A2E", master: "#6A3FB0", shiny: "#E8B923", honor: "#F2F2F2"}[type];
   const deco = {
     poke: "",
     super: `<path d="M13,33 Q19,19 31,11 L38,18 Q27,25 22,38Z" fill="#E3262E"/><path d="M87,33 Q81,19 69,11 L62,18 Q73,25 78,38Z" fill="#E3262E"/>`,
@@ -860,10 +863,10 @@ function ballSVG(type) {
       <stop offset=".65" stop-color="#000" stop-opacity=".0"/><stop offset="1" stop-color="#000" stop-opacity=".45"/></radialGradient>
     <clipPath id="c${i}"><circle cx="50" cy="50" r="46"/></clipPath></defs>
     <g clip-path="url(#c${i})"><rect width="100" height="50" fill="${haut}"/>${deco}<rect y="50" width="100" height="50" fill="#F2F2F2"/>
-    <rect y="45.5" width="100" height="9" fill="#151515"/><circle cx="50" cy="50" r="46" fill="url(#o${i})"/>
+    <rect y="45.5" width="100" height="9" fill="${type === "honor" ? "#D83830" : "#151515"}"/><circle cx="50" cy="50" r="46" fill="url(#o${i})"/>
     <ellipse cx="34" cy="24" rx="13" ry="7" fill="#fff" opacity=".45" transform="rotate(-25 34 24)"/></g>
     <circle cx="50" cy="50" r="46" fill="none" stroke="#151515" stroke-width="4"/>
-    <circle cx="50" cy="50" r="13" fill="#F4F4F4" stroke="#151515" stroke-width="5"/><circle cx="50" cy="50" r="5.5" fill="none" stroke="#C8C8C8" stroke-width="1.5"/></svg>`;
+    <circle cx="50" cy="50" r="13" fill="#F4F4F4" stroke="${type === "honor" ? "#D83830" : "#151515"}" stroke-width="5"/><circle cx="50" cy="50" r="5.5" fill="none" stroke="#C8C8C8" stroke-width="1.5"/></svg>`;
 }
 
 // ---------- Sons (synthétisés, aucun fichier) et vibrations ----------
@@ -1365,7 +1368,7 @@ function Particules(canvas) {
 }
 
 // ----- La Poké Ball en 3D (three.js) -----
-const TEINTES = {poke: 0xE3262E, super: 0x2F6FD6, hyper: 0x2A2A2E, master: 0x6A3FB0, shiny: 0xE8B923};
+const TEINTES = {poke: 0xE3262E, super: 0x2F6FD6, hyper: 0x2A2A2E, master: 0x6A3FB0, shiny: 0xE8B923, honor: 0xF2F2F2};
 function texture(type, haut) {
   // Texture dessinée point par point : (u, v) -> point de la sphère -> couleur (bandes, cercles, « M »…)
   const L = type === "master" || type === "shiny" ? 1024 : 512, H = L / 2, cv = P.createElement("canvas"); cv.width = L; cv.height = H;  // le « M » demande plus de finesse
@@ -1424,7 +1427,7 @@ function Ball3D(canvas, type, diametre = PIXEL_BALL) {
   haut.add(new THREE.Mesh(new THREE.SphereGeometry(R, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), mat(texture(type, true))));
   haut.add(new THREE.Mesh(new THREE.SphereGeometry(R * .985, 48, 24, 0, Math.PI * 2, 0, Math.PI / 2),
     new THREE.MeshStandardMaterial({color: 0x1B1B1F, side: THREE.BackSide, roughness: .8})));
-  const bandeMat = new THREE.MeshBasicMaterial({color: 0x282820});
+  const bandeMat = new THREE.MeshBasicMaterial({color: type === "honor" ? 0xD83830 : 0x282820});  // l'Honor Ball : la bande et l'anneau en rouge
   const bandeH = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
   bandeH.position.y = R * .035; haut.add(bandeH);
   const bandeB = new THREE.Mesh(new THREE.CylinderGeometry(R * 1.004, R * 1.004, R * .07, 64, 1, true), bandeMat);
@@ -1546,15 +1549,15 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     <div class="orage"></div>${c.legendaire && !c.chance ? `<img class="ombre-leg" src="${IMG.grand(c.num, false)}" alt=""><div class="mot-leg"></div>` : ""}
     <div class="haut"><button class="rond son">${son ? "🔊" : "🔇"}</button><div class="nom-ball">${titreBall(c)}</div>
       <button class="rond x">✕</button></div>
-    <div class="aide">Touche la ${BALLS[c.ball] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
+    <div class="aide">Touche la ${BALLS[typeBall(c)] || "Poké Ball"} !<small>${raisonHTML(c)}</small></div>
     <div class="carte"></div>${F ? `<canvas class="mosaique"></canvas><div class="blanc-jeu"></div>` : ""}`;
   if (F) v.classList.add("habitat");
   P.body.appendChild(v); requestAnimationFrame(() => v.classList.add("vu"));
   const $ = s => v.querySelector(s), poke = $(".poke"), aide = $(".aide"), carte = $(".carte"), flash = $(".flash");
   const fx = Particules($(".fx"));
   let B;
-  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), c.ball); }
-  catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), c.ball); }
+  try { if (!window.THREE) throw 0; B = Ball3D($(".scene"), typeBall(c)); }
+  catch (e) { $(".scene").hidden = true; $(".ball2d").hidden = false; B = Ball2D($(".ball2d"), typeBall(c)); }
 
   // Boucle d'affichage (dans la fenêtre parente : jamais ralentie)
   let fini = false, dernier = maintenant(), anims = [], brille = false;
@@ -1620,8 +1623,8 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
       await touche(); attend = false; aide.classList.remove("vu");
       await tween(250, e => { B.y = .08 * (1 - e); B.rotY *= (1 - e); B.lueurBouton(0); });
     }
-    // 3. Les secousses : une de plus quand c'est rare, et de plus en plus longues
-    const n = c.rate ? 1 + hachage(c.id) % 3 : r.leg || r.shiny || hachage(c.id) % 4 === 0 ? 4 : 3;
+    // 3. Les secousses : une de plus quand c'est rare, et de plus en plus longues (pas pour le Pokémon d'un champion : c'est un cadeau, pas une capture)
+    const n = c.champion ? 0 : c.rate ? 1 + hachage(c.id) % 3 : r.leg || r.shiny || hachage(c.id) % 4 === 0 ? 4 : 3;
     for (let i = 0; i < n; i++) {
       await pause(380 + i * 260);
       SONS.secousse(); vibre(35);
@@ -1632,10 +1635,12 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     }
     if (c.rate) return enfuite();
     // 4. « Clic ! »
+    if (!c.champion) {
     await pause(300);
     SONS.clic(); vibre([15, 40, 15]);
     { const [x, y] = centre(); fx.jet(x, y - 40, 3, {couleurs: ["#FFE27A", "#fff"], vitesse: 5, taille: 12, vie: .9, gravite: .05}); }
-    await pause(650);
+    }
+    await pause(c.champion ? 450 : 650);
     if (r.leg && !rejouer && !c.chance) await presage();
     // 5. Elle s'éveille : lueur (blanche, dorée pour un shiny, multicolore pour un légendaire, bleue pour un nouveau)
     SONS.montee(.9);
@@ -1717,6 +1722,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     }
     await pause(vite ? 150 : 550);
     poke.classList.add("couleur"); vibre(r.nouveau || r.shiny ? [40, 60, 80] : 30);
+    if (c.champion) crier(c.num);  // le Pokémon du champion se présente
     const pr = poke.getBoundingClientRect(), px = pr.left + pr.width / 2, py = pr.top + pr.height / 2;
     if (r.leg) { if (rejouer || c.chance) SONS.legendaire(); if (c.chance && !rejouer) crier(c.num); fx.jet(px, py, 90, {couleurs: couleursFx, vitesse: 12, taille: 10, vie: 2, gravite: .02, cercle: true}); }
     if (r.shiny) { SONS.shiny(); fx.jet(px, py, 60, {couleurs: couleursFx, vitesse: 8, taille: 11, vie: 1.8, gravite: .01}); }
@@ -1770,7 +1776,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
-      <div class="phrase">${(sx => c.champion && CHAMPIONS[(/#badge(\d)$/.exec(c.id || "") || [])[1]] ? `${CHAMPIONS[/#badge(\d)$/.exec(c.id)[1]].nom} te confie son <b>${c.nom}</b>${sx} !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
+      <div class="phrase">${(sx => champDe(c) ? `${champDe(c).nom} te confie son <b>${c.nom}</b>${sx} !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
       <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${genAffichee(c.num) ? `Génération ${genDe(c.num)} · ` : ""}Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
@@ -2699,8 +2705,12 @@ function sceneBadge(n, c, rejouer = false) {
     [ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom],
     [ligue ? `${nomJ} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomJ} obtient le <b>${a.badge}</b> !`],
     [ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
-      : `Et prends aussi ceci : une <b>Hyper Ball</b> ! Un Pokémon de type ${a.type} t'attend à l'intérieur.`, ch.nom]]);
+      : recompense(), ch.nom]]);
   let fini = false;
+  function recompense() {  // jamais le nom du Pokémon : on le découvre quand la ball s'ouvre (Kiki, 05/11)
+    return c && c.champion ? "Et prends aussi ceci : mon <b>Honor Ball</b>. Un de mes Pokémon a envie de partir à l'aventure avec toi. Prends-en soin !"
+      : `Et prends aussi ceci : une <b>Hyper Ball</b> ! Un Pokémon de type ${a.type} t'attend à l'intérieur.`;
+  }
   const stop = () => { anim.stop(); air.stop(); DB.fin(); PW.removeEventListener("resize", tailleSalle); };
   const fin = suite => { if (fini) return; fini = true; stop();
     if (!suite || !c) { v.style.transition = "opacity .5s"; v.style.opacity = 0; setTimeout(() => v.remove(), 500); return; }
@@ -2795,7 +2805,7 @@ function sceneBadge(n, c, rejouer = false) {
     await dire(ligue ? `${nomDresseur()} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomDresseur()} obtient le <b>${a.badge}</b> !`);
     if (!c) return fin(false);
     await dire(ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
-      : `Et prends aussi ceci : une <b>Hyper Ball</b> ! Un Pokémon de type ${a.type} t'attend à l'intérieur.`, ch.nom);
+      : recompense(), ch.nom);
     fin(true);
   })().catch(() => {});
 }
@@ -3460,7 +3470,7 @@ function fiche(p) {
   const grande = f.querySelector(".grande");
   const peindre = () => { if (!a) return;
     const c = vue ? shiny : normal, k = c.id.split("#")[1] || "", t = .85 + hasard(c, "taille") * .3;  // ±15 % autour de la taille du Pokédex
-    const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : k === "orme" ? [ico("poke", "p"), "Cadeau du Prof. Orme"] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
+    const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : k === "orme" ? [ico("poke", "p"), "Cadeau du Prof. Orme"] : champDe(c) ? [ico("honneur", "p"), `Confié par ${champDe(c).nom}`] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
     const note = t < .9 ? "Un tout petit spécimen !" : t > 1.1 ? "Un spécimen impressionnant !" : "";
     f.querySelector(".sx").innerHTML = signeSexe(sexeDe(c));
     f.querySelector(".sous").textContent = D.categories[p.num] || "";
@@ -4901,7 +4911,7 @@ function apercuCapture(fond = "prairie") {
 function testScene(n) {  // la scène du badge (ou de la Ligue : Conseil 4, Régis, Panthéon), puis la ball qui s'ouvre dans l'arène
   const ar = LIEUX.filter(l => l.arene)[n - 1].arene;
   const c = n === 9 ? captureEssai(auHasard(EN_JOHTO ? [243, 244, 245, 249, 250, 251] : [144, 145, 146, 150, 151]), {ball: "master", shiny: false, raison: "🏆 Ligue Pokémon"})
-    : captureEssai(pokeDuType(ar.type), {ball: "hyper", fond: (EN_JOHTO ? "jarene" : "arene") + n, raison: `🏅 ${ar.badge} (${CHAMPIONS[n].nom})`});
+    : captureEssai(ar.pokemon || pokeDuType(ar.type), {ball: "hyper", champion: !!ar.pokemon, champN: n, fond: (EN_JOHTO ? "jarene" : "arene") + n, raison: `🏅 ${ar.badge} (${CHAMPIONS[n].nom})`});
   sceneBadge(n, c);
 }
 // ---------- L'entraînement (03/11, idée de Kiki) : le téléphone compte pompes, squats et tractions, façon combat, sans rien de plus à
@@ -5589,7 +5599,7 @@ function dessinerTests() {
     <div class="boutons-t">${(HISTOIRES[REG.nom] || []).map((h, i) => b(`t-hist" data-i="${i}`, `Histoire : ${h.lieu}`)).join("")}${b("t-anniv", "Anniversaire")}</div>
     <div class="groupe">Le début de l'aventure<small>Écran titre, carte du nouveau dresseur, chambre, village, hautes herbes, labo du Professeur Chen, le starter, puis le Pokédex.</small></div>
     <div class="boutons-t">${b("t-debut", "🎬 Écran titre → dresseur → labo")}${b("t-labo", `${ico("poke", "p")} Labo seul`)}${b("t-pokedex", `${ico("poke", "p")} Le Pokédex`)}</div>
-    <div class="groupe">Les arènes<small>La scène du badge avec le champion dans son arène, puis l'Hyper Ball qui s'ouvre dans l'arène vide. La Ligue : les 4 salles du Conseil 4, Régis, le Panthéon et la Master Ball.</small></div>
+    <div class="groupe">Les arènes<small>La scène du badge avec le champion dans son arène, puis son Honor Ball qui s'ouvre dans l'arène vide : le Pokémon qu'il te confie. La Ligue : les 4 salles du Conseil 4, Régis, le Panthéon et la Master Ball.</small></div>
     <div class="boutons-t">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => b(`t-arene" data-n="${n}`, `${portraitChamp(CHAMPIONS[n])}${n === 9 ? "Ligue" : n + ". " + CHAMPIONS[n].nom}`)).join("")}</div>
     <div class="groupe">Les décors de capture<small>Un Pokémon du coin s'ouvre dans le décor (1 chance sur 5 d'être shiny).</small></div>
     <div class="boutons-t">${(EN_JOHTO ? ["jprairie", "jforet", "jgrotte", "jville", "jruines", "jtemple", "jmer", "jtourbillons", "jlac", "jglace", "jmontagne"] : ext).map(f => b(`t-fond" data-f="${f}`, NOM_FOND[f])).join("")}</div>
