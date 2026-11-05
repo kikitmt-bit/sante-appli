@@ -292,7 +292,7 @@ nouveauté par région, ~2 ans) : `FEUILLE_DE_ROUTE.md`, à lire avant de touche
     de bande marron en bas) ; le starter apparaît SUR la table (fond `labo` : ovale = dessus de la table, taille 1).
     Taille du Pokémon à l'ouverture = `rayon` du rond × 1,1 × `taille` du fond (`--pw`), pieds au milieu du rond (avant :
     250 px fixes, trop gros). **Résultat = boîte de dialogue GBA** en bas (`montrerCarte`, classe `carte jeu` : NOUVEAU /
-    SHINY / LÉGENDAIRE, « Tu as attrapé X ! », types, Pokédex et shiny, boutons pixel ▶ OK / ▶ SUIVANTE) à la place de la
+    SHINY / LÉGENDAIRE, « Tu as attrapé X ! », types, nature ; rien d'autre, le reste se découvre dans le Pokédex (Kiki, 05/11 : ni compteur, ni « nouveau », ni bouton vers la fiche) ; boutons pixel ▶ OK / ▶ SUIVANTE) à la place de la
     grande fiche et du bouton « Génial ! » (Kiki : « fait IA »). Titre en haut = provenance (`titreBall` : « Hyper Ball de
     Pierre », « Poké Ball · Forêt de Jade », « Cadeau du Professeur Chen »…). Têtes des champions : même cadrage pour tous
     (carré de 130 px calé sur le haut de la tête et centré sur le visage : tête, cou, haut du torse ; `portraitChamp` =
