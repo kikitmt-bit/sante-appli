@@ -4755,6 +4755,8 @@ const STYLE_ENTR = `
 .pkm-entr button{font:inherit;cursor:pointer;touch-action:manipulation}
 .pkm-entr .go{width:100%;padding:13px;background:#D83830;color:#fff;text-shadow:1px 1px 0 #7A1712;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);font-size:23px}
 .pkm-entr .go:before{content:"▶ "}.pkm-entr .sec{width:100%;padding:9px;background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:12px 5px;font-size:18px}
+.pkm-entr .rond-champ{flex:0 0 72px;width:72px;height:72px;border-radius:50%;overflow:hidden;position:relative;background:#E0E0C8;box-shadow:0 0 0 3px #484838}.pkm-entr .rond-champ .tete-champ{position:absolute;inset:0;overflow:hidden}
+.pkm-entr .tete-e h3{white-space:nowrap;font-size:24px;min-width:0}
 .pkm-entr .tete-e{display:flex;align-items:center;gap:10px}.pkm-entr .tete-e img{width:72px;height:72px;object-fit:contain;image-rendering:pixelated}
 .pkm-entr .regle{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0}.pkm-entr .regle b{font-size:44px;font-weight:400;min-width:74px;text-align:center}
 .pkm-entr .regle button{width:52px;height:46px;font-size:26px;background:#F8F8E8;border:3px solid #484838;border-radius:9px 4px;color:#383828}.pkm-entr .regle button:disabled{opacity:.35}
@@ -4996,13 +4998,16 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
   // le décor est chargé dès maintenant : pas de fond vide au début du combat
   if (!M.poche) { const d0 = DECORS_COMBAT[decorEssai || LIEUX[V.ici].nom.replace(" (retour)", "")]; if (d0) (new PW.Image()).src = `${D.scenes}${d0.image}`; }
   const lireDuel = () => type === "pompes" && (!essai || duelEssai) ? duelEnCours(duelEssai) : null;
+  let resteVu = null;  // chez un champion, l'objectif est ce qu'il reste à faire pour le battre : on ne le remet que si ce reste a changé (les boutons − et + restent libres)
   function reglage() {
     v.classList.remove("plein");
     const duelR = lireDuel(), adversR = duelR && duelR.equipe[duelR.rang];
     if (adversR) (new PW.Image()).src = `${D.scenes}${adversR.image}`;
-    const dit = resteMission ? `Pour ta mission du jour, il reste ${resteMission} ${M.un}${resteMission > 1 ? "s" : ""}${mis.geste === "series" ? " dans cette série" : ""}.`
+    const resteDuel = adversR ? duelR.total - duelR.deja : 0;
+    if (adversR && resteDuel !== resteVu) { cible = resteDuel; resteVu = resteDuel; }
+    const dit = adversR ? `Encore ${resteDuel} ${M.un}${resteDuel > 1 ? "s" : ""} pour battre ${adversR.qui}, en une ou plusieurs séries.` : resteMission ? `Pour ta mission du jour, il reste ${resteMission} ${M.un}${resteMission > 1 ? "s" : ""}${mis.geste === "series" ? " dans cette série" : ""}.`
       : moi.derniere ? `Dernière série : ${moi.derniere}${M.chrono ? " s" : ""}. Vise un peu plus !` : "Première série : à toi de régler.";
-    v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(acteur)}" alt=""><h3>${M.nom}${adversR ? ` contre ${adversR.qui}` : ""}</h3></div><p>${M.consigne}</p>${adversR ? `<p><b>Tes pompes comptent pour son défi : encore ${duelR.total - duelR.deja} pour gagner.</b></p>` : ""}</div>
+    v.innerHTML = `<div class="boite"><div class="tete-e">${adversR ? `<div class="rond-champ">${portraitChamp(adversR.ch)}</div>` : `<img src="${IMG.mini(acteur)}" alt="">`}<h3>${adversR ? `Contre ${adversR.qui}` : M.nom}</h3></div><p>${M.consigne}</p></div>
       <div class="boite"><small>Ton objectif pour cette série${M.chrono ? " (en secondes)" : ""}</small><div class="regle"><button class="moins">−</button><b>${cible}</b><button class="plus">+</button></div>
         <small>${dit}${moi.record ? ` Ton record : ${moi.record}${M.chrono ? " s" : ""}.` : ""}</small>
         ${M.capteur ? `<div style="margin-top:8px"><small>Détection du mouvement (à régler selon tes essais)</small><div class="choix">${Object.keys(SENSIBILITES).map(k => `<button data-s="${k}" class="${k === sens ? "on" : ""}">${k}</button>`).join("")}</div></div>` : ""}
