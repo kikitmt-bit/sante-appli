@@ -8,6 +8,14 @@ appli privée gratuite de Kiki est prise par le padel) : **connexion Google** (2
 secrets `[auth]` + `COMPTES` = adresses Gmail autorisées, jamais dans le dépôt ; ⚙️ → Se déconnecter). Tant que `[auth]`
 manque, repli sur l'ancien `verrou()` (`APP_PASSWORD`, mémorisé : localStorage + cookie `sante_ok`). On travaille
 directement sur `main`.
+**À REPRENDRE EN PRIORITÉ (retours de Kiki du 05/11 au soir, « on regarde ça demain matin »)** :
+1. Phrases des champions (`CONFIE`) : varier les mots, pas « Pokémon fétiche » partout (favori, préféré, mon plus fort…).
+2. Scène du vélo (`sceneVelo`, aperçu 🧪) : le dresseur est minuscule, le remettre à la taille habituelle des autres scènes.
+3. Défi de Pierre aux pompes : après les 30 pompes validées, un long flottement où rien ne se passe, puis le badge finit par arriver ; à rendre clair et immédiat (`defiGagne`, `?frais=1`, `pkm_badge_auto`).
+4. Champions de dos (`sceneEntree`, `entree-*.webp`) : Kiki ne les a jamais vues ; vérifier quand elles se lancent et qu'elles se lancent bien.
+5. Retirer le sexe des Pokémon (résultat de capture, fiche du Pokédex : « ça ne sert à rien »).
+6. Bug : Berta a eu un Nidorino (ou proche) shiny tout doré, sans texture, juste la silhouette en or (image shiny cassée ou effet doré resté par-dessus).
+7. Fin de Kanto (`scenePassage`) : les Pokémon qui défilent = ridicule et mal fait ; le dresseur avec son starter = proportions fausses. À supprimer ou refaire.
 **Comptes des amis** (02/11) : adresses Gmail ajoutées à `COMPTES` ; secret `PROPRIETAIRE` = l'adresse de Kiki (sans lui :
 la seule adresse de `COMPTES`, et s'il y en a plusieurs, personne n'est Kiki : ses données ne sortent jamais).
 `identifiant_ami()` : `AMI` = None pour Kiki, sinon 12 chiffres hexa (sha256 de l'adresse), `PREFIXE` = `data/joueurs/<id>/`
