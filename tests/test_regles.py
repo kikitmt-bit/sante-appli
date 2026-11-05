@@ -643,6 +643,23 @@ class Rival(unittest.TestCase):
             x["gras"] = 20 + k / 3
         self.assertIn("masse grasse", " ".join(rival.repliques(d, jour(30), "rival-k1-route", True, None)))  # sa hausse, oui
 
+    def test_silver_a_sa_voix_a_johto(self):
+        import rival
+        for image in ("rival-j1-mauville", "rival-j2-bois", "rival-j3-rosalia", "rival-j4-antre"):
+            for d in (self.jours(7, zone=0, pas=2000, sommeil=300), self.jours(7, pas=20000, zone=60), self.jours(7, fc_repos=78, vfc=20, zone=10, gras=30.0)):
+                t = " ".join(rival.repliques(d, jour(30), image, True, 24))
+                self.assertNotIn("Régis", t)
+                self.assertNotIn("{", t.replace("{nom}", ""))  # {nom} : remplacé par le téléphone
+                self.assertEqual(rival.voix(image)["nom"], "Silver")
+        self.assertEqual(rival.voix("rival-k1-route")["nom"], "Régis")
+        giovanni = [i for i in rival.VOIX["j"]["accroches"] if "Giovanni" in str(rival.VOIX["j"]["accroches"][i])]
+        self.assertEqual(giovanni, ["rival-j4-antre"])  # dit seulement à la dernière rencontre
+
+    def test_tous_les_rivaux_ont_tous_leurs_textes(self):
+        import rival
+        for v in rival.VOIX.values():
+            self.assertEqual(set(v["textes"]), set(rival.VOIX["k"]["textes"]))
+
     def test_chaque_region_a_quatre_rencontres(self):
         import regions
         for r in regions.REGIONS:

@@ -2987,7 +2987,7 @@ function scenePokedex() {
     fermer();
   })().catch(() => {});
 }
-// --- Régis, le rival (Kiki, 05/11 : détestable) : 4 rencontres par région, une fois chacune, en atteignant le lieu. Le texte vient de rival.py, avec les pires chiffres de la semaine.
+// --- Le rival (Kiki, 05/11 : un par région, chacun sa voix, tous moqueurs) : 4 rencontres par région, une fois chacune, en atteignant le lieu. Le texte vient de rival.py, avec les pires chiffres de la semaine.
 const rivalVu = r => { try { return localStorage.getItem(`pkm_rival_${R.partie}_${r.image}`) === "1"; } catch (e) { return true; } };
 function rivalDu() {  // la dernière rencontre atteinte, pas encore vue ; celles d'avant sont passées (on ne les enchaîne pas)
   const l = (D.rival || []).filter(r => r.lignes && r.dist <= V.pos && !rivalVu(r));
@@ -2997,7 +2997,7 @@ function rivalDu() {  // la dernière rencontre atteinte, pas encore vue ; celle
 function sceneRival(r, essai = false) {
   if (!essai) try { localStorage.setItem(`pkm_rival_${R.partie}_${r.image}`, "1"); } catch (e) {}
   preparerScene();
-  const {v, fin: finE} = ecran("pkm-rival", `${r.image}.webp`, 941, 1672, ""), DR = dialogue(v), qui = "Régis";
+  const {v, fin: finE} = ecran("pkm-rival", `${r.image}.webp`, 941, 1672, ""), DR = dialogue(v), qui = r.nom || "Régis";
   const lignes = (r.lignes || ["Pas assez de jours pour me moquer de toi. Reviens quand ta montre aura quelque chose à raconter."]).map(l => l.replace("{nom}", nomDresseur()));
   DR.prevoir(lignes.map(l => [l, qui]));
   let fini = false;
@@ -5581,7 +5581,7 @@ function dessinerTests() {
   document.getElementById("tests").innerHTML = `
     <div class="groupe">Le passage vers Johto<small>Le Carnet, le générique et l'appel du Professeur Chen ; puis, le lendemain, le voyage, le titre de Johto et le labo d'Orme. Rien n'est enregistré.</small></div>
     <div class="boutons-t">${b("t-passage", `${ico("tele", "p")} La fin de Kanto`)}${b("t-voyage-r", `${ico("carte", "p")} L'arrivée à Johto`)}${b("t-johto", `${ico("carte", "p")} ${EN_JOHTO ? "Revenir à la vraie partie" : "Voir Johto (champions, carte, décors)"}`)}</div>
-    <div class="groupe">Régis, le rival<small>Ses 4 rencontres de la région, avec tes vrais chiffres de la semaine.</small></div>
+    <div class="groupe">Le rival de la région<small>Ses 4 rencontres de la région, avec tes vrais chiffres de la semaine.</small></div>
     <div class="boutons-t">${(D.rival || []).map((r, i) => b(`t-rival" data-i="${i}`, r.lieu)).join("")}</div>
     <div class="groupe">Les petites scènes<small>Entrées d'arène, sanctuaires, histoires, anniversaire : aperçus, sans rien d'enregistré.</small></div>
     <div class="boutons-t">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => b(`t-entree" data-n="${n}`, `Entrée : ${n === 9 ? "Ligue" : CHAMPIONS[n].nom}`)).join("")}</div>

@@ -540,7 +540,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     voyage = Voyage(region, graine_lieux)
     listes = {region.nom: voyage.especes()}  # les Pokémon de chaque région pour ce joueur
     sport_vu = False  # une minute de sport au moins depuis le début : sinon, la montre ne les mesure peut-être pas (rival.py)
-    derniers = []  # les 14 derniers jours, pour les moqueries de Régis (rival.py)
+    derniers = []  # les 14 derniers jours, pour les moqueries du rival (rival.py)
     carnet = nouveau_carnet()  # les chiffres du voyage dans la région en cours, pour le Carnet de fin de région
     jour, m, ok, shiny_bonus = debut, {}, False, 1
     relance, sans_objectif, pas_recents = None, 0, []  # la relance en cours ou la dernière ; les jours de suite sans objectif ; les pas des derniers jours avec des données

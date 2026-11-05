@@ -77,7 +77,7 @@ class Region:
         self.arenes = [i for i, lieu in enumerate(self.lieux) if lieu["arene"]]  # la dernière = la Ligue
         self.variante = variante  # variante(graine) -> les Pokémon de chaque lieu pour ce joueur : tout le monde n'a pas exactement les mêmes
         self.arene_max = arene_max  # après tant de jours actifs à une arène, le champion laisse passer
-        self.rival = {}  # lieu -> image de la rencontre avec Régis (rival.py)
+        self.rival = {}  # lieu -> image de la rencontre avec le rival de la région (rival.py)
         self.especes = set(numeros_) - set(legendaires) - set(reportes)  # les Pokémon du diplôme ; reportes = gardés pour les régions suivantes, à étaler sur tout le jeu
         self.lieux_et_legendes = (set(numeros_) - set(reportes)) | {n + k for n in starters for k in range(3)}  # le starter et ses évolutions, même s'ils sortent des balls bien plus tard
         vus = [n for lieu in self.lieux for n in lieu["pokemon"]]
