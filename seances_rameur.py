@@ -1,4 +1,4 @@
-"""Les séances de rameur enregistrées par le téléphone posé sur le siège (Kiki seul pour l'instant, sans Streamlit).
+"""Les séances de rameur enregistrées par le téléphone posé sur le siège (pour ceux qui ont coché le rameur dans Mon matériel, sans Streamlit).
 
 data/rameur/seances.json = le résumé de chaque séance (lu par l'appli et par montre.py) ; data/rameur/brut/<séance>.json = les capteurs, pour régler
 la détection après coup. Pour le jeu, une séance devient une vraie séance de rameur de la journée (`fusionner`) : points, défis et missions n'ont

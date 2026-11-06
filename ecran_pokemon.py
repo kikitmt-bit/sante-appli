@@ -116,7 +116,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "mission": etat["mission"],
         "joueurs": list(joueurs),
         "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
-        "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd) if joueur is None else None,
+        "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd),
         "matin": {"hier": etat["hier"], "conseil": conseil},
         "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],

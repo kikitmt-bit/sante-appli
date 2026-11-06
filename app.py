@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import random
+import sys
 import threading
 import time
 import urllib.parse
@@ -19,6 +20,22 @@ import pandas as pd
 import requests
 import streamlit as st
 from streamlit_js_eval import streamlit_js_eval
+
+
+def code_a_jour():
+    """Après une mise à jour, Streamlit relit ce fichier mais peut garder ses voisins en mémoire : la nouvelle page arrivait alors sans son nouveau code (bouton du rameur mort, 06/11 ;
+    même panne sur le padel, 05/11). Dès qu'un fichier a changé, on les fait tous relire."""
+    ici = Path(__file__).resolve().parent
+    empreinte = sorted((f.name, f.stat().st_mtime_ns, f.stat().st_size) for f in ici.glob("*.py"))
+    if getattr(sys, "_empreinte_appli", None) != empreinte:
+        for nom, m in list(sys.modules.items()):
+            fichier = getattr(m, "__file__", None)
+            if nom != "__main__" and fichier and Path(fichier).resolve().parent == ici:
+                del sys.modules[nom]
+        sys._empreinte_appli = empreinte
+
+
+code_a_jour()
 
 import amis
 import bilan
@@ -777,7 +794,7 @@ def accueil_ami():
     st.markdown("- **Lu :** activité, pas, cardio, séances, sommeil, poids, à partir des 14 jours avant ton inscription. Rien d'autre.\n"
                 "- **Tes chiffres ne sont visibles que par toi** dans l'appli, jamais par les autres joueurs. Eux voient "
                 "seulement le jeu : ton pseudo, ton dresseur sur la carte, ton lieu, tes badges, ton Pokédex, tes belles captures, tes scores de danse, et pour la semaine en cours tes points d'effort et tes pompes, squats et tractions.\n"
-                "- **Bon à savoir :** ils sont rangés dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
+                "- **Bon à savoir :** ils sont rangés, avec les mesures du téléphone si tu enregistres une séance de rameur, dans le dépôt privé de Kiki, qui gère l'appli et peut donc y accéder.\n"
                 "- **Date de naissance, taille et sexe** (facultatifs) : ils restent sur ton téléphone. Le jour de ton anniversaire, seule la trace de ton cadeau est enregistrée.\n"
                 "- **Tu peux tout arrêter** quand tu veux : Dresseur → Paramètres → Supprimer mes données.")
     if s.get("SCRIPT_URL") and s.get("SCRIPT_CLE"):
@@ -909,21 +926,21 @@ if not AMI:  # L'apprentissage du téléphone (entraînement) : ses mesures, ran
             st.toast("✅ Mesures envoyées à Claude, merci !")
         else:
             st.toast("⚠️ Mesures pas envoyées : elles restent sur ton téléphone, recharge l'appli pour réessayer.")
-    # Les séances de rameur que le téléphone attend d'envoyer. On attend sa réponse avant d'afficher le jeu : sinon la page changerait en pleine scène
-    RAMEUR_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_rameur') || ''", key="rameur_lire")
-    if RAMEUR_TEL is None:
-        st.stop()
-    if RAMEUR_TEL and st.session_state.get("rameur_envoye") != RAMEUR_TEL[:200]:
-        try:
-            ok = seances_rameur.ranger(RAMEUR_TEL, lambda p: lire_depot([p], {p})[p], lambda p, o, msg: ecrire_depot(p, o, msg))
-        except (ValueError, KeyError, TypeError, Panne):
-            ok = False
-        if ok:
-            st.session_state["rameur_envoye"] = RAMEUR_TEL[:200]
-            streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_rameur')", key="rameur_effacer")
-            st.toast("🚣 Séance de rameur enregistrée !")
-        else:
-            st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
+# Les séances de rameur que le téléphone attend d'envoyer, chacun dans son dossier. On attend sa réponse avant d'afficher le jeu : sinon la page changerait en pleine scène
+RAMEUR_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_rameur') || ''", key="rameur_lire")
+if RAMEUR_TEL is None:
+    st.stop()
+if RAMEUR_TEL and st.session_state.get("rameur_envoye") != RAMEUR_TEL[:200]:
+    try:
+        ok = seances_rameur.ranger(RAMEUR_TEL, lambda p: lire_depot([PREFIXE + p], {PREFIXE + p})[PREFIXE + p], lambda p, o, msg: ecrire_depot(PREFIXE + p, o, msg))
+    except (ValueError, KeyError, TypeError, Panne):
+        ok = False
+    if ok:
+        st.session_state["rameur_envoye"] = RAMEUR_TEL[:200]
+        streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_rameur')", key="rameur_effacer")
+        st.toast("🚣 Séance de rameur enregistrée !")
+    else:
+        st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:
@@ -1002,7 +1019,7 @@ with page_sante:
                 st.markdown(liste, unsafe_allow_html=True)
         if not AMI:
             bloc_danse(debut, fin, un_jour, j_ref, lire_vite)
-            bloc_rameur(debut, fin, un_jour, j_ref, lire_vite)
+        bloc_rameur(debut, fin, un_jour, j_ref, lire_vite)
 
     # ----- Sommeil -----
     with st.container(key="rub_sommeil"):

@@ -261,7 +261,8 @@ def tirer(jour, stats, jours, ami=None, gestes=None, materiel=None):
     materiel = materiel_de(None, ami) if materiel is None else materiel
     # chez un ami, la montre doit aussi voir ses séances, sinon une mission de rameur ne se validerait jamais (Apple Santé n'en donne pas) ; Kiki : toujours, il peut corriger le type de sa séance après coup
     seances_vues = not ami or possible("charge", jour, stats, gestes) is not None
-    faisable = lambda m: not m.get("materiel") or (m["materiel"] in materiel and (m.get("geste") or seances_vues))  # noqa: E731
+    # le rameur n'a plus besoin de la montre : le téléphone sur le siège enregistre la séance (06/11)
+    faisable = lambda m: not m.get("materiel") or (m["materiel"] in materiel and (m.get("geste") or m["materiel"] == "rameur" or seances_vues))  # noqa: E731
     seuils = {c: s for c in TIRAGE if faisable(MISSIONS[c]) and (s := possible(c, jour, stats, gestes)) is not None}
     choix = [c for c in seuils if c not in recentes] or list(seuils)
     hier = fait(avant[0]) | {proposee(avant[0])}

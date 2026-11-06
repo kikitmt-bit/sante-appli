@@ -53,7 +53,7 @@ const STYLE_RAMEUR = `
 .pkm-rameur .champs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.pkm-rameur label{display:block;color:#686850;font-size:16px}
 .pkm-rameur .temps{display:flex;align-items:center;gap:4px}.pkm-rameur input{width:100%;min-width:0;box-sizing:border-box;padding:7px;background:#fff;color:#383828;border:2px solid #484838;border-radius:7px 3px;font:inherit;font-size:22px;user-select:text;-webkit-user-select:text}
 .pkm-rameur .alerte{color:#C03028}.pkm-rameur .fait{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:6px 0}.pkm-rameur .fait b{display:block;font-weight:400;font-size:25px;color:#C03028}`;
-function ecranRameur({essai = false, reprise = null} = {}) {
+function ecranRameur({reprise = null} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR); installerStyle("pkm-rameur-style", STYLE_RAMEUR);
   const v = P.createElement("div"); v.className = "pkm-entr pkm-rameur"; P.body.appendChild(v);
   const parler = t => { try { const s = PW.speechSynthesis; s.cancel(); const u = new PW.SpeechSynthesisUtterance(t); u.lang = "fr-FR"; s.speak(u); } catch (e) {} };
@@ -76,13 +76,10 @@ function ecranRameur({essai = false, reprise = null} = {}) {
         <div><label>Temps (min, s)</label><div class="temps"><input class="f-min" type="number" inputmode="numeric" min="0" placeholder="${Math.floor(b.actif_s / 60)}"><input class="f-sec" type="number" inputmode="numeric" min="0" max="59" placeholder="${String(b.actif_s % 60).padStart(2, "0")}"></div></div>
         <div><label>Watts moyens</label><input class="f-watts" type="number" inputmode="numeric" min="0"></div><div><label>Calories</label><input class="f-kcal" type="number" inputmode="numeric" min="0"></div></div>
         <p class="alerte f-erreur"></p></div>
-      <button class="go garder">${essai ? "Fin de l'essai" : "Enregistrer ma séance"}</button>${essai ? "" : `<button class="sec jeter">Ne pas la garder</button>`}
-      ${essai ? `<small style="color:#fff;text-align:center">Essai : rien n'est enregistré.</small>` : ""}`;
+      <button class="go garder">Enregistrer ma séance</button><button class="sec jeter">Ne pas la garder</button>`;
     const nb = c => { const x = parseFloat(v.querySelector(c).value); return x > 0 ? x : null; };
-    const jeter = v.querySelector(".jeter");
-    if (jeter) confirmerDeuxFois(jeter, "Sûr ? Touche encore : elle sera perdue", () => { oublier(); fermer(); });
+    confirmerDeuxFois(v.querySelector(".jeter"), "Sûr ? Touche encore : elle sera perdue", () => { oublier(); fermer(); });
     v.querySelector(".garder").onclick = () => {
-      if (essai) return fermer();
       const temps = nb(".f-min") || nb(".f-sec") ? (nb(".f-min") || 0) * 60 + (nb(".f-sec") || 0) : null, duree = temps || b.actif_s;
       if (!duree) { v.querySelector(".f-erreur").textContent = "Il me faut le temps du rameur pour compter cette séance."; return; }
       const debut = b.coups ? e.debutMur + (b.premier - e.debutT) : e.debutMur, fin = Math.max(b.coups ? e.debutMur + (b.dernier - e.debutT) : e.finMur, debut + duree * 1000 * (temps ? 1 : 0));
@@ -99,7 +96,7 @@ function ecranRameur({essai = false, reprise = null} = {}) {
   if (reprise) return formulaire(reprise);
 
   v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(86)}" alt=""><h3>Le rameur</h3></div>
-      <p>Fixe le téléphone au siège, bien serré, dans le sens que tu veux : il faut juste qu'il ne ballotte pas.</p><p>L'écran reste allumé pendant la séance. Une voix te dira quand les coups sont comptés.</p>${essai ? "<p><b>Essai : rien ne sera enregistré.</b></p>" : ""}</div>
+      <p>Fixe le téléphone au siège, bien serré, dans le sens que tu veux : il faut juste qu'il ne ballotte pas.</p><p>L'écran reste allumé pendant la séance. Une voix te dira quand les coups sont comptés.</p></div>
     <button class="go lancer">Lancer la séance</button><button class="sec retour">Retour</button>`;
   v.querySelector(".retour").onclick = fermer;
   v.querySelector(".lancer").onclick = async () => {
@@ -128,7 +125,7 @@ function ecranRameur({essai = false, reprise = null} = {}) {
     PW.addEventListener("devicemotion", lire);
     v.innerHTML = `<div class="poche"><b class="r-nb">0</b><small>coups</small><div class="rame-info"><span><span class="r-cad">–</span><small>coups / min</small></span><span><span class="r-temps">0:00</span><small>temps</small></span></div><div class="msg r-msg"></div></div><button class="go finir">Terminer</button>`;
     const etat = () => ({debutT, debutMur, finMur: Date.now(), trou, brut: brut.join(";"), coups: A.coups.map(c => [Math.round(c.t), Math.round(c.dur * 100) / 100, Math.round(c.course * 1000) / 1000, Math.round(c.vit * 100) / 100, Math.round(c.ratio * 100) / 100])});
-    const sauver = () => { if (essai) return; try { localStorage.setItem(RAMEUR_ENCOURS, JSON.stringify(etat())); } catch (e) {} };
+    const sauver = () => { try { localStorage.setItem(RAMEUR_ENCOURS, JSON.stringify(etat())); } catch (e) {} };
     const q = c => v.querySelector(c);
     chrono = setInterval(() => {
       const n = A.coups.length, recents = A.coups.filter(c => dernier - c.t < 20000), sec = Math.round((Date.now() - debutMur) / 1000);

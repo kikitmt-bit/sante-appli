@@ -3641,7 +3641,7 @@ function dessinerMuscu() {
   el.querySelectorAll("[data-rameur-reprise]").forEach(b => b.onclick = () => ecranRameur({reprise: rameurInterrompu()}));
   el.querySelectorAll("[data-annule]").forEach(b => confirmerDeuxFois(b, "Sûr ? Touche encore pour annuler", () => annulerSerie(b.dataset.annule)));
 }
-// Le rameur (Kiki seul pour l'instant) : le téléphone sur le siège, une vraie séance de rameur à la fin (rameur.js)
+// Le rameur, pour ceux qui l'ont coché dans Mon matériel : le téléphone sur le siège, une vraie séance de rameur à la fin (rameur.js)
 function carteRameur(mis) {
   if (!D.rameur || !materielDe().includes("rameur")) return "";
   const d = V.defi && V.defi.arrive && voiesDefi().some(e => !e.fait && e.voies.some(o => o.defi === "eau" || o.defi === "force"));
@@ -5754,7 +5754,6 @@ const NOUVEAUTES = [
   {date: "2026-11-06g", sel: ".t-passage", quoi: "fin de Kanto : le Carnet, le coucher de soleil, le téléphone"},
   {date: "2026-11-06h", sel: ".t-voyage-r", quoi: "l'arrivée à Johto dans le nouvel ordre"},
   {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
-  {date: "2026-11-06i", sel: ".t-rameur", quoi: "le rameur : téléphone sur le siège, coups comptés, rien d'enregistré"},
 ];
 function marquerNouveautes(el) {
   const vu = cle => { try { return localStorage.getItem("pkm_neuf_" + cle) === "1"; } catch (e) { return false; } };
@@ -5796,7 +5795,7 @@ function dessinerTests() {
     <div class="groupe">Les écrans<small>Le récap de l'Infirmière Joëlle s'ouvre tout seul à la première visite du jour ; le Panthéon après la Ligue.</small></div>
     <div class="boutons-t">${b("t-centre", `${ico("nuit", "p")} Récap du matin`)}${b("t-relance", `${ico("nuit", "p")} Récap de relance`)}${b("t-velo", `${ico("velo", "p")} Recevoir le vélo`)}${b("t-pantheon", `${ico("ligue", "p")} Panthéon`)}</div>
     <div class="groupe">L'entraînement<small>Le téléphone compte tes répétitions : essai, rien n'est enregistré. Pour de vrai : le bouton « ▶ Série » de la petite tuile Pompes.</small></div>
-    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b("t-rameur", "Rameur (siège)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DUELS).map(q => b(`t-entr" data-e="pompes" data-c="${q}`, `Arène : ${q}`)).join("")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
+    <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DUELS).map(q => b(`t-entr" data-e="pompes" data-c="${q}`, `Arène : ${q}`)).join("")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
       ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${b("t-victoire", `${ico(IMG.badge(1), "p")} 4. Défi gagné : la suite immédiate`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
@@ -5821,7 +5820,6 @@ function dessinerTests() {
   on(".t-fond", x => apercuCapture(x.dataset.f));
   on(".t-centre", () => sceneCentre(true));
   on(".t-relance", () => { const avant = G.relance; G.relance = {cible: 3400, sport: 5, fait: false}; sceneCentre(true); G.relance = avant; });
-  on(".t-rameur", () => ecranRameur({essai: true}));
   on(".t-velo", () => { sceneVelo(true); V.velo = V.velo || "essai"; dessinerVoyage(); });
   document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d, shinyEssai: !!x.dataset.s, duelEssai: x.dataset.c || null}));
   on(".t-pantheon", () => scenePantheon());

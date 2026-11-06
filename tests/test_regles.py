@@ -241,7 +241,8 @@ class Roue(unittest.TestCase):
     def test_une_montre_sans_seances_n_a_pas_les_missions_de_seance(self):
         stat = stats_de({})
         vues = {missions.tirer(jour(n), stat, {}, "a1b2c3d4e5f6", None, {"rameur", "velo", "tapis", "barre"})["cle"] for n in range(150)}
-        self.assertFalse(vues & {"traversee", "tournee", "danse"})
+        self.assertFalse(vues & {"tournee", "danse"})
+        self.assertIn("traversee", vues)  # le rameur n'a plus besoin de la montre : le téléphone sur le siège enregistre la séance
         self.assertIn("pinces", vues)  # compter ses tractions ne dépend pas de la montre
 
     def test_kiki_a_tout_tant_qu_il_n_a_rien_decoche(self):
