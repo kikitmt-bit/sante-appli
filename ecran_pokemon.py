@@ -15,6 +15,8 @@ import chiffres
 import pokemon
 import regions
 import rival
+import seances_danse
+import seances_rameur
 import seances_rameur
 from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
@@ -51,6 +53,24 @@ def _acces_jeu(joueur):
     return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
 
 
+def _carnet_complet(carnet, lire, debut, fin):
+    """Le Carnet de fin de région, avec les distances du rameur et les séances sur le vrai tapis : ce que la page Santé affiche. Lu seulement quand on en a besoin, et une erreur ici ne casse rien."""
+    sortie = dict(carnet)
+    try:
+        fichier = lire([seances_rameur.FICHIER])[seances_rameur.FICHIER]
+        seances = seances_rameur.de_la_periode(fichier, debut, fin)
+        if seances:
+            metres, _ = seances_rameur._total_distance(seances, seances_rameur.modele((fichier or {}).get("seances") or []))
+            sortie["rameur_m"] = max(sortie.get("rameur_m", 0), metres or 0)
+        chemins = seances_danse.fichiers_periode(lire([seances_danse.DOSSIER])[seances_danse.DOSSIER], debut, fin)
+        danses = [s for s in lire(chemins).values() if s and s.get("morceaux")] if chemins else []
+        if danses:
+            sortie["min_danse"] = max(sortie.get("min_danse", 0), seances_danse.totaux(danses)["danse_s"] / 60)
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e:
+        print("Carnet incomplet :", type(e).__name__, flush=True)
+    return sortie
+
+
 def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=(), chansons=(), profil=None, direct=False):
     """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki ; conseil = la phrase utile du
     récap du matin (bilan.conseil_du_jour) ; anniversaire = c'est son anniversaire aujourd'hui (date gardée sur son téléphone) ;
@@ -83,7 +103,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "gestes_jour": etat["gestes_jour"],
         "jeu": None if apercu else _acces_jeu(joueur),
         "region": etat["region"],
-        "carnet": etat["carnet"],
+        "carnet": _carnet_complet(etat["carnet"], lire, dt.date.fromisoformat(etat["region"]["debut"]), aujourd) if etat["fini"] or st.query_params.get("essais") == "1" else etat["carnet"],
         "rival": rival.pour_ecran(etat, aujourd, profil),
         "moments": etat["moments"],
         "kiki": joueur is None,
@@ -124,7 +144,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
         "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
-                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_squat", "bonus_planche", "bonus_danse", "bonus_gestes_max", "objectif_gestes", "bonus_famille", "familles_semaine", "hebdo_jours")},
+                                     "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_squat", "bonus_planche", "bonus_gestes_max", "objectif_gestes", "bonus_famille", "familles_semaine", "hebdo_jours")},
     }
     if joueur:  # ce que le téléphone retient (dresseur, voyage déjà vu…) : à part pour chaque joueur
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"

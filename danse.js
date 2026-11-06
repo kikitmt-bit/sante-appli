@@ -1,4 +1,4 @@
-// La danse au doigt (04/11, carte blanche de Kiki) : un clin d'œil dans l'onglet Muscu, 4 musiques, pour s'amuser et donner envie d'un vrai tapis. 1 point d'effort par jour, pour le premier morceau fini (trace geste-danse) :
+// La danse au doigt (04/11, carte blanche de Kiki) : un clin d'œil dans la Récréation, 4 musiques, pour s'amuser et donner envie d'un vrai tapis. Aucun point d'effort (Kiki, 06/11 : ce n'est pas de la muscu) :
 // le jeu se gagne en faisant du sport. Classement entre joueurs par morceau et difficulté (trace danse-<morceau>-<difficulté>_<millièmes>_<moment>, pokemon.meilleurs_scores). Musiques et pas (fichiers StepMania) : dépôt privé, branche « danse », jamais ce dépôt public (danse.py). Inclus dans pokemon_ui.html par ecran_pokemon.py.
 // Chaque musique est un vrai combat : son dresseur, son décor, son équipe (noms ici : le Pokédex du jeu ne connaît que Kanto), un effet animé. Ces images ne vont pas dans le Pokédex et ne nomment jamais de région.
 const DANSE_DECOR = n => ({image: `combat-danse-${n}.webp`, e: [71.2, 44.7], c: [29.3, 65.7], te: 22, tc: 30});
@@ -160,7 +160,7 @@ function danse(ouvrirSur = null) {
 
   function menu() {
     fin(); v.className = "pkm-entr danse-menu"; mem.niveau = mem.niveau || "Beginner"; mem.vitesse = mem.vitesse || "Normale";
-    v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(acteur)}" ${repli(acteur)} alt=""><div><h3>Danse au doigt</h3><small>${sansVeuve("Pour le plaisir : 1 point par jour pour le premier morceau fini. Sur un vrai tapis de danse, ce sera du vrai sport !")}</small></div></div>
+    v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(acteur)}" ${repli(acteur)} alt=""><div><h3>Danse au doigt</h3><small>${sansVeuve("Pour le plaisir. Sur un vrai tapis de danse, ce sera du vrai sport !")}</small></div></div>
       ${chansons.map(ch => { const r = rang(ch, mem.niveau); return `<button class="d-ch" data-ch="${ch.cle}"><i style="background-image:url('${D.scenes}${ch.decor.image}')"></i><span><b>${ch.titre}</b><small>${sansVeuve(ch.phrase)}</small></span><span class="rg">${r ? danseRang(r) : ""}</span></button>`; }).join("")}
       <div class="d-reg">Difficulté<div class="choix" data-reg="niveau">${DANSE_NIVEAUX.map(([k, n]) => `<button class="${mem.niveau === k ? "on" : ""}" data-v="${k}">${n}</button>`).join("")}</div>
         Vitesse des flèches<div class="choix" data-reg="vitesse">${DANSE_VITESSES.map(([n]) => `<button class="${mem.vitesse === n ? "on" : ""}" data-v="${n}">${n}</button>`).join("")}</div></div>
@@ -359,16 +359,15 @@ function danse(ouvrirSur = null) {
     const pct = max ? J.points / max : 0, r = danseRang(pct), gagne = J.rangE >= equipe.length, cle = `${ch.cle}_${chart.diff}`;
     // Le morceau est fini : le point du jour (le premier seulement), et le score pour le classement quand il bat le meilleur connu (ce téléphone ou le serveur)
     mem.best = mem.best || {}; const score = Math.round(pct * 1000), servi = (((D.joueurs || []).find(j => j.moi) || {}).danse || {})[cle] || 0;
-    const record = pct > Math.max(mem.best[cle] || 0, servi / 1000), maintenant = Date.now(), premierDuJour = !TEST && !gestesAuj().danse;
+    const record = pct > Math.max(mem.best[cle] || 0, servi / 1000), maintenant = Date.now();
     if (pct > (mem.best[cle] || 0)) mem.best[cle] = pct;
     danseMem.garder(mem);
-    if (premierDuJour) memoriser(`${TEST ? "test#" : D.prefixe}geste-danse_1_${maintenant}`);
     if (!TEST && record && score > 0) memoriser(`${D.prefixe}danse-${ch.cle}-${chart.diff}_${score}_${maintenant}`);
     if (gagne) EPIQUE.fanfare();
     const moy = J.ecarts.length ? J.ecarts.reduce((x, y) => x + y, 0) / J.ecarts.length : 0, affiner = J.ecarts.length >= 20 && Math.abs(moy) > .025;
     v.className = "pkm-entr danse-menu";
     v.innerHTML = `<div class="d-tete"><img class="d-saut" src="${IMG.anim(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])}" ${repli(gagne ? acteur : equipe[Math.min(J.rangE, equipe.length - 1)])} alt=""><div><h3>${gagne ? "Victoire !" : "Défaite…"}</h3><small>${ch.titre} · ${ch.qui} : ${gagne ? ch.fin : ch.perdu}</small></div></div>
-      <div class="boite"><div class="d-gros">${r}</div><div class="d-lignes"><span>Score${record ? " (record !)" : ""}</span><span>${Math.round(pct * 100)} %</span>${Object.entries(J.compte).map(([k, n]) => `<span>${k}</span><span>${n}</span>`).join("")}<span>Meilleure suite</span><span>${J.meilleur}</span>${premierDuJour ? "<span>Point du jour</span><span>+1</span>" : ""}</div></div>
+      <div class="boite"><div class="d-gros">${r}</div><div class="d-lignes"><span>Score${record ? " (record !)" : ""}</span><span>${Math.round(pct * 100)} %</span>${Object.entries(J.compte).map(([k, n]) => `<span>${k}</span><span>${n}</span>`).join("")}<span>Meilleure suite</span><span>${J.meilleur}</span></div></div>
       <div class="boite"><h3>Classement</h3><div class="d-zone"></div></div>
       ${affiner ? `<button class="sec" data-affine>Tes touches arrivent ${Math.round(Math.abs(moy) * 1000)} ms ${moy > 0 ? "en retard" : "en avance"} : corriger</button>` : ""}
       <button class="go" data-re>Rejouer</button><button class="sec retour">Autre morceau</button>

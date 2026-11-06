@@ -160,10 +160,10 @@ class Danse(unittest.TestCase):
         pokemon.REGLAGES["debut"], pokemon.REGLAGES["partie"] = DEBUT, 99
         self.p = pokemon.ident(DEBUT, "", None)
 
-    def test_un_seul_point_par_jour(self):
-        traces = [f"{self.p}geste-danse_1_1000", f"{self.p}geste-danse_1_2000"]
+    def test_la_danse_au_doigt_ne_donne_aucun_point(self):
+        traces = [f"{self.p}geste-danse_1_1000", f"{self.p}geste-danse_1_2000"]  # les anciennes traces restent lisibles
         g = pokemon.gestes_du(None, traces, None, DEBUT)[str(DEBUT)]
-        self.assertEqual(pokemon.points_gestes(g, DEBUT), 1)
+        self.assertEqual(pokemon.points_gestes(g, DEBUT), 0)
 
     def test_le_meilleur_score_de_chaque_morceau(self):
         traces = [f"{self.p}danse-zinnia-Beginner_700_1", f"{self.p}danse-zinnia-Beginner_873_2", f"{self.p}danse-red-Hard_500_3"]
@@ -747,6 +747,16 @@ class Rival(unittest.TestCase):
         stats = pd.DataFrame({jour(k): {"pas": 6000 + k * 100, "zone_sport": 0, "km": 4} for k in range(20)}).T
         self.assertIn("Objectif atteint", " ".join(lisible.faits_periode(stats)))
         self.assertTrue(lisible.faits_journee(stats, jour(19), jour(25)))
+
+    def test_le_carnet_compte_toute_la_muscu_et_les_machines(self):
+        stats = pd.DataFrame({jour(k): {"pas": 6000, "min_rameur": 10.0, "min_danse": 5.0} for k in range(3)}).T
+        gestes = {str(jour(k)): {"pompes": 10, "squats": 20, "tractions": 2, "planche": 30} for k in range(3)}
+        rameur = {"exercise": {"exerciseType": "ROWING_MACHINE", "activeDuration": "600s", "metricsSummary": {"distanceMillimeters": 2000000}}}
+        resumes = {str(jour(0)): {"exercise": [rameur]}}
+        _, e = pokemon.jouer(stats, resumes, jour(2), joueur={"id": "abc", "debut": jour(0)}, gestes=gestes)
+        c = e["carnet"]
+        self.assertEqual((c["pompes"], c["squats"], c["tractions"], c["planche"]), (30, 60, 6, 90))
+        self.assertEqual((c["min_rameur"], c["min_danse"], c["rameur_m"]), (30, 15, 2000))
 
     def test_chaque_region_a_quatre_rencontres(self):
         import regions

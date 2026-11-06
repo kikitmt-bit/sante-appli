@@ -544,7 +544,7 @@ details.regles{color:#484838 !important}
 .suivi .suivi-d .speciale{margin:2px 0 8px;box-shadow:none;border-width:2px}
 .lien-direct{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;color:#C9D3EA;font-size:16px;line-height:1.15}.lien-direct button{padding:4px 2px;background:none;border:0;color:#C9D3EA;font:inherit;text-align:left;text-decoration:underline;cursor:pointer}.lien-direct .croix{flex:none;padding:4px 8px;font-size:18px;text-decoration:none}
 .muscu-points{background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:9px 12px;margin-bottom:12px;color:#383828;font-size:18px;line-height:1.15}
-.muscu-points .l1{display:flex;justify-content:space-between;gap:8px}.muscu-points .l1 b{font-weight:400;color:#C03028}
+.muscu-points .l1{display:flex;justify-content:space-between;gap:8px}.muscu-points .l1 b{font-weight:400;color:#C03028;white-space:nowrap}
 .muscu-points .bar{height:10px;border-radius:5px;background:#484838;padding:2px;margin:5px 0 6px}.muscu-points .bar i{display:block;height:100%;background:#40A8F8;border-radius:3px}.muscu-points .bar i.ok{background:#F8C838}
 .muscu-points small{display:block;font-size:15px;color:#686850}
 .exos{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;margin-top:14px}.exo-danse{grid-column:1/-1}
@@ -3224,12 +3224,15 @@ const JOUEUR_DE = "pkm_passage_vu_";
 function appelDu() { return !!(REG.suivante && G.fini && !REG.depart && !departAccepte() && (() => { const l = CAPTURES.find(c => c.id.endsWith("#ligue") && c.jour >= REG.debut); return l && estOuverte(l); })()); }
 function departAccepte() { return !!REG.depart || [...ouvertes].some(id => id.startsWith(D.prefixe) && id.includes("geste-appel_")); }
 const STYLE_PASSAGE = `
-.pkm-ecran .carnet{position:absolute;left:5%;right:5%;bottom:max(70px,9vh);z-index:22;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);color:#383828;padding:10px 12px;font-size:18px;line-height:1.25}
-.pkm-ecran .carnet h3{margin:0 0 6px;font:700 20px 'Jersey 15',monospace;color:#C03028}
-.pkm-ecran .carnet .ligne{display:flex;justify-content:space-between;gap:10px;opacity:0;transform:translateY(5px);transition:opacity .3s,transform .3s}
-.pkm-ecran .carnet .ligne.vu{opacity:1;transform:none}
-.pkm-ecran .carnet .ligne b{color:#B05010;font-weight:400;white-space:nowrap}
-.pkm-ecran .carnet .bout{margin-top:8px;color:#686850;font-size:16px;opacity:0;transition:opacity .5s}.pkm-ecran .carnet .bout.vu{opacity:1}
+.pkm-ecran .carnet{--r:min(3.5vh,28px);position:absolute;left:5%;right:5%;bottom:max(64px,7vh);max-height:46vh;z-index:22;transform:rotate(-1deg);color:#383828;font-size:min(2.15vh,17px);line-height:var(--r);padding:calc(var(--r) * .55) 10px 4px 26px;border:2px solid #484838;border-radius:4px 8px 8px 4px;box-shadow:3px 4px 0 rgba(0,0,0,.4);
+  background:linear-gradient(90deg,transparent 19px,rgba(208,64,56,.55) 19px,rgba(208,64,56,.55) 21px,transparent 21px),repeating-linear-gradient(180deg,transparent 0,transparent calc(var(--r) - 1px),rgba(64,120,190,.3) calc(var(--r) - 1px),rgba(64,120,190,.3) var(--r)),#FBF6DF;background-position:0 0,0 calc(var(--r) * .55)}
+.pkm-ecran .carnet:before{content:"";position:absolute;left:6px;top:-7px;right:6px;height:14px;background:radial-gradient(circle at 7px 7px,#22315A 3.5px,transparent 4px) 0 0/22px 14px repeat-x}
+.pkm-ecran .carnet h3{margin:0;font:400 min(2.6vh,21px)/var(--r) 'Jersey 15',monospace;color:#C03028;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pkm-ecran .carnet .cols{display:grid;grid-template-columns:1fr 1fr;column-gap:14px}
+.pkm-ecran .carnet .ligne{display:flex;justify-content:space-between;gap:6px;min-width:0;white-space:nowrap;opacity:0;transition:opacity .25s}
+.pkm-ecran .carnet .ligne.vu{opacity:1}
+.pkm-ecran .carnet .ligne b{color:#B05010;font-weight:400}
+.pkm-ecran .carnet .bout{text-align:right;color:#686850;font-size:min(1.9vh,15px);opacity:0;transition:opacity .5s}.pkm-ecran .carnet .bout.vu{opacity:1}
 .pkm-ecran.panorama .salle{transition:none;transform:none;left:0}
 .pkm-ecran .accepter{position:absolute;left:50%;bottom:36%;transform:translateX(-50%);z-index:44;white-space:nowrap;background:#D83830;color:#fff;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);padding:8px 18px;font:400 22px 'Jersey 15',monospace}
 .pkm-ecran .nom-region{position:absolute;left:0;right:0;top:12%;text-align:center;z-index:22;font:700 clamp(40px,14vw,68px)/1 'Pixelify Sans',monospace;color:#FFCB05;letter-spacing:4px;text-shadow:4px 4px 0 #8A2A10,-2px -2px 0 #8A2A10,2px -2px 0 #8A2A10,-2px 2px 0 #8A2A10;opacity:0;transform:translateY(-14px);transition:opacity 1.2s,transform 1.2s}
@@ -3249,18 +3252,14 @@ function defiler(salle, duree) { const w = salle.offsetWidth - PW.innerWidth; if
 function parlante(km) {  // une distance qu'on se représente
   const l = [[3000, "plus que Paris-Moscou"], [1400, "plus que Paris-Rome"], [775, "plus que Paris-Marseille"], [465, "plus que Paris-Lyon"], [225, "plus que Paris-Lille"], [100, "plus que Paris-Reims"]];
   const x = l.find(([d]) => km >= d); return x ? x[1] : null; }
-function lignesCarnet() {
-  const c = D.carnet || {}, vues = CAPTURES.filter(x => prise(x) && x.jour >= REG.debut), esp = new Set(vues.map(x => x.num)), nb = x => fr(Math.round(x)), L = [];
-  const ajoute = (t, v, ok = true) => { if (ok) L.push([t, v]); };
-  ajoute("Jours de voyage", nb(c.jours || 0)); ajoute("Badges", "8 + la Ligue");
-  ajoute("Pas", nb(c.pas || 0), c.pas > 0);
-  const p = parlante(c.km || 0); ajoute("Kilomètres", nb(c.km || 0) + (p ? ` · ${p}` : ""), c.km > 0);
-  ajoute("Minutes de sport", nb(c.sport || 0), c.sport > 0); ajoute("Pompes", nb(c.pompes || 0), c.pompes > 0); ajoute("Tractions", nb(c.tractions || 0), c.tractions > 0); ajoute("Squats", nb(c.squats || 0), c.squats > 0);
-  ajoute("Pokémon attrapés", nb(esp.size)); ajoute("Shiny", nb(new Set(vues.filter(x => x.shiny).map(x => x.num)).size));
-  if (c.record && c.record.pas) ajoute("Plus grosse journée", `${nb(c.record.pas)} pas`);
-  const prem = vues.find(x => !x.id.endsWith("#" + CADEAU)); if (prem) ajoute("Première capture", PAR_NUM[prem.num].nom);
-  const rare = vues.filter(x => x.legendaire)[0] || vues.find(x => V.rares.includes(x.num)); if (rare) ajoute("La plus belle prise", PAR_NUM[rare.num].nom);
-  return L;
+function lignesCarnet() {  // court : une page de carnet, en deux colonnes, dans le bas de l'image (le professeur reste visible, Kiki, 06/11). Ce qui vaut zéro n'est pas écrit.
+  const c = D.carnet || {}, vues = CAPTURES.filter(x => prise(x) && x.jour >= REG.debut), nb = x => fr(Math.round(x));
+  const duree = m => m >= 60 ? `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}` : `${Math.round(m)} min`;
+  const km = m => `${String(Math.round(m / 100) / 10).replace(".", ",")} km`;
+  return [["Voyage", `${nb(c.jours || 0)} j`, true], ["Badges", "8 + Ligue", true], ["Pokémon", nb(new Set(vues.map(x => x.num)).size), true], ["Shiny", nb(new Set(vues.filter(x => x.shiny).map(x => x.num)).size), true],
+    ["Pas", nb(c.pas || 0), c.pas > 0], ["Distance", `${nb(c.km || 0)} km`, c.km >= 1], ["Record", `${nb((c.record || {}).pas || 0)} pas`, (c.record || {}).pas > 0], ["Sport", duree(c.sport || 0), c.sport > 0],
+    ["Pompes", nb(c.pompes || 0), c.pompes > 0], ["Squats", nb(c.squats || 0), c.squats > 0], ["Tractions", nb(c.tractions || 0), c.tractions > 0], ["Planche", duree((c.planche || 0) / 60), c.planche > 0],
+    ["Rameur", c.rameur_m >= 100 ? km(c.rameur_m) : duree(c.min_rameur || 0), c.rameur_m >= 100 || c.min_rameur >= 1], ["Danse", duree(c.min_danse || 0), c.min_danse >= 1]].filter(l => l[2]);
 }
 async function sceneCarnet(cle, prof) {
   installerStyle("pkm2-passage-style", STYLE_PASSAGE);
@@ -3272,9 +3271,9 @@ async function sceneCarnet(cle, prof) {
     DP.prevoir(intro.map(l => [l, prof]));
     for (const l of intro) { if (coupe) return; await DP.dire(l, prof); }
     DP.fin(); v.querySelector(".pkm-dial") && v.querySelector(".pkm-dial").remove();
-    v.insertAdjacentHTML("beforeend", `<div class="carnet"><h3>Le Carnet de ${REG.nom}</h3>${L.map(([t, x]) => `<div class="ligne"><span>${t}</span><b>${x}</b></div>`).join("")}<div class="bout">Touche l'écran</div></div>`);
+    v.insertAdjacentHTML("beforeend", `<div class="carnet"><h3>Carnet du Prof. ${prof} : ${REG.nom}</h3><div class="cols">${L.map(([t, x]) => `<div class="ligne"><span>${t}</span><b>${x}</b></div>`).join("")}</div><div class="bout">Touche l'écran</div></div>`);
     const ls = v.querySelectorAll(".carnet .ligne");
-    for (const l of ls) { if (coupe) return; await attendre(520); l.classList.add("vu"); EPIQUE.clic(); vibre(8); }
+    for (const l of ls) { if (coupe) return; await attendre(230); l.classList.add("vu"); EPIQUE.clic(); vibre(8); }
     await attendre(500); v.querySelector(".bout").classList.add("vu");
     await new Promise(ok => v.addEventListener("pointerdown", ok, {once: true}));
   })().catch(() => {});
@@ -3620,32 +3619,32 @@ function apresGeste() {  // tout redessiner, le bonus ouvert le reste
 }
 // La page Muscu (03/11, Kiki : pompes, tractions, squats et planche étaient cachés derrière une petite tuile) : un exercice, un toucher, le téléphone compte
 
-const EXOS = [["pompes", "10 = 5 pts"], ["squats", "10 = 2,5 pts"], ["tractions", "1 = 1 pt"], ["planche", "10 s = 1 pt"]];
+const EXOS = [["pompes", "10 = 5 pts"], ["squats", "10 = 2,5 pts"], ["tractions", "2 = 3 pts"], ["planche", "10 s = 1 pt"]];
 // La récréation (Kiki, 06/11 : la danse au doigt n'est pas de la muscu, c'est un petit jeu) : en bas de Dresseur, après le classement
 function dessinerRecreation() {
   const el = document.getElementById("recreation"); if (!el) return;
   if (!(D.danse || []).length) { el.hidden = true; el.innerHTML = ""; return; }
   el.hidden = false;
-  el.innerHTML = `<div class="cl-t"><b>Récréation</b></div><div class="exos" style="margin-top:6px"><div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(35)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques pour s'amuser, et un classement entre dresseurs · 1 point par jour pour le premier morceau fini</div><button class="go-exo" data-danse>▶ Jouer</button></div></div>`;
+  el.innerHTML = `<div class="cl-t"><b>Récréation</b></div><div class="exos" style="margin-top:6px"><div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(35)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques pour s'amuser, et un classement entre dresseurs</div><button class="go-exo" data-danse>▶ Jouer</button></div></div>`;
   el.querySelector("[data-danse]").onclick = () => danse();
   rognerImages(el);
 }
 function dessinerMuscu() {
   const el = document.getElementById("muscu"), g = gestesAuj(), mem = lireEntr(), mis = D.mission || {};
-  const points = Math.min(g.pompes * R.bonus_pompe + g.tractions * R.bonus_traction + g.squats * R.bonus_squat + g.planche * R.bonus_planche + Math.min(g.danse, 1) * R.bonus_danse, R.bonus_gestes_max);
+  const points = Math.min(g.pompes * R.bonus_pompe + g.tractions * R.bonus_traction + g.squats * R.bonus_squat + g.planche * R.bonus_planche, R.bonus_gestes_max);
   const pourMission = {pompes: "pompes", series: "pompes", squats: "squats", tractions: "tractions"}[mis.geste];
   const duel = duelEnCours();
-  el.innerHTML = `${lienMuscu()}<div class="muscu-points"><div class="l1"><span>Points d'effort du jour</span><b>${String(Math.round(points * 10) / 10).replace(".", ",")} / ${R.bonus_gestes_max}</b></div>
+  el.innerHTML = `${lienMuscu()}<div class="muscu-points"><div class="l1"><span>Pompes, squats, tractions, planche</span><b>${String(Math.round(points * 10) / 10).replace(".", ",")} / ${R.bonus_gestes_max}</b></div>
       <div class="bar"><i class="${points >= R.bonus_gestes_max ? "ok" : ""}" style="width:${points / R.bonus_gestes_max * 100}%"></i></div>
-      <small>La montre ne les compte pas : le téléphone s'en charge. Tes points arrivent à la prochaine actualisation.</small></div>
+      <small>Tes points du jour : la montre ne les compte pas, le téléphone s'en charge. Ils arrivent à la prochaine actualisation.</small></div>
     <div class="exos">${EXOS.filter(([t]) => t !== "tractions" || materielDe().includes("barre") || g.tractions || mis.geste === "tractions").map(([t, gain]) => { const M = ENTR[t], rec = (mem[t] || {}).record;
       const tag = t === "pompes" && duel ? "Arène" : t === pourMission && mis.ok !== true ? "Mission" : "";
       return `<div class="exo">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3>
         <div class="nb-exo">${g[t]}${M.chrono ? "<small> s</small>" : ""}</div>
         <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
         ${t !== "tractions" && derniereSerie(t) ? `<button class="annule-exo" data-annule="${t}">Annuler ma dernière série (${derniereSerie(t).n}${M.chrono ? " s" : ""})</button>` : ""}
-        ${t === "tractions" ? `<div class="plus-moins"><button class="go-exo" data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button class="go-exo" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : `<button class="go-exo" data-compte="${t}">▶ Lancer</button>`}</div>`; }).join("")}
-      ${carteRameur(mis)}</div>`;
+        ${t === "tractions" ? `<div class="plus-moins"><button class="go-exo" data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button class="go-exo" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : `<button class="go-exo" data-compte="${t}">▶ Lancer</button>`}</div>`; }).join("")}</div>
+    ${carteRameur(mis) ? `<div class="muscu-points" style="margin-top:16px"><div class="l1"><span>Machines</span></div><small>Une machine compte comme une vraie séance de sport, à partir de 10 min : hors de la barre du haut, sans plafond.</small></div><div class="exos" style="margin-top:0">${carteRameur(mis)}</div>` : ""}`;
   brancherGestes(el); rognerImages(el);
   el.querySelectorAll("[data-rameur]").forEach(b => b.onclick = () => ecranRameur());
   el.querySelectorAll("[data-rameur-reprise]").forEach(b => b.onclick = () => ecranRameur({reprise: rameurInterrompu()}));

@@ -1141,7 +1141,6 @@ with page_sante:
             graphique(d, "vfc", "Récupération (ms) : plus haut, c'est mieux", type_="ligne",
                       couleur="#B39DFF", hauteur=140)
             graphique(d, "spo2", "Oxygène dans le sang la nuit (%)", type_="ligne", couleur="#4CD3A0", hauteur=140)
-        st.markdown('<div class="lis-note">Des repères généraux pour comprendre tes chiffres, pas un avis médical.</div>', unsafe_allow_html=True)
 
     # ----- Poids -----
     with st.container(key="rub_poids"):
