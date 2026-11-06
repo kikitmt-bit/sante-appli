@@ -3230,6 +3230,13 @@ const STYLE_PASSAGE = `
 .pkm-ecran .accepter{position:absolute;left:50%;bottom:36%;transform:translateX(-50%);z-index:44;white-space:nowrap;background:#D83830;color:#fff;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);padding:8px 18px;font:400 22px 'Jersey 15',monospace}
 .pkm-ecran .nom-region{position:absolute;left:0;right:0;top:12%;text-align:center;z-index:22;font:700 clamp(40px,14vw,68px)/1 'Pixelify Sans',monospace;color:#FFCB05;letter-spacing:4px;text-shadow:4px 4px 0 #8A2A10,-2px -2px 0 #8A2A10,2px -2px 0 #8A2A10,-2px 2px 0 #8A2A10;opacity:0;transform:translateY(-14px);transition:opacity 1.2s,transform 1.2s}
 .pkm-ecran .nom-region.vu{opacity:1;transform:none}
+.pkm-ecran .touche-r{position:absolute;left:0;right:0;bottom:calc(84px + env(safe-area-inset-bottom));text-align:center;z-index:22;pointer-events:none;
+  font:700 22.8px 'Jersey 15',monospace;color:#fff;letter-spacing:2px;text-shadow:2px 2px 0 #284018,0 0 10px rgba(0,0,0,.5);opacity:0;transition:opacity .8s}
+.pkm-ecran .touche-r.vu{opacity:1;animation:pkt-clign 1.2s steps(2,start) 1s infinite}
+@keyframes pkt-clign{50%{opacity:0}}
+/* les deux panneaux du carrefour (vides sur l'image) : le texte posé dessus, en lettres de bois */
+.pkm-ecran .panneau-txt{position:absolute;transform:translate(-50%,-50%);font:700 1.15vh/1 'Pixelify Sans',monospace;color:#5A3414;letter-spacing:.5px;white-space:nowrap;
+  text-shadow:0 1px 0 rgba(255,230,180,.6);pointer-events:none}
 `;
 const attendre = ms => new Promise(r => setTimeout(r, ms));
 // Une image large qui défile doucement, de gauche à droite, à la hauteur de l'écran
@@ -3310,22 +3317,31 @@ async function scenePassage(essai = false) {
   if (await sceneCarnet(p.cle, prof) && await sceneGenerique(p.cle)) await sceneAppel(p.cle, prof, p.suivante, p.appel, essai);
   ouverture = false; if (!essai) dessiner();
 }
-// Le lendemain : le départ à l'aube, la route, la première vue de la nouvelle région, puis son écran titre et le labo
+// Le lendemain (ordre voulu par Kiki, 06/11) : la nouvelle région en grand, son nom, « Touche l'écran » ; puis le travelling de la route ;
+// puis le carrefour (panneaux écrits) ; puis le labo. Plus d'écran titre du jeu ici : on l'a déjà vu.
 async function sceneVoyageRegion(cadeau, essai = false) {
   installerStyle("pkm2-passage-style", STYLE_PASSAGE); preparerScene(); ouverture = true;
   const cle = "kanto-johto", nom = essai ? "Johto" : REG.nom;
+  // duree = null : la scène attend qu'on touche l'écran
   const scene = async (id, n, l, h, duree, fait) => { const E = ecran(id, `passage-${cle}-${n}.webp`, l, h), v = E.v; let coupe = false; const air = fait && fait(v);
     const fin = new Promise(ok => { v.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); }; });
     await attendre(250); v.querySelector(".noir").style.opacity = 0;
-    await Promise.race([attendre(duree), fin]); if (air && air.stop) air.stop(); E.fin();
+    const touche = new Promise(ok => { const go = e => { if (e.target.closest(".pkm-passer")) return; v.removeEventListener("pointerdown", go); audio(); vibre(25); ok(); }; setTimeout(() => v.addEventListener("pointerdown", go), 1500); });
+    await Promise.race([duree ? attendre(duree) : touche, fin]); if (air && air.stop) air.stop(); E.fin();
     if (!coupe) { v.querySelector(".noir").style.opacity = 1; await attendre(1000); } v.remove(); return !coupe; };
-  const suite = await scene("pkm-aube", 6, 940, 1672, 4200) && await scene("pkm-route", 7, 1536, 1024, 9500, v => { v.classList.add("panorama"); defiler(v.querySelector(".salle"), 9200); SONS.version(); })
-    && await scene("pkm-vue", 8, 940, 1672, 5200, v => { v.insertAdjacentHTML("beforeend", `<div class="nom-region">${nom.toUpperCase()}</div>`); setTimeout(() => { v.querySelector(".nom-region").classList.add("vu"); EPIQUE.fanfare(); }, 900); });
+  const pc = (x, t) => x / t * 100 + "%";
+  const suite = await scene("pkm-vue", 8, 940, 1672, null, v => {
+      v.insertAdjacentHTML("beforeend", `<div class="nom-region">${nom.toUpperCase()}</div><div class="touche-r">TOUCHE L'ÉCRAN${essai ? "<small style='display:block;font-size:12px;margin-top:6px;opacity:.85'>Aperçu : rien n'est enregistré</small>" : ""}</div>`);
+      setTimeout(() => { v.querySelector(".nom-region").classList.add("vu"); EPIQUE.fanfare(); }, 900);
+      setTimeout(() => v.querySelector(".touche-r").classList.add("vu"), 2600); })
+    && await scene("pkm-route", 7, 1536, 1024, 9500, v => { v.classList.add("panorama"); defiler(v.querySelector(".salle"), 9200); SONS.version(); })
+    && await scene("pkm-aube", 6, 940, 1672, 4600, v => v.querySelector(".salle").insertAdjacentHTML("beforeend",
+      `<div class="panneau-txt" style="left:${pc(252, 940)};top:${pc(641, 1672)}">${nom.toUpperCase()}</div><div class="panneau-txt" style="left:${pc(344, 940)};top:${pc(697, 1672)}">LIGUE</div>`));
   ouverture = false;
-  if (!suite) { if (!essai && cadeau) lancer(cadeau); return; }
-  const t = ecranTitre(essai); await t.touche; t.fermer();
   if (essai) { const q = PROFESSEURS.orme, n = q.starters[Math.floor(Math.random() * 3)];
-    intro({...PAR_NUM[n], num: n, id: "test#orme", apercu: true, ball: "poke", shiny: false, legendaire: false, lieu: "Bourg Geon", fond: "laboOrme", raison: "🎁 Cadeau du Professeur Orme", quand: "aujourd'hui", jour: D.aujourdhui}, q); }
+    // pendant Kanto, le téléphone ne connaît pas encore les Pokémon de Johto (la suite reste une surprise) : l'essai se donne les 3 starters
+    [[152, "Germignon", "Plante"], [155, "Héricendre", "Feu"], [158, "Kaiminus", "Eau"]].forEach(([k, nm, t]) => { if (!PAR_NUM[k]) PAR_NUM[k] = {num: k, nom: nm, types: [t]}; });
+    if (suite) intro({...PAR_NUM[n], num: n, id: "test#orme", apercu: true, ball: "poke", shiny: false, legendaire: false, lieu: "Bourg Geon", fond: "laboOrme", raison: "🎁 Cadeau du Professeur Orme", quand: "aujourd'hui", jour: D.aujourdhui}, q); }
   else if (cadeau) lancer(cadeau);
 }
 
@@ -5643,6 +5659,7 @@ const NOUVEAUTES = [
   {date: "2026-11-06g", sel: ".t-debut", quoi: "le dresseur un peu plus grand sur le chemin du village"},
   {date: "2026-11-06g", sel: ".t-sball", quoi: "la boîte de capture : génération et nature en haut, OK à côté des types"},
   {date: "2026-11-06g", sel: ".t-passage", quoi: "fin de Kanto : le Carnet, le coucher de soleil, le téléphone"},
+  {date: "2026-11-06h", sel: ".t-voyage-r", quoi: "l'arrivée à Johto dans le nouvel ordre"},
   {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
 ];
 function marquerNouveautes(el) {
