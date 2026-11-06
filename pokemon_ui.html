@@ -458,6 +458,8 @@ h2{color:#fff;font-size:21px;text-shadow:2px 2px 0 #141C38;margin:16px 2px 8px}
 .filtre.on{background:#D83830;border-color:#484838;color:#fff}
 .filtre.ty{border:2px solid #484838;border-radius:8px 4px 8px 4px;color:#fff}
 #tests .groupe,details.regles summary{color:#383828 !important}#tests .groupe small{color:#686850 !important}
+#tests .filtre.neuf{background:#D83830 !important;color:#fff !important;border-color:#8A1C18 !important;box-shadow:2px 2px 0 #8A1C18 !important}
+details.tests summary .neuf-nb{white-space:nowrap;margin-left:6px;padding:1px 7px;border-radius:8px 3px;background:#D83830;color:#fff;font-size:.85em}
 details.regles{color:#484838 !important}
 #recherche{color:#383828 !important}#recherche::placeholder{color:#888870}
 /* chaque carte */
@@ -5598,6 +5600,31 @@ function apprentissage(type) {
   };
 }
 
+// Les nouveautés à tester (Kiki, 06/11) : leurs boutons sont en rouge dans 🧪 jusqu'au premier toucher, 7 jours au plus.
+// À CHAQUE MODIFICATION testable : ajouter ici la date, le sélecteur de ses boutons (dans #tests) et ce qui a changé.
+const NOUVEAUTES = [
+  {date: "2026-11-06", sel: ".t-arene:not([data-n='9'])", quoi: "phrases des champions variées"},
+  {date: "2026-11-06", sel: ".t-velo", quoi: "dresseur à vélo à la bonne taille sur la carte"},
+  {date: "2026-11-06", sel: ".t-entree:not([data-n='9'])", quoi: "entrée des champions (de dos, puis de face)"},
+  {date: "2026-11-06", sel: ".t-passage", quoi: "fin de Kanto sans défilé"},
+  {date: "2026-11-06", sel: ".t-sball", quoi: "shiny qui reprend ses couleurs, plus de sexe"},
+];
+function marquerNouveautes(el) {
+  const vu = cle => { try { return localStorage.getItem("pkm_neuf_" + cle) === "1"; } catch (e) { return false; } };
+  let n = 0;
+  NOUVEAUTES.filter(x => (Date.parse(D.aujourdhui) - Date.parse(x.date)) / 864e5 < 7).forEach(x => el.querySelectorAll(x.sel).forEach(btn => {
+    const cle = `${x.date}_${x.sel}_${btn.dataset.n || btn.dataset.f || btn.dataset.i || ""}`;
+    if (vu(cle)) return;
+    n++; btn.classList.add("neuf"); btn.title = `Nouveau : ${x.quoi}`;
+    btn.addEventListener("click", () => { try { localStorage.setItem("pkm_neuf_" + cle, "1"); } catch (e) {} btn.classList.remove("neuf"); marquerTitreTests(); });
+  }));
+  marquerTitreTests();
+}
+function marquerTitreTests() {
+  const t = document.querySelector("details.tests summary"); if (!t) return;
+  const n = document.querySelectorAll("#tests .neuf").length;
+  t.innerHTML = `🧪 Tester le jeu (aperçus, rien n'est enregistré)${n ? ` <b class="neuf-nb">${n} à tester</b>` : ""}`;
+}
 function dessinerTests() {
   if (!D.essais) { const d = document.querySelector("details.tests"); if (d) d.remove(); return; }  // une surprise pour les amis : arènes, lieux, légendaires…
   const b = (cls, html) => `<button class="filtre ${cls}">${html}</button>`;
@@ -5629,6 +5656,8 @@ function dessinerTests() {
     <div class="groupe">Les ouvertures<small>Les nouveautés : une scène à part pour les légendaires, la Shiny Ball, le raté de la chasse.</small></div>
     <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
+  if (NOUVEAUTES.length) el.insertAdjacentHTML("afterbegin", `<div class="groupe">En rouge : les nouveautés<small>Ce qui vient de changer. Un bouton redevient normal dès que tu l'as touché.</small></div>`);
+  setTimeout(() => marquerNouveautes(el), 0);
   on(".t-debut", () => demarrerAventure(null, true));
   on(".t-pokedex", () => scenePokedex());
   on(".t-entree", x => sceneEntree(+x.dataset.n, null, true));
