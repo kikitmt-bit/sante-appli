@@ -523,6 +523,11 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
     return b
 
 
+def debut_de(joueur):
+    """Le premier jour du joueur dans la partie : pour un ami, le jour où il a relié sa montre, mais jamais avant le début de la partie (une remise à zéro vaut pour tout le monde)."""
+    return max(joueur["debut"], REGLAGES["debut"]) if joueur else REGLAGES["debut"]
+
+
 def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
@@ -533,7 +538,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     R = REGLAGES
     figees = {c["id"]: c for c in figees}
     captures, possedees, cumul = [], set(), 0.0
-    debut, ami = joueur["debut"] if joueur else R["debut"], joueur["id"] if joueur else None
+    debut, ami = debut_de(joueur), joueur["id"] if joueur else None
     jours_ok, shiny_balls, depuis_master = [], 0, debut  # Shiny Ball : jours avec l'objectif dans la fenêtre
     reg_i, region, debut_region, depart = 0, regions.REGIONS[0], debut, False  # la région en cours ; depart = l'appel du professeur est accepté : la suivante commence demain
     graine_lieux = f"{R['partie']}-{ami or 'kiki'}"  # ses Pokémon dans chaque lieu : pas exactement les mêmes que ceux des autres joueurs
@@ -542,7 +547,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     sport_vu = False  # une minute de sport au moins depuis le début : sinon, la montre ne les mesure peut-être pas (rival.py)
     derniers = []  # les 14 derniers jours, pour les moqueries du rival (rival.py)
     carnet = nouveau_carnet()  # les chiffres du voyage dans la région en cours, pour le Carnet de fin de région
-    jour, m, ok, shiny_bonus = debut, {}, False, 1
+    jour, m, ok, shiny_bonus = debut, mesures({}, [], debut), False, 1  # la partie n'a pas encore commencé (date à venir) : une journée vide, l'appli ne plante pas
     relance, sans_objectif, pas_recents = None, 0, []  # la relance en cours ou la dernière ; les jours de suite sans objectif ; les pas des derniers jours avec des données
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
     sem, semaine_passee = None, None  # la semaine en cours et celle d'avant (bilan du dimanche)
@@ -904,7 +909,7 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     """Statistiques depuis le début du jeu et captures figées, avec la fonction `lire` de l'appli (pour un ami : lire
     donne ses fichiers à lui, voir chiffres.chez, et joueur = {"id", "debut"}). anniversaire = le joueur a ouvert l'appli le jour de
     son anniversaire."""
-    debut, ami = joueur["debut"] if joueur else REGLAGES["debut"], joueur["id"] if joueur else None
+    debut, ami = debut_de(joueur), joueur["id"] if joueur else None
     annees = range(debut.year, aujourd.year + 1)
     # les fichiers d'aujourd'hui et d'hier : le moment des Super / Hyper Balls pas encore figées avec leur moment
     recents = {j: f"data/jour/{j.year}/{j}.json" for j in (aujourd - dt.timedelta(days=1), aujourd) if j >= debut}

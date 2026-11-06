@@ -287,7 +287,7 @@ def suivi_recolte():
 
 def bouton_synchroniser(nouveau=False):
     """Le seul bouton de synchronisation, toujours en bas à gauche. Des données viennent d'arriver : on les affiche ; sinon, une récolte tout de suite."""
-    if st.button("🔄 Synchroniser" + (" •" if nouveau else ""), key="nouvelles"):
+    if st.button("🔄" + (" •" if nouveau else ""), key="nouvelles", help="Synchroniser"):
         st.session_state.pop("recolte", None)
         if nouveau:
             st.rerun()
@@ -852,6 +852,8 @@ if st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
             st.session_state["recolte"] = recolte
 # L'âge et la taille restent sur le téléphone (carte du dresseur) : relus à l'ouverture, pour le calcul, jamais enregistrés ici
 CARTE_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_dresseur') || ''", key="profil_dresseur")
+if CARTE_TEL is None:  # pas de réponse du téléphone : on attend avant d'afficher le jeu. Sinon la carte publiée ensuite change la page, qui se recharge en pleine scène (écran noir, 06/11)
+    st.stop()
 PROFIL = bilan.lire_profil(CARTE_TEL, dt.datetime.now(TZ).date())
 if CARTE_TEL is not None:
     publier_dresseur(CARTE_TEL)

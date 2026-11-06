@@ -2078,8 +2078,9 @@ function lancer(c) {  // ouvre une Poké Ball ; le cadeau du Professeur et les b
   if (estOuverte(c)) return ouvrir(c);
   if (p) return intro(c, p);
   if (estEvo(c)) return sceneEvolution(c);
-  if (/^badge\d$/.test(cle)) return sceneBadge(+cle.slice(5), c);
-  if (cle === "ligue") return sceneBadge(9, c);
+  // arrivé et vainqueur entre deux visites : le champion ne s'est encore jamais présenté, son entrée passe d'abord
+  if (/^badge\d$/.test(cle) || cle === "ligue") { const n = cle === "ligue" ? 9 : +cle.slice(5);
+    return entreeVue(n) ? sceneBadge(n, c) : sceneEntree(n, () => sceneBadge(n, c)); }
   if (/^anniv\d{4}$/.test(cle)) return sceneAnniversaire(() => ouvrir(c));
   if (c.ball === "master" && !c.chance && SANCT_TEXTE[c.num] && !c.apercu) return sceneSanctuaire(c.num, () => ouvrir(c));
   ouvrir(c);
@@ -2149,7 +2150,7 @@ const ROGUE = "https://raw.githubusercontent.com/pagefaultgames/pokerogue-assets
 const CHAMPIONS_KANTO = {
   1: {nom: "Pierre", sprite: "brock", arene: {image: "arene-argenta.webp", perso: "arene-argenta-pierre.webp", x: 400, y: 557, pw: 141, ph: 265, torches: [[220, 235], [721, 235]]},
       indice: "Ici, on gagne en prenant de la hauteur. Mes rochers ne se grimpent pas tout seuls… Prépare tes jambes !", lignes: ["Je suis Pierre, le Champion d'Argenta. Ma volonté est aussi solide que la roche !",
-      "Quelle montée ! Tu as tenu bon, comme un vrai montagnard. Je m'incline !"]},
+      "Quelle ténacité ! Tu n'as rien lâché, comme un vrai montagnard. Je m'incline !"]},
   2: {nom: "Ondine", sprite: "misty", arene: {image: "arene-azuria.webp", perso: "arene-azuria-ondine.webp", x: 395, y: 516, pw: 184, ph: 277, torches: [[56, 94], [878, 94]], feu: "255,240,190", taille: 22},
       indice: "Dans mon arène, tout se passe dans l'eau ! Pas de rameur ? Alors montre-moi ton souffle, sur une longue distance !", lignes: ["Je suis Ondine, la Championne d'Azuria ! Ma technique : l'offensive totale avec des Pokémon Eau !",
       "Hmpf… Tu as plus de souffle que je ne le pensais. Bien joué !"]},
@@ -3575,14 +3576,17 @@ function victoireDefi(n) {
   const enregistre = new Promise(ok => setTimeout(() => partagerConfirme([...ouvertes].filter(id => id.includes("geste-") && !serveur.has(id))).then(ok), 300));
   if (n === 9) return enregistre.then(() => recevoirBadge());
   try { localStorage.setItem("pkm_badge_joue", JSON.stringify({n, t: Date.now()})); } catch (e) {}
-  sceneBadge(n, null, false, () => enregistre.then(() => recevoirBadge()));
+  const scene = () => sceneBadge(n, null, false, () => enregistre.then(() => recevoirBadge()));
+  entreeVue(n) ? scene() : sceneEntree(n, scene);
 }
 function recevoirBadge(essai = 1) {
   try { localStorage.setItem("pkm_badge_auto", JSON.stringify({essai, t: Date.now()})); } catch (e) {}
   const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href;
 }
+// Les deux chemins qui se valent (le champion laisse passer, ou le plan B où un exploit compte double) sur une seule barre : on montre le plus avancé
+const joursPasses = (d, a) => Math.min(d.max, Math.round(Math.max(d.actifs, d.valeur_b * d.max / a.b.cible) * 10) / 10);
 function resteDefi() {
-  const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = Math.min(Math.max(a.b.cible - d.valeur_b, 0), d.max ? Math.max(d.max - d.actifs, 0) : 99), ouB = `, ou ${String(resteB).replace(".", ",")} jour${resteB >= 2 ? "s" : ""} d'objectif`;
+  const d = V.defi, a = LIEUX[d.lieu].arene, ep = voiesDefi(), resteB = d.max ? Math.max(d.max - joursPasses(d, a), 0) : Math.max(a.b.cible - d.valeur_b, 0), ouB = `, ou ${String(resteB).replace(".", ",")} jour${resteB >= 2 ? "s" : ""} ${d.max ? "à 2 000 pas" : "d'objectif"}`;
   if (ep.length > 1) { const n = ep.filter(e => !e.fait).length; return `encore ${n} épreuve${n > 1 ? "s" : ""}${ouB}`; }
   const o = ep[0].voies[0];
   return o.mode === "jour" ? `${o.texte.replace(/^Une /, "une ")}${ouB}` : `encore ${o.unite === "pas" ? fr(Math.max(o.cible - o.v, 0)) : Math.ceil(Math.max(o.cible - o.v, 0))} ${o.unite}${ouB}`;
@@ -3664,6 +3668,8 @@ function brancherGestes(racine) {
 }
 // Tes prochains objectifs (02/11, idée de Kiki) : aucune règle en plus, juste les 3 buts les plus proches parmi ce qui existe déjà, pour
 // avoir toujours quelque chose à viser. Classés par points à faire (une espèce ou un jour ≈ 100 points : une barre). Rien sur ce qui viendra après.
+// « (≈ 2 barres) » ; rien sous une barre : 30 points n'en valent pas une
+const barresDe = pts => { const n = Math.round(pts / D.barre.taille); return n >= 1 && pts >= D.barre.taille * .75 ? ` (≈ ${n} barre${n > 1 ? "s" : ""})` : ""; };
 function prochainsObjectifs() {
   const d = V.defi, liste = [], route = (p, min = 0) => Math.max(Math.ceil(p), min);
   if (d && d.arrive) liste.push({rang: -1, ic: LIEUX[d.lieu].arene.image ? ico(IMG.badge(LIEUX[d.lieu].arene.image)) : ico("ligue"), t: `Battre ${CHAMPIONS[d.numero].nom}`, v: resteDefi(), va: "speciales", prio: true});
@@ -3950,16 +3956,16 @@ function carteDefi() {
   const garde = {}; (G.retenues || []).forEach(x => garde[x.ball] = (garde[x.ball] || 0) + 1);
   const liste = Object.entries(garde).map(([b, n]) => `${n} ${BALLS[b]}${n > 1 ? "s" : ""}`);
   if (G.missions_gardees) liste.push(`${G.missions_gardees} pts de mission`);
-  const garde_txt = liste.length ? `<div class="garde-champ"><b>${ch.nom} garde :</b> ${liste.join(", ")}. Il te rend les ${R.rend} derniers jours, ne traîne pas !</div>` : "";
+  const garde_txt = liste.length ? `<div class="garde-champ"><b>${ch.nom} garde :</b> ${liste.join(", ")}. Il te rend les ${R.rend} derniers jours quand tu le bats.</div>` : "";
   const conseil4 = ligue ? `<div class="conseil4">${CONSEIL.map(m => `<span class="${(ep.find(e => e.qui === m.nom) || {}).fait ? "battu" : ""}">${portraitChamp(m)}<i>${m.nom}</i></span>`).join("")}</div>` : "";
   return `<div class="speciale defi ${ok ? "ok" : ""}" style="--c:${ligue ? "#B8860B" : COUL[a.type]}">
     <div class="portrait">${portraitChamp(ch)}</div>
     <div class="tete">${a.image ? ico(IMG.badge(a.image)) : ico("ligue")}Défi de l'arène · ${ch.nom}</div>
-    <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté depuis ton arrivée, rien ne se perd</div>${conseil4}
+    <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté depuis ton arrivée</div>${conseil4}
     ${ep.map(e => `<div class="epreuve ${e.fait ? "faite" : ""}">${e.qui ? `<div class="qui-e">${e.qui}${e.fait ? " ✅" : ""}</div>` : ""}${e.voies.map(voie).join(`<div class="ou-e">ou</div>`)}</div>`).join("")}
     ${types.length && !ok ? blocGestes(types) : ""}
-    <div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span style="white-space:nowrap">${String(d.valeur_b).replace(".", ",")} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}
-    ${d.max ? `<div class="ou-e">ou</div><div class="ligne"><span>${d.max} jours à 2 000 pas : ${ch.nom} te laisse passer</span><span style="white-space:nowrap">${d.actifs} / ${d.max}</span></div>${j(d.actifs, d.max)}` : ""}
+    ${d.max ? "" : `<div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span style="white-space:nowrap">${String(d.valeur_b).replace(".", ",")} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}`}
+    ${d.max ? `<div class="ou-e">ou</div><div class="ligne"><span>${d.max} jours à 2 000 pas : ${ch.nom} te laisse passer (un exploit compte double)</span><span style="white-space:nowrap">${String(joursPasses(d, a)).replace(".", ",")} / ${d.max}</span></div>${j(joursPasses(d, a), d.max)}` : ""}
     ${ep.some(e => e.voies.some(o => o.defi === "soir")) ? `<div class="petit gris" style="margin-top:4px">Les pas du soir sont comptés une fois par heure.</div>` : ""}
     <div class="reste">${ok ? "Défi réussi : ton badge arrive !" : ep.length > 1 ? `Encore <b>${restent} épreuve${restent > 1 ? "s" : ""}</b>, dans l'ordre que tu veux.` : ep[0].voies.length > 1 ? "Une seule de ces voies suffit." : ""}</div>${ok && !TEST ? `<button class="go-exo recevoir-badge">Recevoir mon badge</button>` : ""}${garde_txt}</div>`;
 }
@@ -4590,7 +4596,7 @@ function infosLieu(k) {
   const passe = V.pos >= l.dist, ici = k === V.ici, suite = LIEUX[k + 1], d = V.defi;
   const bloque = d && d.arrive && d.lieu === k;
   const depart = !ici || !suite ? "" : bloque ? "Tu repars après le badge de l'arène."
-    : `Étape suivante : ${suite.nom}, dans ${fr(suite.dist - V.pos)} pts (≈ ${Math.max(1, Math.round((suite.dist - V.pos) / D.barre.taille))} barre${suite.dist - V.pos > 150 ? "s" : ""}).`
+    : `Étape suivante : ${suite.nom}, dans ${fr(suite.dist - V.pos)} pts${barresDe(suite.dist - V.pos)}.`
       + (() => { if (!suite || suite.mode === "route" || bloque) return "";
         if (suite.mode === "grotte") return `<br>${ico(OBJ("escape-rope"), "p")} Par la grotte : tu traverses la montagne à pied jusqu'à ${suite.nom}.`;
         const m = monture(suite.mode);
@@ -4784,6 +4790,8 @@ function voyagerDepuis(el, v, centrer, immediat) {
     if (d && d.arrive && p0 < LIEUX[d.lieu].dist) setTimeout(() => { const ch = el.querySelector(".chef");
       const presente = () => { if (ch && document.body.contains(ch)) { suivre && centrer(P); ch.click(); } };
       entreeVue(d.numero) ? presente() : sceneEntree(d.numero, presente); }, 1200);
+    // le film est fini, plus de badge qui attend : le rival, s'il est sur la route (sinon, à la prochaine visite)
+    else if (!aOuvrir().some(estBadge) && rivalDu()) setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) { const r = rivalDu(); if (r) sceneRival(r); } }, 1600);
   };
   requestAnimationFrame(pas);
 }
@@ -4931,7 +4939,7 @@ function dessinerRegles() {
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
     ${EN_JOHTO ? `<li>${ico("carte", "p")} <b>Le jour et la nuit</b> : à ${REG.nom}, certains Pokémon sortent plutôt tôt ou tard. 2 000 pas le matin ou après 20 h les rendent trois fois plus fréquents ce jour-là.</li>` : ""}
-    <li>${ico(IMG.badge(EN_JOHTO ? 9 : 1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le plan B : quelques jours avec ton objectif, un exploit y compte double, une petite journée moitié. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
+    <li>${ico(IMG.badge(EN_JOHTO ? 9 : 1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le champion te laisse passer après quelques jours à 2 000 pas, et un exploit compte double. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
     <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis l'onglet Muscu, le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
@@ -5809,6 +5817,8 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
 }
 function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
+// La page vient de (re)démarrer : un calque resté là appartient à l'ancienne page, ses minuteurs et ses boutons sont morts (écran noir, ✕ sans effet). On l'enlève.
+P.querySelectorAll(".pkm-ecran,.pkm-entr,#pkm-intro,#pkm-badge,#pkm-voile,#pkm-evo,#pkm-dresseur,#pkm-fiche").forEach(x => x.remove());
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#" + CADEAU));
@@ -5836,8 +5846,8 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   else if (V.defi && V.defi.arrive && !entreeVue(V.defi.numero) && !etatVoyage().attente) { const n = V.defi.numero; setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneEntree(n); }, 1200); }
   else if (V.velo && (() => { try { return localStorage.getItem(`pkm_velo_vu_${R.partie}`) !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneVelo(); }, 1200);
-  else if (rivalDu()) { const r = rivalDu(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneRival(r); }, 1200); }
-  else if (histoireDue()) { const h = histoireDue(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneHistoire(h); }, 1200); }
+  else if (!etatVoyage().attente && !aOuvrir().some(estBadge) && rivalDu()) { const r = rivalDu(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneRival(r); }, 1200); }
+  else if (!etatVoyage().attente && !aOuvrir().some(estBadge) && histoireDue()) { const h = histoireDue(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneHistoire(h); }, 1200); }
   else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);
   else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())

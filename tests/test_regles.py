@@ -672,6 +672,31 @@ class Rival(unittest.TestCase):
         for v in rival.VOIX.values():
             self.assertEqual(set(v["textes"]), set(rival.VOIX["k"]["textes"]))
 
+    def test_remise_a_zero_vaut_pour_les_amis(self):
+        avant = pokemon.REGLAGES["debut"]
+        try:
+            pokemon.REGLAGES["debut"] = jour(5)
+            ancien = {"id": "abc", "debut": jour(0)}
+            self.assertEqual(pokemon.debut_de(ancien), jour(5))
+            self.assertEqual(pokemon.debut_de({"id": "abc", "debut": jour(8)}), jour(8))
+            self.assertEqual(pokemon.debut_de(None), jour(5))
+            stats = pd.DataFrame({jour(k): {"pas": 8000} for k in range(7)}).T
+            captures, _ = pokemon.jouer(stats, {}, jour(6), joueur=ancien)
+            self.assertTrue(captures and all(c["jour"] >= str(jour(5)) for c in captures))
+        finally:
+            pokemon.REGLAGES["debut"] = avant
+
+    def test_partie_pas_encore_commencee(self):
+        avant = pokemon.REGLAGES["debut"]
+        try:
+            pokemon.REGLAGES["debut"] = jour(5)
+            captures, etat = pokemon.jouer(pd.DataFrame(), {}, jour(2))
+            self.assertEqual(captures, [])
+            self.assertEqual(etat["mesures"]["pas"], 0)
+            self.assertEqual(etat["mesures"]["sommeil"], 0)
+        finally:
+            pokemon.REGLAGES["debut"] = avant
+
     def test_chaque_region_a_quatre_rencontres(self):
         import regions
         for r in regions.REGIONS:
