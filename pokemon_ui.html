@@ -620,7 +620,6 @@ const dexRegion = () => DEX.filter(p => REGIONS.some(x => p.num >= x.de && p.num
 const FIN_GEN = [151, 251, 386, 493, 649, 721, 809, 905, 1025];
 const genDe = num => FIN_GEN.findIndex(x => num <= x) + 1;
 const gensVues = () => [...new Set(Object.keys(collection()).map(n => genDe(+n)))].sort((a, b) => a - b);
-const genAffichee = num => genDe(num) > 1 || gensVues().length > 1;
 const filtreGens = new Set();  // vide : toutes
 const PAR_NUM = Object.fromEntries(DEX.map(p => [p.num, p]));
 // Les images, directement dans le dépôt public PokeAPI/sprites
@@ -1813,7 +1812,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
       <div class="phrase">${champDe(c) ? `${champDe(c).nom} te confie son <b>${c.nom}</b> !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
-      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${genAffichee(c.num) ? `Génération ${genDe(c.num)} · ` : ""}Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Génération ${genDe(c.num)} · Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
@@ -3495,7 +3494,7 @@ function fiche(p) {
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
     <div class="tete">
       <img class="grande ${a ? "" : "non"}" src="${IMG.grand(p.num, a ? vue : false)}">
-      <div><div class="no">N° ${N3(p.num)}${a && genAffichee(p.num) ? ` · Génération ${genDe(p.num)}` : ""}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
+      <div><div class="no">N° ${N3(p.num)}${a ? ` · Génération ${genDe(p.num)}` : ""}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
         <div>${typesHTML(p.types, "pkm-type")}</div><div class="sous"></div></div></div>
     ${normal && shiny ? `<div class="onglets-f"><button data-s="0">Normal</button><button data-s="1">${ico("shiny", "p brille")} Shiny</button></div>` : ""}
     ${a ? `<div class="corps"></div><div class="desc"></div>`
@@ -5628,6 +5627,7 @@ const NOUVEAUTES = [
   {date: "2026-11-06", sel: ".t-passage", quoi: "fin de Kanto sans défilé"},
   {date: "2026-11-06", sel: ".t-sball", quoi: "shiny qui reprend ses couleurs, plus de sexe"},
   {date: "2026-11-06b", sel: ".t-entree:not([data-n='9'])", quoi: "une arrivée différente pour chaque champion"},
+  {date: "2026-11-06c", sel: ".t-sball", quoi: "« Génération 1 » affichée dès Kanto"},
   {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
 ];
 function marquerNouveautes(el) {
