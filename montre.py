@@ -20,6 +20,7 @@ from pathlib import Path
 import chiffres
 import missions
 import pokemon
+import seances_rameur
 from pokedex import LEGENDAIRES, POKEMON
 
 MONTRE = "data/pokemon/montre.json"
@@ -259,10 +260,11 @@ def ecrire_github(session, texte, chemin=MONTRE, pareil=lambda a, b: sans_heure(
 def calculer_missions(lire, aujourd, ami=None, materiel=None):
     """La mission de chaque jour (missions.py) : choisie une fois, puis gardée ; pas d'avant 13 h relus (fichiers du jour)."""
     annees = range(missions.DEPUIS.year - 1, aujourd.year + 1)
-    f = lire([f"data/resume/{y}.json" for y in annees] + [missions.FICHIER])
+    f = lire([f"data/resume/{y}.json" for y in annees] + [missions.FICHIER, seances_rameur.FICHIER])
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
+    resumes = seances_rameur.fusionner(resumes, f.get(seances_rameur.FICHIER))
     cache = {}
 
     def stats(j):

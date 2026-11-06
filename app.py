@@ -27,6 +27,7 @@ import ecran_calibrage
 import ecran_pokemon
 import pokemon
 import seances_danse
+import seances_rameur
 from pokedex import LEGENDAIRES, POIDS, POKEMON
 from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
                       chemin_analyse, dossier_ami, dossier_coach, hm, joli, nombre, par_jour, table)
@@ -437,6 +438,24 @@ def bloc_danse(debut, fin, un_jour, j_ref, lire_vite):
         return
     st.markdown(seances_danse.STYLE, unsafe_allow_html=True)
     with st.container(key="bloc_danse"), st.expander(seances_danse.titre(seances)):
+        st.markdown(contenu, unsafe_allow_html=True)
+
+
+def bloc_rameur(debut, fin, un_jour, j_ref, lire_vite):
+    """Les séances du téléphone sur le siège : comme la danse, une seule ligne qui s'ouvre, et une erreur ici ne casse jamais la page."""
+    try:
+        fichier = lire_vite([seances_rameur.FICHIER])[seances_rameur.FICHIER]
+        seances = seances_rameur.de_la_periode(fichier, debut, fin)
+        if not seances:
+            return
+        m = seances_rameur.modele((fichier or {}).get("seances") or [])
+        contenu = seances_rameur.html_jour(seances, j_ref, m) if un_jour else seances_rameur.html_periode(seances, debut, fin, m)
+        titre = seances_rameur.titre(seances, m)
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e:
+        print("Séances de rameur illisibles :", type(e).__name__, flush=True)
+        return
+    st.markdown(seances_rameur.STYLE, unsafe_allow_html=True)
+    with st.container(key="bloc_rameur"), st.expander(titre):
         st.markdown(contenu, unsafe_allow_html=True)
 
 
@@ -890,6 +909,21 @@ if not AMI:  # L'apprentissage du téléphone (entraînement) : ses mesures, ran
             st.toast("✅ Mesures envoyées à Claude, merci !")
         else:
             st.toast("⚠️ Mesures pas envoyées : elles restent sur ton téléphone, recharge l'appli pour réessayer.")
+    # Les séances de rameur que le téléphone attend d'envoyer. On attend sa réponse avant d'afficher le jeu : sinon la page changerait en pleine scène
+    RAMEUR_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_rameur') || ''", key="rameur_lire")
+    if RAMEUR_TEL is None:
+        st.stop()
+    if RAMEUR_TEL and st.session_state.get("rameur_envoye") != RAMEUR_TEL[:200]:
+        try:
+            ok = seances_rameur.ranger(RAMEUR_TEL, lambda p: lire_depot([p], {p})[p], lambda p, o, msg: ecrire_depot(p, o, msg))
+        except (ValueError, KeyError, TypeError, Panne):
+            ok = False
+        if ok:
+            st.session_state["rameur_envoye"] = RAMEUR_TEL[:200]
+            streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_rameur')", key="rameur_effacer")
+            st.toast("🚣 Séance de rameur enregistrée !")
+        else:
+            st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:
@@ -906,7 +940,7 @@ with page_sante:
 
     recents = {f"data/jour/{x.year}/{x}.json" for x in (aujourd, aujourd - dt.timedelta(days=1))}
     recents |= {f"data/resume/{aujourd.year}.json", "data/profil.json",
-                chemin_analyse("Jour", aujourd - dt.timedelta(days=1)), pokemon.FIGEES, pokemon.OUVERTES}
+                chemin_analyse("Jour", aujourd - dt.timedelta(days=1)), pokemon.FIGEES, pokemon.OUVERTES, seances_rameur.FICHIER}
     lire_vite = lambda chemins: lire(chemins, recents)  # noqa: E731
     with st.spinner("Lecture des données…"):
         donnees = charger(lire_vite, periode, st.session_state["ref"], aujourd)
@@ -968,6 +1002,7 @@ with page_sante:
                 st.markdown(liste, unsafe_allow_html=True)
         if not AMI:
             bloc_danse(debut, fin, un_jour, j_ref, lire_vite)
+            bloc_rameur(debut, fin, un_jour, j_ref, lire_vite)
 
     # ----- Sommeil -----
     with st.container(key="rub_sommeil"):

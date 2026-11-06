@@ -6,6 +6,8 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 
+import seances_rameur
+
 TZ = ZoneInfo("Europe/Paris")
 OBJECTIFS = {"pas": 5000, "zone_sport": 10, "sommeil": 7 * 60}  # (plus tard : page « Réglages »)
 JOURS = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"]
@@ -278,11 +280,12 @@ def charger(lire, periode, ref, aujourd):
     debut_tout = min(debut_avant, fin - dt.timedelta(days=90))  # le poids : 3 mois au moins
     annees = range(debut_tout.year, fin.year + 1)
     fichier_ref = f"data/jour/{fin.year}/{fin}.json"
-    f = lire([f"data/resume/{y}.json" for y in annees] + ["data/profil.json", fichier_ref, missions.FICHIER])
+    f = lire([f"data/resume/{y}.json" for y in annees] + ["data/profil.json", fichier_ref, missions.FICHIER, seances_rameur.FICHIER])
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
-    tous = [debut_tout + dt.timedelta(days=i) for i in range((fin - debut_tout).days + 1)]
+    resumes = seances_rameur.fusionner(resumes, f.get(seances_rameur.FICHIER))
+    tous =[debut_tout + dt.timedelta(days=i) for i in range((fin - debut_tout).days + 1)]
     lignes_m = (f.get(missions.FICHIER) or {}).get("jours") or {}  # le même sport que le jeu, estimé par le cœur si la montre ne le donne pas
     stats = pd.DataFrame({d: missions.avec_coeur(stats_jour(resumes.get(str(d)), f.get(fichier_ref) if d == fin else None), lignes_m.get(str(d)), d)
                           for d in tous}).T
@@ -309,6 +312,8 @@ def seance(c):
     details = [hm(minutes)] + ([f"{nombre(km, 1)} km"] if km else []) + \
               [f"{m.get('caloriesKcal', '–')} kcal", f"cardio moy. {m.get('averageHeartRateBeatsPerMinute', '–')}",
                f"{sport:.0f} min de sport"]
+    if "rameur" in c:  # enregistrée par le téléphone sur le siège : ce qu'on sait, sans tirets pour ce qu'on ne sait pas
+        details = [hm(minutes), *c["rameur"]] + ([f"cardio moy. {m['averageHeartRateBeatsPerMinute']}"] if m.get("averageHeartRateBeatsPerMinute") else [])
     return {"type": c.get("exerciseType"), "nom": c.get("displayName") or c.get("exerciseType", "Exercice"),
             "quand": local(c["interval"]["startTime"]), "details": details, "km": km, "minutes": minutes}
 

@@ -11,6 +11,7 @@ import amis
 import chiffres
 import missions
 import pokemon
+import seances_rameur
 
 COPIE = "data/calibrage/partie-{}-{}.json"
 DE_PEU = .8  # « raté de peu » : au moins 80 % du seuil
@@ -21,10 +22,11 @@ def journal(lire_depot, ident, debut, depuis, aujourd, nom):
     ami = None if ident == amis.KIKI else ident
     lire = chiffres.chez(lire_depot, chiffres.dossier_ami(ami)) if ami else lire_depot
     annees = range(depuis.year, aujourd.year + 1)
-    f = lire([f"data/resume/{y}.json" for y in annees] + [missions.FICHIER, pokemon.GESTES, pokemon.OUVERTES])
+    f = lire([f"data/resume/{y}.json" for y in annees] + [missions.FICHIER, pokemon.GESTES, pokemon.OUVERTES, seances_rameur.FICHIER])
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
+    resumes = seances_rameur.fusionner(resumes, f.get(seances_rameur.FICHIER))
     jours_m = (f.get(missions.FICHIER) or {}).get("jours") or {}
     gestes = pokemon.gestes_du(f.get(pokemon.GESTES), (f.get(pokemon.OUVERTES) or {}).get("ouvertes", {}), ami, aujourd)
     jours = [depuis + dt.timedelta(days=k) for k in range((aujourd - depuis).days + 1)]

@@ -1,5 +1,6 @@
 """Les règles du jeu, sans réseau ni données : à lancer avant chaque envoi (python -m unittest discover tests), et à chaque envoi sur GitHub."""
 import datetime as dt
+import json
 import sys
 import unittest
 from pathlib import Path
@@ -8,12 +9,14 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import bilan  # noqa: E402
+import chiffres  # noqa: E402
 import johto  # noqa: E402
 import kanto  # noqa: E402
 import missions  # noqa: E402
 import pokemon  # noqa: E402
 import region as region_  # noqa: E402
 import seances_danse  # noqa: E402
+import seances_rameur  # noqa: E402
 
 DEBUT = dt.date(2026, 11, 9)  # un lundi, après le changement de règles du 04/11
 
@@ -753,6 +756,88 @@ class TestSeancesDanse(unittest.TestCase):
         self.assertEqual(seances_danse.titre([self.SEANCE]), "💃 Danse : 6 min · 1 séance · 2 morceaux")
         self.assertIn("06/11", seances_danse.html_periode([self.SEANCE], dt.date(2026, 11, 1), dt.date(2026, 11, 7)))
         self.assertIn("11/2026", seances_danse.html_periode([self.SEANCE], dt.date(2026, 1, 1), dt.date(2026, 12, 31)))
+
+
+class TestRameur(unittest.TestCase):
+    """Une séance du téléphone sur le siège est une vraie séance de rameur, une seule fois, et ses chiffres apprennent à l'appli."""
+    S = {"id": "2026-11-20-180000", "debut": "2026-11-20T18:00:00+01:00", "fin": "2026-11-20T18:20:00+01:00", "duree_s": 1200, "coups": 480, "cadence": 24, "course_cm": 60, "vitesse": 1.0,
+         "par_min": {"cad": [24] * 20}, "saisi": {"distance": 4000, "temps_s": 1200, "watts": None, "kcal": None}}
+    JOUR = dt.date(2026, 11, 20)
+
+    def montre(self, debut, fin, type_="ROWING_MACHINE"):
+        return {"exercise": {"exerciseType": type_, "activeDuration": "1000s", "interval": {"startTime": debut, "endTime": fin},
+                             "metricsSummary": {"averageHeartRateBeatsPerMinute": 140}}}
+
+    def exos(self, resumes):
+        return [seances_rameur.sd_contenu(p) for p in resumes[str(self.JOUR)]["exercise"]]
+
+    def test_compte_comme_une_seance_de_rameur(self):
+        r = seances_rameur.fusionner({}, {"seances": [self.S]})
+        s = chiffres.stats_jour(r[str(self.JOUR)])
+        self.assertEqual(s["min_rameur"], 20)
+        m = pokemon.mesures({"pas": 0, "zone": 0, "zone_sport": 0, "etages": 0, "sommeil": 0}, self.exos(r), self.JOUR)
+        self.assertEqual(m["eau"], 20)  # Ondine
+        self.assertEqual(m["points"]["sport"], 20)  # comme le rameur de la montre
+        self.assertEqual(pokemon.sport_principal(m)[2], ["Eau", "Glace"])
+
+    def test_la_montre_ne_compte_pas_une_deuxieme_fois(self):
+        resumes = {str(self.JOUR): {"exercise": [self.montre("2026-11-20T17:01:00Z", "2026-11-20T17:19:00Z")]}}
+        r = seances_rameur.fusionner(resumes, {"seances": [self.S]})
+        self.assertEqual(chiffres.stats_jour(r[str(self.JOUR)])["min_rameur"], 20)
+        self.assertEqual(self.exos(r)[0]["metricsSummary"]["averageHeartRateBeatsPerMinute"], 140)  # son cœur est gardé
+        self.assertEqual(len(resumes[str(self.JOUR)]["exercise"]), 1)  # les résumés gardés en mémoire ne changent pas
+
+    def test_une_autre_seance_du_jour_reste(self):
+        r = seances_rameur.fusionner({str(self.JOUR): {"exercise": [self.montre("2026-11-20T08:00:00Z", "2026-11-20T09:00:00Z", "RUNNING")]}}, {"seances": [self.S]})
+        self.assertEqual(len(self.exos(r)), 2)
+
+    def test_sans_seance_rien_ne_change(self):
+        resumes = {"2026-11-20": {"steps": 1}}
+        self.assertIs(seances_rameur.fusionner(resumes, None), resumes)
+
+    def test_une_seance_abimee_ne_casse_rien(self):
+        self.assertEqual(seances_rameur.fusionner({"a": {}}, {"seances": [{"id": "x"}, {"debut": "n'importe quoi", "fin": "", "duree_s": 3}]}), {"a": {}})
+
+    def test_ranger_est_rejouable(self):
+        depot = {}
+        ecrire = lambda p, o, m: depot.__setitem__(p, o) or True  # noqa: E731
+        texte = json.dumps([{"seance": self.S, "brut": "1,2,3;4,5,6", "coups": [[1, 2, 3, 4, 5]]}])
+        for _ in range(2):
+            self.assertTrue(seances_rameur.ranger(texte, depot.get, ecrire))
+        self.assertEqual(len(depot[seances_rameur.FICHIER]["seances"]), 1)
+        self.assertEqual(depot["data/rameur/brut/2026-11-20-180000.json"]["lignes"], "1,2,3;4,5,6")
+
+    def test_si_github_refuse_rien_n_est_oublie(self):
+        self.assertFalse(seances_rameur.ranger(json.dumps([{"seance": self.S}]), lambda p: None, lambda p, o, m: False))
+
+    def seance(self, coups, vitesse, distance, **saisi):
+        return {"debut": "2026-11-20T18:00:00+01:00", "duree_s": 1200, "coups": coups, "vitesse": vitesse, "saisi": {"distance": distance, **saisi}}
+
+    def test_le_modele_apprend_la_vitesse(self):
+        vraies = [self.seance(400, v, 400 * (5 + 3 * v)) for v in (.8, 1.0, 1.2, 1.4, 1.6)]
+        m = seances_rameur.modele(vraies)
+        self.assertAlmostEqual(m["a"], 5, 2)
+        self.assertAlmostEqual(m["b"], 3, 2)
+        self.assertEqual(m["erreur"], 0)
+        c = seances_rameur.chiffres_de({"coups": 100, "vitesse": 1, "duree_s": 300}, m)
+        self.assertAlmostEqual(c["distance"], 800, 0)
+        self.assertEqual(c["estime"], {"distance"})
+
+    def test_ce_qui_est_entre_passe_avant_ce_qui_est_devine(self):
+        m = {"a": 8, "b": 0, "n": 1, "erreur": None, "k_watts": None, "k_kcal": None}
+        self.assertEqual(seances_rameur.chiffres_de(self.S, m)["distance"], 4000)
+
+    def test_sans_distance_rien_a_apprendre(self):
+        self.assertIsNone(seances_rameur.modele([self.seance(400, 1, None)]))
+        self.assertIsNone(seances_rameur.modele([self.seance(5, 1, 100)]))  # trop peu de coups
+
+    def test_page_sante(self):
+        une = seances_rameur.html_jour([self.S], {}, None)
+        self.assertNotIn(chr(10), une)  # sinon le Markdown de Streamlit couperait le bloc
+        self.assertIn("4 000 m", une)
+        self.assertEqual(seances_rameur.titre([self.S]), "🚣 Rameur : 20 min · 1 séance · 4 000 m")
+        self.assertIn("20/11", seances_rameur.html_periode([self.S], dt.date(2026, 11, 16), dt.date(2026, 11, 22), None))
+        self.assertEqual(chiffres.seance(seances_rameur.sd_contenu(seances_rameur.point_de(self.S)))["details"][1:], ["4000 m", "24 coups/min"])
 
 
 if __name__ == "__main__":

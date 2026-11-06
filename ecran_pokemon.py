@@ -15,10 +15,12 @@ import chiffres
 import pokemon
 import regions
 import rival
+import seances_rameur
 from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
 UI = Path(__file__).with_name("pokemon_ui.html")
 DANSE = Path(__file__).with_name("danse.js")
+RAMEUR = Path(__file__).with_name("rameur.js")
 
 
 def _js(objet):
@@ -114,6 +116,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "mission": etat["mission"],
         "joueurs": list(joueurs),
         "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
+        "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd) if joueur is None else None,
         "matin": {"hier": etat["hier"], "conseil": conseil},
         "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
@@ -126,5 +129,5 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         donnees["regles"]["partie"] = f"{R['partie']}-{joueur['id']}"
     if index or apercu:  # chaque région a ses points : le voyage déjà vu repart de zéro
         donnees["regles"]["partie"] = f"{donnees['regles']['partie']}-r{index}" + ("-apercu" if apercu else "")
-    page = UI.read_text(encoding="utf-8").replace("/*__DANSE_JS__*/", DANSE.read_text(encoding="utf-8"))
+    page = UI.read_text(encoding="utf-8").replace("/*__DANSE_JS__*/", DANSE.read_text(encoding="utf-8")).replace("/*__RAMEUR_JS__*/", RAMEUR.read_text(encoding="utf-8"))
     st.iframe(page.replace("__DONNEES__", _js(donnees)), height=900)
