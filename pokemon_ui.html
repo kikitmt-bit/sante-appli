@@ -3582,7 +3582,7 @@ function victoireDefi(n) {
 }
 function recevoirBadge(essai = 1) {
   try { localStorage.setItem("pkm_badge_auto", JSON.stringify({essai, t: Date.now()})); } catch (e) {}
-  const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href;
+  const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); allerA(u.href);
 }
 // Les deux chemins qui se valent (le champion laisse passer, ou le plan B où un exploit compte double) sur une seule barre : on montre le plus avancé
 const joursPasses = (d, a) => Math.min(d.max, Math.round(Math.max(d.actifs, d.valeur_b * d.max / a.b.cible) * 10) / 10);
@@ -3639,9 +3639,12 @@ function dessinerMuscu() {
   brancherGestes(el); rognerImages(el);
   el.querySelectorAll("[data-rameur]").forEach(b => b.onclick = () => ecranRameur());
   el.querySelectorAll("[data-rameur-reprise]").forEach(b => b.onclick = () => ecranRameur({reprise: rameurInterrompu()}));
-  el.querySelectorAll("[data-rameur-page]").forEach(b => b.onclick = () => { const w = PAGE_HAUTE(), u = new URL(w.location.href); u.searchParams.set("rameur", "1"); w.location.href = u.href; });  // la vraie page : c'est son adresse que Chrome mettra sur l'écran d'accueil
+  // un nouvel onglet : la seule façon d'avoir la vraie adresse dans Chrome, celle qu'il mettra sur l'écran d'accueil
+  el.querySelectorAll("[data-rameur-page]").forEach(b => b.onclick = () => { const u = new URL(PAGE_HAUTE().location.href); u.searchParams.set("rameur", "1"); if (!window.open(u.href, "_blank")) allerA(u.href); });
   el.querySelectorAll("[data-annule]").forEach(b => confirmerDeuxFois(b, "Sûr ? Touche encore pour annuler", () => annulerSerie(b.dataset.annule)));
 }
+// Le lien vers la page directe disparaît dès que cette page s'est ouverte une fois (Kiki, 06/11)
+const raccourciVu = () => { try { return !!localStorage.getItem("pkm_rameur_raccourci"); } catch (e) { return false; } };
 // Le rameur, pour ceux qui l'ont coché dans Mon matériel : le téléphone sur le siège, une vraie séance de rameur à la fin (rameur.js)
 function carteRameur(mis) {
   if (!D.rameur || !materielDe().includes("rameur")) return "";
@@ -3650,7 +3653,7 @@ function carteRameur(mis) {
   return `<div class="exo exo-danse">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(86)}" alt=""><h3>Rameur</h3>
     <div class="nb-exo">${D.rameur.minutes}<small> min</small></div><div class="d">aujourd'hui · téléphone fixé au siège</div>
     ${coupee ? `<button class="annule-exo" data-rameur-reprise>Récupérer la séance interrompue</button>` : ""}
-    <button class="go-exo" data-rameur>▶ Lancer</button><button class="annule-exo" data-rameur-page>Page directe, pour un raccourci sur ton téléphone</button></div>`;
+    <button class="go-exo" data-rameur>▶ Lancer</button>${raccourciVu() ? "" : `<button class="annule-exo" style="margin:12px 0 0" data-rameur-page>Page directe, pour un raccourci sur ton téléphone</button>`}</div>`;
 }
 // Un bouton qui agit au deuxième toucher : assez sûr pour ne rien perdre par erreur, sans rester appuyé
 function confirmerDeuxFois(b, question, faire) {
@@ -5814,7 +5817,7 @@ function dessinerTests() {
   document.querySelectorAll(".t-rival").forEach(x => x.onclick = () => sceneRival(D.rival[+x.dataset.i], true));
   on(".t-passage", () => scenePassage(true));
   on(".t-voyage-r", () => sceneVoyageRegion(null, true));
-  on(".t-johto", () => { const u = new URL(PW.location.href); if (EN_JOHTO) u.searchParams.delete("johto"); else u.searchParams.set("johto", "1"); u.searchParams.set("essais", "1"); PW.location.href = u.href; });
+  on(".t-johto", () => { const u = new URL(PW.location.href); if (EN_JOHTO) u.searchParams.delete("johto"); else u.searchParams.set("johto", "1"); u.searchParams.set("essais", "1"); allerA(u.href); });
   on(".t-labo", () => { const p = PROFESSEURS[CADEAU]; intro(captureEssai(auHasard(p.starters), {id: "test#" + CADEAU, shiny: false, lieu: LIEUX[0].nom,
     raison: `🎁 Cadeau du Professeur ${p.prof}`}), p); });
   on(".t-arene", x => testScene(+x.dataset.n));

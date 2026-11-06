@@ -1,6 +1,13 @@
 // Le rameur (Kiki, 06/11) : le téléphone fixé au siège compte les coups, sans rien savoir de son orientation. Inclus dans pokemon_ui.html par ecran_pokemon.py.
 // Kiki entre à la fin ce qu'affiche le rameur : ces chiffres apprennent à l'appli à les deviner (seances_rameur.modele). Les capteurs sont gardés pour régler la détection.
 
+// Changer l'adresse de la page : Streamlit interdit à ses cadres de le faire eux-mêmes (PW.location.href lève une erreur ; reload() passe). Un petit script posé dans la page parente, lui, en a le droit.
+function allerA(url) {
+  PW.__allerA = 0;
+  try { const s = P.createElement("script"); s.textContent = `window.__allerA=1;location.href=${JSON.stringify(url)};`; P.head.appendChild(s); s.remove(); } catch (e) {}
+  if (!PW.__allerA) PW.location.reload();
+}
+
 // Le calcul, sans aucun écran. ajouter(t en ms, accélération sans la pesanteur en m/s²).
 // Le rail impose une seule direction : on la retrouve dans le mouvement (axe principal), quelle que soit la façon dont le téléphone est accroché.
 const RAMEUR = {seuil: .08, oubli: 2.5, duree: [1, 8], course: .1, pic: .15, trou: 12, serie: 4};
@@ -54,7 +61,7 @@ const STYLE_RAMEUR = `
 .pkm-rameur .temps{display:flex;align-items:center;gap:4px}.pkm-rameur input{width:100%;min-width:0;box-sizing:border-box;padding:7px;background:#fff;color:#383828;border:2px solid #484838;border-radius:7px 3px;font:inherit;font-size:22px;user-select:text;-webkit-user-select:text}
 .pkm-rameur .alerte{color:#C03028}.pkm-rameur .fait{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:6px 0}.pkm-rameur .fait b{display:block;font-weight:400;font-size:25px;color:#C03028}`;
 // surFermer et quitter : pour la page du raccourci (rameur_page.html), où fermer ne ramène pas au jeu
-function ecranRameur({reprise = null, surFermer = null, quitter = null} = {}) {
+function ecranRameur({reprise = null, surFermer = null, quitter = null, note = ""} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR); installerStyle("pkm-rameur-style", STYLE_RAMEUR);
   const v = P.createElement("div"); v.className = "pkm-entr pkm-rameur"; P.body.appendChild(v);
   const parler = t => { try { const s = PW.speechSynthesis; s.cancel(); const u = new PW.SpeechSynthesisUtterance(t); u.lang = "fr-FR"; s.speak(u); } catch (e) {} };
@@ -95,7 +102,7 @@ function ecranRameur({reprise = null, surFermer = null, quitter = null} = {}) {
       }
       oublier();
       // Le rechargement peut prendre plusieurs secondes : le formulaire disparaît tout de suite, sinon on retouche le bouton sans rien voir (Kiki, 06/11 : 40 copies de la même séance)
-      const recharger = () => { const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href; };
+      const recharger = () => PW.location.reload();
       v.innerHTML = `<div class="boite"><h3>Séance gardée !</h3><p>Elle est bien sur ton téléphone. Je l'envoie et je recharge l'appli, ça peut prendre quelques secondes.</p></div><button class="sec relancer" style="visibility:hidden">Recharger l'appli</button>`;
       v.querySelector(".relancer").onclick = recharger;
       setTimeout(() => { const b2 = v.querySelector(".relancer"); if (b2) b2.style.visibility = "visible"; }, 15000);
@@ -106,7 +113,7 @@ function ecranRameur({reprise = null, surFermer = null, quitter = null} = {}) {
   if (reprise) return formulaire(reprise);
 
   v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(86)}" alt=""><h3>Le rameur</h3></div>
-      <p>Après « Lancer », tu as 10 secondes pour fixer le téléphone au siège, bien serré, dans le sens que tu veux. Démarre quand la voix dit « zéro ».</p><p>L'écran reste allumé. La voix te dira quand les coups sont comptés, puis le temps toutes les 5 minutes.</p></div>
+      <p>Après « Lancer », tu as 10 secondes pour fixer le téléphone au siège, bien serré, dans le sens que tu veux. Démarre quand la voix dit « zéro ».</p><p>L'écran reste allumé. La voix te dira quand les coups sont comptés, puis le temps toutes les 5 minutes.</p>${note ? `<p><b>${note}</b></p>` : ""}</div>
     <button class="go lancer">Lancer la séance</button><button class="sec retour">${quitter ? quitter.texte : "Retour"}</button>`;
   v.querySelector(".retour").onclick = quitter ? quitter.faire : fermer;
   v.querySelector(".lancer").onclick = async () => {
