@@ -2687,7 +2687,7 @@ const EPIQUE = (() => {
 })();
 
 // ---------- La scène du badge ----------
-function sceneBadge(n, c, rejouer = false) {
+function sceneBadge(n, c, rejouer = false, ensuite = null) {  // ensuite : la scène jouée juste après la victoire, avant que le serveur ait la ball (voir victoireDefi)
   const pause = ms => new Promise(r => setTimeout(r, ms));
   installerStyle("pkm2-badge-style", STYLE_BADGE); preparerScene(); salle();
   const lieu = LIEUX.filter(l => l.arene)[n - 1], a = lieu.arene, ch = CHAMPIONS[n], ligue = !a.type;
@@ -2840,6 +2840,11 @@ function sceneBadge(n, c, rejouer = false) {
     await pause(250); EPIQUE.fanfare();
     await pause(400);
     await dire(ligue ? `${nomDresseur()} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomDresseur()} obtient le <b>${a.badge}</b> !`);
+    if (!c && ensuite) {  // la ball n'existe pas encore côté serveur : le champion l'annonce, l'écran blanchit, la page se recharge et elle s'ouvre
+      await dire(a.pokemon ? CONFIE[ch.nom] || "Tiens, je te confie mon <b>Pokémon préféré</b>. Prends-en soin !" : `Et prends aussi ceci : une <b>Hyper Ball</b> ! Un Pokémon de type ${a.type} t'attend à l'intérieur.`, ch.nom);
+      fini = true; stop(); SONS.montee(.7); v.querySelector(".blanc").style.opacity = 1;
+      return ensuite();
+    }
     if (!c) return fin(false);
     await dire(ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
       : recompense(), ch.nom);
@@ -3551,6 +3556,14 @@ function voiesDefi() {  // chaque épreuve du défi en cours : ses voies avec o�
 }
 // Le défi est gagné d'après ce que le téléphone vient de compter (pompes, tractions) : le serveur ne le sait qu'en relisant. Le badge vient de lui : on recharge, et la scène se lance toute seule.
 const defiGagne = () => { const d = V.defi; if (!d || !d.arrive) return false; const ep = voiesDefi(); return ep.length > 0 && ep.every(e => e.fait); };
+// Le défi vient d'être gagné au téléphone : la scène du badge tout de suite, pendant que le serveur note la série ; à la fin, la page se
+// recharge sur un écran blanc et la ball s'ouvre directement (pkm_badge_joue : la scène est déjà vue). La Ligue garde le chemin d'avant.
+function victoireDefi(n) {
+  const enregistre = new Promise(ok => setTimeout(() => partagerConfirme([...ouvertes].filter(id => id.includes("geste-") && !serveur.has(id))).then(ok), 300));
+  if (n === 9) return enregistre.then(() => recevoirBadge());
+  try { localStorage.setItem("pkm_badge_joue", JSON.stringify({n, t: Date.now()})); } catch (e) {}
+  sceneBadge(n, null, false, () => enregistre.then(() => recevoirBadge()));
+}
 function recevoirBadge(essai = 1) {
   try { localStorage.setItem("pkm_badge_auto", JSON.stringify({essai, t: Date.now()})); } catch (e) {}
   const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href;
@@ -5261,6 +5274,8 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     try { await h.document.documentElement.requestFullscreen({navigationUI: "hide"}); await h.screen.orientation.lock("landscape"); } catch (e) {}
   };
   const quitterPlein = () => { const h = PAGE_HAUTE(); try { h.screen.orientation.unlock(); } catch (e) {} try { if (h.document.fullscreenElement) h.document.exitFullscreen(); } catch (e) {} };
+  // on quitte l'entraînement : si le défi du champion vient d'être gagné, la scène du badge se lance tout de suite (Kiki, 06/11 : plus de temps mort)
+  const terminer = () => { if (essai || TEST || !defiGagne()) return fermer(); const n = V.defi.numero; fermer(); victoireDefi(n); };
   const fermer = () => {
     ferme = true; nettoyer(); P.removeEventListener("visibilitychange", revient); quitterPlein();
     try { PW.speechSynthesis.cancel(); if (verrou) verrou.release(); if (video) { clearInterval(+video.dataset.t); video.pause(); video.remove(); } } catch (e) {}
@@ -5534,18 +5549,13 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
     const essaiNon = v.querySelector(".essai-non");
     if (essaiNon) confirmerDeuxFois(essaiNon, "Sûr ? Touche encore pour ne pas la compter", () => { n = 0; garder(); Object.assign(moi, avantSerie); delete moi.avant; mem[type] = moi; garderEntr(mem); fermer(); });
     v.querySelector(".suite").onclick = () => { garder(); if (!M.chrono) cible = Math.max(n, 1); repos(M.repos || REPOS_SERIE); };
-    v.querySelector(".fini").onclick = () => { garder();
-      if (essai || TEST || !defiGagne()) return fermer();
-      const qui = (CHAMPIONS[V.defi.numero] || {}).nom || "Le champion";  // la série a le temps de partir : le serveur doit la voir au rechargement
-      v.innerHTML = `<div class="rythme">${qui} s'incline !</div><div class="rythme">Ton badge arrive…</div>`;
-      // on attend que le serveur ait noté la série (Kiki, 06/11 : avec une attente fixe, la page rechargée ne la voyait parfois pas, et rien ne se passait)
-      (dernierId ? partagerConfirme([dernierId]) : Promise.resolve(true)).then(() => apres(() => recevoirBadge(), 600)); };
+    v.querySelector(".fini").onclick = () => { garder(); terminer(); };
   }
 
   function repos(s) {  // récupérer entre deux séries, c'est ce qui permet d'en refaire une vraie
     nettoyer();
     v.innerHTML = `<div class="rythme">Repos</div><div class="gros">${s}</div><div class="rythme">Respire, secoue les bras. Prochaine série : ${cible}${M.chrono ? " s" : ""}.</div><button class="go go-r">J'y retourne</button><button class="sec fini">J'ai fini</button>`;
-    v.querySelector(".fini").onclick = fermer;
+    v.querySelector(".fini").onclick = terminer;  // « J'ai fini » pendant le repos : le défi a pu être gagné à la série d'avant (oubli corrigé, Kiki 06/11)
     v.querySelector(".go-r").onclick = () => decompte(M.decompte);
     const el = v.querySelector(".gros");
     const t = setInterval(() => { s--; el.textContent = s; if (s === 10) parler("Dix secondes"); if (s <= 0) { clearInterval(t); ton(880, 0, .3, {type: "square", vol: .1}); vibre(200); decompte(M.decompte); } }, 1000);
@@ -5631,6 +5641,7 @@ const NOUVEAUTES = [
   {date: "2026-11-06b", sel: ".t-entree:not([data-n='9'])", quoi: "une arrivée différente pour chaque champion"},
   {date: "2026-11-06c", sel: ".t-sball", quoi: "« Génération 1 » affichée dès Kanto"},
   {date: "2026-11-06d", sel: ".t-arene:not([data-n='9'])", quoi: "au badge, le champion ne se présente plus"},
+  {date: "2026-11-06e", sel: ".t-victoire", quoi: "la victoire au défi : la scène s'enchaîne tout de suite"},
   {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
 ];
 function marquerNouveautes(el) {
@@ -5676,7 +5687,7 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DUELS).map(q => b(`t-entr" data-e="pompes" data-c="${q}`, `Arène : ${q}`)).join("")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
-      ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
+      ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${b("t-victoire", `${ico(IMG.badge(1), "p")} 4. Défi gagné : la suite immédiate`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
     <div class="groupe">Les ouvertures<small>Les nouveautés : une scène à part pour les légendaires, la Shiny Ball, le raté de la chasse.</small></div>
     <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
@@ -5701,6 +5712,8 @@ function dessinerTests() {
   on(".t-velo", () => { sceneVelo(true); V.velo = V.velo || "essai"; dessinerVoyage(); });
   document.querySelectorAll("#tests .t-entr").forEach(x => x.onclick = () => entrainement(x.dataset.e, {essai: true, decorEssai: x.dataset.d, shinyEssai: !!x.dataset.s, duelEssai: x.dataset.c || null}));
   on(".t-pantheon", () => scenePantheon());
+  on(".t-victoire", () => sceneBadge(1, null, false, () => { const b2 = P.querySelector("#pkm-badge"); setTimeout(() => { if (b2) b2.remove();
+    ouvrir(captureEssai(CHAMPIONS[1] && LIEUX.filter(l => l.arene)[0].arene.pokemon || 95, {ball: "hyper", champion: true, champN: 1, fond: (EN_JOHTO ? "jarene" : "arene") + 1, raison: "🏅 Aperçu"}), false, true); }, 900); }));
   on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
   on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
   on(".t-sball", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "shiny", shiny: true, fond: "prairie", raison: "👑 Aperçu : Shiny Ball"})));
@@ -5783,12 +5796,17 @@ dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessine
   const chen = CAPTURES.find(c => c.id.endsWith("#" + CADEAU));
   const attendu = (() => { try { const f = localStorage.getItem("pkm_badge_auto"); localStorage.removeItem("pkm_badge_auto"); return f ? JSON.parse(f) : null; } catch (e) { return null; } })();
   const badgeAuto = attendu && aOuvrir().find(estBadge);
-  if (badgeAuto) setTimeout(() => lancer(badgeAuto), 900);  // le défi vient d'être gagné : la scène du badge, tout de suite
+  const joue = (() => { try { const f = JSON.parse(localStorage.getItem("pkm_badge_joue") || "null"); return f && Date.now() - f.t < 600000 ? f.n : null; } catch (e) { return null; } })();
+  if (badgeAuto && joue && badgeAuto.id.endsWith("#badge" + joue)) {  // la scène a déjà été jouée avant le rechargement : la ball s'ouvre tout de suite
+    try { localStorage.removeItem("pkm_badge_joue"); } catch (e) {}
+    setTimeout(() => ouvrir(badgeAuto, false, true), 300);
+  }
+  else if (badgeAuto) setTimeout(() => lancer(badgeAuto), 900);  // le défi vient d'être gagné : la scène du badge, tout de suite
   // pas encore là (le serveur n'a pas fini de noter la série) : on le dit, et on relit dans quelques secondes (4 fois au plus, dans les 2 minutes)
   else if (attendu && (attendu.essai || 1) < 5 && Date.now() - (attendu.t || 0) < 120000 && V.defi && V.defi.arrive) {
     const qui = (CHAMPIONS[V.defi.numero] || {}).nom || "Le champion", m = P.createElement("div");
     m.style.cssText = "position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:999999;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);padding:14px 18px;font:22px 'Jersey 15',monospace;color:#383828;text-align:center;max-width:80vw";
-    m.innerHTML = `${qui} prépare ton badge…<br><small style="color:#686850;font-size:17px">Encore un instant</small>`;
+    m.innerHTML = `${joue ? `${qui} te tend sa ball…` : `${qui} prépare ton badge…`}<br><small style="color:#686850;font-size:17px">Encore un instant</small>`;
     P.body.appendChild(m); setTimeout(() => recevoirBadge((attendu.essai || 1) + 1), 5000);
   }
   else if (chen && !estOuverte(chen)) setTimeout(() => REG.index ? sceneVoyageRegion(chen) : demarrerAventure(chen), 400);
