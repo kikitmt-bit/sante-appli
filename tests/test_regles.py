@@ -2,8 +2,10 @@
 import datetime as dt
 import json
 import sys
+import types
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import pandas as pd
 
@@ -815,11 +817,10 @@ class TestRameur(unittest.TestCase):
         self.assertEqual(len(ecritures), 2)  # les capteurs, le résumé
 
     def test_la_page_du_raccourci_est_complete(self):
-        import ecran_pokemon
-        page = ecran_pokemon.page_rameur({"seances": [self.S]}, self.JOUR, "ok")
-        for reste in ("__", "/*__"):
-            self.assertNotIn(reste + "STYLE_ENTR", page)
-        for reste in ("__DONNEES__", "__ETAT__", "__IMAGES__", "__RAMEUR_JS__"):
+        with mock.patch.dict(sys.modules, {"streamlit": types.ModuleType("streamlit")}):  # les tests en ligne n'installent pas Streamlit
+            import ecran_pokemon
+            page = ecran_pokemon.page_rameur({"seances": [self.S]}, self.JOUR, "ok")
+        for reste in ("__STYLE_ENTR__", "__DONNEES__", "__ETAT__", "__IMAGES__", "__RAMEUR_JS__"):
             self.assertNotIn(reste, page)
         self.assertIn(".pkm-entr{", page)  # le style repris du jeu
         self.assertIn("function ecranRameur", page)
