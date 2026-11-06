@@ -1112,8 +1112,9 @@ const STYLE_VOILE = `
 #pkm-voile .carte.jeu .phrase b{color:#C03028;font-weight:400}
 #pkm-voile .carte.jeu .l2{display:flex;align-items:center;flex-wrap:wrap;gap:4px 8px}
 #pkm-voile .carte.jeu .l2 .pkm-type{margin:0;font-family:Outfit,sans-serif}
-#pkm-voile .carte.jeu .cpt{font-size:16px;color:#5A6585;margin-left:auto}
+#pkm-voile .carte.jeu .cpt{font-size:16px;color:#5A6585}
 #pkm-voile .carte.jeu .boutons{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+#pkm-voile .carte.jeu .l2 .boutons{margin:4px 0 0 auto}
 #pkm-voile .carte.jeu .boutons button{flex:0 0 auto;min-width:96px;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;
   font:700 19.2px 'Jersey 15',monospace;background:#F8F8F8;color:#283048;box-shadow:0 0 0 2px #283048,0 3px 0 2px #283048}
 #pkm-voile .carte.jeu .boutons button:before{content:"▶ ";color:#E04040}
@@ -1810,10 +1811,9 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
                   r.leg ? `<b class="et et-leg">LÉGENDAIRE</b>` : ""].join("");
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
-    carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
+    carte.innerHTML = `<div class="l1">${etiq}<span class="cpt">Génération ${genDe(c.num)} · Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span><span class="no">N° ${N3(c.num)}</span></div>
       <div class="phrase">${champDe(c) ? `${champDe(c).nom} te confie son <b>${c.nom}</b> !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
-      <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">Génération ${genDe(c.num)} · Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
-      <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
+      <div class="l2">${typesHTML(c.types, "pkm-type")}<div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
     carte.querySelector(".ok").onclick = fermer;
     const sb = carte.querySelector(".suite");
@@ -2968,7 +2968,7 @@ async function demarrerAventure(chen, essai = false) {
 // --- Le début du jeu (Kiki, 05/11) : la chambre au matin, le village, « Attends ! » au bord des hautes herbes, puis le labo ; après le starter, le Pokédex qui lit la montre.
 // Chaque plan se passe : ✕ saute tout ce qui reste jusqu'au labo.
 const STYLE_DEBUT = `
-.pkm-ecran .marche-d{position:absolute;left:50%;top:60%;width:9%;transform:translate(-50%,-100%);transition:left 7s linear,top 7s linear,width 7s linear;z-index:6}
+.pkm-ecran .marche-d{position:absolute;left:50%;top:60%;width:10.4%;transform:translate(-50%,-100%);transition:left 7s linear,top 7s linear,width 7s linear;z-index:6}
 .pkm-ecran .marche-d .sacha{width:100% !important;background-repeat:no-repeat;image-rendering:pixelated}
 .pkm-ecran .ecran-dex{position:absolute;z-index:6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5vh;color:#203818;font-family:'Jersey 15',monospace;text-align:center;opacity:0;transition:opacity .5s}
 .pkm-ecran .ecran-dex.vu{opacity:1}
@@ -3003,7 +3003,7 @@ async function sceneDebut() {
     colorerDresseur(v);
     const d = v.querySelector(".marche-d"), e = d.querySelector(".sacha"), f = PAS.haut; let k = 0;
     const pas = setInterval(() => { e.style.backgroundPosition = `${f[k++ % f.length] / 8 * 100}% 0`; }, 190);
-    requestAnimationFrame(() => requestAnimationFrame(() => { d.style.left = "68%"; d.style.top = "41%"; d.style.width = "6%"; }));
+    requestAnimationFrame(() => requestAnimationFrame(() => { d.style.left = "68%"; d.style.top = "41%"; d.style.width = "6.9%"; }));
     return () => clearInterval(pas);
   };
   const suite = await plan("pkm-chambre", "debut-chambre.webp", [`Ce matin, ${nom}, c'est le grand jour.`, "Ton sac est prêt, tes chaussures aussi. Dehors, tout un monde t'attend !"], null, reveil)
@@ -3270,21 +3270,18 @@ async function sceneCarnet(cle, prof) {
   await Promise.race([jouer, fin]); E.fin(); v.style.transition = "opacity .6s"; v.style.opacity = 0; await attendre(600); v.remove(); return !coupe;
 }
 async function sceneGenerique(cle) {
-  // Kiki, 06/11 : le défilé des Pokémon et le dresseur collé avec son starter (mauvaises proportions) sont retirés ; restent les deux images,
-  // le panorama de la région qui défile en musique, puis la vue au coucher du soleil
+  // Kiki, 06/11 : le panorama sans les Pokémon était vide et cassait le rythme ; reste le coucher de soleil, quelques secondes, avant le téléphone
   installerStyle("pkm2-passage-style", STYLE_PASSAGE);
-  const E = ecran("pkm-generique", `passage-${cle}-2.webp`, 1536, 1024), v = E.v, duree = 14000;
-  v.classList.add("panorama");
-  const air = airAnime(v.querySelector("canvas.air"), "Ligue"); let coupe = false;
-  const fin = new Promise(ok => { v.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); }; });
-  const jouer = (async () => { await attendre(200); v.querySelector(".noir").style.opacity = 0; EPIQUE.fanfare(); defiler(v.querySelector(".salle"), duree); await attendre(duree); })().catch(() => {});
-  await Promise.race([jouer, fin]); air.stop(); E.fin();
-  if (coupe) { v.remove(); return false; }
-  v.querySelector(".noir").style.opacity = 1; await attendre(1000); v.remove();
-  // le dernier plan : la région vue d'en haut, au coucher du soleil, la caméra s'approche doucement
-  const E2 = ecran("pkm-falaise", `passage-${cle}-3.webp`, 940, 1672), v2 = E2.v;
-  await attendre(200); v2.querySelector(".noir").style.opacity = 0; setTimeout(() => { E2.salle.style.transition = "transform 7s ease-out"; E2.salle.style.transform = "translateX(-50%) scale(1.08)"; }, 300);
-  await attendre(6400); v2.querySelector(".noir").style.opacity = 1; await attendre(1100); E2.fin(); v2.remove(); return true;
+  const E2 = ecran("pkm-falaise", `passage-${cle}-3.webp`, 940, 1672), v2 = E2.v; let coupe = false;
+  const fin = new Promise(ok => { v2.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); }; });
+  const jouer = (async () => {
+    await attendre(200); v2.querySelector(".noir").style.opacity = 0; EPIQUE.fanfare();
+    setTimeout(() => { E2.salle.style.transition = "transform 7s ease-out"; E2.salle.style.transform = "translateX(-50%) scale(1.08)"; }, 300);
+    await attendre(6000);
+  })().catch(() => {});
+  await Promise.race([jouer, fin]); E2.fin();
+  if (coupe) { v2.remove(); return false; }
+  v2.querySelector(".noir").style.opacity = 1; await attendre(1100); v2.remove(); return true;
 }
 function sonnerie(n = 3) { let k = 0; const f = () => { if (k++ >= n) return; ton(880, 0, .12, {type: "square", vol: .05}); ton(740, .16, .12, {type: "square", vol: .05}); setTimeout(f, 1400); }; f(); }
 async function sceneAppel(cle, prof, suivante, phrase, essai) {
@@ -5643,6 +5640,9 @@ const NOUVEAUTES = [
   {date: "2026-11-06d", sel: ".t-arene:not([data-n='9'])", quoi: "au badge, le champion ne se présente plus"},
   {date: "2026-11-06e", sel: ".t-victoire", quoi: "la victoire au défi : la scène s'enchaîne tout de suite"},
   {date: "2026-11-06f", sel: ".t-debut", quoi: "le jeu s'appelle Poké Fit"},
+  {date: "2026-11-06g", sel: ".t-debut", quoi: "le dresseur un peu plus grand sur le chemin du village"},
+  {date: "2026-11-06g", sel: ".t-sball", quoi: "la boîte de capture : génération et nature en haut, OK à côté des types"},
+  {date: "2026-11-06g", sel: ".t-passage", quoi: "fin de Kanto : le Carnet, le coucher de soleil, le téléphone"},
   {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
 ];
 function marquerNouveautes(el) {
