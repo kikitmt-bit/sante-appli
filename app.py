@@ -468,24 +468,12 @@ def envoyer_rameur():
             ok = seances_rameur.ranger(texte, lambda p: lire_depot([PREFIXE + p], {PREFIXE + p})[PREFIXE + p], lambda p, o, msg: ecrire_depot(PREFIXE + p, o, msg))
         except (ValueError, KeyError, TypeError, Panne):
             ok = False
-        st.session_state["rameur_etat"] = "ok" if ok else "erreur"
         if ok:
             st.session_state["rameur_envoye"] = hash(texte)
             streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_rameur')", key="rameur_effacer")
             st.toast("🚣 Séance de rameur enregistrée !")
         else:
             st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
-
-
-def page_rameur():
-    """Le raccourci de l'écran d'accueil (?rameur=1) : ni récolte Google, ni jeu, ni graphiques, seulement de quoi ramer tout de suite. Le rameur marche même si GitHub ne répond pas."""
-    envoyer_rameur()
-    try:
-        fichier = lire_depot([PREFIXE + seances_rameur.FICHIER], {PREFIXE + seances_rameur.FICHIER})[PREFIXE + seances_rameur.FICHIER]
-    except Panne:
-        fichier = None
-    st.iframe(ecran_pokemon.page_rameur(fichier, dt.datetime.now(TZ).date(), st.session_state.get("rameur_etat", "")), height=10)
-    st.stop()
 
 
 def bloc_rameur(debut, fin, un_jour, j_ref, lire_vite):
@@ -915,17 +903,18 @@ JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if 
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
-if st.query_params.get("rameur"):
-    page_rameur()
+# Le raccourci de la muscu (?muscu=1, Kiki, 06/11 ; ?rameur=1 : l'ancien raccourci, qui mène au même endroit) : le jeu seul, sur l'onglet Muscu, sans récolte Google, ni page Santé, ni les autres joueurs
+DIRECT = bool(st.query_params.get("muscu") or st.query_params.get("rameur"))
 
 if "message_maj" in st.session_state:
     st.toast(st.session_state.pop("message_maj"))
 with st.container(key="outils", horizontal=True):
     st.button("⚙️", key="cfg", on_click=lambda: st.session_state.update(config=True))
-st.markdown(NAV, unsafe_allow_html=True)
+if not DIRECT:
+    st.markdown(NAV, unsafe_allow_html=True)
 # Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois en 5 min
 # par joueur. 5 s d'attente au plus, en tâche de fond ensuite : le jeu s'affiche, et un point sur le bouton Synchroniser dit qu'elles sont là (suivi_recolte).
-if st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
+if not DIRECT and st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
     st.session_state["recolte_ouverture"] = True
     recoltes, maintenant_s = _recoltes_ouverture(), time.time()
     if maintenant_s - recoltes.get(AMI, 0) > 300:
@@ -959,6 +948,10 @@ if not AMI:  # L'apprentissage du téléphone (entraînement) : ses mesures, ran
         else:
             st.toast("⚠️ Mesures pas envoyées : elles restent sur ton téléphone, recharge l'appli pour réessayer.")
 envoyer_rameur()
+if DIRECT:
+    with st.container(key="page_jeu"):
+        ecran_pokemon.afficher(lambda chemins: lire(chemins, {pokemon.FIGEES, pokemon.OUVERTES, seances_rameur.FICHIER}), dt.datetime.now(TZ).date(), JOUEUR, None, PROFIL["anniversaire"], profil=PROFIL, direct=True)
+    st.stop()
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:

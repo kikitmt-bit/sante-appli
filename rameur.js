@@ -60,14 +60,13 @@ const STYLE_RAMEUR = `
 .pkm-rameur .champs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.pkm-rameur label{display:block;color:#686850;font-size:16px}
 .pkm-rameur .temps{display:flex;align-items:center;gap:4px}.pkm-rameur input{width:100%;min-width:0;box-sizing:border-box;padding:7px;background:#fff;color:#383828;border:2px solid #484838;border-radius:7px 3px;font:inherit;font-size:22px;user-select:text;-webkit-user-select:text}
 .pkm-rameur .alerte{color:#C03028}.pkm-rameur .fait{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:6px 0}.pkm-rameur .fait b{display:block;font-weight:400;font-size:25px;color:#C03028}`;
-// surFermer et quitter : pour la page du raccourci (rameur_page.html), où fermer ne ramène pas au jeu
-function ecranRameur({reprise = null, surFermer = null, quitter = null, note = ""} = {}) {
+function ecranRameur({reprise = null} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR); installerStyle("pkm-rameur-style", STYLE_RAMEUR);
   const v = P.createElement("div"); v.className = "pkm-entr pkm-rameur"; P.body.appendChild(v);
   const parler = t => { try { const s = PW.speechSynthesis; s.cancel(); const u = new PW.SpeechSynthesisUtterance(t); u.lang = "fr-FR"; s.speak(u); } catch (e) {} };
   let verrou = null, chrono = null, garde = null, lire = null, surVisible = null;
   const couper = () => { clearInterval(chrono); clearInterval(garde); if (lire) PW.removeEventListener("devicemotion", lire); if (surVisible) P.removeEventListener("visibilitychange", surVisible); try { if (verrou) verrou.release(); } catch (e) {} };
-  const fermer = () => { couper(); v.remove(); if (surFermer) surFermer(); };
+  const fermer = () => { couper(); v.remove(); };
   const oublier = () => { try { localStorage.removeItem(RAMEUR_ENCOURS); } catch (e) {} };
 
   function formulaire(e) {
@@ -113,9 +112,9 @@ function ecranRameur({reprise = null, surFermer = null, quitter = null, note = "
   if (reprise) return formulaire(reprise);
 
   v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(86)}" alt=""><h3>Le rameur</h3></div>
-      <p>Après « Lancer », tu as 10 secondes pour fixer le téléphone au siège, bien serré, dans le sens que tu veux. Démarre quand la voix dit « zéro ».</p><p>L'écran reste allumé. La voix te dira quand les coups sont comptés, puis le temps toutes les 5 minutes.</p>${note ? `<p><b>${note}</b></p>` : ""}</div>
-    <button class="go lancer">Lancer la séance</button><button class="sec retour">${quitter ? quitter.texte : "Retour"}</button>`;
-  v.querySelector(".retour").onclick = quitter ? quitter.faire : fermer;
+      <p>Après « Lancer », tu as 10 secondes pour fixer le téléphone au siège, bien serré, dans le sens que tu veux. Démarre quand la voix dit « zéro ».</p><p>L'écran reste allumé. La voix te dira quand les coups sont comptés, puis le temps toutes les 5 minutes.</p></div>
+    <button class="go lancer">Lancer la séance</button><button class="sec retour">Retour</button>`;
+  v.querySelector(".retour").onclick = fermer;
   v.querySelector(".lancer").onclick = async () => {
     audio();
     if (PW.DeviceMotionEvent && PW.DeviceMotionEvent.requestPermission) { try { await PW.DeviceMotionEvent.requestPermission(); } catch (e) {} }

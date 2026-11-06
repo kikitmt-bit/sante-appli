@@ -7,7 +7,6 @@ import datetime as dt
 import hashlib
 import hmac
 import json
-import re
 from pathlib import Path
 
 import streamlit as st
@@ -22,7 +21,6 @@ from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, LEGENDAIRES, POIDS
 UI = Path(__file__).with_name("pokemon_ui.html")
 DANSE = Path(__file__).with_name("danse.js")
 RAMEUR = Path(__file__).with_name("rameur.js")
-RAMEUR_PAGE = Path(__file__).with_name("rameur_page.html")
 
 
 def _js(objet):
@@ -53,18 +51,11 @@ def _acces_jeu(joueur):
     return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
 
 
-def page_rameur(fichier, aujourd, etat=""):
-    """La page du raccourci (?rameur=1) : l'écran du rameur seul, le style de l'entraînement repris du jeu. etat = "ok" ou "erreur" au retour d'un enregistrement."""
-    style = re.search(r"const STYLE_ENTR = `(.*?)`;", UI.read_text(encoding="utf-8"), re.S)[1]
-    return (RAMEUR_PAGE.read_text(encoding="utf-8").replace("__STYLE_ENTR__", style).replace("__IMAGES__", pokemon.IMAGES).replace("__ETAT__", etat)
-            .replace("__DONNEES__", _js(seances_rameur.pour_ecran(fichier, aujourd))).replace("/*__RAMEUR_JS__*/", RAMEUR.read_text(encoding="utf-8")))
-
-
-def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=(), chansons=(), profil=None):
+def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=(), chansons=(), profil=None, direct=False):
     """joueur = {"id", "debut"} pour un ami (lire donne alors ses fichiers à lui), None pour Kiki ; conseil = la phrase utile du
     récap du matin (bilan.conseil_du_jour) ; anniversaire = c'est son anniversaire aujourd'hui (date gardée sur son téléphone) ;
     joueurs = tous les joueurs résumés pour le jeu (amis.public, soi compris : « moi »), pour la carte et l'onglet Dresseur ;
-    chansons = les musiques de la danse au doigt (danse.charger)."""
+    chansons = les musiques de la danse au doigt (danse.charger) ; direct = le raccourci de la muscu, le jeu s'ouvre sur cet onglet, sans aucune scène."""
     with st.spinner("Ouverture du Pokédex…"):
         captures, etat = pokemon.charger_jeu(lire, aujourd, joueur, anniversaire)
         f = lire([pokemon.OUVERTES])
@@ -96,6 +87,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "rival": rival.pour_ecran(etat, aujourd, profil),
         "moments": etat["moments"],
         "kiki": joueur is None,
+        "direct": direct,
         # les tests, les aperçus et les réglages des capteurs : Kiki seul, avec ?essais=1 dans l'adresse (le reste du jeu doit rester une surprise, pour lui aussi)
         "essais": joueur is None and st.query_params.get("essais") == "1",
         "captures": [{

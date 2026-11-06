@@ -2,10 +2,8 @@
 import datetime as dt
 import json
 import sys
-import types
 import unittest
 from pathlib import Path
-from unittest import mock
 
 import pandas as pd
 
@@ -815,16 +813,6 @@ class TestRameur(unittest.TestCase):
         texte = json.dumps([{"seance": self.S, "brut": "1,2,3", "coups": []}] * 40)
         self.assertTrue(seances_rameur.ranger(texte, lambda p: None, lambda p, o, m: ecritures.append(p) or True))
         self.assertEqual(len(ecritures), 2)  # les capteurs, le résumé
-
-    def test_la_page_du_raccourci_est_complete(self):
-        with mock.patch.dict(sys.modules, {"streamlit": types.ModuleType("streamlit")}):  # les tests en ligne n'installent pas Streamlit
-            import ecran_pokemon
-            page = ecran_pokemon.page_rameur({"seances": [self.S]}, self.JOUR, "ok")
-        for reste in ("__STYLE_ENTR__", "__DONNEES__", "__ETAT__", "__IMAGES__", "__RAMEUR_JS__"):
-            self.assertNotIn(reste, page)
-        self.assertIn(".pkm-entr{", page)  # le style repris du jeu
-        self.assertIn("function ecranRameur", page)
-        self.assertIn('"minutes":20', page)
 
     def test_si_github_refuse_rien_n_est_oublie(self):
         self.assertFalse(seances_rameur.ranger(json.dumps([{"seance": self.S}]), lambda p: None, lambda p, o, m: False))
