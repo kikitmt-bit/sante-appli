@@ -715,6 +715,39 @@ class Rival(unittest.TestCase):
         for secret in ("sommeil", "fc_repos", "vfc", "gras", "'pas'", "9007"):
             self.assertNotIn(secret, texte)
 
+    def test_une_pesee_a_la_main_compte_comme_une_autre(self):
+        import pesees
+        matin = dt.datetime(2026, 11, 9, 8, 30, tzinfo=dt.timezone(dt.timedelta(hours=1)))
+        f = pesees.noter(None, matin, 74.56, 21.2)
+        self.assertEqual(f["pesees"][0]["kg"], 74.6)
+        r = pesees.fusionner({}, f)["2026-11-09"]
+        self.assertTrue(pokemon.pesee_matin(r))
+        self.assertEqual(pokemon.pesees_du_jour(r)[0][1:], (74.6, 21.2))
+        s = chiffres.stats_jour(r)
+        self.assertEqual((s["poids"], s["gras"]), (74.6, 21.2))
+        f = pesees.noter(f, matin.replace(hour=9), 74.0)  # la même journée : elle remplace
+        self.assertEqual([p["kg"] for p in f["pesees"]], [74.0])
+        self.assertFalse(pokemon.pesee_matin(pesees.fusionner({}, pesees.noter(None, matin.replace(hour=15), 74))["2026-11-09"]))
+        with self.assertRaises(ValueError):
+            pesees.noter(None, matin, 7)
+        vrai = {"2026-11-09": {"steps:jour": []}}
+        self.assertIs(pesees.fusionner(vrai, None), vrai)
+
+    def test_les_chiffres_de_sante_parlent(self):
+        import lisible
+        self.assertEqual(lisible.coeur_repos(55)["ton"], "bon")
+        self.assertEqual(lisible.coeur_repos(90)["ton"], "alerte")
+        self.assertEqual(lisible.recuperation(20, 30)["ton"], "alerte")
+        self.assertEqual(lisible.recuperation(30, 30)["ton"], "neutre")
+        self.assertEqual(lisible.recuperation(40, 30)["ton"], "bon")
+        self.assertEqual(lisible.oxygene(97.6, 96.2)["ton"], "bon")
+        self.assertIn("médecin", lisible.oxygene(90)["plus"])
+        self.assertEqual(lisible.respiration(14)["ton"], "bon")
+        self.assertIn("80", lisible.calories(2000, 80)[1])
+        stats = pd.DataFrame({jour(k): {"pas": 6000 + k * 100, "zone_sport": 0, "km": 4} for k in range(20)}).T
+        self.assertIn("Objectif atteint", " ".join(lisible.faits_periode(stats)))
+        self.assertTrue(lisible.faits_journee(stats, jour(19), jour(25)))
+
     def test_chaque_region_a_quatre_rencontres(self):
         import regions
         for r in regions.REGIONS:

@@ -3850,7 +3850,7 @@ function dessinerSpeciales() {
     S ? {cle: "semaine", ic: ico("super"), nom: "Ta semaine", val: `${S.jours_ok} / ${R.hebdo_jours} jours · ${S.familles.length} / ${R.familles_semaine} sports`, p: pct(S.jours_ok, R.hebdo_jours), detail: carteSemaine()} : null,
     {cle: "shiny", ic: ico("sball"), nom: "Shiny Ball", val: `${J.serie} / ${R.master_jours} jours`, p: pct(J.serie, R.master_jours), detail: carteShiny},
     {cle: "nuit", ic: ico("nuit"), nom: "Bonne nuit", val: `${J.sommeil ? h(J.sommeil) : "—"} / ${h(R.nuit)}`, p: pct(J.sommeil, R.nuit), detail: carteNuit},
-    D.pesees ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb} / ${D.pesees.cible} cette semaine`, p: pct(D.pesees.nb, D.pesees.cible), detail: cartePesee()} : null,
+    D.pesees && (balanceDe() !== "aucune" || D.pesees.nb) ? {cle: "pesee", ic: ico("masse"), nom: "Pesée", val: `${D.pesees.nb} / ${D.pesees.cible} cette semaine`, p: pct(D.pesees.nb, D.pesees.cible), detail: cartePesee()} : null,
     ...(V.sanctuaires || []).filter(x => x.atteint && !x.fait).map((x, i) => ({cle: "sanct" + i, ic: ico("master"), nom: "Sanctuaire", val: `${x.valeur} / ${x.cible} jours`, p: pct(x.valeur, x.cible), detail: carteSanctuaire(x)})),
     G.chasse && G.chasse.actif ? {cle: "chasse", ic: ico("radar"), nom: "Chasse aux shiny", val: `${Math.round(G.chasse.chance * 100)} %`, p: G.chasse.chance * 100, detail: carteChasse()} : null,
   ].filter(Boolean);
@@ -3950,7 +3950,7 @@ function cartePesee() {  // une petite tuile (demi-largeur) : la moins important
   }
   return `<div class="speciale pesee ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
     <div class="tete">${ico("masse")}Pesée</div>
-    <div class="gain">+${p.bonus || 10} pts par pesée du matin (avant ${p.avant} h), ${p.cible} par semaine au plus</div>
+    <div class="gain">+${p.bonus || 10} pts par pesée du matin (avant ${p.avant} h), ${p.cible} par semaine au plus${balanceDe() === "manuelle" ? ". Note-la dans Santé, rubrique Poids." : ""}</div>
     <div class="semaine-pesee">${p.semaine.map((x, i) => `<i class="${x === 1 ? "on" : x === 0 ? "rate" : i === p.semaine.indexOf(null) ? "auj" : ""}">${jours[i]}</i>`).join("")}</div>
     <div class="reste">${ok ? "Objectif de la semaine atteint !" : `Encore <b>${reste}</b> cette semaine`}</div>${comp}</div>`;
 }
@@ -4201,6 +4201,8 @@ let DRESSEUR_ESSAI = null;  // le pseudo tapé pendant l'aperçu de l'accueil (j
 const nomDresseur = () => DRESSEUR_ESSAI || DRESSEUR.nom || "Sacha";
 // Mon matériel : pour que personne n'ait une mission ou un défi impossible. Tant que rien n'est réglé : tout pour Kiki, rien pour un ami (comme missions.materiel_de).
 const MATERIELS = [["rameur", "Rameur"], ["tapis", "Tapis de danse"], ["velo", "Vélo"], ["barre", "Barre de traction"]];
+const BALANCES = [["connectee", "Connectée"], ["manuelle", "Normale"], ["aucune", "Aucune"]];
+const balanceDe = (d = DRESSEUR) => d.balance || (D.kiki ? "connectee" : "aucune");  // pas encore réglé : la balance connectée de Kiki, rien pour un ami
 const materielDe = (d = DRESSEUR) => Array.isArray(d.materiel) ? d.materiel : D.kiki ? MATERIELS.map(m => m[0]) : [];
 const DEFI_MATERIEL = {eau: "rameur", tractions: "barre"};  // une voie de défi qui demande du matériel
 const IMAGES_DRESSEUR = new Map();  // feuille + couleurs -> image recoloriée (data URL)
@@ -4266,7 +4268,7 @@ const STYLE_DRESSEUR = `
 .carte-dresseur input{width:100%;min-width:0;border:0;background:transparent;font:700 20.4px 'Jersey 15',Outfit,monospace;color:#283048;outline:none;
   text-align:right;padding:0}
 .carte-dresseur .profil{margin-top:8px;display:grid;grid-template-columns:1fr;gap:5px}
-.carte-dresseur .profil .materiel{cursor:default;flex-wrap:wrap}.carte-dresseur .choix-mat{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto;justify-content:flex-end}
+.carte-dresseur .profil .materiel{cursor:default;flex-wrap:wrap}.carte-dresseur .choix-mat button.coche{position:relative;width:26px;height:26px;padding:0;background:#F8F8E8!important}.carte-dresseur .choix-mat button.coche.on:after{content:"✓";position:absolute;inset:0;display:grid;place-items:center;font-size:22px;color:#C03028}.carte-dresseur .choix-mat{display:flex;flex-wrap:wrap;gap:4px;margin-left:auto;justify-content:flex-end}
 .carte-dresseur .choix-mat button{font:400 16px 'Jersey 15',monospace;padding:2px 6px;background:#F8F8E8;border:2px solid #484838;border-radius:5px;color:#383828;cursor:pointer}.carte-dresseur .choix-mat button.on{background:#D83830;color:#fff}
 .carte-dresseur .profil .boite{cursor:text;min-width:0;gap:4px}.carte-dresseur .profil .boite>span:first-child{flex:0 0 auto;font-size:15px}
 .carte-dresseur .profil input{font:400 18px 'Jersey 15',Outfit,monospace;min-height:24px;background:none}
@@ -4346,7 +4348,9 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
       <small>Facultatif. Rend ton bilan santé plus juste. Ça reste sur ton téléphone.</small>
       <div class="boite materiel"><span>MATÉRIEL</span><span class="choix-mat">${MATERIELS.map(([k, n]) => `<button type="button" data-m="${k}" class="${materielDe(d).includes(k) ? "on" : ""}">${n}</button>`).join("")}</span></div>
       <small>Coche ce que tu as : tes missions et les défis des champions s'adaptent, à partir de demain.</small>
-      <div class="boite materiel"><span>RÉCAP DU MATIN</span><span class="choix-mat choix-recap"><button type="button" class="${(() => { try { return localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return true; } })() ? "on" : ""}">Infirmière Joëlle</button></span></div>
+      <div class="boite materiel"><span>BALANCE</span><span class="choix-mat choix-balance">${BALANCES.map(([k, n]) => `<button type="button" data-b="${k}" class="${balanceDe(d) === k ? "on" : ""}">${n}</button>`).join("")}</span></div>
+      <small>Connectée : tes pesées arrivent toutes seules. Normale : tu les notes dans l'onglet Santé, rubrique Poids.</small>
+      <div class="boite materiel"><span>RÉCAP DU MATIN</span><span class="choix-mat choix-recap"><button type="button" aria-label="Récap du matin" class="coche ${(() => { try { return localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return true; } })() ? "on" : ""}"></button></span></div>
       <small>Elle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
@@ -4369,12 +4373,14 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   f.querySelectorAll("input").forEach(i => i.onkeydown = e => { if (e.key === "Enter" || e.keyCode === 13) { e.preventDefault(); i.blur(); } });
   f.querySelectorAll(".choix-sexe button").forEach(b => b.onclick = () => { const deja = b.classList.contains("on");
     f.querySelectorAll(".choix-sexe button").forEach(x => x.classList.remove("on")); if (!deja) b.classList.add("on"); vibre(8); });
-  f.querySelectorAll(".choix-mat button").forEach(b => b.onclick = () => { b.classList.toggle("on"); vibre(8); });
-  const avant = JSON.stringify([d.naissance || "", +d.taille || 0, d.sexe || ""]);
+  f.querySelectorAll(".choix-mat:not(.choix-balance) button").forEach(b => b.onclick = () => { b.classList.toggle("on"); vibre(8); });
+  f.querySelectorAll(".choix-balance button").forEach(b => b.onclick = () => { f.querySelectorAll(".choix-balance button").forEach(x => x.classList.remove("on")); b.classList.add("on"); vibre(8); });
+  const avant = JSON.stringify([d.naissance || "", +d.taille || 0, d.sexe || "", balanceDe(d)]);
   const lireProfil = () => { const n = f.querySelector(".naissance").value, t = Math.round(+f.querySelector(".taille").value);
     d.naissance = /^\d{4}-\d{2}-\d{2}$/.test(n) && n >= "1920-01-01" && n <= D.aujourdhui ? n : ""; d.taille = t >= 100 && t <= 250 ? t : 0;
     const sx = f.querySelector(".choix-sexe button.on"); d.sexe = sx ? sx.dataset.s : "";
-    d.materiel = [...f.querySelectorAll(".choix-mat:not(.choix-recap) button.on")].map(b => b.dataset.m);
+    d.materiel = [...f.querySelectorAll(".choix-mat:not(.choix-recap):not(.choix-balance) button.on")].map(b => b.dataset.m);
+    d.balance = (f.querySelector(".choix-balance button.on") || {dataset: {b: balanceDe(d)}}).dataset.b;
     try { localStorage.setItem("pkm_recap_non", f.querySelector(".choix-recap button.on") ? "0" : "1"); } catch (e) {} };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
@@ -4382,7 +4388,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
       if (enregistrer) { d.nom = champ.value.trim().slice(0, 12); d.partie = R.partie; lireProfil(); DRESSEUR = d;
         try { localStorage.setItem("pkm_dresseur", JSON.stringify(d)); } catch (e) {} dessinerVoyage(); dessinerMonDresseur(); dessinerAmis();
         // l'âge et la taille servent au bilan, calculé par l'appli : elle doit les relire (sauf au tout début : l'aventure continue)
-        if (!accueil && JSON.stringify([d.naissance, d.taille, d.sexe]) !== avant && PW !== window) { f.remove(); ok(enregistrer); return PW.location.reload(); } }
+        if (!accueil && JSON.stringify([d.naissance, d.taille, d.sexe, d.balance]) !== avant && PW !== window) { f.remove(); ok(enregistrer); return PW.location.reload(); } }
       f.remove(); ok(enregistrer); };
     f.querySelector(".ok").onclick = () => {
       if (accueil && !champ.value.trim()) {  // le pseudo d'abord
@@ -4588,8 +4594,8 @@ const STYLE_DUEL = `
 #pkm-duel{position:fixed;inset:0;z-index:999999;overflow-y:auto;background:#22315A;color:#383828;font-family:'Jersey 15',monospace;font-size-adjust:.5;-webkit-overflow-scrolling:touch}
 #pkm-duel .scene{position:relative;width:100%;aspect-ratio:3/2;background:#1A2548 center/cover no-repeat;image-rendering:pixelated;overflow:hidden}
 #pkm-duel .sp{position:absolute;transform:translate(-50%,-100%);image-rendering:pixelated;object-fit:contain}
-#pkm-duel .hud{position:absolute;display:flex;align-items:center;gap:5px;max-width:52%;padding:3px 7px;background:#F8F8E8;border:2px solid #484838;border-radius:10px 4px;box-shadow:2px 2px 0 rgba(0,0,0,.4);line-height:1}
-#pkm-duel .hud.lui{left:3%;top:5%}#pkm-duel .hud.toi{right:3%;bottom:5%}
+#pkm-duel .hud{position:absolute;display:flex;align-items:center;gap:5px;max-width:47%;padding:3px 7px;background:#F8F8E8;border:2px solid #484838;border-radius:10px 4px;box-shadow:2px 2px 0 rgba(0,0,0,.4);line-height:1}
+#pkm-duel .hud.toi{left:3%;bottom:4%}#pkm-duel .hud.lui{right:3%;bottom:4%}
 #pkm-duel .hud canvas{flex:none;width:17px;height:23px;image-rendering:pixelated}#pkm-duel .hud b{display:block;font-size:17px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#pkm-duel .hud small{display:block;font-size:14px;color:#686850}
 #pkm-duel .fermer-x{position:absolute;right:8px;top:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(10,15,35,.65);color:#fff;font-size:20px;cursor:pointer}
 #pkm-duel .corps{padding:10px 12px 76px}

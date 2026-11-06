@@ -8,7 +8,7 @@ Les Pokémon viennent de Kanto (rien ne dévoile la suite du jeu).
 
     analyser(stats, periode, debut, fin, aujourd, j_jour, profil) -> {"titre", "phrase", "cartes": [...]}
     conseil_du_jour(stats, aujourd, profil) -> phrase courte pour le récap du matin, ou None
-    lire_profil(texte, aujourd) -> {"age", "taille", "sexe", "anniversaire"} : la carte du dresseur, gardée sur le téléphone du joueur
+    lire_profil(texte, aujourd) -> {"age", "taille", "sexe", "anniversaire", "balance"} : la carte du dresseur, gardée sur le téléphone du joueur
 
 Le profil n'est jamais enregistré ici : il sert au calcul, le temps de la visite.
 """
@@ -46,9 +46,10 @@ def lire_profil(texte, aujourd):
         taille = float(d.get("taille") or 0)
     except (TypeError, ValueError):
         taille = 0
+    balance = d.get("balance") if d.get("balance") in ("connectee", "manuelle", "aucune") else None
     age = age if age is not None and 5 <= age <= 110 else None
     return {"age": age, "taille": taille if 100 <= taille <= 250 else None, "sexe": d.get("sexe") if d.get("sexe") in ("M", "F") else None,
-            "anniversaire": age is not None and (naissance.month, naissance.day) == (aujourd.month, aujourd.day)}
+            "anniversaire": age is not None and (naissance.month, naissance.day) == (aujourd.month, aujourd.day), "balance": balance}
 
 
 def repere_gras(age, sexe):

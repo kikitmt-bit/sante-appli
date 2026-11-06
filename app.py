@@ -42,6 +42,8 @@ import bilan
 import danse
 import ecran_calibrage
 import ecran_pokemon
+import lisible
+import pesees
 import pokemon
 import seances_danse
 import seances_rameur
@@ -182,6 +184,19 @@ st.markdown("""<style>
 .st-key-bloc_coach [data-testid="stExpander"],.st-key-bloc_coach details{background:#F8F8E8 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .st-key-bloc_coach summary *,.st-key-bloc_coach [data-testid="stMarkdownContainer"] *{color:#383828 !important}
 /* les boîtes */
+.st-key-rub_poids [data-testid="stNumberInput"] input{background:#F8F8E8 !important;color:#383828 !important}.st-key-rub_poids [data-testid="stNumberInput"] input::placeholder{color:#686850 !important;opacity:1}.st-key-rub_poids [data-testid="stNumberInputContainer"]{background:#F8F8E8 !important}.st-key-rub_poids [data-testid="stNumberInputContainer"] button,.st-key-rub_poids [data-testid="stNumberInputContainer"] svg{color:#383828 !important}
+.lis,.lis-faits{background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:9px 11px;margin:0 0 9px}
+.lis .haut{display:flex;align-items:center;justify-content:space-between;gap:8px}.lis .nom{font-size:1.02rem;color:#686850}.lis .val{font-size:1.75rem;line-height:1.05;color:#383828}
+.lis .etat{flex:none;font-size:.82rem;line-height:1.5;padding:0 8px;border-radius:7px 3px;color:#fff}.lis .etat.bon{background:#2F9A50}.lis .etat.neutre{background:#3E78C8}.lis .etat.alerte{background:#C8701C}
+.lis .jauge{position:relative;display:flex;height:10px;margin:7px 0 6px;border:2px solid #484838;border-radius:5px}.lis .jauge i{display:block;height:100%}.lis .jauge i:first-child{border-radius:3px 0 0 3px}.lis .jauge i:nth-last-child(2){border-radius:0 3px 3px 0}
+.lis .jauge b{position:absolute;top:-6px;width:6px;height:18px;margin-left:-3px;background:#383828;border:1px solid #F8F8E8;border-radius:2px}
+.lis .txt{font-size:.92rem;line-height:1.2;color:#484838}.lis .txt b,.lis-faits b{font-weight:400;color:#B05010}.lis .plus{font-size:.92rem;line-height:1.2;color:#383828;margin-top:4px}
+.lis-resume{font-size:1.1rem;line-height:1.2;color:#F8F8E8;margin:0 2px 9px}.lis-note{font-size:.84rem;line-height:1.2;color:#C9D3EA;margin:2px 2px 8px}
+.lis-faits div{font-size:1rem;line-height:1.2;padding:4px 0;border-top:2px dashed #D8D4B8}.lis-faits div:first-child{border-top:0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}.cal span{text-align:center;font-size:.8rem;color:#686850}.cal i{display:grid;place-items:center;aspect-ratio:1;max-height:42px;width:100%;font-style:normal;font-size:.86rem;border-radius:6px 3px;background:#E8E4CC;color:#686850}.cal i.vide{background:transparent}.cal i.bouge{background:#BFE3F8;color:#383828}.cal i.ok{background:#48C868;color:#183818}.cal i.or{background:#F8C838;color:#383828}
+.cal-leg{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:7px;font-size:.84rem;color:#686850}.cal-leg u{display:inline-block;width:11px;height:11px;margin-right:3px;border-radius:3px;text-decoration:none;vertical-align:-1px}
+.st-key-bloc_danse summary,.st-key-bloc_rameur summary{padding:14px 12px !important}.st-key-bloc_danse summary p,.st-key-bloc_rameur summary p{font-size:1.14rem !important}
+details.bilan>summary{list-style:none;cursor:pointer}details.bilan>summary::-webkit-details-marker{display:none}details.bilan .ouvrir{font-size:.84rem;color:#B05010;margin-top:3px}details.bilan .ouvrir:before{content:"▶ Appuie pour le détail"}details.bilan[open] .ouvrir:before{content:"▼ Refermer"}
 .tile,.bilan,.nuit,.pouls,.curieux,div:has(> .vega-embed){background:#F8F8E8 !important;color:#383828 !important;border:3px solid #484838 !important;border-radius:12px 5px 12px 5px !important;box-shadow:3px 3px 0 rgba(10,15,35,.45) !important}
 .tile .l,.tile .s,.curieux,.pouls .s,.bilan .phrase{color:#686850 !important}
 .tile .l{font-size:.86rem !important}.tile .s{font-size:.8rem !important}
@@ -478,8 +493,8 @@ def carte_bilan(b):
     k = 54 / cote  # le visage dans le médaillon
     portrait = (f'<div class="prof-portrait" style="background-image:url({PROFESSEUR["image"]});background-size:{PROFESSEUR["largeur"] * k:.0f}px auto;'
                 f'background-position:-{x * k:.0f}px -{y * k:.0f}px"></div>')
-    st.markdown(f'<div class="bilan"><div class="prof-tete">{portrait}<div><div class="tete">{b["titre"]} du {PROFESSEUR["nom"]}{statut}</div><div class="phrase">{b["phrase"]}</div></div></div>{obs}'
-                '</div>', unsafe_allow_html=True)
+    st.markdown(f'<details class="bilan"><summary><div class="prof-tete">{portrait}<div><div class="tete">{b["titre"]} du {PROFESSEUR["nom"]}{statut}</div><div class="phrase">{b["phrase"]}</div><div class="ouvrir"></div></div></div></summary>{obs}'
+                '</details>', unsafe_allow_html=True)
 
 
 # Le sens d'une évolution : plus = mieux (1), moins = mieux (-1), ni l'un ni l'autre (0)
@@ -551,6 +566,64 @@ def carte_nuit(ligne):
                 f'<span class="tot">{hm(total)}</span>{joli("lever", ligne.get("lever"))}<img src="{img.format("sun-stone")}" alt=""></div>'
                 f'{f"""<div class="phases">{bande}</div><div class="leg">{leg}</div>""" if v else ""}</div>', unsafe_allow_html=True)
     return True
+
+
+def carte_lisible(c, serie=None, couleur=BLEU):
+    """Une mesure qui parle : son nom, sa valeur, si c'est bien, une jauge, et ce que ça veut dire (lisible.py)."""
+    jauge = ""
+    if c["jauge"]:
+        j, avant_z, zones = c["jauge"], c["jauge"]["min"], ""
+        etendue = (j["max"] - j["min"]) or 1
+        for fin_z, coul in j["zones"]:
+            zones += f'<i style="width:{(fin_z - avant_z) / etendue * 100:.1f}%;background:{coul}"></i>'
+            avant_z = fin_z
+        jauge = f'<div class="jauge">{zones}<b style="left:{min(max((j["val"] - j["min"]) / etendue * 100, 0), 100):.1f}%"></b></div>'
+    etat = f'<span class="etat {c["ton"]}">{c["statut"]}</span>' if c["statut"] else ""
+    courbe = mini_courbe(serie, couleur, False) if serie is not None else ""
+    plus = f'<div class="plus">{c["plus"]}</div>' if c["plus"] else ""
+    st.markdown(f'<div class="lis"><div class="haut"><span class="nom">{c["titre"]}</span>{etat}</div><div class="val">{c["valeur"]}</div>{jauge}<div class="txt">{c["texte"]}</div>{plus}{courbe}</div>', unsafe_allow_html=True)
+
+
+def calendrier(df):
+    """La période d'un coup d'œil : un carré par jour, de la couleur de ce qu'il a donné."""
+    R = pokemon.REGLAGES
+    cases = "".join(f"<span>{x}</span>" for x in "LMMJVSD") + '<i class="vide"></i>' * df.index[0].weekday()
+    for j, l in df.iterrows():
+        pas_j, sport = pd.to_numeric(l.get("pas"), errors="coerce"), pd.to_numeric(l.get("zone_sport"), errors="coerce")
+        pas_j, sport = 0 if pd.isna(pas_j) else pas_j, 0 if pd.isna(sport) else sport
+        cl = "or" if pas_j >= R["exploit_pas"] or sport >= R["exploit_zone"] else "ok" if pas_j >= OBJECTIFS["pas"] or sport >= OBJECTIFS["zone_sport"] else "bouge" if pas_j else ""
+        cases += f'<i class="{cl}">{j.day}</i>'
+    leg = '<div class="cal-leg"><span><u style="background:#BFE3F8"></u>a bougé</span><span><u style="background:#48C868"></u>objectif</span><span><u style="background:#F8C838"></u>exploit</span></div>'
+    st.markdown(f'<div class="lis"><div class="cal">{cases}</div>{leg}</div>', unsafe_allow_html=True)
+
+
+def faits(lignes):
+    if lignes:
+        st.markdown('<div class="lis-faits">' + "".join(f"<div>{x}</div>" for x in lignes) + "</div>", unsafe_allow_html=True)
+
+
+def noter_pesee(aujourd):
+    """Balance normale : la pesée se note ici. Une par jour : en noter une autre remplace la première."""
+    chemin = PREFIXE + pesees.FICHIER
+    try:
+        fichier = lire_depot([chemin], {chemin})[chemin]
+    except Panne:
+        return
+    deja = pesees.du_jour(fichier, aujourd)
+    with st.expander(f"⚖️ Corriger ma pesée d'aujourd'hui ({nombre(deja['kg'], 1)} kg)" if deja else "⚖️ Noter ma pesée d'aujourd'hui"):
+        with st.form("pesee", border=False):
+            kg = st.number_input("Poids (kg)", min_value=float(pesees.KG_MIN), max_value=float(pesees.KG_MAX), value=float(deja["kg"]) if deja else None, step=.1, format="%.1f", placeholder="Par exemple 74,5")
+            gras = st.number_input("Masse grasse (%), si ta balance la donne", min_value=float(pesees.GRAS_MIN), max_value=float(pesees.GRAS_MAX), value=deja.get("gras") if deja else None, step=.1, format="%.1f", placeholder="Facultatif")
+            ok = st.form_submit_button("Enregistrer", type="primary", width="stretch")
+        st.caption(f"Le matin avant {pokemon.REGLAGES['pesee_avant']} h : +{pokemon.REGLAGES['bonus_pesee']} points d'effort, {pokemon.REGLAGES['pesees']} fois par semaine au plus.")
+    if ok:
+        if kg is None:
+            st.warning("Écris d'abord ton poids.")
+            return
+        if ecrire_depot(chemin, pesees.noter(fichier, dt.datetime.now(TZ), kg, gras), "pesée notée à la main"):
+            st.toast("⚖️ Pesée enregistrée !")
+            st.rerun()
+        st.warning("Pesée pas enregistrée : réessaie dans un instant.")
 
 
 def carte_pouls(bpm):
@@ -954,17 +1027,36 @@ with page_sante:
     # ----- Activité -----
     with st.container(key="rub_activite"):
         rubrique(128, "Activité", BLEU)  # Tauros, toujours lancé
-        tuiles(["pas", "zone_sport", "km", "etages", "denivele", "actives", "zone", "min_sport", "min_rameur", "min_danse", "seances", "kcal", "kcal_act", "assis"],
-               df, avant, un_jour, legende_avant, BLEU, histoire)
-        curiosite_denivele(agrege(df, "denivele"))
+        tuiles(["pas", "zone_sport", "km", "etages"], df, avant, un_jour, legende_avant, BLEU, histoire)
+        st.markdown('<div class="lis-note">Minutes de sport : le temps où ton cœur monte vraiment (zones jaune et rouge de ta montre). Une marche tranquille ne compte pas ici : ses pas comptent déjà.</div>', unsafe_allow_html=True)
+        heures_pas = None
         if un_jour:
             pas = table(j_ref.get("steps"))
             col = next((c for c in ("countSum", "count") if c in pas), None)
             if col:
                 if col == "count" and (pas["secondes"] == 60).any():  # ancienne liste brute : la série par minute seulement
                     pas = pas[pas["secondes"] == 60]
-                h = pd.to_numeric(pas[col], errors="coerce").groupby(pas["heure"].str[:2] + "h").sum()
-                graphique(pd.DataFrame({"pas": h}), "pas", "Pas par heure")
+                heures_pas = pd.to_numeric(pas[col], errors="coerce").groupby(pas["heure"].str[:2] + "h").sum()
+            meilleure = (heures_pas.idxmax(), heures_pas.max()) if heures_pas is not None and len(heures_pas) and heures_pas.max() >= 100 else None
+            faits(lisible.faits_journee(stats, fin, aujourd, meilleure))
+        else:
+            if len(jours) <= 62:
+                calendrier(df)
+            faits(lisible.faits_periode(df))
+        # La danse et le rameur : ce qui se raconte le mieux, juste après le résumé
+        if not AMI:
+            bloc_danse(debut, fin, un_jour, j_ref, lire_vite)
+        bloc_rameur(debut, fin, un_jour, j_ref, lire_vite)
+        depense = lisible.calories(par_jour(df, "kcal"), par_jour(df, "kcal_act"))
+        if depense:
+            st.markdown(f'<div class="lis"><div class="haut"><span class="nom">Calories{"" if un_jour else " par jour"}</span></div><div class="val">{depense[0]}</div><div class="txt">{depense[1]}</div></div>', unsafe_allow_html=True)
+        reste_assis = lisible.assis(par_jour(df, "assis"), None if fin == aujourd else par_jour(stats.loc[debut - dt.timedelta(days=28):debut - dt.timedelta(days=1)], "assis"))  # une journée pas finie ne se compare pas
+        if reste_assis:
+            faits([reste_assis])
+        curiosite_denivele(agrege(df, "denivele"))
+        if un_jour:
+            if heures_pas is not None:
+                graphique(pd.DataFrame({"pas": heures_pas}), "pas", "Tes pas heure par heure")
         else:
             d = regroupe(df, ["pas", "zone_sport"], mensuel)
             graphique(d, "pas", "Pas par jour" + (" (moyenne par mois)" if mensuel else ""),
@@ -972,27 +1064,12 @@ with page_sante:
             graphique(d, "zone_sport", "Minutes de sport par jour" + (" (moyenne par mois)" if mensuel else ""),
                       objectif=OBJECTIFS["zone_sport"], couleur="#FF9E80", hauteur=140)
 
-        lignes_sport = [(x["type"], x["nom"], x["quand"], x["details"], x["km"], x["minutes"]) for x in donnees["seances"]]
+        lignes_sport = [(x["type"], x["nom"], x["quand"], x["details"], x["km"], x["minutes"]) for x in donnees["seances"]
+                        if "ROWING" not in (x["type"] or "") and "DANC" not in (x["type"] or "")]
         if lignes_sport:
-            st.markdown("**Séances**")
-            if not un_jour:  # résumé par sport
-                res = pd.DataFrame([(n, k, m) for _, n, _, _, k, m in lignes_sport], columns=["Sport", "km", "min"])
-                res = res.groupby("Sport").agg(Séances=("min", "size"), Durée=("min", "sum"), Distance=("km", "sum"))
-                res = res.sort_values("Séances", ascending=False)
-                st.markdown('<div class="tiles">' + "".join(
-                    f'<div class="tile"><div class="l">{n}</div><div class="v">{int(r.Séances)}×</div><div class="s">'
-                    f'{hm(r.Durée)}{f" · {nombre(r.Distance, 1)} km" if r.Distance else ""}</div></div>'
-                    for n, r in res.iterrows()) + "</div>", unsafe_allow_html=True)
-            liste = "".join(f'<div class="sport">{SPORTS.get(t, "⭐")} <b>{n}</b> · {JOURS[q.weekday()]} {q:%d/%m %H:%M}'
-                            f'<div class="s">{" · ".join(dd)}</div></div>' for t, n, q, dd, _, _ in reversed(lignes_sport))
-            if len(lignes_sport) > 5:
-                with st.expander(f"Les {len(lignes_sport)} séances"):
-                    st.markdown(liste, unsafe_allow_html=True)
-            else:
-                st.markdown(liste, unsafe_allow_html=True)
-        if not AMI:
-            bloc_danse(debut, fin, un_jour, j_ref, lire_vite)
-        bloc_rameur(debut, fin, un_jour, j_ref, lire_vite)
+            with st.expander(f"🏅 {'Ta séance' if len(lignes_sport) == 1 else f'Tes {len(lignes_sport)} séances'}"):
+                st.markdown("".join(f'<div class="sport">{SPORTS.get(t, "⭐")} <b>{n}</b> · {JOURS[q.weekday()]} {q:%d/%m %H:%M}'
+                                    f'<div class="s">{" · ".join(dd)}</div></div>' for t, n, q, dd, _, _ in reversed(lignes_sport)), unsafe_allow_html=True)
 
     # ----- Sommeil -----
     with st.container(key="rub_sommeil"):
@@ -1008,54 +1085,87 @@ with page_sante:
     # ----- Cœur -----
     with st.container(key="rub_coeur"):
         rubrique(113, "Cœur et respiration", "#E0526B")  # Leveinard, l'infirmier
-        carte_pouls(par_jour(df, "fc_repos"))
-        tuiles(["fc_repos", "vfc", "fc_max", "resp", "spo2", "spo2_min"], df, avant, un_jour, legende_avant, "#FF7C93", histoire)
+        def mesure(cle):
+            """La valeur de la période. Pour un jour, la dernière connue (la montre donne ses chiffres de la nuit dans la matinée) ; -> (valeur, son jour)."""
+            if not un_jour:
+                return agrege(df, cle), None
+            s = pd.to_numeric(stats.loc[fin - dt.timedelta(days=2):fin, cle], errors="coerce").dropna() if cle in stats else pd.Series(dtype=float)
+            return (s.iloc[-1], s.index[-1]) if len(s) else (None, None)
+
+        mois = stats.loc[debut - dt.timedelta(days=30):debut - dt.timedelta(days=1)]
+        repos, j_repos = mesure("fc_repos")
+        vfc, j_vfc = mesure("vfc")
+        c_repos = lisible.coeur_repos(repos, agrege(mois, "fc_repos")) if repos else None
+        c_vfc = lisible.recuperation(vfc, agrege(mois, "vfc")) if vfc else None
+        phrase = lisible.resume_coeur(c_repos, c_vfc)
+        if phrase:
+            st.markdown(f'<div class="lis-resume">{phrase}</div>', unsafe_allow_html=True)
+        for carte, j_v, cle, teinte in ((c_repos, j_repos, "fc_repos", "#FF7C93"), (c_vfc, j_vfc, "vfc", "#B39DFF")):
+            if carte:
+                if un_jour and j_v != fin:
+                    carte["plus"] = f"Dernière mesure : {j_v:%d/%m}. {carte['plus']}".strip()
+                carte_lisible(carte, histoire[cle] if un_jour and cle in histoire else df[cle] if cle in df else None, teinte)
+        haut = par_jour(df, "fc_max") if un_jour else agrege(df, "fc_max")
+        if haut:
+            carte_lisible(lisible.effort_max(haut, bilan.cardio_max(PROFIL["age"], PROFIL["sexe"]) if PROFIL["age"] else None))
         if un_jour:
             hr = table(j_ref.get("heart-rate"))
             hr = hr.sort_values("heure") if "heure" in hr else hr
             moy = [c for c in hr.columns if "avg" in c.lower() or "mean" in c.lower()]
             if moy:
                 d = pd.DataFrame({"fc": pd.to_numeric(hr[moy[0]], errors="coerce").values}, index=hr["heure"].str[:5])
-                graphique(d.iloc[::5], "fc", "Cardio de la journée (bpm)", type_="ligne")
+                graphique(d.iloc[::5], "fc", "Ton cœur au fil de la journée (bpm)", type_="ligne")
+        oxy, _ = mesure("spo2")
+        mini, _ = mesure("spo2_min")
+        if oxy:
+            carte_lisible(lisible.oxygene(oxy, mini))
+        souffle, _ = mesure("resp")
+        if souffle:
+            carte_lisible(lisible.respiration(souffle))
+        if un_jour:
             spo = table(j_ref.get("oxygen-saturation"))  # Pixel Watch : mesures pendant le sommeil
             if "percentage" in spo:
                 spo = spo.sort_values("heure")
                 d = pd.DataFrame({"spo2": pd.to_numeric(spo["percentage"], errors="coerce").values},
                                  index=spo["heure"].str[:5])
-                graphique(d, "spo2", "Oxygène dans le sang pendant le sommeil (%)", type_="ligne", couleur="#4CD3A0",
-                          hauteur=140)
+                with st.expander("Voir l'oxygène heure par heure, la nuit dernière"):
+                    graphique(d, "spo2", "Oxygène dans le sang pendant le sommeil (%)", type_="ligne", couleur="#4CD3A0",
+                              hauteur=140)
         else:
             d = regroupe(df, ["fc_repos", "vfc", "spo2"], mensuel)
-            graphique(d, "spo2", "Oxygène dans le sang la nuit (%)", type_="ligne", couleur="#4CD3A0", hauteur=140)
-            graphique(d, "fc_repos", "FC au repos (bpm)", type_="ligne", hauteur=140)
-            graphique(d, "vfc", "Variabilité cardiaque (ms) — plus haut = mieux récupéré", type_="ligne",
+            graphique(d, "fc_repos", "Cœur au repos (bpm) : plus bas, c'est mieux", type_="ligne", hauteur=140)
+            graphique(d, "vfc", "Récupération (ms) : plus haut, c'est mieux", type_="ligne",
                       couleur="#B39DFF", hauteur=140)
+            graphique(d, "spo2", "Oxygène dans le sang la nuit (%)", type_="ligne", couleur="#4CD3A0", hauteur=140)
+        st.markdown('<div class="lis-note">Des repères généraux pour comprendre tes chiffres, pas un avis médical.</div>', unsafe_allow_html=True)
 
     # ----- Poids -----
     with st.container(key="rub_poids"):
         rubrique(76, "Poids et masse grasse", "#2FA88A")  # Grolem, 300 kg
-        pesees = donnees["pesees"]
-        if pesees.empty:
+        if (PROFIL["balance"] or ("connectee" if not AMI else "aucune")) == "manuelle":
+            noter_pesee(aujourd)
+        tableau_poids = donnees["pesees"]
+        if tableau_poids.empty:
             st.caption("Aucune pesée ces 3 derniers mois.")
         else:
-            der = pesees.index[-1]
-            gras7 = pesees["gras"].dropna().tail(7).mean()
-            en_pokemon = poids_en_pokemon(pesees["poids"].dropna().iloc[-1], der)
-            cases = [("Poids", joli("poids", pesees["poids"].dropna().iloc[-1]), f"pesée du {der:%d/%m}")]
+            der = tableau_poids.index[-1]
+            gras7 = tableau_poids["gras"].dropna().tail(7).mean()
+            en_pokemon = poids_en_pokemon(tableau_poids["poids"].dropna().iloc[-1], der)
+            cases = [("Poids", joli("poids", tableau_poids["poids"].dropna().iloc[-1]), f"pesée du {der:%d/%m}")]
             rep = bilan.repere_gras(PROFIL["age"], PROFIL["sexe"])
             repere_gras = f" · repère {rep[0]} à {rep[1]} %" if rep else ""
-            if pesees["gras"].notna().any():
-                cases.append(("Masse grasse", joli("gras", pesees["gras"].dropna().iloc[-1]), f"7 dernières pesées : {nombre(gras7, 1)} %{repere_gras}"))
-            i = bilan.imc(pesees["poids"].dropna().iloc[-1], PROFIL["taille"])
+            if tableau_poids["gras"].notna().any():
+                cases.append(("Masse grasse", joli("gras", tableau_poids["gras"].dropna().iloc[-1]), f"7 dernières pesées : {nombre(gras7, 1)} %{repere_gras}"))
+            i = bilan.imc(tableau_poids["poids"].dropna().iloc[-1], PROFIL["taille"])
             if i:
                 cases.append(("IMC", nombre(i, 1), "repère 18,5 à 25, ne distingue pas le muscle du gras"))
-            p_debut = pesees.loc[debut:, "poids"].dropna()
+            p_debut = tableau_poids.loc[debut:, "poids"].dropna()
             if len(p_debut) >= 2:
                 cases.append(("Évolution sur la période", f'{"+" if p_debut.iloc[-1] > p_debut.iloc[0] else ""}{nombre(p_debut.iloc[-1] - p_debut.iloc[0], 1)} kg', f"{len(p_debut)} pesées"))
             grille = "".join(f'<div><div class="l">{l}</div><div class="v">{v}</div><div class="s">{t}</div></div>' for l, v, t in cases)
             soit = f'<div class="pese">{en_pokemon}</div>' if en_pokemon else ""
             st.markdown(f'<div class="tiles"><div class="tile une-tuile"><div class="cases">{grille}</div>{soit}</div></div>', unsafe_allow_html=True)
-            courbe = pesees.loc[(debut if len(jours) >= 30 else donnees["debut_tout"]):]
+            courbe = tableau_poids.loc[(debut if len(jours) >= 30 else donnees["debut_tout"]):]
             if len(courbe) >= 2:
                 meme_annee = courbe.index[0].year == courbe.index[-1].year
                 courbe.index = [x.strftime("%d/%m" if meme_annee else "%d/%m/%y") for x in courbe.index]

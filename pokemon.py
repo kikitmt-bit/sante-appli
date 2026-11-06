@@ -46,6 +46,7 @@ import pandas as pd
 import chiffres
 import missions
 import regions
+import pesees
 import seances_rameur
 from pokedex import LEGENDAIRES, POKEMON
 from region import Voyage
@@ -914,11 +915,11 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     annees = range(debut.year, aujourd.year + 1)
     # les fichiers d'aujourd'hui et d'hier : le moment des Super / Hyper Balls pas encore figées avec leur moment
     recents = {j: f"data/jour/{j.year}/{j}.json" for j in (aujourd - dt.timedelta(days=1), aujourd) if j >= debut}
-    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, OUVERTES, GESTES, missions.FICHIER, seances_rameur.FICHIER] + list(recents.values()))
+    f = lire([f"data/resume/{y}.json" for y in annees] + [FIGEES, OUVERTES, GESTES, missions.FICHIER, seances_rameur.FICHIER, pesees.FICHIER] + list(recents.values()))
     resumes = {}
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
-    resumes = seances_rameur.fusionner(resumes, f.get(seances_rameur.FICHIER))
+    resumes = pesees.fusionner(seances_rameur.fusionner(resumes, f.get(seances_rameur.FICHIER)), f.get(pesees.FICHIER))
     jours =[debut + dt.timedelta(days=i) for i in range((aujourd - debut).days + 1)]
     lignes_m = (f.get(missions.FICHIER) or {}).get("jours") or {}
     stats = pd.DataFrame({j: missions.avec_coeur(chiffres.stats_jour(resumes.get(str(j))), lignes_m.get(str(j)), j) for j in jours}).T
