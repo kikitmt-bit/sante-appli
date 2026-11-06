@@ -758,6 +758,18 @@ class Rival(unittest.TestCase):
         self.assertEqual((c["pompes"], c["squats"], c["tractions"], c["planche"]), (30, 60, 6, 90))
         self.assertEqual((c["min_rameur"], c["min_danse"], c["rameur_m"]), (30, 15, 2000))
 
+    def test_le_filtre_dit_quelle_periode(self):
+        import chiffres as c
+        import lisible
+        auj = dt.date(2026, 11, 6)  # un vendredi
+        nom = lambda p, j: lisible.nom_periode(p, *c.bornes(p, j), auj)  # noqa: E731
+        self.assertEqual(nom("Semaine", auj), ("Cette semaine", "du 2 au 8 novembre"))
+        self.assertEqual(nom("Semaine", dt.date(2026, 10, 30)), ("La semaine dernière", "du 26 octobre au 1 novembre"))
+        self.assertEqual(nom("Semaine", dt.date(2026, 10, 20))[0], "Semaine")
+        self.assertEqual(nom("Mois", auj), ("Novembre 2026", "ce mois-ci"))
+        self.assertEqual(nom("Mois", dt.date(2026, 10, 3)), ("Octobre 2026", ""))
+        self.assertEqual(nom("Année", dt.date(2025, 3, 1)), ("2025", ""))
+
     def test_chaque_region_a_quatre_rencontres(self):
         import regions
         for r in regions.REGIONS:

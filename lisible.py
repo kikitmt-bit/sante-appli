@@ -12,6 +12,21 @@ KCAL_PAIN_AU_CHOCOLAT = 280
 METRES_TERRAIN = 100
 
 
+MOIS_LONGS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
+
+
+def nom_periode(periode, debut, fin, aujourd):
+    """Ce que montre le filtre, en clair : (le nom, sa précision)."""
+    if periode == "Année":
+        return str(debut.year), "cette année" if debut.year == aujourd.year else ""
+    if periode == "Mois":
+        return f"{MOIS_LONGS[debut.month - 1].capitalize()} {debut.year}", "ce mois-ci" if (debut.year, debut.month) == (aujourd.year, aujourd.month) else ""
+    # Semaine, du lundi au dimanche
+    dates = f"du {debut.day} {MOIS_LONGS[debut.month - 1]} au {fin.day} {MOIS_LONGS[fin.month - 1]}" if debut.month != fin.month else f"du {debut.day} au {fin.day} {MOIS_LONGS[fin.month - 1]}"
+    ecart = (aujourd - debut).days // 7
+    return ("Cette semaine" if ecart == 0 else "La semaine dernière" if ecart == 1 else "Semaine"), dates
+
+
 def _carte(titre, valeur, statut, ton, texte, jauge=None, plus=""):
     return {"titre": titre, "valeur": valeur, "statut": statut, "ton": ton, "texte": texte, "jauge": jauge, "plus": plus}
 

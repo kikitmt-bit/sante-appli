@@ -1,5 +1,5 @@
 """Poké Fit : le jeu (Aventure, Pokédex, Dresseur) et les chiffres de santé. Toutes mes données Google Health (récoltées
-par sante.gs dans la branche « data ») dans l'onglet Santé, filtrées par jour / 7 jours / semaine / mois / année, avec
+par sante.gs dans la branche « data ») dans l'onglet Santé, filtrées par jour / semaine / mois / année, avec
 l'analyse d'un coach (Claude)."""
 import datetime as dt
 import hashlib
@@ -54,7 +54,7 @@ from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege,
 st.set_page_config(page_title="Poké Fit", page_icon=str(Path(__file__).with_name("pikachu.png")), layout="centered")
 
 BLEU, GRIS = "#6B8CFF", "#9AA7C2"
-PERIODES = ["Jour", "7 jours", "Semaine", "Mois", "Année"]
+PERIODES = ["Jour", "Semaine", "Mois", "Année"]
 MOIS = ["janv.", "févr.", "mars", "avr.", "mai", "juin", "juil.", "août", "sept.", "oct.", "nov.", "déc."]
 COULEURS_PHASES = {"Profond": "#3E5BD8", "Léger": "#6B8CFF", "Paradoxal": "#B39DFF", "Éveil": "#FF9E80"}
 SPORTS = {"WALKING": "🚶", "OUTDOOR_BIKE": "🚴", "BIKING": "🚴", "ROWING_MACHINE": "🚣", "ELLIPTICAL": "🏞️",
@@ -185,6 +185,7 @@ st.markdown("""<style>
 .st-key-bloc_coach summary *,.st-key-bloc_coach [data-testid="stMarkdownContainer"] *{color:#383828 !important}
 /* les boîtes */
 .st-key-rub_poids [data-testid="stNumberInput"] input{background:#F8F8E8 !important;color:#383828 !important}.st-key-rub_poids [data-testid="stNumberInput"] input::placeholder{color:#686850 !important;opacity:1}.st-key-rub_poids [data-testid="stNumberInputContainer"]{background:#F8F8E8 !important}.st-key-rub_poids [data-testid="stNumberInputContainer"] button,.st-key-rub_poids [data-testid="stNumberInputContainer"] svg{color:#383828 !important}
+.periode-nom{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40px;padding:1px 6px;background:#F8F8E8;border:2px solid #484838;border-radius:8px 4px;color:#383828;line-height:1.05;text-align:center}.periode-nom b{font-weight:400;font-size:1.05rem;color:#383828}.periode-nom small{font-size:.82rem;color:#686850}
 .lis,.lis-faits{background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:9px 11px;margin:0 0 9px}
 .lis .haut{display:flex;align-items:center;justify-content:space-between;gap:8px}.lis .nom{font-size:1.02rem;color:#686850}.lis .val{font-size:1.75rem;line-height:1.05;color:#383828}
 .lis .etat{flex:none;font-size:.82rem;line-height:1.5;padding:0 8px;border-radius:7px 3px;color:#fff}.lis .etat.bon{background:#2F9A50}.lis .etat.neutre{background:#3E78C8}.lis .etat.alerte{background:#C8701C}
@@ -910,7 +911,7 @@ def decaler(sens):
     p, r = st.session_state["periode"] or "Jour", st.session_state["ref"]
     if p == "Jour":
         r += dt.timedelta(days=sens)
-    elif p in ("7 jours", "Semaine"):
+    elif p == "Semaine":
         r += dt.timedelta(days=7 * sens)
     elif p == "Mois":
         a, m = divmod(r.month - 1 + sens, 12)
@@ -999,9 +1000,18 @@ with page_sante:
     fin_affichee = bornes(periode, st.session_state["ref"])[1]
     c1, c2, c3 = st.columns([1, 4, 1], vertical_alignment="center")
     c1.button("◀", on_click=decaler, args=(-1,), width="stretch", help="Période précédente")
-    c2.date_input("Date", key="ref", max_value=aujourd, format="DD/MM/YYYY", label_visibility="collapsed")
+    if periode == "Jour":  # une date précise se choisit au calendrier ; « ref » garde la place quand on change de filtre (un champ absent de la page perdrait sa valeur)
+        st.session_state["ref_date"] = st.session_state["ref"]
+        c2.date_input("Date", key="ref_date", max_value=aujourd, format="DD/MM/YYYY", label_visibility="collapsed",
+                      on_change=lambda: st.session_state.update(ref=st.session_state["ref_date"]))
+    else:
+        nom_p, precis_p = lisible.nom_periode(periode, *bornes(periode, st.session_state["ref"]), aujourd)
+        c2.markdown(f'<div class="periode-nom"><b>{nom_p}</b>{f"<small>{precis_p}</small>" if precis_p else ""}</div>', unsafe_allow_html=True)
     c3.button("▶", on_click=decaler, args=(1,), width="stretch", disabled=fin_affichee >= aujourd,
               help="Période suivante")
+
+    if fin_affichee < aujourd:  # loin dans le passé : un seul geste pour revenir
+        st.button("Revenir à aujourd'hui", key="retour_ajd", width="stretch", on_click=lambda: st.session_state.update(ref=dt.datetime.now(TZ).date()))
 
     recents = {f"data/jour/{x.year}/{x}.json" for x in (aujourd, aujourd - dt.timedelta(days=1))}
     recents |= {f"data/resume/{aujourd.year}.json", "data/profil.json",
@@ -1017,8 +1027,7 @@ with page_sante:
     # Fraîcheur : heure de la dernière mesure reçue aujourd'hui (l'heure de synchro donnée par Google n'est pas à jour)
     heures = [l[0] for typ in ("steps", "heart-rate", "active-energy-burned") if isinstance(du_jour.get(typ), dict)
               for l in du_jour[typ].get("lignes", []) if l and l[0]]
-    st.markdown(f'<div class="fresh">⌚ Dernière mesure{" aujourd" + chr(39) + "hui" if fin == debut else ""} : {max(heures)[:5] if heures else "aucune"}'
-                f' · {debut:%d/%m}{f" → {fin:%d/%m}" if fin != debut else ""}</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="fresh">⌚ Dernière mesure aujourd{chr(39)}hui : {max(heures)[:5] if heures else "aucune"}</div>', unsafe_allow_html=True)
 
     histoire = stats.loc[fin - dt.timedelta(days=20):fin]  # les 3 dernières semaines, pour les mini-courbes de la vue Jour
     jour_bilan = aujourd - dt.timedelta(days=1) if un_jour and fin == aujourd else fin
