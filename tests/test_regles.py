@@ -13,6 +13,7 @@ import kanto  # noqa: E402
 import missions  # noqa: E402
 import pokemon  # noqa: E402
 import region as region_  # noqa: E402
+import seances_danse  # noqa: E402
 
 DEBUT = dt.date(2026, 11, 9)  # un lundi, après le changement de règles du 04/11
 
@@ -715,6 +716,43 @@ class Rival(unittest.TestCase):
         for r in regions.REGIONS:
             self.assertEqual(len(r.rival), 4)
             self.assertLessEqual(set(r.rival), {l["nom"] for l in r.lieux})
+
+
+class TestSeancesDanse(unittest.TestCase):
+    MORCEAU = {"debut": "2026-11-06T12:10:00+01:00", "fin": "2026-11-06T12:13:00+01:00", "titre": "A <b>", "difficulte": "Easy", "niveau": 5, "pct": 80.5,
+               "compte": {"Parfait": 3, "Raté": 1}}
+    SEANCE = {"debut": "2026-11-06T12:10:00+01:00", "fin": "2026-11-06T12:18:00+01:00", "danse_s": 360, "repos_s": 120, "morceaux": [
+        MORCEAU, MORCEAU | {"debut": "2026-11-06T12:15:00+01:00", "fin": "2026-11-06T12:18:00+01:00"}]}
+    TYPES = {"heart-rate": {"colonnes": ["heure", "secondes", "beatsPerMinuteAvg", "beatsPerMinuteMax"], "lignes": [
+        ["12:00:00", 60, 70, 75], ["12:11:00", 60, 120, 130], ["12:13:30", 60, 100, 105], ["12:16:00", 60, 140, 150], ["12:30:00", 60, 80, 85]]},
+        "active-energy-burned": {"colonnes": ["heure", "secondes", "kcalSum"], "lignes": [["12:11:00", 60, 5.0], ["12:30:00", 60, 9.0]]}}
+
+    def test_fichiers_de_la_periode(self):
+        liste = [{"name": "2026-11-05-120000.json"}, {"name": "2026-11-06-120000.json"}, {"name": "2026-11-07-120000.json"}, {"name": "lisezmoi.txt"}]
+        self.assertEqual(seances_danse.fichiers_periode(liste, dt.date(2026, 11, 6), dt.date(2026, 11, 6)), ["data/danse/sessions/2026-11-06-120000.json"])
+        self.assertEqual(seances_danse.fichiers_periode(None, dt.date(2026, 11, 6), dt.date(2026, 11, 6)), [])
+
+    def test_le_coeur_de_la_seance_seulement(self):
+        m = seances_danse.mesures(self.SEANCE, self.TYPES)
+        self.assertEqual(m["max"], 150)  # ni avant ni après la séance
+        self.assertEqual(m["moyenne"], 130)  # le repos de 12:13:30 ne compte pas en dansant
+        self.assertEqual(m["kcal"], 5)
+
+    def test_plusieurs_seances_repliees_une_seule_ouverte(self):
+        une = seances_danse.html_jour([self.SEANCE], self.TYPES)
+        deux = seances_danse.html_jour([self.SEANCE, self.SEANCE], self.TYPES)
+        self.assertIn("<details class=\"dz-seance\" open>", une)
+        self.assertNotIn(" open>", deux)
+        self.assertIn("A &lt;b&gt;", une)  # un titre n'écrit jamais de HTML
+        self.assertNotIn(chr(10), une)  # sinon le Markdown de Streamlit couperait le bloc
+
+    def test_sans_mesures_de_la_montre(self):
+        self.assertIn("quand ta montre aura synchronisé", seances_danse.html_jour([self.SEANCE], {}))
+
+    def test_titre_et_periode(self):
+        self.assertEqual(seances_danse.titre([self.SEANCE]), "💃 Danse : 6 min · 1 séance · 2 morceaux")
+        self.assertIn("06/11", seances_danse.html_periode([self.SEANCE], dt.date(2026, 11, 1), dt.date(2026, 11, 7)))
+        self.assertIn("11/2026", seances_danse.html_periode([self.SEANCE], dt.date(2026, 1, 1), dt.date(2026, 12, 31)))
 
 
 if __name__ == "__main__":

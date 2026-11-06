@@ -26,6 +26,7 @@ import danse
 import ecran_calibrage
 import ecran_pokemon
 import pokemon
+import seances_danse
 from pokedex import LEGENDAIRES, POIDS, POKEMON
 from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
                       chemin_analyse, dossier_ami, dossier_coach, hm, joli, nombre, par_jour, table)
@@ -418,6 +419,25 @@ def lire_depot(paths, recents=()):
     if any(p not in c for p in paths):
         raise Panne
     return {p: c[p][1] for p in paths}
+
+
+def bloc_danse(debut, fin, un_jour, j_ref, lire_vite):
+    """Les séances sur le vrai tapis : rien tant qu'il n'y en a pas, sinon une seule ligne qui s'ouvre. Une erreur ici ne casse jamais la page."""
+    try:
+        chemins = seances_danse.fichiers_periode(lire([seances_danse.DOSSIER], {seances_danse.DOSSIER})[seances_danse.DOSSIER], debut, fin)
+        if not chemins:
+            return
+        seances = [s for s in lire_vite(chemins).values() if s and s.get("morceaux")]
+        seances.sort(key=lambda s: s["debut"])
+        if not seances:
+            return
+        contenu = seances_danse.html_jour(seances, j_ref) if un_jour else seances_danse.html_periode(seances, debut, fin)
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e:
+        print("Séances de danse illisibles :", type(e).__name__, flush=True)
+        return
+    st.markdown(seances_danse.STYLE, unsafe_allow_html=True)
+    with st.container(key="bloc_danse"), st.expander(seances_danse.titre(seances)):
+        st.markdown(contenu, unsafe_allow_html=True)
 
 
 def rubrique(num, titre, couleur=None):
@@ -946,6 +966,8 @@ with page_sante:
                     st.markdown(liste, unsafe_allow_html=True)
             else:
                 st.markdown(liste, unsafe_allow_html=True)
+        if not AMI:
+            bloc_danse(debut, fin, un_jour, j_ref, lire_vite)
 
     # ----- Sommeil -----
     with st.container(key="rub_sommeil"):
