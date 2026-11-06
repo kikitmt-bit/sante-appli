@@ -2935,7 +2935,7 @@ const STYLE_TITRE = `
 function ecranTitre(essai = false) {
   installerStyle("pkm2-titre-style", STYLE_TITRE);
   const E = ecran("pkm-titre", EN_JOHTO ? "titre-johto.webp" : "titre-kanto.webp", 941, 1672), v = E.v;
-  v.insertAdjacentHTML("beforeend", `<div class="logo"><b>POKÉMON</b><i>SPORT</i></div>
+  v.insertAdjacentHTML("beforeend", `<div class="logo"><b>POKÉ FIT</b></div>
     <div class="touche">TOUCHE L'ÉCRAN${essai ? "<small>Aperçu : rien n'est enregistré</small>" : ""}</div>`);
   ambiance(v.querySelector("canvas.air"), [{type: "oiseaux", coul: ["#3A3050"], n: 5, haut: [.08, .26]}, {...VERTS, n: 20}], () => !v.isConnected);
   setTimeout(() => { v.querySelector(".noir").style.opacity = 0; v.classList.add("parti"); }, 80);
@@ -4285,7 +4285,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   const nb = Object.keys(collection()).length, badges = Object.keys(V.badges).filter(k => k <= 8).length;
   const f = P.createElement("div"); f.id = "pkm-dresseur"; f.className = (accueil ? "accueil" : "") + (surTitre ? " sur-titre" : "");
   if (essai) d.nom = "";
-  f.innerHTML = `<div class="ombre"></div>${accueil ? `<div class="titre-jeu">POKÉMON SPORT<small>Crée ton dresseur pour commencer</small></div>` : ""}
+  f.innerHTML = `<div class="ombre"></div>${accueil ? `<div class="titre-jeu">POKÉ FIT<small>Crée ton dresseur pour commencer</small></div>` : ""}
     <div class="carte-dresseur">
     <div class="entete"><span>${accueil ? "NOUVEAU DRESSEUR" : "CARTE DRESSEUR"}</span><small class="id">N° ID ${idDresseur(d.nom)}</small></div>
     <div class="corps"><div class="photo"><canvas width="14" height="19"></canvas></div>
@@ -5642,6 +5642,7 @@ const NOUVEAUTES = [
   {date: "2026-11-06c", sel: ".t-sball", quoi: "« Génération 1 » affichée dès Kanto"},
   {date: "2026-11-06d", sel: ".t-arene:not([data-n='9'])", quoi: "au badge, le champion ne se présente plus"},
   {date: "2026-11-06e", sel: ".t-victoire", quoi: "la victoire au défi : la scène s'enchaîne tout de suite"},
+  {date: "2026-11-06f", sel: ".t-debut", quoi: "le jeu s'appelle Poké Fit"},
   {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
 ];
 function marquerNouveautes(el) {

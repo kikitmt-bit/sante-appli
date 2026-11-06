@@ -1,4 +1,4 @@
-"""Pokémon Sport : le jeu (Aventure, Pokédex, Dresseur) et les chiffres de santé. Toutes mes données Google Health (récoltées
+"""Poké Fit : le jeu (Aventure, Pokédex, Dresseur) et les chiffres de santé. Toutes mes données Google Health (récoltées
 par sante.gs dans la branche « data ») dans l'onglet Santé, filtrées par jour / 7 jours / semaine / mois / année, avec
 l'analyse d'un coach (Claude)."""
 import datetime as dt
@@ -30,7 +30,7 @@ from pokedex import LEGENDAIRES, POIDS, POKEMON
 from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
                       chemin_analyse, dossier_ami, dossier_coach, hm, joli, nombre, par_jour, table)
 
-st.set_page_config(page_title="Pokémon Sport", page_icon=str(Path(__file__).with_name("pikachu.png")), layout="centered")
+st.set_page_config(page_title="Poké Fit", page_icon=str(Path(__file__).with_name("pikachu.png")), layout="centered")
 
 BLEU, GRIS = "#6B8CFF", "#9AA7C2"
 PERIODES = ["Jour", "7 jours", "Semaine", "Mois", "Année"]
@@ -316,7 +316,7 @@ class Panne(Exception):
 
 
 def ecran_panne():
-    st.markdown("## Pokémon Sport")
+    st.markdown("## Poké Fit")
     st.warning("Tes données ne répondent pas pour le moment (GitHub). Rien n'est perdu : réessaie dans une minute.")
     st.button("Réessayer", type="primary", width="stretch")
     st.stop()
@@ -704,11 +704,11 @@ def connexion_google():
     """Connexion avec Google (st.login, secrets [auth]) ; seules les adresses de COMPTES entrent. Streamlit retient la
     connexion 30 jours sur le téléphone."""
     if not st.user.get("is_logged_in"):
-        st.markdown("## Pokémon Sport")
+        st.markdown("## Poké Fit")
         st.button("Se connecter avec Google", type="primary", width="stretch", on_click=st.login)
         st.stop()
     if str(st.user.get("email", "")).lower() not in comptes():
-        st.markdown("## Pokémon Sport")
+        st.markdown("## Poké Fit")
         st.error(f"Le compte {st.user.get('email', '')} n'a pas accès à cette appli.")
         st.button("Changer de compte", width="stretch", on_click=st.logout)
         st.stop()
@@ -732,7 +732,7 @@ def id_ami(email):
 def accueil_ami():
     """Un ami pas encore relié : ce que fait l'appli de ses données, puis « Relier ma montre » (page du script Google)."""
     s = st.secrets
-    st.markdown("## Pokémon Sport")
+    st.markdown("## Poké Fit")
     st.markdown("Ton sport fait avancer ton dresseur et te fait gagner des Poké Balls. Pour ça, l'appli lit les données de "
                 "ta montre dans **Google Santé**.")
     st.markdown("- **Lu :** activité, pas, cardio, séances, sommeil, poids, à partir des 14 jours avant ton inscription. Rien d'autre.\n"
@@ -779,7 +779,7 @@ def verrou():
     if stored == jeton:
         st.session_state["ok"] = True
         return jeton
-    st.markdown("## Pokémon Sport")
+    st.markdown("## Poké Fit")
     with st.form("connexion", border=False):
         essai = st.text_input("Mot de passe", type="password")
         ok = st.form_submit_button("🔓 Entrer", type="primary", width="stretch")
