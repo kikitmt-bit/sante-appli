@@ -597,6 +597,7 @@ details.regles{color:#484838 !important}
     <div id="mon-dresseur"></div>
     <div id="starter-dresseur"></div>
     <div class="carte amis" id="amis"></div>
+    <div class="carte amis" id="recreation" hidden></div>
     <details class="regles"><summary>Comment ça marche ?</summary><ul id="regles"></ul></details>
     <details class="regles tests"><summary>🧪 Tester le jeu (aperçus, rien n'est enregistré)</summary><div id="tests"></div></details>
     <button class="bouton-param" id="ouvrir-param">⚙️ Paramètres</button>
@@ -3620,6 +3621,15 @@ function apresGeste() {  // tout redessiner, le bonus ouvert le reste
 // La page Muscu (03/11, Kiki : pompes, tractions, squats et planche étaient cachés derrière une petite tuile) : un exercice, un toucher, le téléphone compte
 
 const EXOS = [["pompes", "10 = 5 pts"], ["squats", "10 = 2,5 pts"], ["tractions", "1 = 1 pt"], ["planche", "10 s = 1 pt"]];
+// La récréation (Kiki, 06/11 : la danse au doigt n'est pas de la muscu, c'est un petit jeu) : en bas de Dresseur, après le classement
+function dessinerRecreation() {
+  const el = document.getElementById("recreation"); if (!el) return;
+  if (!(D.danse || []).length) { el.hidden = true; el.innerHTML = ""; return; }
+  el.hidden = false;
+  el.innerHTML = `<div class="cl-t"><b>Récréation</b></div><div class="exos" style="margin-top:6px"><div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(35)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques pour s'amuser, et un classement entre dresseurs · 1 point par jour pour le premier morceau fini</div><button class="go-exo" data-danse>▶ Jouer</button></div></div>`;
+  el.querySelector("[data-danse]").onclick = () => danse();
+  rognerImages(el);
+}
 function dessinerMuscu() {
   const el = document.getElementById("muscu"), g = gestesAuj(), mem = lireEntr(), mis = D.mission || {};
   const points = Math.min(g.pompes * R.bonus_pompe + g.tractions * R.bonus_traction + g.squats * R.bonus_squat + g.planche * R.bonus_planche + Math.min(g.danse, 1) * R.bonus_danse, R.bonus_gestes_max);
@@ -3635,7 +3645,6 @@ function dessinerMuscu() {
         <div class="d">aujourd'hui · ${gain}${rec ? `<br>record ${rec}${M.chrono ? " s" : ""}` : ""}</div>
         ${t !== "tractions" && derniereSerie(t) ? `<button class="annule-exo" data-annule="${t}">Annuler ma dernière série (${derniereSerie(t).n}${M.chrono ? " s" : ""})</button>` : ""}
         ${t === "tractions" ? `<div class="plus-moins"><button class="go-exo" data-g="${t}" data-n="-1" ${g[t] < 1 ? "disabled" : ""}>−1</button>${GESTES[t].pas.map(n => `<button class="go-exo" data-g="${t}" data-n="${n}">+${n}</button>`).join("")}</div>` : `<button class="go-exo" data-compte="${t}">▶ Lancer</button>`}</div>`; }).join("")}
-      ${(D.danse || []).length ? `<div class="exo exo-danse"><img class="pk rogne" src="${IMG.mini(formeStarter() || 25)}" alt=""><h3>Danse au doigt</h3><div class="d">4 musiques pour s'amuser · 1 point par jour pour le premier morceau fini</div><button class="go-exo" data-danse>▶ Essayer</button></div>` : ""}
       ${carteRameur(mis)}</div>`;
   brancherGestes(el); rognerImages(el);
   el.querySelectorAll("[data-rameur]").forEach(b => b.onclick = () => ecranRameur());
@@ -5926,7 +5935,7 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
   if (PW.__ongletJeu && PW.__ongletJeu !== "aventure") montrerOnglet(PW.__ongletJeu, false);
   else P.body.classList.remove("page-sante");
 }
-function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
+function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerRecreation(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 // La page vient de (re)démarrer : un calque resté là appartient à l'ancienne page, ses minuteurs et ses boutons sont morts (écran noir, ✕ sans effet). On l'enlève.
 P.querySelectorAll(".pkm-ecran,.pkm-entr,#pkm-intro,#pkm-badge,#pkm-voile,#pkm-evo,#pkm-dresseur,#pkm-fiche,#pkm-duel").forEach(x => x.remove());

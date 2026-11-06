@@ -232,6 +232,8 @@ st.markdown(f"""<style>
 [data-testid="stLayoutWrapper"]:has(> .st-key-outils),[data-testid="stLayoutWrapper"]:has(> .st-key-danse){{display:none !important}}
 [data-testid="stElementContainer"]:has(iframe[height="0"]),
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
+.st-key-bloc_danse.st-key-bloc_danse [data-testid="stExpander"]>details>summary{{background:#F8F8E8 url({ANIME.format(35)}) right 10px center/50px 50px no-repeat !important}}.st-key-bloc_rameur.st-key-bloc_rameur [data-testid="stExpander"]>details>summary{{background:#F8F8E8 url({ANIME.format(86)}) right 10px center/50px 50px no-repeat !important}}
+.st-key-bloc_danse summary,.st-key-bloc_rameur summary{{min-height:64px;padding-right:66px !important;image-rendering:pixelated}}.st-key-bloc_danse summary p,.st-key-bloc_rameur summary p{{white-space:nowrap}}
 .nav-jeu{{display:flex;gap:3px;background:#0A101D;border-radius:14px;padding:3px}}
 .nav-jeu button{{flex:1 1 0;min-width:0;position:relative;display:flex;flex-direction:column;align-items:center;gap:1px;border:0;border-radius:11px;padding:4px 0 3px;
   background:none;color:#9AA7C2;font:700 11.5px Outfit,sans-serif;cursor:pointer}}
@@ -247,7 +249,7 @@ NAV = f"""<div class="nav-jeu">
 <button data-o="muscu"><img class="sprite" src="{pokemon.IMAGES}/pokemon/versions/generation-iii/emerald/68.png" alt="">Muscu</button>
 <button data-o="sante"><img class="leveinard" src="{LEVEINARD}" alt="">Santé</button>
 <button data-o="dex"><img src="data:image/svg+xml;base64,{POKEDEX}" alt="">Pokédex</button>
-<button data-o="dresseur"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="">Dresseur</button></div>"""
+<button data-o="dresseur"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3RAAABc0lEQVR42oWSIWwiQRSGv6WIXnKCSuThtu5wsyRNdkUNjpWLwzXrrm5o0gbWgSN1OHClau/ECapoxSWsIrgb2VO9uq5o8irIbpcE2j+ZzJ+8/3/v/ZOxenpChsfbSPgA1Za2Ml4umoJKBef70U7TffKf6W0kmblULO4z7aqVitM+Q1Cp5HFKANfrdb7OPmS1TFveJ7B/3gOwbjp7m8mNduXMtiWOV7JQKr+LPI5XcmbbcqNdAQRA/o5+CCBKaXl6kp1HKS1FbbmnJ1YtbIt2XTp+SrPZ3bnWNEgZH7rUwiE9PbHyjB2/vsk4qGI1QmQxAsi5SQwdv050dwfAgXfSwjtpXf35/euyflzl+d8zX18O8bxjAF7NC9+OvgAwni05DfrvH+Aiass8daiFQ8azJR2/jklMPmU8W1ILh8xTh4uoLQCWdl3p932c80cABsxpPDxs5VsoxTleHqXbnW0mmsQwDdItYRyviOMVC6W2HsgkBoA3Z1rJs8ec3HcAAAAASUVORK5CYII=" alt="">Dresseur</button></div>"""
 
 
 # ---------- Lecture des fichiers (GitHub, branche data) ----------
@@ -1027,7 +1029,9 @@ with page_sante:
     # ----- Activité -----
     with st.container(key="rub_activite"):
         rubrique(128, "Activité", BLEU)  # Tauros, toujours lancé
-        tuiles(["pas", "zone_sport", "km", "etages"], df, avant, un_jour, legende_avant, BLEU, histoire)
+        # 4 tuiles, selon ce que la montre de chacun mesure : le temps assis passe tôt (Kiki, 06/11 : télétravail), les calories en dernier recours
+        en_tete = [c for c in ("pas", "zone_sport", "assis", "km", "etages", "kcal", "kcal_act") if agrege(df, c) is not None][:4]
+        tuiles(en_tete, df, avant, un_jour, legende_avant, BLEU, histoire)
         st.markdown('<div class="lis-note">Minutes de sport : le temps où ton cœur monte vraiment (zones jaune et rouge de ta montre). Une marche tranquille ne compte pas ici : ses pas comptent déjà.</div>', unsafe_allow_html=True)
         heures_pas = None
         if un_jour:
@@ -1050,9 +1054,9 @@ with page_sante:
         depense = lisible.calories(par_jour(df, "kcal"), par_jour(df, "kcal_act"))
         if depense:
             st.markdown(f'<div class="lis"><div class="haut"><span class="nom">Calories{"" if un_jour else " par jour"}</span></div><div class="val">{depense[0]}</div><div class="txt">{depense[1]}</div></div>', unsafe_allow_html=True)
-        reste_assis = lisible.assis(par_jour(df, "assis"), None if fin == aujourd else par_jour(stats.loc[debut - dt.timedelta(days=28):debut - dt.timedelta(days=1)], "assis"))  # une journée pas finie ne se compare pas
-        if reste_assis:
-            faits([reste_assis])
+        etages = agrege(df, "etages")
+        if etages and "etages" not in en_tete:
+            faits([f"<b>{nombre(etages)} étage{'s' if etages >= 2 else ''}</b> monté{'s' if etages >= 2 else ''}{'' if un_jour else ' sur la période'}."])
         curiosite_denivele(agrege(df, "denivele"))
         if un_jour:
             if heures_pas is not None:

@@ -100,7 +100,7 @@ def _pluriel(n, mot):
 
 def titre(seances):
     t = totaux(seances)
-    return f"💃 Danse : {_minutes(t['danse_s'])} · {_pluriel(t['seances'], 'séance')} · {_pluriel(t['morceaux'], 'morceau')}"
+    return f"Danse · {_minutes(t['danse_s'])} · {_pluriel(t['morceaux'], 'morceau')}"
 
 
 def _tuile(libelle, valeur, detail=""):

@@ -787,7 +787,7 @@ class TestSeancesDanse(unittest.TestCase):
         self.assertIn("quand ta montre aura synchronisé", seances_danse.html_jour([self.SEANCE], {}))
 
     def test_titre_et_periode(self):
-        self.assertEqual(seances_danse.titre([self.SEANCE]), "💃 Danse : 6 min · 1 séance · 2 morceaux")
+        self.assertEqual(seances_danse.titre([self.SEANCE]), "Danse · 6 min · 2 morceaux")
         self.assertIn("06/11", seances_danse.html_periode([self.SEANCE], dt.date(2026, 11, 1), dt.date(2026, 11, 7)))
         self.assertIn("11/2026", seances_danse.html_periode([self.SEANCE], dt.date(2026, 1, 1), dt.date(2026, 12, 31)))
 
@@ -875,7 +875,7 @@ class TestRameur(unittest.TestCase):
         une = seances_rameur.html_jour([self.S], {}, None)
         self.assertNotIn(chr(10), une)  # sinon le Markdown de Streamlit couperait le bloc
         self.assertIn("4 000 m", une)
-        self.assertEqual(seances_rameur.titre([self.S]), "🚣 Rameur : 20 min · 1 séance · 4 000 m")
+        self.assertEqual(seances_rameur.titre([self.S]), "Rameur · 20 min · 4 000 m")
         self.assertIn("20/11", seances_rameur.html_periode([self.S], dt.date(2026, 11, 16), dt.date(2026, 11, 22), None))
         self.assertEqual(chiffres.seance(seances_rameur.sd_contenu(seances_rameur.point_de(self.S)))["details"][1:], ["4000 m", "24 coups/min"])
 

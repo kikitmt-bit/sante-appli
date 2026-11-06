@@ -141,12 +141,3 @@ def calories(total, actives):
         n = round(actives / KCAL_PAIN_AU_CHOCOLAT, 1)
         texte = f"<b>{nombre(actives)} kcal rien qu'en bougeant</b>" + (f", soit environ {nombre(n, 1)} pain{'s' if n >= 2 else ''} au chocolat" if n >= .5 else "") + ". Le reste, ton corps le dépense tout seul : respirer, digérer, penser."
     return (f"{nombre(total)} kcal" if total else f"{nombre(actives)} kcal"), texte
-
-
-def assis(minutes, moyenne=None):
-    if not minutes:
-        return None
-    texte = f"Temps passé sans bouger : <b>{hm(minutes)}</b>."
-    if moyenne and abs(minutes - moyenne) >= 20:
-        texte += f" {hm(abs(minutes - moyenne))} de {'moins' if minutes < moyenne else 'plus'} que d'habitude."
-    return texte

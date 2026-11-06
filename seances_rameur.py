@@ -190,7 +190,7 @@ def _total_distance(seances, m):
 def titre(seances, m=None):
     temps = sum(s["duree_s"] for s in seances)
     d, estime = _total_distance(seances, m)
-    return f"🚣 Rameur : {sd._minutes(temps)} · {sd._pluriel(len(seances), 'séance')}" + (f" · {_metres(d, estime)}" if d else "")
+    return f"Rameur · {sd._minutes(temps)}" + (f" · {_metres(d, estime)}" if d else "")
 
 
 def _moyenne(seances, cle):
