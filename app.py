@@ -930,13 +930,13 @@ if not AMI:  # L'apprentissage du téléphone (entraînement) : ses mesures, ran
 RAMEUR_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_rameur') || ''", key="rameur_lire")
 if RAMEUR_TEL is None:
     st.stop()
-if RAMEUR_TEL and st.session_state.get("rameur_envoye") != RAMEUR_TEL[:200]:
+if RAMEUR_TEL and st.session_state.get("rameur_envoye") != hash(RAMEUR_TEL):  # tout le texte : une 2e séance commence comme la 1re
     try:
         ok = seances_rameur.ranger(RAMEUR_TEL, lambda p: lire_depot([PREFIXE + p], {PREFIXE + p})[PREFIXE + p], lambda p, o, msg: ecrire_depot(PREFIXE + p, o, msg))
     except (ValueError, KeyError, TypeError, Panne):
         ok = False
     if ok:
-        st.session_state["rameur_envoye"] = RAMEUR_TEL[:200]
+        st.session_state["rameur_envoye"] = hash(RAMEUR_TEL)
         streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_rameur')", key="rameur_effacer")
         st.toast("🚣 Séance de rameur enregistrée !")
     else:

@@ -808,6 +808,12 @@ class TestRameur(unittest.TestCase):
         self.assertEqual(len(depot[seances_rameur.FICHIER]["seances"]), 1)
         self.assertEqual(depot["data/rameur/brut/2026-11-20-180000.json"]["lignes"], "1,2,3;4,5,6")
 
+    def test_plusieurs_copies_ne_sont_ecrites_qu_une_fois(self):
+        ecritures = []
+        texte = json.dumps([{"seance": self.S, "brut": "1,2,3", "coups": []}] * 40)
+        self.assertTrue(seances_rameur.ranger(texte, lambda p: None, lambda p, o, m: ecritures.append(p) or True))
+        self.assertEqual(len(ecritures), 2)  # les capteurs, le résumé
+
     def test_si_github_refuse_rien_n_est_oublie(self):
         self.assertFalse(seances_rameur.ranger(json.dumps([{"seance": self.S}]), lambda p: None, lambda p, o, m: False))
 

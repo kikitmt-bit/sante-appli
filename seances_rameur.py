@@ -96,9 +96,9 @@ def fusionner(resumes, fichier):
 
 def ranger(texte, lire, ecrire):
     """Ce que le téléphone a laissé (localStorage pkm_rameur) -> les fichiers du dépôt. Rejouable : une séance déjà rangée est simplement remplacée. -> réussi ?"""
-    attente = json.loads(texte)
+    attente = {a["seance"]["id"]: a for a in json.loads(texte)}  # plusieurs copies d'une même séance : la dernière, écrite une seule fois
     seances = (lire(FICHIER) or {}).get("seances") or []
-    for a in attente:
+    for a in attente.values():
         s = a["seance"]
         _date(s["debut"])
         if a.get("brut") and not ecrire(BRUT.format(s["id"]), {"id": s["id"], "debut": s["debut"], "colonnes": ["x", "y", "z"], "unite": "cm/s²", "hz": 20, "lignes": a["brut"], "coups": a.get("coups") or []}, "rameur : capteurs"):

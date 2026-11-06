@@ -86,13 +86,22 @@ function ecranRameur({reprise = null} = {}) {
       const s = {id: isoLocal(debut).slice(0, 19).replace("T", "-").replace(/:/g, ""), version: 1, debut: isoLocal(debut), fin: isoLocal(fin), duree_s: Math.round(duree), actif_s: b.actif_s, coups: b.coups, cadence: b.cadence, course_cm: b.course_cm, vitesse: b.vitesse, ratio: b.ratio, par_min: b.par_min,
         trou_s: Math.round(e.trou), saisi: {distance: nb(".f-dist"), temps_s: temps, watts: nb(".f-watts"), kcal: nb(".f-kcal")}};
       let deja = []; try { deja = JSON.parse(localStorage.getItem(RAMEUR_ATTENTE) || "[]"); } catch (x) {}
-      const avec = [...deja, {seance: s, brut: e.brut, coups: e.coups}];
-      try { localStorage.setItem(RAMEUR_ATTENTE, JSON.stringify(avec)); }
-      catch (x) { localStorage.setItem(RAMEUR_ATTENTE, JSON.stringify([...deja.map(a => ({seance: a.seance})), {seance: s}])); }  // plus de place : la séance d'abord, sans les capteurs
+      deja = deja.filter(a => a.seance.id !== s.id);
+      try { localStorage.setItem(RAMEUR_ATTENTE, JSON.stringify([...deja, {seance: s, brut: e.brut, coups: e.coups}])); }
+      catch (x) {
+        try { localStorage.setItem(RAMEUR_ATTENTE, JSON.stringify([...deja.map(a => ({seance: a.seance})), {seance: s}])); }  // plus de place : la séance d'abord, sans les capteurs
+        catch (y) { v.querySelector(".f-erreur").textContent = "Le téléphone n'a plus de place : ta séance reste gardée ici, dis-le à Claude."; return; }
+      }
       oublier();
-      const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href;
+      // Le rechargement peut prendre plusieurs secondes : le formulaire disparaît tout de suite, sinon on retouche le bouton sans rien voir (Kiki, 06/11 : 40 copies de la même séance)
+      const recharger = () => { const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href; };
+      v.innerHTML = `<div class="boite"><h3>Séance gardée !</h3><p>Elle est bien sur ton téléphone. Je l'envoie et je recharge l'appli, ça peut prendre quelques secondes.</p></div><button class="sec relancer" style="visibility:hidden">Recharger l'appli</button>`;
+      v.querySelector(".relancer").onclick = recharger;
+      setTimeout(() => { const b2 = v.querySelector(".relancer"); if (b2) b2.style.visibility = "visible"; }, 15000);
+      recharger();
     };
   }
+  reprise = reprise || rameurInterrompu();  // une séance pas encore enregistrée passe d'abord : une nouvelle l'écraserait
   if (reprise) return formulaire(reprise);
 
   v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(86)}" alt=""><h3>Le rameur</h3></div>
