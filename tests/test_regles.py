@@ -697,6 +697,19 @@ class Rival(unittest.TestCase):
         finally:
             pokemon.REGLAGES["debut"] = avant
 
+    def test_le_classement_ne_montre_que_le_jeu(self):
+        import amis
+        stats = pd.DataFrame({jour(k): {"pas": 9000 + k, "sommeil": 400} for k in range(9)}).T
+        gestes = {str(jour(7)): {"pompes": 12}, str(jour(1)): {"pompes": 50}}  # la semaine d'avant ne compte pas
+        captures, etat = pokemon.jouer(stats, {}, jour(8), joueur={"id": "abc", "debut": jour(0)}, gestes=gestes)
+        r = amis.resume(captures, etat, {c["id"] for c in captures}, jour(8))
+        self.assertEqual(r["muscu"], {"pompes": 12, "squats": 0, "tractions": 0})
+        self.assertGreater(r["points"], 0)
+        self.assertGreater(r["points_passee"], r["points"])
+        texte = str(r)
+        for secret in ("sommeil", "fc_repos", "vfc", "gras", "'pas'", "9007"):
+            self.assertNotIn(secret, texte)
+
     def test_chaque_region_a_quatre_rencontres(self):
         import regions
         for r in regions.REGIONS:

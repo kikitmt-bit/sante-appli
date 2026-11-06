@@ -1,7 +1,8 @@
 """Jouer à plusieurs (1re version, 02/11) : ce que chaque joueur voit des autres, et le suivi des amis pour Kiki.
 
 Visible par les autres joueurs : pseudo et couleurs du dresseur, région, place sur la carte, lieu, badges, Pokédex (espèces
-attrapées et ouvertes), shiny, légendaires, starter, 3 dernières captures, nouvelles (belles captures, badges, lieux atteints), meilleurs scores de la danse au doigt.
+attrapées et ouvertes), shiny, légendaires, rares, starter, 3 dernières captures, nouvelles (belles captures, badges, lieux atteints), meilleurs scores de la danse au doigt,
+points d'effort et séries de muscu de la semaine (la course de la semaine, 06/11).
 **Jamais** : pas, sommeil, cardio, poids.
 Le pseudo et les couleurs viennent du téléphone de chacun (localStorage pkm_dresseur : seulement ces 5 champs, jamais la
 date de naissance, la taille ni le sexe) et sont publiés dans data/dresseurs/<id>.json (id = « kiki » ou celui de l'ami).
@@ -57,14 +58,15 @@ def nouvelles(vues, v, frise, aujourd):
         num, nouveau = c["num"], c["num"] not in vus
         vus.add(num)
         quoi = ("evo" if "#evo" in c["id"] else "starter" if c["id"].endswith(("#chen", "#orme")) else "legendaire" if nouveau and num in LEGENDAIRES else "shiny" if c.get("shiny")
-                else "rare" if nouveau and num in regions.RARES else None)
+                else "rare" if nouveau and num in regions.RARES and "#badge" not in c["id"] else None)
         if quoi:
             out.append({"quoi": quoi, "jour": c["jour"], "num": num, "shiny": bool(c.get("shiny"))})
     arenes = [l["arene"] for l in v["lieux"] if l["arene"]]
     out += [{"quoi": "badge", "jour": j, "n": int(k), "champion": arenes[int(k) - 1]["champion"], "image": arenes[int(k) - 1]["image"]} for k, j in v["badges"].items()]
     for f in frise:
+        # le lieu le plus loin de la journée seulement : pas trois lignes pour une seule grosse journée
         out += [{"quoi": "lieu", "jour": f["jour"], "lieu": l["nom"]} for l in v["lieux"]
-                if f["p0"] < l["dist"] <= f["p1"] and "(retour)" not in l["nom"]]
+                if f["p0"] < l["dist"] <= f["p1"] and "(retour)" not in l["nom"]][-1:]
     limite, ordre = str(aujourd - dt.timedelta(days=14)), ["badge", "legendaire", "shiny", "evo", "starter", "rare", "lieu"]
     out = [n for n in out if n["jour"] >= limite]
     out.sort(key=lambda n: ordre.index(n["quoi"]))
@@ -89,11 +91,16 @@ def resume(captures, etat, ouvertes, aujourd):
         ligne, niv = st_["ligne"], st_["niveau"]
         starter = {"num": ligne[2 if niv >= 36 else 1 if niv >= 16 else 0], "niveau": niv}
     dernieres = sorted(vues, key=lambda c: (c["jour"], str(c.get("c") or "")), reverse=True)[:3]
+    arenes = [l["arene"] for l in v["lieux"] if l["arene"]]
+    de_la_semaine = [d for d in etat.get("derniers") or () if d["jour"] >= lundi]
     return {"pos": v["pos"], "ici": v["ici"], "lieu": v["lieux"][v["ici"]]["nom"], "region": v["carte"]["region"], "carte": v["carte"]["image"],
             "badges": sorted(int(k) for k in v["badges"]), "especes": especes, "shiny": shiny,
             "legendaires": sum(n in LEGENDAIRES for n in especes), "starter": starter,
             "dernieres": [{"num": c["num"], "shiny": bool(c.get("shiny")), "jour": c["jour"]} for c in dernieres],
-            "lundi": lundi, "semaine": sum(j >= lundi for j in premieres.values()), "nouvelles": nouvelles(vues, v, etat["frise"], aujourd), "danse": etat.get("danse") or {}}
+            "lundi": lundi, "semaine": sum(j >= lundi for j in premieres.values()), "rares": sum(n in regions.RARES for n in especes),
+            "badges_img": [arenes[int(k) - 1]["image"] for k in sorted(v["badges"], key=int) if arenes[int(k) - 1]["image"]],
+            "points": (etat.get("semaine") or {}).get("points", 0), "points_passee": (etat.get("semaine_passee") or {}).get("points"),
+            "muscu": {k: sum(d.get(k, 0) for d in de_la_semaine) for k in ("pompes", "squats", "tractions")}, "nouvelles": nouvelles(vues, v, etat["frise"], aujourd), "danse": etat.get("danse") or {}}
 
 
 def partie(lire_depot, ident, debut, aujourd):

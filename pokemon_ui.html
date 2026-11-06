@@ -517,22 +517,27 @@ details.regles{color:#484838 !important}
 .carte-wrap .ami-carte .sacha{width:23%!important}
 .carte-wrap .ami-carte .nom-ami{font:400 11px/1 'Jersey 15',monospace;color:#fff;white-space:nowrap;margin-bottom:1px;padding:0 3px;border-radius:3px;background:rgba(20,28,56,.72)}
 .carte-wrap .ami-carte.etiquette{width:auto;z-index:3}
-.joueur{display:flex;align-items:center;gap:9px;padding:7px 2px;border-top:2px dashed #D8D4B8;cursor:pointer}
-.joueur:first-of-type{border-top:0}
-.joueur .rg{flex:0 0 18px;font-size:20px;color:#686850;text-align:center}
-.joueur .ph{flex:0 0 34px;width:34px;height:46px;position:relative}
-.joueur .ph canvas{position:absolute;left:50%;bottom:1px;width:31px;height:42px;transform:translateX(-50%);image-rendering:pixelated}
-.joueur .tx{flex:1;min-width:0;color:#383828;line-height:1.15}
-.joueur .tx b{font-size:19px;font-weight:400}.joueur .tx b i{font-style:normal;color:#C03028;font-size:15px;margin-left:5px}
-.joueur .tx small{display:block;font-size:15px;color:#686850}
-.joueur .st{flex:0 0 40px;width:40px;height:40px;image-rendering:pixelated;object-fit:contain}
-.joueur.moi{background:rgba(64,168,248,.12);border-radius:8px}
-.detail-ami{padding:4px 2px 10px;color:#383828;font-size:15px}
-.detail-ami .cmp{display:flex;gap:6px;margin:4px 0 6px}.detail-ami .cmp span{flex:1;text-align:center;background:#EEEAD2;border-radius:8px;padding:3px 2px;line-height:1.1}
-.detail-ami .cmp b{display:block;font-size:20px;font-weight:400;color:#C03028}
-.detail-ami .lot{display:flex;flex-wrap:wrap;gap:2px}.detail-ami .lot img{width:40px;height:40px;image-rendering:pixelated}
-.detail-ami .lot img.sh{filter:drop-shadow(0 0 2px #F8C838)}
-.joueur .tx small.plus{color:#C03028}.joueur .tx small.moins{color:#287838}.joueur .tx small i{font-style:normal;color:#686850}
+.cl-t{display:flex;align-items:baseline;justify-content:space-between;gap:8px;color:#383828}.cl-t b{font-size:21px;font-weight:400;white-space:nowrap}.cl-t small{font-size:15px;color:#686850;white-space:nowrap}
+.cl-enjeu{margin:6px 0 8px;padding:7px 10px;border-radius:10px 4px;background:#383828;color:#F8F8E8;font-size:17px;line-height:1.15}.cl-enjeu b{font-weight:400;color:#F8C838}
+.cl-l{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;padding:7px 6px;margin-top:6px;border:2px solid #D8D4B8;border-radius:12px 5px;background:#FFFEF4;cursor:pointer;color:#383828}
+.cl-l.moi{border-color:#40A8F8;background:#EAF6FF;cursor:default}
+.cl-rg{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#383828;background:#E8E4CC;border:2px solid #484838}
+.cl-rg.r1{background:#F8C838}.cl-rg.r2{background:#D0D4DC}.cl-rg.r3{background:#D89858}
+.cl-av{flex:none;position:relative;width:48px;height:48px}.cl-av canvas{position:absolute;left:0;bottom:0;width:31px;height:42px;image-rendering:pixelated}
+.cl-av img{position:absolute;right:-5px;bottom:-2px;width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
+.cl-m{flex:1;min-width:0;line-height:1.1}.cl-m b{display:block;font-size:19px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cl-m small{display:block;font-size:14px;color:#686850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cl-bd{display:flex;gap:1px;margin-top:3px}.cl-bd i{flex:none;width:15px;height:15px;border-radius:50%;background:#E0DCC4}.cl-bd img{flex:none;width:15px;height:15px;object-fit:contain;image-rendering:pixelated}
+.cl-sc{flex:none;text-align:right;line-height:1;min-width:58px}.cl-sc b{display:block;font-size:30px;font-weight:400;color:#C03028}.cl-sc small{display:block;font-size:13px;color:#686850}
+.cl-sc span{display:inline-flex;align-items:center;gap:1px;font-size:14px;color:#383828;margin-top:2px;margin-left:4px}.cl-sc span img{width:14px;height:14px;object-fit:contain;image-rendering:pixelated}.cl-sc span img.brille{filter:drop-shadow(0 0 1px #B8860B) drop-shadow(0 0 1px #B8860B) brightness(.9)}
+.cl-bloc{margin-top:16px}
+.cl-course{margin-top:7px;cursor:pointer}.cl-course.moi{cursor:default}.cl-course .haut{display:flex;justify-content:space-between;gap:6px;font-size:16px;color:#383828}.cl-course .haut b{font-weight:400}.cl-course .haut span{white-space:nowrap}
+.cl-piste{position:relative;height:11px;margin:15px 16px 0 0;border-radius:6px;background:#484838;border:2px solid #484838}.cl-piste i{display:block;height:100%;border-radius:4px;background:#40A8F8;transition:width 1s ease-out}
+.cl-course.tete .cl-piste i{background:#F8C838}.cl-piste img{position:absolute;bottom:-3px;width:32px;height:32px;margin-left:-16px;object-fit:contain;image-rendering:pixelated;transition:left 1s ease-out}
+.cl-note{margin-top:6px;font-size:15px;color:#686850;line-height:1.1}.cl-note b{font-weight:400;color:#B05010}
+.cl-jour{margin-top:8px;font-size:15px;color:#B05010}
+.nouvelle{display:flex;align-items:center;gap:8px;padding:3px 0;color:#383828;font-size:16px;line-height:1.1}
+.nouvelle img{flex:0 0 32px;width:32px;height:32px;object-fit:contain;image-rendering:pixelated}.nouvelle img.sh{filter:drop-shadow(0 0 2px #F8C838)}.nouvelle span{flex:1;min-width:0}.nouvelle span b{font-weight:400}
+.cl-plus{all:unset;display:block;margin:8px auto 0;padding:3px 12px;border:2px solid #484838;border-radius:8px 4px;background:#F8F8E8;color:#383828;font-size:16px;cursor:pointer}
 .suivi{grid-column:1/-1;margin:0}
 .suivi button:before{display:inline-block;transition:transform .15s}.suivi button.on:before{transform:rotate(90deg)}
 .suivi .tx .bar{flex:0 0 100%;height:7px;border-radius:4px;background:#484838;padding:1px;margin-bottom:3px}.suivi .tx .bar i{display:block;height:100%;background:#48C868;border-radius:3px}
@@ -554,10 +559,6 @@ details.regles{color:#484838 !important}
 .exo .plus-moins,.speciale .plus-moins{display:flex;gap:4px;width:100%;margin-top:auto}.exo .plus-moins .go-exo,.speciale .plus-moins .go-exo{flex:1;width:auto;min-width:0;margin-top:0}.exo .plus-moins .go-exo:disabled,.speciale .plus-moins .go-exo:disabled{opacity:.45;cursor:default}
 #starter-dresseur{margin-top:12px}#starter-dresseur .starter-carte{margin-bottom:0}
 .bouton-param{display:block;width:100%;margin-top:12px;padding:10px 12px;text-align:left;cursor:pointer;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);color:#383828;font:inherit;font-size:19px}
-.nouvelles{margin-top:10px}.nouvelles .titre{margin-bottom:2px}
-.nouvelle{display:flex;align-items:center;gap:8px;padding:3px 2px;border-top:2px dashed #D8D4B8;color:#383828;font-size:16px;line-height:1.1}
-.nouvelle img{flex:0 0 34px;width:34px;height:34px;object-fit:contain;image-rendering:pixelated}.nouvelle img.sh{filter:drop-shadow(0 0 2px #F8C838)}
-.nouvelle span{flex:1;min-width:0}.nouvelle small{display:block;font-size:14px;color:#686850}
 #mon-dresseur{border-radius:12px 5px 12px 5px;border:3px solid #484838;box-shadow:3px 3px 0 rgba(10,15,35,.45)}
 .onglets{background:#141C38;border-radius:10px}.onglets button{color:#C9D3EA}.onglets button.on{background:#F8F8E8;color:#383828}
 </style>
@@ -4463,7 +4464,6 @@ function amisSurCarte(depuis = V.pos) {
 }
 // L'onglet Dresseur : tous les joueurs (toi avec tes chiffres en direct), classés au nombre de Pokémon (celui qui bouge tous les
 // jours) ; toucher un ami = son Pokédex comparé au tien et ses dernières captures
-let AMI_OUVERT = null;
 function texteNouvelle(n, j) {
   const nom = (PAR_NUM[n.num] || {}).nom;
   if (n.quoi === "badge") return n.n === 9 ? `${j.nom} a vaincu la Ligue Pokémon !` : `${j.nom} a battu ${n.champion || CHAMPIONS[n.n].nom} !`;
@@ -4475,7 +4475,7 @@ function texteNouvelle(n, j) {
 function imageNouvelle(n) {
   if (n.quoi === "lieu") return `<img src="${IC.carte}" alt="">`;
   if (n.quoi === "badge") return `<img src="${n.n === 9 ? IC.ligue : IMG.badge(n.image || n.n)}" alt="">`;
-  return `<img class="${n.shiny ? "sh" : ""}" src="${IMG.mini(n.num, n.shiny)}" alt="">`;
+  return `<img class="rogne ${n.shiny ? "sh" : ""}" src="${IMG.mini(n.num, n.shiny)}" alt="">`;
 }
 function nouvellesAmis(autres) {  // celles de tous les amis, la plus récente d'abord (le tri garde l'ordre du serveur à jour égal : le plus marquant)
   return autres.flatMap(j => (j.nouvelles || []).map(n => [n, j])).sort((a, b) => b[0].jour.localeCompare(a[0].jour));
@@ -4485,50 +4485,122 @@ function couleurPseudo(j) {
   const tons = COULEURS_TISSU[({...DRESSEUR, ...j.couleurs}).casquette] || COULEURS_TISSU.Rouge, [r, v, b] = tons[1];
   return `rgb(${(r * .3 + v * .59 + b * .11 > 150 ? tons[0] : tons[1]).join(",")})`;
 }
+// Le classement des dresseurs (06/11, carte blanche de Kiki) : le général (Pokédex, puis shiny), la course de la semaine, le face-à-face en touchant un adversaire, les nouvelles.
+// Seulement le jeu : jamais les pas, le sommeil, le cœur ni le poids.
+function lesDresseurs() {
+  const col = collection(), mien = Object.keys(col).map(Number).filter(n => col[n].some(c => !c.rate));
+  const srv = (D.joueurs || []).find(j => j.moi) || {}, auj = gestesAuj(), dejaLa = D.gestes_jour || {}, muscu = {};
+  ["pompes", "squats", "tractions"].forEach(k => muscu[k] = ((srv.muscu || {})[k] || 0) + Math.max((auj[k] || 0) - (dejaLa[k] || 0), 0));
+  const arenes = LIEUX.filter(l => l.arene).map(l => l.arene), moi = {...srv, id: "moi", moi: true, nom: nomDresseur(), couleurs: DRESSEUR, pos: V.pos, lieu: LIEUX[V.ici].nom, region: V.carte.region,
+    badges: Object.keys(V.badges).map(Number), especes: mien, shiny: mien.filter(n => col[n].some(c => c.shiny && !c.rate)), legendaires: mien.filter(n => (D.legendaires || []).includes(n)).length,
+    rares: mien.filter(n => (V.rares || []).includes(n)).length, muscu, points: Math.round((G.semaine || {}).points || 0), points_passee: G.semaine_passee ? Math.round(G.semaine_passee.points || 0) : null,
+    badges_img: Object.keys(V.badges).map(k => (arenes[k - 1] || {}).image).filter(Boolean),
+    starter: G.starter ? {num: G.starter.ligne[G.starter.niveau >= 36 ? 2 : G.starter.niveau >= 16 ? 1 : 0], niveau: G.starter.niveau} : null};
+  const autres = (D.joueurs || []).filter(j => !j.moi);
+  // le Pokédex d'abord, puis les shiny ; à égalité sur les deux, même rang
+  const tous = [moi, ...autres].sort((a, b) => b.especes.length - a.especes.length || b.shiny.length - a.shiny.length || (b.badges_img || []).length - (a.badges_img || []).length || b.pos - a.pos);
+  return {moi, autres, tous, rang: j => tous.findIndex(x => x.especes.length === j.especes.length && x.shiny.length === j.shiny.length) + 1};
+}
+const pluriel = (n, mot) => `${n} ${mot}${n > 1 ? "s" : ""}`;
+const nomJoueur = j => `<b style="color:${couleurPseudo(j)}">${j.nom}</b>`;
+// Ce qu'il faut pour passer devant cet adversaire (ou pour rester devant)
+function enjeu(moi, j) {
+  const e = j.especes.length - moi.especes.length, s = j.shiny.length - moi.shiny.length;
+  if (e > 0 || (e === 0 && s >= 0)) return e > 0 ? `Encore <b>${pluriel(e + 1, "espèce")}</b> et tu passes devant ${j.nom} !` : s > 0 ? `Encore <b>${pluriel(s + 1, "shiny").replace("shinys", "shiny")}</b> et tu passes devant ${j.nom} !` : `À égalité avec ${j.nom} : <b>ta prochaine espèce</b> fait la différence !`;
+  return e < 0 ? `Tu as <b>${pluriel(-e, "espèce")}</b> d'avance sur ${j.nom}. Ça peut aller vite !` : `Devant ${j.nom} grâce à <b>${pluriel(-s, "shiny").replace("shinys", "shiny")}</b>. Il suffit d'une espèce pour tout changer !`;
+}
+function bandeauEnjeu(moi, tous) {
+  const i = tous.indexOf(moi), j = i > 0 ? tous[i - 1] : tous[1];
+  return j ? `<div class="cl-enjeu">${enjeu(moi, j)}</div>` : "";
+}
+const lignesClassement = ({tous, rang}) => tous.map(j => {
+  const r = rang(j), imgs = j.badges_img || [], cases = Array.from({length: 8}, (_, k) => imgs[k] ? `<img src="${IMG.badge(imgs[k])}" alt="">` : "<i></i>").join("");
+  const en_plus = `${j.shiny.length ? `<span><img class="brille" src="${IC.shiny}" alt="">${j.shiny.length}</span>` : ""}${j.legendaires ? `<span><img src="${IC.master}" alt="">${j.legendaires}</span>` : ""}`;
+  return `<button class="cl-l ${j.moi ? "moi" : ""}" data-id="${j.id}"><span class="cl-rg r${r}">${r}</span>
+    <span class="cl-av"><canvas width="14" height="19"></canvas>${j.starter ? `<img class="rogne" src="${IMG.mini(j.starter.num)}" alt="">` : ""}</span>
+    <span class="cl-m">${nomJoueur(j)}<small>${j.region} · ${j.lieu.replace(" (retour)", "")}</small><span class="cl-bd">${cases}</span></span>
+    <span class="cl-sc"><b>${j.especes.length}</b><small>Pokédex</small>${en_plus}</span></button>`;
+}).join("");
+function blocCourse({tous, moi}) {
+  const parPoints = [...tous].sort((a, b) => (b.points || 0) - (a.points || 0)), max = Math.max((parPoints[0] || {}).points || 0, 1);
+  const reste = (7 - new Date().getDay()) % 7, fin = reste === 0 ? "dernier jour !" : `encore ${pluriel(reste, "jour")}`;
+  const anciens = tous.filter(j => j.points_passee != null), meilleur = anciens.length ? Math.max(...anciens.map(j => j.points_passee)) : 0;
+  const champions = meilleur > 0 ? anciens.filter(j => j.points_passee === meilleur) : [];
+  const rows = parPoints.map((j, i) => { const p = j.points || 0, pct = Math.max(p / max * 100, 2);
+    return `<div class="cl-course ${j.moi ? "moi" : ""} ${i === 0 && p > 0 ? "tete" : ""}" data-id="${j.id}"><div class="haut">${nomJoueur(j)}<span>${fr(p)} pts</span></div>
+      <div class="cl-piste"><i style="width:${pct}%"></i>${j.starter ? `<img class="rogne" src="${IMG.mini(j.starter.num)}" style="left:${pct}%" alt="">` : ""}</div></div>`; }).join("");
+  return `<div class="cl-bloc"><div class="cl-t"><b>Course de la semaine</b><small>${fin}</small></div>${rows}
+    <div class="cl-note">Points d'effort depuis lundi : tout repart de zéro chaque semaine.${champions.length ? ` Gagnant de la semaine dernière : ${champions.map(nomJoueur).join(", ")}, <b>${fr(meilleur)} pts</b>.` : ""}</div></div>`;
+}
+let FIL_OUVERT = false;
+function blocNouvelles(autres) {
+  const fil = nouvellesAmis(autres); if (!fil.length) return "";
+  const vues = fil.slice(0, FIL_OUVERT ? 15 : 5); let jour = null;
+  const rows = vues.map(([n, j]) => { const entete = n.quand !== jour ? `<div class="cl-jour">${n.quand[0].toUpperCase() + n.quand.slice(1)}</div>` : ""; jour = n.quand;
+    return `${entete}<div class="nouvelle">${imageNouvelle(n)}<span>${texteNouvelle(n, j).replace(j.nom, nomJoueur(j))}</span></div>`; }).join("");
+  return `<div class="cl-bloc"><div class="cl-t"><b>Les nouvelles</b></div>${rows}${fil.length > 5 ? `<button class="cl-plus">${FIL_OUVERT ? "Voir moins" : "Voir plus"}</button>` : ""}</div>`;
+}
 function dessinerAmis() {
   const el = document.getElementById("amis"); if (!el) return;
-  const col = collection(), mien = Object.keys(col).map(Number).filter(n => col[n].some(c => !c.rate));
-  const premieres = {};
-  CAPTURES.filter(prise).forEach(c => { if (!premieres[c.num] || c.jour < premieres[c.num]) premieres[c.num] = c.jour; });
-  const moi = {id: "moi", moi: true, nom: nomDresseur(), couleurs: DRESSEUR, pos: V.pos, lieu: LIEUX[V.ici].nom, region: V.carte.region,
-    badges: Object.keys(V.badges).map(Number), especes: mien, shiny: mien.filter(n => col[n].some(c => c.shiny && !c.rate)),
-    starter: G.starter ? {num: G.starter.ligne[G.starter.niveau >= 36 ? 2 : G.starter.niveau >= 16 ? 1 : 0]} : null};
-  const autres = (D.joueurs || []).filter(j => !j.moi);
-  const titre = `<div class="titre" style="font-size:16px">Classement des dresseurs</div>`;
-  const lundi = (autres[0] || {}).lundi || "";
-  moi.semaine = Object.values(premieres).filter(j => j >= lundi).length;
-  // le Pokédex d'abord, puis les shiny ; à égalité sur les deux, même rang (la liste reste rangée par badges, puis par avancée)
-  const tous = [moi, ...autres].sort((a, b) => b.especes.length - a.especes.length || b.shiny.length - a.shiny.length
-    || b.badges.filter(n => n <= 8).length - a.badges.filter(n => n <= 8).length || b.pos - a.pos);
-  if (!autres.length) { el.innerHTML = titre + `<div class="petit gris" style="margin-top:4px">Aucun autre dresseur pour l'instant.</div>`; return; }
-  const rang = j => tous.findIndex(x => x.especes.length === j.especes.length && x.shiny.length === j.shiny.length) + 1;
-  const lignes = tous.map(j => {
-    const nb = j.badges.filter(n => n <= 8).length, ecart = j.especes.length - mien.length;
-    const sem = j.semaine ? `+${j.semaine} cette semaine` : "";
-    const compare = j.moi ? "" : ecart > 0 ? `${ecart} de plus que toi` : ecart < 0 ? `${-ecart} de moins que toi` : "autant que toi";
-    const ligne = `<div class="joueur ${j.moi ? "moi" : ""}" data-id="${j.id}"><span class="rg">${rang(j)}</span>
-      <div class="ph"><canvas width="14" height="19"></canvas></div>
-      <div class="tx"><b style="color:${couleurPseudo(j)}">${j.nom}${j.moi ? "<i>toi</i>" : ""}</b><small>${j.region} · ${j.lieu.replace(" (retour)", "")}</small>
-        <small>Pokédex ${j.especes.length} · Shiny ${j.shiny.length} · Badges ${nb}</small>
-        ${compare || sem ? `<small class="${ecart > 0 && !j.moi ? "plus" : ecart < 0 && !j.moi ? "moins" : ""}">${compare}${compare && sem ? " · " : ""}${sem ? `<i>${sem}</i>` : ""}</small>` : ""}</div>
-      ${j.starter ? `<img class="st" src="${IMG.mini(j.starter.num)}" alt="">` : ""}</div>`;
-    if (j.moi || AMI_OUVERT !== j.id) return ligne;
-    const a = new Set(mien), b = new Set(j.especes), lui = j.especes.filter(n => !a.has(n));
-    const nom = n => (PAR_NUM[n] || {}).nom || "#" + n;
-    return ligne + `<div class="detail-ami"><div class="cmp"><span><b>${mien.filter(n => b.has(n)).length}</b>en commun</span>
-      <span><b>${mien.filter(n => !b.has(n)).length}</b>que toi</span><span><b>${lui.length}</b>que ${j.nom}</span></div>
-      ${lui.length ? `<div>Ce que ${j.nom} a et pas toi :</div><div class="lot">${lui.map(n => `<img src="${IMG.mini(n, j.shiny.includes(n))}" title="${nom(n)}" alt="${nom(n)}">`).join("")}</div>` : ""}
-      ${j.dernieres && j.dernieres.length ? `<div style="margin-top:6px">Ses dernières captures :</div><div class="lot">${j.dernieres.map(c => `<img class="${c.shiny ? "sh" : ""}" src="${IMG.mini(c.num, c.shiny)}" title="${nom(c.num)}" alt="${nom(c.num)}">`).join("")}</div>` : ""}</div>`;
-  }).join("");
-  const fil = nouvellesAmis(autres).slice(0, 10);
-  const blocFil = fil.length ? `<div class="nouvelles"><div class="titre" style="font-size:16px">Les nouvelles</div>${fil.map(([n, j]) =>
-    `<div class="nouvelle">${imageNouvelle(n)}<span>${texteNouvelle(n, j)}<small>${n.quand}</small></span></div>`).join("")}</div>` : "";
-  el.innerHTML = titre + lignes + blocFil;
-  el.querySelectorAll(".joueur").forEach((r, i) => {
-    const j = tous.find(x => x.id === r.dataset.id);
+  const L = lesDresseurs(), {moi, autres, tous} = L;
+  if (!autres.length) { el.innerHTML = `<div class="cl-t"><b>Classement des dresseurs</b></div><div class="petit gris" style="margin-top:4px">Aucun autre dresseur pour l'instant.</div>`; return; }
+  el.innerHTML = `<div class="cl-t"><b>Classement des dresseurs</b></div>${bandeauEnjeu(moi, tous)}${lignesClassement(L)}${blocCourse(L)}${blocNouvelles(autres)}`;
+  el.querySelectorAll(".cl-l").forEach(r => { const j = tous.find(x => x.id === r.dataset.id);
     apercuDresseur(r.querySelector("canvas"), {...DRESSEUR, ...j.couleurs}, false, CADRE_DRESSEUR);
-    if (!j.moi) r.onclick = () => { AMI_OUVERT = AMI_OUVERT === j.id ? null : j.id; dessinerAmis(); vibre(10); };
-  });
+    if (!j.moi) r.onclick = () => { vibre(10); ouvrirDuel(j); }; });
+  el.querySelectorAll(".cl-course").forEach(r => { const j = tous.find(x => x.id === r.dataset.id); if (!j.moi) r.onclick = () => { vibre(10); ouvrirDuel(j); }; });
+  const plus = el.querySelector(".cl-plus"); if (plus) plus.onclick = () => { FIL_OUVERT = !FIL_OUVERT; dessinerAmis(); };
+  rognerImages(el);
+}
+// Le face-à-face : ton starter contre le sien sur le décor de combat de ton lieu, puis chaque chiffre comparé
+const STYLE_DUEL = `
+#pkm-duel{position:fixed;inset:0;z-index:999999;overflow-y:auto;background:#22315A;color:#383828;font-family:'Jersey 15',monospace;font-size-adjust:.5;-webkit-overflow-scrolling:touch}
+#pkm-duel .scene{position:relative;width:100%;aspect-ratio:3/2;background:#1A2548 center/cover no-repeat;image-rendering:pixelated;overflow:hidden}
+#pkm-duel .sp{position:absolute;transform:translate(-50%,-100%);image-rendering:pixelated;object-fit:contain}
+#pkm-duel .hud{position:absolute;display:flex;align-items:center;gap:5px;max-width:52%;padding:3px 7px;background:#F8F8E8;border:2px solid #484838;border-radius:10px 4px;box-shadow:2px 2px 0 rgba(0,0,0,.4);line-height:1}
+#pkm-duel .hud.lui{left:3%;top:5%}#pkm-duel .hud.toi{right:3%;bottom:5%}
+#pkm-duel .hud canvas{flex:none;width:17px;height:23px;image-rendering:pixelated}#pkm-duel .hud b{display:block;font-size:17px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#pkm-duel .hud small{display:block;font-size:14px;color:#686850}
+#pkm-duel .fermer-x{position:absolute;right:8px;top:8px;width:36px;height:36px;border:0;border-radius:50%;background:rgba(10,15,35,.65);color:#fff;font-size:20px;cursor:pointer}
+#pkm-duel .corps{padding:10px 12px 76px}
+#pkm-duel .boite{background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.35);padding:9px 11px;margin-bottom:11px}
+#pkm-duel .score{text-align:center}#pkm-duel .score .gros{font-size:29px;color:#C03028;line-height:1.05}#pkm-duel .score small{display:block;font-size:17px;line-height:1.15;color:#383828;margin-top:2px}#pkm-duel .score small b{font-weight:400;color:#B05010}
+#pkm-duel h4{margin:0 0 3px;font-size:18px;font-weight:400;color:#B05010}
+#pkm-duel .ech{display:flex;align-items:center;gap:7px;padding:5px 0;border-top:2px dashed #D8D4B8}#pkm-duel h4+.ech{border-top:0}
+#pkm-duel .ech .v{flex:0 0 42px;font-size:20px;line-height:1;color:#8A8A70}#pkm-duel .ech .v.d{text-align:right}#pkm-duel .ech .v.g{color:#383828;font-size:24px}
+#pkm-duel .ech .mi{flex:1;min-width:0;text-align:center}#pkm-duel .ech .lib{display:flex;align-items:center;justify-content:center;gap:4px;font-size:16px;line-height:1.1}#pkm-duel .ech .lib img{width:24px;height:24px;object-fit:contain;image-rendering:pixelated}#pkm-duel .ech .lib img.brille{filter:drop-shadow(0 0 1px #B8860B) drop-shadow(0 0 1px #B8860B) brightness(.9)}
+#pkm-duel .tir{display:flex;height:9px;margin-top:3px;border:2px solid #484838;border-radius:5px;overflow:hidden;background:#D83830}#pkm-duel .tir i{display:block;background:#40A8F8}
+#pkm-duel .qui{display:flex;justify-content:space-between;gap:8px;font-size:16px;margin-bottom:4px}#pkm-duel .qui b{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#pkm-duel .prises{display:flex;gap:6px}#pkm-duel .prise{flex:1 1 0;min-width:0;text-align:center;line-height:1.05;font-size:15px}#pkm-duel .prise img{display:block;width:56px;height:56px;margin:0 auto;object-fit:contain;image-rendering:pixelated}#pkm-duel .prise img.sh{filter:drop-shadow(0 0 3px #F8C838)}#pkm-duel .prise small{display:block;font-size:13px;color:#686850}
+#pkm-duel .fermer{display:block;width:100%;padding:9px;border:3px solid #484838;border-radius:12px 5px;background:#F8F8E8;color:#383828;font:inherit;font-size:19px;cursor:pointer}`;
+function ouvrirDuel(j) {
+  preparerScene(); installerStyle("pkm-duel-style", STYLE_DUEL);
+  const {moi, tous, rang} = lesDresseurs(), adv = tous.find(x => x.id === j.id) || j, nb = (x, k) => (x.muscu || {})[k] || 0;
+  const danseGagnee = (x, y) => Object.keys(x.danse || {}).filter(k => x.danse[k] > ((y.danse || {})[k] || 0)).length;  // les morceaux où x fait mieux, à la même difficulté
+  const ic = (src, cl = "rogne") => `<img class="${cl}" src="${src}" alt="">`;
+  const semaine = [["Points d'effort", ic(IC.effort), moi.points || 0, adv.points || 0, true], ["Pompes", ic(IMG.mini(68)), nb(moi, "pompes"), nb(adv, "pompes")], ["Squats", ic(IMG.mini(115)), nb(moi, "squats"), nb(adv, "squats")], ["Tractions", ic(IMG.mini(127)), nb(moi, "tractions"), nb(adv, "tractions")]];
+  const total = [["Pokédex", ic(IC.poke), moi.especes.length, adv.especes.length, true], ["Badges", ic(IMG.badge(1)), (moi.badges_img || []).length, (adv.badges_img || []).length, true], ["Shiny", ic(IC.shiny, "brille"), moi.shiny.length, adv.shiny.length, true],
+    ["Légendaires", ic(IC.master), moi.legendaires || 0, adv.legendaires || 0], ["Rares", ic(IC.rare), moi.rares || 0, adv.rares || 0], ["Niveau du starter", moi.starter ? ic(IMG.mini(moi.starter.num)) : "", (moi.starter || {}).niveau || 0, (adv.starter || {}).niveau || 0],
+    ["Danse, records", ic(IMG.mini(35)), danseGagnee(moi, adv), danseGagnee(adv, moi)]];
+  const garde = l => l.filter(([, , a, b, toujours]) => toujours || a || b);
+  const lignes = [...garde(semaine), ...garde(total)], gagnes = lignes.filter(l => l[2] > l[3]).length, perdus = lignes.filter(l => l[3] > l[2]).length;
+  const titre = gagnes > perdus ? "Tu mènes" : gagnes < perdus ? `${adv.nom} mène` : "Égalité";
+  const ech = ([lib, image, a, b]) => `<div class="ech"><span class="v ${a >= b && a ? "g" : ""}">${fr(a)}</span><span class="mi"><span class="lib">${image}${lib}</span><span class="tir"><i style="width:${a + b ? a / (a + b) * 100 : 50}%"></i></span></span><span class="v d ${b >= a && b ? "g" : ""}">${fr(b)}</span></div>`;
+  const decor = DECORS_COMBAT[LIEUX[V.ici].nom.replace(" (retour)", "")];
+  const sprites = decor ? `${adv.starter ? `<img class="sp rogne" src="${IMG.grand(adv.starter.num)}" style="left:${decor.e[0]}%;top:${decor.e[1]}%;width:${decor.te * .8}%" alt="">` : ""}${moi.starter ? `<img class="sp rogne" src="${D.images}/pokemon/back/${moi.starter.num}.png" style="left:${decor.c[0]}%;top:${decor.c[1]}%;width:${decor.tc * .75}%" alt="">` : ""}` : "";
+  const hud = (x, cl, nom) => `<div class="hud ${cl}"><canvas width="14" height="19"></canvas><span style="min-width:0"><b style="color:${couleurPseudo(x)}">${nom}</b><small>${rang(x)}<sup>e</sup>${x.starter ? ` · ${PAR_NUM[x.starter.num] ? PAR_NUM[x.starter.num].nom : ""} N. ${x.starter.niveau || "?"}` : ""}</small></span></div>`;
+  const prises = (adv.dernieres || []).map(c => `<div class="prise"><img class="${c.shiny ? "sh" : ""}" src="${IMG.grand(c.num, c.shiny)}" alt="">${(PAR_NUM[c.num] || {}).nom || ""}${c.shiny ? " ✨" : ""}<small>${c.jour.slice(8)}/${c.jour.slice(5, 7)}</small></div>`).join("");
+  const f = P.createElement("div"); f.id = "pkm-duel";
+  f.innerHTML = `<div class="scene" ${decor ? `style="background-image:url('${D.scenes}${decor.image}')"` : ""}>${sprites}${hud(adv, "lui", adv.nom)}${hud(moi, "toi", moi.nom)}<button class="fermer-x" aria-label="Fermer">✕</button></div>
+    <div class="corps"><div class="boite score"><div class="gros">${titre} ${Math.max(gagnes, perdus)} à ${Math.min(gagnes, perdus)}</div><small>${enjeu(moi, adv)}</small></div>
+      <div class="boite"><div class="qui"><b style="color:${couleurPseudo(moi)}">${moi.nom}</b><b style="color:${couleurPseudo(adv)}">${adv.nom}</b></div><h4>Cette semaine</h4>${garde(semaine).map(ech).join("")}</div>
+      <div class="boite"><h4>Depuis le début</h4>${garde(total).map(ech).join("")}</div>
+      ${prises ? `<div class="boite"><h4>Ses dernières captures</h4><div class="prises">${prises}</div></div>` : ""}
+      <button class="fermer">Fermer</button></div>`;
+  P.body.appendChild(f);
+  const fermer = () => f.remove();
+  f.querySelector(".fermer").onclick = fermer; f.querySelector(".fermer-x").onclick = fermer;
+  f.querySelectorAll(".hud").forEach((h, i) => apercuDresseur(h.querySelector("canvas"), {...DRESSEUR, ...(i ? moi : adv).couleurs}, false, CADRE_DRESSEUR));
+  rognerImages(f);
 }
 
 // L'intérieur de la grotte (dans la boule de cristal) : une bande de pixel art dessinée une fois, qui défile
@@ -5794,7 +5866,7 @@ function relierRetour() {
   PW.__gardeJeu = poser;
   PW.__retourJeu = () => {
     PW.__gardePosee = false;
-    const fermer = P.querySelector("#pkm-fiche .fermer, .pkm-entr .retour, .pkm-entr .fini, .pkm-entr .passer, .pkm-ecran .pkm-passer");
+    const fermer = P.querySelector("#pkm-duel .fermer, #pkm-fiche .fermer, .pkm-entr .retour, .pkm-entr .fini, .pkm-entr .passer, .pkm-ecran .pkm-passer");
     if (fermer) { fermer.click(); poser(); return; }
     if (P.querySelector(".pkm-entr, .pkm-ecran, #pkm-badge, #pkm-intro, #pkm-voile")) { poser(); return; }
     if (ONGLET !== "aventure") { montrerOnglet("aventure"); poser(); return; }
@@ -5818,7 +5890,7 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
 function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 // La page vient de (re)démarrer : un calque resté là appartient à l'ancienne page, ses minuteurs et ses boutons sont morts (écran noir, ✕ sans effet). On l'enlève.
-P.querySelectorAll(".pkm-ecran,.pkm-entr,#pkm-intro,#pkm-badge,#pkm-voile,#pkm-evo,#pkm-dresseur,#pkm-fiche").forEach(x => x.remove());
+P.querySelectorAll(".pkm-ecran,.pkm-entr,#pkm-intro,#pkm-badge,#pkm-voile,#pkm-evo,#pkm-dresseur,#pkm-fiche,#pkm-duel").forEach(x => x.remove());
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#" + CADEAU));
