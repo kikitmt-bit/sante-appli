@@ -46,7 +46,7 @@ function bilanRameur(coups) {
 }
 const isoLocal = ms => { const d = new Date(ms), o = -d.getTimezoneOffset(), z = x => String(Math.floor(Math.abs(x))).padStart(2, "0");
   return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}${o < 0 ? "-" : "+"}${z(o / 60)}:${z(o % 60)}`; };
-const RAMEUR_ENCOURS = "pkm_rameur_encours", RAMEUR_ATTENTE = "pkm_rameur", RAMEUR_BRUT_MAX = 108000;  // 90 min de capteurs
+const RAMEUR_ENCOURS = "pkm_rameur_encours", RAMEUR_ATTENTE = "pkm_rameur", RAMEUR_BRUT_MAX = 108000, RAMEUR_DECOMPTE = 10, RAMEUR_PALIER = 300;  // 90 min de capteurs ; décompte et annonces du temps, en secondes
 function rameurInterrompu() { try { return JSON.parse(localStorage.getItem(RAMEUR_ENCOURS) || "null"); } catch (e) { return null; } }
 const STYLE_RAMEUR = `
 .pkm-rameur .poche b{font-size:150px}.pkm-rameur .rame-info{display:flex;justify-content:space-around;width:100%;font-size:26px;margin-top:10px}.pkm-rameur .rame-info span small{display:block;font-size:15px}
@@ -105,7 +105,7 @@ function ecranRameur({reprise = null} = {}) {
   if (reprise) return formulaire(reprise);
 
   v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(86)}" alt=""><h3>Le rameur</h3></div>
-      <p>Fixe le téléphone au siège, bien serré, dans le sens que tu veux : il faut juste qu'il ne ballotte pas.</p><p>L'écran reste allumé pendant la séance. Une voix te dira quand les coups sont comptés.</p></div>
+      <p>Après « Lancer », tu as 10 secondes pour fixer le téléphone au siège, bien serré, dans le sens que tu veux. Démarre quand la voix dit « zéro ».</p><p>L'écran reste allumé. La voix te dira quand les coups sont comptés, puis le temps toutes les 5 minutes.</p></div>
     <button class="go lancer">Lancer la séance</button><button class="sec retour">Retour</button>`;
   v.querySelector(".retour").onclick = fermer;
   v.querySelector(".lancer").onclick = async () => {
@@ -114,6 +114,15 @@ function ecranRameur({reprise = null} = {}) {
     const allumer = async () => { for (const w of [PAGE_HAUTE(), PW]) { try { verrou = await w.navigator.wakeLock.request("screen"); return; } catch (e) {} } };
     await allumer();
     surVisible = () => { if (P.visibilityState === "visible") allumer(); }; P.addEventListener("visibilitychange", surVisible);
+    // Le temps d'accrocher le téléphone et de s'installer (Kiki, 06/11) : on ne mesure qu'à partir de « zéro »
+    v.innerHTML = `<div class="gros r-compte">10</div><div class="rythme">Accroche le téléphone et mets-toi en position</div><button class="sec retour">Annuler</button>`;
+    let annule = false; v.querySelector(".retour").onclick = () => { annule = true; try { PW.speechSynthesis.cancel(); } catch (e) {} fermer(); };
+    for (let s = RAMEUR_DECOMPTE; s >= 0; s--) {
+      v.querySelector(".r-compte").textContent = s; parler(s ? String(s) : "Zéro");
+      if (s) await new Promise(r => setTimeout(r, 1000));
+      if (annule) return;
+    }
+    vibre(200); ton(880, 0, .3, {type: "square", vol: .1});
     const A = analyseurRameur(), brut = []; let debutT = null, debutMur = Date.now(), recus = 0, dernier = null, trou = 0, sx = 0, sy = 0, sz = 0, sn = 0, suivant = 0, annonce = false, g = null;
     lire = e => {
       const t = e.timeStamp || performance.now(), a = e.acceleration, i = e.accelerationIncludingGravity;
@@ -136,12 +145,15 @@ function ecranRameur({reprise = null} = {}) {
     const etat = () => ({debutT, debutMur, finMur: Date.now(), trou, brut: brut.join(";"), coups: A.coups.map(c => [Math.round(c.t), Math.round(c.dur * 100) / 100, Math.round(c.course * 1000) / 1000, Math.round(c.vit * 100) / 100, Math.round(c.ratio * 100) / 100])});
     const sauver = () => { try { localStorage.setItem(RAMEUR_ENCOURS, JSON.stringify(etat())); } catch (e) {} };
     const q = c => v.querySelector(c);
+    let palierDit = 0;
     chrono = setInterval(() => {
       const n = A.coups.length, recents = A.coups.filter(c => dernier - c.t < 20000), sec = Math.round((Date.now() - debutMur) / 1000);
       q(".r-nb").textContent = n; q(".r-temps").textContent = `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
       q(".r-cad").textContent = recents.length >= 3 ? Math.round(recents.length * 60 / Math.max((recents[recents.length - 1].t - recents[0].t) / 1000 + recents[0].dur, 1)) : "–";
       q(".r-msg").textContent = !recus && sec > 3 ? "Les capteurs ne répondent pas" : n ? "" : "J'attends tes premiers coups";
-      if (!annonce && n >= 5) { annonce = true; vibre(40); parler("C'est bon, je compte tes coups."); }
+      const palier = Math.floor(sec / RAMEUR_PALIER);
+      if (palier > palierDit) { palierDit = palier; parler(`${palier * RAMEUR_PALIER / 60} minutes`); }  // le temps depuis « zéro », pauses comprises, comme le chrono à l'écran
+      else if (!annonce && n >= 5) { annonce = true; vibre(40); parler("C'est bon, je compte tes coups."); }
     }, 500);
     garde = setInterval(sauver, 30000);
     confirmerDeuxFois(q(".finir"), "Touche encore pour finir", () => { const e = etat(); couper(); sauver(); formulaire(e); });
