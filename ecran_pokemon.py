@@ -15,7 +15,7 @@ import chiffres
 import pokemon
 import regions
 import rival
-from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, FEMELLES, LEGENDAIRES, POIDS, POKEMON, TAILLES
+from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
 UI = Path(__file__).with_name("pokemon_ui.html")
 DANSE = Path(__file__).with_name("danse.js")
@@ -100,7 +100,6 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "pesees": etat["pesees"],
         "poids": {n: v for n, v in POIDS.items() if n in nums},
         "tailles": {n: v for n, v in TAILLES.items() if n in nums},
-        "femelles": {n: v for n, v in FEMELLES.items() if n in nums},
         "categories": {n: v for n, v in CATEGORIES.items() if n in nums},
         "descriptions": {n: v for n, v in DESCRIPTIONS.items() if n in nums},
         "carte": f"https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/{etat['voyage']['carte']['image']}",

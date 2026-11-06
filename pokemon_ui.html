@@ -232,7 +232,8 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
 .carte-wrap .heros.navire img{width:100%;image-rendering:pixelated;filter:drop-shadow(0 2px 0 rgba(0,0,0,.3))}
 .carte-wrap .heros.navire img.miroir{transform:scaleX(-1)}
 .carte-wrap .heros .sacha{width:23%!important}
-.carte-wrap .heros:not(.porte) .sacha[style*="red_bike"],.carte-wrap .heros:not(.porte) .sacha[style*="red_surf"]{width:46%!important}
+/* à vélo, en surf : une image deux fois plus large (32 × 32) ; repérée par data-feuille, car l'image repeinte aux couleurs du dresseur n'a plus « red_bike » dans son adresse (il était minuscule, Kiki 05/11) */
+.carte-wrap .heros:not(.porte) .sacha[data-feuille="red_bike"],.carte-wrap .heros:not(.porte) .sacha[data-feuille="red_surf"]{width:46%!important}
 .sacha{background-repeat:no-repeat;image-rendering:pixelated;filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
 .sacha.miroir{transform:scaleX(-1)}
 .carte-wrap .heros.porte{animation:pk-vole 1.6s ease-in-out infinite}
@@ -689,21 +690,21 @@ const typeBall = c => c.champion ? "honor" : c.ball;
 // ce que chaque champion dit en confiant son Pokémon fétiche (Kiki, 05/11) : jamais son nom, on le découvre quand la ball s'ouvre
 const CONFIE = {
   "Pierre": "Tiens, je te confie mon <b>Pokémon fétiche</b>. Solide comme le roc : il ne te lâchera jamais.",
-  "Ondine": "Prends mon <b>Pokémon fétiche</b>. Il rêve de voir le monde… et toi, tu as l'air de savoir où tu vas !",
-  "Major Bob": "Hé, soldat ! Je te confie mon <b>Pokémon fétiche</b>. Attention, ça pique !",
-  "Erika": "Je te confie mon <b>Pokémon fétiche</b>. Prends-en soin comme d'une fleur rare.",
-  "Koga": "Un ninja ne donne jamais rien… sauf aujourd'hui. Voici mon <b>Pokémon fétiche</b>.",
-  "Morgane": "Je l'avais vu venir : tu allais gagner. Alors je te confie mon <b>Pokémon fétiche</b>.",
-  "Auguste": "Ha ha ! Tu as le feu sacré ! Tiens, mon <b>Pokémon fétiche</b> : il va te réchauffer !",
-  "Giovanni": "Prends mon <b>Pokémon fétiche</b>. Ne me fais pas regretter ce choix.",
-  "Albert": "Tiens, je te confie mon <b>Pokémon fétiche</b>. Avec lui, tu iras haut !",
-  "Hector": "Les insectes, c'est ma passion. Je te confie mon <b>Pokémon fétiche</b> : traite-le bien !",
-  "Blanche": "Snif… Bon, d'accord : tu as gagné. Je te confie mon <b>Pokémon fétiche</b> !",
-  "Mortimer": "Je l'ai vu en rêve : c'est à toi que je devais le confier. Mon <b>Pokémon fétiche</b>.",
-  "Jasmine": "Tu as été formidable… Je te confie mon <b>Pokémon fétiche</b>. Il est solide, tu verras.",
-  "Chuck": "OUAH ! Quelle force ! Je te confie mon <b>Pokémon fétiche</b> : on s'entraîne ensemble depuis des années !",
-  "Frédo": "À mon âge, on sait reconnaître un vrai dresseur. Je te confie mon <b>Pokémon fétiche</b>.",
-  "Sandra": "… Bon. Tu le mérites. Je te confie mon <b>Pokémon fétiche</b>. Ne me déçois pas !",
+  "Ondine": "Prends mon <b>Pokémon préféré</b>. Il rêve de voir le monde… et toi, tu as l'air de savoir où tu vas !",
+  "Major Bob": "Hé, soldat ! Je te confie mon <b>meilleur élément</b>. Attention, ça pique !",
+  "Erika": "Je te confie mon <b>Pokémon favori</b>. Prends-en soin comme d'une fleur rare.",
+  "Koga": "Un ninja ne donne jamais rien… sauf aujourd'hui. Voici mon <b>arme secrète</b>.",
+  "Morgane": "Je l'avais vu venir : tu allais gagner. Alors je te confie mon <b>plus fidèle compagnon</b>.",
+  "Auguste": "Ha ha ! Tu as le feu sacré ! Tiens, mon <b>Pokémon préféré</b> : il va te réchauffer !",
+  "Giovanni": "Prends mon <b>Pokémon le plus fort</b>. Ne me fais pas regretter ce choix.",
+  "Albert": "Tiens, je te confie mon <b>fidèle partenaire</b>. Avec lui, tu iras haut !",
+  "Hector": "Les insectes, c'est ma passion. Je te confie mon <b>chouchou</b> : traite-le bien !",
+  "Blanche": "Snif… Bon, d'accord : tu as gagné. Je te confie mon <b>Pokémon adoré</b> !",
+  "Mortimer": "Je l'ai vu en rêve : c'est à toi que je devais confier mon <b>Pokémon fétiche</b>.",
+  "Jasmine": "Tu as été formidable… Je te confie mon <b>Pokémon favori</b>. Il est solide, tu verras.",
+  "Chuck": "OUAH ! Quelle force ! Je te confie mon <b>partenaire d'entraînement</b> : on s'entraîne ensemble depuis des années !",
+  "Frédo": "À mon âge, on sait reconnaître un vrai dresseur. Je te confie mon <b>plus vieux compagnon</b>.",
+  "Sandra": "… Bon. Tu le mérites. Je te confie mon <b>Pokémon le plus fier</b>. Ne me déçois pas !",
 };
 const champDe = c => c.champion ? (EN_JOHTO && c.jour < REG.debut ? CHAMPIONS_KANTO : CHAMPIONS)[(/#badge(\d)$/.exec(c.id || "") || [])[1] || c.champN] : null;  // le champion qui l'a confié (de sa région)
 // Les icônes du jeu (objets, rubans, marques et types de PokeAPI/sprites) à la place des émojis
@@ -792,6 +793,14 @@ function partager(ids) {
   }).catch(() => {});
 }
 serveur.forEach(id => ouvertes.add(id)); garder();
+// le même envoi, mais on attend que le serveur l'ait bien noté (le défi gagné aux pompes : sinon la page rechargée ne voit pas encore la série)
+const partagerConfirme = (ids, delai = 15000) => new Promise(ok => {
+  if (!D.jeu) return ok(false);
+  const qui = D.jeu.joueur ? `joueur=${D.jeu.joueur}&sig=${D.jeu.sig}` : `cle=${encodeURIComponent(D.jeu.cle)}`, t = setTimeout(() => ok(false), delai);
+  fetch(`${D.jeu.url}?quoi=ouvrir&ou=telephone&${qui}&ids=${encodeURIComponent(ids.join(","))}`).then(r => r.json())
+    .then(j => { clearTimeout(t); if (j.ok) j.ouvertes.forEach(id => { serveur.add(id); ouvertes.add(id); }); ok(!!j.ok && ids.every(id => j.ouvertes.includes(id))); })
+    .catch(() => { clearTimeout(t); ok(false); });
+});
 const memoriser = id => { ouvertes.add(id); if (id.startsWith("test")) return; garder(); partager([id]); };  // test : rien de gardé
 const CAPTURES = D.captures.map(c => ({...c, nom: PAR_NUM[c.num].nom, types: PAR_NUM[c.num].types}));
 // Balls gagnées depuis la dernière visite : elles apparaissent sur la carte pendant le replay du voyage (01/11), au
@@ -976,12 +985,12 @@ const STYLE_VOILE = `
 #pkm-voile .ball2d{position:absolute;left:50%;top:34%;width:150px;height:150px;margin:-75px 0 0 -75px;transform-origin:50% 80%}
 #pkm-voile .ball2d svg{width:100%;height:100%}
 #pkm-voile .poke{position:absolute;left:50%;top:34%;width:min(250px,64vw);transform:translate(-50%,-50%) scale(.05);opacity:0;
-  filter:brightness(0) invert(1) drop-shadow(0 0 14px #fff);image-rendering:pixelated;pointer-events:none;
+  filter:brightness(0) invert(1) drop-shadow(0 0 14px #fff) drop-shadow(0 0 0 transparent);image-rendering:pixelated;pointer-events:none;  /* même liste d'effets que .couleur : sinon Safari (iPhone) peut rester sur la silhouette (shiny tout doré chez Berta, 05/11) */
   transition:transform .6s cubic-bezier(.2,1.5,.4,1),opacity .2s,filter .9s ease}
 #pkm-voile .poke.sort{opacity:1;transform:translate(-50%,-50%) scale(1)}
-#pkm-voile .poke.couleur{filter:drop-shadow(0 0 18px rgba(140,170,255,.55))}
-#pkm-voile.r-shiny .poke.couleur{filter:drop-shadow(0 0 22px rgba(255,215,90,.95))}
-#pkm-voile.r-leg .poke.couleur{filter:drop-shadow(0 0 26px rgba(255,140,230,.9))}
+#pkm-voile .poke.couleur{filter:brightness(1) invert(0) drop-shadow(0 0 18px rgba(140,170,255,.55)) drop-shadow(0 0 0 transparent)}
+#pkm-voile.r-shiny .poke.couleur{filter:brightness(1) invert(0) drop-shadow(0 0 22px rgba(255,215,90,.95)) drop-shadow(0 0 0 transparent)}
+#pkm-voile.r-leg .poke.couleur{filter:brightness(1) invert(0) drop-shadow(0 0 26px rgba(255,140,230,.9)) drop-shadow(0 0 0 transparent)}
 #pkm-voile .poke.danse{animation:pk-danse 2.4s ease-in-out infinite}
 @keyframes pk-danse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-54%) scale(1.03)}}
 #pkm-voile .fx{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
@@ -1055,8 +1064,8 @@ const STYLE_VOILE = `
 #pkm-voile.revele .lueur-sol{opacity:.7;transform:translate(-50%,-50%) scale(1);transition:opacity 2.5s 1s,transform .9s cubic-bezier(.2,.9,.2,1)}
 #pkm-voile.revele.calme .lueur-sol{opacity:.25}
 #pkm-voile.dehors .poke{left:var(--ox);top:var(--pky,var(--py));width:var(--pkw,var(--pw))}
-#pkm-voile.dehors .poke.couleur{filter:drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
-#pkm-voile.dehors.r-shiny .poke.couleur{filter:drop-shadow(0 0 18px rgba(255,215,90,.95))}
+#pkm-voile.dehors .poke.couleur{filter:brightness(1) invert(0) drop-shadow(0 4px 0 rgba(0,0,0,.18)) drop-shadow(0 0 10px rgba(255,255,255,.35))}
+#pkm-voile.dehors.r-shiny .poke.couleur{filter:brightness(1) invert(0) drop-shadow(0 0 18px rgba(255,215,90,.95)) drop-shadow(0 0 0 transparent)}
 #pkm-voile.habitat .haut{z-index:30}
 #pkm-voile.habitat .rond{background:rgba(10,20,30,.45);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
 #pkm-voile.habitat .nom-ball{text-shadow:0 2px 0 rgba(0,0,0,.5)}
@@ -1795,7 +1804,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     const suite = reste.length && !rejouer && !c.apercu;
     carte.className = "carte jeu";
     carte.innerHTML = `<div class="l1">${etiq}<span class="no">N° ${N3(c.num)}</span></div>
-      <div class="phrase">${(sx => champDe(c) ? `${champDe(c).nom} te confie son <b>${c.nom}</b>${sx} !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b>${sx} !` : rejouer ? `C'est <b>${c.nom}</b>${sx} !` : `<b>${c.nom}</b>${sx} rejoint ta collection !`)(signeSexe(sexeDe(c)))}</div>
+      <div class="phrase">${champDe(c) ? `${champDe(c).nom} te confie son <b>${c.nom}</b> !` : r.nouveau ? `Tu as attrapé <b>${c.nom}</b> !` : rejouer ? `C'est <b>${c.nom}</b> !` : `<b>${c.nom}</b> rejoint ta collection !`}</div>
       <div class="l2">${typesHTML(c.types, "pkm-type")}<span class="cpt">${genAffichee(c.num) ? `Génération ${genDe(c.num)} · ` : ""}Nature : ${NATURES[Math.floor(hasard(c, "nature") * 25)]}</span></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 350);
@@ -3185,14 +3194,6 @@ const STYLE_PASSAGE = `
 .pkm-ecran .carnet .ligne b{color:#B05010;font-weight:400;white-space:nowrap}
 .pkm-ecran .carnet .bout{margin-top:8px;color:#686850;font-size:16px;opacity:0;transition:opacity .5s}.pkm-ecran .carnet .bout.vu{opacity:1}
 .pkm-ecran.panorama .salle{transition:none;transform:none;left:0}
-.pkm-ecran .defile{position:absolute;bottom:24%;left:0;right:0;height:120px;pointer-events:none;z-index:18}
-.pkm-ecran .defile img{position:absolute;bottom:0;height:72px;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3))}
-.pkm-ecran .defile img.haut{bottom:46px}
-.pkm-ecran .marcheur{position:absolute;bottom:9%;left:14%;width:110px;z-index:19;image-rendering:pixelated;filter:drop-shadow(0 3px 0 rgba(0,0,0,.3));animation:pkp-pas .5s steps(2,start) infinite}
-@keyframes pkp-pas{50%{transform:translateY(-4px)}}
-.pkm-ecran .deDos{position:absolute;bottom:17%;left:50%;display:flex;align-items:flex-end;gap:10px;transform:translateX(-50%);z-index:19;opacity:0;transition:opacity 1.6s}
-.pkm-ecran .deDos.vu{opacity:1}.pkm-ecran .deDos img{height:96px;image-rendering:pixelated}
-.pkm-ecran .deDos .sacha{width:56px !important;background-repeat:no-repeat;image-rendering:pixelated}
 .pkm-ecran .accepter{position:absolute;left:50%;bottom:36%;transform:translateX(-50%);z-index:44;white-space:nowrap;background:#D83830;color:#fff;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);padding:8px 18px;font:400 22px 'Jersey 15',monospace}
 .pkm-ecran .nom-region{position:absolute;left:0;right:0;top:12%;text-align:center;z-index:22;font:700 clamp(40px,14vw,68px)/1 'Pixelify Sans',monospace;color:#FFCB05;letter-spacing:4px;text-shadow:4px 4px 0 #8A2A10,-2px -2px 0 #8A2A10,2px -2px 0 #8A2A10,-2px 2px 0 #8A2A10;opacity:0;transform:translateY(-14px);transition:opacity 1.2s,transform 1.2s}
 .pkm-ecran .nom-region.vu{opacity:1;transform:none}
@@ -3236,31 +3237,21 @@ async function sceneCarnet(cle, prof) {
   await Promise.race([jouer, fin]); E.fin(); v.style.transition = "opacity .6s"; v.style.opacity = 0; await attendre(600); v.remove(); return !coupe;
 }
 async function sceneGenerique(cle) {
+  // Kiki, 06/11 : le défilé des Pokémon et le dresseur collé avec son starter (mauvaises proportions) sont retirés ; restent les deux images,
+  // le panorama de la région qui défile en musique, puis la vue au coucher du soleil
   installerStyle("pkm2-passage-style", STYLE_PASSAGE);
-  const E = ecran("pkm-generique", `passage-${cle}-2.webp`, 1536, 1024), v = E.v;
+  const E = ecran("pkm-generique", `passage-${cle}-2.webp`, 1536, 1024), v = E.v, duree = 14000;
   v.classList.add("panorama");
-  const st = CAPTURES.filter(x => prise(x) && x.jour >= REG.debut && !x.id.includes("#evo")), vus = [...new Map(st.map(x => [x.num, x])).values()], depart = (G.starter && G.starter.ligne) || [25];
-  const forme = depart[G.starter && G.starter.niveau >= 36 ? 2 : G.starter && G.starter.niveau >= 16 ? 1 : 0] || depart[0];
-  const duree = Math.min(Math.max(vus.length * 350, 22000), 60000);  // tous les Pokémon attrapés passent, sur deux files : une minute au plus
-  v.insertAdjacentHTML("beforeend", `<img class="marcheur" src="${IMG.anim(forme, false)}" ${repli(forme, false)} alt=""><div class="defile"></div>`);
   const air = airAnime(v.querySelector("canvas.air"), "Ligue"); let coupe = false;
   const fin = new Promise(ok => { v.querySelector(".pkm-passer").onclick = () => { coupe = true; ok(); }; });
-  const jouer = (async () => {
-    await attendre(200); v.querySelector(".noir").style.opacity = 0; EPIQUE.fanfare(); defiler(v.querySelector(".salle"), duree);
-    const piste = v.querySelector(".defile"), W = PW.innerWidth, pas = Math.min(900, (duree - 3000) / Math.max(vus.length, 1));
-    let k = 0;
-    for (const x of vus) { if (coupe) return; const im = P.createElement("img"); im.src = IMG.anim(x.num, x.shiny); im.className = k++ % 2 ? "haut" : ""; im.style.left = W + "px"; im.style.transition = "left 3.4s linear"; piste.appendChild(im);
-      requestAnimationFrame(() => requestAnimationFrame(() => im.style.left = "-140px")); setTimeout(() => im.remove(), 3600); await attendre(pas); }
-    await attendre(3500);
-  })().catch(() => {});
+  const jouer = (async () => { await attendre(200); v.querySelector(".noir").style.opacity = 0; EPIQUE.fanfare(); defiler(v.querySelector(".salle"), duree); await attendre(duree); })().catch(() => {});
   await Promise.race([jouer, fin]); air.stop(); E.fin();
   if (coupe) { v.remove(); return false; }
   v.querySelector(".noir").style.opacity = 1; await attendre(1000); v.remove();
-  // le dernier plan : le dresseur et son starter, de dos, devant le coucher de soleil
+  // le dernier plan : la région vue d'en haut, au coucher du soleil, la caméra s'approche doucement
   const E2 = ecran("pkm-falaise", `passage-${cle}-3.webp`, 940, 1672), v2 = E2.v;
-  v2.insertAdjacentHTML("beforeend", `<div class="deDos"><div class="dos-d">${sacha("red_normal", "haut", false)}</div><img src="${IMG.dos ? IMG.dos(forme) : `${D.images}/pokemon/back/${forme}.png`}" alt=""></div>`); colorerDresseur(v2);
-  await attendre(200); v2.querySelector(".noir").style.opacity = 0; await attendre(900); v2.querySelector(".deDos").classList.add("vu");
-  await attendre(5500); v2.querySelector(".noir").style.opacity = 1; await attendre(1100); E2.fin(); v2.remove(); return true;
+  await attendre(200); v2.querySelector(".noir").style.opacity = 0; setTimeout(() => { E2.salle.style.transition = "transform 7s ease-out"; E2.salle.style.transform = "translateX(-50%) scale(1.08)"; }, 300);
+  await attendre(6400); v2.querySelector(".noir").style.opacity = 1; await attendre(1100); E2.fin(); v2.remove(); return true;
 }
 function sonnerie(n = 3) { let k = 0; const f = () => { if (k++ >= n) return; ton(880, 0, .12, {type: "square", vol: .05}); ton(740, .16, .12, {type: "square", vol: .05}); setTimeout(f, 1400); }; f(); }
 async function sceneAppel(cle, prof, suivante, phrase, essai) {
@@ -3434,7 +3425,7 @@ const STYLE_FICHE = `
 #pkm-fiche .tete .grande.non{filter:brightness(0);opacity:.35;image-rendering:pixelated}
 #pkm-fiche .no{font-size:12px;color:#C9D3EA}#pkm-fiche h3{margin:0;font-size:26px;font-weight:900}
 #pkm-fiche .sous{font-size:12.5px;color:#C9D3EA;margin-top:4px}
-#pkm-fiche .sexe{margin-left:6px}#pkm-fiche .sexe.m{color:#3068D0}#pkm-fiche .sexe.f{color:#D83850}
+
 #pkm-fiche .onglets-f{display:flex;gap:6px;margin:10px 0 0}
 #pkm-fiche .onglets-f button{flex:1;border:2px solid #484838;border-radius:8px 4px 8px 4px;background:#F8F8E8;color:#383828;padding:6px;font-size:16px;cursor:pointer}
 #pkm-fiche .onglets-f button.on{background:#D83830;color:#fff;text-shadow:2px 2px 0 #7A1712}
@@ -3459,16 +3450,14 @@ const STYLE_FICHE = `
 #pkm-fiche .no,#pkm-fiche .sous{color:#686850}#pkm-fiche h3{font-size:30px}
 #pkm-fiche .fermer{background:#D83830;border:3px solid #484838;border-radius:10px 5px 10px 5px;color:#fff;box-shadow:3px 3px 0 rgba(10,15,35,.3);font-size:18px;text-shadow:2px 2px 0 #7A1712}
 #pkm-fiche .fermer:before{content:"▶ "}
-.sexe.m{color:#3068D0}.sexe.f{color:#D83850}.sexe{margin-left:5px}
+
 #pkm-voile .nom-ball,#pkm-voile .aide,#pkm-voile .aide small{font-family:'Jersey 15',Outfit,sans-serif !important;font-size-adjust:.53;font-weight:400 !important}
 `;
 
-// Chaque Pokémon attrapé est un individu : son sexe, sa nature et sa taille sont tirés de l'identifiant de sa capture (toujours les mêmes pour lui)
+// Chaque Pokémon attrapé est un individu : sa nature et sa taille sont tirés de l'identifiant de sa capture (toujours les mêmes pour lui)
 const NATURES = ["Hardi", "Solo", "Rigide", "Mauvais", "Brave", "Assuré", "Docile", "Malin", "Lâche", "Relax", "Modeste", "Doux", "Pudique", "Foufou", "Discret", "Calme", "Gentil", "Prudent", "Bizarre", "Malpoli", "Timide", "Pressé", "Jovial", "Naïf", "Sérieux"];
 const nombreFr = x => (x < 10 ? Math.round(x * 10) / 10 : Math.round(x)).toString().replace(".", ",");
 const hasard = (c, k) => hachage(`${k}|${c.id}|${k}`) / 4294967296;
-const sexeDe = c => { const t = D.femelles[c.num]; return t === undefined || t < 0 ? "" : hasard(c, "sexe") * 8 < t ? "f" : "m"; };
-const signeSexe = x => x ? `<span class="sexe ${x}">${x === "f" ? "♀" : "♂"}</span>` : "";
 function fiche(p) {
   installerStyle("pkm2-fiche-style", STYLE_FICHE);
   const col = collection(), mes = col[p.num] || [], a = mes.length > 0, leg = LEG.has(p.num);
@@ -3479,7 +3468,7 @@ function fiche(p) {
   f.innerHTML = `<div class="ombre"></div><div class="feuille"><div class="poignee"></div>
     <div class="tete">
       <img class="grande ${a ? "" : "non"}" src="${IMG.grand(p.num, a ? vue : false)}">
-      <div><div class="no">N° ${N3(p.num)}${a && genAffichee(p.num) ? ` · Génération ${genDe(p.num)}` : ""}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}<span class="sx"></span></h3>
+      <div><div class="no">N° ${N3(p.num)}${a && genAffichee(p.num) ? ` · Génération ${genDe(p.num)}` : ""}${leg ? " · Légendaire" : ""}</div><h3>${a ? p.nom : "???"}</h3>
         <div>${typesHTML(p.types, "pkm-type")}</div><div class="sous"></div></div></div>
     ${normal && shiny ? `<div class="onglets-f"><button data-s="0">Normal</button><button data-s="1">${ico("shiny", "p brille")} Shiny</button></div>` : ""}
     ${a ? `<div class="corps"></div><div class="desc"></div>`
@@ -3491,7 +3480,6 @@ function fiche(p) {
     const c = vue ? shiny : normal, k = c.id.split("#")[1] || "", t = .85 + hasard(c, "taille") * .3;  // ±15 % autour de la taille du Pokédex
     const origine = c.ball === "evo" ? [ico("effort", "p"), "Évolution"] : k === "chen" ? [ico("poke", "p"), "Cadeau du Prof. Chen"] : k === "orme" ? [ico("poke", "p"), "Cadeau du Prof. Orme"] : champDe(c) ? [ico("honneur", "p"), `Confié par ${champDe(c).nom}`] : [ico(c.ball === "shiny" ? "sball" : c.ball, "p"), BALLS[c.ball] || "Poké Ball"];
     const note = t < .9 ? "Un tout petit spécimen !" : t > 1.1 ? "Un spécimen impressionnant !" : "";
-    f.querySelector(".sx").innerHTML = signeSexe(sexeDe(c));
     f.querySelector(".sous").textContent = D.categories[p.num] || "";
     f.querySelector(".corps").innerHTML = `<div class="ident">
       <div><small>Attrapé</small><b>${c.quand}</b></div><div><small>Avec</small><b>${origine[0]}${origine[1]}</b></div>
@@ -3535,8 +3523,8 @@ function voiesDefi() {  // chaque épreuve du défi en cours : ses voies avec o�
 }
 // Le défi est gagné d'après ce que le téléphone vient de compter (pompes, tractions) : le serveur ne le sait qu'en relisant. Le badge vient de lui : on recharge, et la scène se lance toute seule.
 const defiGagne = () => { const d = V.defi; if (!d || !d.arrive) return false; const ep = voiesDefi(); return ep.length > 0 && ep.every(e => e.fait); };
-function recevoirBadge() {
-  try { localStorage.setItem("pkm_badge_auto", "1"); } catch (e) {}
+function recevoirBadge(essai = 1) {
+  try { localStorage.setItem("pkm_badge_auto", JSON.stringify({essai, t: Date.now()})); } catch (e) {}
   const u = new URL(PW.location.href); u.searchParams.set("frais", "1"); PW.location.href = u.href;
 }
 function resteDefi() {
@@ -3806,7 +3794,7 @@ function dessinerSpeciales() {
     b.classList.add("on"); detail.innerHTML = bonus.find(x => x.cle === b.dataset.c).detail; rognerImages(detail);
     const nc = detail.querySelector(".nuit-carte"); if (nc && nuit) { nc.style.cursor = "pointer"; nc.onclick = () => sceneCentre(); }
   });
-  { const rb = document.querySelector("#speciales .recevoir-badge"); if (rb) rb.onclick = recevoirBadge; }
+  { const rb = document.querySelector("#speciales .recevoir-badge"); if (rb) rb.onclick = () => recevoirBadge(); }
   brancherGestes(document.getElementById("speciales"));
   rognerImages(document.getElementById("speciales"));
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
@@ -5508,10 +5496,10 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       localStorage.setItem("pkm_appr", JSON.stringify(deja.slice(-3))); return true;
     } catch (e) { return false; } };
     if (aMesures) { noter(); v.querySelector(".envoi").onclick = () => { if (noter()) { garder(); PW.location.reload(); } else v.querySelector(".envoi").textContent = "Série trop longue pour l'envoi : dis-le à Claude"; }; }
-    let sauve = 0;  // ce qui est déjà gardé : la série part dès cet écran (appli fermée ici : rien de perdu), puis seulement la correction
+    let sauve = 0, dernierId = null;  // ce qui est déjà gardé : la série part dès cet écran (appli fermée ici : rien de perdu), puis seulement la correction
     const garder = () => {
       if (essai) return;
-      if (n !== sauve) { memoriser(`${TEST ? "test#" : D.prefixe}geste-${type}_${n - sauve}_${Date.now()}`); sauve = n; }
+      if (n !== sauve) { dernierId = `${TEST ? "test#" : D.prefixe}geste-${type}_${n - sauve}_${Date.now()}`; memoriser(dernierId); sauve = n; }
       if (n > 0) { moi.derniere = n; moi.record = Math.max(moi.record || 0, n); moi.avant = avantSerie; mem[type] = moi; garderEntr(mem); }
     };
     garder();
@@ -5522,7 +5510,8 @@ function entrainement(type, {essai = false, decorEssai = null, shinyEssai = fals
       if (essai || TEST || !defiGagne()) return fermer();
       const qui = (CHAMPIONS[V.defi.numero] || {}).nom || "Le champion";  // la série a le temps de partir : le serveur doit la voir au rechargement
       v.innerHTML = `<div class="rythme">${qui} s'incline !</div><div class="rythme">Ton badge arrive…</div>`;
-      apres(recevoirBadge, 5000); };
+      // on attend que le serveur ait noté la série (Kiki, 06/11 : avec une attente fixe, la page rechargée ne la voyait parfois pas, et rien ne se passait)
+      (dernierId ? partagerConfirme([dernierId]) : Promise.resolve(true)).then(() => apres(() => recevoirBadge(), 600)); };
   }
 
   function repos(s) {  // récupérer entre deux séries, c'est ce qui permet d'en refaire une vraie
@@ -5733,18 +5722,27 @@ function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessine
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 { // premier lancement de la partie (le cadeau du Professeur pas encore ouvert) : on crée son dresseur, puis l'aventure
   const chen = CAPTURES.find(c => c.id.endsWith("#" + CADEAU));
-  const badgeAuto = (() => { try { const f = localStorage.getItem("pkm_badge_auto"); localStorage.removeItem("pkm_badge_auto"); return f; } catch (e) { return null; } })() && aOuvrir().find(estBadge);
+  const attendu = (() => { try { const f = localStorage.getItem("pkm_badge_auto"); localStorage.removeItem("pkm_badge_auto"); return f ? JSON.parse(f) : null; } catch (e) { return null; } })();
+  const badgeAuto = attendu && aOuvrir().find(estBadge);
   if (badgeAuto) setTimeout(() => lancer(badgeAuto), 900);  // le défi vient d'être gagné : la scène du badge, tout de suite
+  // pas encore là (le serveur n'a pas fini de noter la série) : on le dit, et on relit dans quelques secondes (4 fois au plus, dans les 2 minutes)
+  else if (attendu && (attendu.essai || 1) < 5 && Date.now() - (attendu.t || 0) < 120000 && V.defi && V.defi.arrive) {
+    const qui = (CHAMPIONS[V.defi.numero] || {}).nom || "Le champion", m = P.createElement("div");
+    m.style.cssText = "position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:999999;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(0,0,0,.45);padding:14px 18px;font:22px 'Jersey 15',monospace;color:#383828;text-align:center;max-width:80vw";
+    m.innerHTML = `${qui} prépare ton badge…<br><small style="color:#686850;font-size:17px">Encore un instant</small>`;
+    P.body.appendChild(m); setTimeout(() => recevoirBadge((attendu.essai || 1) + 1), 5000);
+  }
   else if (chen && !estOuverte(chen)) setTimeout(() => REG.index ? sceneVoyageRegion(chen) : demarrerAventure(chen), 400);
   // la Ligue est finie et sa Master Ball ouverte : le Carnet, le générique, puis le coup de téléphone (une fois ; ensuite, une carte en haut d'Aventure)
   else if (appelDu() && (() => { try { return localStorage.getItem("pkm_passage_vu_" + REG.nom) !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) scenePassage(); }, 1200);
   // la première visite du jour : l'Infirmière Joëlle fait le récap de la nuit et d'hier (on peut le couper, onglet Dresseur) ; ou le bilan de la semaine quand il est dû
+  // arrivé chez un champion : son entrée (de dos, puis de face) passe avant les autres petites scènes (Kiki ne l'avait jamais vue : le rival ou une histoire passaient avant)
+  else if (V.defi && V.defi.arrive && !entreeVue(V.defi.numero) && !etatVoyage().attente) { const n = V.defi.numero; setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneEntree(n); }, 1200); }
   else if (V.velo && (() => { try { return localStorage.getItem(`pkm_velo_vu_${R.partie}`) !== "1"; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneVelo(); }, 1200);
   else if (rivalDu()) { const r = rivalDu(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneRival(r); }, 1200); }
   else if (histoireDue()) { const h = histoireDue(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneHistoire(h); }, 1200); }
-  else if (V.defi && V.defi.arrive && !entreeVue(V.defi.numero) && !etatVoyage().attente) { const n = V.defi.numero; setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneEntree(n); }, 1200); }
   else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);
   else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())
