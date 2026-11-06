@@ -290,13 +290,13 @@ class Roue(unittest.TestCase):
 
     def test_la_mission_monte_avec_ce_qui_a_ete_fait(self):
         stat = stats_de({})
-        self.assertEqual(missions.possible("defi", jour(0), stat, {str(jour(-3)): {"pompes": 10}}), 15)
-        self.assertEqual(missions.possible("defi", jour(0), stat, {str(jour(-3)): {"pompes": 15}}), 20)
-        self.assertEqual(missions.possible("defi", jour(0), stat, {str(jour(-3)): {"pompes": 60}}), 20)
-        self.assertEqual(missions.possible("serie", jour(0), stat, {str(jour(-3)): {"pompes": 20}}), 3)
+        self.assertEqual(missions.possible("defi", jour(40), stat, {str(jour(37)): {"pompes": 10}}), 15)
+        self.assertEqual(missions.possible("defi", jour(40), stat, {str(jour(37)): {"pompes": 15}}), 20)
+        self.assertEqual(missions.possible("defi", jour(40), stat, {str(jour(37)): {"pompes": 60}}), 20)
+        self.assertEqual(missions.possible("serie", jour(40), stat, {str(jour(37)): {"pompes": 20}}), 3)
 
     def test_apres_une_longue_pause_on_repart_doucement(self):
-        self.assertEqual(missions.possible("defi", jour(0), stats_de({}), {str(jour(-29)): {"pompes": 40}}), 10)
+        self.assertEqual(missions.possible("defi", jour(40), stats_de({}), {str(jour(11)): {"pompes": 40}}), 10)
 
     def test_le_seuil_du_jour_est_celui_qui_est_affiche_et_verifie(self):
         info = lambda j: {"seuil": 10}  # noqa: E731
@@ -798,6 +798,26 @@ class Rival(unittest.TestCase):
         for texte in (*i.NUIT_COURTE, *i.HIER_PEU, *i.FIXES.values(), *i.SORTIES.values()):
             self.assertNotIn(" kg", texte)
             self.assertNotIn("poids", texte.lower())
+
+    def test_le_lancement_se_fait_tout_seul(self):
+        avant = dict(pokemon.REGLAGES)
+        try:
+            pokemon.REGLAGES.update(debut=dt.date(2026, 11, 2), partie=4)
+            pokemon.au_lancement(dt.datetime(2026, 11, 9, 4, 29, tzinfo=pokemon.chiffres.TZ))
+            self.assertEqual(pokemon.REGLAGES["partie"], 4)
+            pokemon.au_lancement(dt.datetime(2026, 11, 9, 4, 30, tzinfo=pokemon.chiffres.TZ))
+            self.assertEqual((pokemon.REGLAGES["partie"], pokemon.REGLAGES["debut"]), (5, dt.date(2026, 11, 9)))
+            # un ami relié le 02/11 repart lui aussi du lancement, et ses anciennes captures ne reviennent pas
+            self.assertEqual(pokemon.debut_de({"id": "abc", "debut": dt.date(2026, 11, 2)}), dt.date(2026, 11, 9))
+            self.assertNotIn("-p4", pokemon.ident(dt.date(2026, 11, 9), "chen", "abc"))
+            # le palier de pompes ne tient plus compte d'avant le lancement
+            gestes = {"2026-11-05": {"pompes": 30}, "2026-11-10": {"pompes": 12}}
+            self.assertEqual(missions.meilleure_journee("pompes", dt.date(2026, 11, 9), gestes), 0)
+            self.assertEqual(missions.meilleure_journee("pompes", dt.date(2026, 11, 11), gestes), 12)
+            self.assertEqual(missions.meilleure_journee("pompes", dt.date(2026, 11, 8), gestes), 30)
+        finally:
+            pokemon.REGLAGES.clear()
+            pokemon.REGLAGES.update(avant)
 
     def test_chaque_region_a_quatre_rencontres(self):
         import regions

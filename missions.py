@@ -35,6 +35,7 @@ PART = {"marche": 2, "cardio": 1.5, "pousser": 1, "tirer": 1, "jambes": 1}  # la
 PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50)), "pinces": ("tractions", (2, 3, 5))}
 TYGNON_APRES = 20
 PALIER_BONUS = (20, 25, 30)      # les points de chaque palier (Kiki, 04/11) : la première reste bien payée, et progresser rapporte plus
+LANCEMENT = dt.date(2026, 11, 9)  # la remise à zéro : ce qui a été fait avant ne fixe plus le palier demandé
 MEMOIRE = 28                     # jours regardés pour la meilleure journée
 DISTANCE_FIABLE = .65            # mètres par pas (médiane) : en dessous, Lokhlass n'est pas proposé
 SEANCES_VUES = 3                 # séances de 10 min sur 28 jours : en dessous, Tauros n'est pas proposé
@@ -200,7 +201,7 @@ def reussite(cle, jour, stats, info, gestes=None):
 
 def meilleure_journee(geste, jour, gestes):
     """Le plus de pompes (ou squats, tractions) faites en un jour, sur les MEMOIRE jours d'avant."""
-    return max((((gestes or {}).get(str(jour - dt.timedelta(days=k))) or {}).get(geste, 0) for k in range(1, MEMOIRE + 1)), default=0)
+    return max((((gestes or {}).get(str(jour - dt.timedelta(days=k))) or {}).get(geste, 0) for k in range(1, MEMOIRE + 1) if jour < LANCEMENT or jour - dt.timedelta(days=k) >= LANCEMENT), default=0)
 
 
 def possible(cle, jour, stats, gestes=None):

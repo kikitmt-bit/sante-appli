@@ -994,6 +994,7 @@ if DIRECT:
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:
+    pokemon.au_lancement()
     aujourd = dt.datetime.now(TZ).date()
     st.session_state.setdefault("ref", aujourd)
     periode = st.segmented_control("Période", PERIODES, default="Jour", key="periode", width="stretch",

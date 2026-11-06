@@ -92,6 +92,17 @@ REGLAGES = {
     "pesees": 3, "pesee_avant": 12, "bonus_pesee": 10,
 }
 
+# Le lancement (Kiki, 06/11) : le lundi 9 novembre 2026 à 4 h 30, heure de Paris, la partie repart de zéro toute seule, pour tous les joueurs. Une fois passé, ce bloc peut disparaître
+# (avec "debut" et "partie" écrits en dur dans REGLAGES). Les données de sport ne bougent pas.
+LANCEMENT = dt.datetime(2026, 11, 9, 4, 30, tzinfo=chiffres.TZ)
+
+
+def au_lancement(maintenant=None):
+    """Passe à la partie du lancement si l'heure est venue. Appelé à chaque calcul : l'appli reste allumée d'un jour à l'autre, un réglage lu une seule fois ne bougerait jamais."""
+    if REGLAGES["partie"] == 4 and (maintenant or dt.datetime.now(chiffres.TZ)) >= LANCEMENT:
+        REGLAGES.update(debut=LANCEMENT.date(), partie=5)
+
+
 BALLS = {  # shiny : multiplicateur ; nouvelle : chance d'une espèce jamais vue
     "poke": {"nom": "Poké Ball", "shiny": 1, "nouvelle": 0},
     "super": {"nom": "Super Ball", "shiny": 2, "nouvelle": 0.5},
@@ -438,6 +449,7 @@ def pesee_matin(resume):
 def ident(jour, cle, ami=None):
     """Identifiant d'une ball (et graine de son tirage) : « 2026-10-27-p2#poke3 » (partie 1 : « 2026-10-19#poke3 ») ;
     un ami a le sien dedans (« 2026-11-02-p3-a1b2c3d4e5f6#poke3 ») : chacun ses tirages, même avec les mêmes chiffres."""
+    au_lancement()
     return f"{jour}{'' if REGLAGES['partie'] == 1 else '-p' + str(REGLAGES['partie'])}{'-' + ami if ami else ''}#{cle}"
 
 
@@ -527,6 +539,7 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
 
 def debut_de(joueur):
     """Le premier jour du joueur dans la partie : pour un ami, le jour où il a relié sa montre, mais jamais avant le début de la partie (une remise à zéro vaut pour tout le monde)."""
+    au_lancement()
     return max(joueur["debut"], REGLAGES["debut"]) if joueur else REGLAGES["debut"]
 
 
@@ -848,7 +861,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
                                  "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
-                      "carnet": carnet, "derniers": derniers, "sport_vu": sport_vu, "moments": moments_du_jour((missions_jours or {}).get(str(aujourd))) if region.moments else None, "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores(gestes),
+                      "carnet": carnet, "derniers": derniers, "sport_vu": sport_vu, "moments": moments_du_jour((missions_jours or {}).get(str(aujourd))) if region.moments else None, "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores({j: v for j, v in (gestes or {}).items() if j >= str(debut)}),
                       "fini": 9 in voyage.badges, "hier": hier, "region": {"index": reg_i, "nom": region.nom, "debut": str(debut_region), "depart": depart,
                                                                            "suivante": regions.REGIONS[reg_i + 1].nom if reg_i + 1 < len(regions.REGIONS) else None}, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},
                       "relance": {"cible": relance["cible"], "sport": R["relance_sport"], "fait": relance["fait"], "debut": str(relance["debut"]), "fin": str(relance["fin"])} if relance and relance["debut"] <= aujourd <= relance["fin"] else None,

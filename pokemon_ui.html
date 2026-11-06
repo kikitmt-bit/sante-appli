@@ -4335,7 +4335,8 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
     l.href = "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Jersey+15&display=swap"; P.head.appendChild(l);
   }
   const d = {...DRESSEUR}, rgb = c => `rgb(${c.join(",")})`;
-  if (accueil && d.partie !== R.partie) d.nom = "";  // nouvelle partie : comme un nouveau compte, on choisit son pseudo
+  // nouvelle partie : comme un nouveau compte, on repart d'une carte vide (Kiki, 06/11)
+  if (accueil && d.partie !== R.partie) { d.nom = ""; if (!essai) { Object.assign(d, {naissance: "", taille: 0, sexe: "", peau: "Claire", casquette: "Rouge", veste: "Rouge", pantalon: "Jean"}); delete d.materiel; delete d.balance; } }
   const nb = Object.keys(collection()).length, badges = Object.keys(V.badges).filter(k => k <= 8).length;
   const f = P.createElement("div"); f.id = "pkm-dresseur"; f.className = (accueil ? "accueil" : "") + (surTitre ? " sur-titre" : "");
   if (essai) d.nom = "";
@@ -5931,6 +5932,9 @@ function relierNav() {  // (l'ancienne écoute est retirée : ce cadre peut êtr
 function dessiner() { etatVoyage(); dessinerAOuvrir(); dessinerVoyage(); dessinerBandeauVoyage(); dessinerDernieres(); dessinerStarter(); dessinerProchains(); dessinerMonDresseur(); dessinerAmis(); dessinerRecreation(); dessinerOnglets();
   if (ONGLET === "dex") dessinerDex(); }
 // La page vient de (re)démarrer : un calque resté là appartient à l'ancienne page, ses minuteurs et ses boutons sont morts (écran noir, ✕ sans effet). On l'enlève.
+// La partie du lancement (ou une suivante), vue pour la première fois sur ce téléphone : les records de muscu et de danse repartent de zéro (les réglages de la danse restent)
+try { if (parseInt(R.partie) >= 5 && localStorage.getItem("pkm_partie_vue") !== String(R.partie)) { localStorage.removeItem("pkm_entr");
+  const m = JSON.parse(localStorage.getItem("pkm_danse") || "{}"); delete m.best; localStorage.setItem("pkm_danse", JSON.stringify(m)); localStorage.setItem("pkm_partie_vue", String(R.partie)); } } catch (e) {}
 P.querySelectorAll(".pkm-ecran,.pkm-entr,#pkm-intro,#pkm-badge,#pkm-voile,#pkm-evo,#pkm-dresseur,#pkm-fiche,#pkm-duel").forEach(x => x.remove());
 dessinerBarre(); dessinerSpeciales(); dessinerRegles(); dessinerTests(); dessiner(); relierNav();
 if (D.direct) montrerOnglet("muscu", false);
