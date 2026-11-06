@@ -458,6 +458,36 @@ def bloc_danse(debut, fin, un_jour, j_ref, lire_vite):
         st.markdown(contenu, unsafe_allow_html=True)
 
 
+def envoyer_rameur():
+    """Les séances que le téléphone attend d'envoyer, chacune dans le dossier du joueur. On attend sa réponse avant d'afficher quoi que ce soit : sinon la page changerait en pleine scène."""
+    texte = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_rameur') || ''", key="rameur_lire")
+    if texte is None:
+        st.stop()
+    if texte and st.session_state.get("rameur_envoye") != hash(texte):  # tout le texte : une 2e séance commence comme la 1re
+        try:
+            ok = seances_rameur.ranger(texte, lambda p: lire_depot([PREFIXE + p], {PREFIXE + p})[PREFIXE + p], lambda p, o, msg: ecrire_depot(PREFIXE + p, o, msg))
+        except (ValueError, KeyError, TypeError, Panne):
+            ok = False
+        st.session_state["rameur_etat"] = "ok" if ok else "erreur"
+        if ok:
+            st.session_state["rameur_envoye"] = hash(texte)
+            streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_rameur')", key="rameur_effacer")
+            st.toast("🚣 Séance de rameur enregistrée !")
+        else:
+            st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
+
+
+def page_rameur():
+    """Le raccourci de l'écran d'accueil (?rameur=1) : ni récolte Google, ni jeu, ni graphiques, seulement de quoi ramer tout de suite. Le rameur marche même si GitHub ne répond pas."""
+    envoyer_rameur()
+    try:
+        fichier = lire_depot([PREFIXE + seances_rameur.FICHIER], {PREFIXE + seances_rameur.FICHIER})[PREFIXE + seances_rameur.FICHIER]
+    except Panne:
+        fichier = None
+    st.iframe(ecran_pokemon.page_rameur(fichier, dt.datetime.now(TZ).date(), st.session_state.get("rameur_etat", "")), height=10)
+    st.stop()
+
+
 def bloc_rameur(debut, fin, un_jour, j_ref, lire_vite):
     """Les séances du téléphone sur le siège : comme la danse, une seule ligne qui s'ouvre, et une erreur ici ne casse jamais la page."""
     try:
@@ -885,6 +915,8 @@ JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if 
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")
+if st.query_params.get("rameur"):
+    page_rameur()
 
 if "message_maj" in st.session_state:
     st.toast(st.session_state.pop("message_maj"))
@@ -926,21 +958,7 @@ if not AMI:  # L'apprentissage du téléphone (entraînement) : ses mesures, ran
             st.toast("✅ Mesures envoyées à Claude, merci !")
         else:
             st.toast("⚠️ Mesures pas envoyées : elles restent sur ton téléphone, recharge l'appli pour réessayer.")
-# Les séances de rameur que le téléphone attend d'envoyer, chacun dans son dossier. On attend sa réponse avant d'afficher le jeu : sinon la page changerait en pleine scène
-RAMEUR_TEL = streamlit_js_eval(js_expressions="localStorage.getItem('pkm_rameur') || ''", key="rameur_lire")
-if RAMEUR_TEL is None:
-    st.stop()
-if RAMEUR_TEL and st.session_state.get("rameur_envoye") != hash(RAMEUR_TEL):  # tout le texte : une 2e séance commence comme la 1re
-    try:
-        ok = seances_rameur.ranger(RAMEUR_TEL, lambda p: lire_depot([PREFIXE + p], {PREFIXE + p})[PREFIXE + p], lambda p, o, msg: ecrire_depot(PREFIXE + p, o, msg))
-    except (ValueError, KeyError, TypeError, Panne):
-        ok = False
-    if ok:
-        st.session_state["rameur_envoye"] = hash(RAMEUR_TEL)
-        streamlit_js_eval(js_expressions="localStorage.removeItem('pkm_rameur')", key="rameur_effacer")
-        st.toast("🚣 Séance de rameur enregistrée !")
-    else:
-        st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
+envoyer_rameur()
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
 with page_sante:

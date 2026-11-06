@@ -814,6 +814,17 @@ class TestRameur(unittest.TestCase):
         self.assertTrue(seances_rameur.ranger(texte, lambda p: None, lambda p, o, m: ecritures.append(p) or True))
         self.assertEqual(len(ecritures), 2)  # les capteurs, le résumé
 
+    def test_la_page_du_raccourci_est_complete(self):
+        import ecran_pokemon
+        page = ecran_pokemon.page_rameur({"seances": [self.S]}, self.JOUR, "ok")
+        for reste in ("__", "/*__"):
+            self.assertNotIn(reste + "STYLE_ENTR", page)
+        for reste in ("__DONNEES__", "__ETAT__", "__IMAGES__", "__RAMEUR_JS__"):
+            self.assertNotIn(reste, page)
+        self.assertIn(".pkm-entr{", page)  # le style repris du jeu
+        self.assertIn("function ecranRameur", page)
+        self.assertIn('"minutes":20', page)
+
     def test_si_github_refuse_rien_n_est_oublie(self):
         self.assertFalse(seances_rameur.ranger(json.dumps([{"seance": self.S}]), lambda p: None, lambda p, o, m: False))
 

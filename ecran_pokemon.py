@@ -7,6 +7,7 @@ import datetime as dt
 import hashlib
 import hmac
 import json
+import re
 from pathlib import Path
 
 import streamlit as st
@@ -21,6 +22,7 @@ from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, LEGENDAIRES, POIDS
 UI = Path(__file__).with_name("pokemon_ui.html")
 DANSE = Path(__file__).with_name("danse.js")
 RAMEUR = Path(__file__).with_name("rameur.js")
+RAMEUR_PAGE = Path(__file__).with_name("rameur_page.html")
 
 
 def _js(objet):
@@ -49,6 +51,13 @@ def _acces_jeu(joueur):
         return None
     sig = hmac.new(s["SCRIPT_CLE"].encode(), f"ouvrir:{joueur['id']}".encode(), hashlib.sha256).hexdigest()
     return {"url": s["SCRIPT_URL"], "joueur": joueur["id"], "sig": sig}
+
+
+def page_rameur(fichier, aujourd, etat=""):
+    """La page du raccourci (?rameur=1) : l'écran du rameur seul, le style de l'entraînement repris du jeu. etat = "ok" ou "erreur" au retour d'un enregistrement."""
+    style = re.search(r"const STYLE_ENTR = `(.*?)`;", UI.read_text(encoding="utf-8"), re.S)[1]
+    return (RAMEUR_PAGE.read_text(encoding="utf-8").replace("__STYLE_ENTR__", style).replace("__IMAGES__", pokemon.IMAGES).replace("__ETAT__", etat)
+            .replace("__DONNEES__", _js(seances_rameur.pour_ecran(fichier, aujourd))).replace("/*__RAMEUR_JS__*/", RAMEUR.read_text(encoding="utf-8")))
 
 
 def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueurs=(), chansons=(), profil=None):

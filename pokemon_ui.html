@@ -3639,6 +3639,7 @@ function dessinerMuscu() {
   brancherGestes(el); rognerImages(el);
   el.querySelectorAll("[data-rameur]").forEach(b => b.onclick = () => ecranRameur());
   el.querySelectorAll("[data-rameur-reprise]").forEach(b => b.onclick = () => ecranRameur({reprise: rameurInterrompu()}));
+  el.querySelectorAll("[data-rameur-page]").forEach(b => b.onclick = () => { const w = PAGE_HAUTE(), u = new URL(w.location.href); u.searchParams.set("rameur", "1"); w.location.href = u.href; });  // la vraie page : c'est son adresse que Chrome mettra sur l'écran d'accueil
   el.querySelectorAll("[data-annule]").forEach(b => confirmerDeuxFois(b, "Sûr ? Touche encore pour annuler", () => annulerSerie(b.dataset.annule)));
 }
 // Le rameur, pour ceux qui l'ont coché dans Mon matériel : le téléphone sur le siège, une vraie séance de rameur à la fin (rameur.js)
@@ -3649,7 +3650,7 @@ function carteRameur(mis) {
   return `<div class="exo exo-danse">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(86)}" alt=""><h3>Rameur</h3>
     <div class="nb-exo">${D.rameur.minutes}<small> min</small></div><div class="d">aujourd'hui · téléphone fixé au siège</div>
     ${coupee ? `<button class="annule-exo" data-rameur-reprise>Récupérer la séance interrompue</button>` : ""}
-    <button class="go-exo" data-rameur>▶ Lancer</button></div>`;
+    <button class="go-exo" data-rameur>▶ Lancer</button><button class="annule-exo" data-rameur-page>Page directe, pour un raccourci sur ton téléphone</button></div>`;
 }
 // Un bouton qui agit au deuxième toucher : assez sûr pour ne rien perdre par erreur, sans rester appuyé
 function confirmerDeuxFois(b, question, faire) {
