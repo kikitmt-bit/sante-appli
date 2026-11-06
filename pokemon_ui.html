@@ -3075,11 +3075,30 @@ function sceneRecit(image, lignes, {qui = null, fin = null, debut = null} = {}, 
 }
 // L'entrée dans une arène : le champion nous tourne le dos, puis se retourne. À la Ligue, il reste de dos : le Conseil 4 passe avant.
 const entreeVue = n => { try { return localStorage.getItem(`pkm_entree_${R.partie}_${n}`) === "1"; } catch (e) { return true; } };
+// L'arrivée chez chaque champion, de dos (Kiki, 06/11 : le même texte pour tous, c'était lassant) : d'après son image entree-*.webp
+const ENTREES = {
+  "Pierre": ["Des rochers partout, et une odeur de poussière. Au fond, un homme se tient immobile, comme taillé dans la pierre.", "Tu fais un pas. Il ne bouge pas d'un millimètre."],
+  "Ondine": ["Ça sent le chlore. Au bout du ponton, une fille regarde le bassin, les poings sur les hanches.", "Tu longes l'eau. Un plongeon claque quelque part."],
+  "Major Bob": ["Les machines ronronnent, l'air grésille. Au fond, une carrure de militaire, bras croisés.", "Tu avances. Tes cheveux se dressent tout seuls."],
+  "Erika": ["Une odeur de fleurs t'enveloppe. Au milieu de la serre, une jeune femme contemple ses plantes.", "Tu avances sur la pointe des pieds, pour ne rien écraser."],
+  "Koga": ["La salle est vide. Trop vide. Tu as l'impression d'être observé.", "Tu fais un pas sur le tatami. Une silhouette, au fond, n'était pas là il y a une seconde."],
+  "Morgane": ["Un silence total. Au centre du cercle de lumière, une jeune femme te tourne le dos.", "Avant même que tu ouvres la bouche, elle sait déjà que tu es là."],
+  "Auguste": ["Il fait une chaleur à crever. La lave craque sous le sol. Au fond, un vieil homme en blouse regarde le volcan.", "Tu essuies ton front. Il rit tout seul, sans se retourner."],
+  "Giovanni": ["Un long tapis rouge, des lustres, des dorures. Au bout, un homme en costume te tourne le dos.", "Tu avances. Quelque chose ici ne te dit rien qui vaille."],
+  "Albert": ["Le vent s'engouffre par la grande baie. Au milieu de l'estrade, quelqu'un regarde le ciel.", "Tu avances. Une plume tombe doucement à tes pieds."],
+  "Hector": ["Ça bourdonne entre les arbres, à l'intérieur même de l'arène. Au milieu, un garçon observe quelque chose de tout près.", "Tu fais un pas. Une chenille traverse ton chemin, sans se presser."],
+  "Blanche": ["Tout est rose, ici. Au fond, une fille fredonne en regardant la ville.", "Tu avances. Elle n'a pas l'air de t'avoir entendu."],
+  "Mortimer": ["Une lumière violette, des lanternes qui vacillent. Au fond, un garçon fixe la tour, sans un geste.", "Tu avances. Tu as l'étrange impression qu'il t'attendait."],
+  "Jasmine": ["Des engrenages, de l'acier, un hublot ouvert sur la mer. Une jeune fille regarde le phare au loin.", "Tu avances doucement. Le sol de métal sonne à chaque pas."],
+  "Chuck": ["Ça cogne et ça crie. Sur le tatami, un homme torse nu enchaîne les mouvements, face à la mer.", "Tu approches. Il ne s'arrête même pas pour te regarder."],
+  "Frédo": ["Le froid te saisit d'un coup. La glace craque sous tes pas. Au fond, un vieil homme contemple la cascade gelée.", "Tu glisses un peu. Il ne se retourne pas."],
+  "Sandra": ["Des flammes, de la pierre, une cascade au loin. Au fond, une femme drapée d'une cape te tourne le dos.", "Tu avances. Tu l'entends soupirer, déjà agacée."],
+};
 function sceneEntree(n, suite = null, essai = false) {
   const ch = CHAMPIONS[n]; if (!ch || !ch.arene) return suite && suite();
   if (!essai) try { localStorage.setItem(`pkm_entree_${R.partie}_${n}`, "1"); } catch (e) {}
   const face = ch.arene.image, dos = face.replace("arene-", "entree-"), ligue = n === 9;
-  const lignes = ligue ? ["Tout au fond de la grande salle, le Maître de la Ligue te tourne le dos.", "Il ne se retournera pas tout de suite. Avant lui, il y a le Conseil 4."] : ["La porte s'ouvre. Au fond de la salle, quelqu'un te tourne le dos.", "Tu fais un pas. Le sol résonne."];
+  const lignes = ligue ? ["Tout au fond de la grande salle, le Maître de la Ligue te tourne le dos.", "Il ne se retournera pas tout de suite. Avant lui, il y a le Conseil 4."] : ENTREES[ch.nom] || ["La porte s'ouvre. Au fond de la salle, quelqu'un te tourne le dos.", "Tu fais un pas. Le sol résonne."];
   preparerScene();
   const {v, fin: finE} = ecran("pkm-entree", dos, 941, 1672, `<img class="face" src="${D.scenes}${face}" alt="" style="position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;opacity:0;transition:opacity .35s">`), DE = dialogue(v);
   DE.prevoir([...lignes.map(l => [l, null]), [ch.lignes[0], ch.nom]]);
@@ -4852,7 +4871,7 @@ function testBadge() {  // le défi est réussi : le Badge Roche attend d'être 
   V.defi.epreuves = [[35, 0]];
   ouvertes.delete("test#badge1");
   if (!CAPTURES.some(c => c.id === "test#badge1"))
-    CAPTURES.push({id: "test#badge1", jour: D.aujourdhui, num: 95, ball: "hyper", shiny: false, raison: "🏅 Badge Roche",
+    CAPTURES.push({id: "test#badge1", jour: D.aujourdhui, num: 95, ball: "hyper", champion: true, shiny: false, raison: "🏅 Badge Roche",
       lieu: "Argenta", legendaire: false, quand: "aujourd'hui", nom: PAR_NUM[95].nom, types: PAR_NUM[95].types});
   redessinerTest();
 }
@@ -5608,11 +5627,13 @@ const NOUVEAUTES = [
   {date: "2026-11-06", sel: ".t-entree:not([data-n='9'])", quoi: "entrée des champions (de dos, puis de face)"},
   {date: "2026-11-06", sel: ".t-passage", quoi: "fin de Kanto sans défilé"},
   {date: "2026-11-06", sel: ".t-sball", quoi: "shiny qui reprend ses couleurs, plus de sexe"},
+  {date: "2026-11-06b", sel: ".t-entree:not([data-n='9'])", quoi: "une arrivée différente pour chaque champion"},
+  {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
 ];
 function marquerNouveautes(el) {
   const vu = cle => { try { return localStorage.getItem("pkm_neuf_" + cle) === "1"; } catch (e) { return false; } };
   let n = 0;
-  NOUVEAUTES.filter(x => (Date.parse(D.aujourdhui) - Date.parse(x.date)) / 864e5 < 7).forEach(x => el.querySelectorAll(x.sel).forEach(btn => {
+  NOUVEAUTES.filter(x => (Date.parse(D.aujourdhui) - Date.parse(x.date.slice(0, 10))) / 864e5 < 7).forEach(x => el.querySelectorAll(x.sel).forEach(btn => {
     const cle = `${x.date}_${x.sel}_${btn.dataset.n || btn.dataset.f || btn.dataset.i || ""}`;
     if (vu(cle)) return;
     n++; btn.classList.add("neuf"); btn.title = `Nouveau : ${x.quoi}`;
