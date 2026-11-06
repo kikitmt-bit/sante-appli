@@ -523,16 +523,16 @@ details.regles{color:#484838 !important}
 .cl-l.moi{border-color:#40A8F8;background:#EAF6FF;cursor:default}
 .cl-rg{flex:none;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;color:#383828;background:#E8E4CC;border:2px solid #484838}
 .cl-rg.r1{background:#F8C838}.cl-rg.r2{background:#D0D4DC}.cl-rg.r3{background:#D89858}
-.cl-av{flex:none;position:relative;width:48px;height:48px}.cl-av canvas{position:absolute;left:0;bottom:0;width:31px;height:42px;image-rendering:pixelated}
-.cl-av img{position:absolute;right:-5px;bottom:-2px;width:32px;height:32px;object-fit:contain;image-rendering:pixelated}
+.cl-av{flex:none;position:relative;width:32px;height:44px}.cl-av canvas{position:absolute;left:0;bottom:0;width:31px;height:42px;image-rendering:pixelated}
+.cl-st{flex:none;width:42px;height:42px;object-fit:contain;image-rendering:pixelated}
 .cl-m{flex:1;min-width:0;line-height:1.1}.cl-m b{display:block;font-size:19px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cl-m small{display:block;font-size:14px;color:#686850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cl-bd{display:flex;gap:1px;margin-top:3px}.cl-bd i{flex:none;width:15px;height:15px;border-radius:50%;background:#E0DCC4}.cl-bd img{flex:none;width:15px;height:15px;object-fit:contain;image-rendering:pixelated}
-.cl-sc{flex:none;text-align:right;line-height:1;min-width:58px}.cl-sc b{display:block;font-size:30px;font-weight:400;color:#C03028}.cl-sc small{display:block;font-size:13px;color:#686850}
+.cl-bd{display:flex;gap:1px;margin-top:3px}.cl-bd i{flex:none;width:12px;height:12px;border-radius:50%;background:#E0DCC4}.cl-bd img{flex:none;width:12px;height:12px;object-fit:contain;image-rendering:pixelated}
+.cl-sc{flex:none;text-align:right;line-height:1;min-width:48px}.cl-sc b{display:block;font-size:30px;font-weight:400;color:#C03028}.cl-sc small{display:block;font-size:13px;color:#686850}
 .cl-sc span{display:inline-flex;align-items:center;gap:1px;font-size:14px;color:#383828;margin-top:2px;margin-left:4px}.cl-sc span img{width:14px;height:14px;object-fit:contain;image-rendering:pixelated}.cl-sc span img.brille{filter:drop-shadow(0 0 1px #B8860B) drop-shadow(0 0 1px #B8860B) brightness(.9)}
 .cl-bloc{margin-top:16px}
 .cl-course{margin-top:7px;cursor:pointer}.cl-course.moi{cursor:default}.cl-course .haut{display:flex;justify-content:space-between;gap:6px;font-size:16px;color:#383828}.cl-course .haut b{font-weight:400}.cl-course .haut span{white-space:nowrap}
-.cl-piste{position:relative;height:11px;margin:15px 16px 0 0;border-radius:6px;background:#484838;border:2px solid #484838}.cl-piste i{display:block;height:100%;border-radius:4px;background:#40A8F8;transition:width 1s ease-out}
-.cl-course.tete .cl-piste i{background:#F8C838}.cl-piste img{position:absolute;bottom:-3px;width:32px;height:32px;margin-left:-16px;object-fit:contain;image-rendering:pixelated;transition:left 1s ease-out}
+.cl-piste{position:relative;height:11px;margin:26px 26px 0 0;border-radius:6px;background:#484838;border:2px solid #484838}.cl-piste i{display:block;height:100%;border-radius:4px;background:#40A8F8;transition:width 1s ease-out}
+.cl-course.tete .cl-piste i{background:#F8C838}.cl-piste .velo{position:absolute;bottom:-3px;width:54px;margin-left:-27px;transition:left 1s ease-out}.cl-piste .velo .sacha{width:100%!important}
 .cl-note{margin-top:6px;font-size:15px;color:#686850;line-height:1.1}.cl-note b{font-weight:400;color:#B05010}
 .cl-jour{margin-top:8px;font-size:15px;color:#B05010}
 .nouvelle{display:flex;align-items:center;gap:8px;padding:3px 0;color:#383828;font-size:16px;line-height:1.1}
@@ -4510,7 +4510,9 @@ function nouvellesAmis(autres) {  // celles de tous les amis, la plus récente d
 }
 // Le pseudo à la couleur de la casquette ; le ton foncé pour les couleurs claires, sinon illisibles sur le fond crème
 function couleurPseudo(j) {
-  const tons = COULEURS_TISSU[({...DRESSEUR, ...j.couleurs}).casquette] || COULEURS_TISSU.Rouge, [r, v, b] = tons[1];
+  const casquette = ({...DRESSEUR, ...j.couleurs}).casquette;
+  if (casquette === "Jaune") return "rgb(176,134,12)";  // le ton foncé tirait sur le marron (Kiki, 06/11)
+  const tons = COULEURS_TISSU[casquette] || COULEURS_TISSU.Rouge, [r, v, b] = tons[1];
   return `rgb(${(r * .3 + v * .59 + b * .11 > 150 ? tons[0] : tons[1]).join(",")})`;
 }
 // Le classement des dresseurs (06/11, carte blanche de Kiki) : le général (Pokédex, puis shiny), la course de la semaine, le face-à-face en touchant un adversaire, les nouvelles.
@@ -4545,18 +4547,18 @@ const lignesClassement = ({tous, rang}) => tous.map(j => {
   const r = rang(j), imgs = j.badges_img || [], cases = Array.from({length: 8}, (_, k) => imgs[k] ? `<img src="${IMG.badge(imgs[k])}" alt="">` : "<i></i>").join("");
   const en_plus = `${j.shiny.length ? `<span><img class="brille" src="${IC.shiny}" alt="">${j.shiny.length}</span>` : ""}${j.legendaires ? `<span><img src="${IC.master}" alt="">${j.legendaires}</span>` : ""}`;
   return `<button class="cl-l ${j.moi ? "moi" : ""}" data-id="${j.id}"><span class="cl-rg r${r}">${r}</span>
-    <span class="cl-av"><canvas width="14" height="19"></canvas>${j.starter ? `<img class="rogne" src="${IMG.mini(j.starter.num)}" alt="">` : ""}</span>
-    <span class="cl-m">${nomJoueur(j)}<small>${j.region} · ${j.lieu.replace(" (retour)", "")}</small><span class="cl-bd">${cases}</span></span>
+    <span class="cl-av"><canvas width="14" height="19"></canvas></span>
+    <span class="cl-m">${nomJoueur(j)}<small>${j.region} · ${j.lieu.replace(" (retour)", "")}</small><span class="cl-bd">${cases}</span></span>${j.starter ? `<img class="cl-st rogne" src="${IMG.mini(j.starter.num)}" alt="">` : ""}
     <span class="cl-sc"><b>${j.especes.length}</b><small>Pokédex</small>${en_plus}</span></button>`;
 }).join("");
 function blocCourse({tous, moi}) {
   const parPoints = [...tous].sort((a, b) => (b.points || 0) - (a.points || 0)), max = Math.max((parPoints[0] || {}).points || 0, 1);
-  const reste = (7 - new Date().getDay()) % 7, fin = reste === 0 ? "dernier jour !" : `encore ${pluriel(reste, "jour")}`;
+  const reste = (7 - new Date().getDay()) % 7, fin = reste === 0 ? "dernier jour !" : `encore ${reste} j`;
   const anciens = tous.filter(j => j.points_passee != null), meilleur = anciens.length ? Math.max(...anciens.map(j => j.points_passee)) : 0;
   const champions = meilleur > 0 ? anciens.filter(j => j.points_passee === meilleur) : [];
   const rows = parPoints.map((j, i) => { const p = j.points || 0, pct = Math.max(p / max * 100, 2);
     return `<div class="cl-course ${j.moi ? "moi" : ""} ${i === 0 && p > 0 ? "tete" : ""}" data-id="${j.id}"><div class="haut">${nomJoueur(j)}<span>${fr(p)} pts</span></div>
-      <div class="cl-piste"><i style="width:${pct}%"></i>${j.starter ? `<img class="rogne" src="${IMG.mini(j.starter.num)}" style="left:${pct}%" alt="">` : ""}</div></div>`; }).join("");
+      <div class="cl-piste"><i style="width:${pct}%"></i><span class="velo" style="left:${pct}%">${sacha("red_bike", "droite", true, 2).replace('<div class="sacha', `<div data-d='${JSON.stringify({...DRESSEUR, ...j.couleurs}).replace(/'/g, "")}' class="sacha`)}</span></div></div>`; }).join("");
   return `<div class="cl-bloc"><div class="cl-t"><b>Course de la semaine</b><small>${fin}</small></div>${rows}
     <div class="cl-note">Points d'effort depuis lundi : tout repart de zéro chaque semaine.${champions.length ? ` Gagnant de la semaine dernière : ${champions.map(nomJoueur).join(", ")}, <b>${fr(meilleur)} pts</b>.` : ""}</div></div>`;
 }
@@ -4577,6 +4579,7 @@ function dessinerAmis() {
     apercuDresseur(r.querySelector("canvas"), {...DRESSEUR, ...j.couleurs}, false, CADRE_DRESSEUR);
     if (!j.moi) r.onclick = () => { vibre(10); ouvrirDuel(j); }; });
   el.querySelectorAll(".cl-course").forEach(r => { const j = tous.find(x => x.id === r.dataset.id); if (!j.moi) r.onclick = () => { vibre(10); ouvrirDuel(j); }; });
+  colorerDresseur(el);
   const plus = el.querySelector(".cl-plus"); if (plus) plus.onclick = () => { FIL_OUVERT = !FIL_OUVERT; dessinerAmis(); };
   rognerImages(el);
 }

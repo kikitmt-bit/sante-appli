@@ -31,7 +31,7 @@ def code_a_jour():
         for nom, m in list(sys.modules.items()):
             fichier = getattr(m, "__file__", None)
             if nom != "__main__" and fichier and Path(fichier).resolve().parent == ici:
-                del sys.modules[nom]
+                sys.modules.pop(nom, None)  # une autre visite au même moment a pu le retirer avant
         sys._empreinte_appli = empreinte
 
 
@@ -214,8 +214,6 @@ div:has(> .vega-embed){padding:6px 4px 2px !important}
 # Le conteneur « outils » est caché : c'est « Paramètres », tout en bas de Dresseur, qui touche son bouton (pokemon_ui.html).
 st.markdown(f"""<style>
 [data-testid="stMainBlockContainer"]{{position:relative;padding-bottom:70px !important}}
-.st-key-nouvelles{{position:fixed;left:10px;bottom:12px;z-index:50;width:auto !important}}
-.st-key-nouvelles button{{background:#F8F8E8 !important;color:#383828 !important;border:2px solid #484838 !important;box-shadow:2px 2px 0 rgba(10,15,35,.45) !important;border-radius:8px 4px 8px 4px !important}}
 [data-testid="stLayoutWrapper"]:has(> .st-key-outils),[data-testid="stLayoutWrapper"]:has(> .st-key-danse){{display:none !important}}
 [data-testid="stElementContainer"]:has(iframe[height="0"]),
 [data-testid="stElementContainer"]:has(> [data-testid="stMarkdown"] style){{display:none !important}}
@@ -256,17 +254,6 @@ def _cache():
     return {}  # chemin -> (heure de lecture, contenu)
 
 
-def demander_recolte(attente=90, **en_plus):
-    """Demande au script Google (déployé en Application Web : secrets SCRIPT_URL et SCRIPT_CLE) de récolter tout de suite."""
-    s = st.secrets
-    with st.spinner("Je demande tes dernières données à Google…"):
-        try:
-            params = {"cle": s.get("SCRIPT_CLE", "")} | ({"joueur": AMI} if AMI else {}) | en_plus
-            return requests.get(s["SCRIPT_URL"], params=params, timeout=attente).json()
-        except Exception as e:
-            return {"ok": False, "erreur": str(e)[:120]}
-
-
 @st.cache_resource
 def _recoltes_ouverture():
     """Le moment de la dernière récolte à l'ouverture, par joueur (commun à tous ses téléphones)."""
@@ -291,26 +278,13 @@ def lancer_recolte():
 
 @st.fragment(run_every=5)
 def suivi_recolte():
-    """Quand Google répond après l'affichage : un point sur le bouton dit que de nouvelles données attendent. On ne recharge jamais le jeu tout seul : il peut y avoir une ball ou une série en cours."""
+    """Google a répondu après l'affichage : ses données seront là au prochain rechargement. On ne recharge jamais le jeu tout seul : il peut y avoir une ball ou une série en cours."""
     etat = st.session_state.get("recolte")
-    if not etat:
-        return bouton_synchroniser()
-    if etat["fini"]:
+    if etat and etat["fini"]:
         rep = etat["rep"] or {}
-        if not rep.get("ok") or rep.get("frais"):
-            del st.session_state["recolte"]
-            st.rerun()
-        oublier_fichiers()
-    bouton_synchroniser(etat["fini"])
-
-
-def bouton_synchroniser(nouveau=False):
-    """Le seul bouton de synchronisation, toujours en bas à gauche. Des données viennent d'arriver : on les affiche ; sinon, une récolte tout de suite."""
-    if st.button("🔄" + (" •" if nouveau else ""), key="nouvelles", help="Synchroniser"):
-        st.session_state.pop("recolte", None)
-        if nouveau:
-            st.rerun()
-        actualiser()
+        if rep.get("ok") and not rep.get("frais"):
+            oublier_fichiers()
+        del st.session_state["recolte"]
 
 
 def oublier_fichiers():
@@ -318,16 +292,6 @@ def oublier_fichiers():
     c = _cache()
     for chemin in [k for k in c if not k.startswith("sprites:") and k.startswith(PREFIXE)]:
         del c[chemin]
-
-
-def actualiser():
-    """« Synchroniser » : récolte immédiate de l'essentiel d'aujourd'hui, puis relit les fichiers."""
-    if st.secrets.get("SCRIPT_URL"):
-        rep = demander_recolte()
-        st.session_state["message_maj"] = ("✅ Données à jour" if rep.get("ok")
-                                           else f"⚠️ Actualisation impossible : {rep.get('erreur', '?')}")
-    oublier_fichiers()
-    st.rerun()
 
 
 class Panne(Exception):
@@ -906,18 +870,16 @@ if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans 
 # Le raccourci de la muscu (?muscu=1, Kiki, 06/11 ; ?rameur=1 : l'ancien raccourci, qui mène au même endroit) : le jeu seul, sur l'onglet Muscu, sans récolte Google, ni page Santé, ni les autres joueurs
 DIRECT = bool(st.query_params.get("muscu") or st.query_params.get("rameur"))
 
-if "message_maj" in st.session_state:
-    st.toast(st.session_state.pop("message_maj"))
 with st.container(key="outils", horizontal=True):
     st.button("⚙️", key="cfg", on_click=lambda: st.session_state.update(config=True))
 if not DIRECT:
     st.markdown(NAV, unsafe_allow_html=True)
-# Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois en 5 min
-# par joueur. 5 s d'attente au plus, en tâche de fond ensuite : le jeu s'affiche, et un point sur le bouton Synchroniser dit qu'elles sont là (suivi_recolte).
+# Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois par minute
+# par joueur (plus de bouton : Kiki, 06/11, recharger l'appli suffit). 5 s d'attente au plus, en tâche de fond ensuite : le jeu s'affiche, et les données arrivent au rechargement suivant (suivi_recolte).
 if not DIRECT and st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
     st.session_state["recolte_ouverture"] = True
     recoltes, maintenant_s = _recoltes_ouverture(), time.time()
-    if maintenant_s - recoltes.get(AMI, 0) > 300:
+    if maintenant_s - recoltes.get(AMI, 0) > 60:
         recoltes[AMI] = maintenant_s
         recolte = lancer_recolte()
         with st.spinner("Je demande tes dernières données à Google…"):
@@ -1212,7 +1174,5 @@ def configuration():
 with st.container(key="bandeau_recolte"):
     if st.session_state.get("recolte"):
         suivi_recolte()
-    else:
-        bouton_synchroniser()
 if st.session_state.pop("config", False):  # « Paramètres », en bas de Dresseur
     configuration()
