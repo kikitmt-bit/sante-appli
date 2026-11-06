@@ -2736,7 +2736,9 @@ function sceneBadge(n, c, rejouer = false) {
   const bp = badgePropre(src, !ligue);
   const DB = dialogue(v, ".pkm-passer, .badge"), {dire, cacher} = DB;
   const nomJ = nomDresseur(), conseil = ligue && sc ? CONSEIL : [];
-  DB.prevoir([...conseil.flatMap(m => m.lignes.map(l => [l, m.nom])), ...ch.lignes.map(l => [l, ch.nom]),
+  // au badge, le champion ne se présente plus : il l'a fait à ton arrivée, de dos puis de face (Kiki, 06/11) ; la Ligue garde tout
+  const repliques = ligue ? ch.lignes : ch.lignes.slice(1);
+  DB.prevoir([...conseil.flatMap(m => m.lignes.map(l => [l, m.nom])), ...repliques.map(l => [l, ch.nom]),
     [ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom],
     [ligue ? `${nomJ} est le nouveau <b>Maître de la Ligue Pokémon</b> !` : `${nomJ} obtient le <b>${a.badge}</b> !`],
     [ligue ? "Et voici ta récompense : une <b>Master Ball</b> ! Un Pokémon légendaire t'attend à l'intérieur…"
@@ -2793,7 +2795,7 @@ function sceneBadge(n, c, rejouer = false) {
       if (i === conseil.length - 1) await changerSalle(sc);
     }
     await allumer();
-    for (const l of ch.lignes) await dire(l, ch.nom);
+    for (const l of repliques) await dire(l, ch.nom);
     await dire(ligue ? "Tu as conquis la Ligue. Ce trophée est à toi, Maître Pokémon !" : `En reconnaissance de ta victoire, voici le <b>${a.badge}</b> !`, ch.nom);
     cacher();
     // 3. La révélation : roulement de tambour, l'énergie converge, éclair, onde de choc, le badge apparaît en tournant
@@ -5628,6 +5630,7 @@ const NOUVEAUTES = [
   {date: "2026-11-06", sel: ".t-sball", quoi: "shiny qui reprend ses couleurs, plus de sexe"},
   {date: "2026-11-06b", sel: ".t-entree:not([data-n='9'])", quoi: "une arrivée différente pour chaque champion"},
   {date: "2026-11-06c", sel: ".t-sball", quoi: "« Génération 1 » affichée dès Kanto"},
+  {date: "2026-11-06d", sel: ".t-arene:not([data-n='9'])", quoi: "au badge, le champion ne se présente plus"},
   {date: "2026-11-06b", sel: ".t-badge", quoi: "le test de la victoire contre Pierre donne son Onix avec sa phrase"},
 ];
 function marquerNouveautes(el) {
