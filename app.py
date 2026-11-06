@@ -185,6 +185,7 @@ st.markdown("""<style>
 .st-key-bloc_coach summary *,.st-key-bloc_coach [data-testid="stMarkdownContainer"] *{color:#383828 !important}
 /* les boîtes */
 .st-key-rub_poids [data-testid="stNumberInput"] input{background:#F8F8E8 !important;color:#383828 !important}.st-key-rub_poids [data-testid="stNumberInput"] input::placeholder{color:#686850 !important;opacity:1}.st-key-rub_poids [data-testid="stNumberInputContainer"]{background:#F8F8E8 !important}.st-key-rub_poids [data-testid="stNumberInputContainer"] button,.st-key-rub_poids [data-testid="stNumberInputContainer"] svg{color:#383828 !important}
+[data-testid="stMarkdownContainer"]:has(> .periode-nom),[data-testid="stMarkdown"]:has(.periode-nom){margin:0 !important}
 .periode-nom{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:40px;padding:1px 6px;background:#F8F8E8;border:2px solid #484838;border-radius:8px 4px;color:#383828;line-height:1.05;text-align:center}.periode-nom b{font-weight:400;font-size:1.05rem;color:#383828}.periode-nom small{font-size:.82rem;color:#686850}
 .lis,.lis-faits{background:#F8F8E8;color:#383828;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:9px 11px;margin:0 0 9px}
 .lis .haut{display:flex;align-items:center;justify-content:space-between;gap:8px}.lis .nom{font-size:1.02rem;color:#686850}.lis .val{font-size:1.75rem;line-height:1.05;color:#383828}
