@@ -770,6 +770,35 @@ class Rival(unittest.TestCase):
         self.assertEqual(nom("Mois", dt.date(2026, 10, 3)), ("Octobre 2026", ""))
         self.assertEqual(nom("Année", dt.date(2025, 3, 1)), ("2025", ""))
 
+    def test_joelle_connait_le_calendrier(self):
+        import infirmiere as i
+        self.assertIn("GTA 6", i.evenement(dt.date(2026, 11, 19)))
+        self.assertIn("Saint-Valentin", i.evenement(dt.date(2027, 2, 14)))  # le Super Bowl tombe le 14 février 2027
+        self.assertIn("Lendemain de Super Bowl", i.evenement(dt.date(2027, 2, 15)))
+        self.assertIn("champagne", i.evenement(dt.date(2027, 1, 1)))
+        self.assertEqual(i.paques(2027), dt.date(2027, 3, 28))
+        self.assertEqual(i.paques(2026), dt.date(2026, 4, 5))
+        self.assertIn("volé une heure", i.evenement(dt.date(2026, 3, 29)))
+        self.assertIn("Une heure de plus", i.evenement(dt.date(2026, 10, 25)))
+        self.assertIn("Black Friday", i.evenement(dt.date(2026, 11, 27)))
+        self.assertIsNone(i.evenement(dt.date(2026, 11, 3)))
+
+    def test_joelle_se_moque_sans_tricher(self):
+        import infirmiere as i
+        mardi = dt.date(2026, 11, 3)
+        r = i.recap(mardi, 300, {"pas": 1200, "zone": 0}, 0, False)
+        self.assertIn("5 h 00", r["nuit"])
+        self.assertIn("1 200 pas", r["hier"])
+        self.assertIsNone(r["evenement"])
+        self.assertIn("bonus", i.recap(mardi, 480, None)["nuit"])
+        self.assertIn("montre", i.recap(mardi, None, {"pas": 0, "zone": 0})["hier"])  # une montre oubliée : on se moque d'elle, pas du joueur
+        self.assertNotIn("min de sport", i.recap(mardi, 480, {"pas": 8000, "zone": 12}, 0, False)["hier"])  # sa montre ne mesure peut-être pas le sport
+        self.assertIn("12 min de sport", i.recap(mardi, 480, {"pas": 8000, "zone": 12}, 0, True)["hier"])
+        self.assertTrue(i.recap(dt.date(2026, 11, 2), 480, None)["evenement"])  # un lundi
+        for texte in (*i.NUIT_COURTE, *i.HIER_PEU, *i.FIXES.values(), *i.SORTIES.values()):
+            self.assertNotIn(" kg", texte)
+            self.assertNotIn("poids", texte.lower())
+
     def test_chaque_region_a_quatre_rencontres(self):
         import regions
         for r in regions.REGIONS:

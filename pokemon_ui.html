@@ -3351,6 +3351,8 @@ async function sceneVoyageRegion(cadeau, essai = false) {
 // --- Le Centre Pokémon de nuit : une bonne nuit (Bonne nuit validée) = l'Infirmière Joëlle soigne tes Pokémon ---
 const ALVEOLES = EN_JOHTO ? [[341, 549], [411, 549], [482, 549], [338, 586], [411, 586], [486, 586]] : [[410, 518], [472, 518], [535, 518], [410, 553], [472, 553], [535, 553]];
 const IMG_CENTRE = EN_JOHTO ? "centre-nuit-johto.webp" : "centre-nuit-kanto.webp", LAMPES = EN_JOHTO ? [[200, 190], [738, 190], [145, 710], [795, 710]] : [[325, 490], [620, 490], [75, 40], [716, 40]];
+// Le récap attend le réveil (Kiki, 06/11) : une visite à minuit et demi appartient encore à la veille ; c'est la première visite après 4 h 30 qui le lance. Il n'est plus optionnel.
+const apresLeReveil = () => { const n = new Date(); return n.getHours() * 60 + n.getMinutes() >= 270; };
 function sceneCentre(apercu = false) {
   const L = 941, H = 1672, h = m => `${Math.floor(m / 60)} h ${String(Math.round(m % 60)).padStart(2, "0")}`;
   const {v, salle, fin: finE} = ecran("pkm-centre", IMG_CENTRE, L, H,
@@ -3360,25 +3362,20 @@ function sceneCentre(apercu = false) {
   // Le récap du matin (02/11) : la nuit, hier, ce qui compte aujourd'hui. Trois bulles au plus : ça doit rester rapide.
   const DC = dialogue(v), dormi = J.sommeil, reposé = dormi >= R.nuit, M = D.matin || {}, HIER = M.hier;
   const bonus = String(Math.round((J.shiny_bonus > 1 ? J.shiny_bonus : 1.5) * 100) / 100).replace(".", ",");
-  const salut = new Date().getHours() >= 18 ? "Bonsoir" : "Bonjour";
-  const nuitL = reposé ? `${salut} ${nomDresseur()} ! ${h(dormi)} de sommeil : tes Pokémon sont en pleine forme. Shiny <b>${bonus} fois</b> plus fréquents aujourd'hui !`
-    : dormi ? `${salut} ${nomDresseur()} ! Nuit un peu courte, ${h(dormi)}. Pas de bonus shiny aujourd'hui, mais tes Pokémon t'attendent.`
-    : `${salut} ${nomDresseur()} ! Ta nuit n'est pas encore arrivée de ta montre.`;
+  const salut = new Date().getHours() >= 18 ? "Bonsoir" : "Bonjour", VOIX = M.voix || {}, remplir = x => x && x.replace("{bonus}", bonus);
+  const nuitL = remplir(VOIX.nuit) || "Ta nuit n'est pas arrivée.", evL = remplir(VOIX.evenement);
   // son anniversaire : un mot, et sa Shiny Ball (le seul cadeau du jeu avec le starter, voulu par Kiki)
   const anniv = /^\d{4}-\d{2}-\d{2}$/.test(DRESSEUR.naissance || "") && DRESSEUR.naissance.slice(5) === D.aujourdhui.slice(5);
   const cadeau = CAPTURES.some(c => /#anniv\d{4}$/.test(c.id) && c.jour === D.aujourdhui && !estOuverte(c));
-  let hierL = null;
-  if (HIER) {
-    const balls = CAPTURES.filter(c => c.jour === HIER.jour && !c.rate).length;
-    const faits = [HIER.hyper && "Hyper Ball", HIER.super && "Super Ball", HIER.mission && "mission réussie"].filter(Boolean);
-    hierL = HIER.pas || balls ? `Hier : <b>${fr(HIER.pas)} pas</b>${HIER.zone ? `, ${HIER.zone} min de sport` : ""}${balls ? `, ${balls} Pokémon attrapé${balls > 1 ? "s" : ""}` : ""}${faits.length ? `, ${faits.join(", ")}` : ""}.`
-      : "Hier a été tout calme : aujourd'hui, c'est reparti !";
-  }
+  const hierL = remplir(VOIX.hier);
   let jourL = M.conseil || null;
-  if (V.defi && V.defi.arrive) jourL = `${CHAMPIONS[V.defi.numero].nom} t'attend : ${resteDefi()}.`;
-  if (G.relance && !G.relance.fait) jourL = `Ces derniers jours ont été plus calmes, ça arrive à tout le monde. Pour repartir en douceur : <b>${fr(G.relance.cible)} pas</b> ou ${G.relance.sport} min de sport, et une <b>Poké Ball</b> t'attend !`;
-  const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()} !${cadeau ? " Tous les Pokémon du centre t'offrent une <b>Shiny Ball</b> : elle t'attend avec tes balls à ouvrir !" : " Tous les Pokémon du centre te le souhaitent."}` : null,
-    anniv ? nuitL.replace(/^Bon(jour|soir) [^!]*! /, "") : nuitL, hierL, jourL].filter(Boolean);
+  if (V.defi && V.defi.arrive) jourL = `${CHAMPIONS[V.defi.numero].nom} t'attend : ${resteDefi()}. On commence à croire que tu as peur.`;
+  const relance = G.relance && !G.relance.fait ? `Plusieurs jours sans nouvelles : je préparais ton avis de disparition. Pour repartir sans te casser quelque chose : <b>${fr(G.relance.cible)} pas</b> ou ${G.relance.sport} min de sport, et une <b>Poké Ball</b> t'attend.` : null;
+  if (relance) jourL = relance;
+  // trois bulles au plus : ça doit rester rapide. Un jour spécial passe avant le conseil ; une relance passe toujours.
+  const suite = evL ? [evL, nuitL, relance || hierL] : [nuitL, hierL, jourL], lignes0 = suite.filter(Boolean);
+  const lignes = [anniv ? `Joyeux anniversaire ${nomDresseur()}. Un an de plus, et tes genoux sont au courant.${cadeau ? " Tous les Pokémon du centre t'offrent quand même une <b>Shiny Ball</b> : elle t'attend avec tes balls à ouvrir." : ""}` : null,
+    ...lignes0.map((l, i) => i || anniv ? l : `${salut} ${nomDresseur()}. ${l}`)].filter(Boolean);
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
   let fini = false;
   const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -3389,9 +3386,8 @@ function sceneCentre(apercu = false) {
     await pause(200); v.querySelector(".noir").style.opacity = 0;
     setTimeout(() => salle.style.transform = "translateX(-50%) scale(1.08)", 100);
     await pause(1000);
-    let debut = 1;
-    if (anniv) { await DC.dire(lignes[0], "Infirmière Joëlle"); SONS.shiny(); vibre([40, 60, 80]); debut = 2; }
-    await DC.dire(lignes[debut - 1], "Infirmière Joëlle");
+    const iNuit = (anniv ? 1 : 0) + lignes0.indexOf(nuitL), debut = iNuit + 1;  // jusqu'à la nuit ; la machine ; puis le reste
+    for (let k = 0; k <= iNuit; k++) { await DC.dire(lignes[k], "Infirmière Joëlle"); if (anniv && k === 0) { SONS.shiny(); vibre([40, 60, 80]); } }
     if (reposé) {  // la machine ne se lance qu'après une bonne nuit : c'est sa récompense
       DC.cacher(); v.classList.add("soin"); salle.style.transform = "translateX(-50%) scale(1.25)";
       await pause(350);
@@ -4358,8 +4354,7 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
       <small>Coche ce que tu as : tes missions et les défis des champions s'adaptent, à partir de demain.</small>
       <div class="boite materiel"><span>BALANCE</span><span class="choix-mat choix-balance">${BALANCES.map(([k, n]) => `<button type="button" data-b="${k}" class="${balanceDe(d) === k ? "on" : ""}">${n}</button>`).join("")}</span></div>
       <small>Connectée : tes pesées arrivent toutes seules. Normale : tu les notes dans l'onglet Santé, rubrique Poids.</small>
-      <div class="boite materiel"><span>RÉCAP DU MATIN</span><span class="choix-mat choix-recap"><button type="button" aria-label="Récap du matin" class="coche ${(() => { try { return localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return true; } })() ? "on" : ""}"></button></span></div>
-      <small>Elle te résume ta nuit et ta journée d'hier à la première visite du jour.</small></div>
+</div>
     <div class="reglages">${CHOIX_DRESSEUR.map(([cle, lib]) => `<div class="choix" data-cle="${cle}"><span class="lib">${lib.toUpperCase()}</span>
       <button class="fl g"></button><span class="val"></span><button class="fl d"></button></div>`).join("")}</div>
     <div class="boutons">${accueil ? `<button class="ok go">COMMENCER L'AVENTURE</button>`
@@ -4387,9 +4382,8 @@ function editerDresseur(accueil = false, {surTitre = false, essai = false} = {})
   const lireProfil = () => { const n = f.querySelector(".naissance").value, t = Math.round(+f.querySelector(".taille").value);
     d.naissance = /^\d{4}-\d{2}-\d{2}$/.test(n) && n >= "1920-01-01" && n <= D.aujourdhui ? n : ""; d.taille = t >= 100 && t <= 250 ? t : 0;
     const sx = f.querySelector(".choix-sexe button.on"); d.sexe = sx ? sx.dataset.s : "";
-    d.materiel = [...f.querySelectorAll(".choix-mat:not(.choix-recap):not(.choix-balance) button.on")].map(b => b.dataset.m);
-    d.balance = (f.querySelector(".choix-balance button.on") || {dataset: {b: balanceDe(d)}}).dataset.b;
-    try { localStorage.setItem("pkm_recap_non", f.querySelector(".choix-recap button.on") ? "0" : "1"); } catch (e) {} };
+    d.materiel = [...f.querySelectorAll(".choix-mat:not(.choix-balance) button.on")].map(b => b.dataset.m);
+    d.balance = (f.querySelector(".choix-balance button.on") || {dataset: {b: balanceDe(d)}}).dataset.b; };
   return new Promise(ok => {
     const fermer = enregistrer => { ap.stop();
       if (enregistrer && essai) { DRESSEUR_ESSAI = champ.value.trim().slice(0, 12); f.remove(); return ok(true); }
@@ -5969,9 +5963,9 @@ if (D.direct) montrerOnglet("muscu", false);
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneVelo(); }, 1200);
   else if (!etatVoyage().attente && !aOuvrir().some(estBadge) && rivalDu()) { const r = rivalDu(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneRival(r); }, 1200); }
   else if (!etatVoyage().attente && !aOuvrir().some(estBadge) && histoireDue()) { const h = histoireDue(); setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneHistoire(h); }, 1200); }
-  else if ((() => { try { return localStorage.getItem("pkm_recap_non") !== "1" && bilanSemaineDu(); } catch (e) { return false; } })())
+  else if (apresLeReveil() && bilanSemaineDu())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneSemaine(bilanSemaineDu()); }, 1200);
-  else if (D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui && localStorage.getItem("pkm_recap_non") !== "1"; } catch (e) { return false; } })())
+  else if (apresLeReveil() && D.matin && D.matin.hier && (() => { try { return localStorage.getItem("pkm_centre_vu") !== D.aujourdhui; } catch (e) { return false; } })())
     setTimeout(() => { if (!ouverture && !P.querySelector(".pkm-ecran,#pkm-badge,#pkm-intro,#pkm-voile")) sceneCentre(); }, 1200);
 }
 { // la Shiny Ball d'anniversaire : une trace dans la liste partagée, pour que le calcul de chaque heure la fige (la date de naissance ne sort pas du téléphone)

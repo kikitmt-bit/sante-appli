@@ -12,6 +12,7 @@ from pathlib import Path
 import streamlit as st
 
 import chiffres
+import infirmiere
 import pokemon
 import regions
 import rival
@@ -138,7 +139,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "joueurs": list(joueurs),
         "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
         "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd),
-        "matin": {"hier": etat["hier"], "conseil": conseil},
+        "matin": {"hier": etat["hier"], "conseil": conseil, "voix": infirmiere.recap(aujourd, m.get("sommeil"), etat["hier"], sum(1 for c in captures if etat["hier"] and c["jour"] == etat["hier"]["jour"] and not c.get("rate")), etat["sport_vu"], joueur["id"] if joueur else "")},
         "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
