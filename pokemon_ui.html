@@ -901,10 +901,16 @@ function ballSVG(type) {
 let AC = null, son = true;
 try { son = localStorage.getItem("pkm_son") !== "0"; } catch (e) {}
 function audio() {
+  // Safari sur iPhone coupe ces sons quand le bouton silencieux est mis (Kiki, 06/11 : rien sur Safari, tout sur Chrome) :
+  // « playback » = les sons du jeu, comme ceux d'une vidéo (Safari 16.4 et plus ; ailleurs, rien ne change)
+  try { if (PW.navigator.audioSession && PW.navigator.audioSession.type !== "playback") PW.navigator.audioSession.type = "playback"; } catch (e) {}
   if (!AC) { const A = PW.AudioContext || PW.webkitAudioContext; if (A) AC = new A(); }
-  if (AC && AC.state === "suspended") AC.resume();
+  if (AC && AC.state !== "running") AC.resume();
   return AC;
 }
+// le son ne s'ouvre que pendant un toucher (Safari) : au premier toucher n'importe où, on le prépare
+{ const ouvrirSon = () => { if (!son) return; const a = audio(); if (a && a.state === "running") { P.removeEventListener("touchend", ouvrirSon, true); P.removeEventListener("pointerdown", ouvrirSon, true); } };
+  P.addEventListener("touchend", ouvrirSon, true); P.addEventListener("pointerdown", ouvrirSon, true); }
 function ton(f, t0, dur, {type = "sine", vol = .2, f2 = null, att = .005} = {}) {
   const a = audio(); if (!a || !son) return;
   const t = a.currentTime + t0, o = a.createOscillator(), g = a.createGain();
