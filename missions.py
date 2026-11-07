@@ -234,12 +234,12 @@ def possible(cle, jour, stats, gestes=None):
     return m["seuil"]
 
 
-def familles_du(s, g=None):
-    """Les familles de sport travaillées un jour : s = ses chiffres (chiffres.stats_jour), g = ses pompes, tractions et squats.
+def familles_du(s, g=None, pas=5000):
+    """Les familles de sport travaillées un jour : s = ses chiffres (chiffres.stats_jour), g = ses pompes, tractions et squats, pas = son objectif de pas du moment.
     Écrit aussi pour le joueur dans « Ta semaine » (commentF de pokemon_ui.html) : à changer des deux côtés."""
     n = lambda k: (lambda v: 0 if v is None or v != v else v)(s.get(k))  # noqa: E731 : None ou NaN : rien ce jour-là
     g, f = g or {}, set()
-    if n("pas") >= 5000:
+    if n("pas") >= pas:
         f.add("marche")
     if n("zone_sport") >= 10 or n("min_danse") >= 10 or (n("seance_max") >= 20 and n("min_velo") < 20):
         f.add("cardio")

@@ -759,7 +759,7 @@ function titreBall(c) {
   if (c.chasse) return `${nom} · Chasse aux shiny`;
   if (cle === "hebdo") return `${nom} · ${R.hebdo_jours} jours sur 7`;
   if (cle === "reprise") return `${nom} de la reprise`;
-  if (cle === "variete") return `${nom} · ${R.familles_semaine} sports dans la semaine`;
+  if (cle === "variete") return `${nom} · semaine parfaite`;
   if (c.ball === "hyper") return `${nom} · exploit du jour`;
   if (c.ball === "super") return `${nom} · objectif double`;
   const ici = lieu || (c.fond && NOM_FOND[c.fond]);
@@ -3440,7 +3440,7 @@ function sceneSemaine(s, apercu = false) {
   const pl = (n, m) => `${n} ${m}${n > 1 ? "s" : ""}`;
   const lignes = [`Voici ta semaine, ${nomDresseur()} ! <b>${pl(s.jours_ok, "jour")} sur 7</b> avec ton objectif.${s.hebdo ? " Une <b>Super Ball</b> t'attend !" : ` Il en fallait ${R.hebdo_jours} pour la Super Ball.`}`,
     `<b>${fr(s.pas)} pas</b>, ${s.sport} min de sport, ${pl(s.nuits, "nuit")} de 7 h, et <b>${fr(s.points)} points</b> d'effort.`,
-    faites.length ? `Tu as travaillé ${liste(faites)}.${s.variete ? " Autant de variété vaut une <b>Super Ball</b> de plus !" : ""}${manquent.length ? ` La semaine prochaine, pense à ${liste(manquent)}.` : ""}` : "Une semaine calme, ça arrive. La suivante repart de zéro !"];
+    faites.length ? `Tu as travaillé ${liste(faites)}.${s.variete ? " Une <b>semaine parfaite</b> : une Super Ball de plus !" : ""}${manquent.length ? ` La semaine prochaine, pense à ${liste(manquent)}.` : ""}` : "Une semaine calme, ça arrive. La suivante repart de zéro !"];
   DC.prevoir(lignes.map(l => [l, "Infirmière Joëlle"]));
   let fini = false;
   const pause = ms => new Promise(r => setTimeout(r, ms));
@@ -3849,11 +3849,11 @@ function dessinerSpeciales() {
   const pct = (v, c) => Math.min(c ? v / c * 100 : 0, 100);
   const S = G.semaine, nomsF = {marche: "La marche", cardio: "Le cardio", pousser: "Les bras", tirer: "Le dos", jambes: "Les jambes"};
   // ce qui coche chaque sport, dans la journée (Kiki, 07/11) : le même calcul que missions.familles_du
-  const commentF = {marche: "5 000 pas", cardio: "10 min de sport, 10 min de tapis de danse ou une séance de 20 min", pousser: "10 pompes", tirer: "3 tractions ou 10 min de rameur", jambes: "20 squats ou 15 min de vélo"};
+  const commentF = {marche: `${fr(R.objectif_pas)} pas`, cardio: "10 min de sport, 10 min de tapis de danse ou une séance de 20 min", pousser: "10 pompes", tirer: "3 tractions ou 10 min de rameur", jambes: "20 squats ou 15 min de vélo"};
   const carteSemaine = () => `    <div class="speciale ${S.hebdo ? "ok" : ""}">${S.hebdo ? '<span class="tampon">✅</span>' : ""}
-      <div class="tete">${ico("super")}Ta semaine</div><div class="gain">${R.hebdo_jours} jours avec ton objectif = une Super Ball. ${R.familles_semaine} sports différents = une autre. Chaque nouveau sport de la semaine = +${R.bonus_famille} pts.</div>
+      <div class="tete">${ico("super")}Ta semaine</div><div class="gain">${R.hebdo_jours} jours avec ton objectif = une Super Ball. La <b>semaine parfaite</b>, les ${R.familles_semaine} sports cochés = une autre. Chaque sport se coche par une journée où tu l'as fait (+${R.bonus_famille} pts la première fois de la semaine).</div>
       <div class="ligne"><span>Jours d'objectif</span><span>${S.jours_ok} / ${R.hebdo_jours}</span></div>${j(S.jours_ok, R.hebdo_jours)}
-      <div class="ligne"><span>Sports différents</span><span>${S.familles.length} / ${R.familles_semaine}</span></div>${j(S.familles.length, R.familles_semaine)}
+      <div class="ligne"><span>Semaine parfaite</span><span>${S.familles.length} / ${R.familles_semaine} sports</span></div>${j(S.familles.length, R.familles_semaine)}
       ${Object.entries(nomsF).map(([f, n]) => `<div class="ligne"><span>${S.familles.includes(f) ? "✅" : "▫️"} ${n}</span><span style="text-align:right;opacity:.75">${commentF[f]}</span></div>`).join("")}</div>`;
   const bonus = [
     S ? {cle: "semaine", ic: ico("super"), nom: "Ta semaine", val: `${S.jours_ok} / ${R.hebdo_jours} jours · ${S.familles.length} / ${R.familles_semaine} sports`, p: pct(S.jours_ok, R.hebdo_jours), detail: carteSemaine()} : null,
@@ -5042,7 +5042,7 @@ function dessinerRegles() {
     <li>${ico("radar", "p")} Les types qui sortent dépendent de ce qui a le plus rempli ta barre dans la journée (sans compter les pas) : 🔥 minutes de sport → Feu, Électrik, Combat, Dragon ; 🏋️ musculation → Combat, Acier ;
       🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 💪 pompes et squats → Combat, Acier ; 👟 pas → tous les types.</li>
-    <li>${ico("super", "p")} <b>Ta semaine</b> : ${R.hebdo_jours} jours avec ton objectif = une Super Ball, ${R.familles_semaine} sports différents (marche, cardio, bras, dos, jambes) = une autre, et +${R.bonus_famille} points la première fois de la semaine pour chacun. Bilan le dimanche soir.</li>
+    <li>${ico("super", "p")} <b>Ta semaine</b> : ${R.hebdo_jours} jours avec ton objectif = une Super Ball, la <b>semaine parfaite</b> = une autre : les ${R.familles_semaine} sports (marche, cardio, bras, dos, jambes), chacun coché par une journée où tu l'as fait, et +${R.bonus_famille} points la première fois de la semaine pour chacun. Bilan le dimanche soir.</li>
     <li>${ico("effort", "p")} <b>Ton objectif du jour</b> : ${fr(R.objectif_pas)} pas, ${R.objectif_zone} min de sport ou ${R.objectif_gestes} points de muscu (${R.objectif_gestes * 2} pompes). Il suit tes habitudes :
       chaque lundi, les pas montent ou descendent de 500 (entre 4 500 et 5 500) selon ta semaine ; la muscu commence à 10 points, passe à 15, puis à 20 si tu en fais souvent, et ne redescend jamais sous 15.</li>
     <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min de sport dans la journée, ou n'importe quel exploit.</li>

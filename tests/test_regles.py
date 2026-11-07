@@ -117,11 +117,18 @@ class Points(unittest.TestCase):
         captures, _ = partie(7, pas=[6000, 6000, 6000, 1000, 1000, 1000, 1000])
         self.assertFalse(any(c["id"].endswith("#hebdo") for c in captures))
 
-    def test_quatre_sports_differents_une_super_ball(self):
+    def test_semaine_parfaite_les_cinq_sports(self):  # Kiki, 07/11 : 4 sports ne suffisent plus
         g = {str(jour(0)): {"pompes": 10, "tractions": 3, "squats": 20}}
         captures, etat = partie(2, gestes=g, pas=6000)
         self.assertEqual(sorted(etat["semaine"]["familles"]), ["jambes", "marche", "pousser", "tirer"])
+        self.assertFalse(any(c["id"].endswith("#variete") for c in captures))
+        captures, etat = partie(2, gestes=g, pas=6000, zone_sport=12)
+        self.assertEqual(len(etat["semaine"]["familles"]), 5)
         self.assertEqual(sum(c["id"].endswith("#variete") for c in captures), 1)
+
+    def test_la_marche_suit_l_objectif_de_pas(self):
+        self.assertNotIn("marche", missions.familles_du({"pas": 5200}, None, 5500))
+        self.assertIn("marche", missions.familles_du({"pas": 4600}, None, 4500))
 
     def test_la_muscu_compte_comme_objectif_du_jour(self):
         g = {str(jour(k)): {"pompes": 30} for k in range(7)}  # 10 points les 2 premiers jours, puis 15, puis 20 à force de le faire
