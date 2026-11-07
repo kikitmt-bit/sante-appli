@@ -56,7 +56,7 @@ REGLAGES = {
     # des balls changent, donc rien de l'ancienne partie ne revient : captures figées, balls ouvertes). Partie 1 : du
     # 19/10 au 26/10 ; parties 2 et 3 (27/10) : pour régler le jeu ; partie 4 (02/11) : les règles de l'audit.
     "debut": dt.date(2026, 11, 2), "partie": 4,
-    "shiny": 0.03,                   # chance de shiny de base
+    "shiny": 0.02,                   # chance de shiny de base (3 % avant le lancement du 09/11 : presque un shiny tous les deux jours pour un sportif)
     "shiny_max": 0.5,
     "nuit": 420, "shiny_nuit": 1.5,  # nuit d'au moins 7 h : shiny ×1,5 toute la journée
     "part_lieu": 0.8,                # chance de tirer dans le lieu actuel plutôt qu'en rattrapage (s'il reste des deux)
@@ -70,7 +70,7 @@ REGLAGES = {
     "rattrapage": .25, "rattrapage_garde": 8,  # dans une nouvelle région : 25 % de chances d'un Pokémon manquant des régions d'avant, et à coup sûr après 8 balls sans (Kiki, 29/10)
     "pas_moment": 2000, "poids_moment": 3,  # Johto : 2 000 pas le matin ou le soir rendent ses Pokémon 3 fois plus fréquents ce jour-là
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
-    "legende_chance": {"poke": 0.001, "super": 0.0025, "hyper": 0.005},  # un oiseau par surprise, un seul par région
+    "legende_chance": {"poke": 0.01, "super": 0.025, "hyper": 0.05},  # un oiseau par surprise, un seul par région ; ×10 au lancement (Kiki, 07/11 : un moment exceptionnel, mais qui arrive)
     "barre": 100,                    # points d'effort pour une Poké Ball
     "pas_offerts": 1000,             # les pas de la vie à la maison ne comptent pas
     "seance_min": 10,                # une séance compte à partir de 10 min

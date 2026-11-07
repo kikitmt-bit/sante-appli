@@ -100,8 +100,8 @@ POUR_PLUS_TARD = {
 }
 REPORTES = [n for noms in POUR_PLUS_TARD.values() for n in numeros(noms)]
 
-# Pour que deux joueurs ne finissent pas Kanto avec exactement les mêmes Pokémon (Kiki, 05/11) : chacun a 6 Pokémon de plus, pris parmi ceux gardés pour plus tard (jamais
-# les starters), et 6 de moins, propres à lui, tirés sur son identifiant. Ceux qu'il n'a pas ici reviennent ensuite : à Johto (rattrapage) ou dans leur région. Aucun n'est perdu.
+# Pour que deux joueurs ne finissent pas Kanto avec exactement les mêmes Pokémon (Kiki, 05/11) : chacun a NB_SURPRISES Pokémon de plus, pris parmi ceux gardés pour plus tard (jamais
+# les starters), et autant de moins, propres à lui, tirés sur son identifiant. Ceux qu'il n'a pas ici reviennent ensuite : à Johto (rattrapage) ou dans leur région. Aucun n'est perdu.
 # Là où chacun apparaît alors à Kanto, lieu -> Pokémon (sa place d'origine dans la région).
 SURPRISES = {
     "Route 3": "Sabelette", "Mont Sélénite": "Mélofée, Mélodelfe", "Azuria": "Mystherbe, Abra, Psykokwak, Ptitard", "Route 5 et Cave Taupiqueur": "Mimitoss",
@@ -111,7 +111,7 @@ SURPRISES = {
     "Îles Écume": "Stari, Staross, Crustabri, Akwakwak, Têtarte, Ramoloss", "Cramois'Île": "Ponyta, Galopa, Goupix, Feunard, Caninos, Arcanin, Magmar, Smogo, Smogogo, Métamorph, Ptéra",
     "Jadielle (retour)": "Rhinoféros, Sablaireau", "Route Victoire": "Machopeur, Mackogneur, Tartard, Alakazam", "Plateau Indigo": "Dracolosse, Léviator, Ectoplasma, Flagadoss",
 }
-NB_SURPRISES = 6
+NB_SURPRISES = 15  # 6 avant le lancement : à peine 11 Pokémon d'écart entre deux joueurs à la fin de Kanto ; 15 = 22 en moyenne (Kiki, 07/11)
 _MINI_LIEU = 2  # un lieu garde au moins 2 Pokémon
 
 
@@ -123,7 +123,7 @@ def variante(graine):
     possibles = sorted((n, index[nom]) for nom, noms in SURPRISES.items() for n in numeros(noms))
     for n, i in rng.sample(possibles, NB_SURPRISES):
         listes[i].append(n)
-    retirables = sorted((n, i) for i, liste in enumerate(listes) for n in liste if n in REGION.especes)
+    retirables = sorted((n, i) for i, liste in enumerate(listes) for n in liste if n in REGION.especes and n not in REGION.champions)  # le Pokémon d'un champion ne sort jamais d'une ball sauvage : le retirer ne changerait rien
     rng.shuffle(retirables)
     retires = 0
     for n, i in retirables:
