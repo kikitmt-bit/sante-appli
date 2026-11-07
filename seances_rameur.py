@@ -179,13 +179,117 @@ def lien(secret, joueur):
     return hashlib.sha256(f"rameur|{secret}|{joueur or 'kiki'}".encode()).hexdigest()[:20]
 
 
-def page_tablette(fichier, lien_tablette, images, sacha):
-    """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé, seulement le modèle des mètres par coup)."""
+# La progression du jeu de la tablette (Kiki, 07/11 : « il faut une vraie progression ») : tout se recalcule depuis les séances gardées sur le serveur,
+# rien d'autre à enregistrer. Le compagnon gagne 1 point d'expérience par mètre ramé (entré, sinon deviné), plus 1 000 par objectif de la semaine réussi.
+XP_OBJECTIF = 1000
+CARNET_SEMAINE = 6  # Pokémon vus en mer dans la semaine
+
+
+def xp_pour(niveau):
+    """Mètres pour passer du niveau `niveau` au suivant : 500 au début, puis un peu plus à chaque niveau (niveau 20, l'évolution, vers 27 km)."""
+    return 400 + 100 * niveau
+
+
+def niveau_de(xp):
+    """-> (niveau, expérience dans ce niveau, expérience pour le suivant)."""
+    n = 1
+    while n < 100 and xp >= xp_pour(n):
+        xp -= xp_pour(n)
+        n += 1
+    return n, round(xp), xp_pour(n)
+
+
+def metres_de(s, m):
+    """La distance d'une séance pour le jeu : entrée, sinon devinée, sinon 230 m par minute (2:10 /500 m) pour ne jamais perdre une séance."""
+    d = chiffres_de(s, m)["distance"]
+    return d if d else (s.get("duree_s") or 0) / 60 * 230
+
+
+def objectifs(seances, lundi, m):
+    """Les 3 objectifs de la semaine qui commence `lundi` : une distance réglée sur les 4 semaines d'avant (+10 %, 3 km au moins), 3 jours avec
+    10 min de rameur, 6 Pokémon différents vus en mer. Pas d'objectif de vitesse : on ne se compare qu'à soi, en course."""
+    jour = lambda s: dt.date.fromisoformat(s["debut"][:10])  # noqa: E731
+    sem = [s for s in seances if lundi <= jour(s) < lundi + dt.timedelta(days=7)]
+    avant = [sum(metres_de(s, m) for s in seances if lundi - dt.timedelta(days=7 * k) <= jour(s) < lundi - dt.timedelta(days=7 * (k - 1))) for k in range(1, 5)]
+    avant = [a for a in avant if a > 0]
+    cible = max(3000, round(statistics.fmean(avant) * 1.1 / 500) * 500) if avant else 3000
+    fait = sum(metres_de(s, m) for s in sem)
+    jours = len({jour(s) for s in sem if (s.get("duree_s") or 0) >= 600})
+    vus = {n for s in sem for n in ((s.get("jeu") or {}).get("vus") or [])}
+    return [{"cle": "distance", "texte": f"Rame {cible / 1000:g} km".replace(".", ","), "valeur": round(fait), "cible": cible, "unite": "m"},
+            {"cle": "jours", "texte": "3 jours avec 10 min de rameur", "valeur": jours, "cible": 3, "unite": "jours"},
+            {"cle": "carnet", "texte": f"Vois {CARNET_SEMAINE} Pokémon différents en mer", "valeur": len(vus), "cible": CARNET_SEMAINE, "unite": "Pokémon"}]
+
+
+def progression(seances, aujourd, m=None):
+    """Le compagnon (expérience, niveau), les objectifs de la semaine, le carnet de bord et les records de chaque course, depuis les séances."""
+    m = m if m is not None else modele(seances)
+    xp = sum(metres_de(s, m) for s in seances)
+    lundi = aujourd - dt.timedelta(days=aujourd.weekday())
+    if seances:  # chaque semaine passée : ses objectifs réussis comptent pour toujours
+        d = dt.date.fromisoformat(min(s["debut"][:10] for s in seances))
+        semaine = d - dt.timedelta(days=d.weekday())
+        while semaine < lundi:
+            xp += XP_OBJECTIF * sum(o["valeur"] >= o["cible"] for o in objectifs(seances, semaine, m))
+            semaine += dt.timedelta(days=7)
+    cette = objectifs(seances, lundi, m)
+    xp += XP_OBJECTIF * sum(o["valeur"] >= o["cible"] for o in cette)
+    niveaux, vus = {}, set()
+    for s in seances:
+        j = s.get("jeu") or {}
+        vus |= set(j.get("vus") or [])
+        for c in j.get("courses") or []:
+            n = niveaux.setdefault(c["cle"], {"etoiles": 0, "record_s": None, "fois": 0})
+            n["etoiles"] = max(n["etoiles"], c.get("etoiles") or 0)
+            n["fois"] += 1
+            if c.get("fini") and c.get("temps_s") and (n["record_s"] is None or c["temps_s"] < n["record_s"]):
+                n["record_s"] = c["temps_s"]
+    de_la_semaine = [s for s in seances if dt.date.fromisoformat(s["debut"][:10]) >= lundi]
+    return {"xp": round(xp), "objectifs": cette, "niveaux": niveaux, "vus": sorted(vus), "nb": len(seances),
+            "vus_semaine": sorted({n for s in de_la_semaine for n in ((s.get("jeu") or {}).get("vus") or [])}),
+            "jour_fait": any(s["debut"][:10] == str(aujourd) and (s.get("duree_s") or 0) >= 600 for s in seances),
+            "semaine_m": round(sum(metres_de(s, m) for s in seances if dt.date.fromisoformat(s["debut"][:10]) >= lundi))}
+
+
+def arenes(voyage, scenes):
+    """Les arènes de la région où le rameur compte (défi « eau » ou « force ») : leur séance spéciale sur la tablette. etat : « gagne » (à rejouer),
+    « defi » (on y est : c'est le vrai défi), « a_venir ». La Ligue n'en a pas encore."""
+    from pathlib import Path
+    import unicodedata
+    simple = lambda t: unicodedata.normalize("NFD", t).encode("ascii", "ignore").decode().lower()  # noqa: E731
+    images = {p.stem.rsplit("-", 1)[1]: p.name for p in Path(__file__).with_name("scenes").glob("arene-*-*.webp") if not p.stem.endswith("-vide")}
+    defi, out, num = voyage.get("defi") or {}, [], 0
+    for lieu in voyage["lieux"]:
+        a = lieu["arene"]
+        if not a:
+            continue
+        num += 1
+        ep = a["epreuves"][0]
+        if len(a["epreuves"]) > 1 or ep.get("qui"):
+            continue
+        for k, v in enumerate(ep["voies"]):
+            if v["defi"] in ("eau", "force"):
+                etat = "gagne" if str(num) in voyage["badges"] else "defi" if defi.get("numero") == num and defi.get("arrive") else "a_venir"
+                valeur = (defi.get("epreuves") or [[]])[0][k] if etat == "defi" and defi.get("epreuves") else 0
+                img = images.get(simple(a["champion"]))
+                out.append({"num": num, "champion": a["champion"], "type": a["type"], "badge": a["badge"], "lieu": lieu["nom"], "cible": v["cible"],
+                            "texte": v["texte"], "etat": etat, "valeur": valeur, "pokemon": a.get("pokemon"), "image": scenes + img if img else None})
+                break
+    return out
+
+
+def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False):
+    """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé : le modèle des mètres par coup, la progression
+    du jeu du rameur, la région et les arènes de Poké Fit, les couleurs du dresseur)."""
     from pathlib import Path
     seances = (fichier or {}).get("seances") or []
-    donnees = {"lien": lien_tablette, "modele": modele(seances), "images": images, "sacha": sacha}
+    aujourd = aujourd or dt.date.today()
+    m = modele(seances)
+    donnees = {"lien": lien_tablette, "modele": m, "images": images, "sacha": sacha, "progression": progression(seances, aujourd, m),
+               "region": (voyage or {}).get("carte", {}).get("region") or "Kanto", "lieu": voyage["lieux"][voyage["ici"]]["nom"] if voyage else None,
+               "arenes": arenes(voyage, scenes) if voyage else [], "dresseur": dresseur, "kiki": kiki, "jour": str(aujourd)}
     page = Path(__file__).with_name("rameur_ecran.html").read_text(encoding="utf-8")
-    return page.replace("__DONNEES__", json.dumps(donnees).replace("</", "<\\/"))
+    return page.replace("__DONNEES__", json.dumps(donnees, ensure_ascii=False).replace("</", "<\\/"))
 
 
 # ---------- La page Santé ----------

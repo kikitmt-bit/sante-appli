@@ -951,9 +951,20 @@ if st.query_params.get("ecran") == "rameur":
     except Exception as e:  # sans le modèle, le jeu estime les mètres lui-même
         print("Séances de rameur illisibles pour la tablette :", type(e).__name__, flush=True)
         fichier_rameur = None
+    aujourd_r, voyage_r, dresseur_r = dt.datetime.now(TZ).date(), None, None
+    try:  # la région et les arènes de Poké Fit : le décor et les séances d'arène à débloquer
+        voyage_r = pokemon.charger_jeu(lire, aujourd_r, JOUEUR)[1]["voyage"]
+    except Exception as e:
+        print("Partie illisible pour la tablette :", type(e).__name__, flush=True)
+    try:  # les couleurs de sa carte du dresseur, pour le rameur dessiné dans la barque
+        dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
+    except Exception:
+        pass
     with st.container(key="ecran_rameur"):
         st.iframe(seances_rameur.page_tablette(fichier_rameur, seances_rameur.lien(st.secrets.get("JEU_CLE"), AMI), pokemon.IMAGES,
-                                               "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"), height=800)
+                                               "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/",
+                                               aujourd_r, voyage_r, "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
+                                               {k: (dresseur_r or {}).get(k) for k in ("peau", "casquette", "veste", "pantalon")}, AMI is None), height=800)
     st.stop()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
