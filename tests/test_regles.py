@@ -320,13 +320,13 @@ class Roue(unittest.TestCase):
         self.assertTrue(missions.reussite("traversee", DEBUT, stat, info))
         self.assertFalse(missions.reussite("danse", DEBUT, stat, info))
         self.assertTrue(missions.reussite("tournee", DEBUT, stat, info))
-        self.assertTrue(missions.reussite("pinces", DEBUT, stat, info, {str(DEBUT): {"tractions": 5}}))
+        self.assertTrue(missions.reussite("pinces", DEBUT, stat, info, {str(DEBUT): {"tractions": 7}}))
 
     def test_la_premiere_fois_on_commence_doucement(self):
         stat = stats_de({})
         self.assertEqual(missions.possible("defi", jour(0), stat), 10)
         self.assertEqual(missions.possible("cuisses", jour(0), stat), 20)
-        self.assertEqual(missions.possible("pinces", jour(0), stat), 2)
+        self.assertEqual(missions.possible("pinces", jour(0), stat), 3)
         self.assertIsNone(missions.possible("serie", jour(0), stat))
 
     def test_la_mission_monte_avec_ce_qui_a_ete_fait(self):
@@ -348,7 +348,7 @@ class Roue(unittest.TestCase):
     def test_progresser_rapporte_plus(self):
         self.assertEqual([missions.bonus_de("defi", {"seuil": s}) for s in (10, 15, 20)], [20, 25, 30])
         self.assertEqual([missions.bonus_de("cuisses", {"seuil": s}) for s in (20, 35, 50)], [20, 25, 30])
-        self.assertEqual([missions.bonus_de("pinces", {"seuil": s}) for s in (2, 3, 5)], [20, 25, 30])
+        self.assertEqual([missions.bonus_de("pinces", {"seuil": s}) for s in (3, 5, 7)], [20, 25, 30])
         self.assertEqual(missions.bonus_de("serie", {"seuil": 3}), 40)
         self.assertEqual(missions.bonus_de("doduo", {}), 30)
         self.assertEqual(missions.bonus_de("zone", {}), missions.BONUS)

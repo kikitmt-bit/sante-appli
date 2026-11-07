@@ -32,7 +32,7 @@ FORCE = ("pousser", "tirer", "jambes")  # jamais deux jours de suite sur les mê
 PART = {"marche": 2, "cardio": 1.5, "pousser": 1, "tirer": 1, "jambes": 1}  # la place de chaque famille dans la semaine
 # On part de ce que le joueur a vraiment fait (Kiki, 04/11 : 30 pompes d'un coup après des années sans, c'est trop) : la mission demande le premier palier
 # au-dessus de sa meilleure journée de ces 28 jours. Après une longue pause, on repart donc doucement. Tygnon n'arrive qu'une fois 20 pompes faites en un jour.
-PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50)), "pinces": ("tractions", (2, 3, 5))}
+PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50)), "pinces": ("tractions", (3, 5, 7))}  # tractions : 3 au moins (Kiki, 07/11 : 2, ce n'est pas assez, même pour commencer)
 TYGNON_APRES = 20
 PALIER_BONUS = (20, 25, 30)      # les points de chaque palier (Kiki, 04/11) : la première reste bien payée, et progresser rapporte plus
 LANCEMENT = dt.date(2026, 11, 9)  # la remise à zéro : ce qui a été fait avant ne fixe plus le palier demandé
@@ -79,7 +79,7 @@ MISSIONS = {
     "charge": {"famille": "cardio", "titre": "La charge de Tauros", "texte": "Une séance de 20 min", "seuil": 20, "jours": TOUS_LES_JOURS, "unite": "min",
                "num": 128, "bonus": 25, "phrase": "Tête baissée, et sans s'arrêter avant la fin."},
     # Avec le matériel de Kiki (audit du 03/11) : le dos, le rameur, le tapis de danse, le vélo
-    "pinces": {"famille": "tirer", "materiel": "barre", "titre": "Les pinces de Scarabrute", "texte": "{seuil} tractions dans la journée", "seuil": 5, "jours": TOUS_LES_JOURS, "unite": "tractions", "geste": "tractions",
+    "pinces": {"famille": "tirer", "materiel": "barre", "titre": "Les pinces de Scarabrute", "texte": "{seuil} tractions dans la journée", "seuil": 7, "jours": TOUS_LES_JOURS, "unite": "tractions", "geste": "tractions",
                "num": 127, "bonus": 30, "phrase": "Une fois agrippé, il ne lâche plus."},
     "traversee": {"famille": "tirer", "materiel": "rameur", "titre": "La traversée d'Otaria", "texte": "10 min de rameur", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
                   "num": 86, "bonus": 35, "phrase": "Il nage à contre-courant, et il adore ça."},

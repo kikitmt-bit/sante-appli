@@ -547,6 +547,8 @@ details.regles{color:#484838 !important}
 .muscu-points .l1{display:flex;justify-content:space-between;gap:8px}.muscu-points .l1 b{font-weight:400;color:#C03028;white-space:nowrap}
 .muscu-points .bar{height:10px;border-radius:5px;background:#484838;padding:2px;margin:5px 0 6px}.muscu-points .bar i{display:block;height:100%;background:#40A8F8;border-radius:3px}.muscu-points .bar i.ok{background:#F8C838}
 .muscu-points small{display:block;font-size:15px;color:#686850}
+.muscu-points .bar{position:relative}.muscu-points .bar u{position:absolute;top:-3px;bottom:-3px;width:3px;margin-left:-1px;background:#F8C838;border:1px solid #484838;border-radius:1px}
+.obj-muscu{font-size:17px;margin-bottom:3px}.obj-muscu b{font-weight:400;color:#B05010}
 .exos{display:grid;grid-template-columns:1fr 1fr;gap:14px 10px;margin-top:14px}.exo-danse{grid-column:1/-1}
 .exo{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;background:#F8F8E8;border:3px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 rgba(10,15,35,.45);padding:10px 8px;color:#383828;text-align:center;line-height:1.1}
 .exo .pk{width:72px;height:72px;object-fit:contain;image-rendering:pixelated}
@@ -3631,8 +3633,9 @@ function dessinerMuscu() {
   const pourMission = {pompes: "pompes", series: "pompes", squats: "squats", tractions: "tractions"}[mis.geste];
   const duel = duelEnCours();
   el.innerHTML = `${lienMuscu()}<div class="muscu-points"><div class="l1"><span>Pompes, squats, tractions, planche</span><b>${String(Math.round(points * 10) / 10).replace(".", ",")} / ${R.bonus_gestes_max}</b></div>
-      <div class="bar"><i class="${points >= R.bonus_gestes_max ? "ok" : ""}" style="width:${points / R.bonus_gestes_max * 100}%"></i></div>
-      <small>Tes points du jour : la montre ne les compte pas, le téléphone s'en charge. Ils arrivent à la prochaine actualisation.</small></div>
+      <div class="bar"><i class="${points >= R.objectif_gestes ? "ok" : ""}" style="width:${points / R.bonus_gestes_max * 100}%"></i><u style="left:${R.objectif_gestes / R.bonus_gestes_max * 100}%"></u></div>
+      <div class="obj-muscu">${points >= R.objectif_gestes ? `Objectif du jour atteint ✅ (${R.objectif_gestes} points) : aujourd'hui compte pour la Shiny Ball` : `<b>Objectif du jour : ${R.objectif_gestes} points</b> (le trait doré). Encore ${String(Math.round((R.objectif_gestes - points) * 10) / 10).replace(".", ",")} : ${Math.ceil((R.objectif_gestes - points) / R.bonus_pompe)} pompes, ${Math.ceil((R.objectif_gestes - points) / R.bonus_squat)} squats ou ${Math.ceil((R.objectif_gestes - points) / R.bonus_traction)} tractions`}</div>
+      <small>Ou ${fr(R.objectif_pas)} pas, ou ${R.objectif_zone} min de sport : un seul des trois suffit. Il monte quand tu le réussis souvent. La montre ne compte pas la muscu, le téléphone s'en charge.</small></div>
     <div class="exos">${EXOS.filter(([t]) => t !== "tractions" || materielDe().includes("barre") || g.tractions || mis.geste === "tractions").map(([t, gain]) => { const M = ENTR[t], rec = (mem[t] || {}).record;
       const tag = t === "pompes" && duel ? "Arène" : t === pourMission && mis.ok !== true ? "Mission" : "";
       return `<div class="exo">${tag ? `<span class="tag">${tag}</span>` : ""}<img class="pk rogne" src="${IMG.mini(M.coach)}" alt=""><h3>${M.nom}</h3>
