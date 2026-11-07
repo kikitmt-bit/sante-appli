@@ -271,7 +271,7 @@ function sortieRoute() {
   const r = TH.route;
   return {cle: r.cle, type: "route", nom: r.nom, de: r.de, a: r.a, m: 2000, fantomeNom: r.fantome,
     evts: [{t: "vagues", a: 300, b: 620}, {t: "combat", at: 800, qui: "Nageur Hugo", num: 72, nom: "Tentacool", nv: 18, mode: "puissance", duree: 30,
-      dit: "Nageur Hugo : « Hé, le rameur ! Mon Tentacool nage plus vite que ta barque ! »", regle: "30 s : les coups puissants font des coups critiques."},
+      dit: "Nageur Hugo : « Hé, le rameur ! Mon Tentacool nage plus vite que ton Lokhlass ! »", regle: "30 s : les coups puissants font des coups critiques."},
       {t: "vagues", a: 1080, b: 1400}, {t: "combat", at: 1500, qui: "Nageuse Léa", num: 120, nom: "Stari", nv: 20, mode: "elan", duree: 45,
       dit: "Nageuse Léa : « Stari ne craint que les rameurs réguliers… »", regle: "45 s : seuls les coups dans ton rythme touchent (Élan ×3 ou plus)."},
       {t: "sprint", at: 1750}]};
@@ -545,7 +545,7 @@ function evenements(dt) {
   const C = COURSE;
   if (C.type === "route") {
     C.evts.forEach((e, i) => {
-      if (e.t === "vagues" && !S.faits.has(i) && S.dist >= e.a - 20) { S.faits.add(i); for (let m = e.a; m <= e.b; m += 24 + Math.round(rnd(m) * 12)) fx.vagues.push({m}); dire("Vagues porteuses ! Un bon coup quand la vague passe sous ta barque, et tu surfes.", 4200); }
+      if (e.t === "vagues" && !S.faits.has(i) && S.dist >= e.a - 20) { S.faits.add(i); for (let m = e.a; m <= e.b; m += 24 + Math.round(rnd(m) * 12)) fx.vagues.push({m}); dire("Vagues porteuses ! Un bon coup quand la vague passe sous Lokhlass, et tu la surfes.", 4200); }
       if (e.t === "combat" && !S.faits.has(i) && S.dist >= e.at) { S.faits.add(i); lancerCombat(e); }
       if (e.t === "sprint" && !S.faits.has(i) && S.dist >= e.at) { S.faits.add(i); S.sprint = true; banniere("SPRINT FINAL"); dire("Sprint final ! Plus que 250 m, donne tout !", 3500); SONS.defi(); }
     });
@@ -615,7 +615,7 @@ function pas(maintenant) {
   if (dialT > 0) { dialT -= dtr; if (dialT <= 0) $("dial").classList.add("cache"); }
   if (S.etat === "decompte") {
     const avant = Math.ceil(decompte); decompte -= dtr; const apres = Math.ceil(decompte);
-    if (apres !== avant) { if (apres > 0) { $("gros").textContent = apres; SONS.bip(false); } else partirVraiment(); }
+    if (apres !== avant) { if (apres > 0) { $("gros").innerHTML = apres + (SEANCE.etat === "lancee" ? "<small>Mets-toi en position</small>" : ""); SONS.bip(false); } else partirVraiment(); }
   }
   if (S.etat === "course" || S.etat === "arrivee") {
     if (S.etat === "course") {
@@ -624,6 +624,8 @@ function pas(maintenant) {
       if (essai && auto) { prochAuto -= dt; if (prochAuto <= 0) { prochAuto = 60 / SIM.cad * (.96 + Math.random() * .08); coup(SIM.force + (Math.random() - .5) * .12); } }
       if (S.t - S.dernTrace >= 1) { S.dernTrace += 1; S.trace.push(Math.round(S.dist * 10) / 10); }
       if (S.coupsT.length && S.t - S.coupsT[S.coupsT.length - 1] > 7) S.elan = 0;
+      if (SEANCE.etat === "lancee" && !essai) { SEANCE.relance = (SEANCE.relance || 0) + dtr; if (SEANCE.relance > 4) { SEANCE.relance = 0; envoyer({type: "lancer", s: 0}); }
+        const tp = $("telPerdu"); tp.hidden = false; tp.textContent = telOk ? "Le téléphone ne démarre pas : rallume son écran, il doit rester allumé" : "Pas de téléphone : sur le téléphone, Rameur → « Avec la tablette »"; }
     }
     S.v *= Math.exp(-dt / TAU); if (S.v < .02) S.v = 0;
     S.dist += S.v * dt;
@@ -667,30 +669,22 @@ function couche(objs, pas, facteur, y, decal, base) {
   const off = S.dist * PXM * facteur + base, k0 = Math.floor((off - 120) / pas), k1 = Math.floor((off + W + 20) / pas);
   for (let k = k0; k <= k1; k++) { const o = objs[((k % objs.length) + objs.length) % objs.length], X = Math.round(k * pas + rnd(k + decal) * pas * .6 - off); g.drawImage(o, X, Math.round(y(k) - o.height)); }
 }
-/* La barque et le rameur aux couleurs de sa carte du dresseur. Vu de côté, la barque avance vers la droite et le rameur regarde l'arrière (à gauche),
-   comme sur un vrai rameur. phase : 0 = attaque (bras tendus, buste en avant, pelle dans l'eau), 0,35 = fin de la poussée, puis le retour. */
-function barque(x0, y, ph, fant) {
-  ph = ((ph % 1) + 1) % 1;
-  const drive = ph < .35, t = drive ? ease(ph / .35) : 1 - ease((ph - .35) / .65);  // t : 0 = attaque, 1 = fin de la poussée
-  const pc = c => fant ? `rgba(240,248,255,${fant})` : c;
-  const coque = pc("#F0E8D8"), trait = fant ? `rgba(56,56,40,${fant * .6})` : "#383828", bande = pc(COUL.cap);
-  for (let X = 0; X < 64; X++) { const u = X / 63, bord = Math.round(2.6 * (1 - Math.pow(Math.abs(u * 2 - 1), 2.2))), haut = y - 2 - bord, bas = y + 1 + Math.round(bord * .6);
-    px(g, coque, x0 + X, haut, 1, bas - haut); px(g, trait, x0 + X, bas, 1, 1); px(g, trait, x0 + X, haut - 1, 1, 1); if (bord > 1) px(g, bande, x0 + X, haut + 1, 1, 1); }
-  const pied = x0 + 18, siege = x0 + lerp(23, 32, t), hy = y - 5;  // le siège glisse
-  const angle = lerp(-.55, .5, t);  // le buste : en avant à l'attaque, en arrière à la fin
-  const ep = {x: siege + Math.sin(angle) * 10, y: hy - Math.cos(angle) * 10};
-  const d = Math.hypot(siege - pied, hy - (y - 3)), L = 6.2, gx = (siege + pied) / 2, gy = (hy + y - 3) / 2 - Math.sqrt(Math.max(0, L * L - d * d / 4));  // le genou
-  ligne(g, siege, hy, gx, gy, pc(COUL.jambes), 2); ligne(g, gx, gy, pied, y - 3, pc(COUL.jambes), 2); px(g, trait, pied - 2, y - 4, 3, 2);
-  // l'aviron : un levier sur la dame de nage ; la pelle bouge à l'opposé des mains
-  const mainX = lerp(pied + 4, siege + 3, t), mainY = hy - 5 + (drive ? 0 : -1), dame = x0 + 26;
-  const pelleX = dame - (mainX - dame) * 1.6, pelleY = drive ? y + 3 : y - 5 - Math.round(Math.sin(t * Math.PI) * 2);
-  ligne(g, mainX, mainY, pelleX, pelleY, pc("#E8D8B8"), 1); px(g, bande, Math.round(pelleX) - 3, Math.round(pelleY) - 1, 6, 3); px(g, trait, Math.round(pelleX) - 3, Math.round(pelleY) + 2, 6, 1);
-  ligne(g, siege, hy, ep.x, ep.y, pc(COUL.veste), 4);
-  ligne(g, ep.x, ep.y + 1, mainX, mainY, pc(COUL.veste), 2); px(g, pc(COUL.peau), Math.round(mainX) - 1, Math.round(mainY) - 1, 2, 2);
-  const tx = Math.round(ep.x + Math.sin(angle) * 4), ty = Math.round(ep.y - Math.cos(angle) * 4);  // la tête, et la casquette avec sa visière vers l'arrière de la barque
-  for (let Y = -3; Y <= 3; Y++) for (let X = -3; X <= 3; X++) if (X * X + Y * Y <= 10) px(g, Y < 0 ? pc(COUL.cap) : pc(COUL.peau), tx + X, ty + Y);
-  px(g, pc(COUL.cap), tx - 6, ty - 1, 4, 1); px(g, trait, tx - 3, ty, 1, 1);
-  if (!fant && drive && t < .4) for (let i = 0; i < 3; i++) px(g, "#FFFFFF", Math.round(pelleX) - 3 + i * 3, y + 1 - (i % 2), 2, 1);  // la pelle mord l'eau
+/* Le dresseur qui surfe sur Lokhlass, comme dans les jeux (Kiki, 07/11 : la barque dessinée « n'a plus aucun rapport avec les Pokémon ») : sprites du jeu,
+   Lokhlass d'Émeraude et Red de Rouge Feu. Le fantôme = un Lokhlass blanc. */
+let RIDER = null, LOK_BLANC = null;
+function preparerSurf() {
+  const lok = sprites.lok, red = sprites.red; if (!lok || !red || RIDER) return;
+  RIDER = toile(14, 13, x => { x.translate(14, 0); x.scale(-1, 1); x.drawImage(red, 32, 12, 14, 13, 0, 0, 14, 13); });
+  LOK_BLANC = teinte(lok, "rgba(235,245,255,.8)");
+}
+function surf(x0, bob, fant) {
+  preparerSurf(); const lok = fant ? LOK_BLANC : sprites.lok; if (!lok) return;
+  const ly = WL - 44 + bob, penche = S.etat === "course" && ((S.phase % 1) + 1) % 1 < .35 ? 1 : 0;  // le dresseur se penche à chaque coup
+  if (fant) { g.globalAlpha = fant; g.drawImage(lok, 0, 0, 64, 46, x0, ly, 64, 46); g.globalAlpha = 1; return; }
+  g.drawImage(lok, 0, 0, 64, 46, x0, ly, 64, 46);
+  if (RIDER) g.drawImage(RIDER, x0 + 19 + penche, ly + 9 + penche);
+  g.globalAlpha = .55; px(g, TH.mer[5], x0, WL + 2, 64, 6); g.globalAlpha = 1;
+  for (let X = 0; X < 60; X += 2) px(g, TH.ecume, x0 + 2 + X, WL + 1 + ((X / 2 + Math.floor(performance.now() / 160)) % 2), 2, 1);
 }
 function dessinerPk(img, cx, base, o = {}) {  // un Pokémon posé au ras de l'eau, coupé sous la surface s'il nage
   if (!img) return; const b = boite(img), k = o.k || 1, w = Math.round(b.w * k), h = Math.round(b.h * k);
@@ -734,8 +728,8 @@ function dessiner(T) {
   }
   for (const vg of fx.vagues) { const X = Math.round(BX + 30 + (vg.m - S.dist) * PXM); if (X < -30 || X > W + 30) continue;  // les vagues porteuses
     for (let i = -14; i <= 14; i++) { const h = Math.round(5 * Math.cos(i / 14 * Math.PI / 2)); px(g, vg.fait ? "#F8E070" : TH.ecume, X + i, WL + 4 - h, 1, 1); px(g, vg.fait ? "rgba(248,224,112,.5)" : "rgba(232,248,255,.45)", X + i, WL + 5 - h, 1, h); } }
-  const gd = fantome(S.t);  // le fantôme : une barque blanche, sur la ligne d'eau d'au-dessus
-  if (gd != null && S.etat !== "menu") { const gx = Math.round(BX + (gd - S.dist) * PXM); if (gx > -70 && gx < W + 10) barque(gx, WL - 9, T / 2.6, .55); }
+  const gd = fantome(S.t);  // le fantôme : un Lokhlass blanc
+  if (gd != null && S.etat !== "menu") { const gx = Math.round(BX + (gd - S.dist) * PXM); if (gx > -70 && gx < W + 10) surf(gx, Math.round(Math.sin(T * 2.2 + 1) * 1.2) - 12, .5); }
   const vu = fx.vue;  // le Pokémon en mer
   if (vu) { const img = sprites[(vu.shiny ? "s" : "p") + vu.n], X = BX + 30 + (vu.m - S.dist) * PXM;
     const saut = vu.etat === "plonge" ? -vu.t * 30 : vu.etat === "vu" ? Math.sin(Math.min(1, vu.t / 1.2) * Math.PI) * 18 : Math.abs(Math.sin(vu.t * 2.2)) * 10;
@@ -760,9 +754,8 @@ function dessiner(T) {
   if (img) { const saut = fx.saut > 0 ? Math.sin((1 - fx.saut / 1.2) * Math.PI) * (cp.num === 130 ? 10 : 22) : 0;
     dessinerPk(img, BX + 84 + Math.round(Math.sin(T * .8) * 3), WL + (cp.num === 130 ? 10 : 6) - saut + Math.sin(T * 3) * 1.5, {coupe: saut > 3 ? null : WL + 2, miroir: true, k: cp.num === 130 ? .8 : .6});
     if (fx.saut > 0 && (fx.saut < .2 || fx.saut > 1)) for (let i = 0; i < 5; i++) px(g, "#FFFFFF", BX + 76 + i * 4, WL - (i % 2), 2, 1); }
-  const bob = Math.round(Math.sin(T * 2.2) * 1.1), sur = Math.round(S.surge * 3);  // la barque
-  g.globalAlpha = .45; px(g, "#183868", BX + sur, WL + 3, 64, 3); g.globalAlpha = 1;
-  barque(BX + sur, WL + bob, S.phase, 0);
+  const bob = Math.round(Math.sin(T * 2.2) * 1.2), sur = Math.round(S.surge * 4);  // le dresseur sur Lokhlass
+  surf(BX + sur, bob, 0);
   for (const t of fx.tirs) { const x0 = BX + 84, y0 = WL - 12, x1 = FOE() + 30, y1 = WL - 22, u = Math.min(1, t.t);  // les attaques du compagnon
     for (let i = 0; i < 4; i++) { const v = Math.max(0, u - i * .06), X = x0 + (x1 - x0) * v, Y = y0 + (y1 - y0) * v - Math.sin(v * Math.PI) * 18; px(g, t.crit ? "#B05010" : "#204890", Math.round(X) - 2, Math.round(Y) - 2, 5, 5); px(g, t.crit ? "#F8E070" : "#A8E0FF", Math.round(X) - 1, Math.round(Y) - 1, 3, 3); } }
   for (const p of fx.ecume) { g.globalAlpha = Math.min(1, p.v * 2); px(g, "#FFFFFF", Math.round(p.x), Math.round(p.y), 2, 2); } g.globalAlpha = 1;
@@ -840,10 +833,9 @@ function demarrer() {  // « Partir » : l'intro de l'arène, puis le départ
 }
 function depart() {
   montrer("hud"); $("intro").hidden = true;
-  if (SEANCE.etat === "aucune" && !essai) {  // la première course de la séance : la tablette donne le départ au téléphone, qui fait le décompte
-    SEANCE.etat = "lancee"; envoyer({type: "lancer", s: 5}); S.etat = "pret"; $("gros").innerHTML = "5<small>Mets-toi en position</small>"; parle("Mets-toi en position");
-    return;
-  }
+  // La première course de la séance : le téléphone démarre en même temps que le décompte de la tablette. La tablette ne l'attend jamais (Kiki, 07/11 :
+  // bloqué sur « Mets-toi en position ») : s'il ne répond pas, elle le redemande toutes les 4 s et le dit à l'écran.
+  if (SEANCE.etat === "aucune" && !essai) { SEANCE.etat = "lancee"; SEANCE.relance = 0; envoyer({type: "lancer", s: 5}); S.etat = "decompte"; decompte = 5.99; $("gros").innerHTML = "5<small>Mets-toi en position</small>"; parle("Mets-toi en position"); return; }
   S.etat = "decompte"; decompte = 3.99; $("gros").textContent = "3"; SONS.bip(false);
 }
 function partirVraiment() {
@@ -1060,14 +1052,13 @@ function recevoir(m) {
   if (!m || typeof m !== "object") return;
   if (m.type === "bonjour") {
     telOk = true; $("telPerdu").hidden = true;
-    if (m.etat === "mesure" && SEANCE.etat !== "mesure") { SEANCE.etat = "mesure"; SEANCE.t0 = m.depuis || Date.now(); if (S.etat === "pret") partirVraiment(); }  // la tablette s'était fermée : la séance continue
+    if (m.etat === "mesure" && SEANCE.etat !== "mesure") { SEANCE.etat = "mesure"; SEANCE.t0 = m.depuis || Date.now(); }  // la tablette s'était fermée : la séance continue
     if (m.etat === "fini" && SEANCE.etat !== "saisie") { SEANCE.etat = "stop"; envoyer({type: "stop"}); if ($("saisie").hidden) ouvrirSaisie(); }
-    if (m.etat === "attente" && SEANCE.etat === "lancee") envoyer({type: "lancer", s: 5});
+    if (m.etat === "attente" && SEANCE.etat === "lancee") envoyer({type: "lancer", s: S.etat === "decompte" ? Math.max(0, Math.ceil(decompte) - 1) : 0});
     if (m.etat === "attente" && SEANCE.etat === "mesure") { SEANCE.etat = "aucune"; }  // le téléphone a été relancé : nouvelle séance
     if (!$("menu").hidden) { majAide(); SONS.bip(true); parle("Téléphone relié."); }
   }
-  if (m.type === "decompte" && S.etat === "pret") { $("gros").innerHTML = `${m.s}<small>Mets-toi en position</small>`; SONS.bip(false); if (m.s <= 3) parle(String(m.s)); }
-  if (m.type === "zero") { SEANCE.etat = "mesure"; SEANCE.t0 = SEANCE.t0 || Date.now(); if (S.etat === "pret") partirVraiment(); }
+  if (m.type === "zero" || (m.type === "coup" && SEANCE.etat === "lancee")) { SEANCE.etat = "mesure"; SEANCE.t0 = SEANCE.t0 || Date.now(); $("telPerdu").hidden = true; }
   if (m.type === "coup") coupReel(m);
   if (m.type === "bilan") { SEANCE.bilan = m; if (!$("saisie").hidden) dessinerSaisie(); }
   if (m.type === "garde") recompense(SEANCE.metres, false);
@@ -1083,7 +1074,7 @@ function ecouter() {
   peer.on("connection", c => {
     c.on("open", () => { if (conn && conn !== c) { try { conn.close(); } catch (e) {} } conn = c; });
     c.on("data", d => { conn = c; recevoir(d); });
-    c.on("close", () => { if (conn !== c) return; conn = null; telOk = false; TEL_TXT = "Téléphone déconnecté"; majAide(); if (S.etat === "course") $("telPerdu").hidden = false; });
+    c.on("close", () => { if (conn !== c) return; conn = null; telOk = false; TEL_TXT = "Téléphone déconnecté"; majAide(); if (S.etat === "course") { $("telPerdu").textContent = "Téléphone perdu : il se reconnecte…"; $("telPerdu").hidden = false; } });
   });
   peer.on("disconnected", () => setTimeout(() => { try { if (!peer.destroyed) peer.reconnect(); } catch (e) {} }, 3000));
   peer.on("error", e => {
@@ -1124,6 +1115,7 @@ document.addEventListener("keydown", e => {
 dimensionner();
 chargerPk([129, 130, 72, 120, ...T_.mer_pk.slice(0, 6).map(x => x[0])]);
 image("nageur", D.sacha + "swimmer_m_water.png").then(i => { nageur = i; });
+image("lok", SP(131)); image("red", D.sacha + "red_normal.png");
 dessinerMenu(); requestAnimationFrame(pas); allumer();
 </script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" onload="ecouter()" onerror="ecouter()"></script>

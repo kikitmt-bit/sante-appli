@@ -237,7 +237,7 @@ function ecranRameur({reprise = null} = {}) {
     const ecran = () => {
       if (mesure || !v.isConnected) return;
       v.innerHTML = fin ? `<div class="boite"><h3>Séance terminée</h3><p>Entre ce qu'affiche le rameur sur la tablette : elle me l'envoie et j'enregistre la séance.</p><div class="msg r-tab"></div></div><button class="sec remplir">Remplir ici plutôt</button>`
-        : `<div class="boite"><h3>Avec la tablette</h3><p>Accroche le téléphone au siège, bien serré, et installe-toi. Tout se lance depuis la tablette.</p><p class="msg r-tab"></p></div><button class="sec retour">Annuler</button>`;
+        : `<div class="boite"><h3>Avec la tablette</h3><p>Accroche le téléphone au siège, bien serré, et installe-toi. Tout se lance depuis la tablette.</p><p><b>Laisse son écran allumé</b> : écran éteint, il ne reçoit plus rien.</p><p class="msg r-tab"></p></div><button class="sec retour">Annuler</button>`;
       ecrireTablette();
       if (fin) v.querySelector(".remplir").onclick = () => { const e = fin; couper(); formulaire(e); };
       else v.querySelector(".retour").onclick = fermer;
@@ -249,8 +249,9 @@ function ecranRameur({reprise = null} = {}) {
     tablette = lienTablette(ok => { tabletteOk = ok; ecrireTablette(); if (ok) vibre(60); },
       async m => {
         if (m.type === "lancer" && attente && !mesure && !fin) {
-          attente = false; v.innerHTML = `<div class="gros r-compte">${m.s || 5}</div><div class="rythme">Départ donné par la tablette</div><div class="msg r-tab"></div>`; ecrireTablette();
-          if (await decompter(Math.max(0, Math.min(15, m.s || 5)), true)) mesurer(true);
+          const n = Math.max(0, Math.min(15, m.s ?? 5));  // 0 : la tablette a déjà fini son décompte, on mesure tout de suite
+          attente = false; v.innerHTML = `<div class="gros r-compte">${n}</div><div class="rythme">Départ donné par la tablette</div><div class="msg r-tab"></div>`; ecrireTablette();
+          if (await decompter(n, true)) mesurer(true);
         } else if (m.type === "lancer" && mesure) tablette.envoyer({type: "zero"});  // déjà en route : la tablette s'était déconnectée
         else if (m.type === "stop" && mesure) { fin = mesure.arreter(); ecran(); tablette.envoyer(bilanPour(fin)); }
         else if (m.type === "stop" && fin) tablette.envoyer(bilanPour(fin));
