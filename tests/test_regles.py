@@ -106,11 +106,9 @@ class Points(unittest.TestCase):
         lundi_suivant = partie(8, gestes=g)[1]["cumul"] - partie(8)[1]["cumul"]
         self.assertEqual(lundi_suivant, 8 * 5 + 2 * 15)  # une nouvelle semaine : encore +15
 
-    def test_quatre_jours_d_objectif_une_seule_super_ball(self):
+    def test_plus_de_super_ball_pour_4_jours(self):  # Kiki, 07/11 : seule la semaine parfaite donne la Super Ball de la semaine
         captures, etat = partie(7, pas=6000)
-        ids = [c["id"] for c in captures]
-        self.assertEqual(sum(i.endswith("#hebdo") for i in ids), 1)
-        self.assertTrue(any(i.startswith(str(jour(3))) and i.endswith("#hebdo") for i in ids))  # le 4e jour
+        self.assertFalse(any(c["id"].endswith("#hebdo") for c in captures))
         self.assertEqual(etat["semaine"]["jours_ok"], 7)
 
     def test_trois_jours_ne_suffisent_pas(self):

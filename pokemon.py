@@ -66,7 +66,7 @@ REGLAGES = {
     # La relance (idée de Kiki, 05/11) : 5 jours de suite sans objectif = pendant 7 jours un objectif à sa portée (sa moyenne de pas + 20 %, entre 2 000 et 5 000, ou 5 min de sport) ; réussi, le jour compte et donne une Poké Ball. Une fois tous les 14 jours au plus : s'arrêter ne doit pas devenir une astuce.
     "relance_jours": 5, "relance_duree": 7, "relance_ecart": 14, "relance_min": 2000, "relance_max": 5000, "relance_sport": 5,
     "bonus_pompe": .5, "bonus_traction": 1.5, "bonus_squat": .25, "bonus_planche": .1, "bonus_gestes_max": 40, "ancien_gestes_max": 25,  # points d'effort par pompe, par traction, par squat, et au plus par jour (25 avant le 04/11)
-    "objectif_gestes": 15, "bonus_famille": 15, "familles_semaine": 5, "hebdo_jours": 4,  # audit du 03/11, depuis le 04/11 : 15 points de muscu dans la journée (30 pompes, 10 tractions, 60 squats) = l'objectif du jour est atteint ; chaque famille de sport travaillée dans la semaine : +15 ; les 5 familles (« semaine parfaite », Kiki, 07/11, dès le lancement ; 4 avant) : une Super Ball ; 4 jours d'objectif sur 7 : une Super Ball
+    "objectif_gestes": 15, "bonus_famille": 15, "familles_semaine": 5, "hebdo_jours": 4,  # audit du 03/11, depuis le 04/11 : 15 points de muscu dans la journée (30 pompes, 10 tractions, 60 squats) = l'objectif du jour est atteint ; chaque famille de sport travaillée dans la semaine : +15 ; les 5 familles (« semaine parfaite », Kiki, 07/11, dès le lancement ; 4 avant) : une Super Ball ; 4 jours d'objectif sur 7 : une Super Ball, jusqu'au lancement seulement (Kiki, 07/11 : seule la semaine parfaite compte)
     "rattrapage": .25, "rattrapage_garde": 8,  # dans une nouvelle région : 25 % de chances d'un Pokémon manquant des régions d'avant, et à coup sûr après 8 balls sans (Kiki, 29/10)
     "pas_moment": 2000, "poids_moment": 3,  # Johto : 2 000 pas le matin ou le soir rendent ses Pokémon 3 fois plus fréquents ce jour-là
     "rend": 3,                       # le champion rend ce qui a été gagné sur tant de derniers jours
@@ -774,7 +774,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                  for k, lieu in badges if k in voyage.nets]  # le vrai défi réussi, pas seulement « le champion te laisse passer »
         if reprise:
             dues.append({"cle": "reprise", "ball": "poke", "types": None, "raison": "🔄 Poké Ball de la reprise"})
-        if equitable(jour) and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
+        if equitable(jour) and jour < LANCEMENT.date() and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
             sem["hebdo"] = True
             dues.append({"cle": "hebdo", "ball": "super", "types": None, "raison": f"📅 {R['hebdo_jours']} jours d'objectif dans la semaine"})
         if equitable(jour) and not sem["variete"] and (len(sem["parfaite"]) >= R["familles_semaine"] if jour >= LANCEMENT.date() else len(sem["familles"]) >= 4):  # 5 sports, 5 jours différents
