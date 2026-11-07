@@ -77,6 +77,12 @@ REGLAGES = {
     "force": 2, "force_depuis": dt.date(2026, 10, 27), "rameur_simple": dt.date(2026, 11, 5),  # points par minute de musculation (avant le 27/10 : 1) ; le rameur compte double jusqu'au 04/11, puis comme les autres sports : il fait monter le cœur, ses minutes de sport le récompensent déjà (Kiki, 04/11)
     "master_jours": 25, "master_fenetre": 30,  # jours avec l'objectif sur les 30 derniers pour un légendaire
     "objectif_pas": 5000, "objectif_zone": chiffres.OBJECTIFS["zone_sport"],
+    # Les objectifs du jour qui s'adaptent (Kiki, 07/11) : les pas bougent de 10 % chaque lundi selon la semaine d'avant (presque toujours réussi : un cran
+    # au-dessus ; rarement : un cran en dessous) ; la muscu démarre à 10 points, passe à 15 après 2 réussites, à 20 si on la fait souvent (4 jours sur 7),
+    # et retombe à 15 si on la délaisse, jamais à 10. Les minutes de sport restent à 10 (beaucoup de montres n'en donnent pas), les exploits ne bougent pas.
+    "paliers_pas": (4500, 5000, 5500), "pas_monte": .85, "pas_descend": .35,
+    "paliers_gestes": (10, 15, 20), "gestes_debut": 2, "gestes_souvent": 4, "gestes_oubli": 2,
+    "niveau_max": 100,  # le niveau du starter, comme dans les jeux
     "exploit_pas": 10000, "exploit_zone": 25, "exploit_seance": 45,
     # 01/11 (Kiki) : les « minutes en zone » de Google comptent la zone modérée (verte, dès 108 bpm), atteinte en marchant
     # ou assis le cœur un peu haut (soirée) : 323 min le 31/10 pour une journée de marche. Le jeu ne compte plus que les
@@ -143,7 +149,7 @@ def pts_niveau(region=None):
 
 def niveau(points, region=None):
     """Le niveau du starter, d'après les points depuis le début de la région (ceux du vélo compris : la carte ne doit jamais passer devant)."""
-    return REGLAGES["niveau_depart"] + int(points // pts_niveau(region))
+    return min(REGLAGES["niveau_depart"] + int(points // pts_niveau(region)), REGLAGES["niveau_max"])
 
 NOMS_FAMILLES = {"marche": "la marche", "cardio": "le cardio", "pousser": "les bras", "tirer": "le dos", "jambes": "les jambes"}
 
@@ -233,7 +239,7 @@ def sport_principal(m):
     if not m["sports"]:
         return SPORT_AUTRE
     t = max(m["sports"], key=m["sports"].get)
-    return MUSCU if t == "FORCE" else SPORTS.get(t, SPORT_AUTRE)
+    return MUSCU if t == "FORCE" else SPORTS.get(t) or (SPORTS["BIKING"] if "BIK" in t else SPORT_AUTRE)  # tout vélo, d'appartement compris
 
 
 def origine_barre(m):
@@ -368,7 +374,7 @@ def moment(cle, chrono, m, avant, apres):
     _, obj, exp = seuils_zone(m)
     exploite = lambda x: (x[3] >= REGLAGES["exploit_seance"] or x[1] >= exp  # noqa: E731
                           or x[0] >= REGLAGES["exploit_pas"])
-    ok = exploite if cle == "hyper" else lambda x: (x[0] >= REGLAGES["objectif_pas"] and x[1] >= obj) or exploite(x)
+    ok = exploite if cle == "hyper" else lambda x: (x[0] >= obj_pas(m) and x[1] >= obj) or exploite(x)
     i = next((k for k, x in enumerate(chrono) if ok(x)), None)
     total = chrono[-1][2]
     if i is None or total <= 0:
@@ -376,9 +382,14 @@ def moment(cle, chrono, m, avant, apres):
     return round(min(avant + chrono[i][2] / total * (apres - avant), apres), 1)
 
 
+def obj_pas(m):
+    """L'objectif de pas de ce jour-là (il s'adapte chaque lundi, voir REGLAGES["paliers_pas"])."""
+    return m.get("obj_pas") or REGLAGES["objectif_pas"]
+
+
 def double_ok(m):
     """Journée « objectif double » : les pas ET les minutes de sport."""
-    return m["pas"] >= REGLAGES["objectif_pas"] and m["zone"] >= seuils_zone(m)[1]
+    return m["pas"] >= obj_pas(m) and m["zone"] >= seuils_zone(m)[1]
 
 
 def super_ok(m):
@@ -388,7 +399,7 @@ def super_ok(m):
 
 def objectif_ok(m):
     """Le jour compte pour la Master Ball (5 000 pas ou 10 min de sport)."""
-    return m["pas"] >= REGLAGES["objectif_pas"] or m["zone"] >= seuils_zone(m)[1]
+    return m["pas"] >= obj_pas(m) or m["zone"] >= seuils_zone(m)[1]
 
 
 def balls_du_jour(jour, m, avant, apres, shiny_ball=None, badges=(), debut=None, sanctuaires=(), region=None):
@@ -565,6 +576,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     jour, m, ok, shiny_bonus = debut, mesures({}, [], debut), False, 1  # la partie n'a pas encore commencé (date à venir) : une journée vide, l'appli ne plante pas
     relance, sans_objectif, pas_recents = None, 0, []  # la relance en cours ou la dernière ; les jours de suite sans objectif ; les pas des derniers jours avec des données
     pesees = set()  # les jours de la semaine en cours avec une pesée le matin
+    o_pas, o_gestes, pas_semaine, muscu_ok, gestes_depuis = R["objectif_pas"], R["paliers_gestes"][0], [], [], debut  # les objectifs du jour qui s'adaptent
     sem, semaine_passee = None, None  # la semaine en cours et celle d'avant (bilan du dimanche)
     mission_du = lambda j: (missions_jours or {}).get(str(j)) if j >= missions.DEPUIS else None  # noqa: E731
     bonus, frise = [], []
@@ -663,7 +675,13 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         m = mesures(s, [chiffres.contenu(p) for p in (resumes.get(str(jour)) or {}).get("exercise") or []], jour)
         g = (gestes or {}).get(str(jour)) or {}
         m["gestes_pts"] = points_gestes(g, jour)
-        ok, chrono = objectif_ok(m) or (equitable(jour) and m["gestes_pts"] >= R["objectif_gestes"]), None
+        if jour.weekday() == 0 and len(pas_semaine) >= 4:  # le lundi, l'objectif de pas suit la semaine d'avant (4 jours avec la montre au moins)
+            part, i = sum(p >= o_pas for p in pas_semaine) / len(pas_semaine), R["paliers_pas"].index(o_pas)
+            o_pas = R["paliers_pas"][min(i + 1, 2) if part >= R["pas_monte"] else max(i - 1, 0) if part <= R["pas_descend"] else i]
+        if jour.weekday() == 0:
+            pas_semaine = []
+        m["obj_pas"], m["obj_gestes"] = o_pas, o_gestes
+        ok, chrono = objectif_ok(m) or (equitable(jour) and m["gestes_pts"] >= o_gestes), None
         reprise = bool(relance and relance["debut"] <= jour <= relance["fin"] and not relance["fait"] and (m["pas"] >= relance["cible"] or m["zone"] >= R["relance_sport"]))
         if reprise:
             relance["fait"], ok = True, True
@@ -748,6 +766,8 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                 sanct.append({"cle": f"sanct{num}", "ball": "master", "types": None, "fixe": num,
                               "raison": f"🏛️ Sanctuaire de {region.lieux[k]['nom']} : {nom}"})
         dues = balls_du_jour(jour, m, avant, cumul, shiny_ball, badges, debut_region, sanct, region)
+        dues += [{"cle": f"net{k}", "ball": "super", "types": None, "raison": f"⚔️ Victoire nette : le défi de {lieu['arene']['champion']} réussi"}
+                 for k, lieu in badges if k in voyage.nets]  # le vrai défi réussi, pas seulement « le champion te laisse passer »
         if reprise:
             dues.append({"cle": "reprise", "ball": "poke", "types": None, "raison": "🔄 Poké Ball de la reprise"})
         if equitable(jour) and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
@@ -824,6 +844,17 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
             if sans_objectif >= R["relance_jours"] and libre:
                 cible = min(max(round(sum(pas_recents) / len(pas_recents) * 1.2, -2), R["relance_min"]), R["relance_max"])
                 relance = {"debut": jour + dt.timedelta(days=1), "fin": jour + dt.timedelta(days=R["relance_duree"]), "cible": int(cible), "fait": False}
+        if jour < aujourd:  # les objectifs de demain, d'après la journée finie
+            if m["pas"] > 0:
+                pas_semaine.append(m["pas"])
+            if m["gestes_pts"] >= o_gestes:
+                muscu_ok.append(jour)
+            semaine_m = [j for j in muscu_ok if j > jour - dt.timedelta(days=7)]
+            pg = R["paliers_gestes"]
+            if (o_gestes == pg[0] and len(muscu_ok) >= R["gestes_debut"]) or (o_gestes == pg[1] and len(semaine_m) >= R["gestes_souvent"]):
+                o_gestes, muscu_ok, gestes_depuis = pg[pg.index(o_gestes) + 1], [], jour + dt.timedelta(days=1)
+            elif o_gestes == pg[2] and jour - gestes_depuis >= dt.timedelta(days=6) and len(semaine_m) < R["gestes_oubli"]:
+                o_gestes, muscu_ok, gestes_depuis = pg[1], [], jour + dt.timedelta(days=1)
         if fini and g.get("appel") and reg_i + 1 < len(regions.REGIONS):  # l'appel du professeur est accepté (trace du téléphone) : départ demain matin
             depart = True
         jour += dt.timedelta(days=1)
@@ -850,7 +881,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     plus_rien = [*ici, *passes] and not [n for n in reserves([*ici, *passes]) if n not in especes]
     return captures, {"pesees": {"semaine": semaine, "nb": len(pesees), "cible": R["pesees"],
                                  "avant": R["pesee_avant"], "derniere": derniere, "bonus": R["bonus_pesee"]},
-                      "serie": len(jours_ok), "serie_ok": ok, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
+                      "serie": len(jours_ok), "serie_ok": ok, "objectifs": {"pas": o_pas, "gestes": o_gestes}, "fenetre": fenetre, "voyage": voyage.etat(aujourd),
                       "possedees": possedees, "mesures": m,
                       "barre": cumul % b, "origine": origine_barre(m) if m else SOURCES["pas"], "shiny_bonus": shiny_bonus,
                       "bonus": bonus, "mission": etat_mission(aujourd, stats, mission_du, gestes), "cumul": round(cumul, 1),

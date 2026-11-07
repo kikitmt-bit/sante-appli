@@ -124,10 +124,51 @@ class Points(unittest.TestCase):
         self.assertEqual(sum(c["id"].endswith("#variete") for c in captures), 1)
 
     def test_la_muscu_compte_comme_objectif_du_jour(self):
-        g = {str(jour(k)): {"pompes": 30} for k in range(7)}
-        self.assertEqual(partie(7, gestes=g)[1]["semaine"]["jours_ok"], 7)
-        g = {str(jour(k)): {"pompes": 28} for k in range(7)}
+        g = {str(jour(k)): {"pompes": 30} for k in range(7)}  # 10 points les 2 premiers jours, puis 15, puis 20 à force de le faire
+        self.assertEqual(partie(7, gestes=g)[1]["semaine"]["jours_ok"], 6)
+        g = {str(jour(k)): {"pompes": 18} for k in range(7)}
         self.assertEqual(partie(7, gestes=g)[1]["semaine"]["jours_ok"], 0)
+
+
+class ObjectifsAdaptes(unittest.TestCase):
+    """Kiki, 07/11 : les objectifs du jour suivent les habitudes, sans jamais devenir une contrainte."""
+
+    def test_la_muscu_commence_doucement(self):
+        g = {str(jour(k)): {"pompes": 20} for k in range(7)}
+        _, e = partie(7, gestes=g)
+        self.assertEqual(e["semaine"]["jours_ok"], 2)  # 20 pompes valent l'objectif les 2 premiers jours
+        self.assertEqual(e["objectifs"]["gestes"], 15)
+
+    def test_la_muscu_monte_a_20_puis_retombe_a_15_jamais_a_10(self):
+        g = {str(jour(k)): {"pompes": 30} for k in range(7)}
+        self.assertEqual(partie(7, gestes=g)[1]["objectifs"]["gestes"], 20)
+        self.assertEqual(partie(50, gestes=g)[1]["objectifs"]["gestes"], 15)
+
+    def test_les_pas_montent_quand_c_est_facile(self):
+        self.assertEqual(partie(7, pas=8000)[1]["objectifs"]["pas"], 5000)  # la première semaine : 5 000
+        self.assertEqual(partie(8, pas=8000)[1]["objectifs"]["pas"], 5500)
+        self.assertEqual(partie(30, pas=8000)[1]["objectifs"]["pas"], 5500)  # jamais plus de 10 %
+
+    def test_les_pas_descendent_quand_c_est_trop(self):
+        _, e = partie(9, pas=4700)
+        self.assertEqual(e["objectifs"]["pas"], 4500)
+        self.assertEqual(e["semaine"]["jours_ok"], 2)  # 4 700 pas comptent dès le lundi suivant
+        self.assertEqual(partie(30, pas=2000)[1]["objectifs"]["pas"], 4500)
+
+    def test_victoire_nette_seulement_par_le_vrai_defi(self):
+        g = {str(jour(k)): {"pompes": 40} for k in range(40)}
+        captures, _ = partie(40, gestes=g, pas=12000, zone_sport=30, km=9, etages=40)
+        self.assertTrue(any(c["id"].endswith("#net1") for c in captures))
+        captures, e = partie(60, pas=3500)
+        self.assertIn(1, e["voyage"]["badges"])  # le champion a laissé passer
+        self.assertFalse(any("#net" in c["id"] for c in captures))
+
+    def test_le_starter_s_arrete_au_niveau_100(self):
+        self.assertEqual(pokemon.niveau(10 ** 7), 100)
+
+    def test_le_velo_d_appartement_est_un_velo(self):
+        m = pokemon.mesures({}, [seance("BIKING_STATIONARY", 30)["exercise"]], DEBUT)
+        self.assertEqual(pokemon.sport_principal(m)[1], "Vélo")
 
     def test_la_semaine_passee_est_gardee(self):
         _, etat = partie(9, pas=6000)

@@ -72,7 +72,7 @@ def contenu(lire, maintenant):
                       # serie = jours avec l'objectif sur les 30 derniers ; la montre affiche « série 18/25 »
                       "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone",
                                                    "exploit_seance", "nuit", "pas_offerts", "zone_points")}
-                                | {"serie_legendaire": R["master_jours"]}},
+                                | {"serie_legendaire": R["master_jours"], "objectif_pas": etat["objectifs"]["pas"]}},
         "nuit": {"duree": round(m["sommeil"]), "coucher": hm(s.get("coucher")), "lever": hm(s.get("lever")),
                  "phases": {k: nombre(s.get(k)) for k in ("profond", "leger", "paradoxal", "eveil")}}
                 if m.get("sommeil") else None,

@@ -3745,8 +3745,8 @@ function dessinerStarter() {
   const dr = document.getElementById("starter-dresseur"), st = G.starter, n = formeStarter();
   if (!st || !n) { dr.innerHTML = ""; return; }
   const attend = aOuvrir().some(estEvo), plein = st.pts_niveau;
-  const pct = attend ? 100 : st.dans_niveau / plein * 100;
-  const objectif = attend ? "Il se passe quelque chose !" : niveauDuJour(st) ? `<b>Monte au niveau ${st.niveau} !</b>` : `encore <b>${fr(plein - st.dans_niveau)} pts</b> pour le niveau ${st.niveau + 1}`;
+  const max = st.niveau >= 100, pct = attend || max ? 100 : st.dans_niveau / plein * 100;
+  const objectif = attend ? "Il se passe quelque chose !" : max ? "<b>Niveau maximum !</b>" : niveauDuJour(st) ? `<b>Monte au niveau ${st.niveau} !</b>` : `encore <b>${fr(plein - st.dans_niveau)} pts</b> pour le niveau ${st.niveau + 1}`;
   // dans Dresseur seulement (Kiki, 04/11 : plus jamais sur Aventure, même le jour où il gagne un niveau)
   dr.innerHTML = `<button class="starter-carte"><span class="av"><img src="${IMG.anim(n, false)}" ${repli(n, false)} alt=""></span>
     <span class="milieu"><span class="l1"><b>${PAR_NUM[n].nom}</b><i>Niv. ${st.niveau}</i></span><span class="barre-n"><i style="width:${pct}%"></i></span><small>${objectif}</small></span></button>`;
@@ -3830,7 +3830,7 @@ function dessinerSpeciales() {
   const mPas = manque(J.pas, R.objectif_pas), mZone = manque(J.zone, R.objectif_zone, "min de sport");
   const resteMaster = mas ? "Gagnée aujourd'hui ! Un nouveau compte commence demain."
     : `Encore <b>${R.master_jours - J.serie} jour${R.master_jours - J.serie > 1 ? "s" : ""}</b> avec l'objectif. ` +
-      (J.serie_ok ? "Aujourd'hui compte déjà ✅" : `Pour qu'aujourd'hui compte : <b>${mPas}</b>, <b>${mZone}</b> ou <b>${R.objectif_gestes} points de muscu</b> (${R.objectif_gestes * 2} pompes, ${R.objectif_gestes * 4} squats ou 10 tractions).`);
+      (J.serie_ok ? "Aujourd'hui compte déjà ✅" : `Pour qu'aujourd'hui compte : <b>${mPas}</b>, <b>${mZone}</b> ou <b>${R.objectif_gestes} points de muscu</b> (${R.objectif_gestes * 2} pompes, ${R.objectif_gestes * 4} squats ou ${Math.ceil(R.objectif_gestes / 1.5)} tractions).`);
   const fen = J.fenetre.concat(Array(Math.max(R.master_fenetre - J.fenetre.length, 0)).fill(undefined));
   const carteShiny = `    <div class="speciale ${mas ? "ok" : ""}">${mas ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("sball")}Shiny Ball</div><div class="gain">${R.master_jours} jours sur ${R.master_fenetre} à ${fr(R.objectif_pas)} pas, ${R.objectif_zone} min de sport ou ${R.objectif_gestes * 2} pompes = un shiny garanti</div>
@@ -3994,7 +3994,7 @@ function carteDefi() {
   return `<div class="speciale defi ${ok ? "ok" : ""}" style="--c:${ligue ? "#B8860B" : COUL[a.type]}">
     <div class="portrait">${portraitChamp(ch)}</div>
     <div class="tete">${a.image ? ico(IMG.badge(a.image)) : ico("ligue")}Défi de l'arène · ${ch.nom}</div>
-    <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté depuis ton arrivée</div>${conseil4}
+    <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté depuis ton arrivée · réussi avant qu'il te laisse passer : une Super Ball en plus</div>${conseil4}
     ${ep.map(e => `<div class="epreuve ${e.fait ? "faite" : ""}">${e.qui ? `<div class="qui-e">${e.qui}${e.fait ? " ✅" : ""}</div>` : ""}${e.voies.map(voie).join(`<div class="ou-e">ou</div>`)}</div>`).join("")}
     ${types.length && !ok ? blocGestes(types) : ""}
     ${d.max ? "" : `<div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span style="white-space:nowrap">${String(d.valeur_b).replace(".", ",")} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}`}
@@ -5038,6 +5038,8 @@ function dessinerRegles() {
       🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 💪 pompes et squats → Combat, Acier ; 👟 pas → tous les types.</li>
     <li>${ico("super", "p")} <b>Ta semaine</b> : ${R.hebdo_jours} jours avec ton objectif = une Super Ball, ${R.familles_semaine} sports différents (marche, cardio, bras, dos, jambes) = une autre, et +${R.bonus_famille} points la première fois de la semaine pour chacun. Bilan le dimanche soir.</li>
+    <li>${ico("effort", "p")} <b>Ton objectif du jour</b> : ${fr(R.objectif_pas)} pas, ${R.objectif_zone} min de sport ou ${R.objectif_gestes} points de muscu (${R.objectif_gestes * 2} pompes). Il suit tes habitudes :
+      chaque lundi, les pas montent ou descendent de 500 (entre 4 500 et 5 500) selon ta semaine ; la muscu commence à 10 points, passe à 15, puis à 20 si tu en fais souvent, et ne redescend jamais sous 15.</li>
     <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min de sport dans la journée, ou n'importe quel exploit.</li>
     <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>
     <li>${ico("effort", "p")} <b>Ton starter</b> : il gagne un niveau tous les ${(G.starter || {}).pts_niveau || 195} points d'effort et évolue en grandissant. Ses évolutions ne sortent jamais d'une ball : c'est ton sport qui les fait naître.</li>
@@ -5051,7 +5053,7 @@ function dessinerRegles() {
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
     <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
     ${EN_JOHTO ? `<li>${ico("carte", "p")} <b>Le jour et la nuit</b> : à ${REG.nom}, certains Pokémon sortent plutôt tôt ou tard. 2 000 pas le matin ou après 20 h les rendent trois fois plus fréquents ce jour-là.</li>` : ""}
-    <li>${ico(IMG.badge(EN_JOHTO ? 9 : 1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le champion te laisse passer après quelques jours à 2 000 pas, et un exploit compte double. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
+    <li>${ico(IMG.badge(EN_JOHTO ? 9 : 1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le champion te laisse passer après quelques jours à 2 000 pas, et un exploit compte double. Réussir son vrai défi avant qu'il te laisse passer rapporte une Super Ball en plus. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
     <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis l'onglet Muscu, le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.

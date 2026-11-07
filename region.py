@@ -111,6 +111,7 @@ class Voyage:
         self.debut = None     # le premier jour dans la région
         self.velo = None      # le jour où le joueur en retard a reçu le vélo
         self.bonus = 0.0      # les points de carte que le vélo a ajoutés (le niveau du starter les compte, pour rester en avance sur la carte)
+        self.nets = set()     # les arènes gagnées par le vrai défi (victoire nette), pas parce que le champion a laissé passer
 
     def arene_suivante(self):
         """Index (dans les lieux) de la prochaine arène à gagner, ou None (Ligue gagnée)."""
@@ -131,12 +132,17 @@ class Voyage:
         a = self.r.lieux[self.arene_suivante()]["arene"]
         return [[self.valeur(v, jour) for v in e["voies"]] for e in a["epreuves"]], self.valeur(a["b"], jour)
 
+    def par_defi(self, jour):
+        """Le vrai défi du champion est-il réussi (une voie de chaque épreuve) ? C'est la victoire nette, qui rapporte une Super Ball en plus."""
+        a = self.r.lieux[self.arene_suivante()]["arene"]
+        ep, _ = self.defi(jour)
+        return all(any(x >= v["cible"] for x, v in zip(vals, e["voies"])) for vals, e in zip(ep, a["epreuves"]))
+
     def reussi(self, jour):
         a = self.r.lieux[self.arene_suivante()]["arene"]
-        ep, b = self.defi(jour)
         if self.r.arene_max and self.jours_actifs(jour) >= self.r.arene_max:
             return True
-        return b >= a["b"]["cible"] or all(any(x >= v["cible"] for x, v in zip(vals, e["voies"])) for vals, e in zip(ep, a["epreuves"]))
+        return self.defi(jour)[1] >= a["b"]["cible"] or self.par_defi(jour)
 
     def avancer(self, jour, j, cumul):
         """Un jour de plus : j = chiffres du jour, cumul = points d'effort depuis le début de la région. -> [(numéro, lieu)] des
@@ -167,6 +173,8 @@ class Voyage:
             if not self.reussi(jour):
                 break
             k = self.r.arenes.index(i) + 1
+            if self.par_defi(jour):
+                self.nets.add(k)
             self.badges[k], self.arrivee, self.histo = jour, None, []
             gagnes.append((k, self.r.lieux[i]))
         self.sanct_du_jour = []
