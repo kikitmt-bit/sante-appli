@@ -3848,11 +3848,13 @@ function dessinerSpeciales() {
   // Les bonus : une liste comme « Tes prochains objectifs » (Kiki, 03/11 : les petites tuiles n'étaient pas belles) ; on touche une ligne pour le détail
   const pct = (v, c) => Math.min(c ? v / c * 100 : 0, 100);
   const S = G.semaine, nomsF = {marche: "La marche", cardio: "Le cardio", pousser: "Les bras", tirer: "Le dos", jambes: "Les jambes"};
+  // ce qui coche chaque sport, dans la journée (Kiki, 07/11) : le même calcul que missions.familles_du
+  const commentF = {marche: "5 000 pas", cardio: "10 min de sport, 10 min de tapis de danse ou une séance de 20 min", pousser: "10 pompes", tirer: "3 tractions ou 10 min de rameur", jambes: "20 squats ou 15 min de vélo"};
   const carteSemaine = () => `    <div class="speciale ${S.hebdo ? "ok" : ""}">${S.hebdo ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}Ta semaine</div><div class="gain">${R.hebdo_jours} jours avec ton objectif = une Super Ball. ${R.familles_semaine} sports différents = une autre. Chaque nouveau sport de la semaine = +${R.bonus_famille} pts.</div>
       <div class="ligne"><span>Jours d'objectif</span><span>${S.jours_ok} / ${R.hebdo_jours}</span></div>${j(S.jours_ok, R.hebdo_jours)}
       <div class="ligne"><span>Sports différents</span><span>${S.familles.length} / ${R.familles_semaine}</span></div>${j(S.familles.length, R.familles_semaine)}
-      ${Object.entries(nomsF).map(([f, n]) => `<div class="ligne"><span>${S.familles.includes(f) ? "✅" : "▫️"} ${n}</span></div>`).join("")}</div>`;
+      ${Object.entries(nomsF).map(([f, n]) => `<div class="ligne"><span>${S.familles.includes(f) ? "✅" : "▫️"} ${n}</span><span style="text-align:right;opacity:.75">${commentF[f]}</span></div>`).join("")}</div>`;
   const bonus = [
     S ? {cle: "semaine", ic: ico("super"), nom: "Ta semaine", val: `${S.jours_ok} / ${R.hebdo_jours} jours · ${S.familles.length} / ${R.familles_semaine} sports`, p: pct(S.jours_ok, R.hebdo_jours), detail: carteSemaine()} : null,
     {cle: "shiny", ic: ico("sball"), nom: "Shiny Ball", val: `${J.serie} / ${R.master_jours} jours`, p: pct(J.serie, R.master_jours), detail: carteShiny},
