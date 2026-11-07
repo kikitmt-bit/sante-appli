@@ -3968,9 +3968,9 @@ function cartePesee() {  // une petite tuile (demi-largeur) : la moins important
   }
   return `<div class="speciale pesee ${ok ? "ok" : ""}">${ok ? '<span class="tampon">✅</span>' : ""}
     <div class="tete">${ico("masse")}Pesée</div>
-    <div class="gain">+${p.bonus || 10} pts par pesée du matin (avant ${p.avant} h), ${p.cible} par semaine au plus${balanceDe() === "manuelle" ? ". Note-la dans Santé, rubrique Poids." : ""}</div>
+    <div class="gain">+${p.bonus || 3} pts par pesée du matin (avant ${p.avant} h), tous les jours : plus tu te pèses, plus tes courbes sont fiables${balanceDe() === "manuelle" ? ". Note-la dans Santé, rubrique Poids." : ""}</div>
     <div class="semaine-pesee">${p.semaine.map((x, i) => `<i class="${x === 1 ? "on" : x === 0 ? "rate" : i === p.semaine.indexOf(null) ? "auj" : ""}">${jours[i]}</i>`).join("")}</div>
-    <div class="reste">${ok ? "Objectif de la semaine atteint !" : `Encore <b>${reste}</b> cette semaine`}</div>${comp}</div>`;
+    <div class="reste">${ok ? "Tous les matins cette semaine !" : `<b>${p.nb}</b> pesée${p.nb > 1 ? "s" : ""} cette semaine · +${p.bonus || 3} pts chaque matin`}</div>${comp}</div>`;
 }
 // La chasse aux shiny : plus rien de nouveau dans les lieux atteints, les balls en trop cherchent des shiny
 function carteChasse() {
@@ -5071,7 +5071,7 @@ function dessinerRegles() {
     <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis l'onglet Muscu, le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
     <li>${ico("ligue", "p")} <b>Après la Ligue</b> : tes dernières Poké Balls servent à compléter ton Pokédex, puis à chercher des shiny.</li>
     <li>${ico("masse", "p")} <b>Pesée</b> : +${D.pesees ? D.pesees.bonus : 10} points d'effort par pesée du matin (avant ${D.pesees ? D.pesees.avant : 12} h), une par jour.
-      Vise ${D.pesees ? D.pesees.cible : 3} pesées par semaine, toujours dans les mêmes conditions : tes courbes de poids et de masse grasse seront fiables.</li>
+      L'idéal : chaque matin, dans les mêmes conditions. Le poids bouge d'un ou deux kilos d'un jour à l'autre : avec une pesée par jour, la moyenne de la semaine montre la vraie tendance.</li>
     <li>${ico("radar", "p")} <b>Mission du jour</b> : chaque jour, un Pokémon te lance un défi, parmi ce que ta montre sait mesurer. Réussie = 20 à 40 points d'effort selon la difficulté.</li>
     <li>Jamais de doublon : chaque capture est un Pokémon que tu n'avais pas (ou son shiny).</li>
     ${CAPTURES.some(c => c.id.endsWith("#" + CADEAU) && estOuverte(c)) ? `<li><button class="filtre revoir">${ico("tele", "p")} Revoir l'accueil du Professeur ${PROFESSEURS[CADEAU].prof}</button></li>` : ""}

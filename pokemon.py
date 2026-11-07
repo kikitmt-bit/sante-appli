@@ -95,7 +95,7 @@ REGLAGES = {
     # Pesée (29/10, demande de Kiki : il oublie de se peser) : chaque pesée du matin (avant midi : même poids qu'au
     # réveil s'il n'a pas mangé) = +10 points d'effort, une par jour ; objectif affiché : 3 par semaine (stats fiables).
     # Plus de Poké Ball pour la pesée (Kiki : « trop bien comme cadeau »).
-    "pesees": 3, "pesee_avant": 12, "bonus_pesee": 10,
+    "pesees": 7, "pesee_avant": 12, "bonus_pesee": 3, "ancien_bonus_pesee": 10,  # dès le lancement (Kiki, 07/11) : 3 points chaque matin, sans plafond (une pesée par jour donne les données les plus fiables) ; avant : 10, 3 par semaine
 }
 
 # Le lancement (Kiki, 06/11) : le lundi 9 novembre 2026 à 4 h 30, heure de Paris, la partie repart de zéro toute seule, pour tous les joueurs. Une fois passé, ce bloc peut disparaître
@@ -527,11 +527,13 @@ def bonus_du_jour(jour, stats, resumes, mission_du, gestes=None):
     jour réussie : +25 (le coucher d'hier soir est compté ce matin, quand la nuit est connue). Comptés le jour où on
     les sait : rien ne change après coup (sinon les Poké Balls déjà gagnées se décaleraient)."""
     b = []
-    if pesee_matin(resumes.get(str(jour))):
-        # 3 par semaine pour avoir des stats fiables : au-delà, rien de plus (depuis le 04/11, Kiki : 30 points par semaine au plus)
+    if pesee_matin(resumes.get(str(jour))) and jour >= LANCEMENT.date():
+        b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))  # tous les jours, sans plafond
+    elif pesee_matin(resumes.get(str(jour))):
+        # avant le lancement : 3 par semaine au plus (depuis le 04/11, Kiki : 30 points par semaine au plus)
         avant = sum(pesee_matin(resumes.get(str(jour - dt.timedelta(days=k)))) for k in range(1, jour.weekday() + 1))
-        if avant < REGLAGES["pesees"] or jour < missions.NOUVELLES:
-            b.append(("⚖️", "Pesée du matin", REGLAGES["bonus_pesee"]))
+        if avant < 3 or jour < missions.NOUVELLES:
+            b.append(("⚖️", "Pesée du matin", REGLAGES["ancien_bonus_pesee"]))
     g = (gestes or {}).get(str(jour)) or {}
     pts = points_gestes(g, jour)
     if pts:

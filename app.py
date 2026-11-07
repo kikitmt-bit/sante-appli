@@ -619,7 +619,7 @@ def noter_pesee(aujourd):
             kg = st.number_input("Poids (kg)", min_value=float(pesees.KG_MIN), max_value=float(pesees.KG_MAX), value=float(deja["kg"]) if deja else None, step=.1, format="%.1f", placeholder="Par exemple 74,5")
             gras = st.number_input("Masse grasse (%), si ta balance la donne", min_value=float(pesees.GRAS_MIN), max_value=float(pesees.GRAS_MAX), value=deja.get("gras") if deja else None, step=.1, format="%.1f", placeholder="Facultatif")
             ok = st.form_submit_button("Enregistrer", type="primary", width="stretch")
-        st.caption(f"Le matin avant {pokemon.REGLAGES['pesee_avant']} h : +{pokemon.REGLAGES['bonus_pesee']} points d'effort, {pokemon.REGLAGES['pesees']} fois par semaine au plus.")
+        st.caption(f"Le matin avant {pokemon.REGLAGES['pesee_avant']} h : +{pokemon.REGLAGES['bonus_pesee']} points d'effort, chaque matin.")
     if ok:
         if kg is None:
             st.warning("Écris d'abord ton poids.")
