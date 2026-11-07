@@ -124,7 +124,22 @@ class Points(unittest.TestCase):
         self.assertFalse(any(c["id"].endswith("#variete") for c in captures))
         captures, etat = partie(2, gestes=g, pas=6000, zone_sport=12)
         self.assertEqual(len(etat["semaine"]["familles"]), 5)
+        self.assertEqual(len(etat["semaine"]["parfaite"]), 2)  # un jour ne coche qu'un seul sport : 2 jours, 2 sports
+        self.assertFalse(any(c["id"].endswith("#variete") for c in captures))
+        g = {str(jour(0)): {"pompes": 10}, str(jour(1)): {"tractions": 3}, str(jour(2)): {"squats": 20}}
+        captures, etat = partie(5, gestes=g, pas=[3000, 3000, 3000, 3000, 6000], zone_sport=[0, 0, 0, 12, 0])
+        self.assertEqual(etat["semaine"]["parfaite"], {"pousser": str(jour(0)), "tirer": str(jour(1)), "jambes": str(jour(2)), "cardio": str(jour(3)), "marche": str(jour(4))})
         self.assertEqual(sum(c["id"].endswith("#variete") for c in captures), 1)
+
+    def test_un_jour_bien_place(self):  # le lundi fait marche et bras, le mardi bras seulement : lundi = marche, mardi = bras
+        self.assertEqual(missions.semaine_parfaite([("l", {"marche", "pousser"}), ("m", {"pousser"})]), {"marche": "l", "pousser": "m"})
+
+    def test_la_planche_compte_pour_le_dos_sans_materiel(self):
+        g = {"planche": 60}
+        self.assertIn("tirer", missions.familles_du({}, g, materiel=set()))
+        self.assertIn("tirer", missions.familles_du({}, g, materiel={"velo"}))
+        self.assertNotIn("tirer", missions.familles_du({}, g, materiel={"barre"}))
+        self.assertNotIn("tirer", missions.familles_du({}, {"planche": 50}, materiel=set()))
 
     def test_la_marche_suit_l_objectif_de_pas(self):
         self.assertNotIn("marche", missions.familles_du({"pas": 5200}, None, 5500))

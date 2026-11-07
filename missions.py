@@ -32,8 +32,9 @@ FORCE = ("pousser", "tirer", "jambes")  # jamais deux jours de suite sur les mê
 PART = {"marche": 2, "cardio": 1.5, "pousser": 1, "tirer": 1, "jambes": 1}  # la place de chaque famille dans la semaine
 # On part de ce que le joueur a vraiment fait (Kiki, 04/11 : 30 pompes d'un coup après des années sans, c'est trop) : la mission demande le premier palier
 # au-dessus de sa meilleure journée de ces 28 jours. Après une longue pause, on repart donc doucement. Tygnon n'arrive qu'une fois 20 pompes faites en un jour.
-PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50)), "pinces": ("tractions", (3, 5, 7))}  # tractions : 3 au moins (Kiki, 07/11 : 2, ce n'est pas assez, même pour commencer)
+PALIERS = {"defi": ("pompes", (10, 15, 20)), "cuisses": ("squats", (20, 35, 50)), "pinces": ("tractions", (3, 5, 7)), "gainage": ("planche", (60, 90, 120))}  # tractions : 3 au moins (Kiki, 07/11 : 2, ce n'est pas assez, même pour commencer)
 TYGNON_APRES = 20
+PLANCHE_DOS = 60  # secondes de planche dans la journée : le dos de la semaine parfaite, pour qui n'a ni barre ni rameur
 PALIER_BONUS = (20, 25, 30)      # les points de chaque palier (Kiki, 04/11) : la première reste bien payée, et progresser rapporte plus
 LANCEMENT = dt.date(2026, 11, 9)  # la remise à zéro : ce qui a été fait avant ne fixe plus le palier demandé
 MEMOIRE = 28                     # jours regardés pour la meilleure journée
@@ -81,6 +82,9 @@ MISSIONS = {
     # Avec le matériel de Kiki (audit du 03/11) : le dos, le rameur, le tapis de danse, le vélo
     "pinces": {"famille": "tirer", "materiel": "barre", "titre": "Les pinces de Scarabrute", "texte": "{seuil} tractions dans la journée", "seuil": 7, "jours": TOUS_LES_JOURS, "unite": "tractions", "geste": "tractions",
                "num": 127, "bonus": 30, "phrase": "Une fois agrippé, il ne lâche plus."},
+    # la planche, de temps en temps (Kiki, 07/11 : « j'aime pas forcément, mais il faut varier ») ; sans matériel, c'est la mission du dos
+    "gainage": {"famille": "tirer", "titre": "Le roc de Racaillou", "texte": "{seuil} secondes de planche dans la journée", "seuil": 120, "jours": TOUS_LES_JOURS, "unite": "secondes", "geste": "planche",
+                "num": 74, "bonus": 30, "phrase": "Immobile comme un rocher, et pas plus pressé que ça."},
     "traversee": {"famille": "tirer", "materiel": "rameur", "titre": "La traversée d'Otaria", "texte": "10 min de rameur", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
                   "num": 86, "bonus": 35, "phrase": "Il nage à contre-courant, et il adore ça."},
     "danse": {"famille": "cardio", "materiel": "tapis", "titre": "La danse de Mélofée", "texte": "10 min de tapis de danse", "seuil": 10, "jours": TOUS_LES_JOURS, "unite": "min",
@@ -234,8 +238,9 @@ def possible(cle, jour, stats, gestes=None):
     return m["seuil"]
 
 
-def familles_du(s, g=None, pas=5000):
-    """Les familles de sport travaillées un jour : s = ses chiffres (chiffres.stats_jour), g = ses pompes, tractions et squats, pas = son objectif de pas du moment.
+def familles_du(s, g=None, pas=5000, materiel=None):
+    """Les familles de sport travaillées un jour : s = ses chiffres (chiffres.stats_jour), g = ses pompes, tractions et squats, pas = son objectif de pas du moment,
+    materiel = ce qu'il a coché : sans barre ni rameur, la planche compte pour le dos (Kiki, 07/11).
     Écrit aussi pour le joueur dans « Ta semaine » (commentF de pokemon_ui.html) : à changer des deux côtés."""
     n = lambda k: (lambda v: 0 if v is None or v != v else v)(s.get(k))  # noqa: E731 : None ou NaN : rien ce jour-là
     g, f = g or {}, set()
@@ -245,7 +250,7 @@ def familles_du(s, g=None, pas=5000):
         f.add("cardio")
     if g.get("pompes", 0) >= 10:
         f.add("pousser")
-    if g.get("tractions", 0) >= 3 or n("min_rameur") >= 10:
+    if g.get("tractions", 0) >= 3 or n("min_rameur") >= 10 or (materiel is not None and not {"barre", "rameur"} & set(materiel) and g.get("planche", 0) >= PLANCHE_DOS):
         f.add("tirer")
     if g.get("squats", 0) >= 20 or n("min_velo") >= 15:
         f.add("jambes")
@@ -323,4 +328,25 @@ def calculer(ancien, aujourd, stats, lire_jour, ami=None, gestes=None, materiel=
             else:
                 e["cle"], e["raison"] = choisir(j, stats, pm, (jours.get(str(j - dt.timedelta(days=1))) or {}).get("cle"))
         j += dt.timedelta(days=1)
-    return {"jours": dict(sorted(jours.items()))}
+    sortie = {"jours": dict(sorted(jours.items()))}
+    if materiel is not None:
+        sortie["materiel"] = sorted(materiel)  # relu par pokemon.charger_jeu (semaine parfaite) : le même pour l'appli et la montre
+    return sortie
+
+
+def semaine_parfaite(jours):
+    """Un jour ne coche qu'un seul sport (Kiki, 07/11) : jours = [(jour, familles du jour)] de la semaine -> {famille: jour},
+    le plus de sports possible sur des jours tous différents (appariement ; les premiers jours d'abord, à égalité)."""
+    pris = {}  # jour -> famille
+
+    def essai(f, vus):
+        for j, fs in jours:
+            if f in fs and j not in vus:
+                vus.add(j)
+                if j not in pris or essai(pris[j], vus):
+                    pris[j] = f
+                    return True
+        return False
+    for f in FAMILLES:
+        essai(f, set())
+    return {f: j for j, f in pris.items()}

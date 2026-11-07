@@ -554,7 +554,7 @@ def debut_de(joueur):
     return max(joueur["debut"], REGLAGES["debut"]) if joueur else REGLAGES["debut"]
 
 
-def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None):
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None, materiel=None):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
     figées sont reprises telles quelles ; les autres sont tirées. Chaque capture a « c » = les points cumulés au moment
@@ -696,13 +696,17 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         shiny_bonus = R["shiny_nuit"] if m["sommeil"] >= R["nuit"] else 1
         if jour.weekday() == 0 or sem is None:
             semaine_passee = sem
-            sem = {"lundi": str(jour - dt.timedelta(days=jour.weekday())), "jours_ok": 0, "familles": [], "hebdo": False, "variete": False, "jours": 0, "pas": 0, "sport": 0, "nuits": 0, "points": 0}
+            sem = {"lundi": str(jour - dt.timedelta(days=jour.weekday())), "jours_ok": 0, "familles": [], "par_jour": [], "parfaite": {}, "hebdo": False, "variete": False, "jours": 0, "pas": 0, "sport": 0, "nuits": 0, "points": 0}
         sem["jours"] += 1
         sem["jours_ok"] += ok
         sem["pas"] += round(m["pas"])
         sem["sport"] += round(m["zone"])
         sem["nuits"] += m["sommeil"] >= R["nuit"]
-        nouvelles_familles = [f for f in missions.FAMILLES if f in missions.familles_du(s, g, o_pas if jour >= LANCEMENT.date() else 5000) and f not in sem["familles"]] if equitable(jour) else []  # la marche suit son objectif de pas du moment (Kiki, 07/11)
+        du_jour = missions.familles_du(s, g, o_pas, materiel) if jour >= LANCEMENT.date() else missions.familles_du(s, g)  # la marche suit son objectif de pas du moment (Kiki, 07/11)
+        nouvelles_familles = [f for f in missions.FAMILLES if f in du_jour and f not in sem["familles"]] if equitable(jour) else []
+        if du_jour:
+            sem["par_jour"].append([str(jour), sorted(du_jour)])
+            sem["parfaite"] = missions.semaine_parfaite([(j, set(fs)) for j, fs in sem["par_jour"]])
         sem["familles"] += nouvelles_familles
         tous_bonus = bonus_du_jour(jour, stats, resumes, mission_du, gestes)
         mission_jour = [b for b in tous_bonus if b[0] == "🎯"]
@@ -773,7 +777,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         if equitable(jour) and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
             sem["hebdo"] = True
             dues.append({"cle": "hebdo", "ball": "super", "types": None, "raison": f"📅 {R['hebdo_jours']} jours d'objectif dans la semaine"})
-        if equitable(jour) and not sem["variete"] and len(sem["familles"]) >= (R["familles_semaine"] if jour >= LANCEMENT.date() else 4):
+        if equitable(jour) and not sem["variete"] and (len(sem["parfaite"]) >= R["familles_semaine"] if jour >= LANCEMENT.date() else len(sem["familles"]) >= 4):  # 5 sports, 5 jours différents
             sem["variete"] = True
             dues.append({"cle": "variete", "ball": "super", "types": None, "raison": "🧩 Semaine parfaite : les 5 sports" if jour >= LANCEMENT.date() else "🧩 4 sports différents dans la semaine"})
         if jour in anniversaires:
@@ -975,8 +979,9 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
               if c["jour"] >= str(debut) and c["id"].startswith(ident(c["jour"], "", ami))]
     anniv = jours_anniversaire((f.get(OUVERTES) or {}).get("ouvertes", {}), figees, ami, debut, aujourd, anniversaire)
     gestes = gestes_du(f.get(GESTES), (f.get(OUVERTES) or {}).get("ouvertes", {}), ami, aujourd)
+    materiel = missions.materiel_de({"materiel": (f.get(missions.FICHIER) or {}).get("materiel")}, ami)  # écrit par montre.py avec la mission
     return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"),
-                 {j: f.get(c) for j, c in recents.items()}, joueur, anniv, gestes)
+                 {j: f.get(c) for j, c in recents.items()}, joueur, anniv, gestes, materiel)
 
 
 def figer(dossier):
