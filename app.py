@@ -941,6 +941,20 @@ except Panne:
 if AMI and AMI not in REGISTRE:
     accueil_ami()
 JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if AMI else None
+# L'écran du rameur sur la tablette (?ecran=rameur, Kiki, 07/11) : le jeu seul, en plein écran, qui avance avec les coups envoyés en direct par le téléphone sous le siège.
+# Rien d'autre : ni récolte, ni jeu Pokémon, ni données de santé (seulement le modèle des mètres par coup).
+if st.query_params.get("ecran") == "rameur":
+    st.markdown("<style>.st-key-ecran_rameur iframe{position:fixed;inset:0;width:100vw !important;height:100dvh !important;border:0;z-index:999990;background:#22315A}"
+                "header,[data-testid='stToolbar'],.st-key-outils{display:none !important}</style>", unsafe_allow_html=True)
+    try:
+        fichier_rameur = lire([seances_rameur.FICHIER], {seances_rameur.FICHIER})[seances_rameur.FICHIER]
+    except Exception as e:  # sans le modèle, le jeu estime les mètres lui-même
+        print("Séances de rameur illisibles pour la tablette :", type(e).__name__, flush=True)
+        fichier_rameur = None
+    with st.container(key="ecran_rameur"):
+        st.iframe(seances_rameur.page_tablette(fichier_rameur, seances_rameur.lien(st.secrets.get("JEU_CLE"), AMI), pokemon.IMAGES,
+                                               "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"), height=800)
+    st.stop()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
                       "max-age=34560000; path=/; SameSite=Lax; Secure'; 1", key="memo_ok")

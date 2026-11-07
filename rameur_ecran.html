@@ -1,0 +1,591 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- L'écran du rameur sur la tablette (?ecran=rameur, Kiki, 07/11) : le téléphone sous le siège envoie chaque coup en direct (PeerJS, lien_rameur), le jeu avance avec.
+     Affiché en plein écran par app.py ; les données arrivent dans __DONNEES__ (seances_rameur.page_tablette). -->
+<title>La Grande Traversée</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Pixelify+Sans:wght@500&display=swap">
+<style>
+/* Écran de jeu façon GBA moderne : la scène 16:9 au centre, les boîtes crème de Poké Fit par-dessus, le simulateur dessous. */
+:root{
+  --nuit:#22315A; --nuit2:#1B2849; --creme:#F8F8E8; --bord:#484838; --encre:#383828; --encre2:#686850;
+  --rouge:#D83830; --accent:#C03028; --orange:#B05010; --pv:#48C868; --exp:#40A8F8; --or:#F8C838;
+  --jeu:"Jersey 15", "Pixelify Sans", ui-monospace, monospace; --titre:"Pixelify Sans", "Jersey 15", ui-monospace, monospace;
+  color-scheme:dark;
+}
+html,body{height:100%;margin:0}
+body{background:repeating-linear-gradient(0deg,var(--nuit) 0 6px,var(--nuit2) 6px 12px);color:var(--creme);font-family:var(--jeu);font-size-adjust:0.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;box-sizing:border-box;
+  display:flex;flex-direction:column;align-items:center;gap:10px;overflow-x:hidden;-webkit-user-select:none;user-select:none}
+#stage{position:relative;width:min(100%, calc((100dvh - 110px) * 16 / 9));aspect-ratio:16/9;max-width:100%;container-type:inline-size;
+  border:3px solid #10182C;border-radius:10px;overflow:hidden;box-shadow:4px 4px 0 #0C1222;touch-action:manipulation;cursor:pointer;background:#70B8F0}
+canvas{display:block;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+.boite{position:absolute;background:var(--creme);color:var(--encre);border:.3cqw solid var(--bord);border-radius:1.2cqw .5cqw;box-shadow:.4cqw .4cqw 0 rgba(16,24,44,.45);line-height:1}
+.lab{font-size:1.45cqw;color:var(--encre2);letter-spacing:.06em;text-transform:uppercase}
+.val{font-size:3cqw;font-variant-numeric:tabular-nums}
+#hl{left:1.6cqw;top:1.6cqw;padding:.9cqw 1.4cqw;display:grid;grid-template-columns:auto auto;gap:.5cqw 2cqw;align-items:baseline}
+#hc{left:50%;transform:translateX(-50%);top:1.6cqw;padding:.8cqw 2cqw;text-align:center;min-width:16cqw}
+#hc .val{font-size:5.2cqw}
+#hr{right:1.6cqw;top:1.6cqw;padding:.9cqw 1.4cqw;min-width:15cqw}
+#hr .val{font-size:4cqw}
+.jauge{position:relative;height:1.2cqw;margin-top:.7cqw;background:#D8D8C0;border:.2cqw solid var(--bord);border-radius:.4cqw}
+.jauge .bande{position:absolute;top:0;bottom:0;background:var(--exp)}
+.jauge .curs{position:absolute;top:-.6cqw;bottom:-.6cqw;width:.5cqw;background:var(--accent);transform:translateX(-50%)}
+.jauge.dedans .bande{background:var(--pv)}
+#fantome{left:50%;transform:translateX(-50%);top:12.4cqw;padding:.55cqw 1.4cqw;font-size:2.1cqw;white-space:nowrap}
+.devant{color:#1E7A3C}.derriere{color:var(--accent)}
+#route{left:1.6cqw;right:1.6cqw;bottom:1.6cqw;padding:.8cqw 1.4cqw;display:flex;align-items:center;gap:1.6cqw;font-size:1.9cqw}
+#piste{position:relative;flex:1;height:1.4cqw;background:#D8D8C0;border:.2cqw solid var(--bord);border-radius:.5cqw}
+#piste .fait{position:absolute;left:0;top:0;bottom:0;background:var(--exp);border-radius:.3cqw}
+#piste .zone{position:absolute;top:-.1cqw;bottom:-.1cqw;background:repeating-linear-gradient(90deg,#9CD8F8 0 .6cqw,#E8F8FF .6cqw 1.2cqw);opacity:.9}
+#piste .ball{position:absolute;top:50%;width:2.2cqw;height:2.2cqw;transform:translate(-50%,-50%);border-radius:50%;border:.25cqw solid var(--bord);
+  background:linear-gradient(var(--rouge) 0 45%,var(--bord) 45% 55%,#fff 55%)}
+#piste .ball.gagne{filter:grayscale(1) brightness(1.3)}
+#piste .moi,#piste .ombre{position:absolute;top:50%;width:2.4cqw;height:2.4cqw;transform:translate(-50%,-50%);border-radius:50%;border:.3cqw solid var(--bord)}
+#piste .moi{background:var(--rouge);z-index:2}
+#piste .ombre{background:#fff;opacity:.6}
+#piste .drapeau{position:absolute;right:-.4cqw;top:-2.2cqw;font-size:2.4cqw;color:var(--encre)}
+#dial{left:12cqw;right:12cqw;bottom:8.2cqw;padding:1.3cqw 2cqw;font-size:2.6cqw;line-height:1.15;text-wrap:pretty;transition:opacity .25s}
+#dial.cache{opacity:0}
+#adv{right:1.6cqw;top:12.6cqw;padding:.9cqw 1.4cqw;width:24cqw}
+#adv .nom{font-size:2.4cqw;display:flex;justify-content:space-between}
+.pv{height:1.2cqw;background:#D8D8C0;border:.2cqw solid var(--bord);border-radius:.4cqw;margin-top:.6cqw;overflow:hidden}
+.pv i{display:block;height:100%;background:var(--pv);transition:width .25s}
+.pv.bas i{background:var(--or)}.pv.critique i{background:var(--accent)}
+.chrono{height:.7cqw;background:#D8D8C0;margin-top:.6cqw;border-radius:.3cqw;overflow:hidden}
+.chrono i{display:block;height:100%;background:var(--exp)}
+#adv .regle{font-size:1.6cqw;color:var(--encre2);margin-top:.6cqw}
+.degat{position:absolute;font-size:3.4cqw;color:#fff;text-shadow:.25cqw .25cqw 0 var(--bord);pointer-events:none;animation:monte .9s ease-out forwards}
+@keyframes monte{from{transform:translate(-50%,0);opacity:1}to{transform:translate(-50%,-6cqw);opacity:0}}
+#gros{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--titre);font-size:12cqw;color:var(--creme);
+  text-shadow:.6cqw .6cqw 0 var(--bord);pointer-events:none}
+.calque{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(16,24,44,.35)}
+.calque[hidden]{display:none!important}
+.carte{position:relative;background:var(--creme);color:var(--encre);border:.35cqw solid var(--bord);border-radius:1.6cqw .6cqw;box-shadow:.6cqw .6cqw 0 rgba(16,24,44,.55);
+  padding:1.8cqw 3cqw;width:60cqw;max-height:90%;overflow:auto;cursor:default}
+.carte h1{font-family:var(--titre);font-weight:500;font-size:3.8cqw;margin:0 0 .5cqw;color:var(--accent);letter-spacing:.04em;text-wrap:balance}
+.carte .sous{font-size:2.3cqw;color:var(--encre);margin:0 0 1.2cqw}
+.carte ul{margin:0 0 1.2cqw;padding:0;list-style:none;font-size:1.95cqw;display:grid;gap:.4cqw}
+.carte li::before{content:"▶ ";color:var(--accent)}
+.carte .note{font-size:1.7cqw;color:var(--encre2);margin:1.2cqw 0 0;line-height:1.2}
+.medailles{display:flex;gap:2cqw;font-size:2cqw;margin:0 0 1.6cqw;flex-wrap:wrap}
+.med{display:inline-block;width:1.8cqw;height:1.8cqw;border-radius:50%;border:.25cqw solid var(--bord);vertical-align:-.3cqw;margin-right:.5cqw}
+.or{background:var(--or)}.argent{background:#D0D8E0}.bronze{background:#D89058}.aucune{background:#B8B8A0}
+button.go{font-family:var(--jeu);font-size:2.8cqw;background:var(--rouge);color:#fff;border:.3cqw solid #78180F;border-radius:1cqw .4cqw;padding:.8cqw 2.6cqw;
+  box-shadow:.35cqw .35cqw 0 #78180F;cursor:pointer}
+button.go:active{transform:translate(.2cqw,.2cqw);box-shadow:.15cqw .15cqw 0 #78180F}
+button:focus-visible{outline:3px solid var(--or);outline-offset:2px}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1cqw 2cqw;margin:0 0 1.6cqw}
+.stats div{display:flex;flex-direction:column;gap:.3cqw}
+.stats b{font-weight:400;font-size:3cqw;font-variant-numeric:tabular-nums}
+.grosmed{display:flex;align-items:center;gap:2cqw;margin:0 0 1.4cqw;font-size:3cqw}
+.grosmed .med{width:6cqw;height:6cqw;border-width:.45cqw;box-shadow:inset -.6cqw -.6cqw 0 rgba(0,0,0,.15)}
+.record{color:#1E7A3C}
+#sim{width:min(100%, calc((100dvh - 110px) * 16 / 9));display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:18px;color:#C8D4F0}
+#sim .titre{color:var(--or)}
+#sim label{display:flex;align-items:center;gap:8px}
+#sim input[type=range]{width:120px;accent-color:var(--rouge)}
+#sim button{font-family:var(--jeu);font-size:18px;background:var(--creme);color:var(--encre);border:2px solid var(--bord);border-radius:8px 3px;padding:3px 12px;cursor:pointer;box-shadow:2px 2px 0 #0C1222}
+#sim button.on{background:var(--or)}
+#sim output{min-width:2.4em;color:var(--creme);font-variant-numeric:tabular-nums}
+#sim[hidden]{display:none}
+.lien{font-size:2.1cqw;margin:0 0 1.2cqw;padding:.8cqw 1.2cqw;border:.25cqw dashed var(--bord);border-radius:.8cqw .3cqw;background:#ECECD8}
+.lien.ok{border-style:solid;background:#D8F0D0;color:#1E5A2C}
+.boutons{display:flex;gap:1.6cqw;align-items:center;flex-wrap:wrap}
+button.sec{font-family:var(--jeu);font-size:2cqw;background:var(--creme);color:var(--encre);border:.25cqw solid var(--bord);border-radius:1cqw .4cqw;padding:.6cqw 1.6cqw;cursor:pointer}
+@media (prefers-reduced-motion: reduce){.degat{animation-duration:.01s}}
+</style>
+
+<div id="stage" aria-label="Jeu du rameur">
+  <canvas id="c" width="384" height="216"></canvas>
+  <div class="boite" id="hl"><span class="lab">Distance</span><span class="val" id="vDist">0 m</span><span class="lab">Temps</span><span class="val" id="vTemps">0:00</span></div>
+  <div class="boite" id="hc"><div class="lab">Allure /500 m</div><div class="val" id="vAllure">–:––</div></div>
+  <div class="boite" id="hr"><div class="lab">Cadence</div><div><span class="val" id="vCad">0</span> <span class="lab">coups/min</span></div>
+    <div class="jauge" id="jauge" hidden><div class="bande" id="bande"></div><div class="curs" id="curs"></div></div></div>
+  <div class="boite" id="fantome">Ondine : au départ</div>
+  <div class="boite" id="adv" hidden><div class="nom"><span id="aNom">Tentacool</span><span id="aNv">N.18</span></div>
+    <div class="pv" id="aPvB"><i id="aPv" style="width:100%"></i></div><div class="chrono"><i id="aChr" style="width:100%"></i></div><div class="regle" id="aRegle"></div></div>
+  <div class="boite cache" id="dial"></div>
+  <div class="boite" id="route"><span id="rNom">Route 19</span><div id="piste"><div class="fait" id="rFait"></div><div class="ombre" id="rOmbre"></div><div class="moi" id="rMoi"></div><span class="drapeau">⚑</span></div><span id="rReste">2 000 m</span></div>
+  <div id="gros"></div>
+
+  <div class="calque" id="titre">
+    <div class="carte">
+      <h1>LA GRANDE TRAVERSÉE</h1>
+      <p class="sous">Route 19 · Parmanie → Îles Écume · 2 000 m</p>
+      <ul>
+        <li>Rame : chaque coup fait avancer Lokhlass</li>
+        <li>2 courants porteurs : tiens la cadence, ramasse les perles</li>
+        <li>2 dresseurs te défient en pleine mer</li>
+        <li id="tAdv">Ondine nage à côté de toi, à 2:20 /500 m</li>
+      </ul>
+      <div class="medailles"><span><i class="med or"></i>Or 8:20</span><span><i class="med argent"></i>Argent 9:00</span><span><i class="med bronze"></i>Bronze 10:00</span></div>
+      <p class="lien" id="lien">Je cherche ton téléphone… Sur le téléphone : Muscu → Rameur → Lancer la séance.</p>
+      <div class="boutons"><button class="go" id="partir" hidden>▶ PARTIR</button><button class="sec" id="essayer">Essayer sans téléphone</button></div>
+      <p class="note" id="noteTitre">La course part toute seule quand le téléphone dit « zéro ».</p>
+    </div>
+  </div>
+  <div class="calque" id="fin" hidden><div class="carte" id="finCarte"></div></div>
+</div>
+
+<div id="sim" hidden>
+  <span class="titre">Sans téléphone</span>
+  <button id="bAuto">▶ Auto</button>
+  <label for="iCad">Cadence <input type="range" id="iCad" min="16" max="36" step="1" value="24"><output id="oCad">24</output></label>
+  <label for="iForce">Force <input type="range" id="iForce" min="0" max="100" step="5" value="70"><output id="oForce">70 %</output></label>
+  <button id="bAcc">Vitesse ×1</button>
+  <button id="bCoup">Coup (espace)</button>
+  <button id="bSon" class="on">Son</button>
+  <button id="bVoix">Voix</button>
+</div>
+
+<script>
+"use strict";
+const D = __DONNEES__;
+const SP = n => `${D.images}/pokemon/versions/generation-iii/emerald/${n}.png`;
+const IMG = {lok: SP(131), tentacool: SP(72), stari: SP(120), carpe: SP(129), red: D.sacha + "red_normal.png", nageur: D.sacha + "swimmer_m_water.png"};
+const W = 384, H = 216, HORIZON = 118, WL = 170, LX = 66, PXM = 11;
+const cv = document.getElementById("c"), g = cv.getContext("2d"); g.imageSmoothingEnabled = false;
+const $ = id => document.getElementById(id);
+const rnd = k => { const x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const fmt = s => { s = Math.max(0, s); const m = Math.floor(s / 60), r = Math.floor(s % 60); return m + ":" + String(r).padStart(2, "0"); };
+const fmtM = m => Math.round(m).toLocaleString("fr-FR") + " m";
+const toile = (w, h, f) => { const c = document.createElement("canvas"); c.width = w; c.height = h; f(c.getContext("2d"), w, h); return c; };
+const px = (x, col, X, Y, w = 1, h = 1) => { x.fillStyle = col; x.fillRect(X, Y, w, h); };
+
+/* ---------- le niveau ---------- */
+const NIVEAU = { nom: "Route 19", de: "Parmanie", a: "Îles Écume", m: 2000,
+  or: 500, argent: 540, bronze: 600, ondine: 500 / 140,
+  evts: [
+    { t: "courant", a: 280, b: 620, lo: 22, hi: 26 },
+    { t: "combat", at: 800, qui: "Nageur Hugo", poke: "tentacool", nom: "Tentacool", nv: 18, pv: 140, mode: "sprint", duree: 30,
+      dit: "Nageur Hugo : « Hé, le surfeur ! Mon Tentacool est plus rapide que toi ! »", regle: "30 s à fond : plus le coup est fort, plus il frappe." },
+    { t: "courant", a: 1100, b: 1420, lo: 24, hi: 28 },
+    { t: "combat", at: 1520, qui: "Nageuse Léa", poke: "stari", nom: "Stari", nv: 20, pv: 150, mode: "rythme", lo: 24, hi: 30, duree: 45,
+      dit: "Nageuse Léa : « Stari ne craint que les rameurs réguliers… »", regle: "45 s : tu ne frappes que entre 24 et 30 coups/min." },
+    { t: "sprint", at: 1750 } ] };
+
+/* ---------- images ---------- */
+const sprites = {};
+function charger() {
+  return Promise.all(Object.entries(IMG).map(([k, src]) => new Promise(ok => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => { sprites[k] = i; ok(); }; i.onerror = () => { sprites[k] = toile(64, 64, () => {}); ok(); }; i.src = src; })));
+}
+let lokBlanc, rider, carpeP;
+function preparer() {
+  lokBlanc = toile(64, 64, (x) => { x.drawImage(sprites.lok, 0, 0); x.globalCompositeOperation = "source-atop"; x.fillStyle = "rgba(235,245,255,.75)"; x.fillRect(0, 0, 64, 64); });
+  rider = toile(14, 13, (x) => { x.translate(14, 0); x.scale(-1, 1); x.drawImage(sprites.red, 32, 12, 14, 13, 0, 0, 14, 13); });
+}
+
+/* ---------- décors en pixels, dessinés par le code ---------- */
+function nuage(k) {
+  const w = 30 + Math.floor(rnd(k) * 34), h = 10 + Math.floor(rnd(k + 9) * 6);
+  return toile(w, h + 2, (x) => {
+    const bosses = []; for (let i = 0; i < 4; i++) bosses.push([w * (0.18 + 0.64 * rnd(k * 7 + i)), h * (0.35 + 0.3 * rnd(k * 3 + i)), h * (0.45 + 0.35 * rnd(k * 5 + i))]);
+    for (let Y = 0; Y < h; Y++) for (let X = 0; X < w; X++) {
+      let dedans = Y > h * 0.55 && X > 3 && X < w - 4;
+      for (const [cx, cy, r] of bosses) if ((X - cx) ** 2 + ((Y - cy) * 1.4) ** 2 < r * r) dedans = true;
+      if (dedans) px(x, Y > h * 0.72 ? "#D4ECF8" : "#FFFFFF", X, Y);
+    }
+  });
+}
+function ilot(k, loin) {
+  const w = 34 + Math.floor(rnd(k) * 60), hh = 8 + Math.floor(rnd(k + 3) * (loin ? 8 : 14));
+  const palme = !loin && rnd(k + 5) > 0.45;
+  return toile(w, hh + 16, (x, W2, H2) => {
+    const haut = X => { const u = (X - w / 2) / (w / 2); return Math.round(hh * Math.pow(Math.max(0, 1 - u * u), 0.55) + (rnd(k * 31 + X) - 0.5) * 1.6); };
+    for (let X = 0; X < w; X++) {
+      const t = haut(X); if (t <= 0) continue;
+      for (let i = 0; i < t; i++) {
+        const Y = H2 - 1 - i;
+        let col;
+        if (loin) col = i === t - 1 ? "#A8C8E0" : "#88B0D0";
+        else if (i >= t - 1) col = "#2E4A30"; else if (i >= t - 3) col = (X % 5 === 0) ? "#88D070" : "#58A848";
+        else col = X < w * 0.45 ? "#A08868" : (X % 3 === 0 && i % 4 === 0 ? "#6E5A44" : "#86705A");
+        px(x, col, X, Y);
+      }
+      if (!loin) px(x, "#384030", X, H2 - t);
+    }
+    if (palme) {
+      const pxp = Math.floor(w * (0.35 + rnd(k + 8) * 0.3)), base = H2 - haut(pxp);
+      for (let i = 0; i < 11; i++) px(x, "#7A5030", pxp + (i > 6 ? 1 : 0), base - i);
+      const f = [[-5, 0], [-4, -1], [-3, -1], [-2, -2], [-1, -2], [0, -2], [1, -2], [2, -2], [3, -1], [4, -1], [5, 0], [6, 1], [-6, 1], [0, -3], [1, -3], [-3, 0], [3, 0]];
+      for (const [a, b] of f) px(x, b < -1 ? "#80C868" : "#3C8C3C", pxp + a + 1, base - 11 + b);
+    }
+  });
+}
+function plage() {  /* Parmanie, d'où l'on part */
+  return toile(150, 60, (x) => {
+    for (let X = 0; X < 150; X++) { const t = Math.round(14 + 4 * Math.sin(X / 14) - Math.max(0, X - 110) * 0.35); for (let i = 0; i < t; i++) px(x, i === t - 1 ? "#F8E8B0" : i > t - 5 ? "#E8D090" : "#D8B878", X, 59 - i); }
+    const maison = (X, Y, w, toit) => { px(x, "#F0E8D8", X, Y, w, 12); px(x, "#384030", X, Y + 11, w, 1); px(x, toit, X - 2, Y - 6, w + 4, 6); px(x, "#384030", X - 2, Y - 7, w + 4, 1); px(x, "#5878A8", X + 3, Y + 4, 4, 4); px(x, "#7A5030", X + w - 8, Y + 4, 5, 8); };
+    maison(10, 28, 26, "#D86838"); maison(48, 26, 30, "#4878C8"); maison(88, 32, 20, "#D86838");
+    px(x, "#7A5030", 118, 30, 2, 14);
+    for (const [a, b] of [[-6, 0], [-4, -1], [-2, -2], [0, -2], [2, -2], [4, -1], [6, 0], [7, 1], [-7, 1]]) px(x, "#3C8C3C", 119 + a, 29 + b, 2, 1);
+    px(x, "#A07848", 112, 52, 38, 3); for (let i = 0; i < 5; i++) px(x, "#6E5030", 114 + i * 8, 55, 2, 5);
+  });
+}
+function iles() {  /* les Îles Écume, l'arrivée */
+  return toile(170, 80, (x) => {
+    for (let X = 0; X < 170; X++) {
+      const u = (X - 95) / 75, t = Math.round(58 * Math.pow(Math.max(0, 1 - u * u), 0.7) + (rnd(X) - 0.5) * 3);
+      for (let i = 0; i < t; i++) { const Y = 79 - i; px(x, i >= t - 2 ? "#FFFFFF" : i >= t - 9 ? "#D8F0F8" : (X < 95 ? "#A8D0E8" : "#88B8D8"), X, Y); }
+      if (t > 0) px(x, "#405870", X, 79 - t);
+    }
+    for (let Y = 0; Y < 18; Y++) for (let X = 0; X < 22; X++) if ((X - 11) ** 2 / 121 + (Y - 18) ** 2 / 324 < 1) px(x, "#283848", 70 + X, 52 + Y);
+    for (let i = 0; i < 6; i++) px(x, "#FFFFFF", 30 + i * 22 + Math.floor(rnd(i) * 8), 79 - Math.floor(rnd(i + 3) * 30) - 10, 2, 2);
+    px(x, "#A07848", 0, 74, 40, 3); for (let i = 0; i < 4; i++) px(x, "#6E5030", 3 + i * 10, 77, 2, 3);
+    px(x, "#7A5030", 20, 50, 2, 24); px(x, "#D83830", 22, 50, 10, 6);
+  });
+}
+const NUAGES = [], LOIN = [], MILIEU = [];
+for (let k = 0; k < 8; k++) NUAGES.push(nuage(k + 1));
+for (let k = 0; k < 6; k++) LOIN.push(ilot(k + 40, true));
+for (let k = 0; k < 8; k++) MILIEU.push(ilot(k + 80, false));
+let PLAGE, ILES;
+
+/* ---------- état ---------- */
+const S = { etat: "titre", t: 0, dist: 0, v: 0, vLisse: 0, coups: [], nbCoups: 0, sommeForce: 0, trace: [0], dernTrace: 0,
+  perles: 0, perlesVues: 0, combats: 0, faits: new Set(), combat: null, courant: null, sprint: false, tFin: 0, surge: 0, flash: 0, secousse: 0 };
+const fx = { ecume: [], gouttes: [], perles: [], eclats: [], carpe: null, prochCarpe: 12 };
+let record = null; try { record = JSON.parse(localStorage.getItem("traversee_r19") || "null"); } catch (e) { record = null; }
+const fantome = t => {
+  if (record && record.trace) { const i = Math.floor(t), f = t - i, tr = record.trace; if (i + 1 >= tr.length) return NIVEAU.m; return tr[i] + (tr[i + 1] - tr[i]) * f; }
+  return Math.min(NIVEAU.m, Math.max(0, (t - 2) * NIVEAU.ondine));
+};
+const nomFantome = () => record ? "Ton record" : "Ondine";
+
+/* ---------- son (WebAudio) ---------- */
+let AC = null, son = true, voix = false, bruit = null, mer = null;
+function audio() {
+  if (AC) return; try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  bruit = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const d = bruit.getChannelData(0); let b = 0;
+  for (let i = 0; i < d.length; i++) { b = (b + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = b * 3.5 + (Math.random() * 2 - 1) * 0.15; }
+  const s = AC.createBufferSource(); s.buffer = bruit; s.loop = true; const f = AC.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 500;
+  mer = AC.createGain(); mer.gain.value = 0.05; const lfo = AC.createOscillator(); lfo.frequency.value = 0.12; const lg = AC.createGain(); lg.gain.value = 0.03;
+  lfo.connect(lg); lg.connect(mer.gain); s.connect(f); f.connect(mer); mer.connect(AC.destination); s.start(); lfo.start();
+}
+function eclabousse(fort) {
+  if (!AC || !son) return; const s = AC.createBufferSource(); s.buffer = bruit; const f = AC.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 900 + fort * 700; f.Q.value = 0.8;
+  const gn = AC.createGain(), t = AC.currentTime; gn.gain.setValueAtTime(0, t); gn.gain.linearRampToValueAtTime(0.25 + fort * 0.25, t + 0.05); gn.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+  s.connect(f); f.connect(gn); gn.connect(AC.destination); s.start(t, Math.random()); s.stop(t + 0.7);
+}
+function note(freq, dur, type = "square", vol = 0.08, quand = 0) {
+  if (!AC || !son) return; const o = AC.createOscillator(), gn = AC.createGain(), t = AC.currentTime + quand; o.type = type; o.frequency.setValueAtTime(freq, t);
+  gn.gain.setValueAtTime(vol, t); gn.gain.exponentialRampToValueAtTime(0.001, t + dur); o.connect(gn); gn.connect(AC.destination); o.start(t); o.stop(t + dur + 0.02); return o;
+}
+const SONS = {
+  perle: () => { note(1568, 0.12, "sine", 0.12); note(2093, 0.18, "sine", 0.1, 0.07); },
+  rate: () => note(220, 0.15, "triangle", 0.08),
+  coup: () => { const o = note(880, 0.12, "square", 0.06); if (o) o.frequency.exponentialRampToValueAtTime(220, AC.currentTime + 0.12); },
+  ko: () => { const o = note(660, 0.6, "square", 0.08); if (o) o.frequency.exponentialRampToValueAtTime(80, AC.currentTime + 0.6); },
+  bip: (h) => note(h ? 1046 : 523, 0.18, "square", 0.08),
+  fanfare: () => [[523, 0], [659, .12], [784, .24], [1046, .36], [784, .56], [1046, .68]].forEach(([f, q]) => note(f, 0.22, "square", 0.07, q)),
+  defi: () => [[392, 0], [392, .1], [523, .2], [659, .35]].forEach(([f, q]) => note(f, 0.14, "square", 0.07, q)),
+};
+function parle(txt) { if (!voix || !window.speechSynthesis) return; try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt); u.lang = "fr-FR"; u.rate = 1.05; speechSynthesis.speak(u); } catch (e) {} }
+
+/* ---------- messages ---------- */
+let dialT = 0;
+function dire(txt, ms = 3800, voixTxt) { const d = $("dial"); d.textContent = txt; d.classList.remove("cache"); dialT = ms / 1000; if (voixTxt !== false) parle(voixTxt || txt); }
+
+/* ---------- les coups ---------- */
+const TAU = 3.5;
+function coup(force, metres) {
+  if (S.etat !== "course") return;
+  force = Math.max(0, Math.min(1, force));
+  const d = metres || 5 + 6 * force;        /* mètres par coup : le modèle appris sur tes séances quand il existe (coupReel) */
+  S.v += d / TAU; S.nbCoups++; S.sommeForce += force; S.coups.push(S.t); if (S.coups.length > 6) S.coups.shift();
+  S.surge = 1;
+  for (let i = 0; i < 5 + force * 6; i++) fx.ecume.push({ x: LX + 6 + Math.random() * 10, y: WL - 1 + Math.random() * 3, vx: -20 - Math.random() * 30, vy: -18 - Math.random() * 22 * force, v: 0.6 + Math.random() * 0.4 });
+  eclabousse(force);
+  const c = S.combat;
+  if (c && c.phase === "duel") {
+    const cad = cadence();
+    if (c.mode === "rythme" && (cad < c.lo || cad > c.hi)) { degat("raté", true); SONS.rate(); return; }
+    const dg = Math.round(c.mode === "sprint" ? 4 + 10 * force : 9 + 3 * force);
+    fx.gouttes.push({ t: 0, dg });
+  }
+}
+function cadence() {
+  const n = S.coups.length; if (n < 2) return 0; if (S.t - S.coups[n - 1] > 5) return 0;
+  const k = Math.min(4, n - 1), moy = (S.coups[n - 1] - S.coups[n - 1 - k]) / k; return 60 / moy;
+}
+function degat(txt, rate) {
+  const e = document.createElement("div"); e.className = "degat"; e.textContent = txt; if (rate) e.style.color = "#F8E0C0";
+  e.style.left = (FOE_X + 32) / W * 100 + "%"; e.style.top = (WL - 60) / H * 100 + "%"; $("stage").appendChild(e); setTimeout(() => e.remove(), 950);
+}
+
+/* ---------- les événements de la route ---------- */
+const FOE_X = 248;
+function evenements() {
+  NIVEAU.evts.forEach((e, i) => {
+    if (e.t === "courant") {
+      if (!S.faits.has(i + "a") && S.dist >= e.a - 40) { S.faits.add(i + "a"); for (let m = e.a; m <= e.b; m += 20) fx.perles.push({ m, etat: "flotte", t: 0, z: i }); }
+      if (!S.faits.has(i + "b") && S.dist >= e.a) { S.faits.add(i + "b"); S.courant = e; S.perlesZone = [0, 0];
+        dire(`Courant porteur ! Tiens ${e.lo} à ${e.hi} coups/min pour ramasser les perles.`, 4500); }
+      if (S.courant === e && S.dist > e.b + 10) { S.courant = null; const [p, n] = S.perlesZone; dire(`Courant passé : ${p} perle${p > 1 ? "s" : ""} sur ${n}.`, 3200); }
+    }
+    if (e.t === "combat" && !S.faits.has(i) && S.dist >= e.at) { S.faits.add(i); lancerCombat(e); }
+    if (e.t === "sprint" && !S.faits.has(i) && S.dist >= e.at) { S.faits.add(i); S.sprint = true; dire("Sprint final ! Plus que 250 m, donne tout !", 3500); SONS.defi(); }
+  });
+  if (!S.faits.has("mi") && S.dist >= 1000) { S.faits.add("mi"); if (!S.combat) dire(`Mi-parcours en ${fmt(S.t)}. ${ecartTexte()}`, 3500); }
+}
+function ecartTexte() { const e = S.dist - fantome(S.t), n = nomFantome(); return Math.abs(e) < 3 ? `Au coude à coude avec ${n.toLowerCase() === "ondine" ? "Ondine" : "ton record"} !` : e > 0 ? `${Math.round(e)} m d'avance sur ${n === "Ondine" ? "Ondine" : "ton record"}.` : `${Math.round(-e)} m de retard sur ${n === "Ondine" ? "Ondine" : "ton record"}.`; }
+function lancerCombat(e) {
+  S.combat = { ...e, phase: "arrive", tc: 0, pvMax: e.pv, pvRest: e.pv, x: W + 40 };
+  SONS.defi(); dire(e.dit, 3600, e.dit.replace(/« | »/g, ""));
+  $("aNom").textContent = e.nom; $("aNv").textContent = "N." + e.nv; $("aRegle").textContent = e.regle; $("aPv").style.width = "100%"; $("aChr").style.width = "100%"; $("aPvB").className = "pv";
+}
+function majCombat(dt) {
+  const c = S.combat; if (!c) return; c.tc += dt;
+  if (c.phase === "arrive") { c.x += (FOE_X - c.x) * Math.min(1, dt * 2.5); if (c.tc > 3.6) { c.phase = "duel"; c.tc = 0; $("adv").hidden = false; dire(c.regle, 3000); SONS.bip(true); } }
+  else if (c.phase === "duel") {
+    $("aChr").style.width = Math.max(0, 100 - c.tc / c.duree * 100) + "%";
+    if (c.pvRest <= 0) { c.phase = "ko"; c.tc = 0; SONS.ko(); S.flash = 0.5; S.combats++; S.perles += 10; $("piste").querySelectorAll(".ball")[c.idx]?.classList.add("gagne");
+      dire(`${c.nom} est K.O. ! ${c.qui.split(" ")[1]} te laisse passer. +10 perles`, 3800); }
+    else if (c.tc > c.duree) { c.phase = "fuite"; c.tc = 0; dire(`Temps écoulé ! ${c.nom} plonge et s'échappe… Il lui restait ${Math.ceil(c.pvRest)} PV.`, 3800); }
+  } else if (c.phase === "ko" || c.phase === "fuite") { if (c.tc > 1.8) { $("adv").hidden = true; } if (c.tc > 2.6) S.combat = null; }
+}
+
+/* ---------- boucle ---------- */
+let auto = false, acc = 1, prochAuto = 0, dernier = performance.now(), decompte = 0;
+function pas(maintenant) {
+  const dtr = Math.min(0.1, (maintenant - dernier) / 1000); dernier = maintenant; const dt = dtr * acc;
+  if (dialT > 0) { dialT -= dtr; if (dialT <= 0) $("dial").classList.add("cache"); }
+  if (S.etat === "decompte") {
+    const avant = Math.ceil(decompte); decompte -= dtr; const apres = Math.ceil(decompte);
+    if (apres !== avant) { if (apres > 0) { $("gros").textContent = apres; SONS.bip(false); } else { $("gros").textContent = "RAME !"; SONS.bip(true); S.etat = "course"; S.t = 0; prochAuto = 0.3; parle("Rame !"); } }
+  }
+  if (S.etat === "course" || S.etat === "arrivee") {
+    if (S.etat === "course") {
+      S.t += dt;
+      if (decompte < -1) $("gros").textContent = ""; else decompte -= dtr;
+      if (auto) { prochAuto -= dt; if (prochAuto <= 0) { const cad = +$("iCad").value; prochAuto = 60 / cad * (0.96 + Math.random() * 0.08); coup(+$("iForce").value / 100 + (Math.random() - 0.5) * 0.12); } }
+      if (S.t - S.dernTrace >= 1) { S.dernTrace += 1; S.trace.push(Math.round(S.dist * 10) / 10); }
+    }
+    S.v *= Math.exp(-dt / TAU); if (S.v < 0.02) S.v = 0;
+    S.dist += S.v * dt;
+    S.vLisse += (S.v - S.vLisse) * Math.min(1, dt / 4);
+    if (S.etat === "course") { evenements(); majCombat(dt); if (S.dist >= NIVEAU.m) arriver(); }
+    else { S.tFin += dtr; if (S.tFin > 2.6 && $("fin").hidden) resultats(); }
+  }
+  S.surge = Math.max(0, S.surge - dt * 2.2); S.flash = Math.max(0, S.flash - dtr); S.secousse = Math.max(0, S.secousse - dtr);
+  majFx(dt); dessiner(maintenant / 1000); hud();
+  requestAnimationFrame(pas);
+}
+
+/* ---------- effets ---------- */
+function majFx(dt) {
+  for (const p of fx.ecume) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; p.v -= dt; }
+  fx.ecume = fx.ecume.filter(p => p.v > 0 && p.y < WL + 6);
+  if (S.v > 0.8 && Math.random() < S.v * dt * 4) fx.ecume.push({ x: LX + 4, y: WL + Math.random() * 2, vx: -30 - S.v * 6, vy: -4, v: 0.5 });
+  const c = S.combat;
+  for (const gt of fx.gouttes) { gt.t += dt / 0.4; if (gt.t >= 1 && !gt.fait) { gt.fait = true; if (c && c.phase === "duel") { c.pvRest -= gt.dg; S.secousse = 0.25; degat("-" + gt.dg); SONS.coup();
+    const r = Math.max(0, c.pvRest / c.pvMax); $("aPv").style.width = r * 100 + "%"; $("aPvB").className = "pv" + (r < 0.2 ? " critique" : r < 0.5 ? " bas" : "");
+    for (let i = 0; i < 8; i++) fx.eclats.push({ x: FOE_X + 32, y: WL - 28, vx: (Math.random() - 0.5) * 90, vy: -Math.random() * 70, v: 0.5 }); } } }
+  fx.gouttes = fx.gouttes.filter(gt => gt.t < 1.05);
+  for (const e of fx.eclats) { e.x += e.vx * dt; e.y += e.vy * dt; e.vy += 160 * dt; e.v -= dt; }
+  fx.eclats = fx.eclats.filter(e => e.v > 0);
+  for (const p of fx.perles) {
+    if (p.etat === "flotte" && p.m <= S.dist + 3.5) {
+      const cad = cadence(), z = NIVEAU.evts[p.z]; S.perlesVues++; if (S.perlesZone) S.perlesZone[1]++;
+      if (cad >= z.lo && cad <= z.hi) { p.etat = "prise"; S.perles++; if (S.perlesZone) S.perlesZone[0]++; SONS.perle(); for (let i = 0; i < 6; i++) fx.eclats.push({ x: LX + 58, y: WL - 4, vx: (Math.random() - 0.5) * 60, vy: -Math.random() * 60, v: 0.4, or: 1 }); }
+      else { p.etat = "coule"; SONS.rate(); }
+    }
+    if (p.etat !== "flotte") p.t += dt;
+  }
+  fx.perles = fx.perles.filter(p => p.t < 1.2 && p.m > S.dist - 40);
+  fx.prochCarpe -= dt;
+  if (!fx.carpe && fx.prochCarpe <= 0 && S.etat !== "titre") { fx.carpe = { x: 200 + Math.random() * 150, t: 0, y0: HORIZON + 22 + Math.random() * 14 }; fx.prochCarpe = 18 + Math.random() * 20; }
+  if (fx.carpe) { fx.carpe.t += dt; if (fx.carpe.t > 1.4) fx.carpe = null; }
+}
+
+/* ---------- dessin ---------- */
+const BANDES_CIEL = ["#68B0F0", "#78B8F0", "#88C4F4", "#98CCF4", "#A8D8F8", "#B8E0F8", "#C8E8F8", "#D8F0F8"];
+const BANDES_MER = [[HORIZON, "#A8D8F0"], [HORIZON + 1, "#68B8E8"], [HORIZON + 8, "#58A8E0"], [HORIZON + 20, "#4898D8"], [HORIZON + 36, "#3888D0"], [HORIZON + 56, "#2878C0"], [HORIZON + 78, "#2068B0"]];
+function couche(objs, pas, facteur, y, decal, base) {
+  const off = S.dist * PXM * facteur + base;
+  const k0 = Math.floor((off - 120) / pas), k1 = Math.floor((off + W + 20) / pas);
+  for (let k = k0; k <= k1; k++) { const o = objs[((k % objs.length) + objs.length) % objs.length], X = Math.round(k * pas + rnd(k + decal) * pas * 0.6 - off); g.drawImage(o, X, Math.round(y(k) - o.height)); }
+}
+function dessiner(T) {
+  const sx = S.secousse > 0 ? Math.round((Math.random() - 0.5) * 3) : 0;
+  g.save(); g.translate(sx, 0);
+  const hb = HORIZON / BANDES_CIEL.length;
+  BANDES_CIEL.forEach((c, i) => { px(g, c, -4, Math.floor(i * hb), W + 8, Math.ceil(hb) + 1); if (i) for (let X = (i % 2); X < W + 4; X += 2) px(g, BANDES_CIEL[i - 1], X, Math.floor(i * hb)); });
+  for (let Y = -9; Y <= 9; Y++) for (let X = -9; X <= 9; X++) { const d = X * X + Y * Y; if (d < 82) px(g, d < 50 ? "#FFF8D0" : "#F8E8A0", 318 + X, 26 + Y); }
+  couche(NUAGES, 120, 0.04, k => 14 + rnd(k + 2) * 40, 5, 0);
+  for (let i = 0; i < 3; i++) { const X = ((T * 7 + i * 120) % (W + 40)) - 20, Y = 30 + i * 9 + Math.sin(T * 1.5 + i) * 2, b = Math.floor(T * 3 + i) % 2;
+    px(g, "#404858", X - 3, Y + b, 3, 1); px(g, "#404858", X, Y + 1, 1, 1); px(g, "#404858", X + 1, Y + b, 3, 1); }
+  couche(LOIN, 150, 0.1, () => HORIZON, 11, 400);
+  BANDES_MER.forEach(([y, c], i) => { const y2 = i + 1 < BANDES_MER.length ? BANDES_MER[i + 1][0] : H; px(g, c, -4, y, W + 8, y2 - y); if (i > 1) for (let X = (i % 2); X < W + 4; X += 2) px(g, BANDES_MER[i - 1][1], X, y); });
+  if (S.dist < 60) g.drawImage(PLAGE, Math.round(-S.dist * PXM * 0.32 - 10), HORIZON + 4 - 60 + 6);
+  couche(MILIEU, 210, 0.32, () => HORIZON + 7, 23, 260);
+  const fin = NIVEAU.m - S.dist; if (fin < 45) g.drawImage(ILES, Math.round(LX + 40 + fin * PXM * 0.6), HORIZON + 14 - 80);
+  for (let r = 0; r < 26; r++) {
+    const y = HORIZON + 3 + Math.round(r * r * 0.14 + r * 0.6); if (y > H) break;
+    const fac = 0.2 + r * 0.045, lon = 3 + Math.floor(r / 3), off = S.dist * PXM * fac + T * (2 + r * 0.3);
+    const ecart = 38 + rnd(r) * 30;
+    for (let X = -((off % ecart) + ecart); X < W; X += ecart) { const j = Math.round(rnd(r * 13 + Math.floor((X + off) / ecart)) * 14); px(g, r > 14 ? "#68B0E8" : "#B8E0F8", Math.round(X + j), y, lon, 1); }
+  }
+  if (fx.carpe) { const c = fx.carpe, u = c.t / 1.4, Y = c.y0 - Math.sin(u * Math.PI) * 26; g.save(); g.translate(Math.round(c.x - u * 20), Math.round(Y)); g.rotate((u - 0.5) * 1.6); g.drawImage(sprites.carpe, 11, 7, 42, 51, -10, -12, 21, 25); g.restore();
+    if (u < 0.15 || u > 0.85) for (let i = 0; i < 4; i++) px(g, "#FFFFFF", Math.round(c.x - (u > 0.5 ? 20 : 0) + (i - 2) * 3), c.y0 + 8 - i % 2 * 2, 2, 1); }
+  if (S.courant || fx.perles.length) {
+    const z = S.courant || NIVEAU.evts.find(e => e.t === "courant" && S.dist < e.b + 40 && S.dist > e.a - 40);
+    if (z) { const xa = LX + 48 + (z.a - S.dist) * PXM, xb = LX + 48 + (z.b - S.dist) * PXM;
+      g.globalAlpha = 0.75;
+      for (let r = 0; r < 3; r++) { const y = WL + 6 + r * 9, pasX = 34, off = (T * 70 + S.dist * PXM + r * 13) % pasX;
+        for (let X = -off; X < W; X += pasX) if (X > xa && X < xb) { const a = Math.round(X); px(g, "#E8F8FF", a, y, 2, 1); px(g, "#E8F8FF", a + 2, y + 1, 2, 1); px(g, "#E8F8FF", a + 4, y + 2, 2, 1); px(g, "#E8F8FF", a + 2, y + 3, 2, 1); px(g, "#E8F8FF", a, y + 4, 2, 1); } }
+      g.globalAlpha = 1; }
+  }
+  for (const p of fx.perles) {
+    let X = LX + 52 + (p.m - S.dist) * PXM, Y = WL - 2 + Math.sin(T * 3 + p.m) * 1.5;
+    if (p.etat === "prise") { X = LX + 52; Y -= p.t * 40; } if (p.etat === "coule") { Y += p.t * 14; }
+    if (X < -6 || X > W + 6) continue;
+    g.globalAlpha = p.etat === "flotte" ? 1 : Math.max(0, 1 - p.t);
+    const col = p.etat === "coule" ? "#7888A0" : "#FFF0F8";
+    px(g, "#384868", Math.round(X) - 3, Math.round(Y) - 3, 6, 6); px(g, col, Math.round(X) - 2, Math.round(Y) - 3, 4, 6); px(g, col, Math.round(X) - 3, Math.round(Y) - 2, 6, 4);
+    px(g, "#FFFFFF", Math.round(X) - 1, Math.round(Y) - 2, 2, 1); g.globalAlpha = 1;
+  }
+  const gd = fantome(S.etat === "titre" ? 0 : S.t), gx = LX + (gd - S.dist) * PXM;
+  if (S.etat !== "titre" && gx > -70 && gx < W + 10) { g.globalAlpha = 0.5; const by = Math.round(Math.sin(T * 2.2 + 1) * 1.2); g.drawImage(lokBlanc, 0, 0, 64, 44, Math.round(gx), WL - 56 + by, 64, 44); g.globalAlpha = 1; }
+  const c = S.combat;
+  if (c) {
+    let fy = 0, alpha = 1; if (c.phase === "ko") { fy = c.tc * 30; alpha = Math.max(0, 1 - c.tc / 1.6); } if (c.phase === "fuite") { fy = c.tc * 40; }
+    const fx0 = Math.round(c.x), bob = Math.round(Math.sin(T * 3) * 1.5), Y = WL - 40 + bob + fy;
+    g.save(); g.beginPath(); g.rect(0, 0, W, WL + 2); g.clip(); g.globalAlpha = alpha;
+    const sp = sprites[c.poke], touche = c.phase === "duel" && S.secousse > 0.1 && Math.floor(T * 20) % 2 === 0;
+    if (!touche) g.drawImage(sp, fx0 + (S.secousse > 0 ? 2 : 0), Y);
+    g.restore(); g.globalAlpha = 1;
+    px(g, "#E8F8FF", fx0 + 14, WL + 1 + bob, 36, 1);
+    const nb = Math.floor(T * 3) % 2;
+    g.drawImage(sprites.nageur, (8 + nb) * 16, 13, 16, 17, fx0 + 68, WL - 12 + Math.round(Math.sin(T * 2.6) * 1.5), 16, 17);
+  }
+  const bob = Math.round(Math.sin(T * 2.2) * 1.2), sur = Math.round(S.surge * 4), ly = WL - 44 + bob;
+  g.drawImage(sprites.lok, 0, 0, 64, 46, LX + sur, ly, 64, 46);
+  g.drawImage(rider, LX + sur + 19, ly + 9);
+  g.globalAlpha = 0.55; px(g, "#2878C0", LX + sur, WL + 2, 64, 6); g.globalAlpha = 1;
+  for (let X = 0; X < 60; X += 2) px(g, "#E8F8FF", LX + sur + 2 + X, WL + 1 + ((X / 2 + Math.floor(T * 6)) % 2), 2, 1);
+  for (const p of fx.ecume) { g.globalAlpha = Math.min(1, p.v * 2); px(g, "#FFFFFF", Math.round(p.x), Math.round(p.y), 2, 2); } g.globalAlpha = 1;
+  for (const gt of fx.gouttes) { const x0 = LX + sur + 60, y0 = ly + 14, x1 = FOE_X + 32, y1 = WL - 26, u = Math.min(1, gt.t);
+    for (let i = 0; i < 4; i++) { const v = Math.max(0, u - i * 0.06), X = x0 + (x1 - x0) * v, Y = y0 + (y1 - y0) * v - Math.sin(v * Math.PI) * 18; px(g, "#204890", Math.round(X) - 2, Math.round(Y) - 2, 5, 5); px(g, "#A8E0FF", Math.round(X) - 1, Math.round(Y) - 1, 3, 3); } }
+  for (const e of fx.eclats) { g.globalAlpha = Math.min(1, e.v * 2.5); px(g, e.or ? "#F8E070" : "#C8F0FF", Math.round(e.x), Math.round(e.y), 2, 2); } g.globalAlpha = 1;
+  if (S.sprint && S.etat === "course") { for (let i = 0; i < 9; i++) { const Y = HORIZON + 10 + rnd(i) * 90, X = W - ((T * 420 + i * 97) % (W + 60)); px(g, "rgba(255,255,255,.6)", Math.round(X), Math.round(Y), 26, 1); } }
+  if (S.flash > 0) { g.fillStyle = `rgba(255,255,255,${S.flash})`; g.fillRect(0, 0, W, H); }
+  g.restore();
+}
+
+/* ---------- affichage ---------- */
+function hud() {
+  if (S.etat === "titre") return;
+  $("vDist").textContent = fmtM(S.dist); $("vTemps").textContent = fmt(S.t);
+  $("vAllure").textContent = S.vLisse > 0.6 ? fmt(500 / S.vLisse) : "–:––";
+  const cad = cadence(); $("vCad").textContent = Math.round(cad);
+  const z = S.courant || (S.combat && S.combat.mode === "rythme" && S.combat.phase === "duel" ? S.combat : null);
+  const j = $("jauge"); j.hidden = !z;
+  if (z) { const a = 14, b = 38, P = v => (Math.max(a, Math.min(b, v)) - a) / (b - a) * 100; $("bande").style.left = P(z.lo) + "%"; $("bande").style.width = (P(z.hi) - P(z.lo)) + "%"; $("curs").style.left = P(cad) + "%"; j.classList.toggle("dedans", cad >= z.lo && cad <= z.hi); }
+  const e = S.dist - fantome(S.t), n = nomFantome(), f = $("fantome");
+  f.innerHTML = Math.abs(e) < 2 ? `${n} : au coude à coude` : `${n} : <span class="${e > 0 ? "devant" : "derriere"}">${e > 0 ? "+" : "−"}${Math.round(Math.abs(e))} m</span>`;
+  $("rFait").style.width = Math.min(100, S.dist / NIVEAU.m * 100) + "%"; $("rMoi").style.left = Math.min(100, S.dist / NIVEAU.m * 100) + "%";
+  $("rOmbre").style.left = Math.min(100, fantome(S.t) / NIVEAU.m * 100) + "%"; $("rReste").textContent = fmtM(Math.max(0, NIVEAU.m - S.dist));
+}
+function piste() {
+  const p = $("piste"); let idx = 0;
+  NIVEAU.evts.forEach(e => {
+    if (e.t === "courant") { const d = document.createElement("div"); d.className = "zone"; d.style.left = e.a / NIVEAU.m * 100 + "%"; d.style.width = (e.b - e.a) / NIVEAU.m * 100 + "%"; p.appendChild(d); }
+    if (e.t === "combat") { e.idx = idx++; const d = document.createElement("div"); d.className = "ball"; d.style.left = e.at / NIVEAU.m * 100 + "%"; p.appendChild(d); }
+  });
+}
+
+/* ---------- arrivée ---------- */
+function arriver() {
+  S.etat = "arrivee"; S.tFin = 0; S.trace.push(NIVEAU.m); S.tempsFinal = S.t; S.combat = null; $("adv").hidden = true;
+  SONS.fanfare(); dire(`Arrivée aux Îles Écume en ${fmt(S.t)} !`, 3000);
+}
+function resultats() {
+  const t = S.tempsFinal, med = t <= NIVEAU.or ? ["or", "Médaille d'or"] : t <= NIVEAU.argent ? ["argent", "Médaille d'argent"] : t <= NIVEAU.bronze ? ["bronze", "Médaille de bronze"] : ["aucune", "Pas de médaille cette fois"];
+  const ancien = record, nouveau = !ancien || t < ancien.temps;
+  const ecart = Math.round((2 + NIVEAU.m / NIVEAU.ondine) - t);
+  let face = ancien ? (nouveau ? `Nouveau record ! ${Math.round(ancien.temps - t)} s de mieux.` : `Record pas battu : ${Math.round(t - ancien.temps)} s de plus.`)
+    : (ecart >= 0 ? `Tu bats Ondine de ${ecart} s !` : `Ondine arrive ${-ecart} s avant toi.`);
+  if (nouveau) { record = { temps: t, trace: S.trace }; try { localStorage.setItem("traversee_r19", JSON.stringify(record)); } catch (e) {} }
+  const cadMoy = S.nbCoups / (t / 60), mpc = NIVEAU.m / Math.max(1, S.nbCoups);
+  $("finCarte").innerHTML = `<h1>ARRIVÉE AUX ÎLES ÉCUME !</h1>
+    <div class="grosmed"><i class="med ${med[0]}"></i><div>${med[1]}<div class="lab" style="margin-top:.6cqw">${face}</div></div></div>
+    <div class="stats">
+      <div><span class="lab">Temps</span><b>${fmt(t)}</b></div><div><span class="lab">Allure moyenne</span><b>${fmt(500 / (NIVEAU.m / t))} /500 m</b></div><div><span class="lab">Coups</span><b>${S.nbCoups}</b></div>
+      <div><span class="lab">Cadence moyenne</span><b>${Math.round(cadMoy)} /min</b></div><div><span class="lab">Mètres par coup</span><b>${mpc.toFixed(1).replace(".", ",")} m</b></div><div><span class="lab">Perles</span><b>${S.perles}</b></div>
+      <div><span class="lab">Dresseurs battus</span><b>${S.combats} / 2</b></div></div>
+    <button class="go" id="rejouer">▶ REJOUER</button>
+    <p class="note">${D.modele ? "" : "Distances estimées : elles deviendront justes quand tu auras entré quelques distances du rameur à la fin de tes séances. "}Étape suivante : Route 20, des Îles Écume à Cramois'Île (pas encore faite). Ta séance compte dans Poké Fit comme d'habitude, par le téléphone.</p>`;
+  $("fin").hidden = false; $("rejouer").onclick = (ev) => { ev.stopPropagation(); rejouer(); };
+}
+/* Une nouvelle course, sans recharger la page : le téléphone reste relié et la séance continue. */
+function rejouer() {
+  Object.assign(S, { etat: "titre", t: 0, dist: 0, v: 0, vLisse: 0, nbCoups: 0, sommeForce: 0, trace: [0], dernTrace: 0, perles: 0, perlesVues: 0, combats: 0,
+    faits: new Set(), combat: null, courant: null, sprint: false, tFin: 0, surge: 0, flash: 0, secousse: 0 });
+  fx.ecume = []; fx.gouttes = []; fx.perles = []; fx.eclats = [];
+  $("fin").hidden = true; $("adv").hidden = true; $("piste").querySelectorAll(".ball").forEach(b => b.classList.remove("gagne"));
+  if (record) $("tAdv").textContent = `Ton record nage à côté de toi : ${fmt(record.temps)}`;
+  S.etat = "decompte"; decompte = 3.99; dire(`${nomFantome()} repart avec toi !`, 2500, false);
+}
+
+/* ---------- le téléphone sous le siège ---------- */
+const vits = [];
+function coupReel(m) {
+  if (S.etat !== "course") return;
+  const vit = +m.vit || 0; vits.push(vit); if (vits.length > 20) vits.shift();
+  const tri = [...vits].sort((a, b) => a - b), med = tri[Math.floor(tri.length / 2)] || vit || 1;
+  const force = vits.length < 3 ? 0.5 : 0.5 + (vit / med - 1) * 1.5;   /* fort = plus vite que tes derniers coups */
+  const metres = D.modele ? Math.max(3, D.modele.a + D.modele.b * vit) : 6 + 4 * Math.max(0, Math.min(1, force));
+  coup(force, metres);
+}
+function etatLien(txt, ok) { const l = $("lien"); l.textContent = txt; l.classList.toggle("ok", !!ok); }
+function recevoir(m) {
+  if (!m || typeof m !== "object") return;
+  audio();
+  if (m.type === "bonjour") { etatLien("Téléphone relié ✓ La course part quand il dit « zéro ».", true); if (S.etat === "titre") dire("Téléphone relié ! Accroche-le, la course part à « zéro ».", 3500, false); }
+  if (m.type === "decompte" && (S.etat === "titre" || S.etat === "pret")) { $("titre").hidden = true; S.etat = "pret"; $("gros").textContent = m.s; if (m.s <= 3) SONS.bip(false); }
+  if (m.type === "zero" && (S.etat === "titre" || S.etat === "pret")) { $("titre").hidden = true; $("gros").textContent = "RAME !"; SONS.bip(true); S.etat = "course"; S.t = 0; decompte = 0; }
+  if (m.type === "coup") coupReel(m);
+  if (m.type === "fin") { etatLien("Séance terminée sur le téléphone.", false); if (S.etat === "course") dire(`Séance terminée à ${fmtM(S.dist)}. Enregistre-la sur le téléphone !`, 8000); }
+}
+let peer = null;
+function ecouter() {
+  if (!D.lien || !window.Peer) { etatLien(D.lien ? "Lien impossible : PeerJS n'a pas chargé. Recharge la page." : "Pas de lien pour ce compte.", false); return; }
+  peer = new Peer("pokefit-rameur-" + D.lien);
+  peer.on("open", () => { if (!$("lien").classList.contains("ok")) etatLien("Prête ! Sur le téléphone : Muscu → Rameur → Lancer la séance.", false); });
+  peer.on("connection", c => { c.on("data", recevoir); c.on("close", () => etatLien("Téléphone déconnecté. Il se reliera tout seul à la prochaine séance.", false)); });
+  peer.on("disconnected", () => setTimeout(() => { try { if (!peer.destroyed) peer.reconnect(); } catch (e) {} }, 3000));
+  peer.on("error", e => {
+    if (e.type === "unavailable-id") { etatLien("Cet écran est déjà ouvert ailleurs (ou vient d'être fermé) : je réessaie…", false); try { peer.destroy(); } catch (x) {} setTimeout(ecouter, 8000); }
+    else if (e.type === "network" || e.type === "server-error" || e.type === "socket-error") { etatLien("Pas de réseau pour le lien, je réessaie…", false); try { peer.destroy(); } catch (x) {} setTimeout(ecouter, 8000); }
+  });
+}
+/* L'écran de la tablette reste allumé (le cadre de Streamlit peut le refuser : on essaie aussi la page qui le contient). */
+let verrou = null;
+async function allumer() { for (const w of [window, window.parent]) { try { verrou = await w.navigator.wakeLock.request("screen"); return; } catch (e) {} } }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") allumer(); });
+
+/* ---------- commandes ---------- */
+function partir(ev) { if (ev) ev.stopPropagation(); audio(); if (AC && AC.state === "suspended") AC.resume(); $("titre").hidden = true; S.etat = "decompte"; decompte = 3.99; dire(`${nomFantome()} part avec toi. Bonne traversée !`, 3000, false); }
+$("partir").onclick = partir;
+let essai = false;
+$("essayer").onclick = (ev) => { ev.stopPropagation(); essai = true; $("sim").hidden = false; $("essayer").hidden = true; $("partir").hidden = false;
+  $("noteTitre").textContent = "Sans téléphone : touche l'écran ou la barre d'espace pour ramer, ou lance Auto en dessous."; };
+$("stage").addEventListener("pointerdown", ev => { audio(); allumer(); if (!essai || ev.target.closest("button") || ev.target.closest(".carte")) return; coup(+$("iForce").value / 100); });
+document.addEventListener("keydown", ev => {
+  if (ev.code === "Space" && essai) { ev.preventDefault(); if (S.etat === "titre") partir(); else coup(+$("iForce").value / 100); }
+  if (ev.code === "ArrowUp" || ev.code === "ArrowDown") { const f = $("iForce"); f.value = +f.value + (ev.code === "ArrowUp" ? 5 : -5); f.dispatchEvent(new Event("input")); }
+});
+$("bCoup").onclick = () => { audio(); coup(+$("iForce").value / 100); };
+$("bAuto").onclick = () => { auto = !auto; $("bAuto").classList.toggle("on", auto); $("bAuto").textContent = auto ? "■ Auto" : "▶ Auto"; if (auto && S.etat === "titre") partir(); };
+$("bAcc").onclick = () => { acc = acc === 1 ? 5 : 1; $("bAcc").textContent = "Vitesse ×" + acc; $("bAcc").classList.toggle("on", acc > 1); };
+$("bSon").onclick = () => { son = !son; $("bSon").classList.toggle("on", son); if (mer) mer.gain.value = son ? 0.05 : 0; };
+$("bVoix").onclick = () => { voix = !voix; $("bVoix").classList.toggle("on", voix); if (voix) parle("La voix est activée."); };
+$("iCad").oninput = () => $("oCad").textContent = $("iCad").value;
+$("iForce").oninput = () => $("oForce").textContent = $("iForce").value + " %";
+if (record) $("tAdv").textContent = `Ton record nage à côté de toi : ${fmt(record.temps)}`;
+
+charger().then(() => { preparer(); PLAGE = plage(); ILES = iles(); piste(); requestAnimationFrame(pas); });
+allumer();
+</script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" onload="ecouter()" onerror="ecouter()"></script>

@@ -18,7 +18,6 @@ import regions
 import rival
 import seances_danse
 import seances_rameur
-import seances_rameur
 from pokedex import CATEGORIES, COULEURS_TYPES, DESCRIPTIONS, LEGENDAIRES, POIDS, POKEMON, TAILLES
 
 UI = Path(__file__).with_name("pokemon_ui.html")
@@ -138,7 +137,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "mission": etat["mission"],
         "joueurs": list(joueurs),
         "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
-        "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd),
+        "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd, seances_rameur.lien(st.secrets.get("JEU_CLE"), joueur["id"] if joueur else None)),
         "matin": {"hier": etat["hier"], "conseil": conseil, "voix": infirmiere.recap(aujourd, m.get("sommeil"), etat["hier"], sum(1 for c in captures if etat["hier"] and c["jour"] == etat["hier"]["jour"] and not c.get("rate")), etat["sport_vu"], joueur["id"] if joueur else "")},
         "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],

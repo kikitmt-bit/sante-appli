@@ -162,11 +162,30 @@ def chiffres_de(s, m):
     return out
 
 
-def pour_ecran(fichier, aujourd):
-    """Ce que l'onglet Muscu doit savoir : le modèle, pour proposer une estimation à la fin d'une séance, et le temps ramé aujourd'hui."""
+def pour_ecran(fichier, aujourd, lien_tablette=None):
+    """Ce que l'onglet Muscu doit savoir : le modèle, pour proposer une estimation à la fin d'une séance, le temps ramé aujourd'hui, et le lien vers la tablette."""
     seances = (fichier or {}).get("seances") or []
     du_jour = [s for s in seances if s["debut"][:10] == str(aujourd)]
-    return {"modele": modele(seances), "minutes": round(sum(s.get("duree_s", 0) for s in du_jour) / 60), "nb": len(seances)}
+    return {"modele": modele(seances), "minutes": round(sum(s.get("duree_s", 0) for s in du_jour) / 60), "nb": len(seances), "lien": lien_tablette}
+
+
+# ---------- L'écran de la tablette (Kiki, 07/11 : le jeu qui avance avec les coups, comme Zwift pour le vélo) ----------
+def lien(secret, joueur):
+    """Le nom sous lequel la tablette attend le téléphone (PeerJS) : le même des deux côtés pour un même joueur, impossible à deviner sans la clé
+    du serveur, et qui ne dit rien de lui. None sans clé : pas de lien."""
+    if not secret:
+        return None
+    import hashlib
+    return hashlib.sha256(f"rameur|{secret}|{joueur or 'kiki'}".encode()).hexdigest()[:20]
+
+
+def page_tablette(fichier, lien_tablette, images, sacha):
+    """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé, seulement le modèle des mètres par coup)."""
+    from pathlib import Path
+    seances = (fichier or {}).get("seances") or []
+    donnees = {"lien": lien_tablette, "modele": modele(seances), "images": images, "sacha": sacha}
+    page = Path(__file__).with_name("rameur_ecran.html").read_text(encoding="utf-8")
+    return page.replace("__DONNEES__", json.dumps(donnees).replace("</", "<\\/"))
 
 
 # ---------- La page Santé ----------

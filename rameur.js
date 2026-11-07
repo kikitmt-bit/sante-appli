@@ -51,6 +51,34 @@ function bilanRameur(coups) {
   return {coups: n, actif_s: Math.round(actif), cadence: Math.round(n / actif * 600) / 10, course_cm: Math.round(moy(c => c.course) * 100), vitesse: Math.round(moy(c => c.vit) * 100) / 100, ratio: Math.round(moy(c => c.ratio) * 100) / 100,
     par_min: {cad, course: course.map((c, i) => cad[i] ? Math.round(c / cad[i]) : 0)}, premier: debut, dernier: tous[n - 1].t};
 }
+// La tablette (Kiki, 07/11) : chaque coup part en direct vers l'écran du jeu (?ecran=rameur), d'appareil à appareil (PeerJS : leur serveur gratuit ne sert qu'à
+// se trouver). Tout est facultatif : sans tablette, la séance se passe exactement comme avant. surEtat(true / false) dit si la tablette est reliée.
+const PEERJS = "https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js";
+function lienTablette(surEtat) {
+  const nom = D.rameur && D.rameur.lien;
+  if (!nom) return {envoyer() {}, fermer() {}};
+  let peer = null, conn = null, essai = null, fini = false, enCours = false;
+  const charger = () => window.Peer ? Promise.resolve() : new Promise((ok, ko) => { const s = document.createElement("script"); s.src = PEERJS; s.onload = ok; s.onerror = ko; document.head.appendChild(s); });
+  const relier = () => {
+    if (fini || conn || enCours || !peer || peer.destroyed) return;
+    if (peer.disconnected) { try { peer.reconnect(); } catch (e) {} return; }
+    enCours = true; const c = peer.connect("pokefit-rameur-" + nom, {reliable: true});
+    const rate = setTimeout(() => { enCours = false; try { c.close(); } catch (e) {} }, 8000);
+    c.on("open", () => { clearTimeout(rate); enCours = false; conn = c; surEtat(true); c.send({type: "bonjour"}); });
+    c.on("close", () => { clearTimeout(rate); enCours = false; if (conn === c) { conn = null; if (!fini) surEtat(false); } });
+    c.on("error", () => { clearTimeout(rate); enCours = false; });
+  };
+  charger().then(() => {
+    if (fini) return;
+    peer = new window.Peer();
+    peer.on("open", () => { relier(); essai = setInterval(relier, 5000); });  // la tablette peut s'ouvrir après : on la cherche toutes les 5 s
+    peer.on("error", e => { if (e.type === "peer-unavailable") enCours = false; });
+  }).catch(() => {});
+  return {
+    envoyer(m) { if (conn && conn.open) { try { conn.send(m); } catch (e) {} } },
+    fermer() { fini = true; clearInterval(essai); try { if (conn) conn.close(); if (peer) peer.destroy(); } catch (e) {} },
+  };
+}
 const isoLocal = ms => { const d = new Date(ms), o = -d.getTimezoneOffset(), z = x => String(Math.floor(Math.abs(x))).padStart(2, "0");
   return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}${o < 0 ? "-" : "+"}${z(o / 60)}:${z(o % 60)}`; };
 const RAMEUR_ENCOURS = "pkm_rameur_encours", RAMEUR_ATTENTE = "pkm_rameur", RAMEUR_BRUT_MAX = 108000, RAMEUR_DECOMPTE = 10, RAMEUR_PALIER = 300;  // 90 min de capteurs ; décompte et annonces du temps, en secondes
@@ -64,8 +92,9 @@ function ecranRameur({reprise = null} = {}) {
   preparerScene(); installerStyle("pkm-entr-style", STYLE_ENTR); installerStyle("pkm-rameur-style", STYLE_RAMEUR);
   const v = P.createElement("div"); v.className = "pkm-entr pkm-rameur"; P.body.appendChild(v);
   const parler = t => { try { const s = PW.speechSynthesis; s.cancel(); const u = new PW.SpeechSynthesisUtterance(t); u.lang = "fr-FR"; s.speak(u); } catch (e) {} };
-  let verrou = null, chrono = null, garde = null, lire = null, surVisible = null;
-  const couper = () => { clearInterval(chrono); clearInterval(garde); if (lire) PW.removeEventListener("devicemotion", lire); if (surVisible) P.removeEventListener("visibilitychange", surVisible); try { if (verrou) verrou.release(); } catch (e) {} };
+  let verrou = null, chrono = null, garde = null, lire = null, surVisible = null, tablette = null, tabletteOk = false;
+  const ecrireTablette = () => { const el = v.querySelector(".r-tab"); if (el) el.textContent = tabletteOk ? "Tablette reliée ✓" : (D.rameur && D.rameur.lien ? "Tablette : pas reliée (facultatif)" : ""); };
+  const couper = () => { if (tablette) { tablette.envoyer({type: "fin"}); const t = tablette; tablette = null; setTimeout(() => t.fermer(), 500); } clearInterval(chrono); clearInterval(garde); if (lire) PW.removeEventListener("devicemotion", lire); if (surVisible) P.removeEventListener("visibilitychange", surVisible); try { if (verrou) verrou.release(); } catch (e) {} };
   const fermer = () => { couper(); v.remove(); };
   const oublier = () => { try { localStorage.removeItem(RAMEUR_ENCOURS); } catch (e) {} };
 
@@ -112,7 +141,8 @@ function ecranRameur({reprise = null} = {}) {
   if (reprise) return formulaire(reprise);
 
   v.innerHTML = `<div class="boite"><div class="tete-e"><img src="${IMG.mini(86)}" alt=""><h3>Le rameur</h3></div>
-      <p>Après « Lancer », tu as 10 secondes pour fixer le téléphone au siège, bien serré, dans le sens que tu veux. Démarre quand la voix dit « zéro ».</p><p>L'écran reste allumé. La voix te dira quand les coups sont comptés, puis le temps toutes les 5 minutes.</p></div>
+      <p>Après « Lancer », tu as 10 secondes pour fixer le téléphone au siège, bien serré, dans le sens que tu veux. Démarre quand la voix dit « zéro ».</p><p>L'écran reste allumé. La voix te dira quand les coups sont comptés, puis le temps toutes les 5 minutes.</p>
+      ${D.rameur && D.rameur.lien ? `<p>Pour jouer sur la tablette : ouvre l'appli dessus avec <b>?ecran=rameur</b> à la fin de l'adresse, avant de lancer. Elle se relie toute seule.</p>` : ""}</div>
     <button class="go lancer">Lancer la séance</button><button class="sec retour">Retour</button>`;
   v.querySelector(".retour").onclick = fermer;
   v.querySelector(".lancer").onclick = async () => {
@@ -122,15 +152,18 @@ function ecranRameur({reprise = null} = {}) {
     await allumer();
     surVisible = () => { if (P.visibilityState === "visible") allumer(); }; P.addEventListener("visibilitychange", surVisible);
     // Le temps d'accrocher le téléphone et de s'installer (Kiki, 06/11) : on ne mesure qu'à partir de « zéro »
-    v.innerHTML = `<div class="gros r-compte">10</div><div class="rythme">Accroche le téléphone et mets-toi en position</div><button class="sec retour">Annuler</button>`;
+    tablette = lienTablette(ok => { tabletteOk = ok; ecrireTablette(); if (ok) vibre(60); });
+    v.innerHTML = `<div class="gros r-compte">10</div><div class="rythme">Accroche le téléphone et mets-toi en position</div><div class="msg r-tab"></div><button class="sec retour">Annuler</button>`;
+    ecrireTablette();
     let annule = false; v.querySelector(".retour").onclick = () => { annule = true; try { PW.speechSynthesis.cancel(); } catch (e) {} fermer(); };
     for (let s = RAMEUR_DECOMPTE; s >= 0; s--) {
       v.querySelector(".r-compte").textContent = s; parler(s ? String(s) : "Zéro");
+      if (tablette) tablette.envoyer(s ? {type: "decompte", s} : {type: "zero"});
       if (s) await new Promise(r => setTimeout(r, 1000));
       if (annule) return;
     }
     vibre(200); ton(880, 0, .3, {type: "square", vol: .1});
-    const A = analyseurRameur(), brut = []; let debutT = null, debutMur = Date.now(), recus = 0, dernier = null, trou = 0, sx = 0, sy = 0, sz = 0, sn = 0, suivant = 0, annonce = false, g = null;
+    const A = analyseurRameur(), brut = []; let debutT = null, debutMur = Date.now(), recus = 0, dernier = null, trou = 0, sx = 0, sy = 0, sz = 0, sn = 0, suivant = 0, annonce = false, g = null, envoyes = 0;
     lire = e => {
       const t = e.timeStamp || performance.now(), a = e.acceleration, i = e.accelerationIncludingGravity;
       let x, y, z;
@@ -144,11 +177,13 @@ function ecranRameur({reprise = null} = {}) {
       if (t >= suivant) {  // 20 mesures par seconde, moyennées : assez pour un coup de rame, et 30 min tiennent sur le téléphone
         const mx = sx / sn, my = sy / sn, mz = sz / sn; sx = sy = sz = sn = 0; suivant = t + 50;
         A.ajouter(t, mx, my, mz);
+        while (envoyes < A.coups.length) { const c = A.coups[envoyes++]; if (tablette) tablette.envoyer({type: "coup", n: envoyes, dur: c.dur, course: c.course, vit: c.vit, ratio: c.ratio}); }
         if (brut.length < RAMEUR_BRUT_MAX) brut.push(`${Math.round(mx * 100)},${Math.round(my * 100)},${Math.round(mz * 100)}`);
       }
     };
     PW.addEventListener("devicemotion", lire);
-    v.innerHTML = `<div class="poche"><b class="r-nb">0</b><small>coups</small><div class="rame-info"><span><span class="r-cad">–</span><small>coups / min</small></span><span><span class="r-temps">0:00</span><small>temps</small></span></div><div class="msg r-msg"></div></div><button class="go finir">Terminer</button>`;
+    v.innerHTML = `<div class="poche"><b class="r-nb">0</b><small>coups</small><div class="rame-info"><span><span class="r-cad">–</span><small>coups / min</small></span><span><span class="r-temps">0:00</span><small>temps</small></span></div><div class="msg r-msg"></div><div class="msg r-tab"></div></div><button class="go finir">Terminer</button>`;
+    ecrireTablette();
     const etat = () => ({debutT, debutMur, finMur: Date.now(), trou, brut: brut.join(";"), coups: A.coups.map(c => [Math.round(c.t), Math.round(c.dur * 100) / 100, Math.round(c.course * 1000) / 1000, Math.round(c.vit * 100) / 100, Math.round(c.ratio * 100) / 100])});
     const sauver = () => { try { localStorage.setItem(RAMEUR_ENCOURS, JSON.stringify(etat())); } catch (e) {} };
     const q = c => v.querySelector(c);
