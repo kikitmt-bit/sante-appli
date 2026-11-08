@@ -25,8 +25,11 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 .num{font-variant-numeric:tabular-nums}
 #hg{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px;display:flex;gap:18px}
 #hg b{font-size:30px;font-weight:400;line-height:1}
+#hg b.gros{font-size:52px}
+#hg{align-items:flex-end}
+#fps{position:fixed;left:50%;top:6px;transform:translateX(-50%);font-size:15px;color:var(--creme);text-shadow:1px 1px 0 var(--nuit);pointer-events:none;opacity:.8}
 #hd{position:fixed;right:calc(max(12px,env(safe-area-inset-right,0px)) + 64px);top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px;text-align:right;min-width:120px}
-#hV{font-size:44px;font-weight:400;line-height:.9;display:block}
+#hV{font-size:52px;font-weight:400;line-height:.9;display:block}
 #hV small{font-size:18px;color:var(--encre2)}
 #h5{font-size:18px;color:var(--encre2)}
 #hE{font-size:20px;color:#B05010}
@@ -80,13 +83,14 @@ button.on{background:var(--or)}
 .pave{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .pave button{font-size:44px;padding:8px 0}
 .message{font-size:20px;color:var(--accent);min-height:24px;margin:8px 0 0}
-@media (max-width:760px){#hV{font-size:32px}#hg b{font-size:22px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}#panneau b{font-size:20px}}
+@media (max-width:760px){#hg b.gros{font-size:34px}#hg{gap:10px}#hV{font-size:32px}#hg b{font-size:22px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}#panneau b{font-size:20px}}
 </style>
 <canvas id="c" aria-label="La rivière, vue de derrière ton Pokémon qui nage"></canvas>
 <div id="vitesse"></div><div id="sombre"></div><div id="flash"></div><div id="embruns"></div>
 <div id="hud" hidden>
-  <div class="boite" id="hg"><div><span class="lab">Temps</span><b class="num" id="hT">0:00</b></div><div><span class="lab">Distance</span><b class="num" id="hD">0 m</b></div>
-    <div><span class="lab">Cadence</span><b class="num" id="hC">0</b></div><div><span class="lab">Coups</span><b class="num" id="hN">0</b></div></div>
+  <div class="boite" id="hg"><div><span class="lab">Temps</span><b class="num gros" id="hT">0:00</b></div><div><span class="lab">Cadence /min</span><b class="num gros" id="hC">0</b></div>
+    <div><span class="lab">Distance</span><b class="num" id="hD">0 m</b></div><div><span class="lab">Coups</span><b class="num" id="hN">0</b></div></div>
+  <div id="fps" class="num">– i/s</div>
   <div class="boite" id="hd"><b id="hV" class="num">0,0 <small>km/h</small></b><div id="h5" class="num">–:–– /500 m</div><div id="hE">Mise en route</div></div>
   <button id="bPause" aria-label="Menu de la séance">II</button>
   <div id="panneau"><b id="pNom"></b><span id="pSous"></span></div>
@@ -150,21 +154,21 @@ function at(s) {  // position du milieu de l'eau à s mètres (prolongé tout dr
 function pose(s, d) { const a = at(s); return {x: a.x + Math.cos(a.h) * d * E, z: a.z + Math.sin(a.h) * d * E, h: a.h}; }
 
 // Les deux rives : [s, distance du bord (m) ou null = la mer, hauteur de la rive (unités), largeur de la terre (unités)]
-const GAUCHE = [[0, 7, 4.5, 320], [55, 8, 4.8, 320], [90, 12, 3.6, 300], [102, 24, 1.4, 260], [102.5, null], [213, null], [213.5, 22, 1.6, 900], [224, 9, 4.2, 900], [292, 9, 4.2, 900],
-  [324, 4.6, 1.7, 900], [349, 3.5, .8, 900], [401, 3.2, 1, 900], [470, 3, 1.3, 900], [497, 3, 1.9, 900], [503, 2.9, 4, 900], [509, 2.8, 7.5, 900], [537, 2.8, 7.5, 900], [546, 3.6, 6.5, 900],
+const GAUCHE = [[0, 2.9, 7, 320], [22, 2.9, 7, 320], [25, 7, 4.5, 320], [55, 8, 4.8, 320], [90, 12, 3.6, 300], [102, 24, 1.4, 260], [102.5, null], [213, null], [213.5, 22, 1.6, 900], [224, 9, 4.2, 900], [292, 9, 4.2, 900],
+  [324, 4.6, 1.7, 900], [349, 3.5, .8, 900], [401, 3.2, 1, 900], [470, 3, 1.3, 900], [497, 3, 1.9, 900], [503, 2.9, 1.6, 900], [508.6, 2.9, 1.6, 900], [509.4, 2.8, 7.5, 900], [537, 2.8, 7.5, 900], [546, 3.6, 6.5, 900],
   [600, 4, 5.8, 900], [628, 4.4, 4, 900], [640, 5, 1.2, 900], [683, 5, 1.2, 900], [688, 3.1, 1.2, 900], [696, 3.1, 1.2, 900], [701, 5, 1.2, 900], [756, 5, 1.2, 900], [770, 14, .8, 900], [790, 24, .7, 900], [830, 28, .7, 900], [850, 14, .8, 900],
-  [862, 4, .9, 900], [940, 3.6, 1.4, 900], [950, 2.9, 6.5, 900], [1001, 2.7, 7.5, 900]];
-const DROITE = [[0, null], [318, null], [318.5, 15, 2.2, 300], [336, 5, 1.3, 500], [349, 3.6, .8, 800], [401, 3.5, 1.1, 800], [470, 3.2, 1.3, 800], [497, 3, 1.9, 800],
-  [503, 2.9, 4, 800], [509, 2.8, 7.5, 800], [537, 2.8, 7.5, 800], [546, 3.4, 6.8, 800],
+  [862, 4, .9, 900], [940, 3.6, 1.4, 900], [977.6, 3, 1.4, 900], [978.4, 2.9, 7, 900], [1001, 2.9, 7, 900]];
+const DROITE = [[0, 2.9, 7, 300], [22, 2.9, 7, 300], [22.5, null], [318, null], [318.5, 15, 2.2, 300], [336, 5, 1.3, 500], [349, 3.6, .8, 800], [401, 3.5, 1.1, 800], [470, 3.2, 1.3, 800], [497, 3, 1.9, 800],
+  [503, 2.9, 1.6, 800], [508.6, 2.9, 1.6, 800], [509.4, 2.8, 7.5, 800], [537, 2.8, 7.5, 800], [546, 3.4, 6.8, 800],
   [600, 4.2, 5.5, 800], [628, 4.6, 3.6, 800], [640, 5, 1.2, 800], [683, 5, 1.2, 800], [688, 3.1, 1.2, 800], [696, 3.1, 1.2, 800], [701, 5, 1.2, 800], [756, 5, 1.2, 800], [770, 18, .8, 800], [790, 30, .7, 800], [830, 22, .7, 800], [850, 12, .8, 800],
-  [862, 4.2, .9, 800], [940, 3.6, 1.4, 800], [950, 2.9, 6.5, 800], [1001, 2.7, 7.5, 800]];
+  [862, 4.2, .9, 800], [940, 3.6, 1.4, 800], [977.6, 3, 1.4, 800], [978.4, 2.9, 7, 800], [1001, 2.9, 7, 800]];
 const MER = 25;  // pour creuser l'eau du côté de la mer
 function rive(P, s) {
   let i = 0; while (i < P.length - 2 && P[i + 1][0] <= s) i++;
   const a = P[i], b = P[i + 1];
   if (a[1] == null || b[1] == null) return null;
   const u = clamp((s - a[0]) / (b[0] - a[0]), 0, 1), h = lerp(a[2], b[2], u), g = P === GAUCHE ? 1 : 7;
-  const irreg = (h > 2.5 ? .7 : .25) * (.6 * Math.sin(s * .31 + g) + .4 * Math.sin(s * .77 + g * 2));
+  const irreg = (s < 23 || s > LONG - 23) ? 0 : (h > 2.5 ? .7 : .25) * (.6 * Math.sin(s * .31 + g) + .4 * Math.sin(s * .77 + g * 2));  // pas d'irrégularité dans les deux grottes du raccord
   return {d: lerp(a[1], b[1], u) + irreg, h, W: lerp(a[3], b[3], u)};
 }
 const profil = (o, h) => o <= 26 ? h : lerp(h, H0, lisse(26, 72, o));
@@ -176,7 +180,7 @@ const LIEUX = [[0, "CRAMOIS'ÎLE", "Le ponton du volcan"], [104, "ROUTE 21", "Le
   [640, "JADIELLE", "Les quais"], [686, "JADIELLE", "Le pont de pierre"], [732, "JADIELLE", "Le ponton : on plonge !"], [760, "LAC DE JADIELLE", "Le grand lac"],
   [860, "ROUTE 22", "Le marais"], [948, "GROTTE DU RIVAGE", "Vers le départ"]];
 // zones du sol : 0 île, 1 mer, 2 côte, 3 village, 4 prés, 5 bois, 6 gorge (deux zones voisines se suivent)
-const ZONES = [[0, 0], [104, 1], [214, 2], [349, 3], [405, 4], [482, 5], [500, 6], [640, 3], [760, 4], [860, 5], [948, 6]];
+const ZONES = [[0, 6], [23, 0], [104, 1], [214, 2], [349, 3], [405, 4], [482, 5], [500, 6], [640, 3], [760, 4], [860, 5], [948, 6]];
 const zoneDe = s => { let z = 0; for (const [a, v] of ZONES) if (s >= a) z = v; return z; };
 
 /* ============ la carte du sol (vue du dessus) : où est l'eau, le sable, les herbes ============ */
@@ -236,7 +240,8 @@ const cv = $("c"), R = new THREE.WebGLRenderer({canvas: cv, antialias: false});
 const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(55, 1, .1, 4000);
 const BRUME = new THREE.Color("#CDE6F2"), BN = 90, BF = 640;
 scene.fog = new THREE.Fog(BRUME, BN, BF); scene.background = BRUME;
-function taille() { R.setPixelRatio(Math.min(devicePixelRatio, 1.5)); R.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
+let QUALITE = Math.min(devicePixelRatio, 1);
+function taille() { R.setPixelRatio(QUALITE); R.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
 addEventListener("resize", taille); taille();
 const texSol = new THREE.Texture(); texSol.magFilter = texSol.minFilter = THREE.NearestFilter; texSol.generateMipmaps = false;
 const UNI = {uSol: {value: texSol}, uM1: {value: M1}, uM2: {value: M2}, uBox: {value: new THREE.Vector4(BX0, BZ0, MW * RES, MH * RES)}, uFog: {value: BRUME}, uFn: {value: BN}, uFf: {value: BF},
@@ -277,6 +282,7 @@ const eau = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.Shader
   void main(){
     vec2 t = floor(vP.xz / ${TX.toFixed(3)}), p = (t + .5) * ${TX.toFixed(3)};
     float pr = 1.0 - texture2D(uM1, uvM(p)).g, z = zoneEn(p);
+    if (uSombre > .2) { pr = .3; z = 6.0; }  // dans les grottes : la même eau partout (le raccord de la boucle ne se voit pas)
     float g = texture2D(uTex, vec2((mod(t.x, 32.0) + uF * 32.0 + .5) / 128.0, (mod(t.y, 32.0) + .5) / 32.0)).r;
     vec3 prof = z > 2.5 ? vec3(.2,.52,.82) : vec3(.15,.46,.9), clair = z > 2.5 ? vec3(.34,.66,.86) : vec3(.33,.66,.97);
     vec3 c = mix(prof, clair, smoothstep(0.0, .5, pr)) * (.72 + .45 * g);
@@ -557,7 +563,10 @@ function pontArche(s, w, haut) {  // le petit pont de bois du village, en arche 
   const p = at(s); g.position.set(p.x, 0, p.z); g.rotation.y = -p.h; scene.add(g); return g;
 }
 // les tunnels : on passe sous le Mont Sélénite, puis la grotte du rivage ramène au départ
-const S_GROTTE = 952, T1 = [509, 537], TUNNELS = [T1, [S_GROTTE, LONG]];
+const S_GROTTE = LONG - 22, T1 = [509, 537], T0 = [0, 22], TUNNELS = [T0, T1, [S_GROTTE, LONG]];
+const DEPART = 247, RACCORD = LONG - 14, DECAL = LONG - T0[1];  // RACCORD : 14 m avant la sortie de la grotte du rivage = 14 m avant la sortie de la grotte de départ
+const boucler = () => { if (S.s >= RACCORD) { S.s -= DECAL; sautsFaits.clear(); vie.fill(0); RONDS.forEach(r => r.z = -99); } };  // les gouttes et les ronds, posés dans le monde, ne suivent pas : on les efface
+const surBoucle = s => (((s - DEPART) % DECAL) + DECAL) % DECAL;  // la distance depuis la ligne de départ, sur la boucle
 const dansTunnel = s => TUNNELS.some(([a, b]) => s > a - 1 && s < b);
 function bruitV(x, y, g) {  // un bruit doux (pour des rochers naturels, jamais en briques)
   const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, l = t => t * t * (3 - 2 * t), v = (a, b) => rnd(a * 57.3 + b * 131.7 + g);
@@ -579,25 +588,23 @@ function grotte(S0, S1, fin) {
     for (const t of [[a, c, b], [b, c, d]]) { const cx = (pts[t[0]][0] + pts[t[1]][0] + pts[t[2]][0]) / 3, cy = (pts[t[0]][1] + pts[t[1]][1] + pts[t[2]][1]) / 3;
       if (Math.hypot(cx / RA, cy / (RA * 1.02)) < 1) continue; idx.push(...t); } }
   const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pts.flat(), 3)); geo.setIndex(idx);
-  const nomFace = lune ? "rameur-grotte-selenite.webp" : "rameur-grotte-rivage.webp", fi = faceImage(nomFace, IMG_INFO[nomFace], RA * 2 + .3, 0, .2); g.add(fi.m);
-  if (fi.trou > 6.2) { const hb = fi.trou - 5.8, bouche = new THREE.Mesh(new THREE.PlaneGeometry(RA * 2 + 6, hb), new THREE.MeshBasicMaterial({color: lune ? 0x1A1626 : 0x14201A})); bouche.position.set(0, 5.8 + hb / 2, -.5); g.add(bouche); }  // le haut de l'arche, plus haut que la voûte : le noir de la grotte
+  const nomFace = lune ? "rameur-grotte-selenite.webp" : "rameur-grotte-rivage.webp", fi = faceImage(nomFace, IMG_INFO[nomFace], (RA * 2 + .3) * 1.45, 0, .2); g.add(fi.m);
+  { // le fond de l'arche, plus large que la voûte du tunnel : un cadre sombre qui laisse voir le tunnel
+    const f = new THREE.Shape(), hw = (RA * 2 + .3) * 1.45 / 2 + .5, ht = fi.trou + .5; f.moveTo(-hw, -.5); f.lineTo(hw, -.5); f.lineTo(hw, ht); f.lineTo(-hw, ht); f.lineTo(-hw, -.5);
+    const t = new THREE.Path(); t.moveTo(6.4, -.6); t.absarc(0, -.6, 6.4, 0, Math.PI, false); t.lineTo(6.4, -.6); f.holes.push(t);
+    const cadre = new THREE.Mesh(new THREE.ShapeGeometry(f, 24), new THREE.MeshBasicMaterial({color: lune ? 0x1A1626 : 0x14201A, side: THREE.DoubleSide})); cadre.position.z = -.5; g.add(cadre); }
   // la masse de la montagne au-dessus et de chaque côté du tunnel (jamais dedans : tout reste au-dessus de la voûte ou au-delà des parois)
-  for (let k = 0; k < (S1 - S0) / 9 + 1; k++) { const s = S0 + 12 + k * 9;
-    for (const [d, r, h, y] of [[-14 - rnd(k) * 5, 13, 16 + rnd(k * 3) * 8, 0], [14 + rnd(k + 7) * 5, 13, 15 + rnd(k * 5) * 8, 0], [0, 12, 10 + rnd(k * 9) * 6, 7.6]]) {
-      const p = pose(Math.min(s, S1 - 2), d), m = new THREE.Mesh(facettesHerbe(bosse(r, h, s * 3 + d, false), PAL_EXT, HERBE, s + d), matCouleurs);
-      m.position.set(p.x, y + h * .2, p.z); m.rotation.y = rnd(s + d) * 6; scene.add(m); } }
   // l'intérieur : une voûte cabossée à facettes, éclairée par les cristaux (Mont Sélénite) ou par l'eau turquoise (grotte du rivage)
   const L = (S1 - S0 + 2) * E, voute = new THREE.CylinderGeometry(6.6, 6.6, L, 18, Math.max(4, Math.round(L / 3)), true, -Math.PI / 2, Math.PI), pv = voute.attributes.position, v = new THREE.Vector3();
-  for (let i = 0; i < pv.count; i++) { v.fromBufferAttribute(pv, i); const r = Math.hypot(v.x, v.z), k = 1 - (.06 + .14 * bruitV(v.y / 2.5, Math.atan2(v.z, v.x) * 3, S0)); if (Math.abs(v.z) > .5) { v.x *= k; v.z *= k; } pv.setXYZ(i, v.x, v.y, v.z); }
+  for (let i = 0; i < pv.count; i++) { v.fromBufferAttribute(pv, i); const r = Math.hypot(v.x, v.z), k = 1 - (.06 + .14 * bruitV(v.y / 2.5, Math.atan2(v.z, v.x) * 3, fin ? 0 : S0)); if (Math.abs(v.z) > .5) { v.x *= k; v.z *= k; } pv.setXYZ(i, v.x, v.y, v.z); }
   const tp = texImg(lune ? "rameur-paroi-selenite.webp" : "rameur-paroi-rivage.webp"); tp.wrapS = tp.wrapT = THREE.RepeatWrapping; tp.repeat.set(3, Math.max(1, Math.round(L / 9)));
   const tun = new THREE.Mesh(voute, new THREE.MeshBasicMaterial({map: tp, side: THREE.BackSide, color: 0xC8C8C8}));
   tun.rotation.x = -Math.PI / 2; const gt = new THREE.Group(); gt.add(tun); const mid = at(S0 + (S1 - S0) / 2); gt.position.set(mid.x, 0, mid.z); gt.rotation.y = -mid.h; scene.add(gt);
-  for (let i = 0; i < Math.round((S1 - S0) / (lune ? 2 : 4)); i++) { const s = S0 + 2 + rnd(i * 3 + S0) * (S1 - S0 - 4), cote = i % 2 ? 1 : -1, q = pose(s, cote * (2.3 + rnd(i) * .3)), y = .3 + rnd(i * 5) * 3.5;
+  for (let i = 0; i < Math.round((S1 - S0) / (lune ? 2 : 4)); i++) { const s = S0 + 2 + rnd(i * 3 + (fin ? 0 : S0)) * (S1 - S0 - 4), cote = i % 2 ? 1 : -1, q = pose(s, cote * (2.3 + rnd(i) * .3)), y = .3 + rnd(i * 5) * 3.5;
     if (lune) { const cr = poser(image("cristal", i % 3), q.x, y, q.z, 1 + rnd(i * 7)); cr.userData.cristal = i; }
     const h = poser(image("lumiere"), q.x, y + .3, q.z, lune ? .9 : .7); h.material = h.material.clone(); h.material.alphaTest = .02; h.material.depthWrite = false; h.material.transparent = true; h.material.blending = THREE.AdditiveBlending;
     h.material.color.set(lune ? 0x6070FF : 0x30C8A0); h.material.opacity = .55; }
-  const sortie = pose(fin ? LONG - 1 : S1 + 1, 0), lum = poser(image("lumiere"), sortie.x, 0, sortie.z, 2.2); lum.material = lum.material.clone(); lum.material.alphaTest = .02; lum.material.depthWrite = false; lum.material.fog = false;
-  if (lune) rideau(S0 - .4, RA);
+  const sortie = pose(fin ? S1 - 1 : S1 + 1, 0), lum = poser(image("lumiere"), sortie.x, 0, sortie.z, 2.2); lum.material = lum.material.clone(); lum.material.alphaTest = .02; lum.material.depthWrite = false; lum.material.fog = false;
 }
 function facettesHerbe(geo, roche, herbe, graine) {  // comme facettes, mais ce qui regarde vers le haut devient de l'herbe
   const g = facettes(geo, roche, .18, graine), n = g.attributes.normal, c = g.attributes.color;
@@ -925,7 +932,7 @@ async function villageois(nom, s, d, o = {}) {  // un habitant immobile (face à
 /* ---- tout ce qui borde le parcours, posé à la main (s en mètres, d en mètres : négatif = à gauche) ---- */
 function peupler() {
   // Cramois'Île : le ponton du volcan, la côte de falaises, le volcan, trois maisons sur le plateau
-  ponton(3, -6.5, -1.6, 4.9, 2.6);
+  ponton(30, -6.5, -1.6, 4.9, 2.6);
   volcan3D(86, -66);
   maisonFR(18, -16.5, {style: "pc"});
   maisonFR(33, -17.5, {style: "mart"});
@@ -933,7 +940,7 @@ function peupler() {
   for (const [s, d, t, k] of [[4, -11, "pin", 40], [8, -14, "pin", 48], [27, -12.5, "chene", 11], [30, -21, "pin", 52], [44, -13, "buisson"], [50, -11, "pin", 38], [53, -14.5, "chene", 14],
     [70, -13, "pin", 46], [74, -10.5, "rocher"], [80, -15, "chene", 12], [84, -12, "pin", 42], [91, -16, "pin", 50], [96, -17, "chene", 13], [22, -24, "pin", 56], [57, -26, "pin", 50]])
     decor(t, s, d, {arg: k});
-  decor("panneau", 14, -9.8); decor("bouee", 22, 4.2, {eau: true, dy: -.25}); decor("barque", 6, -4, {eau: true, dy: -.3, tourne: false});
+  decor("panneau", 34, -9.8); decor("bouee", 22, 4.2, {eau: true, dy: -.25}); decor("barque", 6, -4, {eau: true, dy: -.3, tourne: false});
   // Route 21 : les récifs (on serpente entre eux), une bouée, des îlots au loin
   const RECIFS = [[96, 6, 1.1], [111, -5.2, 1.3], [127, 5.4, 1.2], [142, -5.6, 1.4], [158, 4.8, 1], [174, -4.6, 1.15], [190, 6.2, 1.3], [120, -16, 1.6], [150, 15, 1.8], [168, -22, 1.5], [200, 18, 1.2],
     [135, 30, 2], [180, 35, 1.7], [105, -32, 2.2], [210, -12, .9], [60, 14, 1.3], [40, 20, 1.6]];
@@ -976,7 +983,7 @@ function peupler() {
   for (const [t, s2, d2] of [["arbuste", 444, -9], ["arbuste", 229, -11.5], ["boulder", 503, 5.4], ["pokeball", 456, 7.6], ["galet", 133, -9], ["galet", 168, 8], ["galet", 196, -7], ["galet", 105, 9], ["fleurs", 239, -12.5], ["fleurs", 450, -10], ["herbes", 236, -12]])
     decor(t, s2, d2, {eau: t === "galet", dy: t === "galet" ? -.25 : 0, v: Math.floor(rnd(s2 * 1.7) * 4)});
   phare(237, -13.5); moulin(437, 22);
-  grotte(T1[0], T1[1], false); grotte(S_GROTTE, LONG, true); peuplerSuite();
+  grotte(T0[0], T0[1], true); grotte(T1[0], T1[1], false); grotte(S_GROTTE, LONG, true); peuplerSuite();
   // les arbres au loin : des bosquets plantés tout seuls hors du parcours, jamais en rangée (taches de bruit)
   forets();
 }
@@ -988,7 +995,7 @@ function forets() {
     if (eauEn(x, z) || bordEn(x, z) > .02) continue;
     let best = 1e9, bi = 0; for (let i = 0; i < PX.length; i += 8) { const dd = (PX[i] - x) ** 2 + (PZ[i] - z) ** 2; if (dd < best) { best = dd; bi = i; } }
     best = Math.sqrt(best); if (best < 34 || best > 520) continue;
-    const s = bi * DS, zone = zoneDe(s); if (zone === 3 && best < 80) continue;
+    const s = bi * DS, zone = zoneDe(s); if (zone === 3 && best < 80) continue; if (s < 30 || s > LONG - 30) continue;  // rien au-dessus des grottes du raccord
     const dens = bruit(x, z) + (zone === 5 ? .7 : 0) + (zone === 0 ? .5 : 0); if (dens < .35) continue;
     const a = at(s), lat = ((x - a.x) * Math.cos(a.h) + (z - a.z) * Math.sin(a.h)) / E, y = solY(s, lat);
     const t = zone === 5 || zone === 0 ? (rnd(k) > .3 ? Math.floor(rnd(k * 3) * 2) : 4) : Math.floor(rnd(k * 5) * types.length);
@@ -1000,7 +1007,7 @@ function forets() {
 }
 function habiter() {  // les Pokémon et les habitants (chargés en ligne ; s'ils ne chargent pas, l'endroit reste vide)
   const P = (n, s, d, o) => pokemon(n, s, d, o).catch(() => {}), V = (nom, s, d, o) => villageois(nom, s, d, o).catch(() => {});
-  V("sailor", 3.5, -5.2, {salue: true, y: 5.08}); P("0025", 2.5, -4.4, {k: 1.35, dy: 4.9});
+  V("sailor", 30.5, -5.2, {salue: true, y: 5.08}); P("0025", 29.5, -4.4, {k: 1.35, dy: 4.9});
   P("0098", 111, -5.2, {k: 1.4, dy: 1.6}); P("0120", 142, -5.4, {k: 1.4, dy: 1.7, joie: false}); P("0072", 133, 7, {eau: true, flotte: true, k: 1.5}); P("0072", 165, -9, {eau: true, flotte: true, k: 1.5});
   P("0054", 34, -9.3, {k: 1.4});
   V("fisher", 250, 11.5, {image: 0, y: 4.48}); V("little_girl", 251, -6.5, {salue: true, y: 4.48}); P("0016", 252, 4, {k: 1.35, dy: 4.5});
@@ -1056,7 +1063,7 @@ async function construire(i) {
 
 /* ============ la séance : la vitesse vient des coups ============ */
 const TAU = 3.5;
-const S = {etat: "menu", t: 0, s: 4, v: 0, dist: 0, nb: 0, coupsT: [], vMoy: 3.2, vn: 0, auto: true, tour: 1, saut: null, rangee: 4, prochainCoup: 0, lieu: -1};
+const S = {etat: "menu", t: 0, s: 230, v: 0, dist: 0, nb: 0, coupsT: [], vMoy: 3.2, vn: 0, auto: true, tour: 1, saut: null, rangee: 4, prochainCoup: 0, lieu: -1};
 function coup(force = .6, metres) {
   if (S.etat !== "course") return;
   S.v += (metres || 6 + 4 * force) / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
@@ -1093,7 +1100,7 @@ const volcanP = pose(86, -28);
 let T = 0, dernier = performance.now(), camLat = 0, vuLieu = 0;
 
 
-function panneau(i) { const [, nom, sous] = LIEUX[i]; $("pNom").textContent = nom; $("pSous").textContent = sous; const p = $("panneau"); p.classList.add("vu"); clearTimeout(p._t); p._t = setTimeout(() => p.classList.remove("vu"), 3200); }
+function panneau(i) { return; const [, nom, sous] = LIEUX[i]; $("pNom").textContent = nom; $("pSous").textContent = sous; const p = $("panneau"); p.classList.add("vu"); clearTimeout(p._t); p._t = setTimeout(() => p.classList.remove("vu"), 3200); }
 
 function boucle(now) {
   requestAnimationFrame(boucle);
@@ -1104,9 +1111,9 @@ function boucle(now) {
     if (S.auto && S.t >= S.prochainCoup) { coup(.5 + Math.random() * .35); S.prochainCoup = S.t + 60 / (24 + 3 * Math.sin(S.t * .05)); }
     S.v *= Math.exp(-dt / TAU); S.s += S.v * dt; S.dist += S.v * dt;
     S.vMoy = lerp(S.vMoy, Math.max(S.vL || 0, 1), dt / 40);
-    if (S.s >= LONG - 2) { S.s = 3; S.tour++; flash(1); sautsFaits.clear(); S.lieu = -1; }
-  } else if (S.etat === "menu") S.s += dt * 1.6;  // derrière le menu : on glisse doucement
-  if (S.etat !== "course" && S.s > LONG - 2) S.s = 3;
+    if (S.s >= DEPART && S.s - S.v * dt < DEPART && S.t > 5) S.tour++;  // la ligne d'arrivée, sous la jetée
+    boucler();
+  } else if (S.etat === "menu") { S.s += dt * 1.6; boucler(); }  // derrière le menu : on glisse doucement
   S.vL = lerp(S.vL || 0, S.v, clamp(dt / 1.6, 0, 1)); S.vn = clamp((S.vL - 1.5) / 3, 0, 1.2);
   const etatV = S.vL > S.vMoy * 1.18 && S.vL > 3.4 ? 2 : S.vL > S.vMoy * 1.06 && S.vL > 2.9 ? 1 : 0;
   // le lieu
@@ -1138,10 +1145,12 @@ function boucle(now) {
   UNI.uHero.value.set(a.x, 0, a.z); UNI.uL.value = heros ? heros.larg * .5 : .8; UNI.uHdir.value.set(Math.sin(a.h), -Math.cos(a.h)); UNI.uV.value = S.vn;
   // la grotte : il fait sombre, puis la lumière
   const sombre = Math.max(...TUNNELS.map(([t0, t1]) => lisse(t0 - 1, t0 + 6, S.s) * (1 - lisse(t1 - 9, t1 - 2.5, S.s))));
-  UNI.uSombre.value = sombre * .5; $("sombre").style.opacity = sombre * .6; $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, lisse(LONG - 7, LONG - 2, S.s) * .95, 0);
+  UNI.uSombre.value = sombre * .5; $("sombre").style.opacity = sombre * .6; $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, 0);
   $("vitesse").style.opacity = etatV === 2 ? .7 : etatV === 1 ? .25 : 0;
   // tout ce qui se tourne vers toi
-  for (const m of tournants) { m.rotation.y = Math.atan2(cam.position.x - m.position.x - (m.parent.position?.x || 0), cam.position.z - m.position.z - (m.parent.position?.z || 0)); }
+  for (const m of tournants) { const px0 = m.position.x + (m.parent.position?.x || 0), pz0 = m.position.z + (m.parent.position?.z || 0), dx = cam.position.x - px0, dz = cam.position.z - pz0, d2 = dx * dx + dz * dz;
+    const vis = d2 < 230000; if (m.userData.cache !== !vis) { m.userData.cache = !vis; if (!vis) m.visible = false; else if (m.userData.vu !== false) m.visible = true; } if (vis && d2 < 40000) m.rotation.y = Math.atan2(dx, dz); }
+  mesurer(dt);
   for (const v of VIVANTS) v.maj(dt, T);
   for (const e of EVTS) e.maj(dt, T);
   animerMonde(dt); majFonds();
@@ -1185,13 +1194,20 @@ function boucle(now) {
     majProg(); }
   R.render(scene, cam);
 }
+const FPS = {n: 0, t: 0, bas: 0, haut: 0};
+function mesurer(dt) {  // les images par seconde ; si ça rame, l'image devient un peu moins fine (le pixel art le supporte), et remonte quand ça va mieux
+  FPS.n++; FPS.t += dt; if (FPS.t < 1) return; const f = FPS.n / FPS.t; FPS.n = 0; FPS.t = 0; $("fps").textContent = Math.round(f) + " i/s";
+  if (f < 48) { FPS.bas++; FPS.haut = 0; } else if (f > 58) { FPS.haut++; FPS.bas = 0; } else { FPS.bas = 0; FPS.haut = 0; }
+  if (FPS.bas >= 2 && QUALITE > .5) { QUALITE = Math.max(.5, QUALITE - .15); taille(); FPS.bas = 0; }
+  if (FPS.haut >= 6 && QUALITE < Math.min(devicePixelRatio, 1)) { QUALITE = Math.min(Math.min(devicePixelRatio, 1), QUALITE + .1); taille(); FPS.haut = 0; }
+}
 function flash(v) { $("flash").style.opacity = v; }
 
 /* ============ la barre du parcours, en bas ============ */
-const ETAPES = [[0, "Départ"], [104, "Récifs"], [214, "Jetée"], [349, "Bourg Palette"], [405, "Prés"], [508, "Tunnel"], [545, "Gorges"], [640, "Jadielle"], [760, "Lac"], [860, "Marais"], [952, "Grotte"]];
+const ETAPES = [[DEPART, "Départ"], [349, "Bourg Palette"], [405, "Prés"], [508, "Mont Sélénite"], [545, "Gorges"], [640, "Jadielle"], [760, "Lac"], [860, "Marais"], [S_GROTTE, "Grotte"], [T0[1], "Cramois'Île"], [104, "Récifs"]];
 function dessinerProg() {
   const p = $("prog");
-  ETAPES.forEach(([s, nom], i) => { const x = (s / LONG * 100).toFixed(2) + "%";
+  ETAPES.forEach(([s, nom], i) => { const x = (surBoucle(s) / DECAL * 100).toFixed(2) + "%";
     p.insertAdjacentHTML("beforeend", `<div class="etape" data-s="${s}" style="left:${x}"></div><div class="nom ${i % 2 ? "bas" : "haut"}" style="left:${x}">${nom}</div>`); });
   p.insertAdjacentHTML("beforeend", `<canvas class="moi" id="progMoi" width="32" height="32" style="left:0"></canvas>`);
 }
@@ -1201,8 +1217,8 @@ function iconeProg() {  // le portrait de ton Pokémon sur la barre
     const k = Math.min(32 / A.fw, 32 / A.fh); x.clearRect(0, 0, 32, 32); x.drawImage(img, 0, 0, A.fw, A.fh, (32 - A.fw * k) / 2, (32 - A.fh * k) / 2, A.fw * k, A.fh * k); }); }).catch(() => {});
 }
 function majProg() {
-  const u = clamp(S.s / LONG, 0, 1); $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
-  document.querySelectorAll("#prog .etape").forEach(e => e.classList.toggle("passee", S.s >= +e.dataset.s));
+  const u = surBoucle(S.s) / DECAL; $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
+  document.querySelectorAll("#prog .etape").forEach(e => e.classList.toggle("passee", surBoucle(S.s) >= surBoucle(+e.dataset.s)));
 }
 
 /* ============ le menu ============ */
@@ -1223,7 +1239,7 @@ let minuteur = 0;
 function demarrer() {
   pleinEcran(); allumer();
   $("menu").hidden = true; $("hud").hidden = false; $("essai").hidden = !essai;
-  Object.assign(S, {etat: "decompte", t: 0, s: 4, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 1, lieu: -1, saut: null, auto: false}); sautsFaits.clear();
+  Object.assign(S, {etat: "decompte", t: 0, s: DEPART + .05, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 1, lieu: -1, saut: null, auto: false}); sautsFaits.clear();
   let n = 3;
   if (SEANCE.etat === "aucune" && !essai) { SEANCE.etat = "lancee"; SEANCE.relance = 0; envoyer({type: "lancer", s: 5}); n = 5; }
   const montre = () => { note(523, .15, "square", .04); $("gros").innerHTML = n + (n > 3 || SEANCE.etat === "lancee" ? "<small>Mets-toi en position</small>" : ""); };
@@ -1284,7 +1300,7 @@ function finir(jetee) {  // le résumé de la séance, puis retour au menu
     <p class="sous">${jetee ? "Rien n'a été enregistré." : essai ? "Sans téléphone, rien n'est enregistré." : "Le téléphone l'envoie à Poké Fit : elle compte comme toutes tes séances."}</p>
     <div class="stats"><div><span class="lab">Temps</span><b class="num">${fmt(t)}</b></div><div><span class="lab">Distance</span><b class="num">${Math.round(d || 0)} m</b></div>
       <div><span class="lab">Allure moyenne</span><b class="num">${d > 0 && t > 0 ? fmt(500 / (d / t)) : "–:––"}</b></div><div><span class="lab">Coups</span><b class="num">${S.nb}</b></div>
-      <div><span class="lab">Cadence moyenne</span><b class="num">${t > 0 ? Math.round(S.nb / (t / 60)) : 0} /min</b></div><div><span class="lab">Tours</span><b class="num">${S.tour - 1 + Math.round(S.s / LONG * 10) / 10}</b></div></div>
+      <div><span class="lab">Cadence moyenne</span><b class="num">${t > 0 ? Math.round(S.nb / (t / 60)) : 0} /min</b></div><div><span class="lab">Tours</span><b class="num">${S.tour - 1 + Math.round(surBoucle(S.s) / DECAL * 10) / 10}</b></div></div>
     <div class="ligne"><button class="go" id="fOk">▶ OK</button></div>`;
   $("fin").hidden = false;
   $("fOk").onclick = () => { $("fin").hidden = true; $("hud").hidden = true; $("menu").hidden = false;
