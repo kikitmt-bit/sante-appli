@@ -152,11 +152,11 @@ function pose(s, d) { const a = at(s); return {x: a.x + Math.cos(a.h) * d * E, z
 // Les deux rives : [s, distance du bord (m) ou null = la mer, hauteur de la rive (unités), largeur de la terre (unités)]
 const GAUCHE = [[0, 7, 4.5, 320], [55, 8, 4.8, 320], [90, 12, 3.6, 300], [102, 24, 1.4, 260], [102.5, null], [213, null], [213.5, 22, 1.6, 900], [224, 9, 4.2, 900], [292, 9, 4.2, 900],
   [324, 4.6, 1.7, 900], [349, 3.5, .8, 900], [401, 3.2, 1, 900], [470, 3, 1.3, 900], [497, 3, 1.9, 900], [503, 2.9, 4, 900], [509, 2.8, 7.5, 900], [537, 2.8, 7.5, 900], [546, 3.6, 6.5, 900],
-  [600, 4, 5.8, 900], [628, 4.4, 4, 900], [640, 5, 1.2, 900], [756, 5, 1.2, 900], [770, 14, .8, 900], [790, 24, .7, 900], [830, 28, .7, 900], [850, 14, .8, 900],
+  [600, 4, 5.8, 900], [628, 4.4, 4, 900], [640, 5, 1.2, 900], [683, 5, 1.2, 900], [688, 3.1, 1.2, 900], [696, 3.1, 1.2, 900], [701, 5, 1.2, 900], [756, 5, 1.2, 900], [770, 14, .8, 900], [790, 24, .7, 900], [830, 28, .7, 900], [850, 14, .8, 900],
   [862, 4, .9, 900], [940, 3.6, 1.4, 900], [950, 2.9, 6.5, 900], [1001, 2.7, 7.5, 900]];
 const DROITE = [[0, null], [318, null], [318.5, 15, 2.2, 300], [336, 5, 1.3, 500], [349, 3.6, .8, 800], [401, 3.5, 1.1, 800], [470, 3.2, 1.3, 800], [497, 3, 1.9, 800],
   [503, 2.9, 4, 800], [509, 2.8, 7.5, 800], [537, 2.8, 7.5, 800], [546, 3.4, 6.8, 800],
-  [600, 4.2, 5.5, 800], [628, 4.6, 3.6, 800], [640, 5, 1.2, 800], [756, 5, 1.2, 800], [770, 18, .8, 800], [790, 30, .7, 800], [830, 22, .7, 800], [850, 12, .8, 800],
+  [600, 4.2, 5.5, 800], [628, 4.6, 3.6, 800], [640, 5, 1.2, 800], [683, 5, 1.2, 800], [688, 3.1, 1.2, 800], [696, 3.1, 1.2, 800], [701, 5, 1.2, 800], [756, 5, 1.2, 800], [770, 18, .8, 800], [790, 30, .7, 800], [830, 22, .7, 800], [850, 12, .8, 800],
   [862, 4.2, .9, 800], [940, 3.6, 1.4, 800], [950, 2.9, 6.5, 800], [1001, 2.7, 7.5, 800]];
 const MER = 25;  // pour creuser l'eau du côté de la mer
 function rive(P, s) {
@@ -307,8 +307,9 @@ loin.rotation.x = -Math.PI / 2; loin.position.set((BX0 + BX1) / 2, H0 - .04, (BZ
 // les rives : une paroi (falaise ou berge de terre) et le dessus, qui descend doucement vers les terres au loin
 const matRive = new THREE.ShaderMaterial({uniforms: UNI, side: THREE.DoubleSide, vertexShader: `attribute float aW, aU, aH; varying float vW, vU, vH; varying vec3 vP;
   void main(){ vW = aW; vU = aU; vH = aH; vP = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vP,1.0); }`, fragmentShader: GLSL + `
-  varying float vW, vU, vH; varying vec3 vP;
+  varying float vW, vU, vH; varying vec3 vP; uniform sampler2D uFal, uQuai;
   vec3 falaise(float u, float y, float h){
+    if (h >= 1.7) { vec3 c = texture2D(uFal, vec2(u / (h * 3.2), clamp(y / h, 0.0, 1.0))).rgb; if (y < .45) c *= .62 + .38 * smoothstep(0.0, .45, y); return c; }
     vec2 t = floor(vec2(u, y) / GP); float n = h1(t);
     if (h < 1.7) { vec3 c = n > .6 ? vec3(.56,.42,.28) : vec3(.47,.35,.23); if (mod(t.x + floor(t.y / 3.0), 6.0) < 1.0) c = vec3(.4,.29,.19);
       if (y > h - .22) c = vec3(.45,.8,.64); else if (y > h - .33 && n > .4) c = vec3(.25,.7,.55); if (y < .18) c *= .72; return c; }
@@ -325,7 +326,10 @@ const matRive = new THREE.ShaderMaterial({uniforms: UNI, side: THREE.DoubleSide,
     if (y > lev) { c = vec3(.45,.8,.64); if (y > h - .1) c = vec3(.55,.87,.74); } else if (y > lev - .12) c = vec3(.15,.45,.33);
     if (y < .45) c *= .62 + .38 * smoothstep(0.0, .45, y);
     return c; }
-  void main(){ vec3 c = vW > .5 ? falaise(vU, vP.y, vH) : sol(vP.xz); gl_FragColor = vec4(brume(c, vP), 1.0); }`});
+  void main(){ vec3 c = vW > .5 ? falaise(vU, vP.y, vH) : sol(vP.xz); float zq = zoneEn(vP.xz);
+    if (vW > .5 && vH < 1.7 && zq > 2.5 && zq < 3.5) c = texture2D(uQuai, vec2(vU / (vH * 1.5), clamp(vP.y / vH, 0.0, 1.0))).rgb;
+    gl_FragColor = vec4(brume(c, vP), 1.0); }`});
+UNI.uFal = {value: null}; UNI.uQuai = {value: null};
 const PROF = [0, 0, 0, .5, 2.5, 7, 15, 26, 40, 56, 72];  // colonnes : bas de la paroi, haut de la paroi, puis le dessus
 function rubans(P, sg) {
   const runs = []; let run = null;
@@ -377,18 +381,6 @@ function couronne(rayon, haut, larg, f) {
   m.position.set(CX, haut / 2 - 6, CZ); scene.add(m); return m;
 }
 const terreVers = u => { const th = u * Math.PI * 2, dx = Math.sin(th), dz = Math.cos(th); return lisse(.05, .45, -dz) * (1 - .6 * lisse(.3, .9, dx)); };  // le nord, moins à l'est
-couronne(RC0 + 1000, 330, 2400, (x, W, H) => {
-  for (let X = 0; X < W; X++) { const u = X / W, t = terreVers(u); if (t <= 0) continue;
-    let h = (22 + 18 * Math.abs(Math.sin(u * 37)) + 9 * Math.sin(u * 131) + 4 * Math.sin(u * 410)) * t; h = Math.round(h);
-    for (let Y = 0; Y < h; Y++) { const neige = Y > h - 4 && h > 30; x.fillStyle = neige ? "#E8EEF6" : Y > h - 6 ? "#9AA8C8" : "#8C9ABC"; x.fillRect(X, H - 1 - Y, 1, 1); } }
-});
-couronne(RC0 + 500, 210, 2000, (x, W, H) => {
-  for (let X = 0; X < W; X++) { const u = X / W, t = terreVers(u + .02);
-    if (t > 0) { const h = Math.round((10 + 7 * Math.sin(u * 61) + 3 * Math.sin(u * 230) + (Math.floor(X / 3) % 4 === 0 ? 2 : 0)) * t);
-      for (let Y = 0; Y < h; Y++) { x.fillStyle = Y > h - 2 ? "#8EB89A" : "#78A488"; x.fillRect(X, H - 1 - Y, 1, 1); } }
-    else { const m = (X % 330); const h = m > 120 && m < 150 ? Math.round(5 * Math.sin((m - 120) / 30 * Math.PI)) : 0;  // îles au large
-      for (let Y = 0; Y < h; Y++) { x.fillStyle = Y > h - 2 ? "#9CC0A8" : "#88A89A"; x.fillRect(X, H - 1 - Y, 1, 1); } } }
-});
 
 /* ============ les décors en pixel art ============ */
 const px = (x, col, X, Y, w = 1, h = 1) => { x.fillStyle = col; x.fillRect(X, Y, w, h); };
@@ -478,7 +470,7 @@ const RETIRES = new Set(["bouee", "barque", "pokeball", "champignons", "souche",
 function decor(type, s, d, o = {}) {  // un objet posé au bord du parcours : s (m), d (m, + = à droite)
   if (RETIRES.has(type)) return null;
   if (type === "recif") return rocher3D(s, d, 2.4 * (o.arg || 1), {eau: true, mer: true, pointu: true, h: 5.2 * (o.arg || 1)});
-  if (type === "galet") return rocher3D(s, d, .8 + rnd(s * 3) * .6, {eau: true, h: .9});
+  if (type === "galet") return PLANCHE_ROCHERS ? decor("rochergen", s, d, {eau: true, dy: -.4, v: Math.floor(rnd(s * 3) * 8), k: .9 + rnd(s) * .5}) : rocher3D(s, d, .8 + rnd(s * 3) * .6, {eau: true, h: .9});
   if (type === "ilot") return ilot3D(s, d, 7 * (o.k || 1));
   const p = pose(s, d), y = o.y ?? (o.eau ? 0 : solY(s, d)), T = image(type, o.v ?? Math.floor(rnd(s * 3.1 + d) * 4), o.arg);
   const k = (o.k || 1) * ECHELLE(type) * TAILLE(type, o.arg), m = poser(T, p.x, y + (o.dy || 0), p.z, k, o.tourne !== false);
@@ -587,20 +579,18 @@ function grotte(S0, S1, fin) {
     for (const t of [[a, c, b], [b, c, d]]) { const cx = (pts[t[0]][0] + pts[t[1]][0] + pts[t[2]][0]) / 3, cy = (pts[t[0]][1] + pts[t[1]][1] + pts[t[2]][1]) / 3;
       if (Math.hypot(cx / RA, cy / (RA * 1.02)) < 1) continue; idx.push(...t); } }
   const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pts.flat(), 3)); geo.setIndex(idx);
-  const face = facettesHerbe(geo, PAL_EXT, HERBE, S0); g.add(new THREE.Mesh(face, matCouleursDS));
-  // l'arche : un anneau de gros blocs autour de l'entrée
-  const arche = new THREE.Mesh(facettes(new THREE.TorusGeometry(RA + .5, 1.5, 5, 13, Math.PI), PAL_EXT.map(c => new THREE.Color(c).multiplyScalar(.82).getStyle()), .25, S0 + 3), matCouleurs);
-  arche.position.z = .3; g.add(arche);
+  const nomFace = lune ? "rameur-grotte-selenite.webp" : "rameur-grotte-rivage.webp", fi = faceImage(nomFace, IMG_INFO[nomFace], RA * 2 + .3, 0, .2); g.add(fi.m);
+  if (fi.trou > 6.2) { const hb = fi.trou - 5.8, bouche = new THREE.Mesh(new THREE.PlaneGeometry(RA * 2 + 6, hb), new THREE.MeshBasicMaterial({color: lune ? 0x1A1626 : 0x14201A})); bouche.position.set(0, 5.8 + hb / 2, -.5); g.add(bouche); }  // le haut de l'arche, plus haut que la voûte : le noir de la grotte
   // la masse de la montagne au-dessus et de chaque côté du tunnel (jamais dedans : tout reste au-dessus de la voûte ou au-delà des parois)
-  for (let k = 0; k < (S1 - S0) / 9 + 2; k++) { const s = S0 + 4 + k * 9;
+  for (let k = 0; k < (S1 - S0) / 9 + 1; k++) { const s = S0 + 12 + k * 9;
     for (const [d, r, h, y] of [[-14 - rnd(k) * 5, 13, 16 + rnd(k * 3) * 8, 0], [14 + rnd(k + 7) * 5, 13, 15 + rnd(k * 5) * 8, 0], [0, 12, 10 + rnd(k * 9) * 6, 7.6]]) {
       const p = pose(Math.min(s, S1 - 2), d), m = new THREE.Mesh(facettesHerbe(bosse(r, h, s * 3 + d, false), PAL_EXT, HERBE, s + d), matCouleurs);
       m.position.set(p.x, y + h * .2, p.z); m.rotation.y = rnd(s + d) * 6; scene.add(m); } }
-  for (let k = 0; k < 7; k++) { const x = (rnd(k * 3.3 + S0) - .5) * W * .8; if (Math.abs(x) < RA + 3) continue; const q = pose(S0 + 2 + rnd(k) * 3, x / E); decor("pin", S0 + 2 + rnd(k) * 3, x / E, {y: crete(x) * .55 + 1, arg: 44 + k * 4, ombre: false}); }
   // l'intérieur : une voûte cabossée à facettes, éclairée par les cristaux (Mont Sélénite) ou par l'eau turquoise (grotte du rivage)
   const L = (S1 - S0 + 2) * E, voute = new THREE.CylinderGeometry(6.6, 6.6, L, 18, Math.max(4, Math.round(L / 3)), true, -Math.PI / 2, Math.PI), pv = voute.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < pv.count; i++) { v.fromBufferAttribute(pv, i); const r = Math.hypot(v.x, v.z), k = 1 - (.06 + .14 * bruitV(v.y / 2.5, Math.atan2(v.z, v.x) * 3, S0)); if (Math.abs(v.z) > .5) { v.x *= k; v.z *= k; } pv.setXYZ(i, v.x, v.y, v.z); }
-  const tun = new THREE.Mesh(facettes(voute, PAL_INT, .35, S0 + 9), new THREE.MeshBasicMaterial({vertexColors: true, side: THREE.BackSide}));
+  const tp = texImg(lune ? "rameur-paroi-selenite.webp" : "rameur-paroi-rivage.webp"); tp.wrapS = tp.wrapT = THREE.RepeatWrapping; tp.repeat.set(3, Math.max(1, Math.round(L / 9)));
+  const tun = new THREE.Mesh(voute, new THREE.MeshBasicMaterial({map: tp, side: THREE.BackSide, color: 0xC8C8C8}));
   tun.rotation.x = -Math.PI / 2; const gt = new THREE.Group(); gt.add(tun); const mid = at(S0 + (S1 - S0) / 2); gt.position.set(mid.x, 0, mid.z); gt.rotation.y = -mid.h; scene.add(gt);
   for (let i = 0; i < Math.round((S1 - S0) / (lune ? 2 : 4)); i++) { const s = S0 + 2 + rnd(i * 3 + S0) * (S1 - S0 - 4), cote = i % 2 ? 1 : -1, q = pose(s, cote * (2.3 + rnd(i) * .3)), y = .3 + rnd(i * 5) * 3.5;
     if (lune) { const cr = poser(image("cristal", i % 3), q.x, y, q.z, 1 + rnd(i * 7)); cr.userData.cristal = i; }
@@ -620,13 +610,11 @@ const matCouleursDS = new THREE.MeshBasicMaterial({vertexColors: true, side: THR
 const RIDEAUX = [];
 function rideau(s, RA) {
   const a = at(s), larg = RA * 2 + 1.5, haut = RA + 1.2;
-  const t = tex(toile(32, 64, x => { for (let Y = 0; Y < 64; Y++) for (let X = 0; X < 32; X++) { const n = rnd(X * 13 + Math.floor((Y + rnd(X) * 40) / 4) * 7);
-      if (n < .12) continue; px(x, n > .8 ? "#FFFFFF" : n > .45 ? "#C8ECFF" : "#88CCF4", X, Y); } }));
-  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 2);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(larg, haut), new THREE.MeshBasicMaterial({map: t, transparent: true, opacity: .88, side: THREE.DoubleSide, depthWrite: false}));
-  m.position.set(a.x, haut / 2 - .1, a.z); m.rotation.y = -a.h; m.translateZ(1.1); scene.add(m);
-  const crete = new THREE.Mesh(new THREE.BoxGeometry(larg, .35, .5), new THREE.MeshBasicMaterial({color: 0xF4FCFF})); crete.position.set(a.x, haut - .1, a.z); crete.rotation.y = -a.h; crete.translateZ(1.1); scene.add(crete);
-  const bassin = new THREE.Mesh(new THREE.CircleGeometry(larg * .7, 20), new THREE.MeshBasicMaterial({color: 0xF4FCFF, transparent: true, opacity: .8, depthWrite: false})); bassin.rotation.x = -Math.PI / 2; bassin.position.set(a.x, .05, a.z); scene.add(bassin);
+  const t = texImg("rameur-cascade.webp"); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(larg / 7, haut / 10);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(larg, haut), new THREE.MeshBasicMaterial({map: t, transparent: true, opacity: .92, side: THREE.DoubleSide, depthWrite: false}));
+  m.position.set(a.x, haut / 2 - .1, a.z); m.rotation.y = -a.h; m.translateZ(-.1); scene.add(m);
+  const em = new THREE.MeshBasicMaterial({map: texImg("rameur-ecume.webp"), transparent: true, alphaTest: .5, side: THREE.DoubleSide}), ew = larg * 1.15, [ix, iy] = IMG_INFO["rameur-ecume.webp"], eh = ew * iy / ix;
+  const ec = new THREE.Mesh(new THREE.PlaneGeometry(ew, eh), em); ec.position.set(a.x, eh / 2 - .5, a.z); ec.rotation.y = -a.h; ec.translateZ(1.6); scene.add(ec);
   RIDEAUX.push({t, s, x: a.x, z: a.z, larg, passe: false});
 }
 // les fonds au loin, dessinés par ChatGPT pour Kiki (08/11) : un par paysage, posés loin devant et qui s'effacent quand on s'en approche ou qu'on change de paysage
@@ -649,24 +637,6 @@ function majFonds() {
     const pres = Math.abs(S.s - r.s) < 40; if (pres && Math.random() < .5) goutte(r.x + (Math.random() - .5) * r.larg, .2, r.z + (Math.random() - .5) * 2, (Math.random() - .5) * 2, 1.5 + Math.random() * 2.5, (Math.random() - .5) * 2, .9); }
   const e = $("embruns"); if (+e.style.opacity > 0) e.style.opacity = Math.max(0, +e.style.opacity - .012);
 }
-function pontPierre(s, haut = 4.4) {  // le pont de pierre de Jadielle : une arche au-dessus de la rivière, on passe dessous
-  const rg = rive(GAUCHE, s), rd = rive(DROITE, s), dl = rg ? rg.d : 6, dr = rd ? rd.d : 6, span = (dl + dr + 9) * E, ep = 3.6;
-  const Wp = Math.round(span / DECO), Hp = Math.round((haut + 1.3) / DECO), cx0 = Math.round((dl + 4.5) * E / DECO), aw = Math.round((Math.min(dl, dr) - .2) * E / DECO), ah = Math.round((haut - .5) / DECO);
-  const face = toile(Wp, Hp, x => {
-    for (let Y = 0; Y < Hp; Y++) for (let X = 0; X < Wp; X++) { const u = (X - cx0) / aw, v = (Hp - Y) / ah, dA = Math.sqrt(u * u + v * v); if (dA < 1) continue;
-      const rang = Math.floor(Y / 6), dec = rang % 2 ? 5 : 0, joint = Y % 6 === 0 || (X + dec) % 10 === 0, n = rnd(Math.floor((X + dec) / 10) * 13 + rang * 7);
-      let c0 = joint ? "#6E6A70" : n > .66 ? "#C8C4C0" : n > .33 ? "#B4B0AE" : "#A29E9E";
-      if (dA < 1.14) c0 = joint ? "#5A565C" : (Math.floor(Math.atan2(v, u) / .2) % 2 ? "#ACA6A2" : "#948E8C");
-      if (Y < 9) c0 = Y < 2 ? "#E0DCD8" : Y === 8 ? "#7A767C" : "#C8C4C0";
-      px(x, c0, X, Y); }
-    for (let k = 0; k < Wp / 6; k++) { const X = rnd(k * 3.7) * Wp | 0, Y = 9 + rnd(k * 5.1) * 8 | 0; px(x, "#5A9A48", X, Y, 2, 1); }  // un peu de lierre
-    contour(x, Wp, Hp, [44, 40, 46]); });
-  const mat = new THREE.MeshBasicMaterial({map: tex(face), transparent: true, alphaTest: .5, side: THREE.DoubleSide}), g = new THREE.Group();
-  for (const z of [-ep / 2, ep / 2]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(span, Hp * DECO), mat); m.position.set(0, Hp * DECO / 2, z); g.add(m); }
-  const dessus = texte(16, 16, x => { for (let Y = 0; Y < 16; Y++) for (let X = 0; X < 16; X++) px(x, (X % 8 === 0 || Y % 8 === 0) ? "#8A8690" : rnd(X + Y * 16) > .5 ? "#B8B4B0" : "#A8A4A4", X, Y); });
-  const tablier = new THREE.Mesh(new THREE.BoxGeometry(span, .5, ep), dessus); tablier.position.y = Hp * DECO - 1; g.add(tablier);
-  const p = pose(s, (dr - dl) / 2); g.position.set(p.x, 0, p.z); g.rotation.y = -p.h; scene.add(g);
-}
 function tronc(s, larg = 5) {  // un tronc qui flotte en travers : ton Pokémon saute par-dessus
   const ecorce = texte(32, 8, x => { for (let Y = 0; Y < 8; Y++) for (let X = 0; X < 32; X++) px(x, (X + (Y % 2) * 3) % 7 === 0 ? "#4A2E1A" : Y < 2 ? "#9A6A40" : "#7A5030", X, Y); px(x, "#5A8A3A", 6, 0, 5, 1); px(x, "#5A8A3A", 20, 0, 4, 1); });
   const bout = texte(10, 10, x => { for (let Y = 0; Y < 10; Y++) for (let X = 0; X < 10; X++) { const d = Math.hypot(X - 4.5, Y - 4.5); if (d < 5) px(x, d > 4 ? "#5A3A20" : Math.round(d) % 2 ? "#D8B080" : "#B88A58", X, Y); } });
@@ -685,9 +655,8 @@ function peuplerSuite() {  // la deuxième moitié du parcours : posé vite (Kik
   for (let s = 646, i = 0; s < 758; s += 11, i++) decor("lampe", s, (i % 2 ? 1 : -1) * 6.4);
   D2([[658, -7, "banc"], [673, 7, "fleurs"], [698, -7, "boite"], [718, 7, "banc"], [735, -7.2, "fleurs"], [744, 7.2, "boite"], [700, -7.2, "cloture"], [762, 9, "pin", 50]]);
   decor("barque", 661, 4, {eau: true, dy: -.3, tourne: false}); decor("barque", 719, -4.1, {eau: true, dy: -.3, tourne: false});
-  pontPierre(692, 4.4);
-  for (const c of [-1, 1]) decor("lampe", 692.6, c * 4.2, {y: 4.97});
-  ponton(741, -7.5, 7.5, .8, 2.2);
+  pontPierre(692);
+  pontonImage(741, .8);
   // le lac : des îlots, des nénuphars, un tronc à sauter
   ilot3D(812, -15, 8); ilot3D(838, 17, 6); ilot3D(826, -24, 4.5);
   for (const [s, d] of [[772, -9], [776, 8.5], [790, -13], [797, 14], [815, 12], [823, -10], [842, 9], [849, -8]]) plat("nenuphar", s, d, 1.4, Math.floor(rnd(s) * 3));
@@ -704,7 +673,7 @@ function peuplerSuite() {  // la deuxième moitié du parcours : posé vite (Kik
   const P = (n, s, d, o) => pokemon(n, s, d, o).catch(() => {}), V = (nom, s, d, o) => villageois(nom, s, d, o).catch(() => {});
   P("0074", 560, -6.8, {k: 1.4}); P("0095", 604, 8.4, {k: 1.05, joie: false}); P("0041", 590, -7.4, {k: 1.2});
   V("youngster", 650, -7.2, {marche: [646, 688, 1.3]}); V("woman_1", 716, 7.2, {}); V("fisher", 741, -6.6, {image: 0, y: .96});
-  P("0052", 670, -7.4, {k: 1.4}); P("0058", 709, 7.3, {k: 1.4}); P("0025", 692, -2.4, {dy: 4.97, k: 1.35}); P("0039", 692, 2.4, {dy: 4.97, k: 1.35}); P("0060", 741, 3.2, {dy: .96, k: 1.3});
+  P("0052", 670, -7.4, {k: 1.4}); P("0058", 709, 7.3, {k: 1.4}); P("0025", 692, -2.4, {dy: PONT.deck, k: 1.35}); P("0039", 692, 2.4, {dy: PONT.deck, k: 1.35}); P("0060", 741, 3.2, {dy: .96, k: 1.3});
   P("0054", 782, -9, {eau: true, flotte: true, k: 1.45}); P("0060", 820, 7, {eau: true, flotte: true, k: 1.4}); P("0072", 846, -6, {eau: true, flotte: true, k: 1.5}); P("0118", 800, 10, {eau: true, flotte: true, k: 1.4});
   P("0043", 880, -5.2, {k: 1.4}); P("0013", 915, 5.2, {k: 1.4}); P("0048", 936, -5.4, {k: 1.4});
   SURPRISES.push([892, -5.5, "0023"]); ENVOLS.push([664, -8.5, 3]);
@@ -842,6 +811,49 @@ function son(dt) {
 }
 
 UNI.uL = {value: .8};
+/* ============ les images dessinées par ChatGPT pour Kiki (08/11, nuit) : anneaux d'horizon, entrées de grotte, parois, cascade, pont, ponton, rochers ============ */
+const IMG_INFO = {"rameur-anneau-montagnes.webp": [1536, 464], "rameur-anneau-collines.webp": [1536, 261], "rameur-ecume.webp": [2099, 453], "rameur-cascade.webp": [512, 768], "rameur-grotte-selenite.webp": {"taille": [1536, 996], "x0": 0.353515625, "x1": 0.62890625, "haut": 0.3644578313253012}, "rameur-grotte-rivage.webp": {"taille": [1536, 1007], "x0": 0.34375, "x1": 0.6276041666666666, "haut": 0.3753723932472691}, "rameur-pont.webp": {"taille": [1536, 894], "x0": 0.228515625, "x1": 0.767578125, "haut": 0.5100671140939598}, "rameur-ponton.webp": {"taille": [2172, 624], "dessus": 0.5576923076923077}, "rochers": [[48, 272, 283, 197], [399, 180, 349, 296], [814, 187, 336, 296], [1217, 100, 290, 383], [15, 701, 345, 203], [413, 659, 323, 238], [796, 729, 353, 164], [1202, 634, 318, 274]]};
+function texImg(nom, f) { const t = new THREE.TextureLoader().setCrossOrigin("anonymous").load(FONDS_URL + nom, () => f && f(t)); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter; return t; }
+// les anneaux d'horizon : ils font tout le tour du monde, toujours les mêmes (Kiki : jamais un fond coupé ni un fond qui change en fondu)
+function anneau(nom, rayon, rep, bas) {
+  const mat = new THREE.MeshBasicMaterial({transparent: true, alphaTest: .5, side: THREE.BackSide, fog: false}), m = new THREE.Mesh(new THREE.CylinderGeometry(rayon, rayon, 1, 160, 1, true), mat);
+  m.visible = false; scene.add(m);
+  texImg(nom, t => { t.wrapS = THREE.RepeatWrapping; t.repeat.set(rep, 1); t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; mat.map = t; mat.needsUpdate = true;
+    const H = 2 * Math.PI * rayon / rep * t.image.height / t.image.width; m.scale.y = H; m.position.set(CX, bas + H / 2, CZ); m.visible = true; });
+}
+// une image posée de face, à plat, avec son trou (entrée de grotte, arche de pont) centré sur la rivière
+function faceImage(nom, inf, largeurTrou, hauteurMin, z, sy = 1) {
+  const [w, h] = inf.taille, ratio = h / w * sy, f = inf.x1 - inf.x0;
+  let W = largeurTrou / f; if (inf.haut * W * ratio < hauteurMin) W = hauteurMin / (inf.haut * ratio);
+  const H = W * ratio, mat = new THREE.MeshBasicMaterial({map: texImg(nom), transparent: true, alphaTest: .5, side: THREE.DoubleSide});
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); m.position.set(-((inf.x0 + inf.x1) / 2 - .5) * W, H / 2 - .35, z);
+  return {m, W, H, trou: inf.haut * H - .35};
+}
+function pontPierre(s) {  // le pont de pierre de Jadielle (image) : on passe sous l'arche
+  const rg = rive(GAUCHE, s), rd = rive(DROITE, s), dl = rg ? rg.d : 5, dr = rd ? rd.d : 5, ep = 3.6, g = new THREE.Group(), p = pose(s, (dr - dl) / 2);
+  const inf = IMG_INFO["rameur-pont.webp"];
+  for (const z of [-ep / 2, ep / 2]) { const f = faceImage("rameur-pont.webp", inf, (dl + dr) * E + 1.2, 5, z, .72); g.add(f.m); PONT.deck = f.trou + (f.H - .35 - f.trou) * .42; PONT.W = f.W; }
+  const dessus = texte(16, 16, x => { for (let Y = 0; Y < 16; Y++) for (let X = 0; X < 16; X++) px(x, (X % 8 === 0 || Y % 8 === 0) ? "#8A8690" : rnd(X + Y * 16) > .5 ? "#C8C4C0" : "#B8B4B0", X, Y); });
+  const tablier = new THREE.Mesh(new THREE.BoxGeometry(PONT.W * .96, .4, ep - .1), dessus); tablier.position.y = PONT.deck - .2; g.add(tablier);
+  g.position.set(p.x, 0, p.z); g.rotation.y = -p.h; scene.add(g);
+}
+const PONT = {deck: 5, W: 30};
+function pontonImage(s, haut = .8) {  // le ponton bas de Jadielle (image, vu de face des deux côtés) : ton Pokémon plonge dessous
+  const inf = IMG_INFO["rameur-ponton.webp"], [w, h] = inf.taille, W = (5 + 5 + 4) * E, H = W * h / w, larg = 2.2 * E, g = new THREE.Group(), a = at(s);
+  const mat = new THREE.MeshBasicMaterial({map: texImg("rameur-ponton.webp"), transparent: true, alphaTest: .5, side: THREE.DoubleSide});
+  for (const z of [-larg / 2, larg / 2]) { const m = new THREE.Mesh(new THREE.PlaneGeometry(W, H), mat); m.position.set(0, haut + inf.dessus * H - H / 2, z); g.add(m); }
+  const pl = planches(Math.round(larg / DECO), Math.round(W / DECO), true), cote = texte(8, 4, x => px(x, "#7A5030", 0, 0, 8, 4));
+  const tablier = new THREE.Mesh(new THREE.BoxGeometry(W * .97, .3, larg), [cote, cote, pl, pl, cote, cote]); tablier.position.y = haut - .15; g.add(tablier);
+  g.position.set(a.x, 0, a.z); g.rotation.y = -a.h; scene.add(g);
+  const om = new THREE.Mesh(new THREE.PlaneGeometry(W, larg + 1.2), new THREE.MeshBasicMaterial({color: 0x0A2848, transparent: true, opacity: .3, depthWrite: false})); om.rotation.x = -Math.PI / 2;
+  const go = new THREE.Group(); go.add(om); go.position.set(a.x, .02, a.z); go.rotation.y = -a.h; scene.add(go);
+}
+// les rochers de rivière : une planche de 8, découpés et réduits à la finesse des autres décors
+let PLANCHE_ROCHERS = null;
+const chargerRochers = () => new Promise(ok => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => { PLANCHE_ROCHERS = i; ok(); }; i.onerror = () => ok(); i.src = FONDS_URL + "rameur-rochers.webp"; });
+DESSINS.rochergen = k => { const b = IMG_INFO.rochers[(k - 1) % IMG_INFO.rochers.length], r = 1 / 10, w = Math.round(b[2] * r), h = Math.round(b[3] * r);
+  return toile(w, h, x => { x.imageSmoothingEnabled = false; x.drawImage(PLANCHE_ROCHERS, b[0], b[1], b[2], b[3], 0, 0, w, h); }); };
+
 /* ============ les sprites : Pokémon de Donjon Mystère, habitants de Rouge Feu ============ */
 const CACHE = {}, IMGS = {};
 const chargerImg = url => IMGS[url] || (IMGS[url] = new Promise((ok, ko) => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => ok(i); i.onerror = ko; i.src = BUNDLE[url] || url; }));
@@ -964,7 +976,6 @@ function peupler() {
   for (const [t, s2, d2] of [["arbuste", 444, -9], ["arbuste", 229, -11.5], ["boulder", 503, 5.4], ["pokeball", 456, 7.6], ["galet", 133, -9], ["galet", 168, 8], ["galet", 196, -7], ["galet", 105, 9], ["fleurs", 239, -12.5], ["fleurs", 450, -10], ["herbes", 236, -12]])
     decor(t, s2, d2, {eau: t === "galet", dy: t === "galet" ? -.25 : 0, v: Math.floor(rnd(s2 * 1.7) * 4)});
   phare(237, -13.5); moulin(437, 22);
-  fond("mer", 150, -75, 750, 1250, 40, 330); fond("montagnes", 470, 0, 850, 1500, 380, 650); fond("jadielle", 610, 5, 650, 1000, 600, 770); fond("lac", 790, -5, 800, 1300, 752, 960);
   grotte(T1[0], T1[1], false); grotte(S_GROTTE, LONG, true); peuplerSuite();
   // les arbres au loin : des bosquets plantés tout seuls hors du parcours, jamais en rangée (taches de bruit)
   forets();
@@ -1337,7 +1348,9 @@ $("bAuto").onclick = e => { e.stopPropagation(); S.auto = !S.auto; $("bAuto").cl
 cv.addEventListener("pointerdown", () => { audio(); if (essai && S.etat === "course") coup(.6 + Math.random() * .25); });
 addEventListener("keydown", e => { if (e.code === "Space" && essai && S.etat === "course") { e.preventDefault(); coup(.7); } });
 boutonsNageurs(); dessinerProg(); majMenu(); allumer();
-chargerFRLG().then(() => {
+anneau("rameur-anneau-montagnes.webp", RC0 + 1000, 9, -12); anneau("rameur-anneau-collines.webp", RC0 + 500, 11, -6);
+for (const [u, n] of [["uFal", "rameur-falaise.webp"], ["uQuai", "rameur-quai.webp"]]) { const t = texImg(n); t.wrapS = THREE.RepeatWrapping; UNI[u].value = t; }
+Promise.all([chargerFRLG(), chargerRochers()]).then(() => {
   texSol.image = IMG_FRLG.sol; texSol.needsUpdate = true;
   peupler(); habiter(); preparerVie(); construire(choix); iconeProg();
   for (const [s, d, n] of SURPRISES) surprise(s, d, n).catch(() => {});
