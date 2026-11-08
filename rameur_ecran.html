@@ -18,6 +18,7 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 #c{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block}
 #sombre{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(6,8,16,.2) 20%,rgba(6,8,16,.95) 85%);opacity:0}
 #flash{position:fixed;inset:0;pointer-events:none;background:#fff;opacity:0}
+#embruns{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 12% 28%,rgba(235,248,255,.8) 0 7px,transparent 9px),radial-gradient(circle at 78% 18%,rgba(235,248,255,.75) 0 10px,transparent 12px),radial-gradient(circle at 64% 70%,rgba(235,248,255,.7) 0 6px,transparent 8px),radial-gradient(circle at 30% 82%,rgba(235,248,255,.75) 0 9px,transparent 11px),radial-gradient(circle at 88% 56%,rgba(235,248,255,.7) 0 5px,transparent 7px),radial-gradient(circle at 44% 40%,rgba(235,248,255,.6) 0 4px,transparent 6px),radial-gradient(circle at 6% 66%,rgba(235,248,255,.7) 0 8px,transparent 10px),linear-gradient(rgba(200,235,255,.35),rgba(200,235,255,.15))}
 #vitesse{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 55%,transparent 60%,rgba(255,255,255,.28) 84%,rgba(255,255,255,.6) 100%)}
 .boite{background:var(--creme);border:3px solid var(--bord);border-radius:12px 5px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
 .lab{font-size:15px;color:var(--encre2);display:block;line-height:1;text-transform:uppercase;letter-spacing:.05em}
@@ -82,7 +83,7 @@ button.on{background:var(--or)}
 @media (max-width:760px){#hV{font-size:32px}#hg b{font-size:22px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}#panneau b{font-size:20px}}
 </style>
 <canvas id="c" aria-label="La rivière, vue de derrière ton Pokémon qui nage"></canvas>
-<div id="vitesse"></div><div id="sombre"></div><div id="flash"></div>
+<div id="vitesse"></div><div id="sombre"></div><div id="flash"></div><div id="embruns"></div>
 <div id="hud" hidden>
   <div class="boite" id="hg"><div><span class="lab">Temps</span><b class="num" id="hT">0:00</b></div><div><span class="lab">Distance</span><b class="num" id="hD">0 m</b></div>
     <div><span class="lab">Cadence</span><b class="num" id="hC">0</b></div><div><span class="lab">Coups</span><b class="num" id="hN">0</b></div></div>
@@ -571,36 +572,82 @@ function bruitV(x, y, g) {  // un bruit doux (pour des rochers naturels, jamais 
   return lerp(lerp(v(xi, yi), v(xi + 1, yi), l(xf)), lerp(v(xi, yi + 1), v(xi + 1, yi + 1), l(xf)), l(yf));
 }
 function grotte(S0, S1, fin) {
-  // la montagne : une crête irrégulière, de la roche en facettes éclairées du haut à gauche, de l'herbe et des sapins dessus, l'entrée sombre en bas
-  const W = 460, H = 300, ax = W / 2, aw = 52, ah = 58, K = 1.2, g = S0 * .37;
-  const c = toile(W, H, x => {
-    const PAL = ["#3E3833", "#5A5048", "#7A6E62", "#9C8E7E", "#C2B4A0"], HERBE = ["#2E6A2E", "#3E8A3A", "#5AB048"];
-    const haut = []; for (let X = 0; X < W; X++) { const u = Math.abs(X - ax) / ax;
-      haut[X] = Math.round(H - 66 - (H - 100) * Math.pow(Math.max(0, 1 - u), .85) - 12 * Math.sin(X * .045 + g) - 6 * Math.sin(X * .13 + g * 2) - 3 * rnd(X + g)); }
-    const hf = (X, Y) => bruitV(X / 30, Y / 22, g) + .5 * bruitV(X / 10, Y / 8, g + 3) + .2 * bruitV(X / 4, Y / 4, g + 7);
-    for (let X = 0; X < W; X++) for (let Y = Math.max(0, haut[X]); Y < H; Y++) {
-      const u = (X - ax) / aw, v = (H - Y) / ah, dA = Math.sqrt(u * u + v * v);
-      if (dA < 1) continue;  // l'entrée : on voit le tunnel
-      const lum = (hf(X - 2, Y - 2) - hf(X + 2, Y + 2)) * 5 - (X - ax) / ax * .35 + (rnd(X * 3.1 + Y * 7.7) - .5) * .35;
-      let i = clamp(Math.round(2 + lum * 1.6), 0, 4);
-      if (dA < 1.35) i = Math.max(0, i - (dA < 1.12 ? 2 : 1));  // l'ombre autour de l'entrée
-      let col = PAL[i];
-      const prof = Y - haut[X];
-      if (prof < 3 + 3 * rnd(X + g)) col = HERBE[prof < 1 ? 2 : 1];
-      else if (prof < 40 && bruitV(X / 14, Y / 10, g + 11) > .66 + prof / 120) col = HERBE[i > 2 ? 1 : 0];  // de la mousse en haut
-      px(x, col, X, Y);
-    }
-    for (let k = 0; k < 9; k++) { const X = Math.round(30 + rnd(k * 3.3 + g) * (W - 60)); if (Math.abs(X - ax) < aw + 10) continue; const p = DESSINS.pin(k + 1); x.drawImage(p, Math.round(X - p.width / 2), haut[X] - p.height + 5); }
-    contour(x, W, H, [30, 24, 20]); });
-  const p = at(S0), m = new THREE.Mesh(new THREE.PlaneGeometry(W * DECO * K, H * DECO * K), new THREE.MeshBasicMaterial({map: tex(c), transparent: true, alphaTest: .5, side: THREE.DoubleSide}));
-  m.geometry.translate(0, H * DECO * K / 2 - .6, 0); m.position.set(p.x, 0, p.z); scene.add(m); m.lookAt(p.x - Math.sin(p.h), 0, p.z + Math.cos(p.h));
-  const L = (S1 - S0 + 2) * E, roche = texte(64, 64, x => { for (let Y = 0; Y < 64; Y++) for (let X = 0; X < 64; X++) { const n = bruitV(X / 6, Y / 5, g) + (rnd(X * 7 + Y * 13) - .5) * .3; px(x, n > .75 ? "#4A3A30" : n > .45 ? "#2E241E" : "#221A16", X, Y); } });
-  roche.map.wrapS = roche.map.wrapT = THREE.RepeatWrapping; roche.map.repeat.set(8, 6); roche.side = THREE.BackSide;
-  const tun = new THREE.Mesh(new THREE.CylinderGeometry(6.6, 6.6, L, 20, 1, true, -Math.PI / 2, Math.PI), roche);
+  // Kiki, 08/11 : « la montagne de l'extérieur et l'intérieur de la grotte, pas très beaux » : tout est refait en volume à facettes, comme les récifs.
+  // Le Mont Sélénite (le tunnel) : roche grise et violette, pierres de lune qui brillent. La grotte du rivage (la fin) : roche brune, mousse verte, eau turquoise.
+  const lune = !fin, a0 = at(S0), g = new THREE.Group(); g.position.set(a0.x, 0, a0.z); g.rotation.y = -a0.h; scene.add(g);
+  const PAL_EXT = lune ? ["#3E3A46", "#55505E", "#6E6878", "#8C8494", "#ACA4B0"] : ["#4A3E34", "#625244", "#7E6A56", "#9C866C", "#BCA488"];
+  const HERBE = ["#2A6A30", "#3A8A3A", "#56AA48", "#7CC858"];
+  const PAL_INT = lune ? ["#14121C", "#1E1A2A", "#2A2438", "#3A3250", "#4C426A"] : ["#101A16", "#18261E", "#22362A", "#2E4A36", "#3E6044"];
+  // la face de la montagne : une grille cabossée dont on retire l'arche, de l'herbe sur ce qui regarde vers le haut
+  const W = 74, Hm = lune ? 30 : 24, nx = 46, ny = 20, RA = 7.1, pts = [], idx = [];
+  const crete = x => Hm * (.62 + .38 * Math.cos(x / W * Math.PI * 1.1)) + 3.5 * Math.sin(x * .21 + S0) + 2 * Math.sin(x * .53 + S0 * 2);
+  for (let j = 0; j <= ny; j++) for (let i = 0; i <= nx; i++) { const x = (i / nx - .5) * W, v = j / ny, y = v * crete(x), dans = Math.hypot(x / RA, y / (RA * 1.02));
+    let z = (bruitV(x / 5, y / 4, S0) - .5) * 4.2 + v * v * 6; if (dans < 1.7) z = Math.max(z, .4); pts.push([x, y, -z]); }
+  for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
+    for (const t of [[a, c, b], [b, c, d]]) { const cx = (pts[t[0]][0] + pts[t[1]][0] + pts[t[2]][0]) / 3, cy = (pts[t[0]][1] + pts[t[1]][1] + pts[t[2]][1]) / 3;
+      if (Math.hypot(cx / RA, cy / (RA * 1.02)) < 1) continue; idx.push(...t); } }
+  const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pts.flat(), 3)); geo.setIndex(idx);
+  const face = facettesHerbe(geo, PAL_EXT, HERBE, S0); g.add(new THREE.Mesh(face, matCouleursDS));
+  // l'arche : un anneau de gros blocs autour de l'entrée
+  const arche = new THREE.Mesh(facettes(new THREE.TorusGeometry(RA + .5, 1.5, 5, 13, Math.PI), PAL_EXT.map(c => new THREE.Color(c).multiplyScalar(.82).getStyle()), .25, S0 + 3), matCouleurs);
+  arche.position.z = .3; g.add(arche);
+  // la masse de la montagne au-dessus et de chaque côté du tunnel (jamais dedans : tout reste au-dessus de la voûte ou au-delà des parois)
+  for (let k = 0; k < (S1 - S0) / 9 + 2; k++) { const s = S0 + 4 + k * 9;
+    for (const [d, r, h, y] of [[-14 - rnd(k) * 5, 13, 16 + rnd(k * 3) * 8, 0], [14 + rnd(k + 7) * 5, 13, 15 + rnd(k * 5) * 8, 0], [0, 12, 10 + rnd(k * 9) * 6, 7.6]]) {
+      const p = pose(Math.min(s, S1 - 2), d), m = new THREE.Mesh(facettesHerbe(bosse(r, h, s * 3 + d, false), PAL_EXT, HERBE, s + d), matCouleurs);
+      m.position.set(p.x, y + h * .2, p.z); m.rotation.y = rnd(s + d) * 6; scene.add(m); } }
+  for (let k = 0; k < 7; k++) { const x = (rnd(k * 3.3 + S0) - .5) * W * .8; if (Math.abs(x) < RA + 3) continue; const q = pose(S0 + 2 + rnd(k) * 3, x / E); decor("pin", S0 + 2 + rnd(k) * 3, x / E, {y: crete(x) * .55 + 1, arg: 44 + k * 4, ombre: false}); }
+  // l'intérieur : une voûte cabossée à facettes, éclairée par les cristaux (Mont Sélénite) ou par l'eau turquoise (grotte du rivage)
+  const L = (S1 - S0 + 2) * E, voute = new THREE.CylinderGeometry(6.6, 6.6, L, 18, Math.max(4, Math.round(L / 3)), true, -Math.PI / 2, Math.PI), pv = voute.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < pv.count; i++) { v.fromBufferAttribute(pv, i); const r = Math.hypot(v.x, v.z), k = 1 - (.06 + .14 * bruitV(v.y / 2.5, Math.atan2(v.z, v.x) * 3, S0)); if (Math.abs(v.z) > .5) { v.x *= k; v.z *= k; } pv.setXYZ(i, v.x, v.y, v.z); }
+  const tun = new THREE.Mesh(facettes(voute, PAL_INT, .35, S0 + 9), new THREE.MeshBasicMaterial({vertexColors: true, side: THREE.BackSide}));
   tun.rotation.x = -Math.PI / 2; const gt = new THREE.Group(); gt.add(tun); const mid = at(S0 + (S1 - S0) / 2); gt.position.set(mid.x, 0, mid.z); gt.rotation.y = -mid.h; scene.add(gt);
-  for (let i = 0; i < Math.round((S1 - S0) / 2.5); i++) { const s = S0 + 2 + rnd(i * 3 + g) * (S1 - S0 - 4), cote = i % 2 ? 1 : -1, q = pose(s, cote * (2.4 + rnd(i) * .3));
-    const cr = poser(image("cristal", i % 3), q.x, .3 + rnd(i * 5) * 3.5, q.z, 1 + rnd(i * 7)); cr.userData.cristal = i; }
+  for (let i = 0; i < Math.round((S1 - S0) / (lune ? 2 : 4)); i++) { const s = S0 + 2 + rnd(i * 3 + S0) * (S1 - S0 - 4), cote = i % 2 ? 1 : -1, q = pose(s, cote * (2.3 + rnd(i) * .3)), y = .3 + rnd(i * 5) * 3.5;
+    if (lune) { const cr = poser(image("cristal", i % 3), q.x, y, q.z, 1 + rnd(i * 7)); cr.userData.cristal = i; }
+    const h = poser(image("lumiere"), q.x, y + .3, q.z, lune ? .9 : .7); h.material = h.material.clone(); h.material.alphaTest = .02; h.material.depthWrite = false; h.material.transparent = true; h.material.blending = THREE.AdditiveBlending;
+    h.material.color.set(lune ? 0x6070FF : 0x30C8A0); h.material.opacity = .55; }
   const sortie = pose(fin ? LONG - 1 : S1 + 1, 0), lum = poser(image("lumiere"), sortie.x, 0, sortie.z, 2.2); lum.material = lum.material.clone(); lum.material.alphaTest = .02; lum.material.depthWrite = false; lum.material.fog = false;
+  if (lune) rideau(S0 - .4, RA);
+}
+function facettesHerbe(geo, roche, herbe, graine) {  // comme facettes, mais ce qui regarde vers le haut devient de l'herbe
+  const g = facettes(geo, roche, .18, graine), n = g.attributes.normal, c = g.attributes.color;
+  for (let i = 0; i < n.count; i += 3) { const ny = n.getY(i); if (ny < .62) continue; const t = herbe[Math.min(herbe.length - 1, Math.floor((ny - .62) / .38 * herbe.length + rnd(i + graine) * 1.2))], col = new THREE.Color(t);
+    for (let k = 0; k < 3; k++) c.setXYZ(i + k, col.r, col.g, col.b); }
+  return g;
+}
+const matCouleursDS = new THREE.MeshBasicMaterial({vertexColors: true, side: THREE.DoubleSide});
+// la cascade de l'entrée du Mont Sélénite : un rideau d'eau qui tombe devant le tunnel, on passe au travers (Kiki : la cascade = un moment fort, jamais de côté)
+const RIDEAUX = [];
+function rideau(s, RA) {
+  const a = at(s), larg = RA * 2 + 1.5, haut = RA + 1.2;
+  const t = tex(toile(32, 64, x => { for (let Y = 0; Y < 64; Y++) for (let X = 0; X < 32; X++) { const n = rnd(X * 13 + Math.floor((Y + rnd(X) * 40) / 4) * 7);
+      if (n < .12) continue; px(x, n > .8 ? "#FFFFFF" : n > .45 ? "#C8ECFF" : "#88CCF4", X, Y); } }));
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(4, 2);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(larg, haut), new THREE.MeshBasicMaterial({map: t, transparent: true, opacity: .88, side: THREE.DoubleSide, depthWrite: false}));
+  m.position.set(a.x, haut / 2 - .1, a.z); m.rotation.y = -a.h; m.translateZ(1.1); scene.add(m);
+  const crete = new THREE.Mesh(new THREE.BoxGeometry(larg, .35, .5), new THREE.MeshBasicMaterial({color: 0xF4FCFF})); crete.position.set(a.x, haut - .1, a.z); crete.rotation.y = -a.h; crete.translateZ(1.1); scene.add(crete);
+  const bassin = new THREE.Mesh(new THREE.CircleGeometry(larg * .7, 20), new THREE.MeshBasicMaterial({color: 0xF4FCFF, transparent: true, opacity: .8, depthWrite: false})); bassin.rotation.x = -Math.PI / 2; bassin.position.set(a.x, .05, a.z); scene.add(bassin);
+  RIDEAUX.push({t, s, x: a.x, z: a.z, larg, passe: false});
+}
+// les fonds au loin, dessinés par ChatGPT pour Kiki (08/11) : un par paysage, posés loin devant et qui s'effacent quand on s'en approche ou qu'on change de paysage
+const FONDS_URL = /^(localhost|127\.)/.test(location.hostname) ? "scenes/" : "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/";
+const FONDS = [];
+function fond(nom, sVue, angle, dist, larg, s0, s1) {
+  const a = at(sVue), h = a.h + angle * Math.PI / 180, x = a.x + Math.sin(h) * dist, z = a.z - Math.cos(h) * dist;
+  const mat = new THREE.MeshBasicMaterial({transparent: true, opacity: 0, depthWrite: false, fog: false, side: THREE.DoubleSide});
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat); m.position.set(x, 0, z); m.lookAt(a.x, 0, a.z); m.visible = false; scene.add(m);
+  new THREE.TextureLoader().setCrossOrigin("anonymous").load(FONDS_URL + "rameur-fond-" + nom + ".webp", t => { t.anisotropy = 4; mat.map = t; mat.needsUpdate = true;
+    const H = larg * t.image.height / t.image.width; m.scale.set(larg, H, 1); m.position.y = H / 2 - 2; m.userData.pret = true; });
+  FONDS.push({m, s0, s1});
+}
+function majFonds() {
+  for (const f of FONDS) { if (!f.m.userData.pret) continue; const d = Math.hypot(f.m.position.x - cam.position.x, f.m.position.z - cam.position.z);
+    const o = lisse(f.s0 - 25, f.s0 + 5, S.s) * (1 - lisse(f.s1 - 5, f.s1 + 25, S.s)) * lisse(330, 480, d); f.m.material.opacity = o; f.m.visible = o > .01; }
+  for (const r of RIDEAUX) { r.t.offset.y = (r.t.offset.y + .03) % 1;
+    if (!r.passe && S.etat === "course" && S.s > r.s - .2 && S.s < r.s + 3) { r.passe = true; flash(.75); $("embruns").style.opacity = 1; gerbe(1, true); gerbe(1, true); bruitage(900, .4, .9, 1.6); }
+    if (S.s < r.s - 5) r.passe = false;
+    const pres = Math.abs(S.s - r.s) < 40; if (pres && Math.random() < .5) goutte(r.x + (Math.random() - .5) * r.larg, .2, r.z + (Math.random() - .5) * 2, (Math.random() - .5) * 2, 1.5 + Math.random() * 2.5, (Math.random() - .5) * 2, .9); }
+  const e = $("embruns"); if (+e.style.opacity > 0) e.style.opacity = Math.max(0, +e.style.opacity - .012);
 }
 function pontPierre(s, haut = 4.4) {  // le pont de pierre de Jadielle : une arche au-dessus de la rivière, on passe dessous
   const rg = rive(GAUCHE, s), rd = rive(DROITE, s), dl = rg ? rg.d : 6, dr = rd ? rd.d : 6, span = (dl + dr + 9) * E, ep = 3.6;
@@ -640,7 +687,6 @@ function peuplerSuite() {  // la deuxième moitié du parcours : posé vite (Kik
   decor("barque", 661, 4, {eau: true, dy: -.3, tourne: false}); decor("barque", 719, -4.1, {eau: true, dy: -.3, tourne: false});
   pontPierre(692, 4.4);
   for (const c of [-1, 1]) decor("lampe", 692.6, c * 4.2, {y: 4.97});
-  cascade(588, -1, 5.7, 3.6); cascade(619, 1, 4.6, 2.6);
   ponton(741, -7.5, 7.5, .8, 2.2);
   // le lac : des îlots, des nénuphars, un tronc à sauter
   ilot3D(812, -15, 8); ilot3D(838, 17, 6); ilot3D(826, -24, 4.5);
@@ -676,7 +722,7 @@ function facettes(geo, pal, varie = .12, graine = 1) {
 }
 const ROCHE = ["#4A4440", "#625A54", "#7E746A", "#9C9084", "#BCB0A0"], ROCHE_MER = ["#4E4038", "#6A584A", "#887060", "#A89080", "#CCB8A4"];
 function bosse(r, h, graine, pointu) {  // un rocher : une sphère cabossée, aplatie ou pointue
-  const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position, v = new THREE.Vector3();
+  const g = new THREE.IcosahedronGeometry(1, r > 8 ? 2 : 1), p = g.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const k = .78 + .44 * rnd(Math.round(v.x * 7) * 13 + Math.round(v.y * 7) * 7 + Math.round(v.z * 7) * 3 + graine);
     v.multiplyScalar(k); if (v.y < 0) v.y *= .25; else if (pointu) { v.x *= 1 - v.y * .55; v.z *= 1 - v.y * .55; } p.setXYZ(i, v.x * r, v.y * h, v.z * r); }
   return g;
@@ -786,7 +832,7 @@ function bruitage(freq, q, vol, dur) {
 function note(freq, dur, type = "sine", vol = .03, quand = 0) { if (!AC || !sonOn) return null; const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + quand;
   o.type = type; o.frequency.setValueAtTime(freq, t); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .02); return o; }
 function son(dt) {
-  if (!AC) return; const tun = dansTunnel(S.s), cas = CASCADES.reduce((m, c) => Math.max(m, 1 - Math.abs(S.s - c.s) / 45), 0);
+  if (!AC) return; const tun = dansTunnel(S.s), cas = [...CASCADES, ...RIDEAUX].reduce((m, c) => Math.max(m, 1 - Math.abs(S.s - c.s) / 45), 0);
   merG.gain.value = sonOn ? (tun ? .05 : .075) : 0; merF.frequency.value = tun ? 300 : 520 + S.vn * 300;
   ventG.gain.value = sonOn && !tun ? clamp(S.vn * .12, 0, .14) : 0; ventF.frequency.value = 600 + S.vn * 1300;
   chuteG.gain.value = sonOn ? clamp(cas, 0, 1) * .12 : 0;
@@ -918,6 +964,7 @@ function peupler() {
   for (const [t, s2, d2] of [["arbuste", 444, -9], ["arbuste", 229, -11.5], ["boulder", 503, 5.4], ["pokeball", 456, 7.6], ["galet", 133, -9], ["galet", 168, 8], ["galet", 196, -7], ["galet", 105, 9], ["fleurs", 239, -12.5], ["fleurs", 450, -10], ["herbes", 236, -12]])
     decor(t, s2, d2, {eau: t === "galet", dy: t === "galet" ? -.25 : 0, v: Math.floor(rnd(s2 * 1.7) * 4)});
   phare(237, -13.5); moulin(437, 22);
+  fond("mer", 150, -75, 750, 1250, 40, 330); fond("montagnes", 470, 0, 850, 1500, 380, 650); fond("jadielle", 610, 5, 650, 1000, 600, 770); fond("lac", 790, -5, 800, 1300, 752, 960);
   grotte(T1[0], T1[1], false); grotte(S_GROTTE, LONG, true); peuplerSuite();
   // les arbres au loin : des bosquets plantés tout seuls hors du parcours, jamais en rangée (taches de bruit)
   forets();
@@ -1080,13 +1127,13 @@ function boucle(now) {
   UNI.uHero.value.set(a.x, 0, a.z); UNI.uL.value = heros ? heros.larg * .5 : .8; UNI.uHdir.value.set(Math.sin(a.h), -Math.cos(a.h)); UNI.uV.value = S.vn;
   // la grotte : il fait sombre, puis la lumière
   const sombre = Math.max(...TUNNELS.map(([t0, t1]) => lisse(t0 - 1, t0 + 6, S.s) * (1 - lisse(t1 - 9, t1 - 2.5, S.s))));
-  UNI.uSombre.value = sombre * .75; $("sombre").style.opacity = sombre * .85; $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, lisse(LONG - 7, LONG - 2, S.s) * .95, 0);
+  UNI.uSombre.value = sombre * .5; $("sombre").style.opacity = sombre * .6; $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, lisse(LONG - 7, LONG - 2, S.s) * .95, 0);
   $("vitesse").style.opacity = etatV === 2 ? .7 : etatV === 1 ? .25 : 0;
   // tout ce qui se tourne vers toi
   for (const m of tournants) { m.rotation.y = Math.atan2(cam.position.x - m.position.x - (m.parent.position?.x || 0), cam.position.z - m.position.z - (m.parent.position?.z || 0)); }
   for (const v of VIVANTS) v.maj(dt, T);
   for (const e of EVTS) e.maj(dt, T);
-  animerMonde(dt);
+  animerMonde(dt); majFonds();
   // les fumées du volcan et des cheminées
   if (Math.random() < dt * 1.4) fumee({x: VOLCAN.x, y: VOLCAN.y + 1, z: VOLCAN.z}, Math.floor(T * 7));
   for (const ch of CHEMINEES) if (Math.random() < dt * .7) fumee({x: ch.x, y: ch.y, z: ch.z}, Math.floor(T * 5));
