@@ -31,7 +31,7 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 #hE{font-size:20px;color:#B05010}
 #hE.rapide{color:var(--vert)}#hE.turbo{color:var(--rouge)}
 #bPause{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px));width:52px;height:52px;padding:0;font-size:26px}
-#panneau{position:fixed;left:50%;top:14px;transform:translate(-50%,-160%);transition:transform .5s cubic-bezier(.2,.9,.3,1.2);padding:6px 22px 8px;text-align:center;
+#panneau{position:fixed;left:50%;top:max(96px,14vh);transform:translate(-50%,-160%);transition:transform .5s cubic-bezier(.2,.9,.3,1.2);padding:6px 22px 8px;text-align:center;
   background:#F8F0D0;border:4px solid #8A5A30;border-radius:6px;box-shadow:0 0 0 3px #F8E8B8 inset,3px 3px 0 rgba(16,24,44,.55);pointer-events:none}
 #panneau.vu{transform:translate(-50%,0)}
 #panneau b{display:block;font-size:26px;font-weight:400;color:var(--encre);letter-spacing:1px;line-height:1}
@@ -47,7 +47,7 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 #prog .moi{position:absolute;top:12px;width:34px;height:34px;margin-left:-17px;image-rendering:pixelated;filter:drop-shadow(2px 2px 0 rgba(16,24,44,.6))}
 #gros{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--titre);font-size:150px;color:var(--creme);text-shadow:8px 8px 0 var(--bord);pointer-events:none;line-height:1;text-align:center}
 #gros small{font-size:40px;margin-top:10px}
-#tel{position:fixed;left:50%;top:84px;transform:translateX(-50%);padding:5px 14px;font-size:19px;background:#F8E0D8;color:var(--accent);white-space:nowrap}
+#tel{position:fixed;left:50%;top:calc(max(96px,14vh) + 70px);transform:translateX(-50%);padding:5px 14px;font-size:19px;background:#F8E0D8;color:var(--accent);white-space:nowrap}
 #essai{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:84px;display:flex;gap:8px}
 #essai button{font-size:19px;padding:4px 12px}
 button{font-family:var(--jeu);font-size:24px;cursor:pointer;color:var(--encre);background:var(--creme);border:3px solid var(--bord);border-radius:10px 4px;padding:6px 16px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
@@ -107,7 +107,7 @@ button.on{background:var(--or)}
 <div class="calque" id="pause" hidden><div class="carte" style="width:min(680px,100%)"><h1>EN PAUSE ?</h1>
   <p class="sous" id="pauseTxt"></p>
   <div class="ligne" style="flex-direction:column;align-items:stretch"><button class="go" id="pReprendre">▶ Continuer</button>
-    <button id="pChanger">Changer de Pokémon</button><button class="tenir" id="pTerminer"><i></i>■ Terminer la séance (maintiens)</button></div></div></div>
+    <button id="pChanger">Changer de Pokémon</button><button id="pSon">Son : oui</button><button class="tenir" id="pTerminer"><i></i>■ Terminer la séance (maintiens)</button></div></div></div>
 <div class="calque" id="saisie" hidden><div class="carte"><h1>CE QU'AFFICHE LE RAMEUR</h1><p class="sous" id="saisieSous">J'attends le téléphone…</p><div id="saisieGrille"></div></div></div>
 <div class="calque" id="fin" hidden><div class="carte" id="finCarte" style="width:min(820px,100%)"></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -199,10 +199,11 @@ const cEau = carteSol(x => {
 const cZone = carteSol(x => { for (const r of [300, 200, 130, 80, 45, 25]) for (let s = -40; s <= LONG + 40; s += 2) { const p = at(s); x.fillStyle = `rgb(${zoneDe(s) * 36},0,0)`; x.beginPath(); x.arc(p.x, p.z, r, 0, 7); x.fill(); } });  // la zone du bout de parcours le plus proche
 // les chemins de sable, les fleurs et les hautes herbes (posés à la main)
 const CHEMINS = [  // [s0, s1, décalage (m), largeur (m)]
-  [349, 498, 8.5, 2.4], [349, 470, -8.5, 2.2], [220, 296, -14, 2.4]];
+  [349, 498, 8.5, 2.4], [349, 470, -8.5, 2.2], [220, 296, -14, 2.4], [640, 758, 8, 2.2], [640, 758, -8, 2.2]];
 const TACHES = [  // [s, d (m), rayon (m), 1 = fleurs / 2 = hautes herbes]
   [24, -13, 3, 1], [70, -12, 2.5, 1], [236, -13, 2.6, 1], [282, -16, 3, 1], [357, 11, 2.4, 1], [366, -12, 2.6, 1], [392, 13, 2.2, 1], [395, -13, 2.4, 1],
-  [418, -9, 5, 2], [432, 14, 4, 2], [445, -10, 3.5, 1], [452, 7.5, 2.4, 1], [463, -12, 5.5, 2], [490, 12, 3, 2], [44, -16, 3.5, 2]];
+  [418, -9, 5, 2], [432, 14, 4, 2], [445, -10, 3.5, 1], [452, 7.5, 2.4, 1], [463, -12, 5.5, 2], [490, 12, 3, 2], [44, -16, 3.5, 2],
+  [560, -9, 2.5, 1], [655, -9, 2.2, 1], [690, 9.5, 2.4, 1], [730, -9, 2.2, 1], [776, -17, 5, 2], [800, 22, 6, 2], [842, -15, 5, 2], [870, -7, 4, 2], [900, 7, 4.5, 2], [925, -7, 4, 2], [790, 26, 3, 1]];
 const cChemin = carteSol(x => { x.strokeStyle = "#fff"; x.lineCap = "round"; x.lineJoin = "round";
   for (const [a, b, d, w] of CHEMINS) { const pts = []; for (let s = a; s <= b; s += 1) pts.push(pose(s, d + .8 * Math.sin(s * .09))); x.lineWidth = w * E; ligne(x, pts); x.stroke(); }
   // les allées vers les maisons
@@ -271,7 +272,7 @@ const atlas = toile(TUILE * 4, TUILE, x => { for (let f = 0; f < 4; f++) { const
 const texEau = new THREE.CanvasTexture(atlas); texEau.magFilter = texEau.minFilter = THREE.NearestFilter; texEau.generateMipmaps = false;
 UNI.uTex = {value: texEau};
 const eau = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.ShaderMaterial({uniforms: UNI, vertexShader: VERT, fragmentShader: GLSL + `
-  uniform sampler2D uTex; uniform vec3 uHero; uniform vec2 uHdir; uniform float uV, uF; varying vec3 vP;
+  uniform sampler2D uTex; uniform vec3 uHero; uniform vec2 uHdir; uniform float uV, uF, uL; uniform vec3 uRonds[4]; varying vec3 vP;
   void main(){
     vec2 t = floor(vP.xz / ${TX.toFixed(3)}), p = (t + .5) * ${TX.toFixed(3)};
     float pr = 1.0 - texture2D(uM1, uvM(p)).g, z = zoneEn(p);
@@ -287,6 +288,12 @@ const eau = new THREE.Mesh(new THREE.PlaneGeometry(5000, 5000), new THREE.Shader
     float centre = zr > 0.0 ? exp(-xr * xr * 2.0) * exp(-zr * .12) : 0.0, etrave = exp(-(xr * xr * 1.4 + (zr + 1.0) * (zr + 1.0) * 3.0));
     float e = (bras + centre * .6) * smoothstep(.1, 1.0, uV) + etrave * smoothstep(.2, 1.0, uV) * .8, nn = h1(t + floor(uT * 6.0) * .37);
     if (e * nn > .32) c = vec3(.97,1.0,1.0); else if (e * nn > .18) c = mix(c, vec3(.78,.93,1.0), .7);
+    float tr = zr > .8 && xr < .4 + zr * .33 ? step(.8, fract(zr * .8 - uT * 1.4 + xr * .15)) * exp(-zr * .09) * smoothstep(.15, .9, uV) : 0.0;
+    if (tr * h1(t + 3.0) > .25) c = mix(c, vec3(.85,.95,1.0), .55);
+    float cl = length(vec2(xr, (zr + .1) * 1.6)), col = exp(-pow(cl - uL, 2.0) * 16.0) * (.6 + .6 * uV);
+    if (col * h1(t + floor(uT * 8.0)) > .32) c = vec3(.98,1.0,1.0); else if (col > .5) c = mix(c, vec3(.8,.94,1.0), .5);
+    for (int i = 0; i < 4; i++) { vec3 rd = uRonds[i]; float age = uT - rd.z; if (age > 0.0 && age < 1.8) { float R = uL + .2 + age * 2.2, bd = abs(length(p - rd.xy) - R);
+      if (bd < .1 + age * .05 && h1(t + floor(uT * 5.0)) > .25 + age * .3) c = mix(c, vec3(.92,.98,1.0), .8 * (1.0 - age / 1.8)); } }
     gl_FragColor = vec4(brume(c, vP), 1.0);
   }`}));
 eau.rotation.x = -Math.PI / 2; scene.add(eau);
@@ -346,7 +353,7 @@ const nuages = toile(512, 96, x => {
     for (let X = -w; X <= w; X++) { const top = Math.round(h * Math.sqrt(Math.max(0, 1 - (X / w) ** 2)) * (.75 + .35 * Math.sin(X * .35 + k)) );
       for (let Y = -top; Y <= 2; Y++) { const xx = ((Math.round(cx0 + X) % 512) + 512) % 512; x.fillStyle = Y >= 1 ? "#B8D0E8" : Y > -top + 2 ? "#F8FCFF" : "#FFFFFF"; if (Y >= 0 && Y < 1) x.fillStyle = "#DCE8F4"; x.fillRect(xx, Math.round(cy + Y), 1, 1); } } } });
 const texNuages = new THREE.CanvasTexture(nuages); texNuages.magFilter = texNuages.minFilter = THREE.NearestFilter; texNuages.wrapS = THREE.RepeatWrapping; texNuages.generateMipmaps = false;
-const ciel = new THREE.Mesh(new THREE.SphereGeometry(1800, 32, 16), new THREE.ShaderMaterial({side: THREE.BackSide, depthWrite: false, fog: false,
+const ciel = new THREE.Mesh(new THREE.SphereGeometry(3400, 32, 16), new THREE.ShaderMaterial({side: THREE.BackSide, depthWrite: false, fog: false,
   uniforms: {uT: UNI.uT, uN: {value: texNuages}, uFog: UNI.uFog}, vertexShader: `varying vec3 vD; void main(){ vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
   fragmentShader: `uniform float uT; uniform sampler2D uN; uniform vec3 uFog; varying vec3 vD;
   void main(){ vec3 d = normalize(vD); float y = d.y, b = floor(clamp(y, 0.0, 1.0) * 70.0);
@@ -362,18 +369,19 @@ ciel.renderOrder = -10; scene.add(ciel);
 
 // au loin, deux couronnes de silhouettes posées dans le monde (elles glissent à des vitesses différentes quand on avance) : montagnes et collines au nord, quelques îles en mer
 const CX = (BX0 + BX1) / 2, CZ = (BZ0 + BZ1) / 2;
+const RC0 = Math.hypot(BX1 - BX0, BZ1 - BZ0) / 2 - 500;
 function couronne(rayon, haut, larg, f) {
   const c = toile(larg, 80, x => f(x, larg, 80)), t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
   const m = new THREE.Mesh(new THREE.CylinderGeometry(rayon, rayon, haut, 96, 1, true), new THREE.MeshBasicMaterial({map: t, transparent: true, alphaTest: .5, side: THREE.BackSide, fog: false}));
   m.position.set(CX, haut / 2 - 6, CZ); scene.add(m); return m;
 }
 const terreVers = u => { const th = u * Math.PI * 2, dx = Math.sin(th), dz = Math.cos(th); return lisse(.05, .45, -dz) * (1 - .6 * lisse(.3, .9, dx)); };  // le nord, moins à l'est
-couronne(1500, 260, 2400, (x, W, H) => {
+couronne(RC0 + 1000, 330, 2400, (x, W, H) => {
   for (let X = 0; X < W; X++) { const u = X / W, t = terreVers(u); if (t <= 0) continue;
     let h = (22 + 18 * Math.abs(Math.sin(u * 37)) + 9 * Math.sin(u * 131) + 4 * Math.sin(u * 410)) * t; h = Math.round(h);
     for (let Y = 0; Y < h; Y++) { const neige = Y > h - 4 && h > 30; x.fillStyle = neige ? "#E8EEF6" : Y > h - 6 ? "#9AA8C8" : "#8C9ABC"; x.fillRect(X, H - 1 - Y, 1, 1); } }
 });
-couronne(1050, 170, 2000, (x, W, H) => {
+couronne(RC0 + 500, 210, 2000, (x, W, H) => {
   for (let X = 0; X < W; X++) { const u = X / W, t = terreVers(u + .02);
     if (t > 0) { const h = Math.round((10 + 7 * Math.sin(u * 61) + 3 * Math.sin(u * 230) + (Math.floor(X / 3) % 4 === 0 ? 2 : 0)) * t);
       for (let Y = 0; Y < h; Y++) { x.fillStyle = Y > h - 2 ? "#8EB89A" : "#78A488"; x.fillRect(X, H - 1 - Y, 1, 1); } }
@@ -465,7 +473,12 @@ function poser(T, x, y, z, k = 1, tourne = true) {
   const m = new THREE.Mesh(g, T.m); m.position.set(x, y, z); scene.add(m); if (tourne) tournants.push(m); return m; }
 let matOmbre = null;
 function ombre(x, y, z, l) { const T = image("ombre"); matOmbre = matOmbre || new THREE.MeshBasicMaterial({map: T.t, transparent: true, depthWrite: false}); const g = new THREE.PlaneGeometry(l, l * .34), m = new THREE.Mesh(g, matOmbre); m.rotation.x = -Math.PI / 2; m.position.set(x, y + .03, z); scene.add(m); return m; }
+const RETIRES = new Set(["bouee", "barque", "pokeball", "champignons", "souche", "banc", "vague"]);
 function decor(type, s, d, o = {}) {  // un objet posé au bord du parcours : s (m), d (m, + = à droite)
+  if (RETIRES.has(type)) return null;
+  if (type === "recif") return rocher3D(s, d, 2.4 * (o.arg || 1), {eau: true, mer: true, pointu: true, h: 5.2 * (o.arg || 1)});
+  if (type === "galet") return rocher3D(s, d, .8 + rnd(s * 3) * .6, {eau: true, h: .9});
+  if (type === "ilot") return ilot3D(s, d, 7 * (o.k || 1));
   const p = pose(s, d), y = o.y ?? (o.eau ? 0 : solY(s, d)), T = image(type, o.v ?? Math.floor(rnd(s * 3.1 + d) * 4), o.arg);
   const k = (o.k || 1) * ECHELLE(type) * TAILLE(type, o.arg), m = poser(T, p.x, y + (o.dy || 0), p.z, k, o.tourne !== false);
   if (o.ombre !== false && !o.eau && /chene|pommier|pin|buisson|rocher|panneau|boite|lampe|arbuste|boulder/.test(type)) ombre(p.x, y, p.z, T.w * DECO * k * .8);
@@ -626,9 +639,11 @@ function peuplerSuite() {  // la deuxième moitié du parcours : posé vite (Kik
   D2([[658, -7, "banc"], [673, 7, "fleurs"], [698, -7, "boite"], [718, 7, "banc"], [735, -7.2, "fleurs"], [744, 7.2, "boite"], [700, -7.2, "cloture"], [762, 9, "pin", 50]]);
   decor("barque", 661, 4, {eau: true, dy: -.3, tourne: false}); decor("barque", 719, -4.1, {eau: true, dy: -.3, tourne: false});
   pontPierre(692, 4.4);
+  for (const c of [-1, 1]) decor("lampe", 692.6, c * 4.2, {y: 4.97});
+  cascade(588, -1, 5.7, 3.6); cascade(619, 1, 4.6, 2.6);
   ponton(741, -7.5, 7.5, .8, 2.2);
   // le lac : des îlots, des nénuphars, un tronc à sauter
-  decor("ilot", 812, -27, {eau: true, dy: -.5, k: 1.3}); decor("ilot", 838, 31, {eau: true, dy: -.5, k: 1.1, v: 2});
+  ilot3D(812, -15, 8); ilot3D(838, 17, 6); ilot3D(826, -24, 4.5);
   for (const [s, d] of [[772, -9], [776, 8.5], [790, -13], [797, 14], [815, 12], [823, -10], [842, 9], [849, -8]]) plat("nenuphar", s, d, 1.4, Math.floor(rnd(s) * 3));
   decor("bouee", 786, 3.5, {eau: true, dy: -.25}); decor("bouee", 828, -3.5, {eau: true, dy: -.25});
   D2([[768, -14.5, "roseaux"], [772, 18.5, "roseaux"], [780, -17, "chene", 15], [856, 15, "pin", 48], [852, -16, "chene", 13]]);
@@ -643,12 +658,144 @@ function peuplerSuite() {  // la deuxième moitié du parcours : posé vite (Kik
   const P = (n, s, d, o) => pokemon(n, s, d, o).catch(() => {}), V = (nom, s, d, o) => villageois(nom, s, d, o).catch(() => {});
   P("0074", 560, -6.8, {k: 1.4}); P("0095", 604, 8.4, {k: 1.05, joie: false}); P("0041", 590, -7.4, {k: 1.2});
   V("youngster", 650, -7.2, {marche: [646, 688, 1.3]}); V("woman_1", 716, 7.2, {}); V("fisher", 741, -6.6, {image: 0, y: .96});
-  P("0052", 670, -7.4, {k: 1.4}); P("0058", 709, 7.3, {k: 1.4});
+  P("0052", 670, -7.4, {k: 1.4}); P("0058", 709, 7.3, {k: 1.4}); P("0025", 692, -2.4, {dy: 4.97, k: 1.35}); P("0039", 692, 2.4, {dy: 4.97, k: 1.35}); P("0060", 741, 3.2, {dy: .96, k: 1.3});
   P("0054", 782, -9, {eau: true, flotte: true, k: 1.45}); P("0060", 820, 7, {eau: true, flotte: true, k: 1.4}); P("0072", 846, -6, {eau: true, flotte: true, k: 1.5}); P("0118", 800, 10, {eau: true, flotte: true, k: 1.4});
   P("0043", 880, -5.2, {k: 1.4}); P("0013", 915, 5.2, {k: 1.4}); P("0048", 936, -5.4, {k: 1.4});
   SURPRISES.push([892, -5.5, "0023"]); ENVOLS.push([664, -8.5, 3]);
 }
 
+/* ============ les grands repères en volume (08/11, Kiki : des éléments forts, plus rien de plat qui tourne avec la caméra) ============ */
+// éclairage fait à la main : chaque face prend un ton de sa palette selon son orientation (comme un sprite en pixels, mais en vrai volume)
+const LUMIERE = new THREE.Vector3(-.5, .8, .35).normalize();
+function facettes(geo, pal, varie = .12, graine = 1) {
+  const g = geo.index ? geo.toNonIndexed() : geo; g.computeVertexNormals();
+  const n = g.attributes.normal, cols = new Float32Array(n.count * 3), v = new THREE.Vector3();
+  for (let i = 0; i < n.count; i += 3) { v.set(n.getX(i), n.getY(i), n.getZ(i)); const l = clamp(v.dot(LUMIERE) * .5 + .5 + (rnd(i * .37 + graine) - .5) * varie, 0, .999);
+    const c = new THREE.Color(pal[Math.floor(l * pal.length)]); for (let k = 0; k < 3; k++) cols.set([c.r, c.g, c.b], (i + k) * 3); }
+  g.setAttribute("color", new THREE.BufferAttribute(cols, 3)); return g;
+}
+const ROCHE = ["#4A4440", "#625A54", "#7E746A", "#9C9084", "#BCB0A0"], ROCHE_MER = ["#4E4038", "#6A584A", "#887060", "#A89080", "#CCB8A4"];
+function bosse(r, h, graine, pointu) {  // un rocher : une sphère cabossée, aplatie ou pointue
+  const g = new THREE.IcosahedronGeometry(1, 1), p = g.attributes.position, v = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) { v.fromBufferAttribute(p, i); const k = .78 + .44 * rnd(Math.round(v.x * 7) * 13 + Math.round(v.y * 7) * 7 + Math.round(v.z * 7) * 3 + graine);
+    v.multiplyScalar(k); if (v.y < 0) v.y *= .25; else if (pointu) { v.x *= 1 - v.y * .55; v.z *= 1 - v.y * .55; } p.setXYZ(i, v.x * r, v.y * h, v.z * r); }
+  return g;
+}
+const matCouleurs = new THREE.MeshBasicMaterial({vertexColors: true});
+const ANNEAUX = [];  // l'écume autour des rochers dans l'eau
+function rocher3D(s, d, r, o = {}) {
+  const p = pose(s, d), m = new THREE.Mesh(facettes(bosse(r, o.h || r * .8, s * 7 + d, o.pointu), o.mer ? ROCHE_MER : ROCHE, .15, s), matCouleurs);
+  m.position.set(p.x, o.y ?? (o.eau ? -.15 : solY(s, d)), p.z); m.rotation.y = rnd(s + d) * 6; scene.add(m);
+  if (o.eau) { const a = new THREE.Mesh(new THREE.RingGeometry(r * .95, r * 1.25, 18), new THREE.MeshBasicMaterial({color: 0xF0FAFF, transparent: true, opacity: .75, depthWrite: false}));
+    a.rotation.x = -Math.PI / 2; a.position.set(p.x, .04, p.z); scene.add(a); ANNEAUX.push(a); }
+  return m;
+}
+function ilot3D(s, d, r) {  // un îlot : du sable, de l'herbe, deux pins
+  const g = new THREE.LatheGeometry([[0, -.5], [r, -.5], [r * .96, .2], [r * .8, .7], [r * .5, 1.1], [0, 1.25]].map(([x, y]) => new THREE.Vector2(x, y)), 14);
+  const pal = ["#2E7A30", "#3E9A3A", "#5AB848", "#8CD860"], m = new THREE.Mesh(facettes(g, pal, .2, s), matCouleurs), p = pose(s, d); m.position.set(p.x, 0, p.z); scene.add(m);
+  const sable = new THREE.Mesh(new THREE.CylinderGeometry(r * 1.05, r * 1.12, .5, 14), new THREE.MeshBasicMaterial({color: 0xE8D8A0})); sable.position.set(p.x, -.05, p.z); scene.add(sable);
+  for (let i = 0; i < 2 + (r > 4 ? 2 : 0); i++) { const a = rnd(s + i) * 6.3, q = r * .35 * rnd(i + d); decor("pin", s + Math.cos(a) * q / E, d + Math.sin(a) * q / E, {y: 1.05, arg: 40 + i * 8, ombre: false}); }
+  const an = new THREE.Mesh(new THREE.RingGeometry(r * 1.1, r * 1.45, 24), new THREE.MeshBasicMaterial({color: 0xF0FAFF, transparent: true, opacity: .7, depthWrite: false}));
+  an.rotation.x = -Math.PI / 2; an.position.set(p.x, .04, p.z); scene.add(an); ANNEAUX.push(an);
+}
+function texRayee(w, h, f) { const t = tex(toile(w, h, f)); t.wrapS = THREE.RepeatWrapping; return t; }
+const VOLCAN = {};
+function volcan3D(s, d) {  // Cramois'Île : un vrai volcan en volume, ses coulées, sa fumée, la lave qui rougeoie dans le cratère
+  const R0 = 52, HV = 46, prof = [[R0, 0], [R0 * .82, 4], [R0 * .6, 10], [R0 * .42, 19], [R0 * .28, 30], [R0 * .19, 40], [11, HV], [8, HV - 1], [5, HV - 6], [0, HV - 7]];
+  const g = new THREE.LatheGeometry(prof.map(([x, y]) => new THREE.Vector2(x, y)), 40);
+  const t = texRayee(192, 96, (x, W, H) => { for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) { const v = 1 - Y / H, rav = Math.sin(X * .35 + Math.sin(Y * .2) * 2) > .55, n = rnd(X * 3 + Y * 17);
+      let c = rav ? "#6A4430" : n > .6 ? "#A87048" : "#8E5C3C"; if (v < .22) c = n > .5 ? "#3E8A3A" : "#2E7A30"; else if (v < .3 && n > .4) c = "#5A8A3A";
+      if (v > .9) c = v > .93 ? "#3A2018" : "#5A3020"; if (v > .86 && v < .9 && X % 9 < 3) c = "#E87830"; px(x, c, X, Y); } });
+  t.repeat.set(5, 1);
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({map: t})), p = pose(s, d); m.position.set(p.x, .2, p.z); scene.add(m);
+  const lave = new THREE.Mesh(new THREE.CircleGeometry(6, 16), new THREE.MeshBasicMaterial({color: 0xF86020, fog: false})); lave.rotation.x = -Math.PI / 2; lave.position.set(p.x, HV - 6.5, p.z); scene.add(lave);
+  Object.assign(VOLCAN, {x: p.x, y: HV, z: p.z, lave});
+}
+// le phare au bout de la jetée de Bourg Palette : rayé rouge et blanc, sa lumière tourne
+const PHARES = [];
+function phare(s, d) {
+  const p = pose(s, d), y0 = solY(s, d), g = new THREE.Group(); g.position.set(p.x, y0, p.z); scene.add(g);
+  const t = texRayee(32, 64, (x, W, H) => { for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) { const rouge = Math.floor(Y / 16) % 2 === 0, l = X / W; px(x, rouge ? (l < .3 ? "#F87858" : l < .75 ? "#D83830" : "#9A2018") : (l < .3 ? "#FFFFFF" : l < .75 ? "#E8E4DC" : "#B8B0A8"), X, Y); } });
+  t.repeat.set(2, 1);
+  const tour = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.7, 11, 12, 1, true), new THREE.MeshBasicMaterial({map: t, side: THREE.DoubleSide})); tour.position.y = 5.5; g.add(tour);
+  const balcon = new THREE.Mesh(facettes(new THREE.CylinderGeometry(1.75, 1.75, .35, 12), ["#2A3038", "#3A4250", "#4C5666"]), matCouleurs); balcon.position.y = 11.1; g.add(balcon);
+  const vitre = new THREE.Mesh(new THREE.CylinderGeometry(.9, .9, 1.5, 10), new THREE.MeshBasicMaterial({color: 0xFFF0A0, fog: false})); vitre.position.y = 12; g.add(vitre);
+  const toit = new THREE.Mesh(facettes(new THREE.ConeGeometry(1.25, 1.4, 10), ["#7A1810", "#B02818", "#D84030"]), matCouleurs); toit.position.y = 13.4; g.add(toit);
+  const faisceau = new THREE.Mesh(new THREE.ConeGeometry(2.4, 26, 12, 1, true), new THREE.MeshBasicMaterial({color: 0xFFF4C0, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false}));
+  faisceau.geometry.translate(0, -13, 0); faisceau.rotation.z = Math.PI / 2; const pivot = new THREE.Group(); pivot.position.y = 12; pivot.add(faisceau); g.add(pivot);
+  const base = new THREE.Mesh(facettes(new THREE.CylinderGeometry(2.4, 2.8, 1, 10), ROCHE), matCouleurs); base.position.y = .3; g.add(base);
+  PHARES.push(pivot);
+}
+// le moulin des prés : ses ailes tournent plus vite quand tu vas vite
+const AILES = [];
+function moulin(s, d) {
+  const p = pose(s, d), g = new THREE.Group(); g.position.set(p.x, solY(s, d), p.z); scene.add(g);
+  const pierre = texRayee(32, 48, (x, W, H) => { for (let Y = 0; Y < H; Y++) for (let X = 0; X < W; X++) { const j = Y % 6 === 0 || (X + (Math.floor(Y / 6) % 2) * 4) % 8 === 0; px(x, j ? "#A89A88" : rnd(X + Y * 32) > .5 ? "#F0E8D8" : "#E0D6C4", X, Y); }
+    px(x, "#5A3A20", 12, 30, 7, 18); px(x, "#4870C8", 4, 10, 5, 6); px(x, "#A8D8F8", 5, 11, 2, 2); });
+  pierre.repeat.set(3, 1);
+  const tour = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 3.1, 9, 10), new THREE.MeshBasicMaterial({map: pierre})); tour.position.y = 4.5; g.add(tour);
+  const toit = new THREE.Mesh(facettes(new THREE.ConeGeometry(2.8, 3.2, 10), ["#7A2818", "#A83820", "#D05030", "#E87048"]), matCouleurs); toit.position.y = 10.6; g.add(toit);
+  const voile = new THREE.MeshBasicMaterial({map: tex(toile(8, 32, x => { for (let Y = 0; Y < 32; Y++) for (let X = 0; X < 8; X++) px(x, X === 0 || X === 7 || Y % 8 === 0 ? "#6A4428" : "#F4ECD8", X, Y); })), side: THREE.DoubleSide});
+  const rotor = new THREE.Group(); rotor.position.set(0, 9.3, 2.6); g.add(rotor);
+  for (let i = 0; i < 4; i++) { const b = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 6.5), voile); b.geometry.translate(.55, 3.6, 0); b.rotation.z = i * Math.PI / 2; rotor.add(b); }
+  const a = at(s); g.rotation.y = -a.h + Math.PI / 2 + (d > 0 ? Math.PI : 0) + .5; AILES.push(rotor);
+}
+// la cascade des gorges : l'eau qui tombe de la falaise, l'écume et la brume en bas
+const CASCADES = [];
+function cascade(s, cote, haut, larg = 3.2) {
+  const r = rive(cote < 0 ? GAUCHE : DROITE, s), d = cote * (r ? r.d - .9 : 4), p = pose(s, d), a = at(s);
+  const t = tex(toile(16, 64, x => { for (let Y = 0; Y < 64; Y++) for (let X = 0; X < 16; X++) { const n = rnd(X * 13 + Math.floor((Y + X * 3) / 3) * 7);
+      px(x, n > .82 ? "#FFFFFF" : n > .45 ? "#B8E4FC" : "#78C0F0", X, Y); } }));
+  t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, haut / 4);
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(larg, haut), new THREE.MeshBasicMaterial({map: t, transparent: true, opacity: .95, side: THREE.DoubleSide}));
+  m.position.set(p.x, haut / 2 - .1, p.z); m.rotation.y = -a.h + (cote < 0 ? Math.PI / 2 : -Math.PI / 2); scene.add(m);
+  const ec = new THREE.Mesh(new THREE.CircleGeometry(larg * .9, 16), new THREE.MeshBasicMaterial({color: 0xF8FCFF, transparent: true, opacity: .85, depthWrite: false})); ec.rotation.x = -Math.PI / 2; ec.position.set(p.x, .05, p.z); scene.add(ec);
+  CASCADES.push({t, x: p.x, z: p.z, s, haut, larg, ec});
+}
+// des ronds dans l'eau à chaque coup de rame
+const RONDS = [0, 1, 2, 3].map(() => new THREE.Vector3(0, 0, -99)); let rondI = 0;
+UNI.uRonds = {value: RONDS};
+function rond(x, z) { RONDS[rondI].set(x, z, T); rondI = (rondI + 1) % 4; }
+function animerMonde(dt) {
+  for (const pv of PHARES) pv.rotation.y += dt * .9;
+  for (const r of AILES) r.rotation.z -= dt * (.6 + S.vn * 2.2);
+  for (const c of CASCADES) { c.t.offset.y = (c.t.offset.y + dt * 2.2) % 1; const pres = Math.abs(S.s - c.s) < 60;
+    if (pres && Math.random() < dt * 30) for (let k = 0; k < 3; k++) goutte(c.x + (Math.random() - .5) * c.larg, .2, c.z + (Math.random() - .5) * c.larg, (Math.random() - .5) * 2, 1.5 + Math.random() * 2.5, (Math.random() - .5) * 2, .9, [.97, 1, 1]);
+    if (pres && Math.random() < dt * 6) goutte(c.x, .5 + Math.random(), c.z, (Math.random() - .5) * .8, .5, (Math.random() - .5) * .8, 3, [.9, .96, 1], -.05); }
+  for (const a of ANNEAUX) a.scale.setScalar(1 + Math.sin(T * 2 + a.position.x) * .05);
+  if (VOLCAN.lave) VOLCAN.lave.material.color.setHSL(.05, 1, .5 + Math.sin(T * 3) * .08);
+  son(dt);
+}
+
+/* ============ le son : l'eau, le vent de la vitesse, les éclaboussures, les oiseaux, l'écho des tunnels ============ */
+let AC = null, sonOn = true, BRUIT = null, merG = null, merF = null, ventG = null, ventF = null, chuteG = null, prochainChant = 3;
+function audio() {
+  if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+  BRUIT = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const dd = BRUIT.getChannelData(0); let b = 0;
+  for (let i = 0; i < dd.length; i++) { b = (b + .02 * (Math.random() * 2 - 1)) / 1.02; dd[i] = b * 3.5 + (Math.random() * 2 - 1) * .15; }
+  const boucleB = (f, q, type) => { const s = AC.createBufferSource(); s.buffer = BRUIT; s.loop = true; const fi = AC.createBiquadFilter(); fi.type = type; fi.frequency.value = f; fi.Q.value = q; const g = AC.createGain(); g.gain.value = 0; s.connect(fi); fi.connect(g); g.connect(AC.destination); s.start(0, Math.random() * 1.5); return [g, fi]; };
+  [merG, merF] = boucleB(520, .7, "lowpass"); [ventG, ventF] = boucleB(900, .5, "bandpass"); [chuteG] = boucleB(1400, .4, "bandpass");
+}
+function bruitage(freq, q, vol, dur) {
+  if (!AC || !sonOn) return; const s = AC.createBufferSource(); s.buffer = BRUIT; const f = AC.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = freq; f.Q.value = q;
+  const g = AC.createGain(), t = AC.currentTime; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .03); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  s.connect(f); f.connect(g); g.connect(AC.destination); s.start(t, Math.random()); s.stop(t + dur + .1);
+}
+function note(freq, dur, type = "sine", vol = .03, quand = 0) { if (!AC || !sonOn) return null; const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + quand;
+  o.type = type; o.frequency.setValueAtTime(freq, t); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .02); return o; }
+function son(dt) {
+  if (!AC) return; const tun = dansTunnel(S.s), cas = CASCADES.reduce((m, c) => Math.max(m, 1 - Math.abs(S.s - c.s) / 45), 0);
+  merG.gain.value = sonOn ? (tun ? .05 : .075) : 0; merF.frequency.value = tun ? 300 : 520 + S.vn * 300;
+  ventG.gain.value = sonOn && !tun ? clamp(S.vn * .12, 0, .14) : 0; ventF.frequency.value = 600 + S.vn * 1300;
+  chuteG.gain.value = sonOn ? clamp(cas, 0, 1) * .12 : 0;
+  prochainChant -= dt; if (prochainChant > 0 || !sonOn || tun || S.etat === "menu") return;
+  prochainChant = 2.5 + Math.random() * 5; const f = 1800 + Math.random() * 1600;
+  for (let i = 0; i < 2 + Math.random() * 3; i++) { const o = note(f, .09, "sine", .016, i * .13); if (o) o.frequency.exponentialRampToValueAtTime(f * 1.35, AC.currentTime + i * .13 + .08); }
+}
+
+UNI.uL = {value: .8};
 /* ============ les sprites : Pokémon de Donjon Mystère, habitants de Rouge Feu ============ */
 const CACHE = {}, IMGS = {};
 const chargerImg = url => IMGS[url] || (IMGS[url] = new Promise((ok, ko) => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => ok(i); i.onerror = ko; i.src = BUNDLE[url] || url; }));
@@ -721,7 +868,7 @@ async function villageois(nom, s, d, o = {}) {  // un habitant immobile (face à
 function peupler() {
   // Cramois'Île : le ponton du volcan, la côte de falaises, le volcan, trois maisons sur le plateau
   ponton(3, -6.5, -1.6, 4.9, 2.6);
-  decor("volcan", 86, -28, {y: .6, k: 2.4, ombre: false});
+  volcan3D(86, -66);
   maisonFR(18, -16.5, {style: "pc"});
   maisonFR(33, -17.5, {style: "mart"});
   maisonFR(60, -18, {tourne: .3, toit: "bleu"});
@@ -770,6 +917,7 @@ function peupler() {
     decor(t, s, d, {arg: k});
   for (const [t, s2, d2] of [["arbuste", 444, -9], ["arbuste", 229, -11.5], ["boulder", 503, 5.4], ["pokeball", 456, 7.6], ["galet", 133, -9], ["galet", 168, 8], ["galet", 196, -7], ["galet", 105, 9], ["fleurs", 239, -12.5], ["fleurs", 450, -10], ["herbes", 236, -12]])
     decor(t, s2, d2, {eau: t === "galet", dy: t === "galet" ? -.25 : 0, v: Math.floor(rnd(s2 * 1.7) * 4)});
+  phare(237, -13.5); moulin(437, 22);
   grotte(T1[0], T1[1], false); grotte(S_GROTTE, LONG, true); peuplerSuite();
   // les arbres au loin : des bosquets plantés tout seuls hors du parcours, jamais en rangée (taches de bruit)
   forets();
@@ -839,8 +987,8 @@ async function envol(s, d, nb) {
 
 const largeurEau = s => { const g = rive(GAUCHE, s), d = rive(DROITE, s); return 1.6 * Math.min(g ? g.d : 11, d ? d.d : 11); };
 /* ============ ton Pokémon, qui nage de dos ============ */
-const NAGEURS = [{n: "0007", nom: "Carapuce", k: 1.8, plonge: .5}, {n: "0008", nom: "Carabaffe", k: 1.8, plonge: .5}, {n: "0009", nom: "Tortank", k: 1.8, plonge: .5},
-  {n: "0131", nom: "Lokhlass", k: 1.6, plonge: .38}, {n: "0130", nom: "Léviator", k: 1.25, plonge: .42}, {n: "0134", nom: "Aquali", k: 1.8, plonge: .45}];
+const NAGEURS = [{n: "0007", nom: "Carapuce", k: 2.05, plonge: .5}, {n: "0008", nom: "Carabaffe", k: 2.05, plonge: .52}, {n: "0009", nom: "Tortank", k: 2, plonge: .52},
+  {n: "0131", nom: "Lokhlass", k: 1.75, plonge: .48}, {n: "0130", nom: "Léviator", k: 1.4, plonge: .52}, {n: "0134", nom: "Aquali", k: 2.05, plonge: .62}];
 const monture = new THREE.Group(); scene.add(monture);
 let heros = null, construction = 0;
 async function construire(i) {
@@ -854,10 +1002,10 @@ const S = {etat: "menu", t: 0, s: 4, v: 0, dist: 0, nb: 0, coupsT: [], vMoy: 3.2
 function coup(force = .6, metres) {
   if (S.etat !== "course") return;
   S.v += (metres || 6 + 4 * force) / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
-  gerbe(force);
+  gerbe(force); rond(monture.position.x, monture.position.z); bruitage(650 + force * 900, .8, .22 + force * .25, .6);
 }
 const cadence = () => { const c = S.coupsT, n = c.length; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };
-function sauter() { if (!S.saut && S.etat === "course") { S.saut = {t: 0, dur: 1.15}; gerbe(1, true); } }
+function sauter() { if (!S.saut && S.etat === "course") { S.saut = {t: 0, dur: 1.15}; gerbe(1, true); bruitage(480, .7, .45, .9); } }
 // sauter, très rarement : seulement par-dessus un tronc ; plonger sous le ponton bas de Jadielle (Kiki, 08/11 : jamais tout seul sur une vague)
 const SAUTS = [805, 905], PLONGEES = [741], sautsFaits = new Set();
 const plongeeEn = s => { for (const p of PLONGEES) { const u = (s - (p - 3.5)) / 7; if (u > 0 && u < 1) return Math.sin(u * Math.PI); } return 0; };
@@ -910,8 +1058,8 @@ function boucle(now) {
   const a = at(S.s), av = at(S.s + 7); PH0 = a.h;
   let dy = 0;
   if (S.saut) { S.saut.t += dt; const u = S.saut.t / S.saut.dur; dy = Math.sin(Math.min(u, 1) * Math.PI) * 1.9; if (u >= 1) { S.saut = null; gerbe(1, true); gerbe(.8, true); } }
-  const pq = plongeeEn(S.s), plonge = S.saut ? 0 : lerp(.5, .2, clamp(S.vn, 0, 1)) * NAGEURS[choix].plonge / .5 + pq * 1.15;
-  if (pq > .25 && !S.sous) { S.sous = true; gerbe(.9, true); } else if (pq < .25 && S.sous) { S.sous = false; gerbe(1, true); gerbe(.6, true); }
+  const pq = plongeeEn(S.s), plonge = S.saut ? 0 : lerp(.52, .34, clamp(S.vn, 0, 1)) * NAGEURS[choix].plonge / .5 + pq * 1.15;
+  if (pq > .25 && !S.sous) { S.sous = true; gerbe(.9, true); bruitage(380, .6, .5, 1); } else if (pq < .25 && S.sous) { S.sous = false; gerbe(1, true); gerbe(.6, true); bruitage(620, .7, .45, .8); rond(monture.position.x, monture.position.z); }
   monture.position.set(a.x, dy, a.z); monture.rotation.y = Math.atan2(cam.position.x - a.x, cam.position.z - a.z);
   if (heros) {
     heros.mesh.position.y = -heros.haut * plonge + Math.sin(T * 5) * .03;
@@ -929,7 +1077,7 @@ function boucle(now) {
   cam.fov = 55 + S.vn * 6; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
   if (heros) { const kc = at(S.s + 2).k, r = S.saut || S.sous ? 4 : kc < -.006 ? 5 : kc > .006 ? 3 : 4; if (r !== S.rangee) { S.rangee = r; heros.rangee(r); } }
   ciel.position.copy(cam.position); eau.position.set(Math.round(cam.position.x), 0, Math.round(cam.position.z));
-  UNI.uHero.value.set(a.x, 0, a.z); UNI.uHdir.value.set(Math.sin(a.h), -Math.cos(a.h)); UNI.uV.value = S.vn;
+  UNI.uHero.value.set(a.x, 0, a.z); UNI.uL.value = heros ? heros.larg * .5 : .8; UNI.uHdir.value.set(Math.sin(a.h), -Math.cos(a.h)); UNI.uV.value = S.vn;
   // la grotte : il fait sombre, puis la lumière
   const sombre = Math.max(...TUNNELS.map(([t0, t1]) => lisse(t0 - 1, t0 + 6, S.s) * (1 - lisse(t1 - 9, t1 - 2.5, S.s))));
   UNI.uSombre.value = sombre * .75; $("sombre").style.opacity = sombre * .85; $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, lisse(LONG - 7, LONG - 2, S.s) * .95, 0);
@@ -938,8 +1086,9 @@ function boucle(now) {
   for (const m of tournants) { m.rotation.y = Math.atan2(cam.position.x - m.position.x - (m.parent.position?.x || 0), cam.position.z - m.position.z - (m.parent.position?.z || 0)); }
   for (const v of VIVANTS) v.maj(dt, T);
   for (const e of EVTS) e.maj(dt, T);
+  animerMonde(dt);
   // les fumées du volcan et des cheminées
-  if (Math.random() < dt * 1.4) fumee({x: volcanP.x, y: 64, z: volcanP.z}, Math.floor(T * 7));
+  if (Math.random() < dt * 1.4) fumee({x: VOLCAN.x, y: VOLCAN.y + 1, z: VOLCAN.z}, Math.floor(T * 7));
   for (const ch of CHEMINEES) if (Math.random() < dt * .7) fumee({x: ch.x, y: ch.y, z: ch.z}, Math.floor(T * 5));
   for (let i = FUMEES.length - 1; i >= 0; i--) { const m = FUMEES[i], u = m.userData; u.t += dt; const big = u.y > 20;
     m.position.set(u.x + u.t * (big ? 1.4 : .35), u.y + u.t * (big ? 2.2 : .6), u.z); m.scale.setScalar((big ? 2.2 : .6) * (1 + u.t * (big ? .25 : .4))); m.material.opacity = clamp(1 - u.t / (big ? 9 : 5), 0, 1) * .85;
@@ -958,12 +1107,12 @@ function boucle(now) {
     if (magicarpe.vie > 0) { magicarpe.vie -= dt; const u = 1 - magicarpe.vie / 1.3, p = magicarpe.p; magicarpe.mesh.position.set(p.x + u * 2, Math.sin(u * Math.PI) * 3 - .3, p.z); magicarpe.mesh.rotation.y = Math.atan2(cam.position.x - p.x, cam.position.z - p.z); magicarpe.mesh.rotation.z = (u - .5) * -1.6; magicarpe.avancer(dt * 2);
       if (magicarpe.vie <= 0) { magicarpe.mesh.visible = false; for (let k = 0; k < 24; k++) goutte(p.x + 2, .1, p.z, (Math.random() - .5) * 3, 2 + Math.random() * 3, (Math.random() - .5) * 3, .7); } } }
   // Lokhlass, rare, nage un moment à côté de toi dans les récifs
-  if (lokhlass) { if (lokhlass.s == null && S.s > 115 && S.s < 120) { lokhlass.s = S.s + 8; lokhlass.fin = 205; }
+  if (lokhlass) { if (lokhlass.s == null && ((S.s > 115 && S.s < 120) || (S.s > 768 && S.s < 773))) { lokhlass.s = S.s + 8; lokhlass.fin = S.s < 300 ? 205 : 852; }
     if (lokhlass.s != null) { lokhlass.s += Math.max(S.v * .97, 1.2) * dt; const fin = lisse(lokhlass.fin - 6, lokhlass.fin, lokhlass.s), p = pose(lokhlass.s, 13 + Math.sin(lokhlass.s * .1) * 2);
       lokhlass.mesh.visible = lokhlass.s < lokhlass.fin; lokhlass.mesh.position.set(p.x, -lokhlass.haut * (.35 + fin * .7) + Math.sin(T * 2) * .1, p.z); lokhlass.mesh.rotation.y = Math.atan2(cam.position.x - p.x, cam.position.z - p.z);
       const q = at(lokhlass.s); lokhlass.rangee(rangeePMD(vu(Math.sin(q.h), -Math.cos(q.h)))); lokhlass.avancer(dt);
       if (Math.random() < dt * 4) goutte(p.x, .1, p.z, (Math.random() - .5), 1 + Math.random(), (Math.random() - .5), .5);
-      if (lokhlass.s >= lokhlass.fin + 2 || S.s < 100) lokhlass.s = null; } }
+      if (lokhlass.s >= lokhlass.fin + 2 || S.s < lokhlass.fin - 120) lokhlass.s = null; } }
   // des Nosferapti sortent de la grotte quand tu arrives
   if (nosferapti.length) { const u = (S.s - (T1[0] - 15)) / 9; nosferapti.forEach((o, i) => { o.mesh.visible = u > 0 && u < 1.4; if (!o.mesh.visible) return; const p = pose(T1[0] - 1 - u * 14 + i * 1.5, (i - 1) * 2 + Math.sin(T * 4 + i) * .8);
     o.mesh.position.set(p.x, 3.5 + u * 5 + i, p.z); o.mesh.lookAt(cam.position.x, o.mesh.position.y, cam.position.z); o.avancer(dt * 2); }); }
@@ -1019,11 +1168,12 @@ function demarrer() {
   Object.assign(S, {etat: "decompte", t: 0, s: 4, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 1, lieu: -1, saut: null, auto: false}); sautsFaits.clear();
   let n = 3;
   if (SEANCE.etat === "aucune" && !essai) { SEANCE.etat = "lancee"; SEANCE.relance = 0; envoyer({type: "lancer", s: 5}); n = 5; }
-  const montre = () => { $("gros").innerHTML = n + (n > 3 || SEANCE.etat === "lancee" ? "<small>Mets-toi en position</small>" : ""); };
+  const montre = () => { note(523, .15, "square", .04); $("gros").innerHTML = n + (n > 3 || SEANCE.etat === "lancee" ? "<small>Mets-toi en position</small>" : ""); };
   montre(); clearInterval(minuteur);
   minuteur = setInterval(() => { n--; if (n > 0) return montre(); clearInterval(minuteur); partir(); }, 1000);
 }
 function partir() {  // la tablette ne dépend jamais du téléphone pour partir (Kiki, 07/11) : elle le relance s'il ne répond pas
+  note(1046, .3, "square", .05);
   $("gros").textContent = "RAME !"; setTimeout(() => { if ($("gros").textContent === "RAME !") $("gros").textContent = ""; }, 1300);
   S.etat = "course"; if (essai && SEANCE.etat === "aucune") { SEANCE.etat = "mesure"; SEANCE.t0 = Date.now(); }
 }
@@ -1127,8 +1277,9 @@ const docPlein = () => { try { if (window.parent.document.fullscreenElement) ret
 function pleinEcran() { if (docPlein()) return; for (const d of (() => { try { return [window.parent.document, document]; } catch (e) { return [document]; } })()) { try { const p = d.documentElement.requestFullscreen(); if (p) { p.catch(() => {}); return; } } catch (e) {} } }
 
 /* ============ commandes ============ */
-$("bPartir").onclick = () => { if (!$("bPartir").disabled) demarrer(); };
-$("bEssai").onclick = () => { essai = true; majMenu(); };
+$("bPartir").onclick = () => { audio(); if (!$("bPartir").disabled) demarrer(); };
+$("bEssai").onclick = () => { audio(); essai = true; majMenu(); };
+$("pSon").onclick = () => { audio(); sonOn = !sonOn; $("pSon").textContent = "Son : " + (sonOn ? "oui" : "non"); };
 $("bPlein").onclick = () => { const d = docPlein(); if (d) d.exitFullscreen(); else pleinEcran(); };
 $("bPause").onclick = () => { $("pauseTxt").textContent = `${fmt(S.t)} · ${Math.round(S.dist)} m. ${essai ? "" : "Le téléphone continue de compter : la séance ne s'arrête que si tu la termines."}`; $("pause").hidden = false; };
 $("pReprendre").onclick = () => { $("pause").hidden = true; };
@@ -1136,7 +1287,7 @@ $("pChanger").onclick = () => { $("pause").hidden = true; choisir((choix + 1) % 
 tenir($("pTerminer"), terminer);
 $("bCoup").onclick = e => { e.stopPropagation(); coup(.65 + Math.random() * .2); };
 $("bAuto").onclick = e => { e.stopPropagation(); S.auto = !S.auto; $("bAuto").classList.toggle("on", S.auto); };
-cv.addEventListener("pointerdown", () => { if (essai && S.etat === "course") coup(.6 + Math.random() * .25); });
+cv.addEventListener("pointerdown", () => { audio(); if (essai && S.etat === "course") coup(.6 + Math.random() * .25); });
 addEventListener("keydown", e => { if (e.code === "Space" && essai && S.etat === "course") { e.preventDefault(); coup(.7); } });
 boutonsNageurs(); dessinerProg(); majMenu(); allumer();
 chargerFRLG().then(() => {
