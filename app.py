@@ -279,8 +279,9 @@ def _recoltes_ouverture():
     return {}
 
 
-def lancer_recolte():
-    """La récolte de l'ouverture, en tâche de fond : le jeu s'affiche sans attendre Google. -> son état, rempli quand elle finit."""
+def lancer_recolte(ensuite=None):
+    """La récolte de l'ouverture, en tâche de fond : le jeu s'affiche sans attendre Google. `ensuite` : lancé dans la même tâche
+    quand elle a fini (la récolte des autres, qui ne lui prend jamais son tour). -> son état, rempli quand elle finit."""
     s, etat = st.secrets, {"fini": False, "rep": None}
     url, params = s["SCRIPT_URL"], {"cle": s.get("SCRIPT_CLE", ""), "ouverture": 1} | ({"joueur": AMI} if AMI else {})
 
@@ -290,6 +291,8 @@ def lancer_recolte():
         except Exception as e:  # noqa: BLE001
             etat["rep"] = {"ok": False, "erreur": str(e)[:120]}
         etat["fini"] = True
+        if ensuite:
+            ensuite()
     etat["fil"] = threading.Thread(target=travail, daemon=True)
     etat["fil"].start()
     return etat
@@ -309,8 +312,40 @@ def suivi_recolte():
 def oublier_fichiers():
     """Les fichiers de la personne connectée seront relus (les images restent en mémoire)."""
     c = _cache()
-    for chemin in [k for k in c if not k.startswith("sprites:") and k.startswith(PREFIXE)]:
-        del c[chemin]
+    for chemin in [k for k in list(c) if not k.startswith("sprites:") and k.startswith(PREFIXE)]:
+        c.pop(chemin, None)
+
+
+def recolter_les_autres():
+    """À l'ouverture, après la récolte de celui qui ouvre, dans sa tâche de fond, sans jamais attendre : le script récolte aussi les autres amis (Kiki, 09/11 : le classement
+    et la course de la semaine à jour ; au plus une fois toutes les 30 min chacun, voir `lesAutres` du script). Quand il a fini,
+    leurs fichiers et leur partie sont relus à la visite suivante de n'importe qui ; ceux de Kiki aussi (récoltés toutes les
+    10 min, mais gardés 1 h ici quand il n'ouvre pas l'appli). -> la tâche à lancer."""
+    s = st.secrets
+    url, params = s["SCRIPT_URL"], {"cle": s.get("SCRIPT_CLE", ""), "quoi": "autres", "joueur": AMI or ""}
+
+    def travail():
+        try:
+            rep = requests.get(url, params=params, timeout=330).json()
+        except Exception:  # noqa: BLE001 : rien de grave, ce sera pour la prochaine ouverture
+            return
+        if not rep.get("ok") or rep.get("frais"):
+            return
+        c, maintenant_s = _cache(), time.time()
+        ecrits = set(rep.get("ecrits") or [])
+        for k in list(c):
+            if k.startswith(("sprites:", "__")):  # images, et l'heure de la dernière panne de GitHub (« __panne »)
+                continue
+            if k.startswith("jeu-de:"):
+                qui = k.split(":")[1]
+                if qui in ecrits or qui == amis.KIKI:
+                    c.pop(k, None)
+            elif k.startswith("data/joueurs/"):
+                if k.split("/")[2] in ecrits:
+                    c.pop(k, None)
+            elif maintenant_s - c.get(k, (maintenant_s,))[0] > 300:  # un fichier de Kiki
+                c.pop(k, None)
+    return travail
 
 
 class Panne(Exception):
@@ -979,12 +1014,13 @@ if not DIRECT:
     st.markdown(NAV, unsafe_allow_html=True)
 # Les données sont récoltées à l'ouverture de l'appli, pour tout le monde (Kiki, 03/11 : plus de bouton à l'écran), au plus une fois par minute
 # par joueur (plus de bouton : Kiki, 06/11, recharger l'appli suffit). 5 s d'attente au plus, en tâche de fond ensuite : le jeu s'affiche, et les données arrivent au rechargement suivant (suivi_recolte).
+# Puis, dans la même tâche, la récolte des autres amis (recolter_les_autres, Kiki, 09/11) : classement et course de la semaine à jour.
 if not DIRECT and st.secrets.get("SCRIPT_URL") and "recolte_ouverture" not in st.session_state:
     st.session_state["recolte_ouverture"] = True
     recoltes, maintenant_s = _recoltes_ouverture(), time.time()
     if maintenant_s - recoltes.get(AMI, 0) > 60:
         recoltes[AMI] = maintenant_s
-        recolte = lancer_recolte()
+        recolte = lancer_recolte(ensuite=recolter_les_autres() if len(REGISTRE) else None)
         with st.spinner("Je demande tes dernières données à Google…"):
             recolte["fil"].join(5)
         if recolte["fini"]:
