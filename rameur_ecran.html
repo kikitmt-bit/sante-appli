@@ -35,11 +35,10 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 #hE{font-size:20px;color:#B05010}
 #hE.rapide{color:var(--vert)}#hE.turbo{color:var(--rouge)}
 #bPause{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px));width:52px;height:52px;padding:0;font-size:26px}
-#panneau{position:fixed;left:50%;top:max(96px,14vh);transform:translate(-50%,-160%);transition:transform .5s cubic-bezier(.2,.9,.3,1.2);padding:6px 22px 8px;text-align:center;
-  background:#F8F0D0;border:4px solid #8A5A30;border-radius:6px;box-shadow:0 0 0 3px #F8E8B8 inset,3px 3px 0 rgba(16,24,44,.55);pointer-events:none}
-#panneau.vu{transform:translate(-50%,0)}
-#panneau b{display:block;font-size:26px;font-weight:400;color:var(--encre);letter-spacing:1px;line-height:1}
-#panneau span{font-size:17px;color:var(--encre2)}
+#ht{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:calc(max(12px,env(safe-area-inset-top,0px)) + 104px);padding:5px 14px;display:flex;gap:18px;align-items:flex-end}
+#ht b{font-size:30px;font-weight:400;line-height:1}
+#ht .meil{font-size:18px;color:var(--encre2);line-height:1.1}
+#ht .meil.record{color:var(--vert)}
 /* la barre du parcours, en bas : les étapes et ton Pokémon qui avance */
 #prog{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));width:min(860px,calc(100vw - 32px));height:62px;pointer-events:none}
 #prog .rail{position:absolute;left:0;right:0;top:30px;height:8px;background:var(--creme);border:3px solid var(--bord);border-radius:6px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
@@ -83,7 +82,7 @@ button.on{background:var(--or)}
 .pave{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .pave button{font-size:44px;padding:8px 0}
 .message{font-size:20px;color:var(--accent);min-height:24px;margin:8px 0 0}
-@media (max-width:760px){#hg b.gros{font-size:34px}#hg{gap:10px}#hV{font-size:32px}#hg b{font-size:22px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}#panneau b{font-size:20px}}
+@media (max-width:760px){#hg b.gros{font-size:34px}#hg{gap:10px}#hV{font-size:32px}#hg b{font-size:22px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}#ht{top:calc(max(12px,env(safe-area-inset-top,0px)) + 74px)}#ht b{font-size:22px}}
 </style>
 <canvas id="c" aria-label="La rivière, vue de derrière ton Pokémon qui nage"></canvas>
 <div id="vitesse"></div><div id="sombre"></div><div id="flash"></div><div id="embruns"></div>
@@ -93,7 +92,7 @@ button.on{background:var(--or)}
   <div id="fps" class="num">– i/s</div>
   <div class="boite" id="hd"><b id="hV" class="num">0,0 <small>km/h</small></b><div id="h5" class="num">–:–– /500 m</div><div id="hE">Mise en route</div></div>
   <button id="bPause" aria-label="Menu de la séance">II</button>
-  <div id="panneau"><b id="pNom"></b><span id="pSous"></span></div>
+  <div class="boite" id="ht"><div><span class="lab" id="htNom">Élan</span><b class="num" id="htT">–</b></div><div class="meil num" id="htM"></div></div>
   <div id="prog"><div class="rail"><div class="fait" id="progFait"></div></div></div>
   <div class="boite" id="tel" hidden></div>
   <div id="gros"></div>
@@ -101,7 +100,7 @@ button.on{background:var(--or)}
 </div>
 <div class="calque" id="menu"><div class="carte">
   <h1>LA GRANDE BOUCLE</h1>
-  <p class="sous">1 km dans Kanto, de Cramois'Île à la grotte qui ramène au départ. Rame aussi longtemps que tu veux : la boucle recommence.</p>
+  <p class="sous">Un circuit d'1 km dans Kanto, de Bourg Palette au Mont Sélénite, à Jadielle et à Cramois'Île. Tu pars juste avant la jetée, chaque tour est chronométré.</p>
   <span class="lab">Ton Pokémon</span>
   <div class="choix" id="nageurs"></div>
   <div class="ligne"><span class="pill ko" id="mTel">Je cherche ton téléphone…</span><div style="flex:1"></div>
@@ -136,39 +135,48 @@ const H0 = .65;           // hauteur des terres au loin
 // Les décors de Pokémon Rouge Feu (pret/pokefirered) : tuiles des cartes recomposées et détourées (arbres, buissons, fleurs, clôtures, façades, toits, herbe)
 const FRLG = {"pin": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAApCAYAAAAiT5m3AAAC9klEQVR4nL1YLXPbQBA9aQwK/RcEExaoY6WBhQ4rbf+BzVqj0oaW1dDQrFMmsQQlgf4LhWXqvNM9dbVa2SflY2c0Pt3dvre7t7tn27mZUq6WDZ65+rMEhL+ab+GZS57PYvaFPX5N4nK1bK7fX3XvGM/xepFM+P2qA/eXF/1FX7jSu7Bef77PXoS4jIRfP63Ce/X4NNgDr2nMxqUZkKdYB2CLUArW8chjeDaxv7wID4AHYVaht9YtyU6FlyGktymgNA6fh9/3bizs+RgASKG4ud1NJoUOdE+FPdcTKA0kEolk4qSQynPGO7CscksKtQROIec4OdTlatl8efgYPMZDRYQulZRHA13iAFN7PQh1V4+3u+AxPlnDFILrMQR7pa7ElJJZYe41hEgsM1uHVIdXnjHnahXubJBYP9fdO8kY8lPJJs9UElM2N1tX7/5kvZZpZZ20XrZLzOnaZkhl+dAISV5GHhiQdTfO+kOrsN07jPEpvR+LgCaURwEviXUt8EEckgsDCRYyUpFKYJLpBiFJ8QkMjVvHcOfyjg2bcLFXx0HGyiRig2GDsEi7EAPLF92xMdxtOcWFLmy+6JWRrmN5U2kyuTcY7osuMgc6xqwOVogN1jnqWh4TXdcDzOrYnjFd1xt4hpwnoAa21qSuLkUIOPPgKTIvbjh1q4QsjWu8+CGhS91sTR1JfgA2stsXLmOYmQTcrI2wLKdYa6ZuFTmqo+rVMZstzzmmB/KRa5anGhuSh7qqjl0IMLbCbRlykkjOVa2ngSMm14JdS1t3iBYO1s4IDUSHMtfW6GD75v8ZW8LwqFqU3nHcO0+hN4abm0RjBgixWuYUjKx3O9FCkeGjxKLpD0TreoErb6eOXJVViuUmmaXjW2xeEovkMBH43K/DMcMrVU4cBEvGFM6EvTcnbree+KL3DWSyWN9W5vxMzZ9L/rb/CLyALKYq+HdtGbnVvpHvtfvxusQDA2ZKPlXh7mnYt625czLZ47/F0d2pPwcw5+ppOP8A3F1DQ1c6MNoAAAAASUVORK5CYII=", "feuillu": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAA/CAYAAACmVEtSAAAFE0lEQVR4nO1aLXgTQRDdy1dRiQQZCajI1hFcZHF8qEqKrWsVcViorOLDgTxHcK08BchKKpG48M3mZnn7bnbvJ9eviDyT3N7e7Jvd2Z03lxRuZBy8n63lc/Fs5spvlePv12+qYszx9sYmvjx56a/PPnzyxAVCPrQ7tx7TkWIs8kLw6sdPd/jkcfhE8D1x8HoEJ4oxyMtMM+E2iCPlt2prJ7Z24Ov6nQ8Ja9ZTwL7Pi9OtOEzclpBQuI9nFcWQjSqQmNeN2jd8OIyWtS1Fn7AqOhNfbY7B5ed3/lMG1I0rUCdyoYT38Lmz2pa3++J003k+6+RI5xAS4ou3x1ny+l3a9Z6SZcfQkSWsgIyhk7R1HsCkpMvdBbwCfTZ3CcnPvW/PGUXb2a6GkYQOpIlqCFFEWdviMfQ6lzOSDrz9fhw2rJWULKT6bfu84PzpZdF5D8jsl+eX3qA1qzJjutQYVhj7vAf4Pj5bgj2Eji9c8AREFLnQsaAEWKhxOLVBnykx5lvC0AqlsAIPP75e43HZNqsyIBJAp9qIsxMLcD61Wh6ryk+wcG04oB30qFQjOKDOTlhanflVMwRyjvlrGevZZgIwVHEF5F40acKNJjgsh84+OoBILW3IoGp4vnFIPlFOa1vUz/2T34zURpf9gEkumwe6HIua0EptQKIaGthWE2+TIId0pKZgOqDZdBB05nGD1qsanByAwwSn2IH5zC+RDNQnnXuSsBGHZuIUvF4CjYSwN/F8Ix26IpUv+ran4LnIyhqb2Dvgj6WaPJ/PljErSXUhxvevDMFnATmpE3qUTvBMFSB5NsgDWgVJbuWse2cfPiUnBK+tZCnc/R6YfrnwnuFGsVaBtTy24bVVI6T6lkaeYbmBXHwfiZTzC3dz9DreA6oA8YFUKLEGYmKs/XNCrWwZA9Uqj7UXTp+6tEMZm3ICExO+/+mLM0iCeMTyeEheKzg9jQqJo+nv60hMdZkdzqiWGLNCh8WgIzttxzM+f/PgoF4ByJq5+IsGJOSE3JAJsZRuFD7S/0gdIHms143QYL3DbUQw0kIMnoh5bRPkhuUE2wohZCHMPmgZzRVJx7og0X8h49ViDQVhatUkhCa3ry6KVGjwKqimQQ0f7tOsMaI22jcLtAdqOEm+5ircG3I6gjFDKXAI9mljJFdYAXI61kKZEMgtJQ9u9Uu1M1rLU+IY1ZehcCaPUSOloORafx/QF1gttha6HwzyWBdHDqguCpsaHAmaHoUVEez7+8CCTrzIJpKvicumFYR9m3LAdIIqKsQ2vw80kCg9lTw70P5uVAmzYX3Ze/KydwWnq7DUehhtGuRzMB2I8sLNL+emD+MBFKtqnN8H5nAUJ8incpVPZCip+ajLFddt7zQZQ96xXvEL33p/iJQW7OoBwa4eWO3qgWpXD7hdPeB29cB6Vw8A+v5yM7QeCFooaGzSOvhLSpf3Pw0N3/GeIhpLi/xMPRCJOZGsXrZKR3BEBua3AuYM14OlKrJUn5JsNoqZmk/gBxilHgj9WE3mvvex4+6wHoi+W219+q761wP5khKRMkr18/6vf/f/PKqSbQHzzMszQrakNF9wSTETXd/G11LoUJuQnc+mblXdEM9NW8OBadNGKKDC9aOGI+pEeLUoDWSmA+InDo42/y7xY+7HgyKuv+DK37babV5X4/3l7L4xGdughAiHj8AMn//pj68IIcrb5y7I35kDd0mYsdsD943JmMbi43F4nz74C9JbO/yuncZhAAAAAElFTkSuQmCC", "fleurs": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB8AAAAPCAYAAAAceBSiAAABPklEQVR4nKWVP1MCMRDF927S2Glna5kSOs9KSkrt0E/A0MHHgI7xEyglpaVUYifllbZ20lEe88K8cw/DeEneDCS7yW9n3x5/MjnSe+e24v5ms8okUCG88UH2zh5yIlXbBmL4nCAAQqGK5XMdXPTOpJh3pVyW7sXCXLU7n0J5wwQuF72uS8IBYj2+U6NM4Q0vQ+vRp3d0cAP9vO3c+XEDsbzxjY8j40pHjP9TW96gA3SCYGI3Ml3+HtIFOtZj1EVSeEOIwv6rP5Cr14Ur1OYTHMtn14PzqhjP5aVcuwQgqC5Qduqi3OvnncLneAP4YItGVyxyP7a1M6yIL5+Hja9MLJ+xew36nGjBFfT9+JTEGx3gIkE4YQGeQ87hbNTIxfI5HdCFBlGMz44gC/J+Cv/nR1+PUHesx/ex2J78swjh99CoPfV/ZCgYAAAAAElFTkSuQmCC", "buisson": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA8AAAAPCAYAAAA71pVKAAAA7klEQVR4nIWSMRKCMBBFNwwHoLSl1I4SOluOwHgC9QiWegPGEziWlmnpoKTTktbSG8TZDB+XmAy/yi55f/8CijzK68zIujv2yncv9kHnQ0Xt82V7xWZNJyLjM1ESZCgkNtNNPzOIAZbbLAgigVVNBgYRCSEqzm7tKsJUjjS5j5PcWjc98V28mwjgUmxW6dyN9OUxNZdi6xFkZnXbm5iKdObu7ubblUZG5VViuEAUdkfEYN0ONJTV7ydBpBAkezTKfi9Md1+OD8DU9+6qLMzLp5/OPpA7SQD9IcktOE2GAc6pvs9YniT1B0tJIxeQ+gLd8Y624HQ3JQAAAABJRU5ErkJggg==", "panneau": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAYAAAAmlE46AAAA6ElEQVR4nGNgwAGiLB3/gzAueRaYInSJKXNaIIyUGgy5Zcf3M7JUe3n9L+6uRpE4v/8YnJ0c7cVg6GiFqjOl5j/YRnQAUngeqhlDE7JTkW1AB+dxyMFtVDSUZCAG3D//HEwzwQTmti5DoZEBNjkUP4IkkqujwLSTlyNYbN+2/XAxZMAIClWQIlKcOnfpNoRTYYIwP9xHopHFsToV2VZFKBuXSxhBBL6kxYAFgFIOWCMMVFc3Qww4fxweOCD/KDo5gdmtrbVw9XA/wjVBAbYUg6wGa5JjMLRkyEmpATNhtqED7E7FAZCdCgDCMWOXa+zF3wAAAABJRU5ErkJggg==", "boite": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAwAAAAWCAYAAAD0OH0aAAABDUlEQVR4nLWTrw7CMBDGb2QPQR8BOdzqQA43HBIcPMKCIrwB4EARHCiYBLcpqMQxWRQSW3IlbUq3hRDgl6zpn++7tb2rAxaNoC/M8SGeObZGC6NoJO538fJF0UjYQaR4styK4+WWMxwvN7mmTBVsqEfApxTK8CmVGsRFJ6l58A6vGUCDcSH/8AmVvxtce2Kx2b2MfesypKFKCGzmU8DDY98kTRLgZyYPrQ1sHxeKVTCl0QYlxsmEcTChHtHRgfGnoRu2IE5PEPYGEEKeLMuKD20ulOGag8CvF4ri9PSDPFw5z+WgCCdX6+8M2OAjURN4re1OIJOFfVXWiu9rCSOuV8+s2tH1luxtlTEeD50HINOFJ0HyT2sAAAAASUVORK5CYII=", "cloture": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAOCAYAAABpcp9aAAAAv0lEQVR4nGNkgILq6ub/DEigtbWWEZk/qOWrq5v/r9l79v+3b//BGMRG1jCY5ZlgirwsjRiwsQe7PAuMcf3Fe4bjx46B2ZZWVhgGDFZ5RlBU3L//gcHKyxFFw7Ft+xkUFQXA7MEsz1RdXcOAC4DkBrs8S2trC04F+OQGizwLKHpwAXxyg0WeadmyXpTyFhmA5Aa7PBPDEAcsyLkaHxis8ozYqmn0KnswyzMic7ApRG5zDEZ5RiyeQlGI3qgabPIAW3VyR1adKGEAAAAASUVORK5CYII=", "rocher": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABM0lEQVR4nHVToXaDQBBc7mEqIyORqcPGhTo+ofmDtLaKV9WHqs0v5BfOhTgsrsiLQyauMn1zdK/Dpcx7hN1lZneyB4nM4Lj/vGnc2FOo19YmzEtjYVWWt6LcSL5ZT+r9l5PVY4bQP396fUvuGhx/p8ZiBeq4rlfnB8FNypNjMYiuG/z055dtqDEMfva73cQ2k7J8KeX23hH44S8M5/PsBHYDwJECgw0TWMwxi+BI723Xi6mqj3Bcc8AOtAnuEGtulpe/7jzRHtqQ4/i0CYv9Dtqul2zx4AW6LJARKxE5eHEclqiLtAcJYDGeKSeG4QRWlQRhPO0/pFlRiGsan+Cdd5dvERmbjPEUXIPW1PV7gmBOoHXsKRYD4cvS41Q3DHbJYgyffJraiMnrfCXDYnx5FBBq/AM9w8c4fG2U2wAAAABJRU5ErkJggg==", "herbes": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAQCAYAAAB3AH1ZAAABbElEQVR4nLWUrVbDQBCFZzgVlUjqiESCSyS2rjLlCUgcdWgccYUngLwBFtk4+gjBBVlZt5yZZJLZJT2F3cOIbH7mu7tzdzYARyJeX5pjOf/Gxx3sK/IbfuImU1T5FvXY56SnBpIIYFNDVe7sb578hC5nL7cmu16q1Ny4AgRnj2/tw4IucyMiIfwJ3X7dPOPq/bXHs8Xa9mlTwzS9h21T8+PTag5cSRchPOo8qmR5kQxcVXAVtHoSoNh/lpbNoTwKKFC0q3hM4jsWkJiep7AvH6wJ9Rb48kjNoy0jmwRkkSJn+wim8Wo2GyoscrYyhEe6kUXIHn00TW8V7R9X0FkoQYLiQAiP8oJEyCY3qS1laDgRlHeyl748jp5lSToUzuQhPGqY9qy3kFbf/TQEkgq1/aE8jsKyf9o2ZaN0tO4BXx576xzbdNOw4JitSdSe8wAetYXuqvn4CKwbSYVuQh/+x9/MEnI6Vk94KP7KfwPq4VsK9lgshgAAAABJRU5ErkJggg==", "recif_petit": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAPCAYAAADtc08vAAABIUlEQVR4nIVSrVLEMBBOOlGnAAXnwhswvMFJZCW2505SV1A0rpV1d7aKqcTBG3TuDYg7UIDChvkysyFdAv1mttns7rfZn0oxg6q6d6Qbcye5X6VID0+jJ+2fH/09LzbkcjxJxsnjy7vTWgtIRPwTkpN5gLU2VHKxugr2YdeLvm+lmiMjELipq1+vg6NIQTDHf2RCBvKw63zPJHPk9tb48+z0eLqFuGRA66OJD6B5NNtGLBdSKmSJs3Lij00LVEqb6UwtDl/OKWSBAgMQrw4ECCG11gwzKNdlMgB3az+9xD60A9vr24fIqAU+i9RWUnPy5UNBFXlxHRwYFl7hcyFbGCI+aAMGaiUGrRGziBOifF8BGfifSK3hAZxUKZEvz0+8/RvHo67GRaszMQAAAABJRU5ErkJggg==", "maison_toit": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAnCAYAAACYNs/UAAABxElEQVR4nO2aIVDCUBzGP7gXFlljTeLWZlzDaISGNCI2iUTiaBI1WSXaxEaEJMbRtiQ0o96G2204h+wfON/7/+64B2EH9+N7e9/uvcrz++snDjAbT6Oxt/FQs3TIijd7g7fwMLGa0efhQ//gNSJ+Y+sWlptVrrhRS9t9wR2UwNXW0TjoTqKxfduGWasXC0zLSyeu0TOhKq623iXyGplELvwA50Y9K/DYxIVxl4nGhfnnRKantqAkTq/nx1r2RI66SESKUF6Ze1zRPyY76URWT/1j/jsskAgLJMICiWRqzDHIVGMahAWxtEBZaswmCEjXlxYoS42pEZ/t+R5IhAUSYYFEWCARFkiEeyC4B5LgHkiEe+CJ4UWECAskwgKJsEAi3APBPZAE90Ai3ANPDC8iRITnbQEU7208tu8xdS7DXRBgDnnRTMAx4W8/MicQSq/Cw60OjAO0ALTmT1CNQXhO0DqDi/VxAq/Gu52qtLT40KEq9Fcv0SsR+UsiRW7icsQ5tgGVmKCZL3IvkZVO5yY54svifjJf+tEYS9yfjaJIXHyx6ji2kZvI0JU4NFUN04bSLP2Ml7TIkGq4ZKt6n0MJEpHfzr4ANeuvnMDk3PkAAAAASUVORK5CYII=", "maison_facade": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAAAgCAYAAACFM/9sAAAB7ElEQVR4nO2aL0zDQBTGH2RiOHCr28nKylVOIpHY4cBRCW5yOA61OZha5oasbBVUVj5c58AxB2nZQkNYr3e965/tfmZZ9vrd5Uvv7fVLD65fHr/acwQviGAxoxAu32GD73nQs21g4VzdgApG98NS9LP468F8QhOvbMtIvrdkbYacO8wanI64a8vSF4VpICJCVaDitWXoMw0khOQSOjE6zBrkrE2vrVp/G8soyvz9kKmgyURaDzQ7R8yaV4HasvRF0T2wLj3QwktmzRNnbXpt1fqiPVDaEXYe1NSWpS+KFAMXMwoq2Az1qvUr74HYgHlNFXqMKYg2UPURDtxn2GcM0ypm4NmAPRLsMnEao/Rf2CkYNeWJlOqMlDHGXmdjvMS5Wh6qzANZSBukET+46gk55qvf5TywH/kwAROQ5OuXBGlyjQfdxueN0p6FY8ycd9UKAXr9HsA0qk3euA2dBypGWg+Msa025MF1gRudB25B98AU7t0t8FKXvLHSPHCyMpPP8SnfaMLDTueB4/EI/ADhglIYWp8gm8bkgbFguidFYQBosJ8y/OD3GgzfOJbPNwdW2SdZHsg5wvTnDhm0Q9g3pBg42EPj/jUwfnFGJA8cLrvCG2hC3pi1x5ZIOiIzjfEE16wLraImQAGqWFM23yCT70ypj0+UAAAAAElFTkSuQmCC", "maison_cote": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAgCAYAAABU1PscAAABV0lEQVR4nO2YIVPDMBTH33oRw1HXysrhKunHQGInwa0SOVm54XCA4uY2iczUqKPyydTN4uA6rneslzS5e1yTMH6qSf5J8+7eS/LeaLZ7/ByvEHgpYP2yhKreQ8uWc7jMMugjv71TjhWLubFGRXcPq4flYa9ZGh/aDIgk17m0H58LIx0VrQGIqFGEhLlgpCEZkCRJ73gIY2k/duaGcaRY/7x3/VqI3vEAPIdRF5hEZ9L+N0MdwIflGIg8jwF4v5F2P3XmpijXwcWcFANkF8rvabpiQfs/2YDm8lPRXoomGmsxMISf/+ljNADPYTpB+boBm8STlGbA1VRx/A3ElvMTd6HfgJIPOGGA4/kADbT+FjLkPx+wHQPu5gOnEgOpq/mAKc7mAyYMlg9U9f7IJ0VVAsbfFTBbfi40e/D+LRSA57CfjaZw6lo+oNvDkQFN1dc3WPvRlqt94wvuZZIUnNnQXgAAAABJRU5ErkJggg==", "labo_toit": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHAAAAAfCAYAAAA/QknEAAABrUlEQVR4nO2aLXPCQBCGl04MDgkysrhYHMjI2kpcsf0J4GJxTR2ylZGpoxJH5clWxiHb2cxcJ4Q0CcndpTd5H0O4vY8MO3u37x6Duf/wHT4FFO/fKX6NyHVH5HozcicuFRFut7RcrQptfbSvNwEtR0S33pQe344UzKdpOz/Xgft/HI4UJufPM2+S2hf+/W/fONqREAkt7vz0++75hW5qrQIq4R++izmudiBHKOz/ByffwCEqRFTqPBnKsOuHt+yy4LlwYNUZyM7L7st9t683Aekke97y2q230KLIg707LiIQqEFmo7pBFmo5iEDFxFHcbOBw3GgYItByoAMV61zTDPKltLovX6YD+2T/TE5pKY3hEph/+qImRMPx2TyylJZ9D14/X0qDDswBHdhznWgaZKGK4a3QJHCgYtqcgU2AjFBEmwSG4bE8x7XAgZYDHahAB7aNvjZRCB2oQAfqADrQ0H1g0R2dSnAfqFkHljnbBJARCsg6Ufe/4krPQKaqHgq6RdZB/6yFZjsAS2SEjD5gD+KwTz+dfAOwC1RiLAcOtBw40HIcLtlwOgrIOth3P3O2yfpB216wAAAAAElFTkSuQmCC", "labo_facade": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAHAAAAAeCAYAAAD0HpphAAADnUlEQVR4nO1aIXTiMBj+d2+CueLALXLnOkflJLg91O3U2cmdg1MDNyRuTI2pvTkqkeBWBzLnilvd5nbvz1ZoWZqmJCWFd997O/ry50/y5U/z52vuoNW6fp94PozuL4B6QwhB7AsIAg/WQV0XSL0OVuUyVh4s+kubCCr+lmVzx5SljqrdBH8cUzQ2D+MqYMwcuwoHywA+9lkjoQMP3kMX7F8j9tztdlgjCGyo1Wp/1LlrgP2jlYu/aXiG+ePCeqGzWAAPZQa+oC68Bi/L1dFoXsKb/RvgM85jAJg0L9kiwDq4Wo6sMlRIXZs/D5Ut2k3yFyEWQIwu+4UZ20KjCOZ/gdT6bOWQ887XlkiH2XAlUbcBR7WyVn/TCAzzj26hUXzLSiR87bPadPmbxqRg/GNvYJl85+ZAfJX96SqxO3aJ2xh9ivvo9BehsgW7Sf7RQ2W4S4YQ5kDeaQwT58m0CfPaY6wcyxy7JvRV9S/CKdQxwD/pUJkpB1onx+yUins0JuEONGP2tnsMo8c2q4N116HqbxqWYf7KORC3V9QpCDwtuX6NdYp/+IxlrCPXXW7FOv1No1xQ/pl0YKhlREI0TcOp+puGZ5A/TwdKBXBdJ6GmwWNxFPjao3aR0Vmq/qbtr1vmLy3kRTkwCuwIdUraBOTlbxpHBvgn5UCpLzEiNH7yG/6AyCZnx2+0JtEoOD9pHShC266CT32okiroQNhW51PYivpvKE4wTmCR+WnXgTJaTCfW9VCSNt0EmEfW2zPJL6l/LTowbUVFf3VApS1KA245IZbSWEzyyy0HIgb8+doahjaFU3LKnks9CqUz/lGcjrvwdkVWBZLfHk3z2zgHJr260fLRvc3yELseSUHJu2G/snV5Cf7rmGYrH0HwmB1tvXgQeRxN8ksa00Y5MESaTkKcSGxP1MteV7Z/FewyPy058D/yR645UHRFwrsuyVJX9zjG43za3Ra/XHRg3pDt/+2KwLj3B86urrl2tMUOMRnbzwuF0IF4n5WO40x1ZTWa84TfECkLThhEHnjBk+1jG/yM6UAEXovkUVcGt7c3MPUoDHr9ZRB1wyS/3HNgeJelG+HtSBqmHl0+P9Nn6fYJpOeqIvATIRbARWmlXxZz/JfzicrnlPurCdSLenrfMINB/2MiJucvmXuY+/Xi8EvsH4VjVFsO9Z9CTWKyQeD2BXsRQHIntxXuI9iN/K78n8wkOAq3EbvO+VB1EnYZzh5w/gfwhaN6Uam1eQAAAABJRU5ErkJggg==", "labo_cote": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAgCAYAAABU1PscAAACvUlEQVR4nN1Yr5faQBCe3kNwLjjiWMm5lYk8Ca4PBVVnqTwXXOE/KLKn4BSvLpGVIONApi444opr30wuYUM224TkHuQ+AYHZmdkfM/NN9pNlffu7dn0wuQ51wvptzo3oD8ZNqAs8dx0/xwsYPjbBc5exgPERBIGbVnYcYL0eaO0x/Q7284Rc07hUL0uuCXYi2zIdcW4e6OkFQNOEFnNjBfE7gvs6A/5k0/NsNqVjtBcjqUMVRHl/MKZQsKwJ8KcxuC994EMrpRNt6MHbJv4/LUCBvefAn+AQ7w46PfJnAJqHT3IZ2iwcr5If+TP8wpgejMFezckH7va91or1VUgsIFrdAba0YhHB7jcwY047zz5PBYkPZdBlWvjApmQbT8Jz+nBvtBLjxBAScVfUIYbNe2F9ge3ECbTYgzSG8Sj9zSnxTN5MyVVQyU3BlvczW+eiHJBVE0y47mYAO2MlHVO0CkGYSGTT5IbUt6oo5M4BrduhUocxikk8hUEokJS9IuhuQjsTpwP2akI+0Nc5SucAhhfWaQRWC8c3yGlZTJwO2UKbNFHHiUO5dA6cHx0fcqrTWOrwJAjHEytewgP2KklkMg6ohAci6AYnI1jqwkVZpXjAfQntYNigbXFspTwgAkkG63QeB/8DV2zAu/DAraGRlwey0P8i35kQKlkotxejXCdZGQ+c1/Hl9welfPR1CxOug+/5oLP0O0eQg0cq4YEywMmL3yK6kOx5iuZAripUFj+CbNljSduFeOCiOr/glCfUfkvH+rnsV8YDRet8qm1Owc+lf9UcqALeNXNA1oLfDA8gyjJy+5o8kFcetc0pH63e7fMAIqv1XvZqkANRry9DcHavVBSJBeybp1q93+Gn5LqRyrbiGlIm9z3FFHo59PHeSuSR5cfpRu+g5mhENw34ol4nmG+36XEO1O16PcI/kEBwoRost80AAAAASUVORK5CYII=", "pc_toit": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAlCAYAAADyUO83AAABdElEQVR4nO2Zr3PCMBiGv3IRlaurXOUicZvbJLISWzeLRM5u/8HqtslK5CQowG0yc8W1cq67jAuXjdAYko8L33PHj9Jw9H1LHpFEk+VLBxpxJaBoBGTFFZwDTD+on9bwOkkB4G/4ZrGB4Auod+H7g7cfze79BU+cH7v+TWYK/z+4+oK6IF/oF+oKJue8Ci/Kz9/XZrMtILvD9YDpH3Bsoun0oZPS04MrsAvwAZuva8jjw5LzPedRHHCq+HDAAE4Yebdcize6Hd13j/GX8eRZOAAskAMQIQdwcoBzmG0AOQARcgAnBziH2QaQAxAhB3BygHOYbQA5ABFyACcHOIfZBpADECEHcCQHJGm6tyzte1cIzQFJmu6tneslhLYvMDCFV4j37VZZyDBTeNmQ2iaTJYS8PB5JB5SX38bwCrESkA2zIItg8qkvvF6CfAQ7BdoD4TFCVzcj4+f5fOamgLbnzvtEBs+LMTxfD43nZ4sxVOXbUYv4AUeb8HfQkTkIAAAAAElFTkSuQmCC", "pc_facade": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAgCAYAAACinX6EAAAD70lEQVR4nOVZMVQiMRAdfCm0kw7KLaHDjr1KS+y4zrNSqtMOroLupFu7s1MrtLqjk9KrDqqTTsq9DjrspPPeZJm9bEiygV3l+e6/5242iZv5P5nJZMnsVj6/eJt/QAX/wYe3QtetwOWlZ9W3VmtAtd9LZVzmlvLQGALoRFgH+d7gQdmvUt7hd+xbq0EqIjC8qERIe/aRpA5EnojvjW6V/XqCECSCDrbiZJrNry9Y6A/HvIJESFMAm+WN5B3HgazXMPabNjzwfT9cDUndJCMK4H07g8ZpC9JEfnsrNfKriDB+eo53AUIhl+UiDPp9GI+GIAIF2ip/Ahml2b2xHUZdo18jkDw0DmEqVnqdaKfGYaTseB3jO0kclU3Pgxvu9gsCkAjgujCYP8tCLIvq8UE4w9bwOnw1TCcT/pjN5WCKgogikHAa4Jg49nV/ZhyKqSpRhEJ1H0aTKfj5QKn+8Er5gtJexdjevbqF+llzXr6A6vGJ2hJpxol8pCyvCuV4wRgoznmrDVCoGu1mgfFjuPt+wSuQNF8FtBoEFNxS5HnUH0ZmQdUuQkteATkI264f1RiyXQ+Dm9ButtA5l+XLJy7ApA1/70NYdu5/gbPjhCJgWdUnDTBVJZJXiSDPqIy4dhNEwkiUiyC0R8jPBbGFya4MboPoAif14wXCcpRVrQqxj6q93T4D338K44AJIkkTbGYf/d9xtqHZbBltZnjBLeHi/AqgHiVh4wY2fTAa6/ILHJsEQmJxIhB5IkgJnAyc0OF9L9ZmFrf0MSimgY8H+lQ4XwgIkQi43S0EQVz2810A+7qV3eC9hWiAkxFnP7P1/9cGEiJiZa+jjPqYoPV7P0Pybx4EV4VtEoSuMhmPg/1bASSOfWzHHK4qAALJ80TIT34okvMJMWnR+bAKP257yhii3PvnY+IYKwlASLoKdIFIhPIMYQHM6eNAGZ8ODC84C6YghZhdR09qm0feUu3rQpz7bVDhqLoP1907bcenxyn/Q2J4l6MrtfuVJv97L2BUQEIkAt5l0IEkJx1U5HaTz+uQc4ID17Lw6ciaAEx8MIkQpqnFIr/LCyvM2+F9gckVoghl19VmYvzQVCxC5fEx0o6ZHEoh1ptcKw1gfrBQZ/m/TFUpioDfBWTiBJGkKT/Hd6kysm7Cjy0E1UShne12/PuZroFEwMPMe4ZVHuDiZ/HTFv8eKIuwzEcMnQHrdIE4+xkVdCKkkQmu0wXi7GezqgObXd8owmvDLa22d/jq30+WwgZeUIR/xgQi/C9gVHjNlRB3qLr5kizOJHFTJj6oREgK+gEiaR8VbE6S/EuXAZn67w7/aUwEiZAG4oxclXxa7/8LleEj74K0EuMAAAAASUVORK5CYII=", "mart_toit": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAdCAYAAAAaeWr3AAABbElEQVR4nO2ZIVDDMBSGX3sRncQ1crJydhI5OTkkEjlcDwU4kHPMMeTkJLIoqKysfHWVzI17hZaszW0ctMltvM+k6bV5/f8k//VaZ/r6uAEFb5kCBmcwHPThmIjiFGSygPV4W5ejGoD3MZyGd42bk+wdDpHA7zXOPd9egpwOmgagRrxOeI5ZdXwi/T/3uxpzlxGqCa5OPAlXxVMBtUhbmBq3roe0kmZC0J4vxdM+IbIUizYYfi+VLtCtgC5Iok+xeV8WLeUbaU6fbsAJw+sNhZ4qvKRrA0xRGlDifxkhkwWIKEboedvCVdrenyYyYF8mlBOdxggCLNL10v8Jrs3iNDu6GTKJ2HdB/QHb7puq8WsD8iPMABUBFuEMkJwBBZwByBlgDddeaX4PqOAMQM4Aa7j2SnMGVHAGIGeANVx7pTkDKjgD8J9lwHo1K9r6p1hvdGH8WYTJYji/gvH5BEYPzd9vxOrlDZbzmVEjPgDZDJDCGJwAGwAAAABJRU5ErkJggg==", "mart_facade": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAAAgCAYAAACinX6EAAAELElEQVR4nN1YL1jbQBR/8EWAA0dkZGXnyBSTnescoFbUNkenCqqt69xwgKK41a2SqbVq1C0ysnXFrY59vwsvXK53l6QJH2y/74P7k5d77/e7e3eXru3VPtxv7h6QjB3PFeW2uyPK+XQW11fF9OKUzs97mWyPjprkNtqF/Mkxow7MwmnC5s+4T476IsjjRX5JHVDuz9peDM8S5IfjW23Qtd1XooQtRNiofVzZpwoWQxXB0ZFnBKMJVfwqZQFIJoemuM3kmfiYKvpBHp5DCBbBNCbEyQJwUFe0LIKjIw8F2SiLCOoM6wDynufR2egOIehtaJs++lvClkUwgVeIDswDsQPMBf2qCOs28oyb/iAejAdh+/zk7YANbE1pwoBP+NbFhFgRswxw4tSAHa8KR1ZMR54xDUPxp4IXsy1gEDrtB4m+9kEyDeTnp+FUPLeNyfuFStQGdSWEcgqYyOtIy6g39uMZzgqQw0yzP8wG+lSRbGPCJ3x3lXfU2F1lDFkEYgFsM5+GwcU1HXdaD/Uzqjf0eanOuOxP1P2tJRu9v8gHxPly0iXayLZJm3w7akee2VdhIp9t7ErpPkyrQObs+FWXRuM+qZehsnHUGcb185OaCIpF4ABVm6cELkF+1Y1WgE6EvLOfBpkwiEYEH2ddJq+bsSJQVwGTB9ZarfY9KqNJtCRYhDwCVBaTeB+wQSZpQ5bZR/4HOfKfBQB5QCtA72uHmp9OqEzAURjexQKlicDkQdDztuKJKQvMkQVw5IeVnW1hMB6NaBpEF58yACIgBBFAEMedusIwQ3wKMHmAAy0Kt1KlXd8XHGU4qqEw8H0al+KWhJBw7lYiYn5tj9oHvnbXh/Cj4Q9hk3f8tGc68loBABhW6m8pmM2pKAbBhN4/jIUgQFKc3xqAeJa9RB0f4+o4dLsTI3GrADLCkk8DBMQB41Ij5/i366H4y4OiKeKkGfCde1VMbtIJrXoH4R29CNbxD7Pwbt989Cwum4lyM+iJOkru5zaWOrfZ/qUBXHnlrXMn8vRy8F37wt3vOc2aDVGCYHgRUFhriRJt9HMbQJ37XhrAEVyXUiCYzWMRZANgPpsR9a6ImoeP7eYh8RYp2lKp1tPA3+Z5EeY8qpibvLmvywayCAlHt+Fy2btKtMM3ryORlHdeCnTktZugLILueDHBu/kpRECpwpRaZQFH61JfBvLGU0AWAfcBJpW1VOsm5zjDy4DtHgBxTP6txyCL0O126F+GjTwQfw7jAwHfATLwYt4fIFTgsvOcKaAjr/0Y8g0ilHETfM4UsJEHnEXdo41BaBXhqeFXV/sBJLzOZ6+SX9S96BhE5TGYSIT/DTryiRR4ypUgbo+WVOp/LrbPpKWpifzSKaAToSiyfK2t+kWX5dciG3nCT2LHv67ET2IyWIQykBZk0c/ZPOOr5NH3F0tL2nvmYAmSAAAAAElFTkSuQmCC", "sol": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJAAAAAQCAYAAAD59vZgAAAD30lEQVR4nO2aIXTaQBzGr30VzIFr3CIzV1wjKztHHZObKw4cuo661m1uReI2WcnUwA3JXOrAFbe97+A7/rleQsqS0Ef3vXeP5JKS5Pjx/b87etD++fWP+q+t1fWifxq9q8gz26MoUnUvvr/43VfhaTvxnF3rMOuJx7WXc9NJwuAWpTyefz5Nv28XPJeNGzX8cW367XNcanz6YlpeCjw/1qijTYP2MIsy9+9CSd/IPL6peT9/dT3uMeE+JSSVt039CnhiQPWvlAp9pYZTFbZvnjyfBCZoBKZv8Plj4j0Rhkm0plsCsunvUgHCIHGwOGBZBq9Mm8V1eD1eM6/rb/v8LudJgge6mwxVT8ByO2gtN+qhGq8+WMBz2fu27G8oddt5ryrNrnlOgEJoJoOJeq6yQLNVCbMHK2nwkuy0yLJC2bDkCW/W50+TC55osv7GfwhC1bm/M/t0HsIDxwEs3Ac82okcqp29UeFNXUNEkOhMzy1rs9nCtKRjB3mGaFcI3PbDLMrF8i6/3Q0hepP7yBANJwJMFMoayhncBwBByEUQ+qX7UIAHmt0/aoCkK8ltlrXjyvI9arWKeQ8CU/eOTd8oeojdN49lDtFlOEFRLpYUgMuYGFT9uNtA9j7AQSM0Mg9pYFZuozPQcKqb3hYCHGjD1kjDYwtgwZ14LqEDCGjSbdgnxT77WGoGKltF5Zm8skwWzYXjJM26vGBtSYBF5p9xFBqIMH0fXre0+9CF5FjgGMK0SyxffA3P6qn5yAYmq3ItYa9RXUcJAziPi6kTGFsXo6XLIPcw43AKrwXHQclalTDKBoqO0gnGqjc5MeexbCWVsXN/fe42KtWBTjx/HQz3WFVfqarys7uuauqZF6fvELOPVug/Acr0eW0DDoXt6XlT+d/7qjeIQ5S3jnYFzb7BNN8QlrNA9AQSyt5fZSICx1LGHAVw0ABRRy0hMu602rbXhk5q79R49st5f5P5gwqq7hJ3WPTUG5AAFm7vIzzQtvDYP1mgmXIlp+qhr/v1MUzrxSzMNYODABF00Q6MQ+EV+4SNSoIHsuGRM7LDMtZxbFj2DZ6543HsmVaa5O9dJv8QHgER+tEYqvnZwH0AC5yI0KAPDsRSJsV9GyLbkZLknIUVuaL7klTEM1Ud7pMWnO37gfDhS8nQvFD9WBlbDJfZSGYggEI4WM7gSISExyHtVNetWJ+tNEdKLGFFrujuUmWukkfPcB5KZxk4jWgM0BoSwGMdt1eiAQVLmISHWYiuI6GyS16a7IXEVzeNz3OVvIh/5xitYDZBGhIzLorBOe3epZtJl5GljOtHrml8WqC29Rd3HI1GI95gcQAAAABJRU5ErkJggg==", "obj_cut_tree": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABAklEQVR4nJVTIRLCMBC8dHhAkDh4AkgcSCRIcFgcSGQlElsHssjKOpBEIpFI+EGZDVwmvUlbWNN0e7vZuzRqfT7Qr0i3q4LXs3iv8Gz9I+xMXvZ9Mu5TslkVMFGcIOTOPAtZzEg2908CFC13PUtmuXFmbPTItNtdQnVHuiRmQORDpkAtaiImQXC8kNjnWOxmkIo+pUFVEtQptNAkHrQ/3PVZnoNN0B3pok7gr/3TYUQhUu5UJbYG9I3iF2ANUTyungWjJXtqVNQZEBFdLouCB3kyRFOcrNHupIbDQ2kT9x/44jn1S/FhgmHiG2oqDRhHMnTLe1aIFIAcLMNdplALEqEW3kLUl22llIzTAAAAAElFTkSuQmCC", "obj_strength_boulder": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVR4nIVTsRHCMBCzfRkiLSUjOHSMQM0WyRhhi9SMQJd4BEpatgj3PuTIj4nV2Kd/6fW+xPbzZDSWYVh/SGNMN45Wc01JeO6O5uIPkbuHV7zL+fjW2cgigYhZyMhMlmeWxtXEAoiRjtM6bvoHJBBIApjEFbxvd6ezCYA1QnhvCbhBc6Ua4Ep74gTH6fQKjd6TT20MMVZIb2DodWtgk+wNGDwB9xIncKVGjom7ji7T05d4O11X79ssRclEi/t5sikByL01pEf3pX9BUmSVCmR6ZgDUjCAEPi/MqwnXQmn6AAAAAElFTkSuQmCC", "obj_item_ball": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAxklEQVR4nGMsPrqEgRLARJHu4WEACy6J+94x/5H5iluXMBJtwH3vmP9TorxQxHK8Y/5jM4QJl2bJqVvB/HXn74MxSAzdVRgG3IdqBml4nu2NohCXIUwoij6gapCato0h5/h1BlxqMAzw8ooCawL7+fh1hqNHr4IxzBCQHEgN3jD4//8/hq3IBuKNBc1qL0Zv7+j/IENAgJEREugwvrd3NFgNXhdADWE4duwaWCMIg9jYNIMtwZUbr7duQwltbJoxvECMBnQAAOSGaKjrLvGRAAAAAElFTkSuQmCC"};
 const IMG_FRLG = {};
-const chargerFRLG = () => Promise.all(Object.entries(FRLG).map(([k, u]) => new Promise(ok => { const i = new Image(); i.onload = () => { IMG_FRLG[k] = i; ok(); }; i.onerror = ok; i.src = u; })));
+// une seule herbe dans tout le jeu (Kiki, 09/11 : rien n'était uniforme) : le vert menthe de Rouge Feu passe au vert jaune des images de ChatGPT (falaises, montagnes, arbres)
+const VERT_UNI = {"73cda4": "9cc84c", "bdeed5": "d0e88c", "9ce6c5": "b8dc6c", "a4e6c5": "bce070", "41b48b": "6ca83c", "18a46a": "4c8c30"};
+function reverdir(i) { return toile(i.width, i.height, x => { x.drawImage(i, 0, 0); const d = x.getImageData(0, 0, i.width, i.height), a = d.data;
+  for (let k = 0; k < a.length; k += 4) { const h = ((a[k] << 16) | (a[k + 1] << 8) | a[k + 2]).toString(16).padStart(6, "0"), n = VERT_UNI[h]; if (n) { const v = parseInt(n, 16); a[k] = v >> 16; a[k + 1] = (v >> 8) & 255; a[k + 2] = v & 255; } }
+  x.putImageData(d, 0, 0); }); }
+const chargerFRLG = () => Promise.all(Object.entries(FRLG).map(([k, u]) => new Promise(ok => { const i = new Image(); i.onload = () => { IMG_FRLG[k] = /^(sol|herbes|fleurs)$/.test(k) ? reverdir(i) : i; ok(); }; i.onerror = ok; i.src = u; })));
 
 /* ============ le parcours : des lignes droites et des virages, en mètres ============ */
 // [longueur, virage en degrés (+ = droite)]. On part vers l'est, le long de la côte sud de Cramois'Île.
-const SEGS = [[50, 0], [36, -50], [15, 0], [26, 25], [29, -30], [37, 35], [28, 20], [45, 0], [20, 0], [63, -90], [30, 0], [22, 25], [35, -45], [25, 0], [27, 35], [20, 0],
-  [30, 0], [40, 30], [30, -40], [32, 20], [40, 0], [30, -35], [50, 0], [60, 60], [40, 0], [35, -45], [30, 20], [25, 0], [50, 0]];
+// Un vrai circuit (09/11, Kiki) : les virages font un tour complet vers la gauche et la fin retombe pile sur le départ (virages calculés pour
+// fermer la boucle en restant proches du tracé d'origine, la mer toujours à l'extérieur, au moins 118 m entre deux côtés du circuit).
+const SEGS = [[50, 0], [36, -7.22], [15, -10.18], [26, 4.38], [29, -55.68], [37, -1.19], [28, -5.27], [45, 0], [20, -1.88], [63, -63.77], [30, 0], [22, 15.68], [35, -58.32], [25, -9.73],
+  [27, 23.76], [20, -8.5], [30, 0], [40, 11.96], [30, -53.96], [32, 3.02], [40, 0], [30, -56.25], [50, 0], [60, .15], [40, -19.99], [35, -47.11], [30, 5.42], [25, -25.3], [50, 0]];
 const DS = .5, PX = [], PZ = [], PH = [], PK = [];
 { let x = 0, z = 0, h = Math.PI / 2; PX.push(x); PZ.push(z); PH.push(h); PK.push(0);
   for (const [L, A] of SEGS) { const n = Math.round(L / DS), k = A * Math.PI / 180 / L;
     for (let i = 0; i < n; i++) { h += k * DS / 2; x += Math.sin(h) * DS * E; z -= Math.cos(h) * DS * E; h += k * DS / 2; PX.push(x); PZ.push(z); PH.push(h); PK.push(k); } } }
 const LONG = (PX.length - 1) * DS;
-function at(s) {  // position du milieu de l'eau à s mètres (prolongé tout droit avant le départ et après la fin)
-  const sc = clamp(s, 0, LONG - 1e-6), f = sc / DS, i = Math.floor(f), u = f - i, h = lerp(PH[i], PH[i + 1], u), ex = (s - sc) * E;
-  return {x: lerp(PX[i], PX[i + 1], u) + Math.sin(h) * ex, z: lerp(PZ[i], PZ[i + 1], u) - Math.cos(h) * ex, h, k: PK[i + 1]};
+{ const n = PX.length - 1, ex = PX[n] - PX[0], ez = PZ[n] - PZ[0]; for (let i = 0; i <= n; i++) { PX[i] -= ex * i / n; PZ[i] -= ez * i / n; } }  // les derniers centimètres d'écart, répartis
+const mod = s => ((s % LONG) + LONG) % LONG;  // la boucle : 1 001 m = 1 m
+function at(s) {  // position du milieu de l'eau à s mètres
+  const sc = Math.min(mod(s), LONG - 1e-6), f = sc / DS, i = Math.floor(f), u = f - i, h = lerp(PH[i], PH[i + 1], u);
+  return {x: lerp(PX[i], PX[i + 1], u), z: lerp(PZ[i], PZ[i + 1], u), h, k: PK[i + 1]};
 }
 function pose(s, d) { const a = at(s); return {x: a.x + Math.cos(a.h) * d * E, z: a.z + Math.sin(a.h) * d * E, h: a.h}; }
 
 // Les deux rives : [s, distance du bord (m) ou null = la mer, hauteur de la rive (unités), largeur de la terre (unités)]
-const GAUCHE = [[0, 2.9, 7, 320], [22, 2.9, 7, 320], [25, 7, 4.5, 320], [55, 8, 4.8, 320], [90, 12, 3.6, 300], [102, 24, 1.4, 260], [102.5, null], [213, null], [213.5, 22, 1.6, 900], [224, 9, 4.2, 900], [292, 9, 4.2, 900],
+const GAUCHE = [[0, 2.9, 7, 320], [3, 7, 4.5, 320], [55, 8, 4.8, 320], [90, 12, 3.6, 300], [104, 20, 1.5, 300], [160, 23, 1.3, 300], [213.5, 22, 1.6, 900], [224, 9, 4.2, 900], [292, 9, 4.2, 900],
   [324, 4.6, 1.7, 900], [349, 3.5, .8, 900], [401, 3.2, 1, 900], [470, 3, 1.3, 900], [497, 3, 1.9, 900], [503, 2.9, 1.6, 900], [508.6, 2.9, 1.6, 900], [509.4, 2.8, 7.5, 900], [537, 2.8, 7.5, 900], [546, 3.6, 6.5, 900],
   [600, 4, 5.8, 900], [628, 4.4, 4, 900], [640, 5, 1.2, 900], [683, 5, 1.2, 900], [688, 3.1, 1.2, 900], [696, 3.1, 1.2, 900], [701, 5, 1.2, 900], [756, 5, 1.2, 900], [770, 14, .8, 900], [790, 24, .7, 900], [830, 28, .7, 900], [850, 14, .8, 900],
   [862, 4, .9, 900], [940, 3.6, 1.4, 900], [977.6, 3, 1.4, 900], [978.4, 2.9, 7, 900], [1001, 2.9, 7, 900]];
-const DROITE = [[0, 2.9, 7, 300], [22, 2.9, 7, 300], [22.5, null], [318, null], [318.5, 15, 2.2, 300], [336, 5, 1.3, 500], [349, 3.6, .8, 800], [401, 3.5, 1.1, 800], [470, 3.2, 1.3, 800], [497, 3, 1.9, 800],
+const DROITE = [[0, 2.9, 7, 300], [.5, null], [318, null], [318.5, 15, 2.2, 300], [336, 5, 1.3, 500], [349, 3.6, .8, 800], [401, 3.5, 1.1, 800], [470, 3.2, 1.3, 800], [497, 3, 1.9, 800],
   [503, 2.9, 1.6, 800], [508.6, 2.9, 1.6, 800], [509.4, 2.8, 7.5, 800], [537, 2.8, 7.5, 800], [546, 3.4, 6.8, 800],
   [600, 4.2, 5.5, 800], [628, 4.6, 3.6, 800], [640, 5, 1.2, 800], [683, 5, 1.2, 800], [688, 3.1, 1.2, 800], [696, 3.1, 1.2, 800], [701, 5, 1.2, 800], [756, 5, 1.2, 800], [770, 18, .8, 800], [790, 30, .7, 800], [830, 22, .7, 800], [850, 12, .8, 800],
   [862, 4.2, .9, 800], [940, 3.6, 1.4, 800], [977.6, 3, 1.4, 800], [978.4, 2.9, 7, 800], [1001, 2.9, 7, 800]];
 const MER = 25;  // pour creuser l'eau du côté de la mer
 function rive(P, s) {
-  let i = 0; while (i < P.length - 2 && P[i + 1][0] <= s) i++;
+  s = mod(s); let i = 0; while (i < P.length - 2 && P[i + 1][0] <= s) i++;
   const a = P[i], b = P[i + 1];
   if (a[1] == null || b[1] == null) return null;
   const u = clamp((s - a[0]) / (b[0] - a[0]), 0, 1), h = lerp(a[2], b[2], u), g = P === GAUCHE ? 1 : 7;
-  const irreg = (s < 23 || s > LONG - 23) ? 0 : (h > 2.5 ? .7 : .25) * (.6 * Math.sin(s * .31 + g) + .4 * Math.sin(s * .77 + g * 2));  // pas d'irrégularité dans les deux grottes du raccord
+  const irreg = (s < 1 || s > LONG - 23) ? 0 : (h > 2.5 ? .7 : .25) * (.6 * Math.sin(s * .31 + g) + .4 * Math.sin(s * .77 + g * 2));  // pas d'irrégularité dans les deux grottes du raccord
   return {d: lerp(a[1], b[1], u) + irreg, h, W: lerp(a[3], b[3], u)};
 }
 const profil = (o, h) => o <= 26 ? h : lerp(h, H0, lisse(26, 72, o));
@@ -180,8 +188,8 @@ const LIEUX = [[0, "CRAMOIS'ÎLE", "Le ponton du volcan"], [104, "ROUTE 21", "Le
   [640, "JADIELLE", "Les quais"], [686, "JADIELLE", "Le pont de pierre"], [732, "JADIELLE", "Le ponton : on plonge !"], [760, "LAC DE JADIELLE", "Le grand lac"],
   [860, "ROUTE 22", "Le marais"], [948, "GROTTE DU RIVAGE", "Vers le départ"]];
 // zones du sol : 0 île, 1 mer, 2 côte, 3 village, 4 prés, 5 bois, 6 gorge (deux zones voisines se suivent)
-const ZONES = [[0, 6], [23, 0], [104, 1], [214, 2], [349, 3], [405, 4], [482, 5], [500, 6], [640, 3], [760, 4], [860, 5], [948, 6]];
-const zoneDe = s => { let z = 0; for (const [a, v] of ZONES) if (s >= a) z = v; return z; };
+const ZONES = [[0, 0], [104, 1], [214, 2], [349, 3], [405, 4], [482, 5], [500, 6], [640, 3], [760, 4], [860, 5], [948, 6]];
+const zoneDe = s => { s = mod(s); let z = 0; for (const [a, v] of ZONES) if (s >= a) z = v; return z; };
 
 /* ============ la carte du sol (vue du dessus) : où est l'eau, le sable, les herbes ============ */
 let BX0 = 1e9, BZ0 = 1e9, BX1 = -1e9, BZ1 = -1e9;
@@ -194,14 +202,15 @@ const ligne = (x, pts) => { x.beginPath(); pts.forEach((p, i) => i ? x.lineTo(p.
 const cEau = carteSol(x => {
   x.fillStyle = "#fff"; x.fillRect(BX0, BZ0, BX1 - BX0, BZ1 - BZ0);
   x.fillStyle = "#000";
-  for (const [P, sg] of [[GAUCHE, -1], [DROITE, 1]]) { let run = [];
+  { const pts = []; for (let s = 0; s < LONG; s += 1) pts.push(at(s)); ligne(x, pts); x.fill(); }  // l'intérieur de la boucle
+  for (const [P, sg] of [[DROITE, 1]]) { let run = [];
     const fin = () => { if (run.length > 1) { ligne(x, run.map(([s, r]) => pose(s, sg * r.d)).concat(run.slice().reverse().map(([s, r]) => pose(s, sg * (r.d + r.W / E))))); x.fill(); } run = []; };
     for (let s = 0; s <= LONG; s += 1) { const r = rive(P, s); if (r) run.push([s, r]); else fin(); } fin(); }
   x.fillStyle = "#fff"; const g = [], d = [];
-  for (let s = -30; s <= LONG + 30; s += 1) { const l = rive(GAUCHE, s), r = rive(DROITE, s); g.push(pose(s, -(l ? l.d : MER))); d.push(pose(s, r ? r.d : MER)); }
+  for (let s = 0; s <= LONG; s += 1) { const l = rive(GAUCHE, s), r = rive(DROITE, s); g.push(pose(s, -(l ? l.d : MER))); d.push(pose(s, r ? r.d : MER)); }
   ligne(x, g.concat(d.reverse())); x.fill();
 });
-const cZone = carteSol(x => { for (const r of [300, 200, 130, 80, 45, 25]) for (let s = -40; s <= LONG + 40; s += 2) { const p = at(s); x.fillStyle = `rgb(${zoneDe(s) * 36},0,0)`; x.beginPath(); x.arc(p.x, p.z, r, 0, 7); x.fill(); } });  // la zone du bout de parcours le plus proche
+const cZone = carteSol(x => { for (const r of [300, 200, 130, 80, 45, 25]) for (let s = 0; s < LONG; s += 2) { const p = at(s); x.fillStyle = `rgb(${zoneDe(s) * 36},0,0)`; x.beginPath(); x.arc(p.x, p.z, r, 0, 7); x.fill(); } });  // la zone du bout de parcours le plus proche
 // les chemins de sable, les fleurs et les hautes herbes (posés à la main)
 const CHEMINS = [  // [s0, s1, décalage (m), largeur (m)]
   [349, 498, 8.5, 2.4], [349, 470, -8.5, 2.2], [220, 296, -14, 2.4], [640, 758, 8, 2.2], [640, 758, -8, 2.2]];
@@ -262,9 +271,7 @@ const GLSL = `
     if (mc.b >= .7) i = 6.0; else if (mc.b > .3 && h1(cell + 3.0) > .4) i = 7.0;
     if (m2.g > .5 + (h1(t) - .5) * .2) i = 5.0;
     vec3 c = tuile(i, pp);
-    if (z > 4.5 && z < 5.5) c *= vec3(.84,.9,.88);
-    if (z > 5.5) { float n = h1(t); c = n > .55 ? vec3(.6,.53,.43) : vec3(.5,.44,.36); if (h1(t + 31.7) > .8) c = vec3(.45,.8,.64); }
-    if (bord > .02 && bord < .1) c = mix(c, vec3(.55,.87,.74), .6);
+    if (bord > .02 && bord < .1) c = mix(c, vec3(.74,.86,.44), .35);
     return c;
   }`;
 const VERT = `varying vec3 vP; void main(){ vP = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vP,1.0); }`;
@@ -315,23 +322,8 @@ const matRive = new THREE.ShaderMaterial({uniforms: UNI, side: THREE.DoubleSide,
   void main(){ vW = aW; vU = aU; vH = aH; vP = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vP,1.0); }`, fragmentShader: GLSL + `
   varying float vW, vU, vH; varying vec3 vP; uniform sampler2D uFal, uQuai;
   vec3 falaise(float u, float y, float h){
-    if (h >= 1.7) { vec3 c = texture2D(uFal, vec2(u / (h * 3.2), clamp(y / h, 0.0, 1.0))).rgb; if (y < .45) c *= .62 + .38 * smoothstep(0.0, .45, y); return c; }
-    vec2 t = floor(vec2(u, y) / GP); float n = h1(t);
-    if (h < 1.7) { vec3 c = n > .6 ? vec3(.56,.42,.28) : vec3(.47,.35,.23); if (mod(t.x + floor(t.y / 3.0), 6.0) < 1.0) c = vec3(.4,.29,.19);
-      if (y > h - .22) c = vec3(.45,.8,.64); else if (y > h - .33 && n > .4) c = vec3(.25,.7,.55); if (y < .18) c *= .72; return c; }
-    float ond = floor(2.5 * sin(t.y * .23 + floor(t.x / 9.0) * 1.7) + 1.5 * sin(t.y * .61 + t.x * .1));
-    float xx = t.x + ond, col = floor(xx / 9.0), dans = mod(xx, 9.0), larg = 6.0 + floor(h1(vec2(col, 2.0)) * 3.0);
-    vec3 c = h1(vec2(col, 9.0)) > .5 ? vec3(.69,.47,.31) : vec3(.63,.42,.28);
-    if (dans >= larg) c = vec3(.45,.29,.18);
-    else if (dans < 1.5) c = vec3(.82,.6,.41);
-    else if (dans > larg - 2.0) c = vec3(.56,.37,.24);
-    float str = mod(t.y + floor(h1(vec2(col, 5.0)) * 12.0), 13.0);
-    if (str < 1.0 && dans < larg) c *= .82;
-    if (n > .96) c = vec3(.5,.33,.21);
-    float lev = h - .3 - .3 * h1(vec2(floor(t.x / 2.0), 1.0)) - (h1(vec2(floor(t.x / 3.0), 7.0)) > .85 ? .35 : 0.0);
-    if (y > lev) { c = vec3(.45,.8,.64); if (y > h - .1) c = vec3(.55,.87,.74); } else if (y > lev - .12) c = vec3(.15,.45,.33);
-    if (y < .45) c *= .62 + .38 * smoothstep(0.0, .45, y);
-    return c; }
+    { vec3 c = texture2D(uFal, vec2(u / 13.5, 1.0 - (h - y) / 9.0)).rgb; if (y < .45) c *= .62 + .38 * smoothstep(0.0, .45, y); return c; }
+  }
   void main(){ vec3 c = vW > .5 ? falaise(vU, vP.y, vH) : sol(vP.xz); float zq = zoneEn(vP.xz);
     if (vW > .5 && vH < 1.7 && zq > 2.5 && zq < 3.5) c = texture2D(uQuai, vec2(vU / (vH * 1.5), clamp(vP.y / vH, 0.0, 1.0))).rgb;
     gl_FragColor = vec4(brume(c, vP), 1.0); }`});
@@ -339,7 +331,9 @@ UNI.uFal = {value: null}; UNI.uQuai = {value: null};
 const PROF = [0, 0, 0, .5, 2.5, 7, 15, 26, 40, 56, 72];  // colonnes : bas de la paroi, haut de la paroi, puis le dessus
 function rubans(P, sg) {
   const runs = []; let run = null;
-  for (let s = 0; s <= LONG; s += 1) { const r = rive(P, s); if (r) { if (!run) runs.push(run = []); run.push([s, r]); } else run = null; }
+  for (let s = 0; s < LONG; s += 1) { const r = rive(P, s); if (r) { if (!run) runs.push(run = []); run.push([s, r]); } else run = null; }
+  if (runs.length > 1 && runs[0][0][0] === 0 && runs[runs.length - 1].at(-1)[0] === LONG - 1) { const fin = runs.pop(); runs[0] = fin.concat(runs[0].map(([s, r]) => [s + LONG, r])); }
+  else if (runs.length === 1 && runs[0].length >= LONG) runs[0].push([LONG, runs[0][0][1]]);
   for (const run of runs) {
     const pos = [], aW = [], aU = [], aH = [], idx = [], C = PROF.length;
     const sommet = (s, r, j) => { const a = at(s), R0 = Math.abs(a.k) > 1e-4 && Math.sign(a.k) === sg ? 1 / Math.abs(a.k) : 1e9;
@@ -473,14 +467,26 @@ function poser(T, x, y, z, k = 1, tourne = true) {
 let matOmbre = null;
 function ombre(x, y, z, l) { const T = image("ombre"); matOmbre = matOmbre || new THREE.MeshBasicMaterial({map: T.t, transparent: true, depthWrite: false}); const g = new THREE.PlaneGeometry(l, l * .34), m = new THREE.Mesh(g, matOmbre); m.rotation.x = -Math.PI / 2; m.position.set(x, y + .03, z); scene.add(m); return m; }
 const RETIRES = new Set(["bouee", "barque", "pokeball", "champignons", "souche", "banc", "vague"]);
+// Moins de choses, mieux posées (Kiki, 09/11 : « en 2 m², 2 arbres, 2 cailloux, un Pokémon caché derrière, c'est beaucoup trop ») :
+// jamais deux objets collés sur la même rive, rien devant l'entrée d'une grotte, et un Pokémon ou un habitant n'a jamais rien devant lui.
+const POSES = [];  // les objets au bord : {s, d, objs}
+const GRANDS = /chene|pommier|pin|buisson|rocher|boulder|arbuste|rochergen/;
+const libreEn = (s, d, r) => !POSES.some(p => Math.abs(mod(p.s - s + 500) - 500) < r && Math.abs(p.d - d) < r && Math.sign(p.d) === Math.sign(d));
+const devantGrotte = (s, d) => [T1[0], S_GROTTE].some(g => s > g - 16 && s < g + 1 && Math.abs(d) < 18);
+function degager(s, d) {  // un Pokémon ou un habitant arrive : ce qui le cacherait (devant lui ou collé à lui) s'en va
+  for (let i = POSES.length - 1; i >= 0; i--) { const p = POSES[i]; if (Math.sign(p.d) !== Math.sign(d) || Math.abs(mod(p.s - s + 500) - 500) > 4.5) continue;
+    if (Math.abs(p.d) < Math.abs(d) + 2.5) { p.objs.forEach(o => { if (o) { scene.remove(o); const j = tournants.indexOf(o); if (j >= 0) tournants.splice(j, 1); } }); POSES.splice(i, 1); } } }
 function decor(type, s, d, o = {}) {  // un objet posé au bord du parcours : s (m), d (m, + = à droite)
   if (RETIRES.has(type)) return null;
+  const garde = !o.eau && !o.libre && Math.abs(d) < 26 && type !== "herbes" && type !== "fleurs";
+  if (garde && (devantGrotte(s, d) || !libreEn(s, d, GRANDS.test(type) ? 4 : 2.5))) return null;
   if (type === "recif") return rocher3D(s, d, 2.4 * (o.arg || 1), {eau: true, mer: true, pointu: true, h: 5.2 * (o.arg || 1)});
   if (type === "galet") return PLANCHE_ROCHERS ? decor("rochergen", s, d, {eau: true, dy: -.4, v: Math.floor(rnd(s * 3) * 8), k: .9 + rnd(s) * .5}) : rocher3D(s, d, .8 + rnd(s * 3) * .6, {eau: true, h: .9});
   if (type === "ilot") return ilot3D(s, d, 7 * (o.k || 1));
   const p = pose(s, d), y = o.y ?? (o.eau ? 0 : solY(s, d)), T = image(type, o.v ?? Math.floor(rnd(s * 3.1 + d) * 4), o.arg);
   const k = (o.k || 1) * ECHELLE(type) * TAILLE(type, o.arg), m = poser(T, p.x, y + (o.dy || 0), p.z, k, o.tourne !== false);
-  if (o.ombre !== false && !o.eau && /chene|pommier|pin|buisson|rocher|panneau|boite|lampe|arbuste|boulder/.test(type)) ombre(p.x, y, p.z, T.w * DECO * k * .8);
+  const om = o.ombre !== false && !o.eau && /chene|pommier|pin|buisson|rocher|panneau|boite|lampe|arbuste|boulder/.test(type) ? ombre(p.x, y, p.z, T.w * DECO * k * .8) : null;
+  if (garde) POSES.push({s, d, objs: [m, om]});
   return m;
 }
 function plat(type, s, d, k = 1, v = 0) { const p = pose(s, d), T = image(type, v), g = new THREE.PlaneGeometry(T.w * DECO * k, T.h * DECO * k), m = new THREE.Mesh(g, T.m);
@@ -563,10 +569,10 @@ function pontArche(s, w, haut) {  // le petit pont de bois du village, en arche 
   const p = at(s); g.position.set(p.x, 0, p.z); g.rotation.y = -p.h; scene.add(g); return g;
 }
 // les tunnels : on passe sous le Mont Sélénite, puis la grotte du rivage ramène au départ
-const S_GROTTE = LONG - 22, T1 = [509, 537], T0 = [0, 22], TUNNELS = [T0, T1, [S_GROTTE, LONG]];
-const DEPART = 247, RACCORD = LONG - 14, DECAL = LONG - T0[1];  // RACCORD : 14 m avant la sortie de la grotte du rivage = 14 m avant la sortie de la grotte de départ
-const boucler = () => { if (S.s >= RACCORD) { S.s -= DECAL; sautsFaits.clear(); vie.fill(0); RONDS.forEach(r => r.z = -99); } };  // les gouttes et les ronds, posés dans le monde, ne suivent pas : on les efface
-const surBoucle = s => (((s - DEPART) % DECAL) + DECAL) % DECAL;  // la distance depuis la ligne de départ, sur la boucle
+const S_GROTTE = LONG - 22, T1 = [509, 537], TUNNELS = [T1, [S_GROTTE, LONG]];
+const DEPART = 247, ELAN = 18;  // la ligne de départ, sous la jetée de Bourg Palette ; on part 18 m avant, pour la passer lancé (Kiki, 09/11)
+const boucler = () => { if (S.s >= LONG) { S.s -= LONG; sautsFaits.clear(); } };  // un vrai circuit : rien ne saute, on repasse simplement par le mètre 0
+const surBoucle = s => mod(s - DEPART);  // la distance depuis la ligne de départ, sur la boucle
 const dansTunnel = s => TUNNELS.some(([a, b]) => s > a - 1 && s < b);
 function bruitV(x, y, g) {  // un bruit doux (pour des rochers naturels, jamais en briques)
   const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, l = t => t * t * (3 - 2 * t), v = (a, b) => rnd(a * 57.3 + b * 131.7 + g);
@@ -589,22 +595,24 @@ function grotte(S0, S1, fin) {
       if (Math.hypot(cx / RA, cy / (RA * 1.02)) < 1) continue; idx.push(...t); } }
   const geo = new THREE.BufferGeometry(); geo.setAttribute("position", new THREE.Float32BufferAttribute(pts.flat(), 3)); geo.setIndex(idx);
   const nomFace = lune ? "rameur-grotte-selenite.webp" : "rameur-grotte-rivage.webp", fi = faceImage(nomFace, IMG_INFO[nomFace], (RA * 2 + .3) * 1.45, 0, .2); g.add(fi.m);
-  { // le fond de l'arche, plus large que la voûte du tunnel : un cadre sombre qui laisse voir le tunnel
+  { // le fond de l'arche, plus large que la voûte du tunnel : la roche de la grotte (plus un aplat noir : Kiki, 09/11), percée pile à la taille du tunnel
     const f = new THREE.Shape(), hw = (RA * 2 + .3) * 1.45 / 2 + .5, ht = fi.trou + .5; f.moveTo(-hw, -.5); f.lineTo(hw, -.5); f.lineTo(hw, ht); f.lineTo(-hw, ht); f.lineTo(-hw, -.5);
-    const t = new THREE.Path(); t.moveTo(6.4, -.6); t.absarc(0, -.6, 6.4, 0, Math.PI, false); t.lineTo(6.4, -.6); f.holes.push(t);
-    const cadre = new THREE.Mesh(new THREE.ShapeGeometry(f, 24), new THREE.MeshBasicMaterial({color: lune ? 0x1A1626 : 0x14201A, side: THREE.DoubleSide})); cadre.position.z = -.5; g.add(cadre); }
+    const t = new THREE.Path(); t.moveTo(6.5, -.5); t.absarc(0, -.5, 6.5, 0, Math.PI, false); t.lineTo(6.5, -.5); f.holes.push(t);
+    const tr = texImg(lune ? "rameur-paroi-selenite.webp" : "rameur-paroi-rivage.webp"); tr.wrapS = tr.wrapT = THREE.RepeatWrapping; tr.repeat.set(1 / 9, 1 / 9);
+    const cadre = new THREE.Mesh(new THREE.ShapeGeometry(f, 24), new THREE.MeshBasicMaterial({map: tr, color: 0x9A9A9A, side: THREE.DoubleSide})); cadre.position.z = -.5; g.add(cadre); }
   // la masse de la montagne au-dessus et de chaque côté du tunnel (jamais dedans : tout reste au-dessus de la voûte ou au-delà des parois)
   // l'intérieur : une voûte cabossée à facettes, éclairée par les cristaux (Mont Sélénite) ou par l'eau turquoise (grotte du rivage)
   const L = (S1 - S0 + 2) * E, voute = new THREE.CylinderGeometry(6.6, 6.6, L, 18, Math.max(4, Math.round(L / 3)), true, -Math.PI / 2, Math.PI), pv = voute.attributes.position, v = new THREE.Vector3();
   for (let i = 0; i < pv.count; i++) { v.fromBufferAttribute(pv, i); const r = Math.hypot(v.x, v.z), k = 1 - (.06 + .14 * bruitV(v.y / 2.5, Math.atan2(v.z, v.x) * 3, fin ? 0 : S0)); if (Math.abs(v.z) > .5) { v.x *= k; v.z *= k; } pv.setXYZ(i, v.x, v.y, v.z); }
   const tp = texImg(lune ? "rameur-paroi-selenite.webp" : "rameur-paroi-rivage.webp"); tp.wrapS = tp.wrapT = THREE.RepeatWrapping; tp.repeat.set(3, Math.max(1, Math.round(L / 9)));
-  const tun = new THREE.Mesh(voute, new THREE.MeshBasicMaterial({map: tp, side: THREE.BackSide, color: 0xC8C8C8}));
+  const tun = new THREE.Mesh(voute, new THREE.MeshBasicMaterial({map: tp, side: THREE.BackSide, color: 0xE0E0E0}));
   tun.rotation.x = -Math.PI / 2; const gt = new THREE.Group(); gt.add(tun); const mid = at(S0 + (S1 - S0) / 2); gt.position.set(mid.x, 0, mid.z); gt.rotation.y = -mid.h; scene.add(gt);
   for (let i = 0; i < Math.round((S1 - S0) / (lune ? 2 : 4)); i++) { const s = S0 + 2 + rnd(i * 3 + (fin ? 0 : S0)) * (S1 - S0 - 4), cote = i % 2 ? 1 : -1, q = pose(s, cote * (2.3 + rnd(i) * .3)), y = .3 + rnd(i * 5) * 3.5;
     if (lune) { const cr = poser(image("cristal", i % 3), q.x, y, q.z, 1 + rnd(i * 7)); cr.userData.cristal = i; }
     const h = poser(image("lumiere"), q.x, y + .3, q.z, lune ? .9 : .7); h.material = h.material.clone(); h.material.alphaTest = .02; h.material.depthWrite = false; h.material.transparent = true; h.material.blending = THREE.AdditiveBlending;
     h.material.color.set(lune ? 0x6070FF : 0x30C8A0); h.material.opacity = .55; }
-  const sortie = pose(fin ? S1 - 1 : S1 + 1, 0), lum = poser(image("lumiere"), sortie.x, 0, sortie.z, 2.2); lum.material = lum.material.clone(); lum.material.alphaTest = .02; lum.material.depthWrite = false; lum.material.fog = false;
+  if (fin) return;  // la grotte du rivage débouche sur Cramois'Île : pas de halo de sortie (on le traversait : écran blanc)
+  const sortie = pose(S1 + 1, 0), lum = poser(image("lumiere"), sortie.x, 0, sortie.z, 2.2); lum.material = lum.material.clone(); lum.material.alphaTest = .02; lum.material.depthWrite = false; lum.material.fog = false;
 }
 function facettesHerbe(geo, roche, herbe, graine) {  // comme facettes, mais ce qui regarde vers le haut devient de l'herbe
   const g = facettes(geo, roche, .18, graine), n = g.attributes.normal, c = g.attributes.color;
@@ -910,6 +918,7 @@ function rangeePMD(a) { const k = Math.round(a / 45); return {0: 4, 1: 3, 2: 2, 
 const VIVANTS = [];   // Pokémon et habitants (mise à jour à chaque image)
 function surSol(s, d, eau) { const p = pose(s, d); return {x: p.x, y: eau ? 0 : solY(s, d), z: p.z}; }
 async function pokemon(n, s, d, o = {}) {  // un Pokémon posé au bord, qui fait la fête quand tu passes vite
+  if (!o.eau && !o.dy) degager(s, d);
   const p = surSol(s, d, o.eau), g = new THREE.Group(); g.position.set(p.x, p.y + (o.dy || 0), p.z); scene.add(g);
   const repos = await spritePMD(n, o.anim || "Idle", o.rang ?? 0, o.k || 1.45, +n); g.add(repos.mesh); tournants.push(repos.mesh);
   let joie = null; if (o.joie !== false) { try { const a = await animsDe(n); const nom = ["Hop", "Dance", "Pose", "Twirl", "Nod"].find(x => a[x]); if (nom) { joie = await spritePMD(n, nom, 0, o.k || 1.45, +n); joie.mesh.visible = false; g.add(joie.mesh); tournants.push(joie.mesh); } } catch (e) {} }
@@ -919,6 +928,7 @@ async function pokemon(n, s, d, o = {}) {  // un Pokémon posé au bord, qui fai
   VIVANTS.push(v); return v;
 }
 async function villageois(nom, s, d, o = {}) {  // un habitant immobile (face à toi) ou qui marche le long d'un chemin
+  if (o.y == null && !o.marche) degager(s, d);
   const h = await habitant(nom), p = surSol(s, d); if (o.y != null) p.y = o.y; h.mesh.position.set(p.x, p.y, p.z); scene.add(h.mesh); tournants.push(h.mesh); ombre(p.x, p.y, p.z, 1.6);
   const v = {h, s, d, o, t: rnd(s) * 10, maj(dt, T) {
     v.t += dt;
@@ -942,10 +952,10 @@ function peupler() {
     decor(t, s, d, {arg: k});
   decor("panneau", 34, -9.8); decor("bouee", 22, 4.2, {eau: true, dy: -.25}); decor("barque", 6, -4, {eau: true, dy: -.3, tourne: false});
   // Route 21 : les récifs (on serpente entre eux), une bouée, des îlots au loin
-  const RECIFS = [[96, 6, 1.1], [111, -5.2, 1.3], [127, 5.4, 1.2], [142, -5.6, 1.4], [158, 4.8, 1], [174, -4.6, 1.15], [190, 6.2, 1.3], [120, -16, 1.6], [150, 15, 1.8], [168, -22, 1.5], [200, 18, 1.2],
-    [135, 30, 2], [180, 35, 1.7], [105, -32, 2.2], [210, -12, .9], [60, 14, 1.3], [40, 20, 1.6]];
+  const RECIFS = [[96, 6, 1.1], [111, -5.2, 1.3], [127, 5.4, 1.2], [142, -5.6, 1.4], [158, 4.8, 1], [174, -4.6, 1.15], [190, 6.2, 1.3], [120, -16, 1.6], [150, 15, 1.8], [168, -15, 1.5], [200, 18, 1.2],
+    [135, 30, 2], [180, 35, 1.7], [210, -12, .9], [60, 14, 1.3], [40, 20, 1.6]];
   for (const [s, d, k] of RECIFS) { decor("recif", s, d, {eau: true, dy: -.6, arg: k, v: Math.floor(rnd(s) * 3)}); }
-  decor("ilot", 160, 120, {eau: true, dy: -.5, k: 2.2}); decor("ilot", 120, -140, {eau: true, dy: -.5, k: 2.6, v: 2});
+  decor("ilot", 160, 120, {eau: true, dy: -.5, k: 2.2});
   decor("bouee", 150, -2.8, {eau: true, dy: -.25}); decor("bouee", 205, 3, {eau: true, dy: -.25});
   // Bourg Palette : la jetée (on passe dessous), la falaise, les maisons du bout de la presqu'île
   ponton(250, -10, 13, 4.3, 3);
@@ -980,10 +990,10 @@ function peupler() {
   for (const [s, d, t, k] of [[483, -6.5, "pin", 44], [485, 6.8, "pin", 52], [487, -9, "chene", 15], [489, 8.5, "pin", 40], [491, -6.2, "champignons"], [493, 10, "pin", 58], [494, -11, "pin", 50],
     [496, 6.4, "souche"], [498, -7.5, "pin", 46], [500, 7.2, "chene", 13], [502, -6, "rocher"], [504, 6.2, "rocher"], [497, 13, "pin", 60], [490, -14, "pin", 62], [484, 14, "chene", 18]])
     decor(t, s, d, {arg: k});
-  for (const [t, s2, d2] of [["arbuste", 444, -9], ["arbuste", 229, -11.5], ["boulder", 503, 5.4], ["pokeball", 456, 7.6], ["galet", 133, -9], ["galet", 168, 8], ["galet", 196, -7], ["galet", 105, 9], ["fleurs", 239, -12.5], ["fleurs", 450, -10], ["herbes", 236, -12]])
+  for (const [t, s2, d2] of [["arbuste", 444, -9], ["arbuste", 229, -11.5], ["pokeball", 456, 7.6], ["galet", 133, -9], ["galet", 168, 8], ["galet", 196, -7], ["galet", 105, 9], ["fleurs", 239, -12.5], ["fleurs", 450, -10], ["herbes", 236, -12]])
     decor(t, s2, d2, {eau: t === "galet", dy: t === "galet" ? -.25 : 0, v: Math.floor(rnd(s2 * 1.7) * 4)});
   phare(237, -13.5); moulin(437, 22);
-  grotte(T0[0], T0[1], true); grotte(T1[0], T1[1], false); grotte(S_GROTTE, LONG, true); peuplerSuite();
+  grotte(T1[0], T1[1], false); grotte(S_GROTTE, LONG, true); peuplerSuite();
   // les arbres au loin : des bosquets plantés tout seuls hors du parcours, jamais en rangée (taches de bruit)
   forets();
 }
@@ -995,7 +1005,7 @@ function forets() {
     if (eauEn(x, z) || bordEn(x, z) > .02) continue;
     let best = 1e9, bi = 0; for (let i = 0; i < PX.length; i += 8) { const dd = (PX[i] - x) ** 2 + (PZ[i] - z) ** 2; if (dd < best) { best = dd; bi = i; } }
     best = Math.sqrt(best); if (best < 34 || best > 520) continue;
-    const s = bi * DS, zone = zoneDe(s); if (zone === 3 && best < 80) continue; if (s < 30 || s > LONG - 30) continue;  // rien au-dessus des grottes du raccord
+    const s = bi * DS, zone = zoneDe(s); if (zone === 3 && best < 80) continue; if (s < 4 || s > LONG - 30) continue;  // rien au-dessus de la grotte du rivage
     const dens = bruit(x, z) + (zone === 5 ? .7 : 0) + (zone === 0 ? .5 : 0); if (dens < .35) continue;
     const a = at(s), lat = ((x - a.x) * Math.cos(a.h) + (z - a.z) * Math.sin(a.h)) / E, y = solY(s, lat);
     const t = zone === 5 || zone === 0 ? (rnd(k) > .3 ? Math.floor(rnd(k * 3) * 2) : 4) : Math.floor(rnd(k * 5) * types.length);
@@ -1016,18 +1026,19 @@ function habiter() {  // les Pokémon et les habitants (chargés en ligne ; s'il
   P("0019", 418, -9, {k: 1.4}); P("0001", 432, 13.5, {k: 1.4}); P("0043", 447, 6.8, {k: 1.4}); P("0010", 457, -12.6, {k: 1.4});
   P("0143", 452, 15.5, {anim: "Sleep", k: 1.4, joie: false}); P("0083", 470, -8, {k: 1.4}); V("bug_catcher", 437, -11, {salue: true});
   V("biker", 404, 8.5, {marche: [404, 498, 4.5], biker: true});
-  P("0074", 503, -5.4, {k: 1.4}); V("hiker", 506, 5.8, {salue: true});
+  P("0074", 488, -6.4, {k: 1.4}); V("hiker", 492, 6.6, {salue: true});
 }
 
-const SURPRISES = [[236.5, -11.2, "0052"], [420, -8.8, "0019"], [433, 13, "0029"], [462.5, -11, "0010"], [490.5, 11.4, "0013"]];
+const SURPRISES = [[236.5, -11.2, "0052"], [420, -8.8, "0019"], [433, 13, "0029"], [462.5, -11, "0010"], [478, 11, "0013"]];
 const ENVOLS = [[227, -12, 4], [372, -12.5, 3], [439, 10.5, 4]];
 const EVTS = [];
 async function surprise(s, d, n) {
+  degager(s, d);
   const p = surSol(s, d), g = new THREE.Group(); g.position.set(p.x, p.y, p.z); scene.add(g);
   const herbe = decor("herbes", s - .3, d + (d < 0 ? .5 : -.5), {v: 1});
   const repos = await spritePMD(n, "Idle", 0, 1.55, +n), saut = await spritePMD(n, "Hop", 0, 1.55, +n);
   for (const o of [repos, saut]) { g.add(o.mesh); tournants.push(o.mesh); o.mesh.visible = false; }
-  EVTS.push({s, tour: 0, t: -1, maj(dt) {
+  EVTS.push({s, tour: -1, t: -1, maj(dt) {
     if (this.tour !== S.tour && S.s > s - 19 && S.s < s) { this.tour = S.tour; this.t = 0; for (let k = 0; k < 36; k++) goutte(p.x, p.y + .5, p.z, (Math.random() - .5) * 3, 2 + Math.random() * 3, (Math.random() - .5) * 3, .9, k % 2 ? [.45, .8, .5] : [.3, .62, .35]); }
     if (this.t < 0) return; this.t += dt; const u = this.t;
     herbe.rotation.z = u < 1.2 ? Math.sin(u * 30) * .12 * (1 - u / 1.2) : 0;
@@ -1041,7 +1052,7 @@ async function envol(s, d, nb) {
   for (let i = 0; i < nb; i++) { const p = surSol(s + (i - nb / 2) * 1.1, d + (rnd(s + i) - .5) * 2), pose0 = await spritePMD("0016", "Idle", 0, 1.1, 16), vole = await spritePMD("0016", "Walk", 2, 1.1, 16);
     pose0.mesh.position.set(p.x, p.y, p.z); vole.mesh.visible = false; scene.add(pose0.mesh, vole.mesh); tournants.push(pose0.mesh); oiseaux.push({p, pose0, vole, delai: rnd(s * 3 + i) * .5}); }
   const a = at(s), dir = [Math.sin(a.h), -Math.cos(a.h)], cote = [Math.cos(a.h) * Math.sign(d), Math.sin(a.h) * Math.sign(d)];
-  EVTS.push({s, tour: 0, t: -1, maj(dt, T) {
+  EVTS.push({s, tour: -1, t: -1, maj(dt, T) {
     if (this.tour !== S.tour && S.s > s - 10 && S.s < s) { this.tour = S.tour; this.t = 0; }
     for (const o of oiseaux) { if (this.t < 0 || this.t < o.delai) { o.pose0.mesh.visible = true; o.vole.mesh.visible = false; o.pose0.avancer(dt); continue; }
       const u = this.t - o.delai; o.pose0.mesh.visible = false; o.vole.mesh.visible = u < 5;
@@ -1063,7 +1074,7 @@ async function construire(i) {
 
 /* ============ la séance : la vitesse vient des coups ============ */
 const TAU = 3.5;
-const S = {etat: "menu", t: 0, s: 230, v: 0, dist: 0, nb: 0, coupsT: [], vMoy: 3.2, vn: 0, auto: true, tour: 1, saut: null, rangee: 4, prochainCoup: 0, lieu: -1};
+const S = {etat: "menu", t: 0, s: 230, v: 0, dist: 0, nb: 0, coupsT: [], vMoy: 3.2, vn: 0, auto: true, tour: 0, tourT0: 0, temps: [], saut: null, rangee: 4, prochainCoup: 0, lieu: -1};
 function coup(force = .6, metres) {
   if (S.etat !== "course") return;
   S.v += (metres || 6 + 4 * force) / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
@@ -1100,7 +1111,18 @@ const volcanP = pose(86, -28);
 let T = 0, dernier = performance.now(), camLat = 0, vuLieu = 0;
 
 
-function panneau(i) { return; const [, nom, sous] = LIEUX[i]; $("pNom").textContent = nom; $("pSous").textContent = sous; const p = $("panneau"); p.classList.add("vu"); clearTimeout(p._t); p._t = setTimeout(() => p.classList.remove("vu"), 3200); }
+const fmtT = s => fmt(s) + "," + Math.floor((s % 1) * 10);  // un temps au dixième
+function nouveauTour() {  // la ligne de départ, sous la jetée : le temps du tour qui finit, et le suivant qui commence
+  if (S.tour > 0) { const tps = S.t - S.tourT0, record = !S.temps.length || tps < Math.min(...S.temps); S.temps.push(tps);
+    $("gros").innerHTML = `TOUR ${S.tour}<small>${fmtT(tps)}${record && S.temps.length > 1 ? " · meilleur tour !" : ""}</small>`; note(784, .12, "square", .05); note(1046, .25, "square", .05, .13);
+    clearTimeout(nouveauTour.t); nouveauTour.t = setTimeout(() => { $("gros").innerHTML = ""; }, 2600); }
+  S.tour++; S.tourT0 = S.t;
+}
+function majTour() {
+  $("htNom").textContent = S.tour ? "Tour " + S.tour : "Élan"; $("htT").textContent = S.tour ? fmt(S.t - S.tourT0) : Math.max(0, Math.round(DEPART - S.s)) + " m";
+  const m = $("htM"); if (!S.temps.length) { m.innerHTML = S.tour ? "" : "jusqu'au<br>départ"; m.className = "meil num"; return; }
+  m.innerHTML = "Dernier " + fmtT(S.temps.at(-1)) + "<br>Meilleur " + fmtT(Math.min(...S.temps)); m.className = "meil num";
+}
 
 function boucle(now) {
   requestAnimationFrame(boucle);
@@ -1111,13 +1133,11 @@ function boucle(now) {
     if (S.auto && S.t >= S.prochainCoup) { coup(.5 + Math.random() * .35); S.prochainCoup = S.t + 60 / (24 + 3 * Math.sin(S.t * .05)); }
     S.v *= Math.exp(-dt / TAU); S.s += S.v * dt; S.dist += S.v * dt;
     S.vMoy = lerp(S.vMoy, Math.max(S.vL || 0, 1), dt / 40);
-    if (S.s >= DEPART && S.s - S.v * dt < DEPART && S.t > 5) S.tour++;  // la ligne d'arrivée, sous la jetée
+    if (S.s >= DEPART && S.s - S.v * dt < DEPART) nouveauTour();  // la ligne de départ, sous la jetée
     boucler();
   } else if (S.etat === "menu") { S.s += dt * 1.6; boucler(); }  // derrière le menu : on glisse doucement
   S.vL = lerp(S.vL || 0, S.v, clamp(dt / 1.6, 0, 1)); S.vn = clamp((S.vL - 1.5) / 3, 0, 1.2);
   const etatV = S.vL > S.vMoy * 1.18 && S.vL > 3.4 ? 2 : S.vL > S.vMoy * 1.06 && S.vL > 2.9 ? 1 : 0;
-  // le lieu
-  let li = 0; LIEUX.forEach(([a], i) => { if (S.s >= a) li = i; }); if (li !== S.lieu) { if (S.etat === "course") panneau(li); S.lieu = li; }
   for (const p of SAUTS) if (S.etat === "course" && !sautsFaits.has(p) && S.s > p - Math.max(1.4, S.vL * .55) && S.s < p) { sautsFaits.add(p); sauter(); }
   // ton Pokémon
   const a = at(S.s), av = at(S.s + 7); PH0 = a.h;
@@ -1135,10 +1155,9 @@ function boucle(now) {
   const c = at(S.s - 3.6), kk = at(S.s + 5).k * 180 / Math.PI;
   camLat = lerp(camLat, clamp(-kk * 1.1, -2.2, 2.2), dt * 1.2);
   const cx0 = c.x + Math.cos(c.h) * camLat * .5, cz0 = c.z + Math.sin(c.h) * camLat * .5;
-  const dans = dansTunnel(S.s), hc = dans ? 2.4 : 3.1 - S.vn * .25 - (Math.abs(S.s - 250) < 6 ? .4 : 0);
+  const dans = dansTunnel(S.s), hc = (dans ? 2.4 : 3.1) - S.vn * .25;
   cam.position.set(cx0, hc + (S.saut ? dy * .25 : 0), cz0);
-  const biais = -3.5 * (1 - lisse(70, 100, S.s));  // sur l'île, le regard glisse un peu vers le volcan
-  cam.lookAt(a.x + Math.sin(av.h) * 9 + Math.cos(av.h) * biais, 1.1 + dy * .3, a.z - Math.cos(av.h) * 9 + Math.sin(av.h) * biais);
+  cam.lookAt(a.x + Math.sin(av.h) * 9, 1.1 + dy * .3, a.z - Math.cos(av.h) * 9);
   cam.fov = 55 + S.vn * 6; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
   if (heros) { const kc = at(S.s + 2).k, r = S.saut || S.sous ? 4 : kc < -.006 ? 5 : kc > .006 ? 3 : 4; if (r !== S.rangee) { S.rangee = r; heros.rangee(r); } }
   ciel.position.copy(cam.position); eau.position.set(Math.round(cam.position.x), 0, Math.round(cam.position.z));
@@ -1191,7 +1210,7 @@ function boucle(now) {
     $("hT").textContent = fmt(S.t); $("hD").textContent = (D.modele ? "" : "≈ ") + Math.round(S.dist) + " m"; $("hC").textContent = Math.round(ca); $("hN").textContent = S.nb;
     $("hV").innerHTML = (S.vL * 3.6).toFixed(1).replace(".", ",") + " <small>km/h</small>"; $("h5").textContent = (S.vL > .5 ? fmt(500 / S.vL) : "–:––") + " /500 m";
     const e = S.vL < .3 ? "À l'arrêt" : S.t < 20 ? "Mise en route" : ["Croisière", "Rapide", "TURBO !"][etatV]; $("hE").textContent = e; $("hE").className = ["", "rapide", "turbo"][etatV];
-    majProg(); }
+    majProg(); majTour(); }
   R.render(scene, cam);
 }
 const FPS = {n: 0, t: 0, bas: 0, haut: 0};
@@ -1204,10 +1223,10 @@ function mesurer(dt) {  // les images par seconde ; si ça rame, l'image devient
 function flash(v) { $("flash").style.opacity = v; }
 
 /* ============ la barre du parcours, en bas ============ */
-const ETAPES = [[DEPART, "Départ"], [349, "Bourg Palette"], [405, "Prés"], [508, "Mont Sélénite"], [545, "Gorges"], [640, "Jadielle"], [760, "Lac"], [860, "Marais"], [S_GROTTE, "Grotte"], [T0[1], "Cramois'Île"], [104, "Récifs"]];
+const ETAPES = [[DEPART, "Départ"], [349, "Bourg Palette"], [405, "Prés"], [508, "Mont Sélénite"], [545, "Gorges"], [640, "Jadielle"], [760, "Lac"], [860, "Marais"], [S_GROTTE, "Grotte"], [3, "Cramois'Île"], [104, "Récifs"]];
 function dessinerProg() {
   const p = $("prog");
-  ETAPES.forEach(([s, nom], i) => { const x = (surBoucle(s) / DECAL * 100).toFixed(2) + "%";
+  ETAPES.forEach(([s, nom], i) => { const x = (surBoucle(s) / LONG * 100).toFixed(2) + "%";
     p.insertAdjacentHTML("beforeend", `<div class="etape" data-s="${s}" style="left:${x}"></div><div class="nom ${i % 2 ? "bas" : "haut"}" style="left:${x}">${nom}</div>`); });
   p.insertAdjacentHTML("beforeend", `<canvas class="moi" id="progMoi" width="32" height="32" style="left:0"></canvas>`);
 }
@@ -1217,7 +1236,7 @@ function iconeProg() {  // le portrait de ton Pokémon sur la barre
     const k = Math.min(32 / A.fw, 32 / A.fh); x.clearRect(0, 0, 32, 32); x.drawImage(img, 0, 0, A.fw, A.fh, (32 - A.fw * k) / 2, (32 - A.fh * k) / 2, A.fw * k, A.fh * k); }); }).catch(() => {});
 }
 function majProg() {
-  const u = surBoucle(S.s) / DECAL; $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
+  const u = S.tour ? surBoucle(S.s) / LONG : 0;  // pendant l'élan, ton Pokémon attend sur la ligne de départ $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
   document.querySelectorAll("#prog .etape").forEach(e => e.classList.toggle("passee", surBoucle(S.s) >= surBoucle(+e.dataset.s)));
 }
 
@@ -1239,7 +1258,7 @@ let minuteur = 0;
 function demarrer() {
   pleinEcran(); allumer();
   $("menu").hidden = true; $("hud").hidden = false; $("essai").hidden = !essai;
-  Object.assign(S, {etat: "decompte", t: 0, s: DEPART + .05, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 1, lieu: -1, saut: null, auto: false}); sautsFaits.clear();
+  Object.assign(S, {etat: "decompte", t: 0, s: DEPART - ELAN, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 0, tourT0: 0, temps: [], saut: null, auto: false}); sautsFaits.clear();
   let n = 3;
   if (SEANCE.etat === "aucune" && !essai) { SEANCE.etat = "lancee"; SEANCE.relance = 0; envoyer({type: "lancer", s: 5}); n = 5; }
   const montre = () => { note(523, .15, "square", .04); $("gros").innerHTML = n + (n > 3 || SEANCE.etat === "lancee" ? "<small>Mets-toi en position</small>" : ""); };
@@ -1287,7 +1306,7 @@ function dessinerSaisie(msg = "") {
     if (!(nb("min") || nb("sec")) && !SEANCE.bilan.actif_s) return dessinerSaisie("Il me faut le temps du rameur pour compter cette séance.");
     SEANCE.saisi = {distance: nb("distance") || SEANCE.bilan.devine, temps: (nb("min") || 0) * 60 + (nb("sec") || 0) || SEANCE.bilan.actif_s};
     if (essai) return finir(false);
-    envoyer({type: "saisie", distance: nb("distance"), min: nb("min"), sec: nb("sec"), watts: nb("watts"), kcal: nb("kcal"), jeu: {mode: "boucle", pokemon: NAGEURS[choix].nom, dist: Math.round(S.dist), tours: S.tour}});
+    envoyer({type: "saisie", distance: nb("distance"), min: nb("min"), sec: nb("sec"), watts: nb("watts"), kcal: nb("kcal"), jeu: {mode: "boucle", pokemon: NAGEURS[choix].nom, dist: Math.round(S.dist), tours: S.temps.length, meilleur_tour: S.temps.length ? Math.round(Math.min(...S.temps) * 10) / 10 : null}});
     SEANCE.etat = "saisie"; dessinerSaisie("J'envoie au téléphone…");
     clearTimeout(SEANCE.attente); SEANCE.attente = setTimeout(() => { if (SEANCE.etat === "saisie") { SEANCE.etat = "stop"; dessinerSaisie("Le téléphone ne répond pas : regarde son écran, il a peut-être déjà enregistré."); } }, 9000);
   };
@@ -1300,7 +1319,7 @@ function finir(jetee) {  // le résumé de la séance, puis retour au menu
     <p class="sous">${jetee ? "Rien n'a été enregistré." : essai ? "Sans téléphone, rien n'est enregistré." : "Le téléphone l'envoie à Poké Fit : elle compte comme toutes tes séances."}</p>
     <div class="stats"><div><span class="lab">Temps</span><b class="num">${fmt(t)}</b></div><div><span class="lab">Distance</span><b class="num">${Math.round(d || 0)} m</b></div>
       <div><span class="lab">Allure moyenne</span><b class="num">${d > 0 && t > 0 ? fmt(500 / (d / t)) : "–:––"}</b></div><div><span class="lab">Coups</span><b class="num">${S.nb}</b></div>
-      <div><span class="lab">Cadence moyenne</span><b class="num">${t > 0 ? Math.round(S.nb / (t / 60)) : 0} /min</b></div><div><span class="lab">Tours</span><b class="num">${S.tour - 1 + Math.round(surBoucle(S.s) / DECAL * 10) / 10}</b></div></div>
+      <div><span class="lab">Cadence moyenne</span><b class="num">${t > 0 ? Math.round(S.nb / (t / 60)) : 0} /min</b></div><div><span class="lab">Tours</span><b class="num">${S.temps.length}${S.temps.length ? " · meilleur " + fmtT(Math.min(...S.temps)) : ""}</b></div></div>
     <div class="ligne"><button class="go" id="fOk">▶ OK</button></div>`;
   $("fin").hidden = false;
   $("fOk").onclick = () => { $("fin").hidden = true; $("hud").hidden = true; $("menu").hidden = false;
@@ -1365,7 +1384,7 @@ cv.addEventListener("pointerdown", () => { audio(); if (essai && S.etat === "cou
 addEventListener("keydown", e => { if (e.code === "Space" && essai && S.etat === "course") { e.preventDefault(); coup(.7); } });
 boutonsNageurs(); dessinerProg(); majMenu(); allumer();
 anneau("rameur-anneau-montagnes.webp", RC0 + 1000, 9, -12); anneau("rameur-anneau-collines.webp", RC0 + 500, 11, -6);
-for (const [u, n] of [["uFal", "rameur-falaise.webp"], ["uQuai", "rameur-quai.webp"]]) { const t = texImg(n); t.wrapS = THREE.RepeatWrapping; UNI[u].value = t; }
+for (const [u, n] of [["uFal", "rameur-falaise.webp"], ["uQuai", "rameur-quai.webp"]]) { const t = texImg(n); t.wrapS = t.wrapT = THREE.RepeatWrapping; UNI[u].value = t; }
 Promise.all([chargerFRLG(), chargerRochers()]).then(() => {
   texSol.image = IMG_FRLG.sol; texSol.needsUpdate = true;
   peupler(); habiter(); preparerVie(); construire(choix); iconeProg();
