@@ -181,10 +181,11 @@ const PROFILS = {
 const GRIS = {quai: [[.6, .6, .64], [.74, .74, .76]], herbe: [[.56, .52, .46], [.63, .69, .58]], plage: [[.78, .74, .62], [.82, .78, .66]], roche: [[.55, .53, .5], [.6, .62, .55]],
   falaise: [[.58, .55, .52], [.62, .67, .56]], tunnel: [[.42, .41, .44], [.6, .62, .56]], mer: [[.5, .55, .6], [.5, .55, .6]]};
 const FONDU = Math.round(15 / DS);  // deux sortes de rive voisines se fondent sur 30 m (Kiki : des transitions très douces)
-function profilMoyen(T, i) {  // le profil d'une rive au point i : la moyenne des profils voisins (transitions douces)
-  const out = PROFILS.quai.map(() => [0, 0]), col = [[0, 0, 0], [0, 0, 0]]; let n = 0;
-  for (let j = -FONDU; j <= FONDU; j += 2) { const k = T[(i + j + NP0) % NP0], p = PROFILS[k]; p.forEach((q, m) => { out[m][0] += q[0]; out[m][1] += q[1]; }); GRIS[k].forEach((c, m) => c.forEach((v, l) => col[m][l] += v)); n++; }
-  out.forEach(q => { q[0] /= n; q[1] /= n; }); col.forEach(c => c.forEach((v, l) => c[l] = v / n)); return {p: out, col};
+const SORTES = ["quai", "herbe", "plage", "roche", "falaise", "tunnel", "mer"];  // l'ordre des poids envoyés aux textures
+function profilMoyen(T, i) {  // le profil d'une rive au point i : la moyenne des profils voisins (transitions douces), et la part de chaque sorte
+  const out = PROFILS.quai.map(() => [0, 0]), kw = SORTES.map(() => 0); let n = 0;
+  for (let j = -FONDU; j <= FONDU; j += 2) { const k = T[(i + j + NP0) % NP0], p = PROFILS[k]; p.forEach((q, m) => { out[m][0] += q[0]; out[m][1] += q[1]; }); kw[SORTES.indexOf(k)]++; n++; }
+  out.forEach(q => { q[0] /= n; q[1] /= n; }); return {p: out, kw: kw.map(v => v / n)};
 }
 const PROF_G = [], PROF_D = [];
 for (let i = 0; i < NP0; i += 2) { PROF_G[i / 2] = profilMoyen(GA, i); PROF_D[i / 2] = profilMoyen(DR, i); }  // un profil par mètre
@@ -211,28 +212,70 @@ const SOLEIL = new THREE.Vector3(-.55, .62, -.55).normalize();
 { const d = new THREE.DirectionalLight(0xFFF4E0, .75); d.position.copy(SOLEIL).multiplyScalar(100); scene.add(d); scene.add(new THREE.HemisphereLight(0xDDEEFF, 0x8A8070, .62)); }
 function toile(w, h, f) { const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); x.imageSmoothingEnabled = false; f && f(x, w, h); return c; }
 function tex(c) { const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; }
-// Les matériaux : en gris pour l'instant. L'habillage remplacera seulement cette table (mêmes formes, mêmes coordonnées de texture).
+/* ============ les textures (ChatGPT, 09/11 : même consigne pour toute la série, 128 pixels d'art, raccord sans couture vérifié) ============ */
+const TEX_URL = /^(localhost|127\.)/.test(location.hostname) ? "scenes/circuit/" : "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/circuit/";
+const ECH = {herbe: 6, terre: 5, sable: 6, roche: 4, falaise: 8, quai: 5, paves: 4, crepi: 4, tuiles: 3, bois: 3};  // mètres couverts par une tuile de texture
+const TXC = {};
+for (const nom of Object.keys(ECH)) { const t = new THREE.TextureLoader().setCrossOrigin("anonymous").load(TEX_URL + nom + ".png"); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; TXC[nom] = t; }
+const COMMUNS = {uSun: {value: SOLEIL}, uFog: {value: BRUME}, uFn: {value: BN}, uFf: {value: BF}, uSombre: {value: 0}};
+const GLSL_COMMUN = `
+  uniform vec3 uSun, uFog; uniform float uFn, uFf, uSombre;
+  float h1(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+  float vbruit(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1,0)), f.x), mix(h1(i + vec2(0,1)), h1(i + vec2(1,1)), f.x), f.y); }
+  vec3 eclaire(vec3 c, vec3 n){ float d = max(dot(n, uSun), 0.0); vec3 l = mix(vec3(.62,.58,.54), vec3(.9,.94,1.0), .5 + .5 * n.y) * .7 + vec3(1.0,.96,.88) * d * .55; return c * l; }
+  vec3 brume(vec3 c, vec3 wp){ float d = length(wp - cameraPosition); float f = floor(smoothstep(uFn, uFf, d) * 7.0) / 7.0; return mix(c, uFog, f) * (1.0 - uSombre); }`;
+// le sol (rives et terrain) : la texture du dessus ou de la paroi selon la pente ; entre deux sortes, un mélange en taches de pixels (jamais deux textures fondues l'une dans l'autre)
+const matSol = ruban => new THREE.ShaderMaterial({side: THREE.DoubleSide, uniforms: Object.assign({uRuban: {value: ruban ? 1 : 0}}, COMMUNS, Object.fromEntries(Object.entries(TXC).map(([k, v]) => ["t_" + k, {value: v}]))),
+  vertexShader: `attribute vec4 kA, kB; varying vec4 vA, vB; varying vec3 vP, vN; varying float vS;
+    void main(){ vA = kA; vB = kB; vS = uv.x * 4.0; vP = (modelMatrix * vec4(position, 1.0)).xyz; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0); }`,
+  fragmentShader: GLSL_COMMUN + `
+    uniform float uRuban; uniform sampler2D t_herbe, t_terre, t_sable, t_roche, t_falaise, t_quai, t_paves; varying vec4 vA, vB; varying vec3 vP, vN; varying float vS;
+    void main(){
+      vec3 n = normalize(vN), pm = vP / ${E.toFixed(1)}; if (!gl_FrontFacing) n = -n;
+      vec2 top = pm.xz, mur = uRuban > .5 ? vec2(vS, pm.y) : (abs(n.x) > abs(n.z) ? pm.zy : pm.xy);
+      float r = .75 * vbruit(top * .45) + .25 * h1(floor(top * 24.0));  // le tirage des taches : doux à grande échelle, en pixels au bord
+      float w0 = vA.x, w1 = w0 + vA.y, w2 = w1 + vA.z, w3 = w2 + vA.w, w4 = w3 + vB.x + vB.y; r *= .999 * (w4 + vB.z);
+      int k = r < w0 ? 0 : r < w1 ? 1 : r < w2 ? 2 : r < w3 ? 3 : r < w4 ? 4 : 2;
+      float raide = smoothstep(.42, .7, 1.0 - n.y), r2 = h1(floor(mur * 24.0) + 7.0) * .35 + .65 * vbruit(mur * .8);
+      bool paroi = raide > r2;
+      vec3 c;
+      if (k == 0) c = paroi ? texture2D(t_quai, mur / 5.0).rgb : texture2D(t_paves, top / 4.0).rgb;
+      else if (k == 1) c = paroi ? texture2D(t_terre, mur / 5.0).rgb : texture2D(t_herbe, top / 6.0).rgb;
+      else if (k == 3) c = texture2D(t_roche, (paroi ? mur : top) / 4.0).rgb;
+      else if (k == 4) c = paroi ? texture2D(t_falaise, mur / 8.0).rgb : texture2D(t_herbe, top / 6.0).rgb;
+      else c = texture2D(t_sable, (paroi ? mur : top) / 6.0).rgb;
+      if (pm.y < .35) c *= .68 + .32 * smoothstep(-.4, .35, pm.y);  // mouillé au bord de l'eau
+      gl_FragColor = vec4(brume(eclaire(c, n), vP), 1.0);
+    }`});
+// un objet (maison, toit, pont, rocher…) : la texture projetée sur ses faces, dans ses propres axes (une seule projection par face : jamais d'image en double)
+function matObjet(nom, teinte = 0xFFFFFF, ech, toit = false) { return new THREE.ShaderMaterial({side: THREE.DoubleSide, uniforms: Object.assign({t: {value: TXC[nom]}, uEch: {value: (ech || ECH[nom]) * E}, uTeinte: {value: new THREE.Color(teinte)}, uToit: {value: toit ? 1 : 0}}, COMMUNS),
+  vertexShader: `varying vec3 vL, vNl, vP, vN; void main(){ vL = position; vNl = normal; vP = (modelMatrix * vec4(position, 1.0)).xyz; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0); }`,
+  fragmentShader: GLSL_COMMUN + `
+    uniform sampler2D t; uniform float uEch, uToit; uniform vec3 uTeinte; varying vec3 vL, vNl, vP, vN;
+    void main(){ vec3 a = abs(vNl); vec2 uv = a.y > a.x && a.y > a.z ? (uToit > .5 ? vec2(vL.z, vL.y * 1.3) : vL.xz) : (a.x > a.z ? vL.zy : vL.xy);
+      // un toit : les rangées de tuiles suivent le faîte, elles descendent la pente
+      vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
+      gl_FragColor = vec4(brume(eclaire(texture2D(t, uv / uEch).rgb * uTeinte, n), vP), 1.0); }`}); }
+// Les matériaux : chaque forme reçoit le sien ici (les formes ne changent pas avec l'habillage).
 const MATS = {
-  rives: new THREE.MeshLambertMaterial({vertexColors: true, side: THREE.DoubleSide}),
-  terrain: new THREE.MeshLambertMaterial({vertexColors: true}),
-  roche: new THREE.MeshLambertMaterial({color: 0x8E8A86, side: THREE.DoubleSide}),
-  tunnel: new THREE.MeshLambertMaterial({color: 0x6A6670, side: THREE.BackSide}),
-  mur: new THREE.MeshLambertMaterial({color: 0xD8D4CC}), toit: new THREE.MeshLambertMaterial({color: 0x9A8E86}), bois: new THREE.MeshLambertMaterial({color: 0xA89A88}),
-  pierre: new THREE.MeshLambertMaterial({color: 0xB4B0AA}), blanc: new THREE.MeshLambertMaterial({color: 0xF0F0EC}), sombre: new THREE.MeshLambertMaterial({color: 0x5A5A60}),
+  rives: matSol(true), terrain: matSol(false),
+  roche: matObjet("falaise"), rocher: matObjet("roche"), tunnel: matObjet("falaise", 0xB8B0A8),
+  mur: matObjet("crepi"), toit: matObjet("tuiles", 0xFFFFFF, 3, true), bois: matObjet("bois"),
+  pierre: matObjet("quai"), blanc: matObjet("crepi", 0xFFFFFF, 2), sombre: new THREE.MeshLambertMaterial({color: 0x4A4248}), ile: matObjet("herbe"),
   arbre: new THREE.MeshLambertMaterial({color: 0x86947C, side: THREE.DoubleSide}), tronc: new THREE.MeshLambertMaterial({color: 0x8A7A6A}),
   chute: new THREE.MeshBasicMaterial({color: 0xE8F4FA, transparent: true, opacity: .85, side: THREE.DoubleSide})};
 
 /* ============ les rives en volume ============ */
 function rubans(cote) {
-  const T = cote < 0 ? PROF_G : PROF_D, N = T.length, pos = [], col = [], uv = [], ind = [];
-  for (let i = 0; i <= N; i++) { const s = i % N, a = at(s), P = T[s].p, C = T[s].col, w = a.w;
+  const T = cote < 0 ? PROF_G : PROF_D, N = T.length, pos = [], kA = [], kB = [], uv = [], ind = [];
+  for (let i = 0; i <= N; i++) { const s = i % N, a = at(s), P = T[s].p, K = T[s].kw, w = a.w;
     const R0 = Math.abs(a.k) > 1e-5 && Math.sign(a.k) === cote ? 1 / Math.abs(a.k) : 1e9;  // côté intérieur d'un virage : on resserre pour ne jamais replier la rive
     const f = clamp((R0 * .9 - w) / 14, .15, 1); let v = 0;
     P.forEach(([o, h], m) => { const d = cote * (w + o * f), x = a.x + Math.cos(a.h) * d * E, z = a.z + Math.sin(a.h) * d * E; pos.push(x, h * E, z);
-      const c = m < 2 ? C[0] : C[1], n = .97 + .06 * rnd(s * 7 + m); col.push(c[0] * n, c[1] * n, c[2] * n);
+      kA.push(K[0], K[1], K[2], K[3]); kB.push(K[4], K[5], K[6], 0);
       if (m) v += Math.hypot(P[m][0] - P[m - 1][0], P[m][1] - P[m - 1][1]); uv.push(i / 4, v / 4); });
     if (i) for (let m = 0; m < 6; m++) { const A = (i - 1) * 7 + m, B = i * 7 + m; if (cote > 0) ind.push(A, A + 1, B, B, A + 1, B + 1); else ind.push(A, B, A + 1, B, B + 1, A + 1); } }
-  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("kA", new THREE.Float32BufferAttribute(kA, 4)); g.setAttribute("kB", new THREE.Float32BufferAttribute(kB, 4));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(ind); g.computeVertexNormals(); scene.add(new THREE.Mesh(g, MATS.rives));
 }
 rubans(-1); rubans(1);
@@ -259,29 +302,31 @@ function terrainEn(x, z) {  // la hauteur du terrain (m), et s'il faut le dessin
   const p = proche(x, z), cote = p.lat < 0 ? -1 : 1, o = Math.abs(p.lat) - p.w, kind = (cote < 0 ? GA : DR)[idx(p.s)];
   const dm = Math.abs(mod(p.s - S_MONT + LONG / 2) - LONG / 2);  // distance (le long du circuit) au milieu du tunnel
   const dansCouloir = o < 4 && dm < (T_MONT[1] - T_MONT[0]) / 2 + 8;  // au-dessus du tunnel et devant ses entrées : le terrain s'efface (la façade et la voûte prennent le relais)
-  if (o < 13.5) return {h: hauteurRive(cote, p.s, Math.max(o, 0)) - .12, cache: dansCouloir || o < 0, o};
+  const kwR = profilEn(cote, p.s).kw;
+  if (o < 13.5) return {h: hauteurRive(cote, p.s, Math.max(o, 0)) - .12, cache: dansCouloir || o < 0, o, kw: kwR};
   const mw = cote > 0 ? merEn(x, z) : 0, base = Math.max(profilEn(cote, p.s).p[6][1], 1);
   const loin = lisse(13.5, 60, o), ext = cote > 0;  // dehors (à droite) : la couronne de montagnes ; dedans : des collines douces
   let h = base + loin * relief(x / E, z / E) * (ext ? 6 : 3.5) + (ext ? lisse(70, 330, o) * 58 * (.55 + .45 * relief(x / E + 300, z / E)) : lisse(40, 110, o) * 9);
   const mont = lisse(T_MONT[1] - T_MONT[0] + 70, 20, dm) * lisse(170, 0, o) * lisse(13.5, 34, o) * 26; h = Math.max(h, base + mont);  // la montagne du tunnel
-  return {h: lerp(h, -3, mw), cache: dansCouloir, o};
+  // la matière : celle de la rive près de l'eau, puis de l'herbe sur le plat et la falaise dans les pentes (montagnes), le sable vers la mer
+  const loinK = lisse(14, 40, o), merK = lisse(.05, .5, mw), kw = kwR.map((v, i) => lerp(lerp(v, i === 4 ? 1 : 0, loinK), i === 2 ? 1 : 0, merK));
+  return {h: lerp(h, -3, mw), cache: dansCouloir, o, kw};
 }
 const TERRAIN = {};
-{ const PAS = 4 * E, nx = Math.ceil((BX1 - BX0) / PAS), nz = Math.ceil((BZ1 - BZ0) / PAS), pos = new Float32Array((nx + 1) * (nz + 1) * 3), col = new Float32Array(pos.length), uv = new Float32Array((nx + 1) * (nz + 1) * 2), cache = new Uint8Array((nx + 1) * (nz + 1));
+{ const PAS = 4 * E, nx = Math.ceil((BX1 - BX0) / PAS), nz = Math.ceil((BZ1 - BZ0) / PAS), pos = new Float32Array((nx + 1) * (nz + 1) * 3), kA = new Float32Array((nx + 1) * (nz + 1) * 4), kB = new Float32Array(kA.length), uv = new Float32Array((nx + 1) * (nz + 1) * 2), cache = new Uint8Array((nx + 1) * (nz + 1));
   const HT = new Float32Array((nx + 1) * (nz + 1)), OO = new Float32Array(HT.length); Object.assign(TERRAIN, {HT, nx, nz, PAS});
-  for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i, t = terrainEn(BX0 + i * PAS, BZ0 + j * PAS); HT[k] = t.h; OO[k] = t.o; cache[k] = t.cache ? 1 : 0; }
+  for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i, t = terrainEn(BX0 + i * PAS, BZ0 + j * PAS); HT[k] = t.h; OO[k] = t.o; cache[k] = t.cache ? 1 : 0; kA.set(t.kw.slice(0, 4), k * 4); kB.set([...t.kw.slice(4), 0], k * 4); }
   for (let passe = 0; passe < 3; passe++) { const H2 = HT.slice();  // le loin seulement est lissé (les rives gardent leur forme exacte)
     for (let j = 1; j < nz; j++) for (let i = 1; i < nx; i++) { const k = j * (nx + 1) + i; if (OO[k] < 22) continue; HT[k] = (H2[k] * 4 + H2[k - 1] + H2[k + 1] + H2[k - nx - 1] + H2[k + nx + 1]) / 8; } }
   for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i, x = BX0 + i * PAS, z = BZ0 + j * PAS, t = {h: HT[k]}, y = t.h * E;
     pos.set([x, y, z], k * 3); uv.set([x / E / 4, z / E / 4], k * 2);
-    const roc = clamp((t.h - 14) / 30, 0, 1), sable = t.h < .6 ? clamp(1 - t.h, 0, 1) : 0, n = .96 + .08 * rnd(i * 3.1 + j * 7.7);  // l'herbe, la roche en hauteur, le sable au bord de la mer
-    col.set([lerp(lerp(.63, .62, roc), .8, sable) * n, lerp(lerp(.69, .6, roc), .76, sable) * n, lerp(lerp(.58, .58, roc), .64, sable) * n], k * 3); }
+  }
   const ind = [];
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
     if (cache[a] || cache[b] || cache[c] || cache[d]) continue;  // dans l'eau (les rives couvrent déjà le bord) ou au-dessus du tunnel
     if (Math.max(pos[a * 3 + 1], pos[b * 3 + 1], pos[c * 3 + 1], pos[d * 3 + 1]) < -2.5 * E) continue;  // sous la mer : rien
     ind.push(a, c, b, b, c, d); }
-  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.BufferAttribute(col, 3)); g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("kA", new THREE.BufferAttribute(kA, 4)); g.setAttribute("kB", new THREE.BufferAttribute(kB, 4)); g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
   g.setIndex(ind); g.computeVertexNormals(); scene.add(new THREE.Mesh(g, MATS.terrain)); }
 
 /* ============ le tunnel : une voûte qui suit la courbe, une façade de roche percée à chaque entrée ============ */
@@ -290,7 +335,7 @@ const TERRAIN = {};
     for (let m = 0; m <= NA; m++) { const th = Math.PI * m / NA, d = Math.cos(th) * r, y = Math.sin(th) * r * .95 - .6 * E; pos.push(a.x + Math.cos(a.h) * d, y, a.z + Math.sin(a.h) * d); uv.push((s - t0) / 4, m / NA * 3); }
     if (i) for (let m = 0; m < NA; m++) { const A = (i - 1) * (NA + 1) + m, B = i * (NA + 1) + m; ind.push(A, B, A + 1, B, B + 1, A + 1); } }
   const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(ind); g.computeVertexNormals();
-  scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({color: 0x6A6670, side: THREE.DoubleSide})));
+  scene.add(new THREE.Mesh(g, MATS.tunnel));
   for (const [s, sens] of [[t0, 1], [t1, -1]]) {  // la façade : un grand pan de roche vertical, l'arche découpée pile à la taille de la voûte
     const a = at(s), r = (a.w + .9) * E, L = 46 * E, H = 34 * E, f = new THREE.Shape();
     f.moveTo(-L / 2, -1 * E); f.lineTo(L / 2, -1 * E); f.lineTo(L / 2, H * .55); f.lineTo(L * .3, H * .85); f.lineTo(0, H); f.lineTo(-L * .3, H * .85); f.lineTo(-L / 2, H * .55); f.lineTo(-L / 2, -1 * E);
@@ -324,7 +369,7 @@ const atlas = toile(TUILE * 4, TUILE, x => { for (let f = 0; f < 4; f++) { const
   for (let k = 0; k < 6; k++) { const bx = Math.floor(rnd(k) * TUILE), by = Math.floor(rnd(k + 20) * TUILE), d = f * 2;
     for (let i = 0; i < 5; i++) { x.fillStyle = i === 2 ? "#F8F8F8" : "#B8B8B8"; x.fillRect(o + (bx + i + d) % TUILE, (by + (i === 0 || i === 4 ? 1 : 0)) % TUILE, 1, 1); } } } });
 const texEau = tex(atlas);
-const UNI = {uM1: {value: M1}, uBox: {value: new THREE.Vector4(BX0, BZ0, MW * RES, MH * RES)}, uFog: {value: BRUME}, uFn: {value: BN}, uFf: {value: BF}, uT: {value: 0}, uSombre: {value: 0},
+const UNI = {uM1: {value: M1}, uBox: {value: new THREE.Vector4(BX0, BZ0, MW * RES, MH * RES)}, uFog: {value: BRUME}, uFn: {value: BN}, uFf: {value: BF}, uT: {value: 0}, uSombre: COMMUNS.uSombre,
   uHero: {value: new THREE.Vector3()}, uHdir: {value: new THREE.Vector2(1, 0)}, uV: {value: 0}, uF: {value: 0}, uL: {value: .8}, uTex: {value: texEau}, uRonds: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(0, 0, -99))}};
 const eau = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.ShaderMaterial({uniforms: UNI,
   vertexShader: `varying vec3 vP; void main(){ vP = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vP,1.0); }`,
@@ -438,12 +483,12 @@ function construireDecor() {
     const lan = new THREE.Mesh(new THREE.CylinderGeometry(1.5 * E, 1.5 * E, 1.8 * E, 10), MATS.sombre); lan.position.y = 13.9 * E; g.add(lan);
     const toit = new THREE.Mesh(new THREE.ConeGeometry(1.8 * E, 1.6 * E, 10), MATS.toit); toit.position.y = 15.6 * E; g.add(toit); placer(g, s, d, y); }
   for (const [s, d, r, h] of [[S_("Phare") + 30, 24, 3, 9], [S_("Phare") + 44, 34, 2.2, 6], [S_("Phare") + 70, 28, 3.6, 12], [S_("Phare") + 96, 21, 2.4, 7], [S_("Côte") + 20, 30, 2.8, 8]]) {
-    const g = new THREE.Mesh(new THREE.CylinderGeometry(r * .55 * E, r * E, h * E, 7), MATS.roche); g.position.y = h * E / 2 - 1; placer(g, s, d, -.5); }  // des aiguilles de roche dans la mer
-  { const p = pose(S_("Phare") + 60, 150), g = new THREE.Mesh(new THREE.SphereGeometry(45 * E, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), MATS.terrain.clone()); g.material.vertexColors = false; g.material.color.set(0x9AA48E); g.scale.y = .35; g.position.set(p.x, -2, p.z); scene.add(g); }  // une île au large
+    const g = new THREE.Mesh(new THREE.CylinderGeometry(r * .55 * E, r * E, h * E, 7), MATS.rocher); g.position.y = h * E / 2 - 1; placer(g, s, d, -.5); }  // des aiguilles de roche dans la mer
+  { const p = pose(S_("Phare") + 60, 150), g = new THREE.Mesh(new THREE.SphereGeometry(45 * E, 18, 8, 0, Math.PI * 2, 0, Math.PI / 2), MATS.ile); g.scale.y = .35; g.position.set(p.x, -2, p.z); scene.add(g); }  // une île au large
   // la cascade : elle tombe du haut de la montagne, juste à gauche de l'entrée du tunnel (on la voit grandir en approchant du canyon)
   { const s = T_MONT[0] - 2.5, w = at(s).w, p = pose(s, -(w - .3)), m = new THREE.Mesh(new THREE.PlaneGeometry(2.4 * E, 22 * E), MATS.chute); m.position.set(p.x, 11 * E - .6 * E, p.z); m.rotation.y = -p.h; scene.add(m); CASCADES.push({s}); }
   // le lac : deux îlots, loin de la trajectoire
-  for (const [s, d, r] of [[S_("Lac") + 50, 12, 4], [S_("Lac") + 92, -11, 3.2]]) { const g = new THREE.Mesh(new THREE.SphereGeometry(r * E, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), MATS.roche); g.scale.y = .45; placer(g, s, d, -.2);
+  for (const [s, d, r] of [[S_("Lac") + 50, 12, 4], [S_("Lac") + 92, -11, 3.2]]) { const g = new THREE.Mesh(new THREE.SphereGeometry(r * E, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), MATS.rocher); g.scale.y = .45; placer(g, s, d, -.2);
     if (s === S_("Lac") + 50) ACCUEIL.push([s, d, r]); }
   // la forêt : des arbres serrés des deux côtés
   for (let s = S_("Forêt") - 6, i = 0; s < S_("Village") + 4; s += 4.5, i++) for (const c of [-1, 1]) { const w = at(s).w; arbre(s + rnd(i * 7 + c) * 2, c * (w + 2.5 + rnd(i * 3 + c) * 6)); if (rnd(i + c * 9) > .4) arbre(s + 2, c * (w + 10 + rnd(i * 5 + c) * 8)); }
