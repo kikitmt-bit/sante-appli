@@ -964,7 +964,8 @@ if st.query_params.get("ecran") == "rameur":
         st.iframe(seances_rameur.page_tablette(fichier_rameur, seances_rameur.lien(st.secrets.get("JEU_CLE"), AMI), pokemon.IMAGES,
                                                "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/",
                                                aujourd_r, voyage_r, "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
-                                               {k: (dresseur_r or {}).get(k) for k in ("peau", "casquette", "veste", "pantalon")}, AMI is None), height=800)
+                                               {k: (dresseur_r or {}).get(k) for k in ("peau", "casquette", "veste", "pantalon")}, AMI is None,
+                                               "rameur_circuit.html" if st.query_params.get("circuit") else "rameur_ecran.html"), height=800)
     st.stop()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "

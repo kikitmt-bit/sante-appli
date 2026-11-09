@@ -278,7 +278,7 @@ def arenes(voyage, scenes):
     return out
 
 
-def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False):
+def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html"):
     """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé : le modèle des mètres par coup, la progression
     du jeu du rameur, la région et les arènes de Poké Fit, les couleurs du dresseur)."""
     from pathlib import Path
@@ -288,7 +288,7 @@ def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=No
     donnees = {"lien": lien_tablette, "modele": m, "images": images, "sacha": sacha, "progression": progression(seances, aujourd, m),
                "region": (voyage or {}).get("carte", {}).get("region") or "Kanto", "lieu": voyage["lieux"][voyage["ici"]]["nom"] if voyage else None,
                "arenes": arenes(voyage, scenes) if voyage else [], "dresseur": dresseur, "kiki": kiki, "jour": str(aujourd)}
-    page = Path(__file__).with_name("rameur_ecran.html").read_text(encoding="utf-8")
+    page = Path(__file__).with_name(page_html).read_text(encoding="utf-8")  # rameur_circuit.html : le nouveau circuit, en construction (?ecran=rameur&circuit=1)
     return page.replace("__DONNEES__", json.dumps(donnees, ensure_ascii=False).replace("</", "<\\/"))
 
 

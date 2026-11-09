@@ -1,0 +1,777 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- L'écran du rameur sur la tablette, nouvelle version (?ecran=rameur&circuit=1) : « Le Circuit de la Baie » (09/11, Kiki : on repart d'un décor propre).
+     Étape 1 : le circuit en gris, que des volumes simples, pensés pour être habillés ensuite (textures sans couture et sprites).
+     Le moteur vient de la Grande Boucle (rameur_ecran.html) : lien au téléphone, séance, saisie, tours et chronos, nageur, sillage, son.
+     Pokémon : sprites de Pokémon Donjon Mystère (Chunsoft, via PMD SpriteCollab, CC BY-NC 4.0), lus en ligne, dernière version du dépôt.
+     Données : D (seances_rameur.page_tablette) : lien, modèle des mètres par coup. -->
+<title>Circuit de la Baie</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Pixelify+Sans:wght@500&display=swap">
+<style>
+:root{--creme:#F8F8E8;--bord:#484838;--encre:#383828;--encre2:#686850;--rouge:#D83830;--accent:#C03028;--or:#F8C838;--nuit:#10182C;--vert:#1E7A3C;
+  --jeu:"Jersey 15","Pixelify Sans",ui-monospace,monospace;--titre:"Pixelify Sans","Jersey 15",ui-monospace,monospace;color-scheme:dark}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--nuit)}
+body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+#c{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block}
+#sombre{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(6,8,16,.2) 20%,rgba(6,8,16,.95) 85%);opacity:0}
+#flash{position:fixed;inset:0;pointer-events:none;background:#fff;opacity:0}
+#embruns{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 12% 28%,rgba(235,248,255,.8) 0 7px,transparent 9px),radial-gradient(circle at 78% 18%,rgba(235,248,255,.75) 0 10px,transparent 12px),radial-gradient(circle at 64% 70%,rgba(235,248,255,.7) 0 6px,transparent 8px),radial-gradient(circle at 30% 82%,rgba(235,248,255,.75) 0 9px,transparent 11px),radial-gradient(circle at 88% 56%,rgba(235,248,255,.7) 0 5px,transparent 7px),radial-gradient(circle at 44% 40%,rgba(235,248,255,.6) 0 4px,transparent 6px),radial-gradient(circle at 6% 66%,rgba(235,248,255,.7) 0 8px,transparent 10px),linear-gradient(rgba(200,235,255,.35),rgba(200,235,255,.15))}
+#vitesse{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 55%,transparent 60%,rgba(255,255,255,.28) 84%,rgba(255,255,255,.6) 100%)}
+.boite{background:var(--creme);border:3px solid var(--bord);border-radius:12px 5px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
+.lab{font-size:15px;color:var(--encre2);display:block;line-height:1;text-transform:uppercase;letter-spacing:.05em}
+.num{font-variant-numeric:tabular-nums}
+#hg{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px;display:flex;gap:18px}
+#hg b{font-size:30px;font-weight:400;line-height:1}
+#hg b.gros{font-size:52px}
+#hg{align-items:flex-end}
+#fps{position:fixed;left:50%;top:6px;transform:translateX(-50%);font-size:15px;color:var(--creme);text-shadow:1px 1px 0 var(--nuit);pointer-events:none;opacity:.8}
+#hd{position:fixed;right:calc(max(12px,env(safe-area-inset-right,0px)) + 64px);top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px;text-align:right;min-width:120px}
+#hV{font-size:52px;font-weight:400;line-height:.9;display:block}
+#hV small{font-size:18px;color:var(--encre2)}
+#h5{font-size:18px;color:var(--encre2)}
+#hE{font-size:20px;color:#B05010}
+#hE.rapide{color:var(--vert)}#hE.turbo{color:var(--rouge)}
+#bPause{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px));width:52px;height:52px;padding:0;font-size:26px}
+#ht{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:calc(max(12px,env(safe-area-inset-top,0px)) + 104px);padding:5px 14px;display:flex;gap:18px;align-items:flex-end}
+#ht b{font-size:30px;font-weight:400;line-height:1}
+#ht .meil{font-size:18px;color:var(--encre2);line-height:1.1}
+#ht .meil.record{color:var(--vert)}
+/* la barre du parcours, en bas : les étapes et ton Pokémon qui avance */
+#prog{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));width:min(860px,calc(100vw - 32px));height:62px;pointer-events:none}
+#prog .rail{position:absolute;left:0;right:0;top:30px;height:8px;background:var(--creme);border:3px solid var(--bord);border-radius:6px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
+#prog .fait{position:absolute;left:0;top:0;bottom:0;width:0;background:#40A8F8;border-radius:3px}
+#prog .etape{position:absolute;top:27px;width:14px;height:14px;margin-left:-7px;background:var(--creme);border:3px solid var(--bord);border-radius:50%;box-sizing:border-box}
+#prog .etape.passee{background:var(--or)}
+#prog .nom{position:absolute;font-size:14px;line-height:1;color:var(--creme);text-shadow:1px 1px 0 var(--nuit),-1px 1px 0 var(--nuit),1px -1px 0 var(--nuit),-1px -1px 0 var(--nuit);white-space:nowrap;transform:translateX(-50%)}
+#prog .nom.haut{top:6px}#prog .nom.bas{top:48px}
+#prog .moi{position:absolute;top:12px;width:34px;height:34px;margin-left:-17px;image-rendering:pixelated;filter:drop-shadow(2px 2px 0 rgba(16,24,44,.6))}
+#gros{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--titre);font-size:150px;color:var(--creme);text-shadow:8px 8px 0 var(--bord);pointer-events:none;line-height:1;text-align:center}
+#gros small{font-size:40px;margin-top:10px}
+#tel{position:fixed;left:50%;top:calc(max(96px,14vh) + 70px);transform:translateX(-50%);padding:5px 14px;font-size:19px;background:#F8E0D8;color:var(--accent);white-space:nowrap}
+#essai{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:84px;display:flex;gap:8px}
+#essai button{font-size:19px;padding:4px 12px}
+button{font-family:var(--jeu);font-size:24px;cursor:pointer;color:var(--encre);background:var(--creme);border:3px solid var(--bord);border-radius:10px 4px;padding:6px 16px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(16,24,44,.55)}
+button:focus-visible{outline:3px solid var(--or);outline-offset:2px}
+button.go{background:var(--rouge);color:#fff;border-color:#78180F;box-shadow:3px 3px 0 #78180F;font-size:32px;padding:8px 28px}
+button.go:disabled{background:#B8A8A0;border-color:#786860;box-shadow:3px 3px 0 #786860;cursor:default}
+button.on{background:var(--or)}
+.calque{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,16,34,.42);padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
+.carte{background:var(--creme);border:4px solid var(--bord);border-radius:18px 8px;box-shadow:6px 6px 0 rgba(16,24,44,.6);padding:20px 28px;max-height:100%;overflow:auto;width:min(900px,100%);box-sizing:border-box}
+.carte h1{font-family:var(--titre);font-weight:500;font-size:42px;color:var(--accent);margin:0 0 4px;letter-spacing:.03em;line-height:1.05}
+.carte .sous{font-size:22px;margin:0 0 12px;line-height:1.2;text-wrap:pretty}
+.choix{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.ligne{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pill{font-size:20px;padding:4px 12px;border-radius:9px 4px;border:3px solid var(--bord);background:#ECECD8}
+.pill.ok{background:#D8F0D0;color:#1E5A2C;border-color:#1E5A2C}.pill.ko{background:#F8E0D8;color:var(--accent);border-color:var(--accent)}
+.petit{font-size:18px;color:var(--encre2);line-height:1.2;margin:10px 0 0}
+.tenir{position:relative;overflow:hidden}
+.tenir i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(216,56,48,.3);pointer-events:none}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px;margin:12px 0}
+.stats div{display:flex;flex-direction:column;gap:3px}
+.stats b{font-weight:400;font-size:34px}
+#saisieGrille{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px}
+.champs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.champ{display:flex;flex-direction:column;gap:4px;padding:10px 14px;border:3px solid var(--bord);border-radius:10px 4px;background:#fff;text-align:left}
+.champ.actif{outline:5px solid var(--or)}
+.champ .v{font-size:42px;line-height:1;min-height:42px}
+.champ .v.vide{color:#B0B098}
+.pave{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pave button{font-size:44px;padding:8px 0}
+.message{font-size:20px;color:var(--accent);min-height:24px;margin:8px 0 0}
+@media (max-width:760px){#hg b.gros{font-size:34px}#hg{gap:10px}#hV{font-size:32px}#hg b{font-size:22px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}#ht{top:calc(max(12px,env(safe-area-inset-top,0px)) + 74px)}#ht b{font-size:22px}}
+</style>
+<canvas id="c" aria-label="Le circuit, vu de derrière ton Pokémon qui nage"></canvas>
+<div id="vitesse"></div><div id="sombre"></div><div id="flash"></div><div id="embruns"></div>
+<div id="hud" hidden>
+  <div class="boite" id="hg"><div><span class="lab">Temps</span><b class="num gros" id="hT">0:00</b></div><div><span class="lab">Cadence /min</span><b class="num gros" id="hC">0</b></div>
+    <div><span class="lab">Distance</span><b class="num" id="hD">0 m</b></div><div><span class="lab">Coups</span><b class="num" id="hN">0</b></div></div>
+  <div id="fps" class="num">– i/s</div>
+  <div class="boite" id="hd"><b id="hV" class="num">0,0 <small>km/h</small></b><div id="h5" class="num">–:–– /500 m</div><div id="hE">Mise en route</div></div>
+  <button id="bPause" aria-label="Menu de la séance">II</button>
+  <div class="boite" id="ht"><div><span class="lab" id="htNom">Élan</span><b class="num" id="htT">–</b></div><div class="meil num" id="htM"></div></div>
+  <div id="prog"><div class="rail"><div class="fait" id="progFait"></div></div></div>
+  <div class="boite" id="tel" hidden></div>
+  <div id="gros"></div>
+  <div id="essai" hidden><button id="bCoup">Coup (espace)</button><button id="bAuto">Auto</button></div>
+</div>
+<div class="calque" id="menu"><div class="carte">
+  <h1>CIRCUIT DE LA BAIE</h1>
+  <p class="sous">Un circuit d'1 km : le phare, la côte, le canyon, le tunnel, le lac, la forêt, le village. Tu pars dans le port, 120 m avant la ligne, pour trouver ton rythme ; ensuite chaque tour est chronométré.</p>
+  <span class="lab">Ton Pokémon</span>
+  <div class="choix" id="nageurs"></div>
+  <div class="ligne"><span class="pill ko" id="mTel">Je cherche ton téléphone…</span><div style="flex:1"></div>
+    <button id="bPlein" aria-label="Plein écran">⛶</button><button id="bEssai">Essayer sans téléphone</button><button class="go" id="bPartir" disabled>▶ PARTIR</button></div>
+  <p class="petit" id="aide">Sur le téléphone : Muscu → Rameur → « Avec la tablette », puis accroche-le sous le siège.</p>
+  <p class="petit" style="font-size:14px">Pokémon : Pokémon Donjon Mystère (Chunsoft), via PMD SpriteCollab. Décor en cours de construction (version en gris).</p>
+</div></div>
+<div class="calque" id="pause" hidden><div class="carte" style="width:min(680px,100%)"><h1>EN PAUSE ?</h1>
+  <p class="sous" id="pauseTxt"></p>
+  <div class="ligne" style="flex-direction:column;align-items:stretch"><button class="go" id="pReprendre">▶ Continuer</button>
+    <button id="pChanger">Changer de Pokémon</button><button id="pSon">Son : oui</button><button class="tenir" id="pTerminer"><i></i>■ Terminer la séance (maintiens)</button></div></div></div>
+<div class="calque" id="saisie" hidden><div class="carte"><h1>CE QU'AFFICHE LE RAMEUR</h1><p class="sous" id="saisieSous">J'attends le téléphone…</p><div id="saisieGrille"></div></div></div>
+<div class="calque" id="fin" hidden><div class="carte" id="finCarte" style="width:min(820px,100%)"></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+const D = __DONNEES__;
+const BUNDLE = {};  // dans l'appli, les images se lisent en ligne
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v)), lerp = (a, b, t) => a + (b - a) * t;
+const lisse = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const rnd = k => { const x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+const fmt = s => { s = Math.max(0, s); return Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0"); };
+const PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/";
+const FR = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/";
+const PKAPI = n => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/emerald/${n}.png`;
+/* ================================================================================================================================
+   LE CIRCUIT DE LA BAIE (09/11, Kiki : on repart d'un décor propre)
+   Étape 1 : le circuit « en gris ». Que des volumes simples, sans texture, pensés pour être habillés ensuite par des textures
+   qui se répètent sans couture (ChatGPT) et des sprites tournés vers la caméra. Chaque surface porte déjà ses coordonnées de
+   texture (u le long du circuit, v en travers), en mètres : l'habillage ne changera que les matériaux (MATS), jamais les formes.
+   ================================================================================================================================ */
+const E = 2.2;            // 1 m = 2,2 unités de la scène (le nageur, la caméra et le sillage sont réglés là-dessus)
+const TX = .055;          // un pixel de l'eau et du nageur
+const DECO = .11;         // un pixel des sprites du décor
+
+/* ============ le tracé : des sections, comme les pièces d'un circuit ============ */
+// [nom, longueur (m), virage (degrés, + = droite), largeur de l'eau (m), rive gauche, rive droite]
+// Virages calculés pour que la boucle se referme pile (un tour complet vers la gauche, 95 m au moins entre deux côtés du circuit).
+const SECTIONS = [
+  ["Tribunes", 90, 0, 12, "quai", "quai"],
+  ["Phare", 109.9, -129.8, 14, "roche", "mer"],
+  ["Côte", 99.9, -7.6, 11, "plage", "falaise"],
+  ["Canyon", 32, 33.2, 8, "falaise", "falaise"], [null, 32, -46.6, 8, "falaise", "falaise"], [null, 32, 43.7, 8, "falaise", "falaise"], [null, 32, -36, 8, "falaise", "falaise"],
+  ["Tunnel", 64, -26, 7, "tunnel", "tunnel"],
+  ["Lac", 130.1, -91.4, 40, "plage", "plage"],
+  ["Forêt", 45, 27.3, 9, "herbe", "herbe"], [null, 45, -27.2, 9, "herbe", "herbe"],
+  ["Village", 100.1, -38.3, 10, "quai", "quai"],
+  ["Port", 70, -61.5, 12, "quai", "herbe"], [null, 130, 0, 13, "quai", "quai"]];
+const DEPART = 0, ELAN = 120;  // la ligne est au mètre 0 ; on part 120 m avant, dans le port, pour trouver son rythme (Kiki, 09/11)
+const DS = .5, PX = [], PZ = [], PH = [], PK = [], LARG0 = [], GA = [], DR = [], SEC_S = [];
+{ let x = 0, z = 0, h = Math.PI / 2, s = 0;
+  for (const [nom, L, A, w, g, d] of SECTIONS) { SEC_S.push([s, nom]); const n = Math.round(L / DS), st = L / n, k = A * Math.PI / 180 / L;
+    for (let i = 0; i < n; i++) { PX.push(x); PZ.push(z); PH.push(h); PK.push(k); LARG0.push(w / 2); GA.push(g); DR.push(d); h += k * st / 2; x += Math.sin(h) * st * E; z -= Math.cos(h) * st * E; h += k * st / 2; s += st; } }
+  const n = PX.length, ex = x - PX[0], ez = z - PZ[0]; for (let i = 0; i < n; i++) { PX[i] -= ex * i / n; PZ[i] -= ez * i / n; }  // les derniers centimètres, répartis
+  PX.push(PX[0]); PZ.push(PZ[0]); PH.push(PH[0] - Math.PI * 2); PK.push(PK[0]); }
+const NP0 = PX.length - 1, LONG = NP0 * DS;
+const mod = s => ((s % LONG) + LONG) % LONG;
+const idx = s => Math.min(NP0 - 1, Math.floor(mod(s) / DS));
+// la largeur change en douceur (moyenne glissante sur 24 m, sur la boucle)
+const DEMI = (() => { const r = Math.round(12 / DS), o = new Float32Array(NP0); for (let i = 0; i < NP0; i++) { let t = 0; for (let j = -r; j <= r; j++) t += LARG0[(i + j + NP0) % NP0]; o[i] = t / (2 * r + 1); } return o; })();
+function at(s) {
+  const f = mod(s) / DS, i = Math.min(NP0 - 1, Math.floor(f)), u = f - i, j = (i + 1) % NP0;
+  return {x: lerp(PX[i], PX[i + 1], u), z: lerp(PZ[i], PZ[i + 1], u), h: lerp(PH[i], PH[i + 1], u), k: PK[i], w: lerp(DEMI[i], DEMI[j], u)};
+}
+function pose(s, d) { const a = at(s); return {x: a.x + Math.cos(a.h) * d * E, z: a.z + Math.sin(a.h) * d * E, h: a.h}; }  // d en mètres, + = à droite
+const largeurEau = s => at(s).w * 2;
+
+/* ============ les rives : un profil par sorte de rive (décalage depuis le bord de l'eau, hauteur), en mètres ============ */
+// 7 points chacun ; deux sortes voisines se fondent l'une dans l'autre sur une quinzaine de mètres.
+const PROFILS = {
+  quai:    [[0, -.6], [0, 1.15], [.35, 1.25], [2, 1.25], [6, 1.3], [10, 1.35], [14, 1.4]],
+  herbe:   [[0, -.6], [.25, .45], [.9, .8], [2.5, 1.0], [6, 1.2], [10, 1.4], [14, 1.6]],
+  plage:   [[0, -.6], [1.5, 0], [4, .35], [7, .7], [10, 1.0], [12, 1.3], [14, 1.6]],
+  roche:   [[0, -.6], [.4, .9], [1.2, 1.8], [3, 2.4], [7, 2.8], [10, 3.0], [14, 3.2]],
+  falaise: [[0, -.6], [.3, 4], [.8, 7.5], [1.5, 9.5], [4, 10], [9, 10.2], [14, 10.4]],
+  tunnel:  [[0, -.6], [.2, 3], [.5, 6], [1, 9], [4, 10], [9, 10], [14, 10]],
+  mer:     [[0, -1.2], [3, -1.6], [6, -2], [9, -2.4], [11, -2.8], [13, -3], [14, -3]]};
+// la couleur « en gris » de chaque sorte (à peine teintée, pour lire le circuit) : la paroi, puis le dessus
+const GRIS = {quai: [[.6, .6, .64], [.74, .74, .76]], herbe: [[.56, .52, .46], [.63, .69, .58]], plage: [[.78, .74, .62], [.82, .78, .66]], roche: [[.55, .53, .5], [.6, .62, .55]],
+  falaise: [[.58, .55, .52], [.62, .67, .56]], tunnel: [[.42, .41, .44], [.6, .62, .56]], mer: [[.5, .55, .6], [.5, .55, .6]]};
+const FONDU = Math.round(8 / DS);
+function profilMoyen(T, i) {  // le profil d'une rive au point i : la moyenne des profils voisins (transitions douces)
+  const out = PROFILS.quai.map(() => [0, 0]), col = [[0, 0, 0], [0, 0, 0]]; let n = 0;
+  for (let j = -FONDU; j <= FONDU; j += 2) { const k = T[(i + j + NP0) % NP0], p = PROFILS[k]; p.forEach((q, m) => { out[m][0] += q[0]; out[m][1] += q[1]; }); GRIS[k].forEach((c, m) => c.forEach((v, l) => col[m][l] += v)); n++; }
+  out.forEach(q => { q[0] /= n; q[1] /= n; }); col.forEach(c => c.forEach((v, l) => c[l] = v / n)); return {p: out, col};
+}
+const PROF_G = [], PROF_D = [];
+for (let i = 0; i < NP0; i += 2) { PROF_G[i / 2] = profilMoyen(GA, i); PROF_D[i / 2] = profilMoyen(DR, i); }  // un profil par mètre
+const profilEn = (cote, s) => (cote < 0 ? PROF_G : PROF_D)[Math.min(PROF_G.length - 1, Math.floor(mod(s)))];
+function hauteurRive(cote, s, o) {  // la hauteur (m) à o mètres du bord de l'eau
+  const P = profilEn(cote, s).p; if (o <= P[0][0]) return P[0][1]; if (o >= P[6][0]) return P[6][1];
+  for (let m = 1; m < 7; m++) if (o <= P[m][0]) { const a = P[m - 1], b = P[m]; return b[0] - a[0] < 1e-4 ? b[1] : lerp(a[1], b[1], (o - a[0]) / (b[0] - a[0])); }
+  return P[6][1];
+}
+const TUNNELS = []; { let s = 0; for (const [nom, L, , , g] of SECTIONS) { if (g === "tunnel") TUNNELS.push([s, s + L]); s += L; } }
+const dansTunnel = s => TUNNELS.some(([a, b]) => mod(s) > a - 1 && mod(s) < b);
+const surBoucle = s => mod(s - DEPART);
+
+/* ============ three.js ============ */
+const cv = $("c"), R = new THREE.WebGLRenderer({canvas: cv, antialias: false});
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(55, 1, .1, 4000);
+const BRUME = new THREE.Color("#CDE6F2"), BN = 120, BF = 900;
+scene.fog = new THREE.Fog(BRUME, BN, BF); scene.background = BRUME;
+let QUALITE = Math.min(devicePixelRatio, 1);
+function taille() { R.setPixelRatio(QUALITE); R.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
+addEventListener("resize", taille); taille();
+// la lumière : un soleil et le ciel (les volumes gris se lisent par leurs faces éclairées)
+const SOLEIL = new THREE.Vector3(-.55, .62, -.55).normalize();
+{ const d = new THREE.DirectionalLight(0xFFF4E0, .75); d.position.copy(SOLEIL).multiplyScalar(100); scene.add(d); scene.add(new THREE.HemisphereLight(0xDDEEFF, 0x8A8070, .62)); }
+function toile(w, h, f) { const c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); x.imageSmoothingEnabled = false; f && f(x, w, h); return c; }
+function tex(c) { const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; }
+// Les matériaux : en gris pour l'instant. L'habillage remplacera seulement cette table (mêmes formes, mêmes coordonnées de texture).
+const MATS = {
+  rives: new THREE.MeshLambertMaterial({vertexColors: true, side: THREE.DoubleSide}),
+  terrain: new THREE.MeshLambertMaterial({vertexColors: true}),
+  roche: new THREE.MeshLambertMaterial({color: 0x8E8A86, side: THREE.DoubleSide}),
+  tunnel: new THREE.MeshLambertMaterial({color: 0x6A6670, side: THREE.BackSide}),
+  mur: new THREE.MeshLambertMaterial({color: 0xD8D4CC}), toit: new THREE.MeshLambertMaterial({color: 0x9A8E86}), bois: new THREE.MeshLambertMaterial({color: 0xA89A88}),
+  pierre: new THREE.MeshLambertMaterial({color: 0xB4B0AA}), blanc: new THREE.MeshLambertMaterial({color: 0xF0F0EC}), sombre: new THREE.MeshLambertMaterial({color: 0x5A5A60}),
+  arbre: new THREE.MeshLambertMaterial({color: 0x86947C, side: THREE.DoubleSide}), tronc: new THREE.MeshLambertMaterial({color: 0x8A7A6A}),
+  chute: new THREE.MeshBasicMaterial({color: 0xE8F4FA, transparent: true, opacity: .85, side: THREE.DoubleSide})};
+
+/* ============ les rives en volume ============ */
+function rubans(cote) {
+  const T = cote < 0 ? PROF_G : PROF_D, N = T.length, pos = [], col = [], uv = [], ind = [];
+  for (let i = 0; i <= N; i++) { const s = i % N, a = at(s), P = T[s].p, C = T[s].col, w = a.w;
+    const R0 = Math.abs(a.k) > 1e-5 && Math.sign(a.k) === cote ? 1 / Math.abs(a.k) : 1e9;  // côté intérieur d'un virage : on resserre pour ne jamais replier la rive
+    const f = clamp((R0 * .9 - w) / 14, .15, 1); let v = 0;
+    P.forEach(([o, h], m) => { const d = cote * (w + o * f), x = a.x + Math.cos(a.h) * d * E, z = a.z + Math.sin(a.h) * d * E; pos.push(x, h * E, z);
+      const c = m < 2 ? C[0] : C[1], n = .97 + .06 * rnd(s * 7 + m); col.push(c[0] * n, c[1] * n, c[2] * n);
+      if (m) v += Math.hypot(P[m][0] - P[m - 1][0], P[m][1] - P[m - 1][1]); uv.push(i / 4, v / 4); });
+    if (i) for (let m = 0; m < 6; m++) { const A = (i - 1) * 7 + m, B = i * 7 + m; if (cote > 0) ind.push(A, A + 1, B, B, A + 1, B + 1); else ind.push(A, B, A + 1, B, B + 1, A + 1); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(col, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(ind); g.computeVertexNormals(); scene.add(new THREE.Mesh(g, MATS.rives));
+}
+rubans(-1); rubans(1);
+
+/* ============ le terrain au-delà des rives : une grille de hauteurs, collines dedans, montagnes autour, la mer d'un côté ============ */
+const PXm = [], PZm = [];  // un point tous les 2 m, pour chercher vite le point du circuit le plus proche
+for (let i = 0; i < NP0; i += 4) { PXm.push(PX[i]); PZm.push(PZ[i]); }
+let BX0 = 1e9, BZ0 = 1e9, BX1 = -1e9, BZ1 = -1e9; PX.forEach((x, i) => { BX0 = Math.min(BX0, x); BX1 = Math.max(BX1, x); BZ0 = Math.min(BZ0, PZ[i]); BZ1 = Math.max(BZ1, PZ[i]); });
+const MARGE = 340 * E; BX0 -= MARGE; BZ0 -= MARGE; BX1 += MARGE; BZ1 += MARGE;
+function proche(x, z) {  // le point du circuit le plus proche : s (m), décalage latéral (m, + = à droite)
+  let b = 1e18, bi = 0; for (let i = 0; i < PXm.length; i++) { const dx = PXm[i] - x, dz = PZm[i] - z, d = dx * dx + dz * dz; if (d < b) { b = d; bi = i; } }
+  let s = bi * 2; for (let it = 0; it < 2; it++) { const a = at(s), tx = Math.sin(a.h), tz = -Math.cos(a.h); s += ((x - a.x) * tx + (z - a.z) * tz) / E; }  // affiné sur la tangente
+  const a = at(s); return {s: mod(s), lat: ((x - a.x) * Math.cos(a.h) + (z - a.z) * Math.sin(a.h)) / E, w: a.w};
+}
+const bruit2 = (x, z) => { const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi, l = t => t * t * (3 - 2 * t), v = (a, b) => rnd(a * 57.3 + b * 131.7);
+  return lerp(lerp(v(xi, zi), v(xi + 1, zi), l(xf)), lerp(v(xi, zi + 1), v(xi + 1, zi + 1), l(xf)), l(zf)); };
+const relief = (x, z) => bruit2(x / 140, z / 140) * .6 + bruit2(x / 55, z / 55) * .3 + bruit2(x / 21, z / 21) * .1;
+const T_MONT = TUNNELS[0], S_MONT = (T_MONT[0] + T_MONT[1]) / 2;
+// la mer : un secteur du monde, derrière le virage du phare (défini dans l'espace, pas par le point du circuit le plus proche : jamais de pics là où la mer commence)
+const CENTRE = (() => { let x = 0, z = 0; for (let i = 0; i < NP0; i++) { x += PX[i]; z += PZ[i]; } return {x: x / NP0, z: z / NP0}; })();
+const VERS_MER = (() => { let s = 0; for (const [nom, L] of SECTIONS) { if (nom === "Phare") break; s += L; } const a = at(s + 55), dx = a.x - CENTRE.x, dz = a.z - CENTRE.z, n = Math.hypot(dx, dz); return {x: dx / n, z: dz / n, r: n}; })();
+const merEn = (x, z) => { const dx = x - CENTRE.x, dz = z - CENTRE.z, n = Math.hypot(dx, dz) || 1; return lisse(.42, .8, (dx * VERS_MER.x + dz * VERS_MER.z) / n) * lisse(VERS_MER.r * .7, VERS_MER.r * 1.05, n); };
+function terrainEn(x, z) {  // la hauteur du terrain (m), et s'il faut le dessiner à cet endroit
+  const p = proche(x, z), cote = p.lat < 0 ? -1 : 1, o = Math.abs(p.lat) - p.w, kind = (cote < 0 ? GA : DR)[idx(p.s)];
+  const dm = Math.abs(mod(p.s - S_MONT + LONG / 2) - LONG / 2);  // distance (le long du circuit) au milieu du tunnel
+  const dansCouloir = o < 4 && dm < (T_MONT[1] - T_MONT[0]) / 2 + 8;  // au-dessus du tunnel et devant ses entrées : le terrain s'efface (la façade et la voûte prennent le relais)
+  if (o < 13.5) return {h: hauteurRive(cote, p.s, Math.max(o, 0)) - .12, cache: dansCouloir || o < 0, o};
+  const mw = cote > 0 ? merEn(x, z) : 0, base = Math.max(profilEn(cote, p.s).p[6][1], 1);
+  const loin = lisse(13.5, 60, o), ext = cote > 0;  // dehors (à droite) : la couronne de montagnes ; dedans : des collines douces
+  let h = base + loin * relief(x / E, z / E) * (ext ? 6 : 3.5) + (ext ? lisse(70, 330, o) * 58 * (.55 + .45 * relief(x / E + 300, z / E)) : lisse(40, 110, o) * 9);
+  const mont = lisse(T_MONT[1] - T_MONT[0] + 70, 20, dm) * lisse(170, 0, o) * lisse(13.5, 34, o) * 26; h = Math.max(h, base + mont);  // la montagne du tunnel
+  return {h: lerp(h, -3, mw), cache: dansCouloir, o};
+}
+const TERRAIN = {};
+{ const PAS = 4 * E, nx = Math.ceil((BX1 - BX0) / PAS), nz = Math.ceil((BZ1 - BZ0) / PAS), pos = new Float32Array((nx + 1) * (nz + 1) * 3), col = new Float32Array(pos.length), uv = new Float32Array((nx + 1) * (nz + 1) * 2), cache = new Uint8Array((nx + 1) * (nz + 1));
+  const HT = new Float32Array((nx + 1) * (nz + 1)), OO = new Float32Array(HT.length); Object.assign(TERRAIN, {HT, nx, nz, PAS});
+  for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i, t = terrainEn(BX0 + i * PAS, BZ0 + j * PAS); HT[k] = t.h; OO[k] = t.o; cache[k] = t.cache ? 1 : 0; }
+  for (let passe = 0; passe < 3; passe++) { const H2 = HT.slice();  // le loin seulement est lissé (les rives gardent leur forme exacte)
+    for (let j = 1; j < nz; j++) for (let i = 1; i < nx; i++) { const k = j * (nx + 1) + i; if (OO[k] < 22) continue; HT[k] = (H2[k] * 4 + H2[k - 1] + H2[k + 1] + H2[k - nx - 1] + H2[k + nx + 1]) / 8; } }
+  for (let j = 0; j <= nz; j++) for (let i = 0; i <= nx; i++) { const k = j * (nx + 1) + i, x = BX0 + i * PAS, z = BZ0 + j * PAS, t = {h: HT[k]}, y = t.h * E;
+    pos.set([x, y, z], k * 3); uv.set([x / E / 4, z / E / 4], k * 2);
+    const roc = clamp((t.h - 14) / 30, 0, 1), sable = t.h < .6 ? clamp(1 - t.h, 0, 1) : 0, n = .96 + .08 * rnd(i * 3.1 + j * 7.7);  // l'herbe, la roche en hauteur, le sable au bord de la mer
+    col.set([lerp(lerp(.63, .62, roc), .8, sable) * n, lerp(lerp(.69, .6, roc), .76, sable) * n, lerp(lerp(.58, .58, roc), .64, sable) * n], k * 3); }
+  const ind = [];
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const a = j * (nx + 1) + i, b = a + 1, c = a + nx + 1, d = c + 1;
+    if (cache[a] || cache[b] || cache[c] || cache[d]) continue;  // dans l'eau (les rives couvrent déjà le bord) ou au-dessus du tunnel
+    if (Math.max(pos[a * 3 + 1], pos[b * 3 + 1], pos[c * 3 + 1], pos[d * 3 + 1]) < -2.5 * E) continue;  // sous la mer : rien
+    ind.push(a, c, b, b, c, d); }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.BufferAttribute(pos, 3)); g.setAttribute("color", new THREE.BufferAttribute(col, 3)); g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  g.setIndex(ind); g.computeVertexNormals(); scene.add(new THREE.Mesh(g, MATS.terrain)); }
+
+/* ============ le tunnel : une voûte qui suit la courbe, une façade de roche percée à chaque entrée ============ */
+{ const [t0, t1] = T_MONT, pos = [], uv = [], ind = [], NA = 14;
+  for (let s = t0 - .5, i = 0; s <= t1 + .5; s += 1, i++) { const a = at(s), r = (a.w + .9) * E;
+    for (let m = 0; m <= NA; m++) { const th = Math.PI * m / NA, d = Math.cos(th) * r, y = Math.sin(th) * r * .95 - .6 * E; pos.push(a.x + Math.cos(a.h) * d, y, a.z + Math.sin(a.h) * d); uv.push((s - t0) / 4, m / NA * 3); }
+    if (i) for (let m = 0; m < NA; m++) { const A = (i - 1) * (NA + 1) + m, B = i * (NA + 1) + m; ind.push(A, B, A + 1, B, B + 1, A + 1); } }
+  const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(ind); g.computeVertexNormals();
+  scene.add(new THREE.Mesh(g, new THREE.MeshLambertMaterial({color: 0x6A6670, side: THREE.DoubleSide})));
+  for (const [s, sens] of [[t0, 1], [t1, -1]]) {  // la façade : un grand pan de roche vertical, l'arche découpée pile à la taille de la voûte
+    const a = at(s), r = (a.w + .9) * E, L = 46 * E, H = 34 * E, f = new THREE.Shape();
+    f.moveTo(-L / 2, -1 * E); f.lineTo(L / 2, -1 * E); f.lineTo(L / 2, H * .55); f.lineTo(L * .3, H * .85); f.lineTo(0, H); f.lineTo(-L * .3, H * .85); f.lineTo(-L / 2, H * .55); f.lineTo(-L / 2, -1 * E);
+    const tr = new THREE.Path(); tr.moveTo(r, -.6 * E); tr.absarc(0, -.6 * E, r, 0, Math.PI, false); tr.lineTo(r, -.6 * E); f.holes.push(tr);
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(f, 20), MATS.roche); m.position.set(a.x, 0, a.z); m.rotation.y = -a.h + (sens < 0 ? Math.PI : 0); scene.add(m);
+    const cadre = new THREE.Mesh(new THREE.TorusGeometry(r + .35 * E, .45 * E, 6, 20, Math.PI), MATS.pierre); cadre.position.set(a.x, -.6 * E, a.z); cadre.rotation.y = -a.h; scene.add(cadre); } }
+
+/* ============ l'eau : une tuile de pixels qui s'anime, l'écume des rives, le sillage du nageur ============ */
+const RES = 2, MW = Math.ceil((BX1 - BX0) / RES), MH = Math.ceil((BZ1 - BZ0) / RES);
+const cEau = toile(MW, MH, x => { x.setTransform(1 / RES, 0, 0, 1 / RES, -BX0 / RES, -BZ0 / RES); x.fillStyle = "#000"; x.fillRect(BX0, BZ0, BX1 - BX0, BZ1 - BZ0); x.fillStyle = "#fff";
+  const g = [], d = []; for (let s = 0; s <= LONG; s += 1) { const a = at(s); g.push(pose(s, -a.w)); d.push(pose(s, a.w)); }
+  x.beginPath(); g.concat(d.reverse()).forEach((p, i) => i ? x.lineTo(p.x, p.z) : x.moveTo(p.x, p.z)); x.fill();
+  const {HT, nx, nz, PAS} = TERRAIN;  // la mer : là où le terrain passe sous l'eau
+  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) { const k = j * (nx + 1) + i; if (HT[k] < -.4 && HT[k + 1] < -.4 && HT[k + nx + 1] < -.4) x.fillRect(BX0 + i * PAS - PAS / 2, BZ0 + j * PAS - PAS / 2, PAS * 1.5, PAS * 1.5); }
+  x.fillRect(BX0 - 9999, BZ0 - 9999, 1, 1); });
+const N2 = MW * MH, dEau = cEau.getContext("2d").getImageData(0, 0, MW, MH).data, EAU = new Float32Array(N2); for (let i = 0; i < N2; i++) EAU[i] = dEau[i * 4] / 255;
+function flou(a, r) { const t = new Float32Array(N2);
+  for (let y = 0; y < MH; y++) { let s = 0; for (let x = -r; x <= r; x++) s += a[y * MW + clamp(x, 0, MW - 1)];
+    for (let x = 0; x < MW; x++) { t[y * MW + x] = s / (2 * r + 1); s += a[y * MW + Math.min(x + r + 1, MW - 1)] - a[y * MW + Math.max(x - r, 0)]; } }
+  const o = new Float32Array(N2);
+  for (let x = 0; x < MW; x++) { let s = 0; for (let y = -r; y <= r; y++) s += t[clamp(y, 0, MH - 1) * MW + x];
+    for (let y = 0; y < MH; y++) { o[y * MW + x] = s / (2 * r + 1); s += t[Math.min(y + r + 1, MH - 1) * MW + x] - t[Math.max(y - r, 0) * MW + x]; } }
+  return o; }
+const BORD = flou(flou(EAU, 3), 3), dm1 = new Uint8Array(N2 * 4);
+for (let i = 0; i < N2; i++) { dm1[i * 4] = dEau[i * 4]; dm1[i * 4 + 1] = (1 - BORD[i]) * 255; dm1[i * 4 + 3] = 255; }
+const M1 = new THREE.DataTexture(dm1, MW, MH, THREE.RGBAFormat); M1.magFilter = M1.minFilter = THREE.LinearFilter; M1.generateMipmaps = false; M1.needsUpdate = true;
+const eauEn = (x, z) => EAU[clamp(Math.floor((z - BZ0) / RES), 0, MH - 1) * MW + clamp(Math.floor((x - BX0) / RES), 0, MW - 1)] > .5;
+const TUILE = 32;
+const atlas = toile(TUILE * 4, TUILE, x => { for (let f = 0; f < 4; f++) { const o = f * TUILE; x.fillStyle = "#808080"; x.fillRect(o, 0, TUILE, TUILE);
+  for (let Y = 0; Y < TUILE; Y++) for (let X = 0; X < TUILE; X++) if (rnd(X * 7 + Y * 13) > .86) { x.fillStyle = "#6C6C6C"; x.fillRect(o + X, Y, 1, 1); }
+  for (let k = 0; k < 6; k++) { const bx = Math.floor(rnd(k) * TUILE), by = Math.floor(rnd(k + 20) * TUILE), d = f * 2;
+    for (let i = 0; i < 5; i++) { x.fillStyle = i === 2 ? "#F8F8F8" : "#B8B8B8"; x.fillRect(o + (bx + i + d) % TUILE, (by + (i === 0 || i === 4 ? 1 : 0)) % TUILE, 1, 1); } } } });
+const texEau = tex(atlas);
+const UNI = {uM1: {value: M1}, uBox: {value: new THREE.Vector4(BX0, BZ0, MW * RES, MH * RES)}, uFog: {value: BRUME}, uFn: {value: BN}, uFf: {value: BF}, uT: {value: 0}, uSombre: {value: 0},
+  uHero: {value: new THREE.Vector3()}, uHdir: {value: new THREE.Vector2(1, 0)}, uV: {value: 0}, uF: {value: 0}, uL: {value: .8}, uTex: {value: texEau}, uRonds: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(0, 0, -99))}};
+const eau = new THREE.Mesh(new THREE.PlaneGeometry(6000, 6000), new THREE.ShaderMaterial({uniforms: UNI,
+  vertexShader: `varying vec3 vP; void main(){ vP = (modelMatrix * vec4(position,1.0)).xyz; gl_Position = projectionMatrix * viewMatrix * vec4(vP,1.0); }`,
+  fragmentShader: `
+  uniform sampler2D uM1, uTex; uniform vec4 uBox; uniform vec3 uFog, uHero; uniform vec2 uHdir; uniform float uFn, uFf, uT, uSombre, uV, uF, uL; uniform vec3 uRonds[4]; varying vec3 vP;
+  float h1(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
+  void main(){
+    vec2 t = floor(vP.xz / ${TX.toFixed(3)}), p = (t + .5) * ${TX.toFixed(3)};
+    float pr = texture2D(uM1, (p - uBox.xy) / uBox.zw).g;  // 0 au milieu de l'eau, 1 contre la rive
+    float g = texture2D(uTex, vec2((mod(t.x, 32.0) + uF * 32.0 + .5) / 128.0, (mod(t.y, 32.0) + .5) / 32.0)).r;
+    vec3 c = mix(vec3(.17,.48,.86), vec3(.34,.67,.93), smoothstep(.0, .5, pr)) * (.72 + .45 * g);
+    if (pr > .43 + .035 * sin(uT * 2.0 + t.x * .03 + t.y * .02) && h1(t + floor(uT * 4.0)) > .22) c = vec3(.97,1.0,1.0);
+    vec2 r = p - uHero.xz; float zr = -dot(r, uHdir), xr = abs(dot(r, vec2(-uHdir.y, uHdir.x)));
+    float bras = zr > -.6 ? exp(-pow(xr - (.8 + max(zr, 0.0) * .4), 2.0) * 5.0) * exp(-max(zr, 0.0) * .07) : 0.0;
+    float centre = zr > 0.0 ? exp(-xr * xr * 2.0) * exp(-zr * .12) : 0.0, etrave = exp(-(xr * xr * 1.4 + (zr + 1.0) * (zr + 1.0) * 3.0));
+    float e = (bras + centre * .6) * smoothstep(.1, 1.0, uV) + etrave * smoothstep(.2, 1.0, uV) * .8, nn = h1(t + floor(uT * 6.0) * .37);
+    if (e * nn > .32) c = vec3(.97,1.0,1.0); else if (e * nn > .18) c = mix(c, vec3(.78,.93,1.0), .7);
+    float tr = zr > .8 && xr < .4 + zr * .33 ? step(.8, fract(zr * .8 - uT * 1.4 + xr * .15)) * exp(-zr * .09) * smoothstep(.15, .9, uV) : 0.0;
+    if (tr * h1(t + 3.0) > .25) c = mix(c, vec3(.85,.95,1.0), .55);
+    float cl = length(vec2(xr, (zr + .1) * 1.6)), col = exp(-pow(cl - uL, 2.0) * 16.0) * (.6 + .6 * uV);
+    if (col * h1(t + floor(uT * 8.0)) > .32) c = vec3(.98,1.0,1.0); else if (col > .5) c = mix(c, vec3(.8,.94,1.0), .5);
+    for (int i = 0; i < 4; i++) { vec3 rd = uRonds[i]; float age = uT - rd.z; if (age > 0.0 && age < 1.8) { float R = uL + .2 + age * 2.2, bd = abs(length(p - rd.xy) - R);
+      if (bd < .1 + age * .05 && h1(t + floor(uT * 5.0)) > .25 + age * .3) c = mix(c, vec3(.92,.98,1.0), .8 * (1.0 - age / 1.8)); } }
+    float d = length(vP - cameraPosition), f = floor(smoothstep(uFn, uFf, d) * 7.0) / 7.0;
+    gl_FragColor = vec4(mix(c, uFog, f) * (1.0 - uSombre), 1.0);
+  }`}));
+eau.rotation.x = -Math.PI / 2; scene.add(eau);
+const RONDS = UNI.uRonds.value; let rondI = 0, T = 0;
+function rond(x, z) { RONDS[rondI].set(x, z, T); rondI = (rondI + 1) % 4; }
+
+/* ============ le ciel : un dôme en bandes de pixels, des nuages qui passent ============ */
+const nuages = toile(512, 96, x => {
+  for (let k = 0; k < 26; k++) { const cx0 = rnd(k * 3.3) * 512, cy = 26 + rnd(k * 1.7) * 52, w = 18 + rnd(k * 5.1) * 46, h = 6 + rnd(k * 2.3) * 9;
+    for (let X = -w; X <= w; X++) { const top = Math.round(h * Math.sqrt(Math.max(0, 1 - (X / w) ** 2)) * (.75 + .35 * Math.sin(X * .35 + k)));
+      for (let Y = -top; Y <= 2; Y++) { const xx = ((Math.round(cx0 + X) % 512) + 512) % 512; x.fillStyle = Y >= 1 ? "#B8D0E8" : Y > -top + 2 ? "#F8FCFF" : "#FFFFFF"; if (Y >= 0 && Y < 1) x.fillStyle = "#DCE8F4"; x.fillRect(xx, Math.round(cy + Y), 1, 1); } } } });
+const texNuages = tex(nuages); texNuages.wrapS = THREE.RepeatWrapping;
+const ciel = new THREE.Mesh(new THREE.SphereGeometry(3400, 32, 16), new THREE.ShaderMaterial({side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: {uT: UNI.uT, uN: {value: texNuages}, uFog: UNI.uFog}, vertexShader: `varying vec3 vD; void main(){ vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+  fragmentShader: `uniform float uT; uniform sampler2D uN; uniform vec3 uFog; varying vec3 vD;
+  void main(){ vec3 d = normalize(vD); float y = d.y, b = floor(clamp(y, 0.0, 1.0) * 70.0);
+    float dith = mod(floor(gl_FragCoord.x / 3.0) + floor(gl_FragCoord.y / 3.0), 2.0);
+    float q = (b + (fract(clamp(y, 0.0, 1.0) * 70.0) > .5 ? dith : 0.0)) / 70.0;
+    vec3 c = mix(uFog, vec3(.22,.45,.85), pow(clamp(q * 2.2, 0.0, 1.0), .55));
+    float az = atan(d.x, -d.z) / 6.28318 + .5, v = (y - .02) / .3;
+    if (v > 0.0 && v < 1.0) { vec4 n = texture2D(uN, vec2(az * 3.0 + uT * .0018, v)); c = mix(c, mix(n.rgb, uFog, .25 * (1.0 - v)), n.a); }
+    gl_FragColor = vec4(y < 0.0 ? uFog : c, 1.0); }`}));
+ciel.renderOrder = -10; scene.add(ciel);
+
+/* ============ les pièces du décor : des volumes simples ============ */
+function placer(m, s, d, y = 0, tourne = 0) { const p = pose(s, d); m.position.set(p.x, y * E, p.z); m.rotation.y = -p.h + tourne; scene.add(m); return m; }
+const boite = (l, h, p, mat) => { const g = new THREE.BoxGeometry(l * E, h * E, p * E); g.translate(0, h * E / 2, 0); return new THREE.Mesh(g, mat); };
+const solEn = (s, d) => { const a = at(s), o = Math.abs(d) - a.w; return o < 0 ? 0 : hauteurRive(d < 0 ? -1 : 1, s, o); };
+function maison(s, d, l = 6, p = 5, h = 3.2) {  // un cube (l le long de l'eau, p en profondeur) et un toit à deux pans, la porte tournée vers l'eau
+  const g = new THREE.Group(), y = solEn(s, d); g.add(boite(p, h, l, MATS.mur));
+  const tri = new THREE.Shape(); tri.moveTo(-(p / 2 + .35) * E, 0); tri.lineTo((p / 2 + .35) * E, 0); tri.lineTo(0, p * .42 * E); tri.lineTo(-(p / 2 + .35) * E, 0);
+  const tg = new THREE.ExtrudeGeometry(tri, {depth: (l + .5) * E, bevelEnabled: false}); tg.translate(0, h * E, -(l + .5) * E / 2); g.add(new THREE.Mesh(tg, MATS.toit));
+  const porte = boite(.12, 2, 1.1, MATS.sombre); porte.position.x = (d < 0 ? 1 : -1) * p / 2 * E; g.add(porte);
+  return placer(g, s, d, y);
+}
+function pont(s, haut = 3.6) {  // un pont en arc au-dessus de l'eau : tablier, garde-corps, deux piles sur les quais
+  const a = at(s), L = (a.w * 2 + 4), g = new THREE.Group(), N = 12;
+  for (let i = 0; i < N; i++) { const u0 = i / N - .5, u1 = (i + 1) / N - .5, y0 = haut + .6 * Math.cos(u0 * Math.PI), y1 = haut + .6 * Math.cos(u1 * Math.PI), x0 = u0 * L, x1 = u1 * L;
+    const b = new THREE.Mesh(new THREE.BoxGeometry((Math.hypot(x1 - x0, y1 - y0) + .05) * E, .5 * E, 3 * E), MATS.pierre); b.position.set((x0 + x1) / 2 * E, (y0 + y1) / 2 * E, 0); b.rotation.z = Math.atan2(y1 - y0, x1 - x0); g.add(b);
+    for (const zz of [-1.4, 1.4]) { const r = new THREE.Mesh(new THREE.BoxGeometry((Math.hypot(x1 - x0, y1 - y0) + .05) * E, .8 * E, .25 * E), MATS.pierre); r.position.set((x0 + x1) / 2 * E, ((y0 + y1) / 2 + .6) * E, zz * E); r.rotation.z = b.rotation.z; g.add(r); } }
+  for (const sx of [-1, 1]) { const pile = boite(2, haut + 1.2, 3.4, MATS.pierre); pile.position.set(sx * (L / 2 - .6) * E, -1 * E, 0); g.add(pile); }
+  g.position.set(a.x, 0, a.z); g.rotation.y = -a.h; scene.add(g);
+}
+function arbre(s, d, k = 1) {  // en attendant les sprites : un cône sur un tronc
+  const y = solEn(s, d), g = new THREE.Group(), H = (5 + rnd(s * 3 + d) * 2) * k;
+  const c = new THREE.Mesh(new THREE.ConeGeometry(1.8 * k * E, H * .8 * E, 6), MATS.arbre); c.position.y = H * .6 * E; g.add(c);
+  const tr = boite(.35 * k, H * .25, .35 * k, MATS.tronc); g.add(tr);
+  placer(g, s, d, y);
+}
+function tribune(s0, s1, cote) {  // trois gradins le long du quai
+  const n = Math.round((s1 - s0) / 6);
+  for (let i = 0; i < n; i++) { const s = s0 + (i + .5) * (s1 - s0) / n, w = at(s).w;
+    for (let k = 0; k < 3; k++) placer(boite(1.4, .6 + k * .6, 5.6, k % 2 ? MATS.pierre : MATS.mur), s, cote * (w + 3 + k * 1.4), solEn(s, cote * (w + 3)), 0); }
+}
+// le décor, section par section
+const S_ = nom => SEC_S.find(([, n]) => n === nom)[0];
+function construireDecor() {
+  // la ligne de départ : deux piliers, une banderole en damier
+  { const a = at(DEPART), w = a.w, dam = new THREE.MeshLambertMaterial({map: tex(toile(16, 2, x => { for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) { x.fillStyle = (i + j) % 2 ? "#202020" : "#F0F0F0"; x.fillRect(i, j, 1, 1); } }))});
+    for (const sx of [-1, 1]) placer(boite(.9, 6.2, .9, MATS.blanc), DEPART, sx * (w + .8), solEn(DEPART, sx * (w + .8)));
+    const b = boite(w * 2 + 2.4, 1.1, .3, [MATS.blanc, MATS.blanc, MATS.blanc, MATS.blanc, dam, dam]); placer(b, DEPART, 0, 5.2); }
+  tribune(8, 74, -1); tribune(8, 74, 1);
+  // le port : des maisons des deux côtés, des pontons courts (l'élan se fait ici)
+  for (let s = LONG - 128; s < LONG - 10; s += 15) { maison(s, -(at(s).w + 7), 6, 5); maison(s + 7, at(s).w + 7, 6, 5); }
+  for (let s = LONG - 120; s < LONG - 20; s += 22) for (const c of [-1, 1]) placer(boite(3.2, .25, 1.6, MATS.bois), s, c * (at(s).w - 1.3), .5);
+  // le phare, sur la pointe rocheuse à l'intérieur du virage
+  { const s = S_("Phare") + 52, w = at(s).w, d = -(w + 9), y = solEn(s, d), g = new THREE.Group();
+    const fut = new THREE.Mesh(new THREE.CylinderGeometry(1.3 * E, 1.8 * E, 13 * E, 10), MATS.blanc); fut.position.y = 6.5 * E; g.add(fut);
+    const lan = new THREE.Mesh(new THREE.CylinderGeometry(1.5 * E, 1.5 * E, 1.8 * E, 10), MATS.sombre); lan.position.y = 13.9 * E; g.add(lan);
+    const toit = new THREE.Mesh(new THREE.ConeGeometry(1.8 * E, 1.6 * E, 10), MATS.toit); toit.position.y = 15.6 * E; g.add(toit); placer(g, s, d, y); }
+  // la cascade, à la sortie du tunnel : elle tombe de la montagne dans le lac, sur la gauche
+  { const s = T_MONT[1] + 14, w = at(s).w, p = pose(s, -(w + 2)), m = new THREE.Mesh(new THREE.PlaneGeometry(7 * E, 20 * E), MATS.chute); m.position.set(p.x, 10 * E - .6, p.z); m.rotation.y = -p.h + Math.PI / 2; scene.add(m); CASCADES.push({s}); }
+  // le lac : deux îlots, loin de la trajectoire
+  for (const [s, d, r] of [[S_("Lac") + 50, 12, 4], [S_("Lac") + 92, -11, 3.2]]) { const g = new THREE.Mesh(new THREE.SphereGeometry(r * E, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), MATS.roche); g.scale.y = .45; placer(g, s, d, -.2);
+    arbre(s, d, .7); }
+  // la forêt : des arbres serrés des deux côtés
+  for (let s = S_("Forêt") - 6, i = 0; s < S_("Village") + 4; s += 4.5, i++) for (const c of [-1, 1]) { const w = at(s).w; arbre(s + rnd(i * 7 + c) * 2, c * (w + 2.5 + rnd(i * 3 + c) * 6)); if (rnd(i + c * 9) > .4) arbre(s + 2, c * (w + 10 + rnd(i * 5 + c) * 8)); }
+  // le village : des maisons sur les quais, deux ponts
+  for (let s = S_("Village") + 6, i = 0; s < S_("Village") + 98; s += 11, i++) { const c = i % 2 ? 1 : -1; maison(s, c * (at(s).w + 5.5), 6 + rnd(i) * 2, 5); maison(s + 5, -c * (at(s + 5).w + 6), 5.5, 5); }
+  pont(S_("Village") + 30); pont(S_("Village") + 76);
+  // quelques arbres sur la côte et les prés
+  for (let s = S_("Côte") + 6, i = 0; s < S_("Canyon"); s += 9, i++) arbre(s, -(at(s).w + 6 + rnd(i) * 10));
+  for (let s = S_("Port"), i = 0; s < S_("Port") + 70; s += 8, i++) arbre(s, at(s).w + 4 + rnd(i) * 6);
+}
+const CASCADES = [], RIDEAUX = [];
+
+/* ============ les sprites : Pokémon de Donjon Mystère, habitants de Rouge Feu ============ */
+const CACHE = {}, IMGS = {};
+const chargerImg = url => IMGS[url] || (IMGS[url] = new Promise((ok, ko) => { const i = new Image(); i.crossOrigin = "anonymous"; i.onload = () => ok(i); i.onerror = ko; i.src = BUNDLE[url] || url; }));
+function animsDe(n) {
+  return CACHE[n] || (CACHE[n] = (BUNDLE[PMD + n + "/AnimData.xml"] ? Promise.resolve(BUNDLE[PMD + n + "/AnimData.xml"]) : fetch(PMD + n + "/AnimData.xml").then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })).then(xml => {
+    const doc = new DOMParser().parseFromString(xml, "text/xml"), blocs = {}, out = {};
+    doc.querySelectorAll("Anim").forEach(a => blocs[a.querySelector("Name").textContent] = a);
+    for (const [nom, a0] of Object.entries(blocs)) { let a = a0; const cp = a.querySelector("CopyOf"); if (cp) a = blocs[cp.textContent]; if (!a || !a.querySelector("FrameWidth")) continue;
+      out[nom] = {fichier: a.querySelector("Name").textContent, fw: +a.querySelector("FrameWidth").textContent, fh: +a.querySelector("FrameHeight").textContent, dur: [...a.querySelectorAll("Duration")].map(d => +d.textContent)}; }
+    return out; }));
+}
+async function spritePMD(n, nom, rang = 0, k = 1, num) {
+  const PIX = TX * 1.1 * k;
+  try {
+    const A = (await animsDe(n))[nom]; if (!A) throw new Error("pas de " + nom);
+    const img = await chargerImg(`${PMD}${n}/${A.fichier}-Anim.png`), cols = Math.floor(img.width / A.fw), rows = Math.floor(img.height / A.fh);
+    const c = toile(img.width, img.height, x => x.drawImage(img, 0, 0)), d = c.getContext("2d").getImageData(0, 0, img.width, img.height).data;
+    const r0 = Math.min(rang, rows - 1); let x0 = 1e9, x1 = -1, y1 = -1, y0 = 1e9;
+    for (let i = 0; i < cols; i++) for (let Y = 0; Y < A.fh; Y++) for (let X = 0; X < A.fw; X++) if (d[((r0 * A.fh + Y) * img.width + i * A.fw + X) * 4 + 3] > 20) { x0 = Math.min(x0, X); x1 = Math.max(x1, X + 1); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y + 1); }
+    if (x1 < 0) { x0 = 0; x1 = A.fw; y0 = 0; y1 = A.fh; }
+    const t = tex(c); t.repeat.set(1 / cols, 1 / rows);
+    const geo = new THREE.PlaneGeometry(A.fw * PIX, A.fh * PIX); geo.translate((A.fw / 2 - (x0 + x1) / 2) * PIX, (y1 - A.fh / 2) * PIX, 0);
+    const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: t, transparent: true, alphaTest: .5, side: THREE.DoubleSide}));
+    const total = A.dur.reduce((s, v) => s + v, 0) / 60;
+    const o = {mesh, rows, rang: r0, temps: Math.random() * total, larg: (x1 - x0) * PIX, haut: (y1 - y0) * PIX,
+      image(i) { t.offset.set(i / cols, 1 - (o.rang + 1) / rows); },
+      rangee(r) { o.rang = clamp(r, 0, rows - 1); },
+      avancer(dt) { o.temps = (o.temps + dt) % total; let s = o.temps * 60, i = 0; while (i < A.dur.length - 1 && s >= A.dur[i]) { s -= A.dur[i]; i++; } o.image(i); }};
+    o.image(0); return o;
+  } catch (e) {  // le dépôt ne répond plus : l'image de PokeAPI du même Pokémon
+    const i = await chargerImg(PKAPI(num || +n)), t = tex(i), q = 64 * PIX * .6, geo = new THREE.PlaneGeometry(q, q); geo.translate(0, q * .38, 0);
+    return {mesh: new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: t, transparent: true, alphaTest: .5, side: THREE.DoubleSide})), rows: 1, larg: q * .6, haut: q * .8, image() {}, rangee() {}, avancer() {}};
+  }
+}
+async function habitant(nom) {  // planche de Rouge Feu : 0 face, 1 dos, 2 profil gauche, 3-4 marche face, 5-6 marche dos, 7-8 marche profil
+  const img = await chargerImg(FR + "people/" + nom + ".png"), fh = img.height, fw = nom === "biker" ? 32 : 16, n = Math.round(img.width / fw), t = tex(img); t.repeat.set(1 / n, 1);
+  const geo = new THREE.PlaneGeometry(fw * DECO, fh * DECO); geo.translate(0, fh * DECO / 2, 0);
+  const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({map: t, transparent: true, alphaTest: .5, side: THREE.DoubleSide}));
+  return {mesh, n, image(i, miroir) { t.offset.x = clamp(i, 0, n - 1) / n; mesh.scale.x = miroir ? -1 : 1; }};
+}
+// le sens d'un mouvement vu de la caméra : rangée de Donjon Mystère (0 face … 4 dos), ou image de Rouge Feu
+const _v = new THREE.Vector3();
+function vu(dx, dz) { _v.set(dx, 0, dz).transformDirection(cam.matrixWorldInverse); return Math.atan2(_v.x, -_v.z) * 180 / Math.PI; }
+function rangeePMD(a) { const k = Math.round(a / 45); return {0: 4, 1: 3, 2: 2, 3: 1, 4: 0, "-4": 0, "-3": 7, "-2": 6, "-1": 5}[k]; }
+
+/* ============ le son : l'eau, le vent de la vitesse, les éclaboussures, les oiseaux, l'écho des tunnels ============ */
+let AC = null, sonOn = true, BRUIT = null, merG = null, merF = null, ventG = null, ventF = null, chuteG = null, prochainChant = 3;
+function audio() {
+  if (AC) { if (AC.state === "suspended") AC.resume(); return; }
+  try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+  BRUIT = AC.createBuffer(1, AC.sampleRate * 2, AC.sampleRate); const dd = BRUIT.getChannelData(0); let b = 0;
+  for (let i = 0; i < dd.length; i++) { b = (b + .02 * (Math.random() * 2 - 1)) / 1.02; dd[i] = b * 3.5 + (Math.random() * 2 - 1) * .15; }
+  const boucleB = (f, q, type) => { const s = AC.createBufferSource(); s.buffer = BRUIT; s.loop = true; const fi = AC.createBiquadFilter(); fi.type = type; fi.frequency.value = f; fi.Q.value = q; const g = AC.createGain(); g.gain.value = 0; s.connect(fi); fi.connect(g); g.connect(AC.destination); s.start(0, Math.random() * 1.5); return [g, fi]; };
+  [merG, merF] = boucleB(520, .7, "lowpass"); [ventG, ventF] = boucleB(900, .5, "bandpass"); [chuteG] = boucleB(1400, .4, "bandpass");
+}
+function bruitage(freq, q, vol, dur) {
+  if (!AC || !sonOn) return; const s = AC.createBufferSource(); s.buffer = BRUIT; const f = AC.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = freq; f.Q.value = q;
+  const g = AC.createGain(), t = AC.currentTime; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .03); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  s.connect(f); f.connect(g); g.connect(AC.destination); s.start(t, Math.random()); s.stop(t + dur + .1);
+}
+function note(freq, dur, type = "sine", vol = .03, quand = 0) { if (!AC || !sonOn) return null; const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime + quand;
+  o.type = type; o.frequency.setValueAtTime(freq, t); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur); o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + dur + .02); return o; }
+function son(dt) {
+  if (!AC) return; const tun = dansTunnel(S.s), cas = [...CASCADES, ...RIDEAUX].reduce((m, c) => Math.max(m, 1 - Math.abs(S.s - c.s) / 45), 0);
+  merG.gain.value = sonOn ? (tun ? .05 : .075) : 0; merF.frequency.value = tun ? 300 : 520 + S.vn * 300;
+  ventG.gain.value = sonOn && !tun ? clamp(S.vn * .12, 0, .14) : 0; ventF.frequency.value = 600 + S.vn * 1300;
+  chuteG.gain.value = sonOn ? clamp(cas, 0, 1) * .12 : 0;
+  prochainChant -= dt; if (prochainChant > 0 || !sonOn || tun || S.etat === "menu") return;
+  prochainChant = 2.5 + Math.random() * 5; const f = 1800 + Math.random() * 1600;
+  for (let i = 0; i < 2 + Math.random() * 3; i++) { const o = note(f, .09, "sine", .016, i * .13); if (o) o.frequency.exponentialRampToValueAtTime(f * 1.35, AC.currentTime + i * .13 + .08); }
+}
+
+
+/* ============ ton Pokémon, qui nage de dos ============ */
+const NAGEURS = [{n: "0007", nom: "Carapuce", k: 2.05, plonge: .5}, {n: "0008", nom: "Carabaffe", k: 2.05, plonge: .52}, {n: "0009", nom: "Tortank", k: 2, plonge: .52},
+  {n: "0131", nom: "Lokhlass", k: 1.75, plonge: .48}, {n: "0130", nom: "Léviator", k: 1.4, plonge: .52}, {n: "0134", nom: "Aquali", k: 2.05, plonge: .62}];
+const monture = new THREE.Group(); scene.add(monture);
+let heros = null, construction = 0;
+async function construire(i) {
+  const n = ++construction, o = await spritePMD(NAGEURS[i].n, "Walk", 4, NAGEURS[i].k, +NAGEURS[i].n); if (n !== construction) return;
+  while (monture.children.length) monture.remove(monture.children[0]); monture.add(o.mesh); heros = o;
+}
+
+/* ============ la séance : la vitesse vient des coups ============ */
+const TAU = 3.5;
+const S = {etat: "menu", t: 0, s: LONG - ELAN, v: 0, dist: 0, nb: 0, coupsT: [], vMoy: 3.2, vn: 0, auto: true, tour: 0, tourT0: 0, temps: [], rangee: 4, prochainCoup: 0};
+function coup(force = .6, metres) {
+  if (S.etat !== "course") return;
+  S.v += (metres || 6 + 4 * force) / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
+  gerbe(force); rond(monture.position.x, monture.position.z); bruitage(650 + force * 900, .8, .22 + force * .25, .6);
+}
+const cadence = () => { const c = S.coupsT, n = c.length; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };
+// la ligne : un vrai circuit, on repasse simplement par le mètre 0
+function avancer(ds) { const avant = S.s; S.s += ds; if (S.s >= LONG) { S.s -= LONG; if (S.etat === "course") nouveauTour(); } return avant; }
+const fmtT = s => fmt(s) + "," + Math.floor((s % 1) * 10);  // un temps au dixième
+function nouveauTour() {  // la ligne de départ : le temps du tour qui finit, et le suivant qui commence
+  if (S.tour > 0) { const tps = S.t - S.tourT0, record = !S.temps.length || tps < Math.min(...S.temps); S.temps.push(tps);
+    $("gros").innerHTML = `TOUR ${S.tour}<small>${fmtT(tps)}${record && S.temps.length > 1 ? " · meilleur tour !" : ""}</small>`; note(784, .12, "square", .05); note(1046, .25, "square", .05, .13);
+    clearTimeout(nouveauTour.t); nouveauTour.t = setTimeout(() => { $("gros").innerHTML = ""; }, 2600); }
+  else { $("gros").innerHTML = "TOP CHRONO !"; note(1046, .3, "square", .05); clearTimeout(nouveauTour.t); nouveauTour.t = setTimeout(() => { $("gros").innerHTML = ""; }, 1400); }
+  S.tour++; S.tourT0 = S.t;
+}
+function majTour() {
+  $("htNom").textContent = S.tour ? "Tour " + S.tour : "Élan"; $("htT").textContent = S.tour ? fmt(S.t - S.tourT0) : Math.max(0, Math.round(LONG - S.s)) + " m";
+  const m = $("htM"); if (!S.temps.length) { m.innerHTML = S.tour ? "" : "jusqu'à<br>la ligne"; return; }
+  m.innerHTML = "Dernier " + fmtT(S.temps.at(-1)) + "<br>Meilleur " + fmtT(Math.min(...S.temps));
+}
+
+/* ============ les gouttes ============ */
+const NP = 1800, pos = new Float32Array(NP * 3), col = new Float32Array(NP * 3), vit = new Float32Array(NP * 3), vie = new Float32Array(NP), grav = new Float32Array(NP);
+const gp = new THREE.BufferGeometry(); gp.setAttribute("position", new THREE.BufferAttribute(pos, 3)); gp.setAttribute("color", new THREE.BufferAttribute(col, 3));
+scene.add(new THREE.Points(gp, new THREE.PointsMaterial({size: TX * 2.4, vertexColors: true, depthWrite: false})));
+let libre = 0, PH0 = 0;
+function goutte(x, y, z, vx, vy, vz, v, c = [.97, 1, 1], g = 11) { const i = libre; libre = (libre + 1) % NP; pos.set([x, y, z], i * 3); vit.set([vx, vy, vz], i * 3); col.set(c, i * 3); vie[i] = v; grav[i] = g; }
+function gerbe(force, rond) { const p = monture.position, h = PH0, dx = Math.sin(h), dz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h), n = 18 + force * 26, l = heros ? heros.larg * .5 : .7;
+  for (const c of [-1, 1]) for (let k = 0; k < n; k++) { const sx = c * (l * .9 + Math.random() * .3), av = -.1 + Math.random() * .5, lat = c * (.8 + Math.random() * 2), up = 2.2 + Math.random() * 3 * (.5 + force), back = -(1.2 + Math.random() * 2.2) * (rond ? 0 : 1);
+    goutte(p.x + rx * sx + dx * av, .1, p.z + rz * sx + dz * av, rx * lat + dx * back, up, rz * lat + dz * back, .7 + Math.random() * .4, k % 3 ? [.97, 1, 1] : [.66, .87, 1]); } }
+
+/* ============ la caméra, l'image ============ */
+let dernier = performance.now(), camLat = 0;
+function boucle(now) {
+  requestAnimationFrame(boucle);
+  const dt = clamp((now - dernier) / 1000, 0, .05); dernier = Math.max(dernier, now); T += dt; UNI.uT.value = T; UNI.uF.value = Math.floor(T * 3) % 4;
+  if (S.etat === "course") {
+    S.t += dt;
+    if (S.auto && S.t >= S.prochainCoup) { coup(.5 + Math.random() * .35); S.prochainCoup = S.t + 60 / (24 + 3 * Math.sin(S.t * .05)); }
+    S.v *= Math.exp(-dt / TAU); avancer(S.v * dt); S.dist += S.v * dt;
+    S.vMoy = lerp(S.vMoy, Math.max(S.vL || 0, 1), dt / 40);
+  } else if (S.etat === "menu") avancer(dt * 1.6);  // derrière le menu : on glisse doucement
+  S.vL = lerp(S.vL || 0, S.v, clamp(dt / 1.6, 0, 1)); S.vn = clamp((S.vL - 1.5) / 3, 0, 1.2);
+  const etatV = S.vL > S.vMoy * 1.18 && S.vL > 3.4 ? 2 : S.vL > S.vMoy * 1.06 && S.vL > 2.9 ? 1 : 0;
+  // ton Pokémon
+  const a = at(S.s), av = at(S.s + 7); PH0 = a.h;
+  const plonge = lerp(.52, .34, clamp(S.vn, 0, 1)) * NAGEURS[choix].plonge / .5;
+  monture.position.set(a.x, 0, a.z); monture.rotation.y = Math.atan2(cam.position.x - a.x, cam.position.z - a.z);
+  if (heros) { heros.mesh.position.y = -heros.haut * plonge + Math.sin(T * 5) * .03; heros.avancer(dt * (.6 + S.vn * 1.2)); }
+  // la caméra : derrière, un peu en hauteur, toujours le même angle ; dans les virages elle se décale un peu vers l'extérieur
+  const c = at(S.s - 3.6), kk = at(S.s + 5).k * 180 / Math.PI;
+  camLat = lerp(camLat, clamp(-kk * 1.1, -2.2, 2.2), dt * 1.2);
+  const hc = (dansTunnel(S.s) ? 2.4 : 3.1) - S.vn * .25;
+  cam.position.set(c.x + Math.cos(c.h) * camLat * .5, hc, c.z + Math.sin(c.h) * camLat * .5);
+  cam.lookAt(a.x + Math.sin(av.h) * 9, 1.1, a.z - Math.cos(av.h) * 9);
+  cam.fov = 55 + S.vn * 6; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  if (heros) { const kc = at(S.s + 2).k, r = kc < -.006 ? 5 : kc > .006 ? 3 : 4; if (r !== S.rangee) { S.rangee = r; heros.rangee(r); } }
+  ciel.position.copy(cam.position); eau.position.set(Math.round(cam.position.x), 0, Math.round(cam.position.z));
+  UNI.uHero.value.set(a.x, 0, a.z); UNI.uL.value = heros ? heros.larg * .5 : .8; UNI.uHdir.value.set(Math.sin(a.h), -Math.cos(a.h)); UNI.uV.value = S.vn;
+  // le tunnel : il fait sombre, puis la lumière
+  const sombre = Math.max(0, ...TUNNELS.map(([t0, t1]) => lisse(t0 - 1, t0 + 6, mod(S.s)) * (1 - lisse(t1 - 9, t1 - 2.5, mod(S.s)))));
+  UNI.uSombre.value = sombre * .45; $("sombre").style.opacity = sombre * .55; $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, 0);
+  $("vitesse").style.opacity = etatV === 2 ? .7 : etatV === 1 ? .25 : 0;
+  for (const m of tournants) { const dx = cam.position.x - m.position.x, dz = cam.position.z - m.position.z; m.rotation.y = Math.atan2(dx, dz); }
+  mesurer(dt); son(dt);
+  // les gouttes
+  for (let i = 0; i < NP; i++) { if (vie[i] <= 0) continue; vie[i] -= dt; const j = i * 3; vit[j + 1] -= grav[i] * dt; pos[j] += vit[j] * dt; pos[j + 1] += vit[j + 1] * dt; pos[j + 2] += vit[j + 2] * dt; if (vie[i] <= 0 || pos[j + 1] < -.1) { vie[i] = 0; pos[j + 1] = -50; } }
+  gp.attributes.position.needsUpdate = true; gp.attributes.color.needsUpdate = true;
+  // l'écran
+  if (S.etat === "course" || S.etat === "decompte") { const ca = cadence();
+    $("hT").textContent = fmt(S.t); $("hD").textContent = (D.modele ? "" : "≈ ") + Math.round(S.dist) + " m"; $("hC").textContent = Math.round(ca); $("hN").textContent = S.nb;
+    $("hV").innerHTML = (S.vL * 3.6).toFixed(1).replace(".", ",") + " <small>km/h</small>"; $("h5").textContent = (S.vL > .5 ? fmt(500 / S.vL) : "–:––") + " /500 m";
+    const e = S.vL < .3 ? "À l'arrêt" : S.t < 20 ? "Mise en route" : ["Croisière", "Rapide", "TURBO !"][etatV]; $("hE").textContent = e; $("hE").className = ["", "rapide", "turbo"][etatV];
+    majProg(); majTour(); }
+  R.render(scene, cam);
+}
+const tournants = [];
+const FPS = {n: 0, t: 0, bas: 0, haut: 0};
+function mesurer(dt) {  // les images par seconde ; si ça rame, l'image devient un peu moins fine, et remonte quand ça va mieux
+  FPS.n++; FPS.t += dt; if (FPS.t < 1) return; const f = FPS.n / FPS.t; FPS.n = 0; FPS.t = 0; $("fps").textContent = Math.round(f) + " i/s";
+  if (f < 48) { FPS.bas++; FPS.haut = 0; } else if (f > 58) { FPS.haut++; FPS.bas = 0; } else { FPS.bas = 0; FPS.haut = 0; }
+  if (FPS.bas >= 2 && QUALITE > .5) { QUALITE = Math.max(.5, QUALITE - .15); taille(); FPS.bas = 0; }
+  if (FPS.haut >= 6 && QUALITE < Math.min(devicePixelRatio, 1)) { QUALITE = Math.min(Math.min(devicePixelRatio, 1), QUALITE + .1); taille(); FPS.haut = 0; }
+}
+function flash(v) { $("flash").style.opacity = v; }
+
+/* ============ la barre du parcours, en bas ============ */
+const ETAPES = SEC_S.filter(([, n]) => n).map(([s, n]) => [s, n === "Tribunes" ? "Ligne" : n]);
+function dessinerProg() {
+  const p = $("prog");
+  ETAPES.forEach(([s, nom], i) => { const x = (surBoucle(s) / LONG * 100).toFixed(2) + "%";
+    p.insertAdjacentHTML("beforeend", `<div class="etape" data-s="${s}" style="left:${x}"></div><div class="nom ${i % 2 ? "bas" : "haut"}" style="left:${x}">${nom}</div>`); });
+  p.insertAdjacentHTML("beforeend", `<canvas class="moi" id="progMoi" width="32" height="32" style="left:0"></canvas>`);
+}
+function iconeProg() {  // le portrait de ton Pokémon sur la barre
+  const c = $("progMoi"); if (!c) return; const x = c.getContext("2d"); x.imageSmoothingEnabled = false; x.clearRect(0, 0, 32, 32);
+  const P = NAGEURS[choix]; animsDe(P.n).then(a => { const A = a.Idle || a.Walk; return chargerImg(`${PMD}${P.n}/${A.fichier}-Anim.png`).then(img => {
+    const k = Math.min(32 / A.fw, 32 / A.fh); x.clearRect(0, 0, 32, 32); x.drawImage(img, 0, 0, A.fw, A.fh, (32 - A.fw * k) / 2, (32 - A.fh * k) / 2, A.fw * k, A.fh * k); }); }).catch(() => {});
+}
+function majProg() {
+  const u = S.tour ? surBoucle(S.s) / LONG : 0;  // pendant l'élan, ton Pokémon attend sur la ligne de départ
+  $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
+  document.querySelectorAll("#prog .etape").forEach(e => e.classList.toggle("passee", surBoucle(S.s) >= surBoucle(+e.dataset.s)));
+}
+
+/* ============ le menu ============ */
+let choix = 0; try { choix = clamp(+localStorage.getItem("traversee_pokemon") || 0, 0, NAGEURS.length - 1); } catch (e) {}
+function boutonsNageurs() { $("nageurs").innerHTML = NAGEURS.map((n, i) => `<button data-i="${i}" class="${i === choix ? "on" : ""}" aria-pressed="${i === choix}">${n.nom}</button>`).join("");
+  $("nageurs").querySelectorAll("button").forEach(b => b.onclick = () => { choisir(+b.dataset.i); }); }
+function choisir(i) { choix = i; try { localStorage.setItem("traversee_pokemon", i); } catch (e) {} boutonsNageurs(); construire(choix); iconeProg(); }
+let essai = false, telOk = false, conn = null, TEL_TXT = "Je cherche ton téléphone…";
+function majMenu() {
+  const t = $("mTel"); t.textContent = essai ? "Essai sans téléphone" : telOk ? "Téléphone relié ✓" : TEL_TXT; t.className = "pill " + (telOk ? "ok" : essai ? "" : "ko");
+  $("bPartir").disabled = !(telOk || essai || SEANCE.etat === "mesure"); $("bEssai").hidden = telOk || essai;
+  $("aide").textContent = essai ? "Essai : touche l'écran ou la barre d'espace pour ramer, ou lance Auto." : telOk ? "Téléphone relié ! Installe-toi et pars quand tu es prêt." : "Sur le téléphone : Muscu → Rameur → « Avec la tablette », puis accroche-le sous le siège.";
+}
+
+/* ============ départ, pause, fin ============ */
+const SEANCE = {etat: "aucune", t0: null, bilan: null, saisi: null, relance: 0};
+let minuteur = 0;
+function demarrer() {
+  pleinEcran(); allumer();
+  $("menu").hidden = true; $("hud").hidden = false; $("essai").hidden = !essai;
+  Object.assign(S, {etat: "decompte", t: 0, s: LONG - ELAN, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 0, tourT0: 0, temps: [], auto: false});
+  let n = 3;
+  if (SEANCE.etat === "aucune" && !essai) { SEANCE.etat = "lancee"; SEANCE.relance = 0; envoyer({type: "lancer", s: 5}); n = 5; }
+  const montre = () => { note(523, .15, "square", .04); $("gros").innerHTML = n + (n > 3 || SEANCE.etat === "lancee" ? "<small>Mets-toi en position</small>" : ""); };
+  montre(); clearInterval(minuteur);
+  minuteur = setInterval(() => { n--; if (n > 0) return montre(); clearInterval(minuteur); partir(); }, 1000);
+}
+function partir() {  // la tablette ne dépend jamais du téléphone pour partir (Kiki, 07/11) : elle le relance s'il ne répond pas
+  note(1046, .3, "square", .05);
+  $("gros").textContent = "RAME !"; setTimeout(() => { if ($("gros").textContent === "RAME !") $("gros").textContent = ""; }, 1300);
+  S.etat = "course"; if (essai && SEANCE.etat === "aucune") { SEANCE.etat = "mesure"; SEANCE.t0 = Date.now(); }
+}
+setInterval(() => {
+  if (S.etat !== "course" || essai || SEANCE.etat !== "lancee") return;
+  envoyer({type: "lancer", s: 0}); $("tel").hidden = false;
+  $("tel").textContent = telOk ? "Le téléphone ne démarre pas : rallume son écran" : "Pas de téléphone : Rameur → « Avec la tablette »";
+}, 4000);
+function tenir(b, f) {  // un bouton à maintenir 1,2 s (en sueur, pas de fausse manœuvre)
+  let t0 = 0, id = 0; const i = b.querySelector("i");
+  const stop = () => { cancelAnimationFrame(id); t0 = 0; if (i) i.style.width = "0"; };
+  const tic = () => { const p = (performance.now() - t0) / 1200; if (i) i.style.width = Math.min(100, p * 100) + "%"; if (p >= 1) { stop(); f(); } else id = requestAnimationFrame(tic); };
+  b.onpointerdown = e => { e.preventDefault(); t0 = performance.now(); id = requestAnimationFrame(tic); };
+  b.onpointerup = b.onpointerleave = b.onpointercancel = stop;
+}
+function terminer() {
+  $("pause").hidden = true; S.etat = "fin"; $("essai").hidden = true; $("tel").hidden = true; clearInterval(minuteur);
+  if (essai) { SEANCE.bilan = {coups: S.nb, cadence: Math.round(cadence()), actif_s: Math.round(S.t), devine: Math.round(S.dist)}; ouvrirSaisie(); return; }
+  if (SEANCE.etat === "aucune" || SEANCE.etat === "lancee") { SEANCE.saisi = {distance: S.dist, temps: S.t}; finir(true); return; }
+  SEANCE.etat = "stop"; envoyer({type: "stop"}); ouvrirSaisie();
+}
+const SAISIE = {distance: "", min: "", sec: "", watts: "", kcal: ""}; let champActif = "distance";
+function ouvrirSaisie() { $("saisie").hidden = false; Object.keys(SAISIE).forEach(k => SAISIE[k] = ""); champActif = "distance"; dessinerSaisie(); }
+function dessinerSaisie(msg = "") {
+  const b = SEANCE.bilan, ph = {distance: b && b.devine ? "≈ " + b.devine : "", min: b ? String(Math.floor(b.actif_s / 60)) : "", sec: b ? String(b.actif_s % 60).padStart(2, "0") : "", watts: "", kcal: ""};
+  $("saisieSous").textContent = !b ? "J'attends le téléphone…" : b.coups ? `Le téléphone a compté ${b.coups} coups. Entre ce que tu lis sur le rameur : la distance est la plus utile, le reste est facultatif.` : "Le téléphone n'a pas vu de coups : entre au moins le temps du rameur pour garder ta séance.";
+  const champ = (k, lab) => `<button class="champ ${champActif === k ? "actif" : ""}" data-k="${k}"><span class="lab">${lab}</span><span class="v num ${SAISIE[k] ? "" : "vide"}">${SAISIE[k] || ph[k] || "–"}</span></button>`;
+  $("saisieGrille").innerHTML = `<div><div class="champs">${champ("distance", "Distance (m)")}${champ("watts", "Watts moyens")}${champ("min", "Temps : minutes")}${champ("sec", "Temps : secondes")}${champ("kcal", "Calories")}</div>
+      <p class="message">${msg}</p><div class="ligne" style="margin-top:10px"><button class="go" id="sOk" ${b ? "" : "disabled"}>Enregistrer</button><button class="tenir" id="sJeter"><i></i>Ne pas la garder (maintiens)</button></div></div>
+    <div class="pave">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button data-n="${n}">${n}</button>`).join("")}<button data-n="c">⌫</button><button data-n="0">0</button><button data-n="x" style="font-size:24px">Effacer</button></div>`;
+  $("saisieGrille").querySelectorAll(".champ").forEach(e => e.onclick = () => { champActif = e.dataset.k; dessinerSaisie(); });
+  $("saisieGrille").querySelectorAll(".pave button").forEach(e => e.onclick = () => { const n = e.dataset.n, v = SAISIE[champActif];
+    SAISIE[champActif] = n === "c" ? v.slice(0, -1) : n === "x" ? "" : (v + n).replace(/^0+(?=\d)/, "").slice(0, champActif === "sec" ? 2 : 6); dessinerSaisie(); });
+  $("sOk").onclick = () => {
+    if (!SEANCE.bilan || SEANCE.etat === "saisie") return;
+    const nb = k => +SAISIE[k] || null;
+    if (!(nb("min") || nb("sec")) && !SEANCE.bilan.actif_s) return dessinerSaisie("Il me faut le temps du rameur pour compter cette séance.");
+    SEANCE.saisi = {distance: nb("distance") || SEANCE.bilan.devine, temps: (nb("min") || 0) * 60 + (nb("sec") || 0) || SEANCE.bilan.actif_s};
+    if (essai) return finir(false);
+    envoyer({type: "saisie", distance: nb("distance"), min: nb("min"), sec: nb("sec"), watts: nb("watts"), kcal: nb("kcal"), jeu: {mode: "circuit", circuit: "baie", pokemon: NAGEURS[choix].nom, dist: Math.round(S.dist), tours: S.temps.length, meilleur_tour: S.temps.length ? Math.round(Math.min(...S.temps) * 10) / 10 : null}});
+    SEANCE.etat = "saisie"; dessinerSaisie("J'envoie au téléphone…");
+    clearTimeout(SEANCE.attente); SEANCE.attente = setTimeout(() => { if (SEANCE.etat === "saisie") { SEANCE.etat = "stop"; dessinerSaisie("Le téléphone ne répond pas : regarde son écran, il a peut-être déjà enregistré."); } }, 9000);
+  };
+  tenir($("sJeter"), () => { if (essai) return finir(true); envoyer({type: "jeter"}); });
+}
+function finir(jetee) {  // le résumé de la séance, puis retour au menu
+  $("saisie").hidden = true; clearTimeout(SEANCE.attente);
+  const d = SEANCE.saisi ? SEANCE.saisi.distance : S.dist, t = SEANCE.saisi ? SEANCE.saisi.temps : S.t;
+  $("finCarte").innerHTML = `<h1>${jetee ? "SÉANCE NON GARDÉE" : essai ? "ESSAI TERMINÉ" : "SÉANCE ENREGISTRÉE !"}</h1>
+    <p class="sous">${jetee ? "Rien n'a été enregistré." : essai ? "Sans téléphone, rien n'est enregistré." : "Le téléphone l'envoie à Poké Fit : elle compte comme toutes tes séances."}</p>
+    <div class="stats"><div><span class="lab">Temps</span><b class="num">${fmt(t)}</b></div><div><span class="lab">Distance</span><b class="num">${Math.round(d || 0)} m</b></div>
+      <div><span class="lab">Allure moyenne</span><b class="num">${d > 0 && t > 0 ? fmt(500 / (d / t)) : "–:––"}</b></div><div><span class="lab">Coups</span><b class="num">${S.nb}</b></div>
+      <div><span class="lab">Cadence moyenne</span><b class="num">${t > 0 ? Math.round(S.nb / (t / 60)) : 0} /min</b></div><div><span class="lab">Tours</span><b class="num">${S.temps.length}${S.temps.length ? " · meilleur " + fmtT(Math.min(...S.temps)) : ""}</b></div></div>
+    <div class="ligne"><button class="go" id="fOk">▶ OK</button></div>`;
+  $("fin").hidden = false;
+  $("fOk").onclick = () => { $("fin").hidden = true; $("hud").hidden = true; $("menu").hidden = false;
+    Object.assign(SEANCE, {etat: "aucune", t0: null, bilan: null, saisi: null}); Object.assign(S, {etat: "menu", t: 0, nb: 0, coupsT: [], dist: 0}); essai = false; majMenu(); };
+}
+
+/* ============ le téléphone sous le siège ============ */
+const vits = [];
+function coupReel(m) {
+  if (S.etat !== "course") return;
+  const vit = +m.vit || 0; vits.push(vit); if (vits.length > 20) vits.shift();
+  const tri = [...vits].sort((a, b) => a - b), med = tri[Math.floor(tri.length / 2)] || vit || 1;
+  const force = clamp(vits.length < 3 ? .5 : .5 + (vit / med - 1) * 1.5, 0, 1);  // fort = plus vite que tes derniers coups
+  coup(force, D.modele ? Math.max(3, D.modele.a + D.modele.b * vit) : 6 + 4 * force);
+}
+function envoyer(m) { if (conn && conn.open) { try { conn.send(m); } catch (e) {} } }
+function recevoir(m) {
+  if (!m || typeof m !== "object") return;
+  if (m.type === "bonjour") { telOk = true;
+    if (m.etat === "mesure" && SEANCE.etat !== "mesure") { SEANCE.etat = "mesure"; SEANCE.t0 = m.depuis || Date.now(); }
+    if (m.etat === "fini" && SEANCE.etat !== "saisie") { SEANCE.etat = "stop"; envoyer({type: "stop"}); if ($("saisie").hidden) ouvrirSaisie(); }
+    if (m.etat === "attente" && SEANCE.etat === "lancee") envoyer({type: "lancer", s: 0});
+    if (SEANCE.etat !== "lancee") $("tel").hidden = true;
+    majMenu(); }
+  if (m.type === "zero" || (m.type === "coup" && SEANCE.etat === "lancee")) { SEANCE.etat = "mesure"; SEANCE.t0 = SEANCE.t0 || Date.now(); $("tel").hidden = true; }
+  if (m.type === "coup") coupReel(m);
+  if (m.type === "bilan") { SEANCE.bilan = m; if (!$("saisie").hidden) dessinerSaisie(); }
+  if (m.type === "garde") finir(false);
+  if (m.type === "erreur") { SEANCE.etat = "stop"; dessinerSaisie(m.texte || "Le téléphone n'a pas pu enregistrer."); }
+  if (m.type === "jete") finir(true);
+}
+let peer = null;
+function ecouter() {
+  if (!D.lien || !window.Peer) { TEL_TXT = D.lien ? "Lien impossible : recharge la page" : "Pas de lien pour ce compte"; majMenu(); return; }
+  peer = new Peer("pokefit-rameur-" + D.lien);
+  peer.on("open", () => { TEL_TXT = "En attente du téléphone"; majMenu(); });
+  peer.on("connection", c => {
+    c.on("open", () => { if (conn && conn !== c) { try { conn.close(); } catch (e) {} } conn = c; });
+    c.on("data", d => { conn = c; recevoir(d); });
+    c.on("close", () => { if (conn !== c) return; conn = null; telOk = false; TEL_TXT = "Téléphone déconnecté"; majMenu(); if (S.etat === "course") { $("tel").hidden = false; $("tel").textContent = "Téléphone perdu : il se reconnecte…"; } });
+  });
+  peer.on("disconnected", () => setTimeout(() => { try { if (!peer.destroyed) peer.reconnect(); } catch (e) {} }, 3000));
+  peer.on("error", e => { if (["unavailable-id", "network", "server-error", "socket-error"].includes(e.type)) { TEL_TXT = "Je réessaie de me relier…"; majMenu(); try { peer.destroy(); } catch (x) {} setTimeout(ecouter, 8000); } });
+}
+async function allumer() { for (const w of [window, window.parent]) { try { await w.navigator.wakeLock.request("screen"); return; } catch (e) {} } }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") allumer(); });
+const docPlein = () => { try { if (window.parent.document.fullscreenElement) return window.parent.document; } catch (e) {} return document.fullscreenElement ? document : null; };
+function pleinEcran() { if (docPlein()) return; for (const d of (() => { try { return [window.parent.document, document]; } catch (e) { return [document]; } })()) { try { const p = d.documentElement.requestFullscreen(); if (p) { p.catch(() => {}); return; } } catch (e) {} } }
+
+/* ============ commandes ============ */
+$("bPartir").onclick = () => { audio(); if (!$("bPartir").disabled) demarrer(); };
+$("bEssai").onclick = () => { audio(); essai = true; majMenu(); };
+$("pSon").onclick = () => { audio(); sonOn = !sonOn; $("pSon").textContent = "Son : " + (sonOn ? "oui" : "non"); };
+$("bPlein").onclick = () => { const d = docPlein(); if (d) d.exitFullscreen(); else pleinEcran(); };
+$("bPause").onclick = () => { $("pauseTxt").textContent = `${fmt(S.t)} · ${Math.round(S.dist)} m. ${essai ? "" : "Le téléphone continue de compter : la séance ne s'arrête que si tu la termines."}`; $("pause").hidden = false; };
+$("pReprendre").onclick = () => { $("pause").hidden = true; };
+$("pChanger").onclick = () => { $("pause").hidden = true; choisir((choix + 1) % NAGEURS.length); flash(1); };
+tenir($("pTerminer"), terminer);
+$("bCoup").onclick = e => { e.stopPropagation(); coup(.65 + Math.random() * .2); };
+$("bAuto").onclick = e => { e.stopPropagation(); S.auto = !S.auto; $("bAuto").classList.toggle("on", S.auto); };
+cv.addEventListener("pointerdown", () => { audio(); if (essai && S.etat === "course") coup(.6 + Math.random() * .25); });
+addEventListener("keydown", e => { if (e.code === "Space" && essai && S.etat === "course") { e.preventDefault(); coup(.7); } });
+boutonsNageurs(); dessinerProg(); majMenu(); allumer();
+construireDecor(); construire(choix); iconeProg();
+requestAnimationFrame(boucle);
+</script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" onload="ecouter()" onerror="ecouter()"></script>

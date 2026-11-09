@@ -1236,7 +1236,8 @@ function iconeProg() {  // le portrait de ton Pokémon sur la barre
     const k = Math.min(32 / A.fw, 32 / A.fh); x.clearRect(0, 0, 32, 32); x.drawImage(img, 0, 0, A.fw, A.fh, (32 - A.fw * k) / 2, (32 - A.fh * k) / 2, A.fw * k, A.fh * k); }); }).catch(() => {});
 }
 function majProg() {
-  const u = S.tour ? surBoucle(S.s) / LONG : 0;  // pendant l'élan, ton Pokémon attend sur la ligne de départ $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
+  const u = S.tour ? surBoucle(S.s) / LONG : 0;  // pendant l'élan, ton Pokémon attend sur la ligne de départ
+  $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
   document.querySelectorAll("#prog .etape").forEach(e => e.classList.toggle("passee", surBoucle(S.s) >= surBoucle(+e.dataset.s)));
 }
 
