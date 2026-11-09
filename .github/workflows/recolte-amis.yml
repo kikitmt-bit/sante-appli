@@ -1,0 +1,29 @@
+# La récolte de tous les amis, toutes les 30 min de 6 h à minuit environ (Kiki, 09/11 : quand quelqu'un ouvre l'appli, le
+# classement et la course de la semaine sont déjà à jour). Appelle l'Application Web du script Google (`?quoi=autres`,
+# `lesAutres` de sante.gs) comme le fait l'appli : ce n'est pas un déclencheur Google, donc hors des 90 min par jour.
+# Secrets nécessaires : SCRIPT_URL et SCRIPT_CLE (les mêmes que dans les secrets Streamlit).
+# Dépôt public : le journal ne dit que « fait » et le nombre d'amis dont les données ont changé, jamais qui ni quoi.
+name: Récolte des amis
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 5-22 * * *"  # en heure UTC : 6 h - 0 h à Paris l'hiver, 7 h - 1 h l'été
+concurrency:
+  group: recolte-amis
+  cancel-in-progress: false
+permissions: {}
+jobs:
+  recolte:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Demander la récolte au script Google
+        env:
+          SCRIPT_URL: ${{ secrets.SCRIPT_URL }}
+          SCRIPT_CLE: ${{ secrets.SCRIPT_CLE }}
+        run: |
+          if [ -z "$SCRIPT_URL" ] || [ -z "$SCRIPT_CLE" ]; then echo "Secrets SCRIPT_URL / SCRIPT_CLE absents : rien à faire."; exit 0; fi
+          rep=$(curl -sSL --max-time 330 --get "$SCRIPT_URL" --data-urlencode "cle=$SCRIPT_CLE" --data-urlencode "quoi=autres") || { echo "Le script n'a pas répondu."; exit 1; }
+          echo "$rep" | jq -e . > /dev/null 2>&1 || { echo "Réponse illisible (script pas encore recollé ?)."; exit 1; }
+          echo "$rep" | jq -r 'if .ok then (if .frais then "Déjà fait il y a moins de 5 min." else "Fait : \((.ecrits // []) | length) ami(s) avec du nouveau." end) else "Refusé par le script." end'
+          echo "$rep" | jq -e '.ok' > /dev/null

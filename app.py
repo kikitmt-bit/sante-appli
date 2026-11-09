@@ -428,11 +428,19 @@ def les_joueurs(aujourd):
 
 
 def lire_depot(paths, recents=()):
-    """Contenu de plusieurs fichiers (lus en parallèle). Relus après 2 min pour les plus récents, 1 h pour les autres. GitHub en panne : on
-    garde la dernière version lue et on ne réessaie qu'une minute plus tard ; sans aucune version : Panne."""
+    """Contenu de plusieurs fichiers (lus en parallèle). Relus après 2 min pour les plus récents, 10 min pour ceux des autres joueurs
+    (récoltés toutes les 30 min : Kiki, 09/11, le classement à jour), 1 h pour les autres. GitHub en panne : on garde la dernière
+    version lue et on ne réessaie qu'une minute plus tard ; sans aucune version : Panne."""
     c, now = _cache(), time.time()
+
+    def age_max(p):
+        if p in recents:
+            return 120
+        moi = globals().get("PREFIXE", "")  # pas encore connu avant la connexion (écran du rameur)
+        autre = not p.startswith(moi) if moi else p.startswith("data/joueurs/")
+        return 600 if autre else 3600
     a_lire = [p for p in paths if p not in c or c[p][1] is None and now - c[p][0] > 120 or
-              not p.startswith("sprites:") and now - c[p][0] > (120 if p in recents else 3600)]  # images : gardées
+              not p.startswith("sprites:") and now - c[p][0] > age_max(p)]  # images : gardées
     en_panne = now < c.get("__panne", 0)
     if en_panne:
         a_lire = [p for p in a_lire if p not in c]
