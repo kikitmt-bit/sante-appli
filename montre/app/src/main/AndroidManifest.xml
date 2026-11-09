@@ -9,6 +9,8 @@
     <!-- Claude : la montre suit la réponse écran éteint (SuiviClaude) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Capteurs : enregistrement des mouvements au rameur / à l'elliptique, écran éteint -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
     <!-- Pas, étages, distance, calories en direct (Health Services) ; agenda pour la case du bas du cadran -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
@@ -128,6 +130,23 @@
             android:name=".SuiviClaude"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
+
+        <!-- Capteurs : enregistrer une séance de rameur ou d'elliptique (liste des applis) -->
+        <activity
+            android:name=".CapteursActivity"
+            android:exported="true"
+            android:icon="@drawable/ic_lanceur"
+            android:label="Capteurs"
+            android:taskAffinity="fr.kiki.pokemontre.capteurs">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service
+            android:name=".Enregistreur"
+            android:exported="false"
+            android:foregroundServiceType="health" />
 
         <!-- Plein écran : ouverture des Poké Balls -->
         <activity
