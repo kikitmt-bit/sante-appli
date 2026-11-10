@@ -170,7 +170,7 @@ const largeurEau = s => at(s).w * 2;
 /* ============ les rives : un profil par sorte de rive (décalage depuis le bord de l'eau, hauteur), en mètres ============ */
 // 7 points chacun ; deux sortes voisines se fondent l'une dans l'autre sur une quinzaine de mètres.
 const PROFILS = {
-  quai:    [[0, -.6], [0, 1.15], [.35, 1.25], [2, 1.25], [6, 1.3], [10, 1.35], [14, 1.4]],
+  quai:    [[0, -.6], [0, .7], [.35, .8], [2, .8], [6, .85], [10, .9], [14, .95]],  // bas : depuis l'eau, on voit les maisons (Kiki, 10/11)
   herbe:   [[0, -.6], [.25, .45], [.9, .8], [2.5, 1.0], [6, 1.2], [10, 1.4], [14, 1.6]],
   plage:   [[0, -.6], [1.5, 0], [4, .35], [7, .7], [10, 1.0], [12, 1.3], [14, 1.6]],
   roche:   [[0, -.6], [.4, .9], [1.2, 1.8], [3, 2.4], [7, 2.8], [10, 3.0], [14, 3.2]],
@@ -180,6 +180,7 @@ const PROFILS = {
 // la couleur « en gris » de chaque sorte (à peine teintée, pour lire le circuit) : la paroi, puis le dessus
 const GRIS = {quai: [[.6, .6, .64], [.74, .74, .76]], herbe: [[.56, .52, .46], [.63, .69, .58]], plage: [[.78, .74, .62], [.82, .78, .66]], roche: [[.55, .53, .5], [.6, .62, .55]],
   falaise: [[.58, .55, .52], [.62, .67, .56]], tunnel: [[.42, .41, .44], [.6, .62, .56]], mer: [[.5, .55, .6], [.5, .55, .6]]};
+const PAVE = 4.5;  // la bande pavée d'un quai, le long de l'eau (m) ; au-delà, l'herbe des parcelles
 const FONDU = Math.round(15 / DS);  // deux sortes de rive voisines se fondent sur 30 m (Kiki : des transitions très douces)
 const SORTES = ["quai", "herbe", "plage", "roche", "falaise", "tunnel", "mer"];  // l'ordre des poids envoyés aux textures
 function profilMoyen(T, i) {  // le profil d'une rive au point i : la moyenne des profils voisins (transitions douces), et la part de chaque sorte
@@ -215,7 +216,8 @@ function toile(w, h, f) { const c = document.createElement("canvas"); c.width = 
 function tex(c) { const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; }
 /* ============ les textures (ChatGPT, 09/11 : même consigne pour toute la série, 128 pixels d'art, raccord sans couture vérifié) ============ */
 const TEX_URL = /^(localhost|127\.)/.test(location.hostname) ? "scenes/circuit/" : "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/circuit/";
-const ECH = {herbe: 6, terre: 5, sable: 6, roche: 4, falaise: 8, quai: 5, paves: 4, crepi: 4, tuiles: 3, bois: 3, toit_rouge: 3, toit_bleu: 3, toit_vert: 3};  // mètres couverts par une tuile de texture
+const CREME = [253, 240, 217];  // le mur crème des façades dessinées par ChatGPT
+const ECH = {herbe: 6, terre: 5, sable: 6, roche: 4, falaise: 8, quai: 5, paves: 4, crepi: 4, tuiles: 3, bois: 3, toit_rouge: 3, toit_bleu: 3, toit_vert: 3, toit_orange: 3, toit_violet: 3, toit_marine: 3};  // mètres couverts par une tuile de texture
 const TXC = {};
 for (const nom of Object.keys(ECH)) { const t = new THREE.TextureLoader().setCrossOrigin("anonymous").load(TEX_URL + nom + ".png"); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter; t.anisotropy = 4; TXC[nom] = t; }
 const COMMUNS = {uSun: {value: SOLEIL}, uFog: {value: BRUME}, uFn: {value: BN}, uFf: {value: BF}, uSombre: {value: 0}};
@@ -228,10 +230,10 @@ const GLSL_COMMUN = `
   vec3 brume(vec3 c, vec3 wp){ float d = length(wp - cameraPosition); float f = floor(smoothstep(uFn, uFf, d) * 7.0) / 7.0; return mix(c, uFog, f) * (1.0 - uSombre); }`;
 // le sol (rives et terrain) : la texture du dessus ou de la paroi selon la pente ; entre deux sortes, un mélange en taches de pixels (jamais deux textures fondues l'une dans l'autre)
 const matSol = ruban => new THREE.ShaderMaterial({side: THREE.DoubleSide, uniforms: Object.assign({uRuban: {value: ruban ? 1 : 0}, uT0: {value: TUNNELS[0][0] - .5}, uT1: {value: TUNNELS[0][1] + .5}}, COMMUNS, Object.fromEntries(Object.entries(TXC).map(([k, v]) => ["t_" + k, {value: v}]))),
-  vertexShader: `attribute vec4 kA, kB; varying vec4 vA, vB; varying vec3 vP, vN; varying float vS;
-    void main(){ vA = kA; vB = kB; vS = uv.x * 4.0; vP = (modelMatrix * vec4(position, 1.0)).xyz; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0); }`,
+  vertexShader: `attribute vec4 kA, kB; varying vec4 vA, vB; varying vec3 vP, vN; varying float vS, vV;
+    void main(){ vA = kA; vB = kB; vS = uv.x * 4.0; vV = uv.y * 4.0; vP = (modelMatrix * vec4(position, 1.0)).xyz; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0); }`,
   fragmentShader: GLSL_COMMUN + `
-    uniform float uRuban, uT0, uT1; uniform sampler2D t_herbe, t_terre, t_sable, t_roche, t_falaise, t_quai, t_paves; varying vec4 vA, vB; varying vec3 vP, vN; varying float vS;
+    uniform float uRuban, uT0, uT1; uniform sampler2D t_herbe, t_terre, t_sable, t_roche, t_falaise, t_quai, t_paves; varying vec4 vA, vB; varying vec3 vP, vN; varying float vS, vV;
     void main(){
       vec3 n = normalize(vN), pm = vP / ${E.toFixed(1)}; if (!gl_FrontFacing) n = -n;
       vec2 top = pm.xz, mur = uRuban > .5 ? vec2(vS, pm.y) : (abs(n.x) > abs(n.z) ? pm.zy : pm.xy);
@@ -241,6 +243,7 @@ const matSol = ruban => new THREE.ShaderMaterial({side: THREE.DoubleSide, unifor
       float raide = smoothstep(.42, .7, 1.0 - n.y), r2 = h1(floor(mur * 24.0) + 7.0) * .35 + .65 * vbruit(mur * .8);
       bool paroi = raide > r2;
       vec3 c;
+      if (k == 0 && uRuban > .5 && !paroi && vV > ${(PAVE + .6 + PROFILS.quai[1][1]).toFixed(2)}) k = 1;  // au-delà de la bande pavée du quai : des parcelles d'herbe (Kiki, 10/11 : pas de dallage partout)
       if (k == 0) c = paroi ? texture2D(t_quai, mur / 5.0).rgb : texture2D(t_paves, top / 4.0).rgb;
       else if (k == 1) c = paroi ? texture2D(t_terre, mur / 5.0).rgb : texture2D(t_herbe, top / 6.0).rgb;
       else if (k == 3) c = texture2D(t_roche, (paroi ? mur : top) / 4.0).rgb;
@@ -259,11 +262,16 @@ function matObjet(nom, teinte = 0xFFFFFF, ech, toit = false, egal = false) { ret
       // un toit : les rangées de tuiles suivent le faîte, elles descendent la pente
       vec3 n = normalize(vN); if (!gl_FrontFacing) n = -n;
       vec3 c = texture2D(t, uv / uEch).rgb * uTeinte; gl_FragColor = vec4(brume(uEgal > .5 ? c * LUM_TUNNEL : eclaire(c, n), vP), 1.0); }`}); }
-// une image posée telle quelle sur une face (façade et côté des maisons Pokémon, dessinés par ChatGPT de face) : coordonnées de la face, éclairée comme le reste
-function matImage(nom) { const t = new THREE.TextureLoader().setCrossOrigin("anonymous").load(TEX_URL + nom + ".png"); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
-  return new THREE.ShaderMaterial({uniforms: Object.assign({t: {value: t}}, COMMUNS),
+// une image posée telle quelle sur une face (façades et côtés des maisons Pokémon, dessinés de face par ChatGPT), éclairée comme le reste
+// rep = combien de fois l'image se répète en largeur ; mur = la couleur qui remplace le crème des murs dessinés (couleurs franches par bâtiment, Kiki 10/11)
+const IMG_TEX = {};
+function matImage(nom, rep = 1, mur = CREME) { const t = IMG_TEX[nom] || (IMG_TEX[nom] = new THREE.TextureLoader().setCrossOrigin("anonymous").load(TEX_URL + nom + ".png")); t.wrapS = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
+  return new THREE.ShaderMaterial({uniforms: Object.assign({t: {value: t}, uRep: {value: rep}, uCreme: {value: new THREE.Vector3(...CREME.map(v => v / 255))}, uMur: {value: new THREE.Vector3(...mur.map(v => v / 255))}}, COMMUNS),
     vertexShader: `varying vec2 vU; varying vec3 vP, vN; void main(){ vU = uv; vP = (modelMatrix * vec4(position, 1.0)).xyz; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * vec4(vP, 1.0); }`,
-    fragmentShader: GLSL_COMMUN + `uniform sampler2D t; varying vec2 vU; varying vec3 vP, vN; void main(){ gl_FragColor = vec4(brume(eclaire(texture2D(t, vU).rgb, normalize(vN)), vP), 1.0); }`}); }
+    fragmentShader: GLSL_COMMUN + `uniform sampler2D t; uniform float uRep; uniform vec3 uCreme, uMur; varying vec2 vU; varying vec3 vP, vN;
+      void main(){ vec3 c = texture2D(t, vec2(vU.x * uRep, vU.y)).rgb; float m = 1.0 - smoothstep(.07, .16, distance(c, uCreme));
+        c = mix(c, uMur * (c.r + c.g + c.b) / (uCreme.r + uCreme.g + uCreme.b), m);
+        gl_FragColor = vec4(brume(eclaire(c, normalize(vN)), vP), 1.0); }`}); }
 // Les matériaux : chaque forme reçoit le sien ici (les formes ne changent pas avec l'habillage).
 const MATS = {
   rives: matSol(true), terrain: matSol(false),
@@ -319,7 +327,7 @@ function terrainEn(x, z) {  // la hauteur du terrain (m), et s'il faut le dessin
   let h = base + loin * relief(x / E, z / E) * (ext ? 6 : 3.5) + (ext ? lisse(70, 330, o) * 58 * (.55 + .45 * relief(x / E + 300, z / E)) : lisse(40, 110, o) * 9);
   const mont = lisse(T_MONT[1] - T_MONT[0] + 70, 20, dm) * lisse(170, 0, o) * lisse(13.5, 34, o) * 26; h = Math.max(h, base + mont);  // la montagne du tunnel
   // la matière : celle de la rive près de l'eau, puis de l'herbe sur le plat et la falaise dans les pentes (montagnes), le sable vers la mer
-  const loinK = kwR[0] > .5 ? (o > 22 ? 1 : 0) : lisse(14, 40, o), merK = lisse(.05, .5, mw), kw = kwR.map((v, i) => lerp(lerp(v, i === 4 ? 1 : 0, loinK), i === 2 ? 1 : 0, merK));
+  const loinK = kwR[0] > .5 ? 1 : lisse(14, 40, o), merK = lisse(.05, .5, mw), kw = kwR.map((v, i) => lerp(lerp(v, i === 4 ? 1 : 0, loinK), i === 2 ? 1 : 0, merK));
   return {h: lerp(h, -3, mw), cache: dansCouloir, o, kw};
 }
 const TERRAIN = {};
@@ -432,14 +440,106 @@ ciel.renderOrder = -10; scene.add(ciel);
 function placer(m, s, d, y = 0, tourne = 0) { const p = pose(s, d); m.position.set(p.x, y * E, p.z); m.rotation.y = -p.h + tourne; scene.add(m); return m; }
 const boite = (l, h, p, mat) => { const g = new THREE.BoxGeometry(l * E, h * E, p * E); g.translate(0, h * E / 2, 0); return new THREE.Mesh(g, mat); };
 const solEn = (s, d) => { const a = at(s), o = Math.abs(d) - a.w; return o < 0 ? 0 : hauteurRive(d < 0 ? -1 : 1, s, o); };
-function maison(s, d, l = 6, p = 5, h = 3.1, angle = 0, toit) {  // une maison de village Pokémon : façade (porte, deux fenêtres) tournée vers l'eau, côtés à une fenêtre, grand toit coloré qui déborde
-  const g = new THREE.Group(), y = solEn(s, d), murs = [MATS.cote, MATS.cote, MATS.pignon, MATS.pignon, MATS.cote, MATS.cote];
-  murs[d < 0 ? 0 : 1] = MATS.facade; g.add(boite(p, h, l, murs));
-  const hT = p * .48, tri = new THREE.Shape(); tri.moveTo(-(p / 2 + .55) * E, 0); tri.lineTo((p / 2 + .55) * E, 0); tri.lineTo(0, hT * E); tri.lineTo(-(p / 2 + .55) * E, 0);
-  const tg = new THREE.ExtrudeGeometry(tri, {depth: (l + .9) * E, bevelEnabled: false}); tg.translate(0, (h - .15) * E, -(l + .9) * E / 2);
-  g.add(new THREE.Mesh(tg, [MATS.pignon, toit || MATS.toits[Math.floor(rnd(s * 5.1 + d) * MATS.toits.length)]]));  // le pignon couleur mur, les pans en bardeaux
-  return placer(g, s, d, y, angle);
+// ---------- Les bâtiments Pokémon (Kiki, 10/11, d'après ses références : Let's Go, Rouge Feu, Écarlate) ----------
+// Des blocs simples ; toits plats ou écrasés (pente faible, gros débord, épaisseur et faîte visibles), parfois bombés ; un couple de couleurs franches par bâtiment ;
+// des maisons à étage avec balcon ; le Centre Pokémon (toit rouge bombé, emblème) et la Boutique (toit bleu). Façades et côtés = les images de ChatGPT, mur recoloré.
+const MURS = [[253, 240, 217], [248, 214, 116], [226, 228, 234], [250, 250, 246], [246, 184, 156], [190, 226, 200], [198, 220, 246]];  // crème, jaune, gris clair, blanc, saumon, vert d'eau, bleu ciel
+const TOITS = ["toit_rouge", "toit_orange", "toit_marine", "toit_vert", "toit_violet", "toit_bleu"];
+const MAT_B = {};
+const img = (nom, rep, mur) => MAT_B[nom + rep + "m" + mur] || (MAT_B[nom + rep + "m" + mur] = matImage(nom, rep, MURS[mur]));
+const matToit = (n, sombre) => MAT_B[n + (sombre ? "s" : "")] || (MAT_B[n + (sombre ? "s" : "")] = matObjet(n, sombre ? 0x8C8C8C : 0xFFFFFF, 3, true));
+const matMur = mur => MAT_B["mur" + mur] || (MAT_B["mur" + mur] = matObjet("crepi", new THREE.Color(...MURS[mur].map((v, i) => Math.min(1, v / [251, 231, 209][i]))).getHex()));
+MATS.gris = matObjet("crepi", 0xB0B4BC); MATS.grisF = matObjet("crepi", 0x8E929C);
+const devant = d => d < 0 ? 1 : -1;  // le sens de la façade (vers l'eau) dans les axes du bâtiment
+// un volume de murs : l le long de l'eau, p en profondeur ; la façade (vers l'eau) porte « avant », les autres faces des fenêtres
+function bloc(g, l, p, h, y0, d, mur, avant, x0 = 0, z0 = 0) {
+  const fen = n => img("cote", Math.max(1, Math.round(n / Math.max(h, 2.4))), mur), murs = [fen(l), fen(l), matMur(mur), matMur(mur), fen(p), fen(p)];
+  murs[d < 0 ? 0 : 1] = avant; const b = boite(p, h, l, murs); b.position.set(x0 * E, y0 * E, z0 * E); g.add(b); return b;
 }
+// un toit écrasé : deux pans à pente faible, un gros débord, l'épaisseur visible, un faîte épais ; et le pignon, couleur du mur
+function toitBas(g, l, p, y, n, mur, pente = .3, deb = .75, x0 = 0) {
+  const a = p / 2 + deb, hT = a * pente, th = .34, L = l + deb * 2, f = new THREE.Shape();
+  f.moveTo(-a * E, 0); f.lineTo(0, hT * E); f.lineTo(a * E, 0); f.lineTo(a * E, -th * E); f.lineTo(0, (hT - th) * E); f.lineTo(-a * E, -th * E); f.lineTo(-a * E, 0);
+  const geo = new THREE.ExtrudeGeometry(f, {depth: L * E, bevelEnabled: false}); geo.translate(x0 * E, (y + th) * E, -L * E / 2);
+  g.add(new THREE.Mesh(geo, [matToit(n, true), matToit(n)]));
+  const fa = boite(.55, .3, L + .02, matToit(n, true)); fa.position.set(x0 * E, (y + th + hT - .12) * E, 0); g.add(fa);  // le faîte
+  const hp = (p / 2) * pente + th, pg = new THREE.Shape(); pg.moveTo(-p / 2 * E, 0); pg.lineTo(p / 2 * E, 0); pg.lineTo(0, hp * E); pg.lineTo(-p / 2 * E, 0);
+  for (const sz of [-1, 1]) { const m = new THREE.Mesh(new THREE.ShapeGeometry(pg), matMur(mur)); m.position.set(x0 * E, y * E, sz * l / 2 * E); g.add(m); }
+}
+// un toit plat : une dalle grise, un rebord tout autour, parfois une cheminée carrée
+function toitPlat(g, l, p, y, mat = MATS.gris, chem = false, x0 = 0, z0 = 0) {
+  const dal = boite(p + .5, .3, l + .5, mat); dal.position.set(x0 * E, y * E, z0 * E); g.add(dal);
+  for (const [bx, bz, bl, bp] of [[0, -(l + .5) / 2, .3, p + .5], [0, (l + .5) / 2, .3, p + .5], [-(p + .5) / 2, 0, l + .5, .3], [(p + .5) / 2, 0, l + .5, .3]]) {
+    const r = boite(bp, .42, bl, mat); r.position.set((x0 + bx) * E, (y + .3) * E, (z0 + bz) * E); g.add(r); }
+  if (chem) { const c = boite(1, 1.5, 1, MATS.grisF); c.position.set((x0 - p * .22) * E, (y + .3) * E, (z0 + l * .28) * E); g.add(c); }
+}
+// un toit bombé (Centre Pokémon) : un arc de cylindre le long du bâtiment, fermé aux deux bouts
+function toitBombe(g, l, p, y, n) {
+  const deb = .7, c = p / 2 + deb, th = Math.PI / 3.2, R = c / Math.sin(th), L = l + deb * 2, base = R * Math.cos(th);
+  const geo = new THREE.CylinderGeometry(R * E, R * E, L * E, 24, 1, true, -th, th * 2); geo.rotateX(-Math.PI / 2); geo.translate(0, (y - base) * E, 0);
+  g.add(new THREE.Mesh(geo, matToit(n)));
+  const sh = new THREE.Shape(); for (let i = 0; i <= 16; i++) { const t = -th + 2 * th * i / 16; sh[i ? "lineTo" : "moveTo"](R * Math.sin(t) * E, (R * Math.cos(t) - base) * E); } sh.lineTo(-R * Math.sin(th) * E, 0);
+  for (const sz of [-1, 1]) { const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), matToit(n, true)); m.position.set(0, y * E, sz * L / 2 * E); g.add(m); }
+  const fa = boite(.5, .3, L, matToit(n, true)); fa.position.y = (y + R - base - .12) * E; g.add(fa);
+}
+// un garde-corps blanc (balcon) le long d'un bord : barreaux et main courante, en instances
+function gardeCorps(g, x, z0, z1, y) { const n = Math.max(2, Math.round(Math.abs(z1 - z0) / .45));
+  for (let i = 0; i <= n; i++) { const b = boite(.09, .85, .09, MAT_INST.blanc); b.position.set(x * E, y * E, lerp(z0, z1, i / n) * E); g.add(b); }
+  const m = boite(.16, .12, Math.abs(z1 - z0) + .1, MAT_INST.blanc); m.position.set(x * E, (y + .85) * E, (z0 + z1) / 2 * E); g.add(m); }
+// une enseigne : un panneau, et un objet du jeu en pixels dessus (Poké Ball du Centre, Potion de la Boutique : sprites de PokeAPI)
+const OBJETS = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/";
+function enseigne(g, x, y, larg, haut, couleur, objet, d) {
+  const fx = devant(d), pan = boite(.3, haut, larg, new THREE.MeshLambertMaterial({color: couleur})); pan.position.set(x * E, y * E, 0); g.add(pan);
+  if (!objet) return; const t = new THREE.TextureLoader().setCrossOrigin("anonymous").load(OBJETS + objet + ".png"); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter;
+  const k = haut * .92, m = new THREE.Mesh(new THREE.PlaneGeometry(k * E, k * E), new THREE.MeshBasicMaterial({map: t, transparent: true, alphaTest: .5}));
+  m.position.set((x + fx * .17) * E, (y + haut / 2) * E, 0); m.rotation.y = fx * Math.PI / 2; g.add(m);
+}
+// les modèles
+function maisonBasse(s, d, l, p, h, angle, mur, toit) {  // de plain-pied, toit écrasé coloré
+  const g = new THREE.Group(); bloc(g, l, p, h, 0, d, mur, img("facade", 1, mur)); toitBas(g, l, p, h, toit, mur); return placer(g, s, d, solEn(s, d), angle); }
+function maisonPlate(s, d, l, p, h, angle, mur, toit) {  // toit-terrasse gris à rebord et cheminée, une bande de couleur sous le rebord
+  const g = new THREE.Group(); bloc(g, l, p, h, 0, d, mur, img("facade", 1, mur)); toitPlat(g, l, p, h, MATS.gris, true);
+  const bd = boite(p + .12, .35, l + .12, matToit(toit)); bd.position.y = (h - .35) * E; g.add(bd); return placer(g, s, d, solEn(s, d), angle); }
+function maisonEtage(s, d, l, p, h, angle, mur, toit) {  // un bloc du bas, un bloc du haut en retrait sur l'arrière, la terrasse devant avec son balcon blanc
+  const g = new THREE.Group(), fx = devant(d), h2 = 2.5, p2 = p * .58, l2 = l * .7, x2 = -fx * (p - p2) / 2;
+  bloc(g, l, p, h, 0, d, mur, img("facade", 1, mur)); toitPlat(g, l, p, h, MATS.gris);
+  bloc(g, l2, p2, h2, h + .3, d, mur, img("cote", 2, mur), x2); toitBas(g, l2, p2, h + .3 + h2, toit, mur, .28, .6, x2);
+  gardeCorps(g, fx * (p / 2 + .05), -l / 2 + .2, l / 2 - .2, h + .3); return placer(g, s, d, solEn(s, d), angle); }
+function grandBatiment(s, cote, l, p, h, mur) {  // long et bas, toit plat gris, cheminée, murs jaune pâle, deux portes (le labo, la halle du port)
+  const d = cote * (at(s).w + PAVE + 4.5 + p / 2), g = new THREE.Group(); bloc(g, l, p, h, 0, d, mur, img("facade", 2, mur)); toitPlat(g, l, p, h, MATS.gris, true); return placer(g, s, d, solEn(s, d)); }
+function centrePokemon(s, cote) {  // le Centre Pokémon : murs blancs, grand toit rouge bombé, fronton blanc à la Poké Ball au-dessus des portes
+  const l = 13.5, p = 9, h = 4.4, d = cote * (at(s).w + PAVE + 5 + p / 2), g = new THREE.Group(), fx = devant(d); chemin(s, cote * (at(s).w + PAVE), cote * (at(s).w + PAVE + 5.1), 4);
+  bloc(g, l, p, h, 0, d, 3, img("facade", 1, 3)); toitBombe(g, l, p, h, "toit_rouge");
+  enseigne(g, fx * (p / 2 + .9), h - .3, 4.4, 2.6, 0xF6F6F0, "poke-ball", d); return placer(g, s, d, solEn(s, d)); }
+function boutique(s, cote) {  // la Boutique : murs blancs, toit bleu écrasé, enseigne bleue à la Potion
+  const l = 9, p = 7, h = 3.4, d = cote * (at(s).w + PAVE + 4.5 + p / 2), g = new THREE.Group(), fx = devant(d); chemin(s, cote * (at(s).w + PAVE), cote * (at(s).w + PAVE + 4.6), 2.6);
+  bloc(g, l, p, h, 0, d, 3, img("facade", 1, 3)); toitBas(g, l, p, h, "toit_bleu", 3, .26, .8);
+  enseigne(g, fx * (p / 2 + 1.0), h - .1, 3.6, 1.3, 0x3C78D0, "potion", d); return placer(g, s, d, solEn(s, d)); }
+// les petites choses de la ville, en instances (une seule forme pour des centaines de pièces) : barrières blanches, boîtes aux lettres, lampadaires
+const MAT_INST = {blanc: new THREE.MeshLambertMaterial({color: 0xF2F2EA}), rouge: new THREE.MeshLambertMaterial({color: 0xD8473A}), sombre: new THREE.MeshLambertMaterial({color: 0x4C505C}), lanterne: new THREE.MeshBasicMaterial({color: 0xFFF2BC})};
+const INST = {}, _m4 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _v3 = new THREE.Vector3(), _sc = new THREE.Vector3(), _ay = new THREE.Vector3(0, 1, 0);
+function inst(nom, x, y, z, rot, sx, sy, sz) { (INST[nom] || (INST[nom] = [])).push([x, y, z, rot, sx, sy, sz]); }  // un pavé (base posée à y), en unités de la scène
+function poserInstances() { const geo = new THREE.BoxGeometry(1, 1, 1); geo.translate(0, .5, 0);
+  for (const [nom, L] of Object.entries(INST)) { const m = new THREE.InstancedMesh(geo, MAT_INST[nom], L.length);
+    L.forEach(([x, y, z, r, sx, sy, sz], i) => { _q.setFromAxisAngle(_ay, r); m.setMatrixAt(i, _m4.compose(_v3.set(x, y, z), _q, _sc.set(sx, sy, sz))); }); scene.add(m); } }
+function barriere(s0, s1, d) {  // une barrière blanche le long de l'eau, de s0 à s1, à la distance d
+  const n = Math.max(1, Math.round(Math.abs(s1 - s0) / .9));
+  for (let i = 0; i <= n; i++) { const s = lerp(s0, s1, i / n), p = pose(s, d), y = solEn(s, d) * E; inst("blanc", p.x, y, p.z, -p.h, .13 * E, .95 * E, .13 * E);
+    if (i < n) { const q = pose(lerp(s0, s1, (i + 1) / n), d), L = Math.hypot(q.x - p.x, q.z - p.z), r = -Math.atan2(q.z - p.z, q.x - p.x);
+      for (const hy of [.32, .7]) inst("blanc", (p.x + q.x) / 2, y + hy * E, (p.z + q.z) / 2, r, L + .02, .1 * E, .07 * E); } } }
+function barriereTravers(s, d0, d1) {  // un bout de barrière en travers (de l'eau vers l'arrière)
+  const n = Math.max(1, Math.round(Math.abs(d1 - d0) / .9));
+  for (let i = 0; i <= n; i++) { const d = lerp(d0, d1, i / n), p = pose(s, d), y = solEn(s, d) * E; inst("blanc", p.x, y, p.z, -p.h, .13 * E, .95 * E, .13 * E);
+    if (i < n) { const q = pose(s, lerp(d0, d1, (i + 1) / n)), L = Math.hypot(q.x - p.x, q.z - p.z), r = -Math.atan2(q.z - p.z, q.x - p.x);
+      for (const hy of [.32, .7]) inst("blanc", (p.x + q.x) / 2, y + hy * E, (p.z + q.z) / 2, r, L + .02, .1 * E, .07 * E); } } }
+function boiteLettres(s, d) { const p = pose(s, d), y = solEn(s, d) * E; inst("sombre", p.x, y, p.z, -p.h, .1 * E, 1.05 * E, .1 * E); inst("rouge", p.x, y + 1.05 * E, p.z, -p.h, .42 * E, .34 * E, .3 * E); }
+function lampadaires(s0, s1, cotes, evite) {  // le long du quai pavé, tous les 16 m, jamais sur un pont
+  for (const c of cotes) for (let s = s0 + 4; s < s1; s += 16) { if (evite.some(e => Math.abs(e - s) < 4)) continue;
+    const d = c * (at(s).w + PAVE - .9), p = pose(s, d), y = solEn(s, d) * E; inst("sombre", p.x, y, p.z, -p.h, .2 * E, 3.4 * E, .2 * E); inst("lanterne", p.x, y + 3.4 * E, p.z, -p.h, .5 * E, .6 * E, .5 * E); inst("sombre", p.x, y + 4 * E, p.z, -p.h, .62 * E, .14 * E, .62 * E); } }
+const CHEMIN = matObjet("terre");
+function chemin(s, d0, d1, larg = 1.6) {  // un chemin de terre claire, du quai jusqu'à la porte
+  const a = Math.min(Math.abs(d0), Math.abs(d1)), b = Math.max(Math.abs(d0), Math.abs(d1)), c = Math.sign(d0 || d1), y = Math.max(solEn(s, c * a), solEn(s, c * b));
+  placer(boite(b - a, .07, larg, CHEMIN), s, c * (a + b) / 2, y - .03); }
 function pont(s, haut = 3.6) {  // un pont en arc au-dessus de l'eau : tablier, garde-corps, deux piles sur les quais
   const a = at(s), L = (a.w * 2 + 4), g = new THREE.Group(), N = 12;
   for (let i = 0; i < N; i++) { const u0 = i / N - .5, u1 = (i + 1) / N - .5, y0 = haut + .6 * Math.cos(u0 * Math.PI), y1 = haut + .6 * Math.cos(u1 * Math.PI), x0 = u0 * L, x1 = u1 * L;
@@ -459,14 +559,27 @@ function sprite(nom, s, d, k = 1) {
   const m = new THREE.Mesh(g, matSprite(nom)), p = pose(s, d); m.position.set(p.x, solEn(s, d) * E, p.z); scene.add(m); tournants.push(m); return m;
 }
 function arbre(s, d, k = 1, v) { const nom = v || (rnd(s * 3.3 + d) < .62 ? "arbre" : "sapin"); return sprite(nom, s, d, k); }
-function quartier(s0, s1, cote, graine, gros = []) {  // une rangée de maisons qui ne se ressemblent pas : taille, étages, retrait, écart, petit angle ; jardins et grosses bâtisses
+function quartier(s0, s1, cote, graine, evite = [], gros = [], sansRouge = []) {  // une rangée de parcelles d'herbe derrière le quai pavé : une maison chacune, son chemin de terre, sa barrière blanche, sa boîte aux lettres
   let s = s0, i = 0;
   while (s < s1) { const r = k => rnd(graine * 31.7 + i * 7.3 + k), w = at(s).w;
-    if (gros.length && s >= gros[0][0] - 6) { const [, l, p, h] = gros.shift(); maison(s + l / 2, cote * (w + 4.5 + p / 2), l, p, h, (r(5) - .5) * .06); s += l + 2 + r(6) * 2; i++; continue; }
-    if (r(1) < .16) { arbre(s + 2, cote * (w + 6 + r(2) * 3), 1, "arbre"); s += 5 + r(3) * 3; i++; continue; }  // un jardin
-    const l = 5.6 + r(4) * 2.2, p = 4.4 + r(7) * 1.4, h = 2.9 + r(9) * .45, retrait = 4.2 + r(10) * 4.5;  // toutes de plain-pied, comme dans les jeux ; on varie la taille, le retrait, l'angle et la couleur du toit
-    maison(s + l / 2, cote * (w + retrait + p / 2), l, p, h, (r(11) - .5) * .12); s += l + .8 + r(12) * 3.5; i++; }
+    if (gros.length && s >= gros[0][0] - 8) { const [, f, larg] = gros.shift(); if (s + larg < s1) { f(s + larg / 2, cote); s += larg + 3; i++; continue; } }
+    const type = r(1), etage = type > .42 && type < .78, plate = type >= .78;
+    const l = etage ? 7.2 + r(4) * 1.6 : 5.8 + r(4) * 2, p = etage ? 6 + r(7) : 4.6 + r(7) * 1.4, h = etage ? 2.9 : 2.9 + r(9) * .4, jardin = 2.6 + r(10) * 1.8;
+    const sc = s + l / 2; if (sc + l / 2 > s1) break;
+    if (evite.some(e => Math.abs(e - sc) < l / 2 + 3.5)) { s += 3; i++; continue; }  // pas de maison au pied d'un pont
+    const avant = w + PAVE + jardin, d = cote * (avant + p / 2), mur = Math.floor(r(13) * MURS.length), t0 = TOITS[Math.floor(r(14) * TOITS.length)], toit = t0 === "toit_rouge" && sansRouge.some(e => Math.abs(e - sc) < 22) ? "toit_orange" : t0, angle = (r(11) - .5) * .05;
+    (etage ? maisonEtage : plate ? maisonPlate : maisonBasse)(sc, d, l, p, h, angle, mur, toit);
+    // le jardin de devant : chemin jusqu'à la porte, barrière blanche ouverte au milieu, boîte aux lettres, quelques buissons
+    const bx = cote * (w + PAVE + .7), g0 = sc - l / 2 - .8, g1 = sc + l / 2 + .8;
+    chemin(sc, cote * (w + PAVE), cote * (avant + .1)); barriere(g0, sc - 1.1, bx); barriere(sc + 1.1, g1, bx);
+    barriereTravers(g0, bx, cote * (avant + 1)); barriereTravers(g1, bx, cote * (avant + 1));
+    boiteLettres(sc + 1.6 * (r(15) < .5 ? 1 : -1), cote * (w + PAVE + 1.4));
+    if (r(16) < .7) sprite("buisson", sc - l / 2 + .6, cote * (w + PAVE + 1.5 + r(17)), .5); if (r(18) < .5) sprite("buisson", sc + l / 2 - .6, cote * (w + PAVE + 1.4 + r(19)), .5);
+    s += l + 2.4 + r(12) * 2.6; i++; }
 }
+function rangeeArbres(s0, s1, cote, loin) {  // une bordure d'arbres en rangs serrés derrière les maisons, sur l'herbe (comme autour de Bourg Palette)
+  for (let s = s0, i = 0; s < s1; s += 3.6 + rnd(i * 3.1 + cote) * 1.4, i++) { const w = at(s).w; arbre(s, cote * (w + loin + rnd(i * 5.7 + cote) * 2.5), 1, rnd(i * 2.3 + cote) < .8 ? "arbre" : "sapin");
+    if (rnd(i * 4.9 + cote) < .5) arbre(s + 1.8, cote * (w + loin + 4 + rnd(i * 6.1 + cote) * 3), 1); } }
 function tribune(s0, s1, cote) {  // trois gradins le long du quai
   const n = Math.round((s1 - s0) / 6);
   for (let i = 0; i < n; i++) { const s = s0 + (i + .5) * (s1 - s0) / n, w = at(s).w;
@@ -488,8 +601,10 @@ function construireDecor() {
     const b = boite(w * 2 + 2.4, 1.1, .3, [MATS.blanc, MATS.blanc, MATS.blanc, MATS.blanc, dam, dam]); placer(b, DEPART, 0, 5.2); }
   tribune(8, 74, -1); tribune(8, 74, 1);
   // le port : des maisons qui ne se ressemblent pas, une halle aux poissons, la capitainerie avec sa tour (l'élan se fait ici)
-  quartier(LONG - 130, LONG - 6, -1, 1, [[LONG - 92, 12, 7, 3.6]]); quartier(LONG - 124, LONG - 8, 1, 2, [[LONG - 50, 9, 6.5, 4]]);
-  { const s = LONG - 22, d = -(at(s).w + 9), g = boite(3.4, 11, 3.4, MATS.mur); placer(g, s, d, solEn(s, d)); const c = new THREE.Mesh(new THREE.ConeGeometry(2.8 * E, 3 * E, 4), MATS.toit); c.rotation.y = Math.PI / 4; placer(c, s, d, solEn(s, d) + 12.5); }
+  quartier(LONG - 130, LONG - 30, -1, 1, [], [[LONG - 92, (s, c) => grandBatiment(s, c, 15, 8, 4.2, 1), 15]]); quartier(LONG - 124, LONG - 8, 1, 2, [], [[LONG - 50, (s, c) => maisonEtage(s, c * (at(s).w + PAVE + 4 + 3.5), 9, 7, 3, 0, 4, "toit_orange"), 9]]);
+  { const s = LONG - 22, d = -(at(s).w + PAVE + 5), y = solEn(s, d), g = new THREE.Group(); g.add(boite(3.4, 11, 3.4, matMur(3))); toitPlat(g, 3.4, 3.4, 11, MATS.gris); placer(g, s, d, y);
+    const c = new THREE.Mesh(new THREE.ConeGeometry(2.2 * E, 2.2 * E, 4), matToit("toit_rouge")); c.rotation.y = Math.PI / 4; placer(c, s, d, y + 11.3 + 1.1); }  // la capitainerie et sa tour
+  lampadaires(LONG - 128, LONG - 4, [-1, 1], []); rangeeArbres(LONG - 130, LONG - 28, -1, PAVE + 18); rangeeArbres(LONG - 124, LONG - 6, 1, PAVE + 17);
   // le phare, sur la pointe rocheuse à l'intérieur du virage
   { const s = S_("Phare") + 52, w = at(s).w, d = -(w + 9), y = solEn(s, d), g = new THREE.Group();
     const fut = new THREE.Mesh(new THREE.CylinderGeometry(1.3 * E, 1.8 * E, 13 * E, 10), MATS.blanc); fut.position.y = 6.5 * E; g.add(fut);
@@ -504,8 +619,9 @@ function construireDecor() {
   // la forêt : des arbres serrés des deux côtés
   for (let s = S_("Forêt") - 6, i = 0; s < S_("Village") - 3; s += 4.5, i++) for (const c of [-1, 1]) { const w = at(s).w; arbre(s + rnd(i * 7 + c) * 2, c * (w + 2.5 + rnd(i * 3 + c) * 6)); if (rnd(i + c * 9) > .4) arbre(s + 2, c * (w + 10 + rnd(i * 5 + c) * 8)); }
   // le village : des maisons sur les quais, deux ponts
-  quartier(S_("Village") + 4, S_("Village") + 98, -1, 3, [[S_("Village") + 50, 10, 7, 3.8]]); quartier(S_("Village") + 2, S_("Village") + 98, 1, 4);
-  pont(S_("Village") + 30); pont(S_("Village") + 76);
+  { const V = S_("Village"), ponts = [V + 30, V + 76];
+    quartier(V + 4, V + 98, -1, 3, ponts, [[V + 43, (s, c) => centrePokemon(s, c), 13.5]], [V + 50]); quartier(V + 2, V + 98, 1, 4, ponts, [[V + 46, (s, c) => boutique(s, c), 9]]);
+    ponts.forEach(s => pont(s)); lampadaires(V + 2, V + 98, [-1, 1], ponts); rangeeArbres(V, V + 100, -1, PAVE + 18); rangeeArbres(V, V + 100, 1, PAVE + 17); }
   // quelques arbres sur la côte et les prés
   for (let s = S_("Côte") + 6, i = 0; s < S_("Canyon"); s += 9, i++) arbre(s, -(at(s).w + 6 + rnd(i) * 10));
   // des buissons : au pied des arbres de la forêt, le long de la côte, dans les prés du port
@@ -513,6 +629,7 @@ function construireDecor() {
   for (let s = S_("Côte") + 10, i = 0; s < S_("Canyon") - 6; s += 13, i++) sprite("buisson", s, -(at(s).w + 3.5 + rnd(i * 3) * 3), .6);
   for (let s = S_("Port") + 4, i = 0; s < S_("Port") + 66; s += 11, i++) sprite("buisson", s, at(s).w + 2.5 + rnd(i * 7) * 2, .6);
   for (let s = S_("Port"), i = 0; s < S_("Port") + 70; s += 8, i++) arbre(s, at(s).w + 4 + rnd(i) * 6);
+  poserInstances();
 }
 const CASCADES = [], RIDEAUX = [], ACCUEIL = [];
 
