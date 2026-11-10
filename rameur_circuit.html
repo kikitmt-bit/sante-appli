@@ -234,8 +234,8 @@ const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(55, 1, .2, 40
 /* ============ la pixelisation (Kiki, 10/11 : tout au même grain) ============ */
 // Toute la scène est dessinée en basse résolution (PIXW pixels de large), puis agrandie sans lissage : textures, sprites, eau et modèles
 // ont alors la même taille de pixel, quelle que soit leur origine. Un fin contour sombre souligne les silhouettes proches (d'après la profondeur).
-// Réglage : ?pixel=0 (désactivé, ancien rendu) ou ?pixel=400 (largeur en pixels) dans l'adresse ; 480 par défaut.
-const PIXW = (() => { let q = ""; try { q = window.parent.location.search; } catch (e) {} q = q || location.search; const p = new URLSearchParams(q).get("pixel"); return p === "0" ? 0 : (+p >= 160 ? +p : 480); })();
+// Réglage : ?pixel=0 (désactivé, ancien rendu) ou ?pixel=400 (largeur en pixels) dans l'adresse ; 720 par défaut (480 était trop gros sur la tablette de Kiki).
+const PIXW = (() => { let q = ""; try { q = window.parent.location.search; } catch (e) {} q = q || location.search; const p = new URLSearchParams(q).get("pixel"); return p === "0" ? 0 : (+p >= 160 ? +p : 720); })();
 const POST = {rt: null, scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), mat: null};
 if (PIXW) {
   POST.mat = new THREE.ShaderMaterial({depthTest: false, depthWrite: false, uniforms: {tC: {value: null}, tD: {value: null}, uT: {value: new THREE.Vector2(1, 1)}, uN: {value: cam.near}, uF: {value: cam.far}},
@@ -951,7 +951,8 @@ const FPS = {n: 0, t: 0, bas: 0, haut: 0};
 function mesurer(dt) {  // les images par seconde ; si ça rame, l'image devient un peu moins fine, et remonte quand ça va mieux
   FPS.n++; FPS.t += dt; if (FPS.t < 1) return; const f = FPS.n / FPS.t; FPS.n = 0; FPS.t = 0; $("fps").textContent = Math.round(f) + " i/s";
   if (f < 48) { FPS.bas++; FPS.haut = 0; } else if (f > 58) { FPS.haut++; FPS.bas = 0; } else { FPS.bas = 0; FPS.haut = 0; }
-  if (FPS.bas >= 2 && QUALITE > .5) { QUALITE = Math.max(.5, QUALITE - .15); taille(); FPS.bas = 0; }
+  const plancher = PIXW ? .85 : .5;  // pixelisé : la finesse ne descend presque jamais (à 480 × .5 le jeu devenait une bouillie, Kiki 10/11)
+  if (FPS.bas >= 2 && QUALITE > plancher) { QUALITE = Math.max(plancher, QUALITE - .05); taille(); FPS.bas = 0; }
   if (FPS.haut >= 6 && QUALITE < Math.min(devicePixelRatio, 1)) { QUALITE = Math.min(Math.min(devicePixelRatio, 1), QUALITE + .1); taille(); FPS.haut = 0; }
 }
 function flash(v) { $("flash").style.opacity = v; }
