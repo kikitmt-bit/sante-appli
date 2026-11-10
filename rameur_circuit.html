@@ -801,7 +801,9 @@ function choisirFantome() { FANTOME.courant = FANTOME.mode === "aucun" ? null : 
 function remiseFantome() { FANTOME.pts = []; FANTOME.dernierPt = -1; FANTOME.seance = null; FANTOME.courant = null; if (FANTOME.o) FANTOME.o.mesh.visible = false; }
 async function construireFantome(i) {  // ton Pokémon, en transparence
   const n = ++construireFantome.n, o = await spritePMD(NAGEURS[i].n, "Walk", 4, NAGEURS[i].k, +NAGEURS[i].n); if (n !== construireFantome.n) return;
-  Object.assign(o.mesh.material, {transparent: true, opacity: .45, alphaTest: .05, depthWrite: false}); o.mesh.material.color.set(0xDDEEFF); o.mesh.renderOrder = 3;
+  Object.assign(o.mesh.material, {transparent: true, opacity: .62, alphaTest: .05, depthWrite: false}); o.mesh.material.color.set(0xFFFFFF); o.mesh.renderOrder = 3;
+  o.mesh.material.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.86, .97, 1.0), .68);"); };  // un fantôme : presque blanc, une pointe de bleu
+  o.mesh.material.needsUpdate = true;
   if (FANTOME.o) scene.remove(FANTOME.o.mesh); FANTOME.o = o; o.mesh.visible = false; scene.add(o.mesh);
 }
 construireFantome.n = 0;
@@ -831,9 +833,9 @@ function majFantome(dt) {
     if (tau - FANTOME.dernierPt >= .1) { FANTOME.pts.push([+tau.toFixed(2), +uLigne(S.s).toFixed(2)]); FANTOME.dernierPt = tau; } }
   const o = FANTOME.o; if (!o) return;
   const u = S.tour > 0 && (S.etat === "course" || S.etat === "fin") && FANTOME.courant ? uFantome(FANTOME.courant.pts, S.t - S.tourT0) : null;
-  FANTOME.u = u; o.mesh.visible = u !== null && Math.abs(u - uLigne(S.s)) > .6;
+  FANTOME.u = u; o.mesh.visible = u !== null;  // toujours visible, même quand il est à ta hauteur (Kiki, 10/11)
   if (u === null) return;
-  const s = DEPART + u, a = at(s), d = 1.1, x = a.x + Math.cos(a.h) * d * E, z = a.z + Math.sin(a.h) * d * E;  // un peu sur la droite, pour ne pas se confondre avec toi
+  const s = DEPART + u, a = at(s), d = 1.8, x = a.x + Math.cos(a.h) * d * E, z = a.z + Math.sin(a.h) * d * E;  // un peu sur la droite, pour ne pas se confondre avec toi
   o.mesh.position.set(x, -o.haut * .45, z); o.mesh.rotation.y = Math.atan2(cam.position.x - x, cam.position.z - z);
   const k = at(s + 2).k; o.rangee(k < -.006 ? 5 : k > .006 ? 3 : 4); o.avancer(dt * 1.2);
 }
@@ -936,13 +938,15 @@ const fondPlan = toile(PLAN.W, PLAN.H, x => {
   for (let i = -3; i < 3; i++) for (let j = 0; j < 2; j++) { x.fillStyle = (i + j) % 2 ? "#202020" : "#F8F8F8"; const px = lx + nx * (i + .5) * 4.5 - Math.sin(a.h) * (j - .5) * 4.5, py = ly + nz * (i + .5) * 4.5 + Math.cos(a.h) * (j - .5) * 4.5; x.fillRect(px - 2.4, py - 2.4, 4.8, 4.8); }
 });
 const cvPlan = $("carte"); cvPlan.width = PLAN.W; cvPlan.height = PLAN.H; const ctxPlan = cvPlan.getContext("2d");
-function poserPortrait(x, px, py, k, alpha) {  // le sprite de ton Pokémon (pieds sur le tracé), avec une ombre sombre pour qu'il se détache
-  const m = $("progMoi"), T = 32 * k; x.save(); x.imageSmoothingEnabled = false; x.globalAlpha = alpha;
+const iconeFantome = toile(32, 32);
+function poserPortrait(x, px, py, k, alpha, fantome) {  // le sprite de ton Pokémon (centré sur le tracé), avec un contour sombre pour qu'il se détache ; le fantôme : sa silhouette blanc bleuté
+  let m = $("progMoi"); const T = 32 * k;
+  if (fantome) { const f = iconeFantome.getContext("2d"); f.clearRect(0, 0, 32, 32); f.globalCompositeOperation = "source-over"; f.drawImage(m, 0, 0); f.globalCompositeOperation = "source-in"; f.fillStyle = "#9FD8FF"; f.fillRect(0, 0, 32, 32); f.globalCompositeOperation = "source-over"; m = iconeFantome; } x.save(); x.imageSmoothingEnabled = false; x.globalAlpha = alpha;
   x.shadowColor = "rgba(16,24,44,.9)"; x.shadowBlur = 0; for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) { x.shadowOffsetX = dx; x.shadowOffsetY = dy; x.drawImage(m, px - T / 2, py - T / 2, T, T); }
   x.shadowColor = "transparent"; x.drawImage(m, px - T / 2, py - T / 2, T, T); x.restore(); }
 function majCarte() {
   if ($("hud").hidden) return; const x = ctxPlan; x.clearRect(0, 0, PLAN.W, PLAN.H); x.drawImage(fondPlan, 0, 0);
-  if (FANTOME.u !== null && FANTOME.u !== undefined) { const g = at(DEPART + FANTOME.u), [gx, gy] = PLAN.xy(g.x, g.z); poserPortrait(x, gx, gy, 2.2, .5); }
+  if (FANTOME.u !== null && FANTOME.u !== undefined) { const g = at(DEPART + FANTOME.u), [gx, gy] = PLAN.xy(g.x, g.z); poserPortrait(x, gx, gy, 2.4, .9, true); }
   const a = at(S.s), [mx, my] = PLAN.xy(a.x, a.z); poserPortrait(x, mx, my, 2.6, 1);
 }
 function iconeProg() {  // le portrait de ton Pokémon, posé sur le plan
