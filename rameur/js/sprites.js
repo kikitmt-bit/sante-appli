@@ -40,17 +40,17 @@ function dessinerPMD(o, i, rang, sx, yBas, ech, plonge = 0, yEau = null) {
 
 /* ---- ton Pokémon : de dos, le corps dans l'eau, avec son sillage ---- */
 const NAGEURS = [{n: "0007", nom: "Carapuce", plonge: .3, km: 0}, {n: "0008", nom: "Carabaffe", plonge: .32, km: 20}, {n: "0009", nom: "Tortank", plonge: .34, km: 60}];
-const HERO_ECH = 2;   // chaque pixel du Pokémon fait 2 pixels de l'écran : toujours net
+const HERO_ECH = Math.max(2, Math.round(E.H / 150));   // chaque pixel du Pokémon fait 3 pixels de l'image (à 450 px de haut) : toujours net
 let heros = null, construction = 0;
 async function construire(i) { const n = ++construction, o = await chargerPMD(NAGEURS[i].n, "Walk", +NAGEURS[i].n); if (n === construction) heros = o; }
 const GOUTTES = [];   // gouttes et écume : {s (m le long de la piste), x (m), y (m), vx, vy, vs, vie, max, eau}
 function gerbe(force) {  // un coup de rame : une gerbe de chaque côté
   const n = 12 + Math.round(force * 18);
-  for (let c = -1; c <= 1; c += 2) for (let k = 0; k < n; k++) GOUTTES.push({s: S.s + ZH + (Math.random() - .3) * .6, x: c * (.5 + Math.random() * .3), y: .1, vx: c * (.8 + Math.random() * 2), vy: 2.2 + Math.random() * 3 * (.5 + force), vs: -(1 + Math.random() * 2), vie: .7 + Math.random() * .4, max: 1.1, eau: false});
+  for (let c = -1; c <= 1; c += 2) for (let k = 0; k < n; k++) GOUTTES.push({s: S.s - .2 + (Math.random() - .5) * .5, x: c * (.5 + Math.random() * .3), y: .1, vx: c * (.8 + Math.random() * 2), vy: 2.2 + Math.random() * 3 * (.5 + force), vs: -(1 + Math.random() * 2), vie: .7 + Math.random() * .4, max: 1.1, eau: false});
 }
 function sillage(dt, v) {  // de l'écume qui reste à la surface, derrière toi
   const n = Math.min(6, Math.round(v * dt * 14 + Math.random()));
-  for (let k = 0; k < n; k++) { const c = Math.random() < .5 ? -1 : 1; GOUTTES.push({s: S.s + ZH - .3, x: c * (.3 + Math.random() * .25), y: 0, vx: c * (.5 + Math.random() * 1.1) * (.5 + v * .12), vy: 0, vs: 0, vie: .9 + Math.random() * .7, max: 1.6, eau: true}); }
+  for (let k = 0; k < n; k++) { const c = Math.random() < .5 ? -1 : 1; GOUTTES.push({s: S.s - .6, x: c * (.3 + Math.random() * .25), y: 0, vx: c * (.5 + Math.random() * 1.1) * (.5 + v * .12), vy: 0, vs: 0, vie: .9 + Math.random() * .7, max: 1.6, eau: true}); }
 }
 function avancerGouttes(dt) { for (let i = GOUTTES.length - 1; i >= 0; i--) { const g = GOUTTES[i]; g.vie -= dt; if (g.vie <= 0) { GOUTTES.splice(i, 1); continue; }
   g.x += g.vx * dt; g.s += g.vs * dt; if (!g.eau) { g.vy -= 11 * dt; g.y += g.vy * dt; if (g.y < 0) { g.y = 0; g.eau = true; g.vy = 0; g.vx *= .3; g.vs = 0; } } else { g.vx *= Math.pow(.4, dt); } } }

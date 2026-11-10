@@ -1,0 +1,233 @@
+{
+ "id": "ecume",
+ "nom": "Baie des Écumes",
+ "biome": "kanto",
+ "graine": 23,
+ "elan": 120,
+ "note": "Niveau dessiné pour le pseudo-3D : des collines (crête puis descente), des S serrés, un lagon large, un tunnel dans la colline. long = mètres, virage = degrés (+ droite, - gauche), colline = dénivelé de la pièce, « auto » = la pièce qui referme la boucle (tour complet à gauche, retour à la hauteur de départ). Une pièce sans nom prolonge la précédente.",
+ "sections": [
+  {
+   "nom": "Ligne",
+   "long": 100,
+   "virage": 0,
+   "colline": 0,
+   "eau": 12,
+   "rives": [
+    "quai",
+    "quai"
+   ]
+  },
+  {
+   "nom": "Digue",
+   "long": 60,
+   "virage": 18,
+   "colline": -2,
+   "eau": 12,
+   "rives": [
+    "herbe",
+    "plage"
+   ]
+  },
+  {
+   "long": 60,
+   "virage": -6,
+   "colline": 0,
+   "eau": 12,
+   "rives": [
+    "herbe",
+    "plage"
+   ]
+  },
+  {
+   "nom": "Gorge",
+   "long": 34,
+   "virage": 38,
+   "colline": 4,
+   "eau": 9,
+   "rives": [
+    "falaise",
+    "falaise"
+   ]
+  },
+  {
+   "long": 34,
+   "virage": -64,
+   "colline": 4,
+   "eau": 8,
+   "rives": [
+    "falaise",
+    "falaise"
+   ]
+  },
+  {
+   "long": 34,
+   "virage": 52,
+   "colline": 2,
+   "eau": 8,
+   "rives": [
+    "falaise",
+    "falaise"
+   ]
+  },
+  {
+   "long": 34,
+   "virage": -40,
+   "colline": 2,
+   "eau": 9,
+   "rives": [
+    "falaise",
+    "falaise"
+   ]
+  },
+  {
+   "nom": "Crête",
+   "long": 50,
+   "virage": 0,
+   "colline": 0,
+   "eau": 11,
+   "rives": [
+    "herbe",
+    "herbe"
+   ]
+  },
+  {
+   "long": 60,
+   "virage": 0,
+   "colline": -14,
+   "eau": 11,
+   "rives": [
+    "herbe",
+    "herbe"
+   ]
+  },
+  {
+   "nom": "Lagon",
+   "long": 70,
+   "virage": -52,
+   "colline": 0,
+   "eau": 34,
+   "rives": [
+    "plage",
+    "plage"
+   ]
+  },
+  {
+   "long": 70,
+   "virage": -58,
+   "colline": 0,
+   "eau": 38,
+   "rives": [
+    "plage",
+    "plage"
+   ]
+  },
+  {
+   "nom": "Tunnel",
+   "long": 64,
+   "virage": -16,
+   "colline": 6,
+   "eau": 7,
+   "rives": [
+    "tunnel",
+    "tunnel"
+   ]
+  },
+  {
+   "nom": "Bois",
+   "long": 60,
+   "virage": -52,
+   "colline": -4,
+   "eau": 9,
+   "rives": [
+    "herbe",
+    "herbe"
+   ]
+  },
+  {
+   "long": 60,
+   "virage": -46,
+   "colline": 0,
+   "eau": 9,
+   "rives": [
+    "herbe",
+    "herbe"
+   ]
+  },
+  {
+   "nom": "Village",
+   "long": 110,
+   "virage": -50,
+   "colline": 4,
+   "eau": 10,
+   "rives": [
+    "quai",
+    "quai"
+   ]
+  },
+  {
+   "nom": "Port",
+   "long": 90,
+   "virage": "auto",
+   "colline": "auto",
+   "eau": 12,
+   "rives": [
+    "quai",
+    "herbe"
+   ]
+  },
+  {
+   "long": 130,
+   "virage": 0,
+   "colline": 0,
+   "eau": 13,
+   "rives": [
+    "quai",
+    "quai"
+   ]
+  }
+ ],
+ "reperes": [
+  {
+   "sprite": "tribune",
+   "section": "Ligne",
+   "a": 40,
+   "cote": "g",
+   "dist": 3
+  },
+  {
+   "sprite": "tribune",
+   "section": "Ligne",
+   "a": 40,
+   "cote": "d",
+   "dist": 3
+  },
+  {
+   "sprite": "phare",
+   "section": "Digue",
+   "a": 30,
+   "cote": "d",
+   "dist": 14
+  },
+  {
+   "sprite": "ilot",
+   "section": "Lagon",
+   "a": 30,
+   "cote": "c",
+   "dist": 9
+  },
+  {
+   "sprite": "ilot",
+   "section": "Lagon",
+   "a": 92,
+   "cote": "c",
+   "dist": -10
+  },
+  {
+   "sprite": "ilot",
+   "section": "Lagon",
+   "a": 118,
+   "cote": "c",
+   "dist": 8
+  }
+ ]
+}

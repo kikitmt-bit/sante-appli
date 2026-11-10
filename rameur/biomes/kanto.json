@@ -1,47 +1,412 @@
 {
-  "nom": "Kanto",
-  "note": "Un biome = les couleurs, les rives, les sprites et les règles de placement du décor. Chaque couleur a deux nuances (bandes qui défilent). Les sprites « bloc » sont des formes provisoires, à remplacer par des images.",
-  "ciel": {"haut": "#2A62C8", "bas": "#CDE6F2"},
-  "brume": "#CDE6F2",
-  "eau": ["#2F88EA", "#2A7EDD"],
-  "ecume": "#EAF8FF",
-  "montagnes": {"loin": "#9DB8D8", "pres": "#6FA070"},
-  "terrains": {
-    "herbe": ["#8CC45A", "#82BA52"],
-    "sable": ["#E8D8A0", "#E0CF96"],
-    "roche": ["#8E8A86", "#86827E"]
-  },
-  "rives": {
-    "quai":    {"h": 0.8, "larg": 4.5, "dessus": ["#BFBFC8", "#B2B2BC"], "paroi": ["#8E8E9A", "#868692"], "derriere": "herbe"},
-    "herbe":   {"h": 1.0, "larg": 12,  "dessus": ["#8CC45A", "#82BA52"], "paroi": ["#8A6A48", "#82623F"], "derriere": "herbe"},
-    "plage":   {"h": 0.3, "larg": 10,  "dessus": ["#E8D8A0", "#E0CF96"], "paroi": ["#CDBB84", "#C5B37C"], "derriere": "herbe"},
-    "roche":   {"h": 2.4, "larg": 8,   "dessus": ["#8E8A86", "#86827E"], "paroi": ["#7A7570", "#716C68"], "derriere": "herbe"},
-    "falaise": {"h": 10,  "larg": 6,   "dessus": ["#8CC45A", "#82BA52"], "paroi": ["#8F6E4E", "#866646"], "derriere": "herbe"},
-    "tunnel":  {"h": 7,   "larg": 4,   "dessus": ["#6A6672", "#625E6A"], "paroi": ["#5A5560", "#524D58"], "plafond": ["#4A4650", "#443F4A"], "derriere": "roche"},
-    "mer":     {"h": 0,   "larg": 0,   "dessus": ["#2F88EA", "#2A7EDD"], "paroi": ["#2F88EA", "#2A7EDD"], "derriere": "herbe"}
-  },
-  "sprites": {
-    "arbre":   {"img": "arbre.png",   "px": [114, 124], "larg": 6},
-    "sapin":   {"img": "sapin.png",   "px": [78, 127],  "larg": 4},
-    "buisson": {"img": "buisson.png", "px": [85, 42],   "larg": 2.4},
-    "fleurs":  {"img": "fleurs.png",  "px": [239, 50],  "larg": 3.6},
-    "maison":  {"bloc": {"larg": 8, "haut": 5, "murs": ["#F4E8D0", "#E8D0A8", "#D8E8E0", "#F0D8D0", "#E4E8F0"], "toit": ["#C8503C", "#3C5AA0", "#4C9060", "#D88A3C"]}},
-    "lampadaire": {"bloc": {"larg": 0.5, "haut": 4.5, "murs": ["#3A3A48"], "toit": ["#F8E088"]}},
-    "tribune": {"bloc": {"larg": 6, "haut": 3, "murs": ["#B8B8C4"], "toit": ["#9A9AA8"]}},
-    "phare":   {"bloc": {"larg": 4, "haut": 16, "murs": ["#F4F4F4"], "toit": ["#D83830"]}},
-    "rocher":  {"bloc": {"larg": 3.2, "haut": 7, "murs": ["#7C7874", "#8A8682"], "toit": ["#9C9890"]}},
-    "bouee":   {"bloc": {"larg": 0.9, "haut": 1.3, "murs": ["#F4F4F4"], "toit": ["#D83830"]}},
-    "ilot":    {"bloc": {"larg": 9, "haut": 2.4, "murs": ["#8E8A86"], "toit": ["#8CC45A"]}}
-  },
-  "regles": [
-    {"nom": "forêt",       "sprites": {"arbre": 0.65, "sapin": 0.35}, "sections": ["Forêt"],  "cote": "gd", "bande": [2, 10],  "pas": 4,  "proba": 0.9, "echelle": [0.9, 1.25]},
-    {"nom": "sous-bois",   "sprites": {"buisson": 1},                 "sections": ["Forêt"],  "cote": "gd", "bande": [1, 3],   "pas": 6,  "proba": 0.8},
-    {"nom": "côte",        "sprites": {"arbre": 0.7, "sapin": 0.3},   "sections": ["Côte"],   "cote": "g",  "bande": [6, 20],  "pas": 12, "proba": 0.7},
-    {"nom": "lac",         "sprites": {"arbre": 0.5, "sapin": 0.5},   "sections": ["Lac"],    "cote": "gd", "bande": [8, 25],  "pas": 14, "proba": 0.6},
-    {"nom": "lointain",    "sprites": {"sapin": 0.6, "arbre": 0.4},   "sections": null,       "cote": "gd", "bande": [30, 70], "pas": 10, "proba": 0.8, "echelle": [1.3, 1.8], "sauf": ["Tunnel", "Phare"]},
-    {"nom": "maisons",     "sprites": {"maison": 1},                  "sections": ["Village", "Port"], "cote": "gd", "bande": [5, 8], "pas": 13, "proba": 0.85, "sur": ["quai"], "echelle": [0.85, 1.2]},
-    {"nom": "bouées",      "sprites": {"bouee": 1},                    "sections": ["Phare"],  "cote": "d",  "bande": [3, 9],   "pas": 14, "proba": 1, "sur": ["mer"]},
-    {"nom": "récifs",      "sprites": {"rocher": 1},                  "sections": ["Phare", "Tribunes"], "cote": "d", "bande": [14, 90], "pas": 20, "proba": 0.9, "sur": ["mer"], "echelle": [0.7, 1.6]},
-    {"nom": "lampadaires", "sprites": {"lampadaire": 1},              "sections": ["Village", "Port", "Tribunes"], "cote": "gd", "bande": [0.6, 1.2], "pas": 16, "proba": 1, "sur": ["quai"]}
+ "nom": "Kanto",
+ "note": "Un biome = les couleurs, les rives, les sprites et les règles de placement du décor. Chaque couleur a deux nuances (bandes qui défilent). Les sprites « bloc » sont des formes provisoires, à remplacer par des images.",
+ "ciel": {
+  "haut": "#2A62C8",
+  "bas": "#CDE6F2"
+ },
+ "brume": "#CDE6F2",
+ "eau": [
+  "#3A94F2",
+  "#2878D8"
+ ],
+ "ecume": "#EAF8FF",
+ "montagnes": {
+  "loin": "#9DB8D8",
+  "pres": "#6FA070"
+ },
+ "terrains": {
+  "herbe": [
+   "#8CC45A",
+   "#82BA52"
+  ],
+  "sable": [
+   "#E8D8A0",
+   "#E0CF96"
+  ],
+  "roche": [
+   "#8E8A86",
+   "#86827E"
   ]
+ },
+ "rives": {
+  "quai": {
+   "h": 0.8,
+   "larg": 4.5,
+   "dessus": [
+    "#BFBFC8",
+    "#B2B2BC"
+   ],
+   "paroi": [
+    "#8E8E9A",
+    "#868692"
+   ],
+   "derriere": "herbe"
+  },
+  "herbe": {
+   "h": 1.0,
+   "larg": 12,
+   "dessus": [
+    "#8CC45A",
+    "#82BA52"
+   ],
+   "paroi": [
+    "#8A6A48",
+    "#82623F"
+   ],
+   "derriere": "herbe"
+  },
+  "plage": {
+   "h": 0.3,
+   "larg": 10,
+   "dessus": [
+    "#E8D8A0",
+    "#E0CF96"
+   ],
+   "paroi": [
+    "#CDBB84",
+    "#C5B37C"
+   ],
+   "derriere": "herbe"
+  },
+  "roche": {
+   "h": 2.4,
+   "larg": 8,
+   "dessus": [
+    "#8E8A86",
+    "#86827E"
+   ],
+   "paroi": [
+    "#7A7570",
+    "#716C68"
+   ],
+   "derriere": "herbe"
+  },
+  "falaise": {
+   "h": 10,
+   "larg": 6,
+   "dessus": [
+    "#8CC45A",
+    "#82BA52"
+   ],
+   "paroi": [
+    "#8F6E4E",
+    "#866646"
+   ],
+   "derriere": "herbe"
+  },
+  "tunnel": {
+   "h": 7,
+   "larg": 4,
+   "dessus": [
+    "#6A6672",
+    "#625E6A"
+   ],
+   "paroi": [
+    "#5A5560",
+    "#524D58"
+   ],
+   "plafond": [
+    "#4A4650",
+    "#443F4A"
+   ],
+   "derriere": "roche"
+  },
+  "mer": {
+   "h": 0,
+   "larg": 0,
+   "dessus": [
+    "#2F88EA",
+    "#2A7EDD"
+   ],
+   "paroi": [
+    "#2F88EA",
+    "#2A7EDD"
+   ],
+   "derriere": "herbe"
+  }
+ },
+ "sprites": {
+  "arbre": {
+   "img": "arbre.png",
+   "px": [
+    114,
+    124
+   ],
+   "larg": 6
+  },
+  "sapin": {
+   "img": "sapin.png",
+   "px": [
+    78,
+    127
+   ],
+   "larg": 4
+  },
+  "buisson": {
+   "img": "buisson.png",
+   "px": [
+    85,
+    42
+   ],
+   "larg": 2.4
+  },
+  "fleurs": {
+   "img": "fleurs.png",
+   "px": [
+    239,
+    50
+   ],
+   "larg": 3.6
+  },
+  "maison": {
+   "bloc": {
+    "larg": 8,
+    "haut": 5,
+    "murs": [
+     "#F4E8D0",
+     "#E8D0A8",
+     "#D8E8E0",
+     "#F0D8D0",
+     "#E4E8F0"
+    ],
+    "toit": [
+     "#C8503C",
+     "#3C5AA0",
+     "#4C9060",
+     "#D88A3C"
+    ]
+   }
+  },
+  "lampadaire": {
+   "bloc": {
+    "larg": 0.5,
+    "haut": 4.5,
+    "murs": [
+     "#3A3A48"
+    ],
+    "toit": [
+     "#F8E088"
+    ]
+   }
+  },
+  "tribune": {
+   "bloc": {
+    "larg": 6,
+    "haut": 3,
+    "murs": [
+     "#B8B8C4"
+    ],
+    "toit": [
+     "#9A9AA8"
+    ]
+   }
+  },
+  "phare": {
+   "bloc": {
+    "larg": 4,
+    "haut": 16,
+    "murs": [
+     "#F4F4F4"
+    ],
+    "toit": [
+     "#D83830"
+    ]
+   }
+  },
+  "rocher": {
+   "bloc": {
+    "larg": 3.2,
+    "haut": 7,
+    "murs": [
+     "#7C7874",
+     "#8A8682"
+    ],
+    "toit": [
+     "#9C9890"
+    ]
+   }
+  },
+  "bouee": {
+   "bloc": {
+    "larg": 0.9,
+    "haut": 1.3,
+    "murs": [
+     "#F4F4F4"
+    ],
+    "toit": [
+     "#D83830"
+    ]
+   }
+  },
+  "ilot": {
+   "bloc": {
+    "larg": 9,
+    "haut": 2.4,
+    "murs": [
+     "#8E8A86"
+    ],
+    "toit": [
+     "#8CC45A"
+    ]
+   }
+  }
+ },
+ "regles": [
+  {
+   "nom": "forêt",
+   "sprites": {
+    "arbre": 0.65,
+    "sapin": 0.35
+   },
+   "cote": "gd",
+   "sur": [
+    "herbe"
+   ],
+   "bande": [
+    2,
+    10
+   ],
+   "pas": 4,
+   "proba": 0.9,
+   "echelle": [
+    0.9,
+    1.25
+   ]
+  },
+  {
+   "nom": "sous-bois",
+   "sprites": {
+    "buisson": 1
+   },
+   "cote": "gd",
+   "sur": [
+    "herbe"
+   ],
+   "bande": [
+    1,
+    3
+   ],
+   "pas": 6,
+   "proba": 0.8
+  },
+  {
+   "nom": "plage",
+   "sprites": {
+    "arbre": 0.7,
+    "sapin": 0.3
+   },
+   "cote": "gd",
+   "sur": [
+    "plage"
+   ],
+   "bande": [
+    7,
+    22
+   ],
+   "pas": 16,
+   "proba": 0.7
+  },
+  {
+   "nom": "lointain",
+   "sprites": {
+    "sapin": 0.6,
+    "arbre": 0.4
+   },
+   "cote": "gd",
+   "sur": [
+    "herbe",
+    "plage",
+    "falaise",
+    "roche",
+    "quai"
+   ],
+   "bande": [
+    30,
+    70
+   ],
+   "pas": 10,
+   "proba": 0.8,
+   "echelle": [
+    1.3,
+    1.8
+   ]
+  },
+  {
+   "nom": "maisons",
+   "sprites": {
+    "maison": 1
+   },
+   "cote": "gd",
+   "sur": [
+    "quai"
+   ],
+   "sauf": [
+    "Ligne"
+   ],
+   "bande": [
+    5,
+    8
+   ],
+   "pas": 13,
+   "proba": 0.85,
+   "echelle": [
+    0.85,
+    1.2
+   ]
+  },
+  {
+   "nom": "lampadaires",
+   "sprites": {
+    "lampadaire": 1
+   },
+   "cote": "gd",
+   "sur": [
+    "quai"
+   ],
+   "bande": [
+    0.6,
+    1.2
+   ],
+   "pas": 16,
+   "proba": 1
+  },
+  {
+   "nom": "bouées",
+   "sprites": {
+    "bouee": 1
+   },
+   "cote": "gd",
+   "sur": [
+    "mer"
+   ],
+   "bande": [
+    3,
+    9
+   ],
+   "pas": 14,
+   "proba": 1
+  },
+  {
+   "nom": "récifs",
+   "sprites": {
+    "rocher": 1
+   },
+   "cote": "gd",
+   "sur": [
+    "mer"
+   ],
+   "bande": [
+    14,
+    90
+   ],
+   "pas": 20,
+   "proba": 0.9,
+   "echelle": [
+    0.7,
+    1.6
+   ]
+  }
+ ],
+ "reflet": "#B4DCFC"
 }

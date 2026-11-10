@@ -12,7 +12,7 @@ def _json(chemin):
     return json.dumps(json.loads(Path(chemin).read_text(encoding="utf-8")), ensure_ascii=False).replace("</", "<\\/")
 
 
-def page(donnees, niveau="baie"):
+def page(donnees, niveau="ecume"):
     """`donnees` : ce que la page reçoit de l'appli (lien du téléphone, modèle des mètres par coup, progression…)."""
     niv = json.loads((RACINE / "niveaux" / f"{niveau}.json").read_text(encoding="utf-8"))
     html = (RACINE / "index.html").read_text(encoding="utf-8")

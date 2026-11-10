@@ -2,11 +2,10 @@
 // ?perf=1 : les images par seconde à l'écran.  ?planche=1 : au lieu du jeu, une image tous les 50 m (la planche), pour contrôler le niveau d'un coup d'œil
 // (réglages : &pas=20 &cols=3 &de=100 &a=250).
 // window.__verif() rend la liste des problèmes trouvés (vide = tout va bien).
-const PARAMS = (() => { let q = ""; try { q = window.parent.location.search; } catch (e) {} return new URLSearchParams(q || location.search); })();
 if (PARAMS.get("perf")) $("fps").style.cssText = "display:block;position:fixed;left:10px;top:150px;color:#fff;font-size:22px;text-shadow:2px 2px 0 #000";
 function verifier() {
   const pb = [], P = PISTE;
-  const cap = P.secs.reduce((t, c) => t + c.virage, 0); if (Math.abs(Math.abs(cap) - 360) > 1.5) pb.push(`les virages font ${cap.toFixed(1)}° au lieu d'un tour complet (360°)`);
+  const cap = P.secs.reduce((t, c) => t + c.virage, 0); if (Math.abs(cap - (NIVEAU.tour === undefined ? -360 : NIVEAU.tour)) > 1.5) pb.push(`les virages font ${cap.toFixed(1)}° au lieu d'un tour complet (360°)`);
   const col = P.secs.reduce((t, c) => t + (c.colline || 0), 0); if (Math.abs(col) > .01) pb.push(`les collines ne se compensent pas (${col} m)`);
   for (const c of P.secs) for (const r of c.rives) if (!BIOME.rives[r]) pb.push(`rive inconnue « ${r} » dans ${c.nom}`);
   for (const c of P.secs) if (c.eau < 4) pb.push(`eau trop étroite dans ${c.nom} (${c.eau} m)`);
@@ -15,6 +14,17 @@ function verifier() {
   const dens = {}; for (const o of DECOR_LISTE) dens[o.nom] = (dens[o.nom] || 0) + 1;
   return {problemes: pb, longueur: Math.round(P.LONG), bandes: P.NS, sprites: dens, tunnels: TUNNELS.map(t => t.map(Math.round))};
 }
+// le décor est-il fluide ? On avance par pas de 10 cm et on suit l'écran d'un sprite : un saut (accélération brusque) = un décor qui « sautille »
+function verifierFluidite() {
+  const pb = [], cibles = DECOR_LISTE.filter(o => o.img).slice(0, 400); let pire = 0, quel = null;
+  for (let s0 = 0; s0 < LONG; s0 += 97) { const suivis = {};
+    for (let k = 0; k < 120; k++) { const pos = s0 + k * .1; bords(pos);
+      for (const o of cibles) { const z = mod(o.s - pos); if (z < 15 || z > 150) continue; const n = Math.max(0, Math.min(ND - 1, B.z.findIndex((v, i) => i < ND && z >= v && z < B.z[i + 1]))); const q = ecranSprite(o, n, pos); (suivis[o.s] ||= []).push(q.yb + q.sx * .01); } }
+    for (const [cle, v] of Object.entries(suivis)) for (let i = 2; i < v.length; i++) { const a = Math.abs(v[i] - 2 * v[i - 1] + v[i - 2]); if (a > pire) { pire = a; quel = cle; } } }
+  if (pire > 1.5) pb.push(`le décor sautille : écart de ${pire.toFixed(1)} px entre deux images (sprite au mètre ${quel})`);
+  return {problemes: pb, pire: +pire.toFixed(2)};
+}
+window.__fluidite = verifierFluidite;
 window.__verif = verifier;
 async function faireLaPlanche(pas = 50, cols = 4, de = 0, a = LONG) {
   $("menu").hidden = true; $("hud").hidden = true;

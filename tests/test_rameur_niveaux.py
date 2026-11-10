@@ -15,8 +15,13 @@ class TestNiveaux(unittest.TestCase):
             biome = json.loads((RACINE / "biomes" / f"{n['biome']}.json").read_text(encoding="utf-8"))
             with self.subTest(niveau=f.stem):
                 self.assertEqual(n["id"], f.stem)
-                self.assertAlmostEqual(abs(sum(s["virage"] for s in n["sections"])), 360, delta=1.5, msg="la boucle doit faire un tour complet")
-                self.assertAlmostEqual(sum(s.get("colline", 0) for s in n["sections"]), 0, delta=.01, msg="les collines doivent se compenser")
+                nombre = lambda v: v if isinstance(v, (int, float)) else 0  # noqa: E731  (« auto » = la pièce qui referme la boucle)
+                if not any(s.get("virage") == "auto" for s in n["sections"]):
+                    self.assertAlmostEqual(sum(nombre(s["virage"]) for s in n["sections"]), n.get("tour", -360), delta=1.5, msg="la boucle doit faire un tour complet")
+                else:
+                    self.assertLess(abs(n.get("tour", -360) - sum(nombre(s["virage"]) for s in n["sections"])), 200, msg="la pièce « auto » ne doit pas devenir un demi-tour")
+                if not any(s.get("colline") == "auto" for s in n["sections"]):
+                    self.assertAlmostEqual(sum(s.get("colline", 0) for s in n["sections"]), 0, delta=.01, msg="les collines doivent se compenser")
                 self.assertTrue(n["sections"][0].get("nom"), "la première pièce porte un nom")
                 noms = {s["nom"] for s in n["sections"] if s.get("nom")}
                 for s in n["sections"]:

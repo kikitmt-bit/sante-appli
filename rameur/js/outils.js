@@ -8,6 +8,7 @@ const fmtT = s => fmt(s) + "," + Math.floor((s % 1) * 10);  // un temps au dixi�
 function hasard(graine) { let a = graine | 0; return () => { a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 const rnd = k => { const x = Math.sin(k * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
+const PARAMS = (() => { let q = ""; try { q = window.parent.location.search; } catch (e) {} return new URLSearchParams(q || location.search); })();  // les réglages de l'adresse (?perf=1, ?h=450…)
 const PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/";
 const PKAPI = n => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-iii/emerald/${n}.png`;
 const BUNDLE = {};  // dans l'appli, les images se lisent en ligne (rien d'intégré)

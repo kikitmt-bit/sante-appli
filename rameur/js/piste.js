@@ -4,8 +4,13 @@
 const GAIN_VIRAGE = 0.8;   // à l'image, un virage est un peu moins serré qu'en vrai (un virage de 130° en 110 m ne se dessine pas tel quel)
 const MER_LARGEUR = 400;   // une rive « mer » : l'eau continue jusqu'à l'horizon
 const PISTE = (() => {
+  // « auto » : la pièce qui reste fait le tour complet (virage) ou ramène à la hauteur de départ (colline) : on dessine librement, la boucle se referme toute seule
+  const num = (v) => typeof v === "number" ? v : 0, tour = NIVEAU.tour === undefined ? -360 : NIVEAU.tour;
+  const autoV = NIVEAU.sections.filter(c => c.virage === "auto").length, autoH = NIVEAU.sections.filter(c => c.colline === "auto").length;
+  const resteV = (tour - NIVEAU.sections.reduce((t, c) => t + num(c.virage), 0)) / Math.max(1, autoV), resteH = -NIVEAU.sections.reduce((t, c) => t + num(c.colline), 0) / Math.max(1, autoH);
+  const sections = NIVEAU.sections.map(c => Object.assign({}, c, {virage: c.virage === "auto" ? resteV : c.virage, colline: c.colline === "auto" ? resteH : (c.colline || 0)}));
   const secs = []; let s = 0, nom = "", cumul = 0;
-  for (const c of NIVEAU.sections) { if (c.nom) nom = c.nom; secs.push(Object.assign({}, c, {nom, s0: s, s1: s + c.long, h0: cumul})); s += c.long; cumul += c.colline || 0; }
+  for (const c of sections) { if (c.nom) nom = c.nom; secs.push(Object.assign({}, c, {nom, s0: s, s1: s + c.long, h0: cumul})); s += c.long; cumul += c.colline || 0; }
   const LONG = s, NS = Math.round(LONG / 2), SEG = LONG / NS;
   const F = () => new Float32Array(NS);
   const P = {LONG, NS, SEG, secs, kap: F(), vir: F(), sol: F(), ew: F(), wl: F(), wr: F(), hg: F(), hd: F(), bg: F(), bd: F(), kg: new Array(NS), kd: new Array(NS), sec: new Uint8Array(NS), tun: new Uint8Array(NS), hdg: F(), px: F(), pz: F()};

@@ -5,12 +5,13 @@
 const cv = $("c"), cx = cv.getContext("2d", {alpha: false});
 const E = {W: 480, H: 270, HY: 108};
 const CAMD = 1 / Math.tan(70 * Math.PI / 360);   // champ de vision de 70°
-const CAMH = 2.8;     // hauteur de la caméra au-dessus de l'eau (m)
+const CAMH = 2.4;     // hauteur de la caméra au-dessus de l'eau (m)
 const ZH = 8;         // ton Pokémon est 8 m devant la caméra
 const ND = 220;       // bandes dessinées (440 m)
 const BN = 50, BF = 420;  // la brume : début, fin (m)
 const HC = 7;         // hauteur de la voûte d'un tunnel (m)
-function tailleEcran() { const asp = innerWidth / innerHeight; E.H = 270; E.W = clamp(Math.round(E.H * asp), 360, 640); cv.width = E.W; cv.height = E.H; E.HY = Math.round(E.H * .4); cx.imageSmoothingEnabled = false; }
+const HAUTEUR = clamp(+PARAMS.get("h") || 450, 200, 720);   // la finesse de l'image : 450 pixels de haut (?h=300 plus gros, ?h=600 plus fin)
+function tailleEcran() { const asp = innerWidth / innerHeight; E.H = HAUTEUR; E.W = clamp(Math.round(E.H * asp), Math.round(E.H * 1.2), Math.round(E.H * 2.4)); cv.width = E.W; cv.height = E.H; E.HY = Math.round(E.H * .4); cx.imageSmoothingEnabled = false; }
 addEventListener("resize", tailleEcran); tailleEcran();
 
 /* ---- les couleurs : chacune a 8 nuances de brume, calculées une fois ---- */
@@ -75,30 +76,36 @@ function dessinerBloc(o, x, yb, w, h, v) {
   if (o.nom === "maison" && ww > 10) { cx.fillStyle = "rgba(40,50,80,.55)"; const fw = Math.max(2, Math.round(ww * .16)), fh = Math.max(2, Math.round(hh * .22)); cx.fillRect(x0 + Math.round(ww * .18), y0 + Math.round(hh * .5), fw, fh); cx.fillRect(x0 + ww - Math.round(ww * .18) - fw, y0 + Math.round(hh * .5), fw, fh); cx.fillStyle = "rgba(90,50,30,.8)"; cx.fillRect(x0 + Math.round(ww * .45), y0 + Math.round(hh * .62), Math.max(2, Math.round(ww * .12)), Math.round(hh * .38)); }
   if (o.nom === "phare" && ww > 6) { cx.fillStyle = "rgba(216,56,48,.9)"; for (const f of [.38, .62]) cx.fillRect(x0, y0 + Math.round(hh * f), ww, Math.max(1, Math.round(hh * .08))); }
 }
-function dessinerSprite(o, n) {
-  const zS = (B.z[n] + B.z[n + 1]) / 2; if (zS < 2.5) return;
-  const ppm = CAMD / zS * E.W / 2, X = (B.X[n] + B.X[n + 1]) / 2, g = (B.g[n] + B.g[n + 1]) / 2, sx = E.W / 2 + ppm * (X + o.x), yb = E.HY + ppm * (CAMH - (g + o.y)), w = o.larg * ppm, h = o.haut * ppm;
+function ecranSprite(o, n, pos) {  // où un sprite tombe à l'écran, EXACTEMENT : au milieu de sa bande il sauterait d'une bande à l'autre (le décor « sautille »)
+  let z = o.s - pos; z = (((z + LONG / 2) % LONG) + LONG) % LONG - LONG / 2;
+  const t = clamp((z - B.z[n]) / (B.z[n + 1] - B.z[n]), 0, 1), zz = Math.max(z, .5), X = lerp(B.X[n], B.X[n + 1], t), g = lerp(B.g[n], B.g[n + 1], t), ppm = CAMD / zz * E.W / 2;
+  return {z: zz, ppm, sx: E.W / 2 + ppm * (X + o.x), yb: E.HY + ppm * (CAMH - (g + o.y)), w: o.larg * ppm, h: o.haut * ppm};
+}
+function dessinerSprite(o, n, pos) {
+  const q = ecranSprite(o, n, pos); if (q.z < 2.5) return; const {sx, yb, w, h, ppm, z} = q;
   if (w < 2 || sx + w / 2 < 0 || sx - w / 2 > E.W || yb - h > E.H) return;
-  cx.globalAlpha = 1 - .85 * lisse(BN, BF, zS);
+  const a = 1 - lisse(BF * .55, BF * .97, z); if (a <= .02) return; cx.globalAlpha = a;   // il apparaît dans la brume, jamais d'un coup
   if (o.dessiner) o.dessiner(cx, sx, yb, ppm);
-  else if (o.bloc) dessinerBloc(o, sx, yb, w, h, brumeDe(zS) > 3 ? 3 : 0);
+  else if (o.bloc) dessinerBloc(o, sx, yb, w, h, brumeDe(z) > 3 ? 3 : 0);
   else { const im = image(o.nom); if (im) { cx.imageSmoothingEnabled = w < im.width * .6; cx.drawImage(im, Math.round(sx - w / 2), Math.round(yb - h), Math.round(w), Math.round(h)); cx.imageSmoothingEnabled = false; } }
   cx.globalAlpha = 1;
 }
 
 /* ---- la façade d'un tunnel : un pan de montagne percé d'une arche ---- */
-function facade(n, par) {
-  const roche = BIOME.rives.tunnel, c = pal(roche.paroi[par]), sx = B.sx[n], ppm = B.ppm[n], x0 = sx - 45 * ppm, x1 = sx + 45 * ppm, yh = E.HY - ppm * (26 - CAMH + B.g[n]), yc = B.yc[n], yb = B.sy[n];
-  const strate = (y0, y1, xa, xb) => { for (let y = Math.max(0, Math.round(y0)); y < Math.min(E.H, Math.round(y1)); y++) { cx.fillStyle = ((y >> 2) & 1) ? c[0] : pal(roche.paroi[1 - par])[0]; cx.fillRect(Math.round(xa), y, Math.max(0, Math.round(xb) - Math.round(xa)), 1); } };
-  strate(yh, yc, x0, x1); strate(yc, yb, x0, B.xwl[n]); strate(yc, yb, B.xwr[n], x1);
-  cx.fillStyle = pal(roche.dessus[par])[0]; cx.fillRect(Math.round(x0), Math.round(yh), Math.max(0, Math.round(x1) - Math.round(x0)), 2);
+function facade(n, par, f) {  // l'entrée d'un tunnel : une colline de roche (herbe au sommet) percée d'une arche
+  const roche = BIOME.rives.tunnel, c = pal(roche.paroi[par]), c2 = pal(roche.paroi[1 - par]), herbe = pal(BIOME.terrains.herbe[par]), sx = B.sx[n], ppm = B.ppm[n], yh = E.HY - ppm * (24 - CAMH + B.g[n]), yc = B.yc[n], yb = B.sy[n], xl = B.xwl[n], xr = B.xwr[n];
+  for (let y = Math.max(0, Math.round(yh)); y < Math.min(E.H, Math.round(yb)); y++) {
+    const t = (y - yh) / (yb - yh), dem = ppm * (7 + 48 * Math.pow(t, .75)), a = Math.round(sx - dem), b = Math.round(sx + dem), haut = t < .22;
+    cx.fillStyle = haut ? herbe[f] : (((y >> 2) & 1) ? c[f] : c2[f]);
+    if (y >= yc) { cx.fillRect(a, y, Math.max(0, Math.round(xl) - a), 1); cx.fillRect(Math.round(xr), y, Math.max(0, b - Math.round(xr)), 1); } else cx.fillRect(a, y, Math.max(0, b - a), 1);
+  }
 }
 
 /* la paroi d'une rive : un seul aplat si elle est basse, des strates (couches de roche) si elle est haute */
 function paroi(xc, xn, c, n, hc, hn, couleurs, par, f) {
   const yF = B.sy[c], yN = B.sy[n], pc = B.ppm[c], pn = B.ppm[n], ns = Math.max(1, Math.round(Math.max(hc, hn) / 1.3));
   if (ns <= 1) return colonnes(xc, xn, yF - pc * hc, yF, yN - pn * hn, yN, pal(couleurs[par])[f]);
-  for (let k = 0; k < ns; k++) { const a = k / ns, b = (k + 1) / ns; colonnes(xc, xn, yF - pc * hc * b, yF - pc * hc * a, yN - pn * hn * b, yN - pn * hn * a, pal(couleurs[(k + par) & 1])[f]); }
+  for (let k = 0; k < ns; k++) { const a = k / ns, b = (k + 1) / ns; colonnes(xc, xn, yF - pc * hc * b, yF - pc * hc * a, yN - pn * hn * b, yN - pn * hn * a, pal(couleurs[k & 1])[f]); }
 }
 
 /* ---- le monde, de la bande la plus lointaine à la plus proche ---- */
@@ -118,12 +125,15 @@ function monde(pos) {
     const fc = Math.max(1, B.ppm[c] * .35), fn = Math.max(1, B.ppm[n] * .35), eau = BIOME.eau[par];
     trapeze(yF, yN, B.xwl[c] - (P.kg[i] === "mer" ? 0 : fc), B.xwr[c] + (P.kd[i] === "mer" ? 0 : fc), B.xwl[n] - (P.kg[i] === "mer" ? 0 : fn), B.xwr[n] + (P.kd[i] === "mer" ? 0 : fn), pal(BIOME.ecume)[f]);
     trapeze(yF, yN, B.xwl[c], B.xwr[c], B.xwl[n], B.xwr[n], pal(eau)[f]);
+    if (n < 110) { const ew = P.ew[i], yM = (yF + yN) / 2, ppm = (B.ppm[c] + B.ppm[n]) / 2, sxm = (B.sx[c] + B.sx[n]) / 2;  // des reflets clairs posés sur l'eau : ils défilent, c'est la sensation de vitesse
+      for (let k = 0; k < 3; k++) { const r1 = rnd(gi * 3.17 + k * 11.3), r2 = rnd(gi * 5.71 + k * 7.9), w = Math.max(2, ppm * (.4 + r2 * 1.0)); if (r1 < .5) continue;
+        cx.fillStyle = pal(BIOME.reflet || "#A8D4FA")[f]; cx.fillRect(Math.round(sxm + ppm * (r2 * 2 - 1) * ew * .85 - w / 2), Math.round(yM), Math.round(w), Math.max(1, Math.min(2, Math.round((yN - yF) / 14)))); } }
     if (P.tun[i]) {  // la voûte
       const pl = BIOME.rives.tunnel.plafond[par]; trapeze(B.yc[n], B.yc[c], B.xwl[n], B.xwr[n], B.xwl[c], B.xwr[c], pal(pl)[f]);
-      if (!P.tun[(i + NS - 1) % NS]) facade(n, par);
+      if (!P.tun[(i + NS - 1) % NS]) facade(n, par, f);
     }
-    for (const o of DECOR[i]) dessinerSprite(o, n);
-    const dyn = DYN.get(i); if (dyn) for (const o of dyn) dessinerSprite(o, n);
+    for (const o of DECOR[i]) dessinerSprite(o, n, pos);
+    const dyn = DYN.get(i); if (dyn) for (const o of dyn) dessinerSprite(o, n, pos);
   }
 }
 /* la position de l'eau (ligne de l'écran) à une distance z devant la caméra, plus la largeur d'un mètre à cet endroit */
