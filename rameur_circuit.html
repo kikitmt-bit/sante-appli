@@ -230,11 +230,42 @@ const surBoucle = s => mod(s - DEPART);
 
 /* ============ three.js ============ */
 const cv = $("c"), R = new THREE.WebGLRenderer({canvas: cv, antialias: false});
-const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(55, 1, .1, 4000);
+const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(55, 1, .2, 4000);
+/* ============ la pixelisation (Kiki, 10/11 : tout au même grain) ============ */
+// Toute la scène est dessinée en basse résolution (PIXW pixels de large), puis agrandie sans lissage : textures, sprites, eau et modèles
+// ont alors la même taille de pixel, quelle que soit leur origine. Un fin contour sombre souligne les silhouettes proches (d'après la profondeur).
+// Réglage : ?pixel=0 (désactivé, ancien rendu) ou ?pixel=400 (largeur en pixels) dans l'adresse ; 480 par défaut.
+const PIXW = (() => { let q = ""; try { q = window.parent.location.search; } catch (e) {} q = q || location.search; const p = new URLSearchParams(q).get("pixel"); return p === "0" ? 0 : (+p >= 160 ? +p : 480); })();
+const POST = {rt: null, scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1), mat: null};
+if (PIXW) {
+  POST.mat = new THREE.ShaderMaterial({depthTest: false, depthWrite: false, uniforms: {tC: {value: null}, tD: {value: null}, uT: {value: new THREE.Vector2(1, 1)}, uN: {value: cam.near}, uF: {value: cam.far}},
+    vertexShader: `varying vec2 vU; void main(){ vU = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }`,
+    fragmentShader: `uniform sampler2D tC, tD; uniform vec2 uT; uniform float uN, uF; varying vec2 vU;
+      float lz(vec2 u){ float z = texture2D(tD, u).x * 2.0 - 1.0; return 2.0 * uN * uF / (uF + uN - z * (uF - uN)); }
+      void main(){
+        vec3 c = texture2D(tC, vU).rgb; float z0 = lz(vU), i0 = 1.0 / z0;
+        // 1/profondeur est une pente régulière sur un sol plat : la différence seconde ne s'allume qu'aux bords d'un objet (le pixel le plus proche)
+        float ix = 1.0 / lz(vU + vec2(uT.x, 0.0)), ig = 1.0 / lz(vU - vec2(uT.x, 0.0)), iy = 1.0 / lz(vU + vec2(0.0, uT.y)), ib = 1.0 / lz(vU - vec2(0.0, uT.y));
+        float e = max((2.0 * i0 - ix - ig) / i0, (2.0 * i0 - iy - ib) / i0);
+        float bord = step(.35, e) * (1.0 - smoothstep(50.0, 260.0, z0));
+        c = mix(c, c * vec3(.42, .48, .62), bord * .85);
+        gl_FragColor = vec4(c, 1.0);
+      }`});
+  const q = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), POST.mat); q.frustumCulled = false; POST.scene.add(q);
+}
+function viseBasse(w, h) {  // la cible de dessin en basse résolution (recréée à chaque changement de taille)
+  if (POST.rt) POST.rt.dispose();
+  const rt = new THREE.WebGLRenderTarget(w, h, {minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true});
+  rt.depthTexture = new THREE.DepthTexture(w, h, THREE.UnsignedIntType); POST.rt = rt;
+  POST.mat.uniforms.tC.value = rt.texture; POST.mat.uniforms.tD.value = rt.depthTexture; POST.mat.uniforms.uT.value.set(1 / w, 1 / h);
+}
 const BRUME = new THREE.Color("#CDE6F2"), BN = 120, BF = 900;
 scene.fog = new THREE.Fog(BRUME, BN, BF); scene.background = BRUME;
 let QUALITE = Math.min(devicePixelRatio, 1);
-function taille() { R.setPixelRatio(QUALITE); R.setSize(innerWidth, innerHeight, false); cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
+function taille() {
+  if (PIXW) { R.setPixelRatio(Math.min(devicePixelRatio, 2)); R.setSize(innerWidth, innerHeight, false); const w = Math.max(240, Math.round(PIXW * QUALITE)); viseBasse(w, Math.max(135, Math.round(w * innerHeight / innerWidth))); }  // l'écran à pleine finesse, le monde en gros pixels
+  else { R.setPixelRatio(QUALITE); R.setSize(innerWidth, innerHeight, false); }
+  cam.aspect = innerWidth / innerHeight; cam.updateProjectionMatrix(); }
 addEventListener("resize", taille); taille();
 // la lumière : un soleil et le ciel (les volumes gris se lisent par leurs faces éclairées)
 const SOLEIL = new THREE.Vector3(-.55, .62, -.55).normalize();
@@ -455,7 +486,7 @@ const ciel = new THREE.Mesh(new THREE.SphereGeometry(3400, 32, 16), new THREE.Sh
   uniforms: {uT: UNI.uT, uN: {value: texNuages}, uFog: UNI.uFog}, vertexShader: `varying vec3 vD; void main(){ vD = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
   fragmentShader: `uniform float uT; uniform sampler2D uN; uniform vec3 uFog; varying vec3 vD;
   void main(){ vec3 d = normalize(vD); float y = d.y, b = floor(clamp(y, 0.0, 1.0) * 70.0);
-    float dith = mod(floor(gl_FragCoord.x / 3.0) + floor(gl_FragCoord.y / 3.0), 2.0);
+    float dith = mod(floor(gl_FragCoord.x / ${PIXW ? "1.0" : "3.0"}) + floor(gl_FragCoord.y / ${PIXW ? "1.0" : "3.0"}), 2.0);
     float q = (b + (fract(clamp(y, 0.0, 1.0) * 70.0) > .5 ? dith : 0.0)) / 70.0;
     vec3 c = mix(uFog, vec3(.22,.45,.85), pow(clamp(q * 2.2, 0.0, 1.0), .55));
     float az = atan(d.x, -d.z) / 6.28318 + .5, v = (y - .02) / .3;
@@ -770,7 +801,7 @@ function son(dt) {
 
 /* ============ ton Pokémon, qui nage de dos ============ */
 // Un seul compagnon pour la démo : Carapuce, qui évolue avec les kilomètres ramés (toutes les séances du rameur, comptées par le serveur) (Kiki, 10/11)
-const NAGEURS = [{n: "0007", nom: "Carapuce", k: 2.05, plonge: .5, km: 0}, {n: "0008", nom: "Carabaffe", k: 2.05, plonge: .52, km: 20}, {n: "0009", nom: "Tortank", k: 2, plonge: .52, km: 60}];
+const NAGEURS = [{n: "0007", nom: "Carapuce", k: 2.05, plonge: .3, km: 0}, {n: "0008", nom: "Carabaffe", k: 2.05, plonge: .32, km: 20}, {n: "0009", nom: "Tortank", k: 2, plonge: .34, km: 60}];
 const monture = new THREE.Group(); scene.add(monture);
 let heros = null, construction = 0;
 async function construire(i) {
@@ -889,7 +920,8 @@ function boucle(now) {
   UNI.uHero.value.set(a.x, 0, a.z); UNI.uL.value = heros ? heros.larg * .5 : .8; UNI.uHdir.value.set(Math.sin(a.h), -Math.cos(a.h)); UNI.uV.value = S.vn;
   // le tunnel : la lumière baisse à peine, tout doucement (Kiki, 09/11 : rien ne doit changer brusquement)
   const sombre = Math.max(0, ...TUNNELS.map(([t0, t1]) => lisse(t0 - 4, t0 + 16, mod(S.s)) * (1 - lisse(t1 - 18, t1 + 2, mod(S.s)))));
-  UNI.uSombre.value = sombre * .07; $("sombre").style.opacity = sombre * .05;  // 10 % au plus (Kiki, 10/11) $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, 0);
+  UNI.uSombre.value = sombre * .07; $("sombre").style.opacity = sombre * .05;  // 10 % au plus (Kiki, 10/11)
+  $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, 0);  // le flash blanc s'éteint (cette ligne était avalée par le commentaire : « Changer de Pokémon » laissait l'écran blanc)
   $("vitesse").style.opacity = etatV === 2 ? .7 : etatV === 1 ? .25 : 0;
   for (const m of tournants) { const dx = cam.position.x - m.position.x, dz = cam.position.z - m.position.z; m.rotation.y = Math.atan2(dx, dz); }
   mesurer(dt); son(dt); for (const v of VIVANTS) v(dt);
@@ -903,7 +935,8 @@ function boucle(now) {
     const e = S.vL < .3 || ca < 1 ? "À l'arrêt" : S.t < 15 ? "Mise en route" : ca < 18 ? "Tranquille" : ["Croisière", "Rapide", "TURBO !"][etatV]; $("hE").textContent = e; $("hE").className = ["", "rapide", "turbo"][etatV];
     majTour(); }
   majFantome(dt); majCarte();
-  R.render(scene, cam);
+  if (PIXW) { R.setRenderTarget(POST.rt); R.render(scene, cam); R.setRenderTarget(null); R.render(POST.scene, POST.cam); }
+  else R.render(scene, cam);
 }
 const tournants = [];
 // le Pokémon qui t'accueille à la sortie du tunnel, sur son rocher : il saute de joie quand tu passes
