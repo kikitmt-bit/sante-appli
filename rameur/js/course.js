@@ -34,6 +34,6 @@ function boucle(now) {
   const caE = cadence(); S.etatV = caE >= 30 ? 2 : caE >= 26 ? 1 : 0;  // Croisière jusqu'à 25 coups/min (Kiki rame à 24), Rapide dès 26, TURBO dès 30
   majFantome(dt, T); sillage(dt, S.vL); avancerGouttes(dt);
   const pos = S.s - ZH;
-  dessiner(pos, T); dessinerGouttes(pos); dessinerHero(pos, T);
+  dessiner(pos, T); dessinerGouttes(pos); dessinerHero(pos, T); lignesVitesse(T);
   son(dt); majHud(dt); mesurer(dt);
 }

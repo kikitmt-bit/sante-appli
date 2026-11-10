@@ -9,10 +9,8 @@ function poserDecor() {
   const pris = {g: [], d: []};  // ce qui est déjà posé, pour ne rien coller
   function sprite(nom, s, x, y, echelle) {
     const def = BIOME.sprites[nom]; if (!def) return;
-    let o;
-    if (def.bloc) { const b = def.bloc, v = Math.floor(R() * 99); o = {nom, bloc: b, larg: b.larg * echelle, haut: b.haut * echelle, murs: b.murs[v % b.murs.length], toit: b.toit[(v >> 2) % b.toit.length]}; }
-    else o = {nom, img: def.img, larg: def.larg * echelle, haut: def.larg * echelle * def.px[1] / def.px[0]};
-    o.s = s; o.x = x; o.y = y; DECOR[idx(s)].push(o); DECOR_LISTE.push(o); return o;
+    const v = Math.floor(R() * 6), cv = JARDIN.variante(def.gen, v), larg = def.larg * echelle;   // une variante parmi six, dessinée par l'atelier (jardin.js)
+    const o = {nom, canvas: cv, larg, haut: larg * cv.height / cv.width, s, x, y}; DECOR[idx(s)].push(o); DECOR_LISTE.push(o); return o;
   }
   for (const r of BIOME.regles) {
     for (const c of PISTE.secs) {
@@ -21,10 +19,11 @@ function poserDecor() {
         const sg = cote === "g" ? -1 : 1; let s = c.s0 + 1 + R() * r.pas * .5;
         while (s < c.s1 - 1) {
           const pas = r.pas * (.7 + .6 * R()), i = idx(s), kind = (sg < 0 ? PISTE.kg : PISTE.kd)[i];
-          const bien = R() < r.proba && (kind !== "mer" || (r.sur && r.sur.includes("mer"))) && kind !== "tunnel" && (!r.sur || r.sur.includes(kind));
+          const bien = (sg < 0 ? PISTE.hg[i] : PISTE.hd[i]) < 4 && R() < r.proba &&   // jamais sur une rive qui monte en paroi : l'objet flotterait
+             (kind !== "mer" || (r.sur && r.sur.includes("mer"))) && kind !== "tunnel" && (!r.sur || r.sur.includes(kind));
           if (bien) {
             const d = lerp(r.bande[0], r.bande[1], R()), nom = choisir(r.sprites), ech = r.echelle ? lerp(r.echelle[0], r.echelle[1], R()) : 1, def = BIOME.sprites[nom];
-            const larg = (def.bloc ? def.bloc.larg : def.larg) * ech;
+            const larg = def.larg * ech;
             if (!pris[cote].some(p => Math.abs(p.s - s) < (p.larg + larg) * .5 && Math.abs(p.d - d) < 5)) {
               pris[cote].push({s, d, larg});
               sprite(nom, s, sg * (PISTE.ew[i] + d), PISTE.sol[i] + (sg < 0 ? PISTE.hg[i] : PISTE.hd[i]), ech);

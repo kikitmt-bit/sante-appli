@@ -1,6 +1,7 @@
 """Serveur d'essai du rameur (pseudo-3D) : python rameur/serveur.py [port]
 La page est assemblée à chaque chargement (on retouche un module, on recharge). Les images viennent du dossier scenes/."""
 import http.server
+import importlib
 import json
 import os
 import sys
@@ -17,6 +18,7 @@ class H(http.server.SimpleHTTPRequestHandler):
         if self.path.split("?")[0] in ("/", "/rameur"):
             from urllib.parse import parse_qs, urlparse
             niveau = (parse_qs(urlparse(self.path).query).get("niveau") or ["ecume"])[0]
+            importlib.reload(rameur_page)  # on retouche rameur_page.py : pas besoin de relancer le serveur
             octets = rameur_page.page({"lien": None, "modele": None, "progression": None}, niveau).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")

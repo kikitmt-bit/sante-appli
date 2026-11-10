@@ -5,7 +5,7 @@ from pathlib import Path
 
 RACINE = Path(__file__).with_name("rameur")
 # l'ordre compte : chaque module peut s'appuyer sur ceux d'avant
-MODULES = ["outils", "piste", "decor", "rendu", "sprites", "fantome", "hud", "son", "menu", "course", "liaison", "verif", "main"]
+MODULES = ["outils", "jardin", "piste", "decor", "rendu", "sprites", "fantome", "hud", "son", "menu", "course", "liaison", "verif", "main"]
 
 
 def _json(chemin):

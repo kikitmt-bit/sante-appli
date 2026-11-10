@@ -41,9 +41,9 @@
   {
    "nom": "Gorge",
    "long": 34,
-   "virage": 38,
+   "virage": 24,
    "colline": 4,
-   "eau": 9,
+   "eau": 12,
    "rives": [
     "falaise",
     "falaise"
@@ -51,9 +51,9 @@
   },
   {
    "long": 34,
-   "virage": -64,
+   "virage": -38,
    "colline": 4,
-   "eau": 8,
+   "eau": 12,
    "rives": [
     "falaise",
     "falaise"
@@ -61,9 +61,9 @@
   },
   {
    "long": 34,
-   "virage": 52,
+   "virage": 32,
    "colline": 2,
-   "eau": 8,
+   "eau": 12,
    "rives": [
     "falaise",
     "falaise"
@@ -71,9 +71,9 @@
   },
   {
    "long": 34,
-   "virage": -40,
+   "virage": -26,
    "colline": 2,
-   "eau": 9,
+   "eau": 12,
    "rives": [
     "falaise",
     "falaise"

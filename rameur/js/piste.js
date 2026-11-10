@@ -26,7 +26,8 @@ const PISTE = (() => {
   }
   const lisser = (a, rayon) => { const r = Math.round(rayon / SEG), o = new Float32Array(NS); for (let i = 0; i < NS; i++) { let t = 0; for (let j = -r; j <= r; j++) t += a[(i + j + NS) % NS]; o[i] = t / (2 * r + 1); } a.set(o); };
   for (const a of [P.ew, P.wl, P.wr]) lisser(a, 12);
-  for (const a of [P.hg, P.hd, P.bg, P.bd]) lisser(a, 8);
+  for (const a of [P.hg, P.hd, P.bg, P.bd]) { lisser(a, 22); lisser(a, 22); }   // les rives changent de hauteur sur ~90 m : jamais un mur qui surgit
+  P.relief = F(); for (let i = 0; i < NS; i++) P.relief[i] = (P.kg[i] === "falaise" || P.kd[i] === "falaise" || P.tun[i]) ? 1 : 0; lisser(P.relief, 60); lisser(P.relief, 60);   // 1 = un massif de roche derrière
   // le plan vu de dessus (pour la mini-carte) : on suit le cap, puis on répartit l'écart de fermeture
   let h = 0, x = 0, z = 0; for (let i = 0; i < NS; i++) { P.px[i] = x; P.pz[i] = z; P.hdg[i] = h; h += P.vir[i] * SEG; x += Math.cos(h) * SEG; z += Math.sin(h) * SEG; }
   const ex = x, ez = z; for (let i = 0; i < NS; i++) { P.px[i] -= ex * i / NS; P.pz[i] -= ez * i / NS; }

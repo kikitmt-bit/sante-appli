@@ -1,5 +1,6 @@
 """Contrôle des niveaux et des biomes du rameur (pseudo-3D) : un niveau est un fichier, donc on le vérifie comme un fichier."""
 import json
+import re
 import unittest
 from pathlib import Path
 
@@ -29,6 +30,9 @@ class TestNiveaux(unittest.TestCase):
                     self.assertGreaterEqual(s["eau"], 4)
                     for r in s["rives"]:
                         self.assertIn(r, biome["rives"], f"rive « {r} » inconnue du biome")
+                for s in n["sections"]:
+                    if s["rives"][0] in ("falaise", "tunnel") and s["rives"][1] in ("falaise", "tunnel") and isinstance(s["virage"], (int, float)):
+                        self.assertLessEqual(abs(s["virage"]) / s["long"], 1.3, "virage trop serré entre des parois : on n'y voit pas à plus de 40 m")
                 for p in n.get("reperes", []):
                     self.assertIn(p["section"], noms)
                     self.assertIn(p["sprite"], biome["sprites"])
@@ -38,11 +42,11 @@ class TestNiveaux(unittest.TestCase):
                     for nom in (r.get("sections") or []) + r.get("sauf", []):
                         self.assertIn(nom, noms, f"la règle « {r['nom']} » parle d'une section qui n'existe pas : {nom}")
 
-    def test_les_images_du_biome_existent(self):
+    def test_les_sprites_du_biome_existent(self):
         for f in (RACINE / "biomes").glob("*.json"):
             for nom, d in json.loads(f.read_text(encoding="utf-8"))["sprites"].items():
-                if "img" in d:
-                    self.assertTrue((RACINE.parent / "scenes" / "circuit" / d["img"]).exists(), f"image manquante : {d['img']}")
+                if "gen" in d:
+                    self.assertIn(d["gen"], re.findall(r"^    (\w+)\(seed\)", (RACINE / "js" / "jardin.js").read_text(encoding="utf-8"), re.M), f"l'atelier ne sait pas dessiner : {d['gen']}")
 
     def test_la_page_s_assemble(self):
         import sys

@@ -4,11 +4,11 @@
 // agrandie sans lissage par le navigateur. Le décor (arbres, maisons…) est fait de sprites tournés vers la caméra, mis à l'échelle.
 const cv = $("c"), cx = cv.getContext("2d", {alpha: false});
 const E = {W: 480, H: 270, HY: 108};
-const CAMD = 1 / Math.tan(70 * Math.PI / 360);   // champ de vision de 70°
-const CAMH = 2.4;     // hauteur de la caméra au-dessus de l'eau (m)
-const ZH = 8;         // ton Pokémon est 8 m devant la caméra
-const ND = 220;       // bandes dessinées (440 m)
-const BN = 50, BF = 420;  // la brume : début, fin (m)
+const CAMD = 1 / Math.tan(62 * Math.PI / 360);   // champ de vision de 62° (plus serré : plus de vitesse)
+const CAMH = 2.2;     // hauteur de la caméra au-dessus de l'eau (m)
+const ZH = 6;         // ton Pokémon est 6 m devant la caméra
+const ND = 250;       // bandes dessinées (500 m)
+const BN = 60, BF = 480;  // la brume : début, fin (m)
 const HC = 7;         // hauteur de la voûte d'un tunnel (m)
 const HAUTEUR = clamp(+PARAMS.get("h") || 450, 200, 720);   // la finesse de l'image : 450 pixels de haut (?h=300 plus gros, ?h=600 plus fin)
 function tailleEcran() { const asp = innerWidth / innerHeight; E.H = HAUTEUR; E.W = clamp(Math.round(E.H * asp), Math.round(E.H * 1.2), Math.round(E.H * 2.4)); cv.width = E.W; cv.height = E.H; E.HY = Math.round(E.H * .4); cx.imageSmoothingEnabled = false; }
@@ -42,9 +42,14 @@ function fond(pos, t) {
   for (let k = 0; k < NB; k++) { const u = Math.pow(k / (NB - 1), .8), y0 = Math.round(k * HY / NB), y1 = Math.round((k + 1) * HY / NB); cx.fillStyle = `rgb(${Math.round(lerp(haut[0], bas[0], u))},${Math.round(lerp(haut[1], bas[1], u))},${Math.round(lerp(haut[2], bas[2], u))})`; cx.fillRect(0, y0, W, y1 - y0); }
   const off = hdgA(pos) * W * .9 * GAIN_VIRAGE * 2.2;   // le fond tourne avec le cap
   const dn = ((Math.round(off * .5 + t * 1.5) % 512) + 512) % 512; for (let x = -dn; x < W; x += 512) cx.drawImage(NUAGES, Math.round(x), HY - 62);
-  for (const [coul, a, b, c, ph, base, amp] of [[BIOME.montagnes.loin, 3, 7, 13, 1, 10, 22], [BIOME.montagnes.pres, 5, 11, 17, 3, 5, 12]]) {
-    cx.fillStyle = pal(coul)[coul === BIOME.montagnes.loin ? 4 : 2];
-    for (let x = 0; x < W; x++) { const X = ((Math.round(x + off * (coul === BIOME.montagnes.loin ? .6 : 1)) % TUILE_M) + TUILE_M) % TUILE_M, h = Math.max(1, Math.round(base + amp * (relief(X, a, b, c, ph) + .5))); cx.fillRect(x, HY - h, 1, h + 1); } }
+  const K = E.H / 450, rel = val(PISTE.relief, pos + 90);
+  for (const [coul, a, b, c, ph, base, amp, fogi] of [[BIOME.montagnes.loin, 3, 7, 13, 1, 16, 46, 4], [BIOME.montagnes.pres, 5, 11, 17, 3, 8, 26, 2]]) {
+    cx.fillStyle = pal(coul)[fogi];
+    for (let x = 0; x < W; x++) { const X = ((Math.round(x + off * (fogi === 4 ? .6 : 1)) % TUILE_M) + TUILE_M) % TUILE_M, h = Math.max(1, Math.round((base + amp * (relief(X, a, b, c, ph) + .5)) * K)); cx.fillRect(x, HY - h, 1, h + 1); } }
+  if (rel > .03) {  // un massif de roche derrière les gorges et les tunnels : jamais de ciel entre les parois
+    const roc = BIOME.rives.falaise.paroi, hm = HY * 1.05 * Math.min(1, rel * 1.7);
+    for (let x = 0; x < W; x++) { const X = ((Math.round(x + off) % TUILE_M) + TUILE_M) % TUILE_M, h = Math.round(hm * (.9 + .15 * relief(X, 4, 9, 15, 2))); for (let y = HY - h; y <= HY; y += 1) { cx.fillStyle = pal(roc[(Math.floor((y - HY) / (7 * K))) & 1 ? 1 : 0])[3]; cx.fillRect(x, y, 1, 1); } }
+  }
   cx.fillStyle = `rgb(${BRUME_RVB.join(",")})`; cx.fillRect(0, HY, W, E.H - HY);   // sous l'horizon : la brume
 }
 
@@ -64,18 +69,7 @@ function bords(pos) {
   }
 }
 
-/* ---- un sprite du décor : une image, ou une forme provisoire (« bloc ») ---- */
-const ASPECT = {};
-function image(nom) { const a = BIOME.sprites[nom]; if (!a || !a.img) return null; if (!(nom in ASPECT)) { ASPECT[nom] = null; chargerImg(IMAGES_URL + a.img).then(i => ASPECT[nom] = i).catch(() => ASPECT[nom] = false); } return ASPECT[nom] || null; }
-function dessinerBloc(o, x, yb, w, h, v) {
-  const b = o.bloc, mur = pal(o.murs)[v], toit = pal(o.toit)[v];
-  if (o.nom === "ilot") { const lignes = Math.max(2, Math.round(h)); cx.fillStyle = mur; for (let k = 0; k < lignes; k++) { const t = k / lignes, dem = w / 2 * Math.sqrt(1 - t * t * .9); cx.fillRect(Math.round(x - dem), Math.round(yb - k - 1), Math.max(1, Math.round(dem * 2)), 1); } cx.fillStyle = toit; cx.fillRect(Math.round(x - w * .3), Math.round(yb - h), Math.max(1, Math.round(w * .6)), Math.max(1, Math.round(h * .25))); return; }
-  const x0 = Math.round(x - w / 2), y0 = Math.round(yb - h), ww = Math.max(1, Math.round(w)), hh = Math.max(1, Math.round(h));
-  cx.fillStyle = mur; cx.fillRect(x0, y0, ww, hh);
-  cx.fillStyle = toit; const rh = o.nom === "phare" ? Math.round(hh * .16) : Math.max(1, Math.round(hh * .28)); cx.fillRect(o.nom === "phare" ? x0 : x0 - Math.round(ww * .06), y0, o.nom === "phare" ? ww : ww + Math.round(ww * .12), rh);
-  if (o.nom === "maison" && ww > 10) { cx.fillStyle = "rgba(40,50,80,.55)"; const fw = Math.max(2, Math.round(ww * .16)), fh = Math.max(2, Math.round(hh * .22)); cx.fillRect(x0 + Math.round(ww * .18), y0 + Math.round(hh * .5), fw, fh); cx.fillRect(x0 + ww - Math.round(ww * .18) - fw, y0 + Math.round(hh * .5), fw, fh); cx.fillStyle = "rgba(90,50,30,.8)"; cx.fillRect(x0 + Math.round(ww * .45), y0 + Math.round(hh * .62), Math.max(2, Math.round(ww * .12)), Math.round(hh * .38)); }
-  if (o.nom === "phare" && ww > 6) { cx.fillStyle = "rgba(216,56,48,.9)"; for (const f of [.38, .62]) cx.fillRect(x0, y0 + Math.round(hh * f), ww, Math.max(1, Math.round(hh * .08))); }
-}
+/* ---- un sprite du décor : une petite image dessinée par l'atelier (jardin.js) ---- */
 function ecranSprite(o, n, pos) {  // où un sprite tombe à l'écran, EXACTEMENT : au milieu de sa bande il sauterait d'une bande à l'autre (le décor « sautille »)
   let z = o.s - pos; z = (((z + LONG / 2) % LONG) + LONG) % LONG - LONG / 2;
   const t = clamp((z - B.z[n]) / (B.z[n + 1] - B.z[n]), 0, 1), zz = Math.max(z, .5), X = lerp(B.X[n], B.X[n + 1], t), g = lerp(B.g[n], B.g[n + 1], t), ppm = CAMD / zz * E.W / 2;
@@ -86,8 +80,7 @@ function dessinerSprite(o, n, pos) {
   if (w < 2 || sx + w / 2 < 0 || sx - w / 2 > E.W || yb - h > E.H) return;
   const a = 1 - lisse(BF * .55, BF * .97, z); if (a <= .02) return; cx.globalAlpha = a;   // il apparaît dans la brume, jamais d'un coup
   if (o.dessiner) o.dessiner(cx, sx, yb, ppm);
-  else if (o.bloc) dessinerBloc(o, sx, yb, w, h, brumeDe(z) > 3 ? 3 : 0);
-  else { const im = image(o.nom); if (im) { cx.imageSmoothingEnabled = w < im.width * .6; cx.drawImage(im, Math.round(sx - w / 2), Math.round(yb - h), Math.round(w), Math.round(h)); cx.imageSmoothingEnabled = false; } }
+  else { const im = o.canvas; if (im) { cx.imageSmoothingEnabled = w < im.width * .6; cx.drawImage(im, Math.round(sx - w / 2), Math.round(yb - h), Math.round(w), Math.round(h)); cx.imageSmoothingEnabled = false; } }
   cx.globalAlpha = 1;
 }
 
@@ -101,6 +94,14 @@ function facade(n, par, f) {  // l'entrée d'un tunnel : une colline de roche (h
   }
 }
 
+/* la lisière : un mur continu d'arbres (houppiers serrés) derrière la rive, qui donne de la profondeur au décor lointain */
+const couronne = s => .82 + .2 * Math.sin(s * .9) + .12 * Math.sin(s * 2.3 + 1) + .08 * Math.sin(s * 5.1);
+function lisiere(c, n, i, par, f, pos) {
+  for (const cote of [-1, 1]) { const r = BIOME.rives[(cote < 0 ? PISTE.kg : PISTE.kd)[i]], L = r.lisiere; if (!L) continue;
+    const xs = cote < 0 ? B.xol : B.xor, yb = cote < 0 ? B.ytl : B.ytr, sF = pos + B.z[c], sN = pos + B.z[n];
+    const xF = xs[c] + cote * B.ppm[c] * L.dist, xN = xs[n] + cote * B.ppm[n] * L.dist, hF = L.h * couronne(sF) * B.ppm[c], hN = L.h * couronne(sN) * B.ppm[n];
+    colonnes(xF, xN, yb[c] - hF, yb[c] - hF * .38, yb[n] - hN, yb[n] - hN * .38, pal(L.couleurs[par])[f]); colonnes(xF, xN, yb[c] - hF * .38, yb[c], yb[n] - hN * .38, yb[n], pal(L.bas)[f]); }
+}
 /* la paroi d'une rive : un seul aplat si elle est basse, des strates (couches de roche) si elle est haute */
 function paroi(xc, xn, c, n, hc, hn, couleurs, par, f) {
   const yF = B.sy[c], yN = B.sy[n], pc = B.ppm[c], pn = B.ppm[n], ns = Math.max(1, Math.round(Math.max(hc, hn) / 1.3));
@@ -119,6 +120,7 @@ function monde(pos) {
     // à gauche, puis à droite : le terrain au-delà, le dessus de la rive, sa paroi
     if (B.ytl[c] < B.ytl[n]) { trapeze(B.ytl[c], B.ytl[n], -4, B.xol[c], -4, B.xol[n], tg[f]); trapeze(B.ytl[c], B.ytl[n], B.xol[c], B.xwl[c], B.xol[n], B.xwl[n], pal(rg.dessus[par])[f]); }
     if (B.ytr[c] < B.ytr[n]) { trapeze(B.ytr[c], B.ytr[n], B.xor[c], E.W + 4, B.xor[n], E.W + 4, td[f]); trapeze(B.ytr[c], B.ytr[n], B.xwr[c], B.xor[c], B.xwr[n], B.xor[n], pal(rd.dessus[par])[f]); }
+    lisiere(c, n, i, par, f, pos);
     if (P.kg[i] !== "mer") paroi(B.xwl[c], B.xwl[n], c, n, B.hg[c], B.hg[n], rg.paroi, par, f);
     if (P.kd[i] !== "mer") paroi(B.xwr[c], B.xwr[n], c, n, B.hd[c], B.hd[n], rd.paroi, par, f);
     // l'eau, avec un liseré d'écume sur les bords
@@ -138,4 +140,9 @@ function monde(pos) {
 }
 /* la position de l'eau (ligne de l'écran) à une distance z devant la caméra, plus la largeur d'un mètre à cet endroit */
 function surEau(z, pos) { const ppm = CAMD / z * E.W / 2, g = val(PISTE.sol, pos + z) - val(PISTE.sol, pos); return {ppm, y: E.HY + ppm * (CAMH - g), x: E.W / 2}; }
+function lignesVitesse(t) {  // quand ça va vite : des traits clairs qui partent du point de fuite vers les bords de l'écran
+  if (S.etatV < 1 || S.etat !== "course") return; const n = S.etatV === 2 ? 22 : 12, {W, HY} = E, k = Math.floor(t * 14);
+  cx.fillStyle = "rgba(255,255,255,.42)"; for (let j = 0; j < n; j++) { const a = rnd(k * 7.3 + j * 3.1) * 6.283, r0 = (.38 + rnd(k * 2.9 + j) * .45) * W * .6, len = W * (.08 + rnd(j * 5.7 + k) * .16), dx = Math.cos(a), dy = Math.sin(a) * .7;
+    for (let u = 0; u < len; u += 2) { const x = Math.round(W / 2 + dx * (r0 + u)), y = Math.round(HY + 40 + dy * (r0 + u)); if (y > 0 && y < E.H - 60 && x > 0 && x < W) cx.fillRect(x, y, 2, 1); } }
+}
 function dessiner(pos, t) { fond(pos, t || 0); monde(pos); }
