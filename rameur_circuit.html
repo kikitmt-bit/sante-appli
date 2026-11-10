@@ -21,26 +21,33 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 .boite{background:var(--creme);border:3px solid var(--bord);border-radius:12px 5px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
 .lab{font-size:15px;color:var(--encre2);display:block;line-height:1;text-transform:uppercase;letter-spacing:.05em}
 .num{font-variant-numeric:tabular-nums}
-#hg{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px 8px;min-width:190px}
-#hg b.gros{font-size:52px;font-weight:400;line-height:1;display:block}
-#tours{font-size:21px;line-height:1.2;margin-top:4px}
-#tours div{display:flex;justify-content:space-between;gap:14px}
-#tours .encours{font-size:28px;color:var(--encre)}
-#tours .ancien{color:var(--encre2)}#tours .meilleur{color:var(--vert)}
-#tours .ecart.devant{color:var(--vert)}#tours .ecart.derriere{color:var(--accent)}
-#hm{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top,0px));padding:6px 18px 8px;display:flex;gap:26px;align-items:flex-end}
-#hm b{font-size:60px;font-weight:400;line-height:.95;display:block}
-#hm small{font-size:20px;color:var(--encre2)}
-#h5{font-size:18px;color:var(--encre2)}
-#hE{font-size:20px;color:#B05010}
-#hE.rapide{color:var(--vert)}#hE.turbo{color:var(--rouge)}
-#hd{position:fixed;right:calc(max(12px,env(safe-area-inset-right,0px)) + 64px);top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px 8px;text-align:right}
-#hd b{font-size:34px;font-weight:400;line-height:1;display:block}
-#hd div+div{margin-top:4px}
-#fps{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:6px;font-size:14px;color:var(--creme);text-shadow:1px 1px 0 var(--nuit);pointer-events:none;opacity:.7}
-#bPause{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px));width:52px;height:52px;padding:0;font-size:26px}
-/* le plan du circuit, en bas à gauche (comme dans Mario Kart) : toi, ton fantôme, la ligne */
-#carte{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));width:210px;height:auto;padding:4px;box-sizing:content-box;pointer-events:none}
+/* ----- l'écran de course, à la Mario Kart : pas de cadre, du texte blanc bordé de nuit, chaque chiffre dans une case de largeur fixe ----- */
+.hud{position:fixed;color:#fff;pointer-events:none;line-height:1;
+  text-shadow:3px 0 0 var(--nuit),-3px 0 0 var(--nuit),0 3px 0 var(--nuit),0 -3px 0 var(--nuit),2px 2px 0 var(--nuit),-2px 2px 0 var(--nuit),2px -2px 0 var(--nuit),-2px -2px 0 var(--nuit),4px 5px 0 rgba(16,24,44,.55)}
+.hud .lab{color:#FFE48A;font-size:19px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
+.hud .u{font-size:24px;color:#DDE8F4;margin-left:6px}
+.fixe{display:inline-block;text-align:right;font-variant-numeric:tabular-nums}
+#hg{left:max(22px,env(safe-area-inset-left,0px));top:max(16px,env(safe-area-inset-top,0px))}
+#hT{font-size:72px;width:3.1em}
+#hT{text-align:left}
+#tours{font-size:26px;margin-top:8px;width:270px}
+#tours div{display:flex;justify-content:space-between;margin-top:3px}
+#tours .encours{font-size:34px}
+#tours .ancien{color:#DDE8F4}#tours .meilleur{color:#8CF0A0}
+#tours .ecart.devant{color:#8CF0A0}#tours .ecart.derriere{color:#FF8C7C}
+#hm{left:50%;transform:translateX(-50%);top:max(16px,env(safe-area-inset-top,0px));display:flex;gap:44px;align-items:flex-start}
+#hm .gros{font-size:84px}
+#hC{width:1.6em}#hV{width:2.2em}
+#hm .sous{font-size:22px;color:#DDE8F4;margin-top:4px;text-align:center}
+#hE.rapide{color:#8CF0A0}#hE.turbo{color:#FF8C7C}
+#hd{right:max(22px,env(safe-area-inset-right,0px));top:max(16px,env(safe-area-inset-top,0px));text-align:right}
+#hD{font-size:64px;width:3.2em}
+#hN,#fps{display:none}
+#bPause{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));width:58px;height:58px;padding:0;border-radius:50%;
+  background:rgba(16,24,44,.42);border:3px solid rgba(255,255,255,.85);box-shadow:none;color:#fff;font-size:24px;letter-spacing:-2px}
+#bPause:active{transform:scale(.94)}
+/* le plan du circuit, en bas à gauche, sur fond transparent : le tracé en blanc, ton Pokémon, ton fantôme */
+#carte{position:fixed;left:max(14px,env(safe-area-inset-left,0px));bottom:max(10px,env(safe-area-inset-bottom,0px));width:250px;height:auto;pointer-events:none}
 /* la barre du parcours, en bas : les étapes et ton Pokémon qui avance */
 #prog{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));width:min(860px,calc(100vw - 32px));height:62px;pointer-events:none}
 #prog .rail{position:absolute;left:0;right:0;top:30px;height:8px;background:var(--creme);border:3px solid var(--bord);border-radius:6px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
@@ -53,7 +60,7 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 #gros{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--titre);font-size:150px;color:var(--creme);text-shadow:8px 8px 0 var(--bord);pointer-events:none;line-height:1;text-align:center}
 #gros small{font-size:40px;margin-top:10px}
 #tel{position:fixed;left:50%;top:calc(max(96px,14vh) + 70px);transform:translateX(-50%);padding:5px 14px;font-size:19px;background:#F8E0D8;color:var(--accent);white-space:nowrap}
-#essai{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:84px;display:flex;gap:8px}
+#essai{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));display:flex;gap:8px;opacity:.85}
 #essai button{font-size:19px;padding:4px 12px}
 button{font-family:var(--jeu);font-size:24px;cursor:pointer;color:var(--encre);background:var(--creme);border:3px solid var(--bord);border-radius:10px 4px;padding:6px 16px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
 button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(16,24,44,.55)}
@@ -84,18 +91,18 @@ button.on{background:var(--or)}
 .pave{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .pave button{font-size:44px;padding:8px 0}
 .message{font-size:20px;color:var(--accent);min-height:24px;margin:8px 0 0}
-@media (max-width:760px){#hg b.gros{font-size:34px}#hg{min-width:0}#tours{font-size:17px}#tours .encours{font-size:21px}#hm b{font-size:36px}#hm{gap:12px}#hd b{font-size:24px}#carte{width:130px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}}
+@media (max-width:760px){#hT{font-size:42px}#tours{font-size:18px;width:170px}#tours .encours{font-size:22px}#hm{gap:20px}#hm .gros{font-size:48px}#hm .sous{font-size:16px}#hD{font-size:38px}.hud .lab{font-size:14px}.hud .u{font-size:16px}#carte{width:150px}#bPause{width:46px;height:46px}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}}
 </style>
 <canvas id="c" aria-label="Le circuit, vu de derrière ton Pokémon qui nage"></canvas>
 <div id="vitesse"></div><div id="sombre"></div><div id="flash"></div><div id="embruns"></div>
 <div id="hud" hidden>
-  <div class="boite" id="hg"><span class="lab">Temps</span><b class="num gros" id="hT">0:00</b><div id="tours" class="num"></div></div>
-  <div class="boite" id="hm"><div><span class="lab">Cadence /min</span><b class="num" id="hC">0</b></div>
-    <div><span class="lab">Vitesse</span><b class="num" id="hV">0,0 <small>km/h</small></b></div><div><div id="h5" class="num">–:–– /500 m</div><div id="hE">Mise en route</div></div></div>
-  <div class="boite" id="hd"><div><span class="lab">Distance</span><b class="num" id="hD">0 m</b></div><div><span class="lab">Coups</span><b class="num" id="hN">0</b></div></div>
-  <div id="fps" class="num">– i/s</div>
-  <button id="bPause" aria-label="Menu de la séance">II</button>
-  <canvas id="carte" class="boite" aria-label="Le plan du circuit"></canvas><canvas id="progMoi" width="32" height="32" hidden></canvas>
+  <div class="hud" id="hg"><span class="lab">Temps</span><b class="fixe" id="hT">0:00</b><div id="tours"></div></div>
+  <div class="hud" id="hm"><div><span class="lab">Cadence</span><b class="fixe gros" id="hC">0</b><span class="u">/min</span></div>
+    <div><span class="lab">Vitesse</span><b class="fixe gros" id="hV">0,0</b><span class="u">km/h</span><div class="sous"><span id="h5">–:–– /500 m</span> · <span id="hE">Mise en route</span></div></div></div>
+  <div class="hud" id="hd"><span class="lab">Distance</span><b class="fixe" id="hD">0</b><span class="u">m</span><b id="hN">0</b></div>
+  <div id="fps">– i/s</div>
+  <button id="bPause" aria-label="Pause">❚❚</button>
+  <canvas id="carte" aria-label="Le plan du circuit"></canvas><canvas id="progMoi" width="32" height="32" hidden></canvas>
   <div class="boite" id="tel" hidden></div>
   <div id="gros"></div>
   <div id="essai" hidden><button id="bCoup">Coup (espace)</button><button id="bAuto">Auto</button></div>
@@ -846,8 +853,8 @@ function boucle(now) {
   gp.attributes.position.needsUpdate = true; gp.attributes.color.needsUpdate = true;
   // l'écran
   if (S.etat === "course" || S.etat === "decompte") { const ca = cadence();
-    $("hT").textContent = fmt(S.t); $("hD").textContent = (D.modele ? "" : "≈ ") + Math.round(S.dist) + " m"; $("hC").textContent = Math.round(ca); $("hN").textContent = S.nb;
-    $("hV").innerHTML = (S.vL * 3.6).toFixed(1).replace(".", ",") + " <small>km/h</small>"; $("h5").textContent = (S.vL > .5 ? fmt(500 / S.vL) : "–:––") + " /500 m";
+    $("hT").textContent = fmt(S.t); $("hD").textContent = (D.modele ? "" : "≈") + Math.round(S.dist); $("hC").textContent = Math.round(ca); $("hN").textContent = S.nb;
+    $("hV").textContent = (S.vL * 3.6).toFixed(1).replace(".", ","); $("h5").textContent = (S.vL > .5 ? fmt(500 / S.vL) : "–:––") + " /500 m";
     const e = S.vL < .3 ? "À l'arrêt" : S.t < 20 ? "Mise en route" : ["Croisière", "Rapide", "TURBO !"][etatV]; $("hE").textContent = e; $("hE").className = ["", "rapide", "turbo"][etatV];
     majTour(); }
   majFantome(dt); majCarte();
@@ -875,22 +882,25 @@ function flash(v) { $("flash").style.opacity = v; }
 const ETAPES = SEC_S.filter(([, n]) => n).map(([s, n]) => [s, n === "Tribunes" ? "Ligne" : n]);
 /* ============ le plan du circuit, en bas à gauche (Kiki, 10/11 : comme dans Mario Kart) ============ */
 const PLAN = (() => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i < NP0; i++) { x0 = Math.min(x0, PX[i]); x1 = Math.max(x1, PX[i]); z0 = Math.min(z0, PZ[i]); z1 = Math.max(z1, PZ[i]); }
-  const W = 420, pad = 34, k = (W - 2 * pad) / Math.max(x1 - x0, z1 - z0), H = Math.ceil((z1 - z0) * k + 2 * pad), ox = (W - (x1 - x0) * k) / 2;
+  const W = 420, pad = 54, k = (W - 2 * pad) / Math.max(x1 - x0, z1 - z0), H = Math.ceil((z1 - z0) * k + 2 * pad), ox = (W - (x1 - x0) * k) / 2;
   return {W, H, xy: (x, z) => [ox + (x - x0) * k, pad + (z - z0) * k]}; })();
 const fondPlan = toile(PLAN.W, PLAN.H, x => {
   x.imageSmoothingEnabled = true; x.lineJoin = x.lineCap = "round";
   const trace = (a, b) => { x.beginPath(); for (let i = a; i <= b; i += 2) { const [px, py] = PLAN.xy(PX[i % NP0], PZ[i % NP0]); i === a ? x.moveTo(px, py) : x.lineTo(px, py); } };
-  trace(0, NP0); x.closePath(); x.strokeStyle = "#484838"; x.lineWidth = 22; x.stroke(); x.strokeStyle = "#48A8F0"; x.lineWidth = 13; x.stroke();
-  for (const [t0, t1] of TUNNELS) { trace(Math.floor(t0 / DS), Math.ceil(t1 / DS)); x.strokeStyle = "#5A6070"; x.lineWidth = 13; x.stroke(); }  // le tunnel
+  trace(0, NP0); x.closePath(); x.strokeStyle = "rgba(16,24,44,.7)"; x.lineWidth = 22; x.stroke(); x.strokeStyle = "#FFFFFF"; x.lineWidth = 11; x.stroke();
+  for (const [t0, t1] of TUNNELS) { trace(Math.floor(t0 / DS), Math.ceil(t1 / DS)); x.strokeStyle = "#AEB8C8"; x.lineWidth = 11; x.stroke(); }  // le tunnel, en gris clair
   const a = at(DEPART), [lx, ly] = PLAN.xy(a.x, a.z), nx = Math.cos(a.h), nz = Math.sin(a.h);  // la ligne, en damier
   for (let i = -3; i < 3; i++) for (let j = 0; j < 2; j++) { x.fillStyle = (i + j) % 2 ? "#202020" : "#F8F8F8"; const px = lx + nx * (i + .5) * 4.5 - Math.sin(a.h) * (j - .5) * 4.5, py = ly + nz * (i + .5) * 4.5 + Math.cos(a.h) * (j - .5) * 4.5; x.fillRect(px - 2.4, py - 2.4, 4.8, 4.8); }
 });
 const cvPlan = $("carte"); cvPlan.width = PLAN.W; cvPlan.height = PLAN.H; const ctxPlan = cvPlan.getContext("2d");
+function poserPortrait(x, px, py, k, alpha) {  // le sprite de ton Pokémon (pieds sur le tracé), avec une ombre sombre pour qu'il se détache
+  const m = $("progMoi"), T = 32 * k; x.save(); x.imageSmoothingEnabled = false; x.globalAlpha = alpha;
+  x.shadowColor = "rgba(16,24,44,.9)"; x.shadowBlur = 0; for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) { x.shadowOffsetX = dx; x.shadowOffsetY = dy; x.drawImage(m, px - T / 2, py - T * .82, T, T); }
+  x.shadowColor = "transparent"; x.drawImage(m, px - T / 2, py - T * .82, T, T); x.restore(); }
 function majCarte() {
   if ($("hud").hidden) return; const x = ctxPlan; x.clearRect(0, 0, PLAN.W, PLAN.H); x.drawImage(fondPlan, 0, 0);
-  if (FANTOME.u !== null && FANTOME.u !== undefined) { const g = at(DEPART + FANTOME.u), [gx, gy] = PLAN.xy(g.x, g.z); x.beginPath(); x.arc(gx, gy, 11, 0, 7); x.fillStyle = "rgba(240,248,255,.85)"; x.fill(); x.lineWidth = 3; x.strokeStyle = "#686850"; x.stroke(); }
-  const a = at(S.s), [mx, my] = PLAN.xy(a.x, a.z); x.beginPath(); x.arc(mx, my, 20, 0, 7); x.fillStyle = "#F8C838"; x.fill(); x.lineWidth = 4; x.strokeStyle = "#484838"; x.stroke();
-  x.imageSmoothingEnabled = false; x.drawImage($("progMoi"), mx - 17, my - 17, 34, 34);
+  if (FANTOME.u !== null && FANTOME.u !== undefined) { const g = at(DEPART + FANTOME.u), [gx, gy] = PLAN.xy(g.x, g.z); poserPortrait(x, gx, gy, 2.2, .5); }
+  const a = at(S.s), [mx, my] = PLAN.xy(a.x, a.z); poserPortrait(x, mx, my, 2.6, 1);
 }
 function iconeProg() {  // le portrait de ton Pokémon, posé sur le plan
   const c = $("progMoi"); if (!c) return; const x = c.getContext("2d"); x.imageSmoothingEnabled = false; x.clearRect(0, 0, 32, 32);
