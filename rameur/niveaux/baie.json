@@ -1,0 +1,32 @@
+{
+  "id": "baie",
+  "nom": "Circuit de la Baie",
+  "biome": "kanto",
+  "graine": 11,
+  "elan": 120,
+  "note": "long = mètres, virage = degrés (+ droite, - gauche ; le total fait un tour complet vers la gauche), eau = largeur de l'eau, colline = dénivelé de la pièce (le total est 0), rives = [gauche, droite]. Une pièce sans nom prolonge la précédente.",
+  "sections": [
+    {"nom": "Tribunes", "long": 90,    "virage": 0,      "eau": 12, "rives": ["quai", "quai"]},
+    {"nom": "Phare",    "long": 109.9, "virage": -129.8, "eau": 14, "rives": ["roche", "mer"]},
+    {"nom": "Côte",     "long": 50,    "virage": -3.8,   "eau": 11, "rives": ["plage", "roche"]},
+    {                    "long": 49.9,  "virage": -3.8,   "eau": 11, "rives": ["plage", "falaise"]},
+    {"nom": "Canyon",   "long": 32,    "virage": 33.2,   "eau": 8,  "rives": ["falaise", "falaise"], "colline": 3},
+    {                    "long": 32,    "virage": -46.6,  "eau": 8,  "rives": ["falaise", "falaise"]},
+    {                    "long": 32,    "virage": 43.7,   "eau": 8,  "rives": ["falaise", "falaise"], "colline": 3},
+    {                    "long": 32,    "virage": -36,    "eau": 8,  "rives": ["falaise", "falaise"]},
+    {"nom": "Tunnel",   "long": 64,    "virage": -26,    "eau": 7,  "rives": ["tunnel", "tunnel"]},
+    {"nom": "Lac",      "long": 130.1, "virage": -91.4,  "eau": 40, "rives": ["plage", "plage"], "colline": -6},
+    {"nom": "Forêt",    "long": 45,    "virage": 27.3,   "eau": 9,  "rives": ["herbe", "herbe"]},
+    {                    "long": 45,    "virage": -27.2,  "eau": 9,  "rives": ["herbe", "herbe"]},
+    {"nom": "Village",  "long": 100.1, "virage": -38.3,  "eau": 10, "rives": ["quai", "quai"]},
+    {"nom": "Port",     "long": 70,    "virage": -61.5,  "eau": 12, "rives": ["quai", "herbe"]},
+    {                    "long": 130,   "virage": 0,      "eau": 13, "rives": ["quai", "quai"]}
+  ],
+  "reperes": [
+    {"sprite": "phare",   "section": "Phare",    "a": 52, "cote": "g", "dist": 9},
+    {"sprite": "tribune", "section": "Tribunes", "a": 40, "cote": "g", "dist": 3},
+    {"sprite": "tribune", "section": "Tribunes", "a": 40, "cote": "d", "dist": 3},
+    {"sprite": "ilot",    "section": "Lac",      "a": 50, "cote": "c", "dist": 8},
+    {"sprite": "ilot",    "section": "Lac",      "a": 92, "cote": "c", "dist": -9}
+  ]
+}

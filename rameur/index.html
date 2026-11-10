@@ -1,0 +1,144 @@
+<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rameur · pseudo-3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jersey+15&family=Pixelify+Sans:wght@500&display=swap">
+<style>
+:root{--creme:#F8F8E8;--bord:#484838;--encre:#383828;--encre2:#686850;--rouge:#D83830;--accent:#C03028;--or:#F8C838;--nuit:#10182C;--vert:#1E7A3C;
+  --jeu:"Jersey 15","Pixelify Sans",ui-monospace,monospace;--titre:"Pixelify Sans","Jersey 15",ui-monospace,monospace;color-scheme:dark}
+html,body{height:100%;margin:0;overflow:hidden;background:var(--nuit)}
+body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user-select:none;user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+#c{position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;display:block;image-rendering:pixelated;image-rendering:crisp-edges;background:#CDE6F2}
+#sombre{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 55%,rgba(6,8,16,.2) 20%,rgba(6,8,16,.95) 85%);opacity:0}
+#flash{position:fixed;inset:0;pointer-events:none;background:#fff;opacity:0}
+#embruns{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(circle at 12% 28%,rgba(235,248,255,.8) 0 7px,transparent 9px),radial-gradient(circle at 78% 18%,rgba(235,248,255,.75) 0 10px,transparent 12px),radial-gradient(circle at 64% 70%,rgba(235,248,255,.7) 0 6px,transparent 8px),radial-gradient(circle at 30% 82%,rgba(235,248,255,.75) 0 9px,transparent 11px),radial-gradient(circle at 88% 56%,rgba(235,248,255,.7) 0 5px,transparent 7px),radial-gradient(circle at 44% 40%,rgba(235,248,255,.6) 0 4px,transparent 6px),radial-gradient(circle at 6% 66%,rgba(235,248,255,.7) 0 8px,transparent 10px),linear-gradient(rgba(200,235,255,.35),rgba(200,235,255,.15))}
+#vitesse{position:fixed;inset:0;pointer-events:none;opacity:0;background:radial-gradient(ellipse at 50% 55%,transparent 60%,rgba(255,255,255,.28) 84%,rgba(255,255,255,.6) 100%)}
+.boite{background:var(--creme);border:3px solid var(--bord);border-radius:12px 5px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
+.lab{font-size:15px;color:var(--encre2);display:block;line-height:1;text-transform:uppercase;letter-spacing:.05em}
+.num{font-variant-numeric:tabular-nums}
+/* ----- l'écran de course, à la Mario Kart : pas de cadre, du texte blanc bordé de nuit, chaque chiffre dans une case de largeur fixe ----- */
+.hud{position:fixed;color:#fff;pointer-events:none;line-height:1;
+  -webkit-text-stroke:6px var(--nuit);paint-order:stroke fill;text-shadow:4px 5px 0 rgba(16,24,44,.6)}
+.hud .lab,.hud .u,#tours,.hud .sous{-webkit-text-stroke-width:4px}
+.hud .lab{color:#FFE48A;font-size:19px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
+.hud .u{font-size:24px;color:#DDE8F4;margin-left:6px}
+.fixe{display:inline-block;text-align:right;font-variant-numeric:tabular-nums}
+#hg{left:max(22px,env(safe-area-inset-left,0px));top:max(16px,env(safe-area-inset-top,0px))}
+#hT{font-size:72px;width:3.1em}
+#hT{text-align:left}
+#tours{font-size:26px;margin-top:8px;width:270px}
+#tours div{display:flex;justify-content:space-between;margin-top:3px}
+#tours .encours{font-size:34px}
+#tours .ancien{color:#DDE8F4}#tours .meilleur{color:#8CF0A0}
+#tours .ecart.devant{color:#8CF0A0}#tours .ecart.derriere{color:#FF8C7C}
+#hm{left:50%;transform:translateX(-50%);top:max(16px,env(safe-area-inset-top,0px));display:flex;gap:44px;align-items:flex-start}
+#hm .gros{font-size:84px}
+#hC{width:1.6em}#hV{width:2.2em}
+#hm .sous{font-size:22px;color:#DDE8F4;margin-top:4px;text-align:center}
+#hE.rapide{color:#8CF0A0}#hE.turbo{color:#FF8C7C}
+#hd{right:max(22px,env(safe-area-inset-right,0px));top:max(16px,env(safe-area-inset-top,0px));text-align:right}
+#hD{font-size:64px;width:3.2em}
+#hN,#fps{display:none}
+#bPause{position:fixed;right:max(18px,env(safe-area-inset-right,0px));bottom:max(18px,env(safe-area-inset-bottom,0px));width:58px;height:58px;padding:0;border-radius:50%;
+  background:rgba(16,24,44,.42);border:3px solid rgba(255,255,255,.85);box-shadow:none;color:#fff;font-size:24px;letter-spacing:-2px}
+#bPause:active{transform:scale(.94)}
+/* le plan du circuit, en bas à gauche, sur fond transparent : le tracé en blanc, ton Pokémon, ton fantôme */
+#carte{position:fixed;left:max(14px,env(safe-area-inset-left,0px));bottom:max(10px,env(safe-area-inset-bottom,0px));width:250px;height:auto;pointer-events:none}
+/* la barre du parcours, en bas : les étapes et ton Pokémon qui avance */
+#prog{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));width:min(860px,calc(100vw - 32px));height:62px;pointer-events:none}
+#prog .rail{position:absolute;left:0;right:0;top:30px;height:8px;background:var(--creme);border:3px solid var(--bord);border-radius:6px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
+#prog .fait{position:absolute;left:0;top:0;bottom:0;width:0;background:#40A8F8;border-radius:3px}
+#prog .etape{position:absolute;top:27px;width:14px;height:14px;margin-left:-7px;background:var(--creme);border:3px solid var(--bord);border-radius:50%;box-sizing:border-box}
+#prog .etape.passee{background:var(--or)}
+#prog .nom{position:absolute;font-size:14px;line-height:1;color:var(--creme);text-shadow:1px 1px 0 var(--nuit),-1px 1px 0 var(--nuit),1px -1px 0 var(--nuit),-1px -1px 0 var(--nuit);white-space:nowrap;transform:translateX(-50%)}
+#prog .nom.haut{top:6px}#prog .nom.bas{top:48px}
+#prog .moi{position:absolute;top:12px;width:34px;height:34px;margin-left:-17px;image-rendering:pixelated;filter:drop-shadow(2px 2px 0 rgba(16,24,44,.6))}
+#gros{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--titre);font-size:150px;color:var(--creme);text-shadow:8px 8px 0 var(--bord);pointer-events:none;line-height:1;text-align:center}
+#gros small{font-size:40px;margin-top:10px}
+#tel{position:fixed;left:50%;top:calc(max(96px,14vh) + 70px);transform:translateX(-50%);padding:5px 14px;font-size:19px;background:#F8E0D8;color:var(--accent);white-space:nowrap}
+#essai{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));display:flex;gap:8px;opacity:.85}
+#essai button{font-size:19px;padding:4px 12px}
+button{font-family:var(--jeu);font-size:24px;cursor:pointer;color:var(--encre);background:var(--creme);border:3px solid var(--bord);border-radius:10px 4px;padding:6px 16px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 rgba(16,24,44,.55)}
+button:focus-visible{outline:3px solid var(--or);outline-offset:2px}
+button.go{background:var(--rouge);color:#fff;border-color:#78180F;box-shadow:3px 3px 0 #78180F;font-size:32px;padding:8px 28px}
+button.go:disabled{background:#B8A8A0;border-color:#786860;box-shadow:3px 3px 0 #786860;cursor:default}
+button.on{background:var(--or)}
+.calque{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(10,16,34,.42);padding:16px max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));box-sizing:border-box}
+.carte{background:var(--creme);border:4px solid var(--bord);border-radius:18px 8px;box-shadow:6px 6px 0 rgba(16,24,44,.6);padding:20px 28px;max-height:100%;overflow:auto;width:min(900px,100%);box-sizing:border-box}
+.carte h1{font-family:var(--titre);font-weight:500;font-size:42px;color:var(--accent);margin:0 0 4px;letter-spacing:.03em;line-height:1.05}
+.carte .sous{font-size:22px;margin:0 0 12px;line-height:1.2;text-wrap:pretty}
+.choix{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.carte.menu{width:min(820px,100%)}
+.mTitre{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}.mTitre span{font-size:20px;color:var(--encre2)}
+.mCompagnon{display:flex;gap:18px;align-items:center;background:#22315A;border-radius:12px 5px;padding:6px 18px;margin:0 0 10px;color:#fff}
+.mCompagnon canvas{width:96px;height:96px;image-rendering:pixelated;flex:none}
+.mInfos{flex:1;display:flex;flex-direction:column;gap:4px}.mInfos b{font-family:var(--titre);font-weight:500;font-size:32px;color:#FFE48A}
+.mInfos span{font-size:20px;color:#DDE8F4}
+.mBarre{height:12px;background:rgba(255,255,255,.18);border-radius:6px;overflow:hidden}.mBarre i{display:block;height:100%;width:0;background:#40A8F8}
+.formes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 14px}
+.formes button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px}
+.formes canvas{width:64px;height:64px;image-rendering:pixelated}
+.formes button[disabled]{opacity:.75;cursor:default;background:#E4E4D4}
+.formes small{font-size:16px;color:var(--encre2)}
+.ligne{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pill{font-size:20px;padding:4px 12px;border-radius:9px 4px;border:3px solid var(--bord);background:#ECECD8}
+.pill.ok{background:#D8F0D0;color:#1E5A2C;border-color:#1E5A2C}.pill.ko{background:#F8E0D8;color:var(--accent);border-color:var(--accent)}
+.petit{font-size:18px;color:var(--encre2);line-height:1.2;margin:10px 0 0}
+.tenir{position:relative;overflow:hidden}
+.tenir i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(216,56,48,.3);pointer-events:none}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 24px;margin:12px 0}
+.stats div{display:flex;flex-direction:column;gap:3px}
+.stats b{font-weight:400;font-size:34px}
+#saisieGrille{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px}
+.champs{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.champ{display:flex;flex-direction:column;gap:4px;padding:10px 14px;border:3px solid var(--bord);border-radius:10px 4px;background:#fff;text-align:left}
+.champ.actif{outline:5px solid var(--or)}
+.champ .v{font-size:42px;line-height:1;min-height:42px}
+.champ .v.vide{color:#B0B098}
+.pave{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pave button{font-size:44px;padding:8px 0}
+.message{font-size:20px;color:var(--accent);min-height:24px;margin:8px 0 0}
+@media (max-width:760px){#hT{font-size:42px}#tours{font-size:18px;width:170px}#tours .encours{font-size:22px}#hm{gap:20px}#hm .gros{font-size:48px}#hm .sous{font-size:16px}#hD{font-size:38px}.hud .lab{font-size:14px}.hud .u{font-size:16px}#carte{width:150px}#bPause{width:46px;height:46px}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}}
+</style>
+<canvas id="c" aria-label="Le circuit, vu de derrière ton Pokémon qui nage"></canvas>
+<div id="vitesse"></div><div id="sombre"></div><div id="flash"></div><div id="embruns"></div>
+<div id="hud" hidden>
+  <div class="hud" id="hg"><span class="lab">Temps</span><b class="fixe" id="hT">0:00</b><div id="tours"></div></div>
+  <div class="hud" id="hm"><div><span class="lab">Cadence</span><b class="fixe gros" id="hC">0</b><span class="u">/min</span></div>
+    <div><span class="lab">Vitesse</span><b class="fixe gros" id="hV">0,0</b><span class="u">km/h</span><div class="sous"><span id="h5">–:–– /500 m</span> · <span id="hE">Mise en route</span></div></div></div>
+  <div class="hud" id="hd"><span class="lab">Distance</span><b class="fixe" id="hD">0</b><span class="u">m</span><b id="hN">0</b></div>
+  <div id="fps">– i/s</div>
+  <button id="bPause" aria-label="Pause">❚❚</button>
+  <canvas id="carte" aria-label="Le plan du circuit"></canvas><canvas id="progMoi" width="32" height="32" hidden></canvas>
+  <div class="boite" id="tel" hidden></div>
+  <div id="gros"></div>
+  <div id="essai" hidden><button id="bCoup">Coup (espace)</button><button id="bAuto">Auto</button></div>
+</div>
+<div class="calque" id="menu"><div class="carte menu">
+  <div class="mTitre"><h1>CIRCUIT DE LA BAIE</h1><span>1 km par tour · départ lancé</span></div>
+  <div class="mCompagnon"><canvas id="mPortrait" width="96" height="96"></canvas>
+    <div class="mInfos"><b id="mNom">Carapuce</b><span id="mKm" class="num">0 km ramés</span><div class="mBarre"><i id="mBarre"></i></div><span id="mProchain"></span></div></div>
+  <span class="lab">Ton Pokémon</span>
+  <div class="formes" id="nageurs"></div>
+  <span class="lab">Ton fantôme</span>
+  <div class="choix" id="fantomes"></div>
+  <div class="ligne"><span class="pill ko" id="mTel">Je cherche ton téléphone…</span><div style="flex:1"></div>
+    <button id="bPlein" aria-label="Plein écran">⛶</button><button id="bEssai">Essayer sans téléphone</button><button class="go" id="bPartir" disabled>▶ PARTIR</button></div>
+  <p class="petit" id="aide">Sur le téléphone : Muscu → Rameur → « Avec la tablette », puis accroche-le sous le siège.</p>
+  <p class="petit" style="font-size:14px">Pokémon : Pokémon Donjon Mystère (Chunsoft), via PMD SpriteCollab.</p>
+</div></div>
+<div class="calque" id="pause" hidden><div class="carte" style="width:min(680px,100%)"><h1>EN PAUSE ?</h1>
+  <p class="sous" id="pauseTxt"></p>
+  <div class="ligne" style="flex-direction:column;align-items:stretch"><button class="go" id="pReprendre">▶ Continuer</button>
+    <button id="pChanger">Changer de Pokémon</button><button id="pSon">Son : oui</button><button class="tenir" id="pTerminer"><i></i>■ Terminer la séance (maintiens)</button></div></div></div>
+<div class="calque" id="saisie" hidden><div class="carte"><h1>CE QU'AFFICHE LE RAMEUR</h1><p class="sous" id="saisieSous">J'attends le téléphone…</p><div id="saisieGrille"></div></div></div>
+<div class="calque" id="fin" hidden><div class="carte" id="finCarte" style="width:min(820px,100%)"></div></div>
+<script>
+"use strict";
+const D = __DONNEES__, NIVEAU = __NIVEAU__, BIOME = __BIOME__;
+</script>
+<script>
+__MODULES__
+</script>
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" onload="ecouter()" onerror="ecouter()"></script>
