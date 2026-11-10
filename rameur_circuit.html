@@ -23,7 +23,8 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 .num{font-variant-numeric:tabular-nums}
 /* ----- l'écran de course, à la Mario Kart : pas de cadre, du texte blanc bordé de nuit, chaque chiffre dans une case de largeur fixe ----- */
 .hud{position:fixed;color:#fff;pointer-events:none;line-height:1;
-  text-shadow:3px 0 0 var(--nuit),-3px 0 0 var(--nuit),0 3px 0 var(--nuit),0 -3px 0 var(--nuit),2px 2px 0 var(--nuit),-2px 2px 0 var(--nuit),2px -2px 0 var(--nuit),-2px -2px 0 var(--nuit),4px 5px 0 rgba(16,24,44,.55)}
+  -webkit-text-stroke:6px var(--nuit);paint-order:stroke fill;text-shadow:4px 5px 0 rgba(16,24,44,.6)}
+.hud .lab,.hud .u,#tours,.hud .sous{-webkit-text-stroke-width:4px}
 .hud .lab{color:#FFE48A;font-size:19px;letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:2px}
 .hud .u{font-size:24px;color:#DDE8F4;margin-left:6px}
 .fixe{display:inline-block;text-align:right;font-variant-numeric:tabular-nums}
@@ -73,6 +74,18 @@ button.on{background:var(--or)}
 .carte h1{font-family:var(--titre);font-weight:500;font-size:42px;color:var(--accent);margin:0 0 4px;letter-spacing:.03em;line-height:1.05}
 .carte .sous{font-size:22px;margin:0 0 12px;line-height:1.2;text-wrap:pretty}
 .choix{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px}
+.carte.menu{width:min(820px,100%)}
+.mTitre{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}.mTitre span{font-size:20px;color:var(--encre2)}
+.mCompagnon{display:flex;gap:18px;align-items:center;background:#22315A;border-radius:12px 5px;padding:6px 18px;margin:0 0 10px;color:#fff}
+.mCompagnon canvas{width:96px;height:96px;image-rendering:pixelated;flex:none}
+.mInfos{flex:1;display:flex;flex-direction:column;gap:4px}.mInfos b{font-family:var(--titre);font-weight:500;font-size:32px;color:#FFE48A}
+.mInfos span{font-size:20px;color:#DDE8F4}
+.mBarre{height:12px;background:rgba(255,255,255,.18);border-radius:6px;overflow:hidden}.mBarre i{display:block;height:100%;width:0;background:#40A8F8}
+.formes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:8px 0 14px}
+.formes button{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 6px}
+.formes canvas{width:64px;height:64px;image-rendering:pixelated}
+.formes button[disabled]{opacity:.75;cursor:default;background:#E4E4D4}
+.formes small{font-size:16px;color:var(--encre2)}
 .ligne{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 .pill{font-size:20px;padding:4px 12px;border-radius:9px 4px;border:3px solid var(--bord);background:#ECECD8}
 .pill.ok{background:#D8F0D0;color:#1E5A2C;border-color:#1E5A2C}.pill.ko{background:#F8E0D8;color:var(--accent);border-color:var(--accent)}
@@ -107,11 +120,12 @@ button.on{background:var(--or)}
   <div id="gros"></div>
   <div id="essai" hidden><button id="bCoup">Coup (espace)</button><button id="bAuto">Auto</button></div>
 </div>
-<div class="calque" id="menu"><div class="carte">
-  <h1>CIRCUIT DE LA BAIE</h1>
-  <p class="sous">Un circuit d'1 km : le phare, la côte, le canyon, le tunnel, le lac, la forêt, le village. Tu pars dans le port, 120 m avant la ligne, pour trouver ton rythme ; ensuite chaque tour est chronométré.</p>
+<div class="calque" id="menu"><div class="carte menu">
+  <div class="mTitre"><h1>CIRCUIT DE LA BAIE</h1><span>1 km par tour · départ lancé</span></div>
+  <div class="mCompagnon"><canvas id="mPortrait" width="96" height="96"></canvas>
+    <div class="mInfos"><b id="mNom">Carapuce</b><span id="mKm" class="num">0 km ramés</span><div class="mBarre"><i id="mBarre"></i></div><span id="mProchain"></span></div></div>
   <span class="lab">Ton Pokémon</span>
-  <div class="choix" id="nageurs"></div>
+  <div class="formes" id="nageurs"></div>
   <span class="lab">Ton fantôme</span>
   <div class="choix" id="fantomes"></div>
   <div class="ligne"><span class="pill ko" id="mTel">Je cherche ton téléphone…</span><div style="flex:1"></div>
@@ -573,7 +587,7 @@ function matSprite(nom) { if (MAT_SPRITE[nom]) return MAT_SPRITE[nom]; const t =
   return MAT_SPRITE[nom] = new THREE.MeshBasicMaterial({map: t, transparent: true, alphaTest: .5, side: THREE.DoubleSide}); }
 function sprite(nom, s, d, k = 1) {
   const [W, H] = SPRITES[nom]; if (!W) return null; const px = PX_SPRITE * k * (.9 + rnd(s * 1.7 + d * 7) * .2), g = new THREE.PlaneGeometry(W * px, H * px); g.translate(0, H * px / 2 - .12 * E, 0);
-  const m = new THREE.Mesh(g, matSprite(nom)), p = pose(s, d); m.position.set(p.x, solEn(s, d) * E, p.z); scene.add(m); tournants.push(m); return m;
+  const m = new THREE.Mesh(g, matSprite(nom)), p = pose(s, d), o = Math.abs(d) - at(s).w; m.position.set(p.x, (o > 13 ? terrainEn(p.x, p.z).h - .15 : solEn(s, d)) * E, p.z); scene.add(m); tournants.push(m); return m;
 }
 function arbre(s, d, k = 1, v) { const nom = v || (rnd(s * 3.3 + d) < .62 ? "arbre" : "sapin"); return sprite(nom, s, d, k); }
 function quartier(s0, s1, cote, graine, evite = [], gros = [], sansRouge = []) {  // une rangée de parcelles d'herbe derrière le quai pavé : une maison chacune, son chemin de terre, sa barrière blanche, sa boîte aux lettres
@@ -609,6 +623,35 @@ function murets() {  // à chaque bout d'un quai, côté nature : un muret de pi
     const m = boite(.6, 1.85, L, MATS.pierre); m.rotation.y = Math.PI / 2; m.position.x = cote * (L / 2) * E; g.add(m);  // le muret, du bord de l'eau jusqu'au loin
     for (const o of [.4, L * .5, L]) { const p = boite(.9, 2.2, .9, MATS.pierre); p.position.x = cote * o * E; g.add(p); }
     placer(g, s, cote * w, -.6); } }  // posé au niveau de l'eau : il cache aussi la marche entre le quai et la berge
+// ---------- Rendre le circuit vivant (Kiki, 10/11 : « que ce soit un plaisir de jouer ») ----------
+// Des Pokémon (sprites de Donjon Mystère, de face, qui sautent de joie quand tu passes vite) et des lisières d'arbres qui cachent le pied des montagnes.
+function spectateur(n, s, d, y, k = 1.35) {
+  spritePMD(n, "Idle", 0, k, +n).then(o => { const p = pose(s, d); o.mesh.position.set(p.x, y * E, p.z); scene.add(o.mesh); tournants.push(o.mesh);
+    const y0 = y * E, ph = rnd(s * 3.7 + d) * 6;
+    VIVANTS.push(dt => { o.avancer(dt); const proche = Math.abs(mod(S.s - s + LONG / 2) - LONG / 2) < 16;
+      o.mesh.position.y = y0 + (proche && S.etat === "course" && S.vL > 1 ? Math.abs(Math.sin(T * (S.etatV ? 9 : 6) + ph)) * (S.etatV ? .7 : .35) * E : 0); }); }).catch(() => {});
+}
+function habiller() {
+  const surSol = (s, d) => solEn(s, d) + (Math.abs(d) - at(s).w > 13 ? 0 : 0);
+  // le public sur les gradins de la ligne d'arrivée
+  const PUBLIC = ["0025", "0039", "0052", "0133", "0035", "0001", "0004", "0016", "0019", "0043", "0060", "0074", "0079", "0104", "0172", "0175", "0007", "0054"];
+  PUBLIC.forEach((n, i) => { const c = i % 2 ? 1 : -1, s = 11 + (i >> 1) * 7.2 + rnd(i * 2.1) * 2, k = (i * 5 + (i >> 1)) % 3, w = at(s).w;
+    spectateur(n, s, c * (w + 3 + k * 1.4), solEn(s, c * (w + 3)) + .6 + k * .6, 1.25); });
+  // le long du parcours : chacun chez soi
+  const ICI = [["0098", "Côte", 14, -1], ["0120", "Côte", 40, -1], ["0079", "Côte", 70, -1], ["0086", "Phare", 34, -1], ["0090", "Phare", 80, -1],
+    ["0074", "Canyon", 30, 1], ["0183", "Lac", 20, -1], ["0118", "Lac", 70, 1], ["0060", "Lac", 112, -1], ["0010", "Forêt", 10, 1], ["0016", "Forêt", 52, -1], ["0043", "Forêt", 78, 1],
+    ["0025", "Village", 12, -1], ["0052", "Village", 60, 1], ["0133", "Village", 88, -1], ["0066", "Port", 30, -1], ["0079", "Port", 100, 1], ["0129", "Port", 60, 1]];
+  for (const [n, sec, ds, c] of ICI) { const s = S_(sec) + ds, w = at(s).w, d = c * (w + (GA[idx(s)] === "quai" || DR[idx(s)] === "quai" ? 2.2 : 2.8)); spectateur(n, s, d, surSol(s, d), 1.2); }
+  // des lisières de sapins et d'arbres au pied des montagnes (dehors, à droite) et sur les collines (dedans) : elles cachent la jointure entre la rive et la montagne
+  for (let s = 0, i = 0; s < LONG; s += 7 + rnd(i * 1.3) * 3, i++) { const w = at(s).w, p = pose(s, w + 60);
+    if (merEn(p.x, p.z) > .15 || dansTunnel(s) || Math.abs(mod(s - S_MONT + LONG / 2) - LONG / 2) < 40) continue;
+    arbre(s, w + 34 + rnd(i * 2.7) * 22, 1.5, rnd(i * 4.1) < .7 ? "sapin" : "arbre"); if (rnd(i * 5.3) < .55) arbre(s + 3, w + 58 + rnd(i * 6.7) * 25, 1.7, "sapin"); }
+  for (let s = 3, i = 0; s < LONG; s += 13 + rnd(i * 2.2) * 6, i++) { const w = at(s).w; if (dansTunnel(s) || GA[idx(s)] === "quai") continue;
+    arbre(s, -(w + 26 + rnd(i * 3.9) * 30), 1.3); }
+  // le pied de la montagne du tunnel : un rideau de sapins de part et d'autre des deux entrées
+  for (const [t, sens] of [[T_MONT[0], -1], [T_MONT[1], 1]]) for (let k = 0; k < 9; k++) { const s = t + sens * (8 + k * 4.5), w = at(s).w;
+    for (const c of [-1, 1]) arbre(s, c * (w + 10 + rnd(k * 3 + c) * 10), 1.4, "sapin"); }
+}
 // le décor, section par section
 const S_ = nom => SEC_S.find(([, n]) => n === nom)[0];
 function construireDecor() {
@@ -617,7 +660,7 @@ function construireDecor() {
   { const a = at(DEPART), w = a.w, dam = new THREE.MeshLambertMaterial({map: tex(toile(16, 2, x => { for (let i = 0; i < 16; i++) for (let j = 0; j < 2; j++) { x.fillStyle = (i + j) % 2 ? "#202020" : "#F0F0F0"; x.fillRect(i, j, 1, 1); } }))});
     for (const sx of [-1, 1]) placer(boite(.9, 6.2, .9, MATS.blanc), DEPART, sx * (w + .8), solEn(DEPART, sx * (w + .8)));
     const b = boite(w * 2 + 2.4, 1.1, .3, [MATS.blanc, MATS.blanc, MATS.blanc, MATS.blanc, dam, dam]); placer(b, DEPART, 0, 5.2); }
-  tribune(8, 74, -1); tribune(8, 74, 1);
+  tribune(8, 74, -1); tribune(8, 74, 1); habiller();
   // le port : des maisons qui ne se ressemblent pas, une halle aux poissons, la capitainerie avec sa tour (l'élan se fait ici)
   quartier(LONG - 130, LONG - 30, -1, 1, [], [[LONG - 92, (s, c) => grandBatiment(s, c, 14, 8, 4.4, 1), 14]]); quartier(LONG - 124, LONG - 8, 1, 2, [], [[LONG - 50, (s, c) => maisonEtage(s, c * (at(s).w + PAVE + 4 + 3.5), 9, 7, 3, 0, 4, "toit_orange"), 9]]);
   { const s = LONG - 22, d = -(at(s).w + PAVE + 5), y = solEn(s, d), g = new THREE.Group(); g.add(boite(3.4, 11, 3.4, matMur(3))); toitPlat(g, 3.4, 3.4, 11, MATS.gris); placer(g, s, d, y);
@@ -726,8 +769,8 @@ function son(dt) {
 
 
 /* ============ ton Pokémon, qui nage de dos ============ */
-const NAGEURS = [{n: "0007", nom: "Carapuce", k: 2.05, plonge: .5}, {n: "0008", nom: "Carabaffe", k: 2.05, plonge: .52}, {n: "0009", nom: "Tortank", k: 2, plonge: .52},
-  {n: "0131", nom: "Lokhlass", k: 1.75, plonge: .48}, {n: "0130", nom: "Léviator", k: 1.4, plonge: .52}, {n: "0134", nom: "Aquali", k: 2.05, plonge: .62}];
+// Un seul compagnon pour la démo : Carapuce, qui évolue avec les kilomètres ramés (toutes les séances du rameur, comptées par le serveur) (Kiki, 10/11)
+const NAGEURS = [{n: "0007", nom: "Carapuce", k: 2.05, plonge: .5, km: 0}, {n: "0008", nom: "Carabaffe", k: 2.05, plonge: .52, km: 20}, {n: "0009", nom: "Tortank", k: 2, plonge: .52, km: 60}];
 const monture = new THREE.Group(); scene.add(monture);
 let heros = null, construction = 0;
 async function construire(i) {
@@ -826,7 +869,7 @@ function boucle(now) {
     S.vMoy = lerp(S.vMoy, Math.max(S.vL || 0, 1), dt / 40);
   } else if (S.etat === "menu") avancer(dt * 1.6);  // derrière le menu : on glisse doucement
   S.vL = lerp(S.vL || 0, S.v, clamp(dt / 1.6, 0, 1)); S.vn = clamp((S.vL - 1.5) / 3, 0, 1.2);
-  const etatV = S.vL > S.vMoy * 1.18 && S.vL > 3.4 ? 2 : S.vL > S.vMoy * 1.06 && S.vL > 2.9 ? 1 : 0;
+  const caE = cadence(), etatV = caE >= 30 ? 2 : caE >= 26 ? 1 : 0; S.etatV = etatV;  // Croisière jusqu'à 25 coups/min (Kiki rame à 24), Rapide dès 26, TURBO dès 30
   // ton Pokémon
   const a = at(S.s), av = at(S.s + 7); PH0 = a.h;
   const plonge = lerp(.52, .34, clamp(S.vn, 0, 1)) * NAGEURS[choix].plonge / .5;
@@ -855,7 +898,7 @@ function boucle(now) {
   if (S.etat === "course" || S.etat === "decompte") { const ca = cadence();
     $("hT").textContent = fmt(S.t); $("hD").textContent = (D.modele ? "" : "≈") + Math.round(S.dist); $("hC").textContent = Math.round(ca); $("hN").textContent = S.nb;
     $("hV").textContent = (S.vL * 3.6).toFixed(1).replace(".", ","); $("h5").textContent = (S.vL > .5 ? fmt(500 / S.vL) : "–:––") + " /500 m";
-    const e = S.vL < .3 ? "À l'arrêt" : S.t < 20 ? "Mise en route" : ["Croisière", "Rapide", "TURBO !"][etatV]; $("hE").textContent = e; $("hE").className = ["", "rapide", "turbo"][etatV];
+    const e = S.vL < .3 || ca < 1 ? "À l'arrêt" : S.t < 15 ? "Mise en route" : ca < 18 ? "Tranquille" : ["Croisière", "Rapide", "TURBO !"][etatV]; $("hE").textContent = e; $("hE").className = ["", "rapide", "turbo"][etatV];
     majTour(); }
   majFantome(dt); majCarte();
   R.render(scene, cam);
@@ -895,8 +938,8 @@ const fondPlan = toile(PLAN.W, PLAN.H, x => {
 const cvPlan = $("carte"); cvPlan.width = PLAN.W; cvPlan.height = PLAN.H; const ctxPlan = cvPlan.getContext("2d");
 function poserPortrait(x, px, py, k, alpha) {  // le sprite de ton Pokémon (pieds sur le tracé), avec une ombre sombre pour qu'il se détache
   const m = $("progMoi"), T = 32 * k; x.save(); x.imageSmoothingEnabled = false; x.globalAlpha = alpha;
-  x.shadowColor = "rgba(16,24,44,.9)"; x.shadowBlur = 0; for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) { x.shadowOffsetX = dx; x.shadowOffsetY = dy; x.drawImage(m, px - T / 2, py - T * .82, T, T); }
-  x.shadowColor = "transparent"; x.drawImage(m, px - T / 2, py - T * .82, T, T); x.restore(); }
+  x.shadowColor = "rgba(16,24,44,.9)"; x.shadowBlur = 0; for (const [dx, dy] of [[3, 0], [-3, 0], [0, 3], [0, -3]]) { x.shadowOffsetX = dx; x.shadowOffsetY = dy; x.drawImage(m, px - T / 2, py - T / 2, T, T); }
+  x.shadowColor = "transparent"; x.drawImage(m, px - T / 2, py - T / 2, T, T); x.restore(); }
 function majCarte() {
   if ($("hud").hidden) return; const x = ctxPlan; x.clearRect(0, 0, PLAN.W, PLAN.H); x.drawImage(fondPlan, 0, 0);
   if (FANTOME.u !== null && FANTOME.u !== undefined) { const g = at(DEPART + FANTOME.u), [gx, gy] = PLAN.xy(g.x, g.z); poserPortrait(x, gx, gy, 2.2, .5); }
@@ -914,10 +957,43 @@ function boutonsFantomes() {  // au menu : contre quel fantôme rouler
 }
 
 /* ============ le menu ============ */
-let choix = 0; try { choix = clamp(+localStorage.getItem("traversee_pokemon") || 0, 0, NAGEURS.length - 1); } catch (e) {}
-function boutonsNageurs() { $("nageurs").innerHTML = NAGEURS.map((n, i) => `<button data-i="${i}" class="${i === choix ? "on" : ""}" aria-pressed="${i === choix}">${n.nom}</button>`).join("");
-  $("nageurs").querySelectorAll("button").forEach(b => b.onclick = () => { choisir(+b.dataset.i); }); }
-function choisir(i) { choix = i; try { localStorage.setItem("traversee_pokemon", i); } catch (e) {} boutonsNageurs(); construire(choix); construireFantome(choix); iconeProg(); }
+// les kilomètres de ton compagnon : ceux du serveur (toutes tes séances au rameur), plus les séances finies ici et pas encore comptées par le serveur
+const KM_LOCAUX = "circuit_km_en_attente";  // [{nb: séances connues du serveur à ce moment, m: mètres}]
+function kmTotal() { const srv = ((D.progression || {}).metres || 0), nb = (D.progression || {}).nb || 0; let loc = [];
+  try { loc = (JSON.parse(localStorage.getItem(KM_LOCAUX)) || []).filter(e => e.nb >= nb); } catch (e) {} return (srv + loc.reduce((t, e) => t + e.m, 0)) / 1000; }
+function retenirKm() { try { const nb = (D.progression || {}).nb || 0, L = (JSON.parse(localStorage.getItem(KM_LOCAUX)) || []).filter(e => e.nb >= nb); localStorage.setItem(KM_LOCAUX, JSON.stringify(L)); } catch (e) {} }
+const debloque = i => kmTotal() >= NAGEURS[i].km;
+let choix = 0; try { choix = +localStorage.getItem("circuit_forme"); } catch (e) {}
+if (!(choix >= 0 && choix < NAGEURS.length) || !debloque(choix)) choix = NAGEURS.map((_, i) => i).filter(debloque).pop() || 0;
+function dessinerForme(c, i, silhouette) {  // le Pokémon en pixels dans une petite toile (sa silhouette s'il n'est pas encore débloqué)
+  const x = c.getContext("2d"), W = c.width, P = NAGEURS[i]; x.imageSmoothingEnabled = false;
+  animsDe(P.n).then(a => { const A = a.Idle || a.Walk; return chargerImg(`${PMD}${P.n}/${A.fichier}-Anim.png`).then(img => {
+    const k = Math.floor(Math.min(W / A.fw, W / A.fh) * 10) / 10; x.clearRect(0, 0, W, W); x.drawImage(img, 0, 0, A.fw, A.fh, (W - A.fw * k) / 2, (W - A.fh * k) / 2, A.fw * k, A.fh * k);
+    if (silhouette) { x.globalCompositeOperation = "source-in"; x.fillStyle = "#30304A"; x.fillRect(0, 0, W, W); x.globalCompositeOperation = "source-over"; } }); }).catch(() => {});
+}
+function boutonsNageurs() {
+  const km = kmTotal();
+  $("nageurs").innerHTML = NAGEURS.map((n, i) => { const ok = km >= n.km;
+    return `<button data-i="${i}" class="${i === choix ? "on" : ""}" aria-pressed="${i === choix}" ${ok ? "" : "disabled"}><canvas width="64" height="64"></canvas><span>${ok ? n.nom : "???"}</span><small>${ok ? (i === choix ? "Choisi" : "Débloqué") : "à " + n.km + " km"}</small></button>`; }).join("");
+  $("nageurs").querySelectorAll("button").forEach(b => { const i = +b.dataset.i; dessinerForme(b.querySelector("canvas"), i, !debloque(i)); if (debloque(i)) b.onclick = () => choisir(i); });
+  // le compagnon : ses kilomètres et la prochaine évolution
+  const actuel = NAGEURS.map((_, i) => i).filter(debloque).pop() || 0, suivant = NAGEURS[actuel + 1];
+  $("mNom").textContent = NAGEURS[actuel].nom; dessinerForme($("mPortrait"), actuel, false);
+  $("mKm").textContent = km.toFixed(1).replace(".", ",") + " km ramés";
+  if (suivant) { const k0 = NAGEURS[actuel].km; $("mBarre").style.width = clamp((km - k0) / (suivant.km - k0) * 100, 0, 100).toFixed(1) + "%";
+    $("mProchain").textContent = `Évolue dans ${(suivant.km - km).toFixed(1).replace(".", ",")} km`; }
+  else { $("mBarre").style.width = "100%"; $("mProchain").textContent = "Forme finale atteinte !"; }
+}
+function choisir(i) { if (!debloque(i)) return; choix = i; try { localStorage.setItem("circuit_forme", i); } catch (e) {} boutonsNageurs(); construire(choix); construireFantome(choix); iconeProg(); }
+function evolutionDe(metres) {  // en fin de séance : la séance compte tout de suite pour l'évolution ; si un seuil est passé, on l'annonce
+  if (!(metres > 0)) return ""; const avant = kmTotal();
+  try { const L = JSON.parse(localStorage.getItem(KM_LOCAUX)) || []; L.push({nb: (D.progression || {}).nb || 0, m: Math.round(metres)}); localStorage.setItem(KM_LOCAUX, JSON.stringify(L)); } catch (e) {}
+  const apres = kmTotal(), nv = NAGEURS.findIndex(n => avant < n.km && apres >= n.km);
+  if (nv < 0) return `<p class="sous">${NAGEURS[choix].nom} a maintenant ${apres.toFixed(1).replace(".", ",")} km au compteur.</p>`;
+  setTimeout(() => { const c = $("evoPortrait"); if (c) dessinerForme(c, nv, false); }, 60);
+  setTimeout(() => { note(523, .15, "square", .05); note(659, .15, "square", .05, .15); note(784, .15, "square", .05, .3); note(1046, .4, "square", .06, .45); }, 300);
+  return `<div class="mCompagnon"><canvas id="evoPortrait" width="96" height="96"></canvas><div class="mInfos"><b>Quoi ? ${NAGEURS[nv - 1].nom} évolue !</b><span>Tu peux maintenant nager avec ${NAGEURS[nv].nom}. Choisis-le dans le menu.</span></div></div>`;
+}
 let essai = false, telOk = false, conn = null, TEL_TXT = "Je cherche ton téléphone…";
 function majMenu() {
   const t = $("mTel"); t.textContent = essai ? "Essai sans téléphone" : telOk ? "Téléphone relié ✓" : TEL_TXT; t.className = "pill " + (telOk ? "ok" : essai ? "" : "ko");
@@ -993,7 +1069,7 @@ function finir(jetee) {  // le résumé de la séance, puis retour au menu
     <div class="stats"><div><span class="lab">Temps</span><b class="num">${fmt(t)}</b></div><div><span class="lab">Distance</span><b class="num">${Math.round(d || 0)} m</b></div>
       <div><span class="lab">Allure moyenne</span><b class="num">${d > 0 && t > 0 ? fmt(500 / (d / t)) : "–:––"}</b></div><div><span class="lab">Coups</span><b class="num">${S.nb}</b></div>
       <div><span class="lab">Cadence moyenne</span><b class="num">${t > 0 ? Math.round(S.nb / (t / 60)) : 0} /min</b></div><div><span class="lab">Tours</span><b class="num">${S.temps.length}${S.temps.length ? " · meilleur " + fmtT(Math.min(...S.temps)) : ""}</b></div></div>
-    <div class="ligne"><button class="go" id="fOk">▶ OK</button></div>`;
+    ${jetee || essai ? "" : evolutionDe(d)}<div class="ligne"><button class="go" id="fOk">▶ OK</button></div>`;
   $("fin").hidden = false;
   $("fOk").onclick = () => { $("fin").hidden = true; $("hud").hidden = true; $("menu").hidden = false;
     Object.assign(SEANCE, {etat: "aucune", t0: null, bilan: null, saisi: null}); Object.assign(S, {etat: "menu", t: 0, nb: 0, coupsT: [], dist: 0}); essai = false; boutonsFantomes(); majMenu(); };
@@ -1049,13 +1125,13 @@ $("pSon").onclick = () => { audio(); sonOn = !sonOn; $("pSon").textContent = "So
 $("bPlein").onclick = () => { const d = docPlein(); if (d) d.exitFullscreen(); else pleinEcran(); };
 $("bPause").onclick = () => { $("pauseTxt").textContent = `${fmt(S.t)} · ${Math.round(S.dist)} m. ${essai ? "" : "Le téléphone continue de compter : la séance ne s'arrête que si tu la termines."}`; $("pause").hidden = false; };
 $("pReprendre").onclick = () => { $("pause").hidden = true; };
-$("pChanger").onclick = () => { $("pause").hidden = true; choisir((choix + 1) % NAGEURS.length); flash(1); };
+$("pChanger").onclick = () => { $("pause").hidden = true; const L = NAGEURS.map((_, i) => i).filter(debloque); choisir(L[(L.indexOf(choix) + 1) % L.length]); flash(1); };
 tenir($("pTerminer"), terminer);
 $("bCoup").onclick = e => { e.stopPropagation(); coup(.65 + Math.random() * .2); };
 $("bAuto").onclick = e => { e.stopPropagation(); S.auto = !S.auto; $("bAuto").classList.toggle("on", S.auto); };
 cv.addEventListener("pointerdown", () => { audio(); if (essai && S.etat === "course") coup(.6 + Math.random() * .25); });
 addEventListener("keydown", e => { if (e.code === "Space" && essai && S.etat === "course") { e.preventDefault(); coup(.7); } });
-boutonsNageurs(); boutonsFantomes(); majMenu(); allumer();
+retenirKm(); boutonsNageurs(); boutonsFantomes(); majMenu(); allumer();
 construireDecor(); construire(choix); construireFantome(choix); iconeProg(); for (const [s, d, r] of ACCUEIL) accueil("0054", s, d, r).catch(() => {});
 requestAnimationFrame(boucle);
 </script>

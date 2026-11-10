@@ -245,7 +245,7 @@ def progression(seances, aujourd, m=None):
             if c.get("fini") and c.get("temps_s") and (n["record_s"] is None or c["temps_s"] < n["record_s"]):
                 n["record_s"] = c["temps_s"]
     de_la_semaine = [s for s in seances if dt.date.fromisoformat(s["debut"][:10]) >= lundi]
-    return {"xp": round(xp), "objectifs": cette, "niveaux": niveaux, "vus": sorted(vus), "nb": len(seances),
+    return {"xp": round(xp), "metres": round(sum(metres_de(s, m) for s in seances)), "objectifs": cette, "niveaux": niveaux, "vus": sorted(vus), "nb": len(seances),
             "vus_semaine": sorted({n for s in de_la_semaine for n in ((s.get("jeu") or {}).get("vus") or [])}),
             "jour_fait": any(s["debut"][:10] == str(aujourd) and (s.get("duree_s") or 0) >= 600 for s in seances),
             "semaine_m": round(sum(metres_de(s, m) for s in seances if dt.date.fromisoformat(s["debut"][:10]) >= lundi))}
