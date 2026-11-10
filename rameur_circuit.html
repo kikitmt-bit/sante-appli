@@ -506,10 +506,12 @@ function maisonEtage(s, d, l, p, h, angle, mur, toit) {  // un bloc du bas, un b
   bloc(g, l2, p2, h2, h + .3, d, mur, img("cote", 2, mur), x2); toitBas(g, l2, p2, h + .3 + h2, toit, mur, .28, .6, x2);
   gardeCorps(g, fx * (p / 2 + .05), -l / 2 + .2, l / 2 - .2, h + .3); return placer(g, s, d, solEn(s, d), angle); }
 function grandBatiment(s, cote, l, p, h, mur) {  // long et bas, toit plat gris, cheminée, murs jaune pâle, deux portes (le labo, la halle du port)
-  const d = cote * (at(s).w + PAVE + 4.5 + p / 2), g = new THREE.Group(); bloc(g, l, p, h, 0, d, mur, img("facade", 2, mur)); toitPlat(g, l, p, h, MATS.gris, true); return placer(g, s, d, solEn(s, d)); }
+  const d = cote * (at(s).w + PAVE + 4.5 + p / 2), g = new THREE.Group(); bloc(g, l, p, h, 0, d, mur, img("facade_labo", 1, mur)); toitPlat(g, l, p, h, MATS.gris, true); return placer(g, s, d, solEn(s, d)); }
 function centrePokemon(s, cote) {  // le Centre Pokémon : murs blancs, grand toit rouge bombé, fronton blanc à la Poké Ball au-dessus des portes
   const l = 13.5, p = 9, h = 4.4, d = cote * (at(s).w + PAVE + 5 + p / 2), g = new THREE.Group(), fx = devant(d); chemin(s, cote * (at(s).w + PAVE), cote * (at(s).w + PAVE + 5.1), 4);
-  bloc(g, l, p, h, 0, d, 3, img("facade", 1, 3)); toitBombe(g, l, p, h, "toit_rouge");
+  bloc(g, l, p, h, 0, d, 3, img("cote", 3, 3)); toitBombe(g, l, p, h, "toit_rouge");
+  const lp = h * 159 / 105, pf = new THREE.Mesh(new THREE.PlaneGeometry(lp * E, h * E), img("facade_centre", 1, 3)); pf.position.set(fx * (p / 2 + .03) * E, h / 2 * E, 0); pf.rotation.y = fx * Math.PI / 2; g.add(pf);  // les portes vitrées sous l'auvent rouge, au milieu
+  for (const sz of [-1, 1]) sprite("fleurs", s + sz * (lp / 2 + 1.6), cote * (at(s).w + PAVE + 4.3), .22);
   enseigne(g, fx * (p / 2 + .9), h - .3, 4.4, 2.6, 0xF6F6F0, "poke-ball", d); return placer(g, s, d, solEn(s, d)); }
 function boutique(s, cote) {  // la Boutique : murs blancs, toit bleu écrasé, enseigne bleue à la Potion
   const l = 9, p = 7, h = 3.4, d = cote * (at(s).w + PAVE + 4.5 + p / 2), g = new THREE.Group(), fx = devant(d); chemin(s, cote * (at(s).w + PAVE), cote * (at(s).w + PAVE + 4.6), 2.6);
@@ -549,7 +551,7 @@ function pont(s, haut = 3.6) {  // un pont en arc au-dessus de l'eau : tablier, 
   g.position.set(a.x, 0, a.z); g.rotation.y = -a.h; scene.add(g);
 }
 // la végétation : des sprites dessinés par ChatGPT (fond transparent, même finesse que les textures : ~4,8 cm par pixel), toujours tournés vers la caméra
-const SPRITES = {arbre: [114, 124], sapin: [78, 127], buisson: [85, 42]};  // taille en pixels d'art
+const SPRITES = {arbre: [114, 124], sapin: [78, 127], buisson: [85, 42], fleurs: [239, 50]};  // taille en pixels d'art
 const PX_SPRITE = .048 * E;
 const MAT_SPRITE = {};
 function matSprite(nom) { if (MAT_SPRITE[nom]) return MAT_SPRITE[nom]; const t = new THREE.TextureLoader().setCrossOrigin("anonymous").load(TEX_URL + nom + ".png"); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearMipmapLinearFilter;
@@ -575,6 +577,7 @@ function quartier(s0, s1, cote, graine, evite = [], gros = [], sansRouge = []) {
     barriereTravers(g0, bx, cote * (avant + 1)); barriereTravers(g1, bx, cote * (avant + 1));
     boiteLettres(sc + 1.6 * (r(15) < .5 ? 1 : -1), cote * (w + PAVE + 1.4));
     if (r(16) < .7) sprite("buisson", sc - l / 2 + .6, cote * (w + PAVE + 1.5 + r(17)), .5); if (r(18) < .5) sprite("buisson", sc + l / 2 - .6, cote * (w + PAVE + 1.4 + r(19)), .5);
+    if (r(23) < .75) for (const sz of r(24) < .5 ? [-1, 1] : [r(25) < .5 ? -1 : 1]) sprite("fleurs", sc + sz * (l / 4 + .6), cote * (avant - .55), .25);  // un parterre de fleurs au pied de la façade
     s += l + 2.4 + r(12) * 2.6; i++; }
 }
 function rangeeArbres(s0, s1, cote, loin) {  // une bordure d'arbres en rangs serrés derrière les maisons, sur l'herbe (comme autour de Bourg Palette)
@@ -601,7 +604,7 @@ function construireDecor() {
     const b = boite(w * 2 + 2.4, 1.1, .3, [MATS.blanc, MATS.blanc, MATS.blanc, MATS.blanc, dam, dam]); placer(b, DEPART, 0, 5.2); }
   tribune(8, 74, -1); tribune(8, 74, 1);
   // le port : des maisons qui ne se ressemblent pas, une halle aux poissons, la capitainerie avec sa tour (l'élan se fait ici)
-  quartier(LONG - 130, LONG - 30, -1, 1, [], [[LONG - 92, (s, c) => grandBatiment(s, c, 15, 8, 4.2, 1), 15]]); quartier(LONG - 124, LONG - 8, 1, 2, [], [[LONG - 50, (s, c) => maisonEtage(s, c * (at(s).w + PAVE + 4 + 3.5), 9, 7, 3, 0, 4, "toit_orange"), 9]]);
+  quartier(LONG - 130, LONG - 30, -1, 1, [], [[LONG - 92, (s, c) => grandBatiment(s, c, 14, 8, 4.4, 1), 14]]); quartier(LONG - 124, LONG - 8, 1, 2, [], [[LONG - 50, (s, c) => maisonEtage(s, c * (at(s).w + PAVE + 4 + 3.5), 9, 7, 3, 0, 4, "toit_orange"), 9]]);
   { const s = LONG - 22, d = -(at(s).w + PAVE + 5), y = solEn(s, d), g = new THREE.Group(); g.add(boite(3.4, 11, 3.4, matMur(3))); toitPlat(g, 3.4, 3.4, 11, MATS.gris); placer(g, s, d, y);
     const c = new THREE.Mesh(new THREE.ConeGeometry(2.2 * E, 2.2 * E, 4), matToit("toit_rouge")); c.rotation.y = Math.PI / 4; placer(c, s, d, y + 11.3 + 1.1); }  // la capitainerie et sa tour
   lampadaires(LONG - 128, LONG - 4, [-1, 1], []); rangeeArbres(LONG - 130, LONG - 28, -1, PAVE + 18); rangeeArbres(LONG - 124, LONG - 6, 1, PAVE + 17);
