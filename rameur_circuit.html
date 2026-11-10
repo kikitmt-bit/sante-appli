@@ -21,22 +21,26 @@ body{font-family:var(--jeu);font-size-adjust:.55;color:var(--encre);-webkit-user
 .boite{background:var(--creme);border:3px solid var(--bord);border-radius:12px 5px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
 .lab{font-size:15px;color:var(--encre2);display:block;line-height:1;text-transform:uppercase;letter-spacing:.05em}
 .num{font-variant-numeric:tabular-nums}
-#hg{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px;display:flex;gap:18px}
-#hg b{font-size:30px;font-weight:400;line-height:1}
-#hg b.gros{font-size:52px}
-#hg{align-items:flex-end}
-#fps{position:fixed;left:50%;top:6px;transform:translateX(-50%);font-size:15px;color:var(--creme);text-shadow:1px 1px 0 var(--nuit);pointer-events:none;opacity:.8}
-#hd{position:fixed;right:calc(max(12px,env(safe-area-inset-right,0px)) + 64px);top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px;text-align:right;min-width:120px}
-#hV{font-size:52px;font-weight:400;line-height:.9;display:block}
-#hV small{font-size:18px;color:var(--encre2)}
+#hg{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px 8px;min-width:190px}
+#hg b.gros{font-size:52px;font-weight:400;line-height:1;display:block}
+#tours{font-size:21px;line-height:1.2;margin-top:4px}
+#tours div{display:flex;justify-content:space-between;gap:14px}
+#tours .encours{font-size:28px;color:var(--encre)}
+#tours .ancien{color:var(--encre2)}#tours .meilleur{color:var(--vert)}
+#tours .ecart.devant{color:var(--vert)}#tours .ecart.derriere{color:var(--accent)}
+#hm{position:fixed;left:50%;transform:translateX(-50%);top:max(12px,env(safe-area-inset-top,0px));padding:6px 18px 8px;display:flex;gap:26px;align-items:flex-end}
+#hm b{font-size:60px;font-weight:400;line-height:.95;display:block}
+#hm small{font-size:20px;color:var(--encre2)}
 #h5{font-size:18px;color:var(--encre2)}
 #hE{font-size:20px;color:#B05010}
 #hE.rapide{color:var(--vert)}#hE.turbo{color:var(--rouge)}
+#hd{position:fixed;right:calc(max(12px,env(safe-area-inset-right,0px)) + 64px);top:max(12px,env(safe-area-inset-top,0px));padding:6px 14px 8px;text-align:right}
+#hd b{font-size:34px;font-weight:400;line-height:1;display:block}
+#hd div+div{margin-top:4px}
+#fps{position:fixed;right:max(12px,env(safe-area-inset-right,0px));bottom:6px;font-size:14px;color:var(--creme);text-shadow:1px 1px 0 var(--nuit);pointer-events:none;opacity:.7}
 #bPause{position:fixed;right:max(12px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px));width:52px;height:52px;padding:0;font-size:26px}
-#ht{position:fixed;left:max(12px,env(safe-area-inset-left,0px));top:calc(max(12px,env(safe-area-inset-top,0px)) + 104px);padding:5px 14px;display:flex;gap:18px;align-items:flex-end}
-#ht b{font-size:30px;font-weight:400;line-height:1}
-#ht .meil{font-size:18px;color:var(--encre2);line-height:1.1}
-#ht .meil.record{color:var(--vert)}
+/* le plan du circuit, en bas à gauche (comme dans Mario Kart) : toi, ton fantôme, la ligne */
+#carte{position:fixed;left:max(12px,env(safe-area-inset-left,0px));bottom:max(12px,env(safe-area-inset-bottom,0px));width:210px;height:auto;padding:4px;box-sizing:content-box;pointer-events:none}
 /* la barre du parcours, en bas : les étapes et ton Pokémon qui avance */
 #prog{position:fixed;left:50%;transform:translateX(-50%);bottom:max(14px,env(safe-area-inset-bottom,0px));width:min(860px,calc(100vw - 32px));height:62px;pointer-events:none}
 #prog .rail{position:absolute;left:0;right:0;top:30px;height:8px;background:var(--creme);border:3px solid var(--bord);border-radius:6px;box-shadow:3px 3px 0 rgba(16,24,44,.55)}
@@ -80,18 +84,18 @@ button.on{background:var(--or)}
 .pave{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .pave button{font-size:44px;padding:8px 0}
 .message{font-size:20px;color:var(--accent);min-height:24px;margin:8px 0 0}
-@media (max-width:760px){#hg b.gros{font-size:34px}#hg{gap:10px}#hV{font-size:32px}#hg b{font-size:22px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}#ht{top:calc(max(12px,env(safe-area-inset-top,0px)) + 74px)}#ht b{font-size:22px}}
+@media (max-width:760px){#hg b.gros{font-size:34px}#hg{min-width:0}#tours{font-size:17px}#tours .encours{font-size:21px}#hm b{font-size:36px}#hm{gap:12px}#hd b{font-size:24px}#carte{width:130px}#prog .nom{display:none}#saisieGrille{grid-template-columns:1fr}.carte h1{font-size:32px}}
 </style>
 <canvas id="c" aria-label="Le circuit, vu de derrière ton Pokémon qui nage"></canvas>
 <div id="vitesse"></div><div id="sombre"></div><div id="flash"></div><div id="embruns"></div>
 <div id="hud" hidden>
-  <div class="boite" id="hg"><div><span class="lab">Temps</span><b class="num gros" id="hT">0:00</b></div><div><span class="lab">Cadence /min</span><b class="num gros" id="hC">0</b></div>
-    <div><span class="lab">Distance</span><b class="num" id="hD">0 m</b></div><div><span class="lab">Coups</span><b class="num" id="hN">0</b></div></div>
+  <div class="boite" id="hg"><span class="lab">Temps</span><b class="num gros" id="hT">0:00</b><div id="tours" class="num"></div></div>
+  <div class="boite" id="hm"><div><span class="lab">Cadence /min</span><b class="num" id="hC">0</b></div>
+    <div><span class="lab">Vitesse</span><b class="num" id="hV">0,0 <small>km/h</small></b></div><div><div id="h5" class="num">–:–– /500 m</div><div id="hE">Mise en route</div></div></div>
+  <div class="boite" id="hd"><div><span class="lab">Distance</span><b class="num" id="hD">0 m</b></div><div><span class="lab">Coups</span><b class="num" id="hN">0</b></div></div>
   <div id="fps" class="num">– i/s</div>
-  <div class="boite" id="hd"><b id="hV" class="num">0,0 <small>km/h</small></b><div id="h5" class="num">–:–– /500 m</div><div id="hE">Mise en route</div></div>
   <button id="bPause" aria-label="Menu de la séance">II</button>
-  <div class="boite" id="ht"><div><span class="lab" id="htNom">Élan</span><b class="num" id="htT">–</b></div><div class="meil num" id="htM"></div></div>
-  <div id="prog"><div class="rail"><div class="fait" id="progFait"></div></div></div>
+  <canvas id="carte" class="boite" aria-label="Le plan du circuit"></canvas><canvas id="progMoi" width="32" height="32" hidden></canvas>
   <div class="boite" id="tel" hidden></div>
   <div id="gros"></div>
   <div id="essai" hidden><button id="bCoup">Coup (espace)</button><button id="bAuto">Auto</button></div>
@@ -101,10 +105,12 @@ button.on{background:var(--or)}
   <p class="sous">Un circuit d'1 km : le phare, la côte, le canyon, le tunnel, le lac, la forêt, le village. Tu pars dans le port, 120 m avant la ligne, pour trouver ton rythme ; ensuite chaque tour est chronométré.</p>
   <span class="lab">Ton Pokémon</span>
   <div class="choix" id="nageurs"></div>
+  <span class="lab">Ton fantôme</span>
+  <div class="choix" id="fantomes"></div>
   <div class="ligne"><span class="pill ko" id="mTel">Je cherche ton téléphone…</span><div style="flex:1"></div>
     <button id="bPlein" aria-label="Plein écran">⛶</button><button id="bEssai">Essayer sans téléphone</button><button class="go" id="bPartir" disabled>▶ PARTIR</button></div>
   <p class="petit" id="aide">Sur le téléphone : Muscu → Rameur → « Avec la tablette », puis accroche-le sous le siège.</p>
-  <p class="petit" style="font-size:14px">Pokémon : Pokémon Donjon Mystère (Chunsoft), via PMD SpriteCollab. Décor en cours de construction (version en gris).</p>
+  <p class="petit" style="font-size:14px">Pokémon : Pokémon Donjon Mystère (Chunsoft), via PMD SpriteCollab.</p>
 </div></div>
 <div class="calque" id="pause" hidden><div class="carte" style="width:min(680px,100%)"><h1>EN PAUSE ?</h1>
   <p class="sous" id="pauseTxt"></p>
@@ -226,7 +232,7 @@ const GLSL_COMMUN = `
   float h1(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453); }
   float vbruit(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f); return mix(mix(h1(i), h1(i + vec2(1,0)), f.x), mix(h1(i + vec2(0,1)), h1(i + vec2(1,1)), f.x), f.y); }
   vec3 eclaire(vec3 c, vec3 n){ float d = max(dot(n, uSun), 0.0); vec3 l = mix(vec3(.62,.58,.54), vec3(.9,.94,1.0), .5 + .5 * n.y) * .7 + vec3(1.0,.96,.88) * d * .55; return c * l; }
-  const float LUM_TUNNEL = .7;
+  const float LUM_TUNNEL = .8;
   vec3 brume(vec3 c, vec3 wp){ float d = length(wp - cameraPosition); float f = floor(smoothstep(uFn, uFf, d) * 7.0) / 7.0; return mix(c, uFog, f) * (1.0 - uSombre); }`;
 // le sol (rives et terrain) : la texture du dessus ou de la paroi selon la pente ; entre deux sortes, un mélange en taches de pixels (jamais deux textures fondues l'une dans l'autre)
 const matSol = ruban => new THREE.ShaderMaterial({side: THREE.DoubleSide, uniforms: Object.assign({uRuban: {value: ruban ? 1 : 0}, uT0: {value: TUNNELS[0][0] - .5}, uT1: {value: TUNNELS[0][1] + .5}}, COMMUNS, Object.fromEntries(Object.entries(TXC).map(([k, v]) => ["t_" + k, {value: v}]))),
@@ -509,8 +515,10 @@ function grandBatiment(s, cote, l, p, h, mur) {  // long et bas, toit plat gris,
   const d = cote * (at(s).w + PAVE + 4.5 + p / 2), g = new THREE.Group(); bloc(g, l, p, h, 0, d, mur, img("facade_labo", 1, mur)); toitPlat(g, l, p, h, MATS.gris, true); return placer(g, s, d, solEn(s, d)); }
 function centrePokemon(s, cote) {  // le Centre Pokémon : murs blancs, grand toit rouge bombé, fronton blanc à la Poké Ball au-dessus des portes
   const l = 13.5, p = 9, h = 4.4, d = cote * (at(s).w + PAVE + 5 + p / 2), g = new THREE.Group(), fx = devant(d); chemin(s, cote * (at(s).w + PAVE), cote * (at(s).w + PAVE + 5.1), 4);
-  bloc(g, l, p, h, 0, d, 3, img("cote", 3, 3)); toitBombe(g, l, p, h, "toit_rouge");
-  const lp = h * 159 / 105, pf = new THREE.Mesh(new THREE.PlaneGeometry(lp * E, h * E), img("facade_centre", 1, 3)); pf.position.set(fx * (p / 2 + .03) * E, h / 2 * E, 0); pf.rotation.y = fx * Math.PI / 2; g.add(pf);  // les portes vitrées sous l'auvent rouge, au milieu
+  bloc(g, l, p, h, 0, d, 3, matMur(3)); toitBombe(g, l, p, h, "toit_rouge");
+  const lp = h * 159 / 105, lc = (l - lp) / 2;  // la façade : les portes vitrées au milieu, une fenêtre de chaque côté, posées sur un mur uni
+  for (const [nom, w, z] of [["facade_centre", lp, 0], ["cote", lc, -(lp + lc) / 2], ["cote", lc, (lp + lc) / 2]]) {
+    const pf = new THREE.Mesh(new THREE.PlaneGeometry(w * E, h * E), img(nom, 1, 3)); pf.position.set(fx * (p / 2 + .04) * E, h / 2 * E, z * E); pf.rotation.y = fx * Math.PI / 2; g.add(pf); }
   for (const sz of [-1, 1]) sprite("fleurs", s + sz * (lp / 2 + 1.6), cote * (at(s).w + PAVE + 4.3), .22);
   enseigne(g, fx * (p / 2 + .9), h - .3, 4.4, 2.6, 0xF6F6F0, "poke-ball", d); return placer(g, s, d, solEn(s, d)); }
 function boutique(s, cote) {  // la Boutique : murs blancs, toit bleu écrasé, enseigne bleue à la Potion
@@ -591,8 +599,8 @@ function tribune(s0, s1, cote) {  // trois gradins le long du quai
 function murets() {  // à chaque bout d'un quai, côté nature : un muret de pierre et son pilier, en travers de la rive
   for (const [T, cote] of [[GA, -1], [DR, 1]]) for (let i = 0; i < NP0; i++) { const a = T[i], b = T[(i + 1) % NP0]; if ((a === "quai") === (b === "quai")) continue;
     const s = (i + 1) * DS, w = at(s).w, g = new THREE.Group(), L = 14;
-    const m = boite(.7, 2.85, L, MATS.pierre); m.rotation.y = Math.PI / 2; m.position.x = cote * (L / 2) * E; g.add(m);  // le muret, du bord de l'eau jusqu'au loin
-    for (const o of [.4, L * .5, L]) { const p = boite(1.1, 3.3, 1.1, MATS.pierre); p.position.x = cote * o * E; g.add(p); }
+    const m = boite(.6, 1.85, L, MATS.pierre); m.rotation.y = Math.PI / 2; m.position.x = cote * (L / 2) * E; g.add(m);  // le muret, du bord de l'eau jusqu'au loin
+    for (const o of [.4, L * .5, L]) { const p = boite(.9, 2.2, .9, MATS.pierre); p.position.x = cote * o * E; g.add(p); }
     placer(g, s, cote * w, -.6); } }  // posé au niveau de l'eau : il cache aussi la marche entre le quai et la berge
 // le décor, section par section
 const S_ = nom => SEC_S.find(([, n]) => n === nom)[0];
@@ -732,19 +740,63 @@ const cadence = () => { const c = S.coupsT, n = c.length; if (n < 2 || S.t - c[n
 // la ligne : un vrai circuit, on repasse simplement par le mètre 0
 function avancer(ds) { const avant = S.s; S.s += ds; if (S.s >= LONG) { S.s -= LONG; if (S.etat === "course") nouveauTour(); } return avant; }
 const fmtT = s => fmt(s) + "," + Math.floor((s % 1) * 10);  // un temps au dixième
+/* ============ les tours et le fantôme (Kiki, 10/11) ============ */
+// Le fantôme rejoue un tour entier : ton meilleur tour de tous les temps (gardé sur la tablette) ou le meilleur de la séance (dès le 2e tour).
+// Un tour = une liste de points [temps depuis la ligne (s), mètres depuis la ligne], un tous les dixièmes de seconde.
+const CLE_RECORD = "circuit_baie_record_rameur";  // une clé par machine : l'elliptique aura la sienne, jamais comparée au rameur
+const FANTOME = {mode: "record", pts: [], dernierPt: -1, seance: null, courant: null, o: null};
+try { FANTOME.mode = localStorage.getItem("circuit_fantome") || "record"; } catch (e) {}
+function recordTous() { try { const r = JSON.parse(localStorage.getItem(CLE_RECORD)); return r && r.temps > 0 && r.pts && r.pts.length > 10 ? r : null; } catch (e) { return null; } }
+function choisirFantome() { FANTOME.courant = FANTOME.mode === "aucun" ? null : FANTOME.mode === "seance" ? FANTOME.seance : (recordTous() || FANTOME.seance); }
+function remiseFantome() { FANTOME.pts = []; FANTOME.dernierPt = -1; FANTOME.seance = null; FANTOME.courant = null; if (FANTOME.o) FANTOME.o.mesh.visible = false; }
+async function construireFantome(i) {  // ton Pokémon, en transparence
+  const n = ++construireFantome.n, o = await spritePMD(NAGEURS[i].n, "Walk", 4, NAGEURS[i].k, +NAGEURS[i].n); if (n !== construireFantome.n) return;
+  Object.assign(o.mesh.material, {transparent: true, opacity: .45, alphaTest: .05, depthWrite: false}); o.mesh.material.color.set(0xDDEEFF); o.mesh.renderOrder = 3;
+  if (FANTOME.o) scene.remove(FANTOME.o.mesh); FANTOME.o = o; o.mesh.visible = false; scene.add(o.mesh);
+}
+construireFantome.n = 0;
+const uLigne = s => mod(s - DEPART);  // mètres depuis la ligne
+function uFantome(pts, tau) {  // où était le fantôme, tau secondes après la ligne (null : il a fini son tour)
+  if (!pts || !pts.length || tau > pts[pts.length - 1][0]) return null;
+  let lo = 0, hi = pts.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m][0] <= tau) lo = m; else hi = m; }
+  const [t0, u0] = pts[lo], [t1, u1] = pts[hi]; return lerp(u0, u1, clamp((tau - t0) / Math.max(t1 - t0, 1e-3), 0, 1));
+}
+function tFantome(pts, u) {  // quand le fantôme est passé là (pour l'écart)
+  if (!pts || !pts.length || u > pts[pts.length - 1][1]) return null;
+  let lo = 0, hi = pts.length - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; if (pts[m][1] <= u) lo = m; else hi = m; }
+  const [t0, u0] = pts[lo], [t1, u1] = pts[hi]; return lerp(t0, t1, clamp((u - u0) / Math.max(u1 - u0, 1e-3), 0, 1));
+}
 function nouveauTour() {  // la ligne de départ : le temps du tour qui finit, et le suivant qui commence
   if (S.tour > 0) { const tps = S.t - S.tourT0, record = !S.temps.length || tps < Math.min(...S.temps); S.temps.push(tps);
-    $("gros").innerHTML = `TOUR ${S.tour}<small>${fmtT(tps)}${record && S.temps.length > 1 ? " · meilleur tour !" : ""}</small>`; note(784, .12, "square", .05); note(1046, .25, "square", .05, .13);
+    const pts = FANTOME.pts.concat([[+tps.toFixed(2), LONG]]), ancien = recordTous(), recordAbsolu = !essai && (!ancien || tps < ancien.temps);
+    if (record) FANTOME.seance = {temps: tps, pts};
+    if (recordAbsolu) try { localStorage.setItem(CLE_RECORD, JSON.stringify({temps: tps, pts, jour: new Date().toISOString().slice(0, 10)})); } catch (e) {}
+    $("gros").innerHTML = `TOUR ${S.tour}<small>${fmtT(tps)}${recordAbsolu && ancien ? " · RECORD !" : record && S.temps.length > 1 ? " · meilleur tour !" : ""}</small>`; note(784, .12, "square", .05); note(1046, .25, "square", .05, .13);
     clearTimeout(nouveauTour.t); nouveauTour.t = setTimeout(() => { $("gros").innerHTML = ""; }, 2600); }
   else { $("gros").innerHTML = "TOP CHRONO !"; note(1046, .3, "square", .05); clearTimeout(nouveauTour.t); nouveauTour.t = setTimeout(() => { $("gros").innerHTML = ""; }, 1400); }
-  S.tour++; S.tourT0 = S.t;
+  S.tour++; S.tourT0 = S.t; FANTOME.pts = []; FANTOME.dernierPt = -1; choisirFantome();
 }
-function majTour() {
-  $("htNom").textContent = S.tour ? "Tour " + S.tour : "Élan"; $("htT").textContent = S.tour ? fmt(S.t - S.tourT0) : Math.max(0, Math.round(LONG - S.s)) + " m";
-  const m = $("htM"); if (!S.temps.length) { m.innerHTML = S.tour ? "" : "jusqu'à<br>la ligne"; return; }
-  m.innerHTML = "Dernier " + fmtT(S.temps.at(-1)) + "<br>Meilleur " + fmtT(Math.min(...S.temps));
+function majFantome(dt) {
+  if (S.etat === "course" && S.tour > 0) { const tau = S.t - S.tourT0;  // on enregistre ton tour
+    if (tau - FANTOME.dernierPt >= .1) { FANTOME.pts.push([+tau.toFixed(2), +uLigne(S.s).toFixed(2)]); FANTOME.dernierPt = tau; } }
+  const o = FANTOME.o; if (!o) return;
+  const u = S.tour > 0 && (S.etat === "course" || S.etat === "fin") && FANTOME.courant ? uFantome(FANTOME.courant.pts, S.t - S.tourT0) : null;
+  FANTOME.u = u; o.mesh.visible = u !== null && Math.abs(u - uLigne(S.s)) > .6;
+  if (u === null) return;
+  const s = DEPART + u, a = at(s), d = 1.1, x = a.x + Math.cos(a.h) * d * E, z = a.z + Math.sin(a.h) * d * E;  // un peu sur la droite, pour ne pas se confondre avec toi
+  o.mesh.position.set(x, -o.haut * .45, z); o.mesh.rotation.y = Math.atan2(cam.position.x - x, cam.position.z - z);
+  const k = at(s + 2).k; o.rangee(k < -.006 ? 5 : k > .006 ? 3 : 4); o.avancer(dt * 1.2);
 }
-
+function majTour() {  // à gauche : le temps du tour en cours, l'écart avec le fantôme, puis les tours finis (le meilleur en vert)
+  let h = "";
+  if (!S.tour) h = `<div class="encours"><span>Élan</span><span>${Math.max(0, Math.round(LONG - S.s))} m</span></div><div class="ancien"><span>jusqu'à la ligne</span></div>`;
+  else { const tau = S.t - S.tourT0; h = `<div class="encours"><span>Tour ${S.tour}</span><span>${fmtT(tau)}</span></div>`;
+    if (FANTOME.courant) { const g = tFantome(FANTOME.courant.pts, uLigne(S.s)); if (g !== null && tau > 3) { const e = tau - g;
+      h += `<div class="ecart ${e <= 0 ? "devant" : "derriere"}"><span>Fantôme</span><span>${e <= 0 ? "−" : "+"}${Math.abs(e).toFixed(1).replace(".", ",")} s</span></div>`; } } }
+  const best = S.temps.length ? Math.min(...S.temps) : 0;
+  S.temps.map((t, i) => [t, i]).reverse().slice(0, 5).forEach(([t, i]) => { h += `<div class="${t === best ? "meilleur" : "ancien"}"><span>Tour ${i + 1}</span><span>${fmtT(t)}${t === best && S.temps.length > 1 ? " ★" : ""}</span></div>`; });
+  if (majTour.h !== h) { $("tours").innerHTML = h; majTour.h = h; }
+}
 /* ============ les gouttes ============ */
 const NP = 1800, pos = new Float32Array(NP * 3), col = new Float32Array(NP * 3), vit = new Float32Array(NP * 3), vie = new Float32Array(NP), grav = new Float32Array(NP);
 const gp = new THREE.BufferGeometry(); gp.setAttribute("position", new THREE.BufferAttribute(pos, 3)); gp.setAttribute("color", new THREE.BufferAttribute(col, 3));
@@ -776,16 +828,16 @@ function boucle(now) {
   // la caméra : derrière, un peu en hauteur, toujours le même angle ; dans les virages elle se décale un peu vers l'extérieur
   const c = at(S.s - 3.6), kk = at(S.s + 5).k * 180 / Math.PI;
   camLat = lerp(camLat, clamp(-kk * 1.1, -2.2, 2.2), dt * 1.2);
-  const hc = 3.1 - S.vn * .25;  // la même caméra partout, tunnel compris (Kiki, 09/11)
+  const hc = 3.1;  // la même caméra partout, à toute vitesse, tunnel compris : jamais elle ne change d'angle (Kiki, 09/11 et 10/11)
   cam.position.set(c.x + Math.cos(c.h) * camLat * .5, hc, c.z + Math.sin(c.h) * camLat * .5);
   cam.lookAt(a.x + Math.sin(av.h) * 9, 1.1, a.z - Math.cos(av.h) * 9);
-  cam.fov = 55 + S.vn * 6; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  cam.fov = 55; cam.updateProjectionMatrix(); cam.updateMatrixWorld();
   if (heros) { const kc = at(S.s + 2).k, r = kc < -.006 ? 5 : kc > .006 ? 3 : 4; if (r !== S.rangee) { S.rangee = r; heros.rangee(r); } }
   ciel.position.copy(cam.position); eau.position.set(Math.round(cam.position.x), 0, Math.round(cam.position.z));
   UNI.uHero.value.set(a.x, 0, a.z); UNI.uL.value = heros ? heros.larg * .5 : .8; UNI.uHdir.value.set(Math.sin(a.h), -Math.cos(a.h)); UNI.uV.value = S.vn;
   // le tunnel : la lumière baisse à peine, tout doucement (Kiki, 09/11 : rien ne doit changer brusquement)
   const sombre = Math.max(0, ...TUNNELS.map(([t0, t1]) => lisse(t0 - 4, t0 + 16, mod(S.s)) * (1 - lisse(t1 - 18, t1 + 2, mod(S.s)))));
-  UNI.uSombre.value = sombre * .18; $("sombre").style.opacity = sombre * .22; $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, 0);
+  UNI.uSombre.value = sombre * .07; $("sombre").style.opacity = sombre * .05;  // 10 % au plus (Kiki, 10/11) $("flash").style.opacity = Math.max(+$("flash").style.opacity - dt * 1.4, 0);
   $("vitesse").style.opacity = etatV === 2 ? .7 : etatV === 1 ? .25 : 0;
   for (const m of tournants) { const dx = cam.position.x - m.position.x, dz = cam.position.z - m.position.z; m.rotation.y = Math.atan2(dx, dz); }
   mesurer(dt); son(dt); for (const v of VIVANTS) v(dt);
@@ -797,7 +849,8 @@ function boucle(now) {
     $("hT").textContent = fmt(S.t); $("hD").textContent = (D.modele ? "" : "≈ ") + Math.round(S.dist) + " m"; $("hC").textContent = Math.round(ca); $("hN").textContent = S.nb;
     $("hV").innerHTML = (S.vL * 3.6).toFixed(1).replace(".", ",") + " <small>km/h</small>"; $("h5").textContent = (S.vL > .5 ? fmt(500 / S.vL) : "–:––") + " /500 m";
     const e = S.vL < .3 ? "À l'arrêt" : S.t < 20 ? "Mise en route" : ["Croisière", "Rapide", "TURBO !"][etatV]; $("hE").textContent = e; $("hE").className = ["", "rapide", "turbo"][etatV];
-    majProg(); majTour(); }
+    majTour(); }
+  majFantome(dt); majCarte();
   R.render(scene, cam);
 }
 const tournants = [];
@@ -820,28 +873,41 @@ function flash(v) { $("flash").style.opacity = v; }
 
 /* ============ la barre du parcours, en bas ============ */
 const ETAPES = SEC_S.filter(([, n]) => n).map(([s, n]) => [s, n === "Tribunes" ? "Ligne" : n]);
-function dessinerProg() {
-  const p = $("prog");
-  ETAPES.forEach(([s, nom], i) => { const x = (surBoucle(s) / LONG * 100).toFixed(2) + "%";
-    p.insertAdjacentHTML("beforeend", `<div class="etape" data-s="${s}" style="left:${x}"></div><div class="nom ${i % 2 ? "bas" : "haut"}" style="left:${x}">${nom}</div>`); });
-  p.insertAdjacentHTML("beforeend", `<canvas class="moi" id="progMoi" width="32" height="32" style="left:0"></canvas>`);
+/* ============ le plan du circuit, en bas à gauche (Kiki, 10/11 : comme dans Mario Kart) ============ */
+const PLAN = (() => { let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9; for (let i = 0; i < NP0; i++) { x0 = Math.min(x0, PX[i]); x1 = Math.max(x1, PX[i]); z0 = Math.min(z0, PZ[i]); z1 = Math.max(z1, PZ[i]); }
+  const W = 420, pad = 34, k = (W - 2 * pad) / Math.max(x1 - x0, z1 - z0), H = Math.ceil((z1 - z0) * k + 2 * pad), ox = (W - (x1 - x0) * k) / 2;
+  return {W, H, xy: (x, z) => [ox + (x - x0) * k, pad + (z - z0) * k]}; })();
+const fondPlan = toile(PLAN.W, PLAN.H, x => {
+  x.imageSmoothingEnabled = true; x.lineJoin = x.lineCap = "round";
+  const trace = (a, b) => { x.beginPath(); for (let i = a; i <= b; i += 2) { const [px, py] = PLAN.xy(PX[i % NP0], PZ[i % NP0]); i === a ? x.moveTo(px, py) : x.lineTo(px, py); } };
+  trace(0, NP0); x.closePath(); x.strokeStyle = "#484838"; x.lineWidth = 22; x.stroke(); x.strokeStyle = "#48A8F0"; x.lineWidth = 13; x.stroke();
+  for (const [t0, t1] of TUNNELS) { trace(Math.floor(t0 / DS), Math.ceil(t1 / DS)); x.strokeStyle = "#5A6070"; x.lineWidth = 13; x.stroke(); }  // le tunnel
+  const a = at(DEPART), [lx, ly] = PLAN.xy(a.x, a.z), nx = Math.cos(a.h), nz = Math.sin(a.h);  // la ligne, en damier
+  for (let i = -3; i < 3; i++) for (let j = 0; j < 2; j++) { x.fillStyle = (i + j) % 2 ? "#202020" : "#F8F8F8"; const px = lx + nx * (i + .5) * 4.5 - Math.sin(a.h) * (j - .5) * 4.5, py = ly + nz * (i + .5) * 4.5 + Math.cos(a.h) * (j - .5) * 4.5; x.fillRect(px - 2.4, py - 2.4, 4.8, 4.8); }
+});
+const cvPlan = $("carte"); cvPlan.width = PLAN.W; cvPlan.height = PLAN.H; const ctxPlan = cvPlan.getContext("2d");
+function majCarte() {
+  if ($("hud").hidden) return; const x = ctxPlan; x.clearRect(0, 0, PLAN.W, PLAN.H); x.drawImage(fondPlan, 0, 0);
+  if (FANTOME.u !== null && FANTOME.u !== undefined) { const g = at(DEPART + FANTOME.u), [gx, gy] = PLAN.xy(g.x, g.z); x.beginPath(); x.arc(gx, gy, 11, 0, 7); x.fillStyle = "rgba(240,248,255,.85)"; x.fill(); x.lineWidth = 3; x.strokeStyle = "#686850"; x.stroke(); }
+  const a = at(S.s), [mx, my] = PLAN.xy(a.x, a.z); x.beginPath(); x.arc(mx, my, 20, 0, 7); x.fillStyle = "#F8C838"; x.fill(); x.lineWidth = 4; x.strokeStyle = "#484838"; x.stroke();
+  x.imageSmoothingEnabled = false; x.drawImage($("progMoi"), mx - 17, my - 17, 34, 34);
 }
-function iconeProg() {  // le portrait de ton Pokémon sur la barre
+function iconeProg() {  // le portrait de ton Pokémon, posé sur le plan
   const c = $("progMoi"); if (!c) return; const x = c.getContext("2d"); x.imageSmoothingEnabled = false; x.clearRect(0, 0, 32, 32);
   const P = NAGEURS[choix]; animsDe(P.n).then(a => { const A = a.Idle || a.Walk; return chargerImg(`${PMD}${P.n}/${A.fichier}-Anim.png`).then(img => {
     const k = Math.min(32 / A.fw, 32 / A.fh); x.clearRect(0, 0, 32, 32); x.drawImage(img, 0, 0, A.fw, A.fh, (32 - A.fw * k) / 2, (32 - A.fh * k) / 2, A.fw * k, A.fh * k); }); }).catch(() => {});
 }
-function majProg() {
-  const u = S.tour ? surBoucle(S.s) / LONG : 0;  // pendant l'élan, ton Pokémon attend sur la ligne de départ
-  $("progFait").style.width = (u * 100).toFixed(2) + "%"; $("progMoi").style.left = (u * 100).toFixed(2) + "%";
-  document.querySelectorAll("#prog .etape").forEach(e => e.classList.toggle("passee", surBoucle(S.s) >= surBoucle(+e.dataset.s)));
+function boutonsFantomes() {  // au menu : contre quel fantôme rouler
+  const r = recordTous(), L = [["record", "Mon meilleur tour" + (r ? " · " + fmtT(r.temps) : " (pas encore)")], ["seance", "Mon meilleur tour de la séance"], ["aucun", "Aucun"]];
+  $("fantomes").innerHTML = L.map(([k, t]) => `<button data-f="${k}" class="${FANTOME.mode === k ? "on" : ""}" aria-pressed="${FANTOME.mode === k}">${t}</button>`).join("");
+  $("fantomes").querySelectorAll("button").forEach(b => b.onclick = () => { FANTOME.mode = b.dataset.f; try { localStorage.setItem("circuit_fantome", FANTOME.mode); } catch (e) {} boutonsFantomes(); });
 }
 
 /* ============ le menu ============ */
 let choix = 0; try { choix = clamp(+localStorage.getItem("traversee_pokemon") || 0, 0, NAGEURS.length - 1); } catch (e) {}
 function boutonsNageurs() { $("nageurs").innerHTML = NAGEURS.map((n, i) => `<button data-i="${i}" class="${i === choix ? "on" : ""}" aria-pressed="${i === choix}">${n.nom}</button>`).join("");
   $("nageurs").querySelectorAll("button").forEach(b => b.onclick = () => { choisir(+b.dataset.i); }); }
-function choisir(i) { choix = i; try { localStorage.setItem("traversee_pokemon", i); } catch (e) {} boutonsNageurs(); construire(choix); iconeProg(); }
+function choisir(i) { choix = i; try { localStorage.setItem("traversee_pokemon", i); } catch (e) {} boutonsNageurs(); construire(choix); construireFantome(choix); iconeProg(); }
 let essai = false, telOk = false, conn = null, TEL_TXT = "Je cherche ton téléphone…";
 function majMenu() {
   const t = $("mTel"); t.textContent = essai ? "Essai sans téléphone" : telOk ? "Téléphone relié ✓" : TEL_TXT; t.className = "pill " + (telOk ? "ok" : essai ? "" : "ko");
@@ -855,7 +921,7 @@ let minuteur = 0;
 function demarrer() {
   pleinEcran(); allumer();
   $("menu").hidden = true; $("hud").hidden = false; $("essai").hidden = !essai;
-  Object.assign(S, {etat: "decompte", t: 0, s: LONG - ELAN, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 0, tourT0: 0, temps: [], auto: false});
+  Object.assign(S, {etat: "decompte", t: 0, s: LONG - ELAN, v: 0, vL: 0, nb: 0, coupsT: [], dist: 0, tour: 0, tourT0: 0, temps: [], auto: false}); remiseFantome(); majTour.h = "";
   let n = 3;
   if (SEANCE.etat === "aucune" && !essai) { SEANCE.etat = "lancee"; SEANCE.relance = 0; envoyer({type: "lancer", s: 5}); n = 5; }
   const montre = () => { note(523, .15, "square", .04); $("gros").innerHTML = n + (n > 3 || SEANCE.etat === "lancee" ? "<small>Mets-toi en position</small>" : ""); };
@@ -920,7 +986,7 @@ function finir(jetee) {  // le résumé de la séance, puis retour au menu
     <div class="ligne"><button class="go" id="fOk">▶ OK</button></div>`;
   $("fin").hidden = false;
   $("fOk").onclick = () => { $("fin").hidden = true; $("hud").hidden = true; $("menu").hidden = false;
-    Object.assign(SEANCE, {etat: "aucune", t0: null, bilan: null, saisi: null}); Object.assign(S, {etat: "menu", t: 0, nb: 0, coupsT: [], dist: 0}); essai = false; majMenu(); };
+    Object.assign(SEANCE, {etat: "aucune", t0: null, bilan: null, saisi: null}); Object.assign(S, {etat: "menu", t: 0, nb: 0, coupsT: [], dist: 0}); essai = false; boutonsFantomes(); majMenu(); };
 }
 
 /* ============ le téléphone sous le siège ============ */
@@ -979,8 +1045,8 @@ $("bCoup").onclick = e => { e.stopPropagation(); coup(.65 + Math.random() * .2);
 $("bAuto").onclick = e => { e.stopPropagation(); S.auto = !S.auto; $("bAuto").classList.toggle("on", S.auto); };
 cv.addEventListener("pointerdown", () => { audio(); if (essai && S.etat === "course") coup(.6 + Math.random() * .25); });
 addEventListener("keydown", e => { if (e.code === "Space" && essai && S.etat === "course") { e.preventDefault(); coup(.7); } });
-boutonsNageurs(); dessinerProg(); majMenu(); allumer();
-construireDecor(); construire(choix); iconeProg(); for (const [s, d, r] of ACCUEIL) accueil("0054", s, d, r).catch(() => {});
+boutonsNageurs(); boutonsFantomes(); majMenu(); allumer();
+construireDecor(); construire(choix); construireFantome(choix); iconeProg(); for (const [s, d, r] of ACCUEIL) accueil("0054", s, d, r).catch(() => {});
 requestAnimationFrame(boucle);
 </script>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js" onload="ecouter()" onerror="ecouter()"></script>
