@@ -278,6 +278,22 @@ def arenes(voyage, scenes):
     return out
 
 
+def m_coup_montre(seances):
+    """Mètres par coup des séances jouées avec la montre (« La Rivière ») où la distance du rameur a été entrée : la médiane. None avant la première."""
+    r = [s["saisi"]["distance"] / s["coups"] for s in seances
+         if (s.get("jeu") or {}).get("mode") == "riviere" and (s.get("saisi") or {}).get("distance") and s.get("coups", 0) >= MIN_COUPS_APPRENTISSAGE]
+    return round(statistics.median(r), 2) if r else None
+
+
+def derniere(seances):
+    """La dernière séance, pour le menu du jeu : le joueur voit que l'envoi a marché."""
+    if not seances:
+        return None
+    s = max(seances, key=lambda x: x["debut"])
+    d = _date(s["debut"]).astimezone(TZ)
+    return {"quand": d.strftime("%d/%m à %H:%M"), "distance": (s.get("saisi") or {}).get("distance"), "tours": (s.get("jeu") or {}).get("tours")}
+
+
 def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html"):
     """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé : le modèle des mètres par coup, la progression
     du jeu du rameur, la région et les arènes de Poké Fit, les couleurs du dresseur)."""
@@ -288,7 +304,8 @@ def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=No
     donnees = {"lien": lien_tablette, "modele": m, "images": images, "sacha": sacha, "progression": progression(seances, aujourd, m),
                "region": (voyage or {}).get("carte", {}).get("region") or "Kanto", "lieu": voyage["lieux"][voyage["ici"]]["nom"] if voyage else None,
                "arenes": arenes(voyage, scenes) if voyage else [], "dresseur": dresseur, "kiki": kiki, "jour": str(aujourd)}
-    if page_html.startswith("riviere/"):  # le nouveau moteur 3D « La Rivière » (dossier riviere/, essai : ?ecran=rameur&riviere=1), un niveau = un fichier
+    if page_html.startswith("riviere/"):
+        donnees["m_coup"], donnees["derniere"] = m_coup_montre(seances), derniere(seances)  # le nouveau moteur 3D « La Rivière » (dossier riviere/, essai : ?ecran=rameur&riviere=1), un niveau = un fichier
         from riviere import page as riviere_page
         return riviere_page.page(donnees, page_html.split("/", 1)[1])
     if page_html.startswith("rameur/"):  # le rameur en pseudo-3D (dossier rameur/, niveau « baie » : ?ecran=rameur&pseudo=1), assemblé en une seule page

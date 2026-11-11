@@ -28,6 +28,33 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 #bAuto.on { background: #F8C838; }
 #hMontre { right: max(2.2vw, env(safe-area-inset-right, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + 18px); font-size: min(3.6vh, 2.9vw); color: #F8F8E8; opacity: .85; }
 #hMontre.la { color: #48C868; opacity: 1; }
+#panneau { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(27,36,64,.45); overflow-y: auto; padding: 2vh 16px; box-sizing: border-box; }
+#panneau .boite { width: min(560px, 100%); background: #F8F8E8; color: #383828; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; padding: 14px 20px 18px; font-size: 24px; line-height: 1.1; }
+#panneau h1 { margin: 0 0 2px; font-size: 40px; font-weight: normal; color: #C03028; }
+#panneau h2 { margin: 12px 0 6px; font-size: 26px; font-weight: normal; color: #B05010; }
+#panneau p { margin: 6px 0; }
+#panneau .sous, #panneau .petit { color: #686850; font-size: 20px; }
+#panneau .alerte { color: #C03028; font-size: 20px; min-height: 0; }
+#panneau .etat-montre { font-size: 22px; color: #686850; }
+#panneau .etat-montre.la { color: #2E8A48; }
+#panneau .choix { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+#panneau button { font: inherit; font-size: 26px; padding: 8px 14px; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
+#panneau button.rouge { background: #D83830; color: #fff; }
+#panneau button.sec { background: #F8F8E8; color: #383828; }
+#panneau .chiffres { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; font-size: 28px; }
+#panneau .chiffres small, #panneau .saisie small { display: block; font-size: 15px; color: #686850; letter-spacing: .05em; }
+#panneau .tours { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 21px; }
+#panneau .tours .mieux { color: #2E8A48; }
+#panneau .saisie { display: flex; flex-wrap: wrap; gap: 8px; }
+#panneau .saisie label { flex: 1 1 120px; border: 2px solid #A8A890; border-radius: 8px 4px; padding: 3px 8px; cursor: pointer; font-size: 26px; background: #fff; }
+#panneau .saisie label.court { flex: 0 1 80px; }
+#panneau .saisie label.actif { border-color: #D83830; box-shadow: 0 0 0 2px #F8C838; }
+#panneau .pave { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 10px; }
+#panneau .pave button { padding: 6px; font-size: 30px; background: #fff; color: #383828; box-shadow: 2px 2px 0 #1B2440; }
+#panneau .pave button:disabled { visibility: hidden; }
+#bFin { position: fixed; right: max(2.2vw, env(safe-area-inset-right, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(4.4vh, 3.6vw) * 1.6 + 26px); font: inherit; font-size: min(4.4vh, 3.6vw); padding: .15em .8em; color: #fff; background: #D83830; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
+#hPret { left: 50%; top: 34vh; transform: translateX(-50%); font-size: min(7vh, 5.4vw); text-align: center; white-space: nowrap; }
+@media (max-width: 520px) { #panneau .chiffres { grid-template-columns: repeat(2, 1fr); } #panneau h1 { font-size: 32px; } }
 [hidden] { display: none !important; }
 #voile { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
 #charge { position: fixed; inset: 0; display: grid; place-items: center; background: #22315A; color: #F8F8E8; font-size: 34px; }
@@ -43,9 +70,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 <div class="hud" id="hLieu"><span id="vLieu"></span></div>
 <div class="hud" id="vFps"></div>
 <div class="hud" id="hMontre" hidden></div>
-<button id="bAuto">Auto</button>
+<button id="bAuto" hidden>Auto</button>
+<button id="bFin" hidden>■ Fin</button>
+<div class="hud" id="hPret" hidden>PRÊT ?<small>le chrono part à ton premier coup de rame</small></div>
 <div id="credit">Pokémon : Donjon Mystère (Chunsoft), via PMD SpriteCollab · habitants : Pokémon Rouge Feu</div>
 <div id="voile"></div>
+<div id="panneau" class="panneau" hidden></div>
 <div id="charge">Le monde se construit…</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>

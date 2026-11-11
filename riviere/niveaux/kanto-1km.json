@@ -6,8 +6,8 @@
  "graine": 11,
  "nageur": 7,
  "boucle": "gauche",
- "distance": 1000,
- "allure": 2,
+ "distance": 2000,
+ "allure": 1,
  "elan": 120,
  "note": "Un circuit : boucle = le sens du tour (gauche : la terre au milieu) ; distance = les VRAIS mètres d'un tour (ceux du rameur) ; allure = le décor défile ce nombre de fois plus vite, donc un tour fait distance × allure mètres de décor ; elan = on part ce nombre de mètres de décor avant la ligne. Les longueurs ci-dessous sont des mètres de décor, à peu près : le jeu les ajuste un peu pour que la boucle se referme (jamais une pièce « fixe », à lieu ou à tunnel), et la pièce au virage « auto » prend le virage qui manque. La ligne est au début de la première pièce. tronc = ton Pokémon saute ; rondins = il passe dessous.",
  "pieces": [

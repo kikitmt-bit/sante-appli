@@ -37,7 +37,7 @@ function animerSprites(t, S) {
   // un tronc : il saute par-dessus, comme un dauphin ; des rondins : il passe dessous. La hauteur dépend de sa position, pas du temps : aucun retard possible.
   let bond = 0; for (const e of MONDE.evenements) { const d = ecart(S.s, e.s); if (e.type === "saut" && d > -4.5 && d < 4.5) bond = Math.sin((d + 4.5) / 9 * Math.PI) * 1.9; else if (e.type === "plongee" && d > -3.5 && d < 4) bond = -Math.sin((d + 3.5) / 7.5 * Math.PI) * 1.7; }
   if ((Math.abs(bond) > .25) !== S.enAir) { S.enAir = Math.abs(bond) > .25; gerbe(S.s, .9); }   // une gerbe au départ et à l'arrivée
-  if (nageur) { const a = at(S.s); nageur.image(nageur.pl.image(t * (.45 + S.vn * .2))); nageur.m.position.set(a.x, -nageur.h * .42 + Math.sin(t * 3) * .03 + S.elan * .08 + bond * (bond > 0 ? 1 : nageur.h), a.z); nageur.regarder(); }   // il nage posément, le corps bien dans l'eau
+  if (nageur) { const a = at(S.s); nageur.image(nageur.pl.image(t * (.45 + S.vn * .2))); nageur.m.position.set(a.x, -nageur.h * .42 + Math.sin(t * 3) * .03 + S.elan * .03 + bond * (bond > 0 ? 1 : nageur.h), a.z); nageur.regarder(); }   // il nage posément, le corps bien dans l'eau
   for (const q of PUBLIC) { q.image(q.pl.image(t + q.ph)); const d = Math.abs(ecart(q.s, S.s)); q.m.position.y = q.y0 + (q.vole ? Math.sin(t * 2.2 + q.ph) * .35 : d < 22 && S.v > .8 ? Math.abs(Math.sin(t * 8 + q.ph)) * .4 : 0); q.regarder();
     const loin = Math.hypot(camera.position.x - q.m.position.x, camera.position.z - q.m.position.z), k = q.fixe || loin < 12 ? 1 : Math.min(2.2, Math.pow(loin / 12, .5)); q.m.scale.set(q.l * k, q.h * k, 1); }   // de loin, un Pokémon rapetisse moins vite que le décor : on le reconnaît avant d'être à côté
 }

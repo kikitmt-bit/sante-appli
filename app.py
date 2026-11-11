@@ -989,6 +989,7 @@ JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if 
 if st.query_params.get("ecran") == "rameur":
     st.markdown("<style>.st-key-ecran_rameur iframe{position:fixed;inset:0;width:100vw !important;height:100dvh !important;border:0;z-index:999990;background:#22315A}"
                 "header,[data-testid='stToolbar'],.st-key-outils{display:none !important}</style>", unsafe_allow_html=True)
+    envoyer_rameur()  # une séance finie sur la tablette (« La Rivière ») attend sur cette machine : on l'envoie avant de relire les séances
     try:
         fichier_rameur = lire([seances_rameur.FICHIER], {seances_rameur.FICHIER})[seances_rameur.FICHIER]
     except Exception as e:  # sans le modèle, le jeu estime les mètres lui-même

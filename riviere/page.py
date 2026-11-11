@@ -11,7 +11,7 @@ from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent
 # l'ordre compte : chaque module peut s'appuyer sur ceux d'avant
-MODULES = ["outils", "piste", "rendu", "forme", "terrain", "eau", "tunnel", "objets", "decor", "sprites", "jeu", "montre"]
+MODULES = ["outils", "piste", "rendu", "forme", "terrain", "eau", "tunnel", "objets", "decor", "sprites", "jeu", "montre", "seance"]
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
 try:  # les tailles officielles des Pokémon (m), pour les afficher à leur échelle
