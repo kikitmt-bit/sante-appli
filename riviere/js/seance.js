@@ -24,6 +24,8 @@ function ouvrirMenu() {
     <p class="etat-montre" id="mMontre"></p>
     ${attend ? `<p class="alerte">Une séance attend d'être envoyée : recharge la page.</p>` : ""}
     ${der ? `<p class="petit">Dernière séance : ${der.quand}${der.distance ? " · " + metres(der.distance) + " m" : ""}${der.tours ? " · " + der.tours + " tour" + (der.tours > 1 ? "s" : "") : ""}</p>` : ""}
+    <div class="fantomes"><small>TON FANTÔME</small>${[["record", "Mon record"], ["seance", "Meilleur tour de la séance"], ["aucun", "Aucun"]].map(([k, t]) =>
+      `<button class="opt${FANTOME.choix === k ? " on" : ""}" data-f="${k}">${t}</button>`).join("")}<p class="petit" id="mFantome"></p></div>
     <div class="choix">
       ${reprise ? `<button class="rouge" id="mReprise">▶ Récupérer la séance interrompue (${fmt(reprise.t)})</button>` : ""}
       <button class="rouge" id="mGo">▶ Commencer la séance</button>
@@ -33,8 +35,11 @@ function ouvrirMenu() {
   p.querySelector("#mGo").onclick = e => { if (reprise && ++sur < 2) { e.target.textContent = "La séance interrompue sera perdue : touche encore"; return; } ecrireLS(ENCOURS, null); commencer("vraie"); };
   p.querySelector("#mEssai").onclick = () => commencer("essai");
   if (reprise) p.querySelector("#mReprise").onclick = () => ouvrirFin(reprise, true);
-  majMenuMontre();
+  p.querySelectorAll("[data-f]").forEach(b => b.onclick = () => { choisirFantome(b.dataset.f); p.querySelectorAll("[data-f]").forEach(x => x.classList.toggle("on", x === b)); majTexteFantome(); });
+  majTexteFantome(); majMenuMontre();
 }
+function majTexteFantome() { const el = $("mFantome"); if (!el) return;
+  el.textContent = FANTOME.choix === "aucun" ? "Pas de fantôme." : FANTOME.choix === "record" ? (FANTOME.record ? "Ton record (" + chrono(FANTOME.record.t) + ") nage avec toi dès le premier tour." : "Pas encore de record : ton meilleur tour de la séance le remplace dès le 2e tour.") : "Ton meilleur tour de cette séance nage avec toi dès le 2e tour."; }
 function majMenuMontre() {
   const el = $("mMontre"); if (!el) return;
   const la = MONTRE.sujet && MONTRE.vu && performance.now() - MONTRE.vu < 12000;
@@ -46,31 +51,33 @@ setInterval(majMenuMontre, 1000);
 /* départ : on remet tout à zéro, avant la ligne */
 function commencer(mode) {
   Object.assign(S, {mode, s: PARAMS.has("s") ? +PARAMS.get("s") : BOUCLE ? LONG - ELAN : 6, v: 0, v1: 0, v2: 0, vL: 0, vn: 0, t: 0, dist: 0, nb: 0, coupsT: [], tour: 0, tourT0: 0, tours: [],
-    lance: false, pause: false, debutMur: 0, auto: mode === "essai" && PARAMS.get("auto") !== "0", prochain: .6});
-  fermerPanneau(); majAuto(); majBoutons();
+    lance: false, pause: false, debutMur: 0, t0: performance.now(), pauseTot: 0, auto: mode === "essai" && PARAMS.get("auto") !== "0", prochain: .6});
+  fermerPanneau(); majAuto(); majBoutons(); fantomeChoisi();
   if (mode === "essai") annoncer("ESSAI : TOUCHE L'ÉCRAN");
 }
 
 /* pendant la séance : on la garde sur la machine toutes les 10 s (un onglet fermé, une coupure : on la récupère au menu) */
-const bilanDe = () => ({debutMur: S.debutMur, t: S.t, nb: S.nb, dist: S.dist, tours: S.tours.slice(), maj: Date.now()});
+const bilanDe = () => ({debutMur: S.debutMur, t: S.t, nb: S.nb, dist: Math.max(S.dist, S.nb * M_COUP), tours: S.tours.slice(), maj: Date.now()});
 setInterval(() => { if (S.mode === "vraie" && S.lance && !S.pause) ecrireLS(ENCOURS, bilanDe()); }, 10000);
 
+function mettrePause() { S.pause = true; S.pauseDebut = performance.now(); majBoutons(); }
+function reprendre() { S.pauseTot += performance.now() - S.pauseDebut; S.pause = false; fermerPanneau(); majBoutons(); }
 $("bFin").addEventListener("pointerdown", e => { e.stopPropagation();
-  if (S.mode === "essai") { S.pause = true; majBoutons(); finEssai(); return; }
-  S.pause = true; majBoutons(); if (S.lance) ecrireLS(ENCOURS, bilanDe());
+  if (S.mode === "essai") { mettrePause(); finEssai(); return; }
+  mettrePause(); if (S.lance) ecrireLS(ENCOURS, bilanDe());
   ouvrirFin(bilanDe(), false); });
 
 function resume(b) {
   const meilleur = b.tours.length ? Math.min(...b.tours) : 0;
   return `<div class="chiffres"><div><small>TEMPS</small>${fmt(b.t)}</div><div><small>COUPS</small>${b.nb}</div>
-    <div><small>CADENCE</small>${b.t > 20 ? Math.round(b.nb / (b.t / 60)) : 0}/min</div><div><small>DISTANCE ≈</small>${metres(b.dist)} m</div></div>
+    <div><small>CADENCE</small>${b.t > 20 ? Math.round(b.nb / (b.t / 60)) : 0}/min</div><div><small>DISTANCE</small>${metres(b.dist)} m</div></div>
     ${b.tours.length ? `<div class="tours">${b.tours.map((t, i) => `<span class="${t === meilleur && b.tours.length > 1 ? "mieux" : ""}">Tour ${i + 1} · ${chrono(t)}</span>`).join("")}</div>` : `<p class="petit">Aucun tour complet.</p>`}`;
 }
 function finEssai() {
   const p = panneau(`<h1>Fin de l'essai</h1>${resume(bilanDe())}<p class="petit">Un essai n'est jamais enregistré.</p>
     <div class="choix"><button class="rouge" id="fMenu">▶ Retour au menu</button><button class="sec" id="fReprendre">Reprendre</button></div>`);
   p.querySelector("#fMenu").onclick = ouvrirMenu;
-  p.querySelector("#fReprendre").onclick = () => { S.pause = false; fermerPanneau(); majBoutons(); };
+  p.querySelector("#fReprendre").onclick = reprendre;
 }
 
 /* la fin d'une vraie séance : ce qu'affiche le rameur, au pavé numérique (la tablette n'a pas toujours de clavier) */
@@ -98,7 +105,7 @@ function ouvrirFin(b, recuperee) {
     if (k === "⌫") champs[actif] = champs[actif].slice(0, -1); else if (champs[actif].length < max) champs[actif] = (champs[actif] + k).replace(/^0+(?=\d)/, "");
     if (actif === "sec" && +champs.sec > 59) champs.sec = "59"; maj(); });
   maj();
-  if (!recuperee) p.querySelector("#fReprendre").onclick = () => { S.pause = false; fermerPanneau(); majBoutons(); };
+  if (!recuperee) p.querySelector("#fReprendre").onclick = reprendre;
   p.querySelector("#fJeter").onclick = e => { if (++jeter < 2) { e.target.textContent = "Sûr ? Touche encore pour jeter"; return; } ecrireLS(ENCOURS, null); ouvrirMenu(); };
   p.querySelector("#fGarder").onclick = () => {
     const n = c => (+champs[c] > 0 ? +champs[c] : null), temps = n("min") || n("sec") ? (n("min") || 0) * 60 + (n("sec") || 0) : null;

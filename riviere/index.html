@@ -21,7 +21,15 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 #annonce { left: 50%; top: 30vh; transform: translateX(-50%); font-size: min(11vh, 8.5vw); color: #F8C838; white-space: nowrap; opacity: 0; }
 #annonce.vu { animation: annonce 2.6s ease-out; }
 @keyframes annonce { 0% { opacity: 0; transform: translateX(-50%) scale(.7); } 12% { opacity: 1; transform: translateX(-50%) scale(1.06); } 20% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
-#hLieu { left: max(2.2vw, env(safe-area-inset-left, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); font-size: min(5.4vh, 4.4vw); }
+#carte { position: fixed; left: max(1.5vw, env(safe-area-inset-left, 0px)); bottom: calc(2vh + env(safe-area-inset-bottom, 0px)); width: min(30vh, 24vw); height: min(30vh, 24vw); pointer-events: none; image-rendering: pixelated; }
+#hLieu { left: max(2.2vw, env(safe-area-inset-left, 0px)); bottom: calc(2vh + env(safe-area-inset-bottom, 0px) + min(30vh, 24vw)); font-size: min(4.4vh, 3.6vw); }
+#hDist .coeur { display: block; margin-top: .12em; }
+#vCoeur { color: #FF8A8A; }
+#panneau .fantomes { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+#panneau .fantomes small { flex-basis: 100%; font-size: 15px; color: #686850; letter-spacing: .05em; }
+#panneau .fantomes .petit { flex-basis: 100%; margin: 2px 0 0; }
+#panneau button.opt { font-size: 21px; padding: 4px 10px; background: #F8F8E8; color: #383828; box-shadow: 2px 2px 0 #1B2440; }
+#panneau button.opt.on { background: #F8C838; }
 #vFps { left: 50%; bottom: 1vh; transform: translateX(-50%); font-size: 18px; }
 #credit { position: fixed; right: 84px; bottom: calc(1vh + env(safe-area-inset-bottom, 0px)); font-size: 13px; color: #fff; opacity: .75; text-shadow: 1px 1px 0 #1B2440; pointer-events: none; }
 #bAuto { position: fixed; left: 50%; bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); font: inherit; font-size: min(4.4vh, 3.6vw); padding: .15em .9em; color: #383828; background: #F8F8E8; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
@@ -64,9 +72,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 <canvas id="c"></canvas>
 <div class="hud" id="hTemps"><small>TEMPS</small><span id="vTemps">0:00</span></div>
 <div class="hud" id="hMilieu"><div><small>CADENCE</small><span class="fixe" id="vCad">0</span><span class="unite">/min</span></div><div><small>ALLURE</small><span class="fixe" id="vVit" style="min-width:2.1em">-:--</span><span class="unite">/500 m</span></div></div>
-<div class="hud" id="hDist"><small>DISTANCE</small><span class="fixe" id="vDist" style="min-width:2.2em">0</span><span class="unite">m</span></div>
+<div class="hud" id="hDist"><small>DISTANCE</small><span class="fixe" id="vDist" style="min-width:2.2em">0</span><span class="unite">m</span><span class="coeur"><small>CŒUR</small><span class="fixe" id="vCoeur">--</span><span class="unite">♥</span></span></div>
 <div class="hud" id="hTour" hidden><div id="vTour"></div><div id="vTours"></div></div>
 <div class="hud" id="annonce"></div>
+<canvas id="carte"></canvas>
 <div class="hud" id="hLieu"><span id="vLieu"></span></div>
 <div class="hud" id="vFps"></div>
 <div class="hud" id="hMontre" hidden></div>

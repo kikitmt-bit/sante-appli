@@ -279,10 +279,11 @@ def arenes(voyage, scenes):
 
 
 def m_coup_montre(seances):
-    """Mètres par coup des séances jouées avec la montre (« La Rivière ») où la distance du rameur a été entrée : la médiane. None avant la première."""
-    r = [s["saisi"]["distance"] / s["coups"] for s in seances
-         if (s.get("jeu") or {}).get("mode") == "riviere" and (s.get("saisi") or {}).get("distance") and s.get("coups", 0) >= MIN_COUPS_APPRENTISSAGE]
-    return round(statistics.median(r), 2) if r else None
+    """Mètres par coup des séances jouées avec la montre (« La Rivière ») où la distance du rameur a été entrée : distance totale / coups totaux des
+    10 dernières (les longues comptent plus). None avant la première : le jeu prend 9 m (séances du téléphone, 9,0 à 9,1)."""
+    r = [s for s in seances if (s.get("jeu") or {}).get("mode") == "riviere" and (s.get("saisi") or {}).get("distance") and s.get("coups", 0) >= MIN_COUPS_APPRENTISSAGE]
+    r = sorted(r, key=lambda s: s["debut"])[-10:]
+    return round(sum(s["saisi"]["distance"] for s in r) / sum(s["coups"] for s in r), 3) if r else None
 
 
 def derniere(seances):
