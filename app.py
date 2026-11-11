@@ -26,11 +26,12 @@ def code_a_jour():
     """Après une mise à jour, Streamlit relit ce fichier mais peut garder ses voisins en mémoire : la nouvelle page arrivait alors sans son nouveau code (bouton du rameur mort, 06/11 ;
     même panne sur le padel, 05/11). Dès qu'un fichier a changé, on les fait tous relire."""
     ici = Path(__file__).resolve().parent
-    empreinte = sorted((f.name, f.stat().st_mtime_ns, f.stat().st_size) for f in ici.glob("*.py"))
+    # les sous-dossiers aussi (riviere/page.py, 11/11 : l'ancienne version restait en mémoire et cherchait des fichiers déplacés)
+    empreinte = sorted((str(f.relative_to(ici)), f.stat().st_mtime_ns, f.stat().st_size) for f in [*ici.glob("*.py"), *ici.glob("*/*.py")])
     if getattr(sys, "_empreinte_appli", None) != empreinte:
         for nom, m in list(sys.modules.items()):
             fichier = getattr(m, "__file__", None)
-            if nom != "__main__" and fichier and Path(fichier).resolve().parent == ici:
+            if nom != "__main__" and fichier and Path(fichier).resolve().is_relative_to(ici):
                 sys.modules.pop(nom, None)  # une autre visite au même moment a pu le retirer avant
         sys._empreinte_appli = empreinte
 
