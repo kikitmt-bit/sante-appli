@@ -1003,12 +1003,23 @@ if st.query_params.get("ecran") == "rameur":
         dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
     except Exception:
         pass
+    # Quelle version du jeu (11/11, Kiki) : « La Rivière » par défaut (le tour de Bourg Palette, ou &riviere=<niveau>) ;
+    # les anciennes restent : &circuit=1 (Circuit de la Baie), &pseudo=1 (pseudo-3D), &ancien=1 (Grande Boucle).
+    q = st.query_params
+    if q.get("pseudo"):
+        page_rameur = "rameur/" + ("ecume" if q.get("pseudo") == "1" else q.get("pseudo"))
+    elif q.get("ancien"):
+        page_rameur = "rameur_ecran.html"
+    elif q.get("circuit"):
+        page_rameur = "rameur_circuit.html"
+    else:
+        page_rameur = "riviere/" + (q.get("riviere") if q.get("riviere") not in (None, "", "1") else "kanto-1km")
     with st.container(key="ecran_rameur"):
         st.iframe(seances_rameur.page_tablette(fichier_rameur, seances_rameur.lien(st.secrets.get("JEU_CLE"), AMI), pokemon.IMAGES,
                                                "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/",
                                                aujourd_r, voyage_r, "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
                                                {k: (dresseur_r or {}).get(k) for k in ("peau", "casquette", "veste", "pantalon")}, AMI is None,
-                                               "riviere/" + ("kanto-1km" if st.query_params.get("riviere") == "1" else st.query_params.get("riviere")) if st.query_params.get("riviere") else "rameur/" + ("ecume" if st.query_params.get("pseudo") == "1" else st.query_params.get("pseudo")) if st.query_params.get("pseudo") else "rameur_ecran.html" if st.query_params.get("ancien") else "rameur_circuit.html"), height=800)  # le Circuit de la Baie par défaut (10/11) ; l'ancienne Grande Boucle : &ancien=1
+                                               page_rameur), height=800)
     st.stop()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
