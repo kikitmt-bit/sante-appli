@@ -383,36 +383,6 @@
    ]
   },
   {
-   "nom": "hautes herbes",
-   "objets": {
-    "herbes": 1
-   },
-   "sur": [
-    "pre"
-   ],
-   "bande": [
-    2.5,
-    16
-   ],
-   "pas": 3,
-   "serre": 0.8
-  },
-  {
-   "nom": "fleurs",
-   "objets": {
-    "fleurs": 1
-   },
-   "sur": [
-    "pre",
-    "bourg"
-   ],
-   "bande": [
-    1.5,
-    16
-   ],
-   "pas": 8
-  },
-  {
    "nom": "roseaux",
    "objets": {
     "roseaux": 1
@@ -427,7 +397,8 @@
     0.4
    ],
    "pas": 12,
-   "pente": 2
+   "pente": 2,
+   "plat": 1.2
   },
   {
    "nom": "rochers",

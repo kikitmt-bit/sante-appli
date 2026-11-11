@@ -40,7 +40,7 @@ mètres le long de cette ligne.
 | `sprites.js` | les Pokémon et les habitants (sprites), les éclaboussures | oui |
 | `monture.js` | ton Pokémon : nage ou course selon la surface, corde dans les virages, vrais sauts (`MONTURES`) | oui |
 | `camera.js` | suit la pente, se penche dans les virages, accompagne les sauts | oui |
-| `son.js` | les bruitages, faits par le code | — |
+| `son.js` | très doux (Kiki, 11/11) : un petit bruit à chaque coup, et les cascades (pièces `net` de 2 m au moins) qui s'entendent selon la distance, en fondu lent ; rien dans un tunnel, jamais d'écho | — |
 
 Les cinq premiers ne touchent jamais à three.js : c'est ce qui permet de les contrôler sans navigateur.
 
@@ -98,7 +98,7 @@ Object.assign(OBJETS, {
 ```
 
 Les couleurs viennent de la palette de la région (`PAL`), jamais écrites en dur : c'est ce qui permettra à Johto d'avoir ses arbres
-rouges avec les mêmes recettes. **Aucune image dans le décor.** Les règles de pose par densité sont dans la région (`regles`).
+rouges avec les mêmes recettes. **Aucune image dans le décor.** Les règles de pose par densité sont dans la région (`regles`) ; `plat` dans une règle : la rive, à 3 m du bord, ne dépasse pas cette hauteur (les roseaux ne poussent jamais au pied d'une paroi). Refusés par Kiki (11/11) : les hautes herbes en pyramides, les fleurs en cubes.
 Un objet qui fait réagir la monture : `Object.assign(EVENEMENTS, {tronc: "saut"})` (`"saut"` ou `"plongee"`).
 
 ## Ajouter une région (un autre style)

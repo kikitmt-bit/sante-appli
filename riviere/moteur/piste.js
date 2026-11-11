@@ -124,6 +124,14 @@ const PISTE = (() => {
   for (let i = 0; i < N; i++) bas = Math.min(bas, Y[i]);
   for (let i = 0; i < N; i++) Y[i] -= bas;
   const PENTE = new Float32Array(N); for (let i = 0; i < N; i++) PENTE[i] = (Y[borne(i + 1)] - Y[borne(i - 1)]) / 2;
+  // le sens où l'eau file (COULE, la pente vue par l'eau) : vers le bas d'une pente, mais une petite bosse (un tremplin, moins de 2 m)
+  // ne la fait pas remonter vers le joueur : sur une montée courte, l'eau continue dans le sens de la course (Kiki, 11/11)
+  const COULE = Float32Array.from(PENTE);
+  for (let i = 0; i < N; i++) {
+    if (PENTE[i] <= .01 || PENTE[borne(i - 1)] > .01) continue;   // le pied d'une montée
+    let j = i, n = 0; while (PENTE[borne(j)] > .01 && n < N) { j++; n++; }
+    if (Y[borne(j)] - Y[i] < 2) for (let k = i; k < j; k++) COULE[borne(k)] = -PENTE[borne(k)];
+  }
   const COURB = adoucir(K0, 5, BOUCLE), W = adoucir(W0, FONDU, BOUCLE), CAMH = adoucir(CH0, 12, BOUCLE), CAMR = adoucir(CR0, 12, BOUCLE);
   // l'allure du décor : celle du niveau, celle de la pièce, et la pente (ça file dans une descente, ça peine dans une côte)
   const pd = adoucir(PENTE, 5, BOUCLE), al = new Float32Array(N);
@@ -150,7 +158,7 @@ const PISTE = (() => {
     if (BOUCLE ? PONT[(i + N - 1) % N] : i > 0 && PONT[i - 1]) FR[i] = 2; else if (!BOUCLE && i === 0) FR[i] = 1;
   }
   const CH = new Float32Array(N), SH = new Float32Array(N); for (let i = 0; i < N; i++) { CH[i] = Math.cos(H[i]); SH[i] = Math.sin(H[i]); }
-  return {N, X, Z, Y, H, HFIN: h, W, PG: poids(KG), PD: poids(KD), TUN, PONT, NET, SF, PC, PENTE, COURB, ALL, VR, CAMH, CAMR, FA, FR, CH, SH, pieces, surfaces, fermeture};
+  return {N, X, Z, Y, H, HFIN: h, W, PG: poids(KG), PD: poids(KD), TUN, PONT, NET, SF, PC, PENTE, COULE, COURB, ALL, VR, CAMH, CAMR, FA, FR, CH, SH, pieces, surfaces, fermeture};
 })();
 const LONG = BOUCLE ? PISTE.N : PISTE.N - 1;   // la longueur du niveau (un tour, pour une boucle)
 const idx = s => { const i = Math.round(s), N = PISTE.N; return BOUCLE ? ((i % N) + N) % N : clamp(i, 0, N - 1); };          // le mètre de la piste le plus proche de s

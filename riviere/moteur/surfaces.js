@@ -55,7 +55,7 @@ const MAT_EAU = new THREE.ShaderMaterial({uniforms: EAU_U, vertexShader: PISTE_V
 const MAT_MER = new THREE.ShaderMaterial({uniforms: EAU_U, vertexShader: PISTE_VS, fragmentShader: EAU_FS, defines: {MER: 1}, side: THREE.DoubleSide});
 SURFACES.eau = {materiau: MAT_EAU, liquide: true, monture: "nageur"};
 
-/* ---- la terre ferme : un chemin de terre (deux ornières) ou une route (ligne au milieu, bordures rouges et blanches) ---- */
+/* ---- la terre ferme : un chemin de terre ou une route (ligne au milieu, bordures rouges et blanches) ---- */
 const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte;
   varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -69,8 +69,7 @@ const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode; uniform vec3 uC1, 
       if (vBord < .7) c = mix(uLigne, vec3(.84, .22, .2), step(.5, fract(vSU.x / 3.)));             // les bordures
       else if (abs(vSU.y) < .1 && fract(vSU.x / 5.) < .5) c = uLigne;                                 // la ligne du milieu
     } else {
-      if (vBord < .5 + o) c = uBordC;                                                                // l'accotement
-      else if (abs(abs(vSU.y) - 1.15) < .3 && h21(floor(vec2(vSU.x * 2., vSU.y * 5.))) > .4) c = mix(c, uC2 * .84, .85 * prox + .15);   // deux ornières
+      if (vBord < .5 + o) c = uBordC;                                                                // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
     }
     c = mix(c, uBrume, smoothstep(uB0, uB1, vZ) * .94);
     gl_FragColor = vec4(c * uSombre * uTeinte, 1.); }`;
@@ -98,7 +97,7 @@ function construirePiste() {
     const pos = [], su = [], bord = [], ec = [], pente = [], ind = [];
     for (let i = a0; i <= a1; i++) {
       const a = at(i), w = a.w, rx = Math.cos(a.h), rz = Math.sin(a.h), ii = idx(i), pont = P.PONT[ii], eg = pont || hRive(ii, 0, .02) > .02 ? 1 : 0, ed = pont || hRive(ii, 1, .02) > .02 ? 1 : 0;
-      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(w - Math.abs(u)); ec.push(eg, ed); pente.push(P.PENTE[ii]); }
+      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]); }
     }
     for (let i = 0; i < a1 - a0; i++) for (let j = 0; j < 6; j++) { const a = i * 7 + j, b = a + 7; ind.push(a, a + 1, b, a + 1, b + 1, b); }
     const g = new THREE.BufferGeometry();
@@ -134,6 +133,10 @@ function construirePonts() {
         const nrmale = Math.abs(dy) > .01 ? [(k < 4 ? -1 : 1) * A.rx * (k === 2 || k === 4 ? -1 : 1), 0, (k < 4 ? -1 : 1) * A.rz * (k === 2 || k === 4 ? -1 : 1)] : [0, k === 7 ? -1 : 1, 0];
         for (const q of [0, 1, 2, 0, 2, 3]) F.v(V[q][0], V[q][1], V[q][2], nrmale[0], nrmale[1], nrmale[2], tons[k], k === 1 || k === 5 ? 1 : 0);
       }
+    }
+    for (const [i, sens] of [[ia - 1, -1], [ib + 1, 1]]) {   // les deux bouts fermés : les parapets et le tablier ne sont plus creux (11/11)
+      const A = sec(i), c = A.c, nx = Math.sin(A.a.h) * sens, nz = -Math.cos(A.a.h) * sens;
+      for (const [p, q, r, t] of [[0, 1, 2, 3], [4, 5, 6, 7], [0, 3, 4, 7]]) for (const V of [[c[p], c[q], c[r]], [c[p], c[r], c[t]], [c[p], c[r], c[q]], [c[p], c[t], c[r]]]) for (const v of V) F.v(v[0], v[1], v[2], nx, 0, nz, pierre[1], 0);
     }
     for (let i = ia + 4; i < ib - 2; i += 9) {   // les piles : jamais dans la piste qui passe dessous
       const a = at(i), sol = hauteur(a.x, a.z); if (Q.e < 1.5 && !Q.bout) continue;

@@ -48,6 +48,7 @@ function poserDecor() {   // tout placer (aucun appel à three.js : se contrôle
         if (reserve(s, cote, e) || (r.sauf || []).includes(pieceEn(s).titre)) continue;
         const q = pose(s, sg * (at(s).w + e)); pres(q.x, q.z); if (Math.abs(Q.e - e) > 1.5) continue;   // dans un virage serré, ce point est en fait plus près d'un autre bout de rivière
         const y = hauteur(q.x, q.z); if (y - P.Y[Q.i] < .15) continue;
+        if (r.plat !== undefined) { const q3 = pose(s, sg * (at(s).w + 3)); if (hauteur(q3.x, q3.z) - P.Y[Q.i] > r.plat) continue; }   // plat : la rive, à 3 m du bord, ne monte pas plus haut (des roseaux jamais au pied d'une paroi)
         const pente = Math.max(Math.abs(hauteur(q.x + 1.5, q.z) - hauteur(q.x - 1.5, q.z)), Math.abs(hauteur(q.x, q.z + 1.5) - hauteur(q.x, q.z - 1.5))) / 3; if (pente > (r.pente || .45)) continue;
         const rayon = (RAYON[nom] || 1) * ech * (r.serre || 1); if (!libre(q.x, q.z, rayon)) continue;
         poser(nom, s, cote, e, Object.assign({r: (RAYON[nom] || 1) * (r.serre || 1)}, r.reglages, r.nums ? {num: r.nums[Math.floor(R() * r.nums.length)]} : null), ech); } } }

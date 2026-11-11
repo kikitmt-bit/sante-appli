@@ -1,7 +1,7 @@
 /* ============ le kit d'objets : chacun est une petite recette de volumes, dans son repère (z = vers la rivière, x = dans le sens du courant, y = vers le haut) ============ */
 // Ajouter un objet au jeu = ajouter une recette ici, ou déposer un autre fichier dans ce dossier (Object.assign(OBJETS, {…})) : page.py les ramasse tous. Les niveaux, les régions et les lieux n'utilisent que des noms d'objets.
 // F : la Forme où dessiner (déjà placée et tournée) ; o : ses réglages (venus du fichier) ; R : le hasard du niveau ; K : le monde (étiquettes, sprites, objets animés).
-Object.assign(RAYON, {arbre: 2.3, arbre_loin: 3.1, buisson: 1, rocher: 1.2, herbes: 1.6, fleurs: 1, roseaux: .5, maison: 6, labo: 11, centre: 8, boutique: 7, eolienne: 2, panneau: 1.6, barriere: .3, boite_lettres: .4, lampadaire: .4, pokemon: .8, habitant: .6, chemin: 0, tronc: 0, rondins: 0, ligne: 0});
+Object.assign(RAYON, {arbre: 2.3, arbre_loin: 3.1, buisson: 1, rocher: 1.2, roseaux: .5, maison: 6, labo: 11, centre: 8, boutique: 7, eolienne: 2, panneau: 1.6, barriere: .3, boite_lettres: .4, lampadaire: .4, pokemon: .8, habitant: .6, chemin: 0, tronc: 0, rondins: 0, ligne: 0});
 const BLANC = [1, 1, 1];
 Object.assign(EVENEMENTS, {tronc: "saut", rondins: "plongee"});   // ces objets font réagir ton Pokémon quand il arrive dessus
 /* les pièces communes aux bâtiments */
@@ -31,11 +31,7 @@ Object.assign(OBJETS, {
   arbre_loin(F, o, R) { const t = PAL.feuilles; F.cyl(0, -.5, 0, .45, .35, 1.8, 4, PAL.tronc[0]); F.dome(0, 2.6, 0, 3.1, 1.9, 3.1, t, 6); F.dome(0, 3.9, 0, 2.2, 3.2, 2.2, t, 6, true); },
   buisson(F, o, R) { const t = PAL.feuilles; F.ombre(.2, 0, 1.3, 1); F.boule(0, .45, 0, 1, .75, .9, t, 0); F.boule(.7, .35, .2, .65, .55, .6, t, 0); },
   rocher(F, o, R) { F.ombre(.2, 0, 1.4, 1.2); F.caillou(0, .25, 0, 1.1, .8, .95, PAL.pierre, R); if (R() < .5) F.caillou(.9, .1, .4, .5, .4, .5, PAL.pierre, R); },
-  herbes(F, o, R) {  // les hautes herbes : des touffes sombres et serrées
-    const t = PAL.herbes; for (let k = 0; k < 9; k++) { const a = R() * 6.283, d = Math.sqrt(R()) * 1.7, x = Math.cos(a) * d, z = Math.sin(a) * d;
-      F.cyl(x, 0, z, .3, 0, .5 + R() * .25, 4, t[0], t[1]); } },
-  fleurs(F, o, R) { const c = o.couleur ? PAL.fleurs[o.couleur] : null; for (let k = 0; k < 5; k++) { const a = R() * 6.283, d = Math.sqrt(R()) * 1, x = Math.cos(a) * d, z = Math.sin(a) * d;
-      F.boite(x, 0, z, .22, .3, .22, c || (R() < .6 ? PAL.fleurs.rouge : PAL.fleurs.blanc)); } },
+  // (hautes herbes en pyramides et fleurs en cubes : retirées, Kiki, 11/11)
   roseaux(F, o, R) { for (let k = 0; k < 4; k++) { const x = (R() - .5) * 1.4, z = (R() - .5) * .5, h = .55 + R() * .5; F.boite(x, -.4, z, .06, h + .4, .06, PAL.herbes[1]); if (k % 2) F.boite(x, h - .05, z, .11, .26, .11, PAL.tronc[1]); } },
   barriere(F, o) { const L = o.long || 6, n = Math.max(2, Math.round(L / 1.25) + 1), b = PAL.blanc;
     for (let k = 0; k < n; k++) F.boite(-L / 2 + L * k / (n - 1), -.3, 0, .16, 1.15, .16, b, {haut: BLANC});

@@ -12,7 +12,9 @@ function construireTerrain() {
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     const x = x0 + i * C, z = z0 + j * C, k = j * nx + i, h = hSol(x, z), e = Q.e, pi = Q.i, cote = Q.d > 0 ? 1 : 0, tun = P.TUN[pi], culee = Q.bout === 2;
     GI[k] = pi; GE[k] = e; GC[k] = cote;
-    if (e < .8 && !culee) { if (tun) { HH[k] = h; GK[k] = 2; } else { HH[k] = P.Y[pi] - 1.5; GK[k] = 1; } }
+    const bec = culee && Q.av > -3 && Math.abs(Q.d) < P.W[pi] + .8;   // juste au bout d'un pont, dans le couloir de la piste : le lit, pas de l'herbe (11/11 : deux coins d'herbe sur l'eau)
+    if (bec) { HH[k] = P.Y[pi] - 1.5; GK[k] = 1; }
+    else if (e < .8 && !culee) { if (tun) { HH[k] = h; GK[k] = 2; } else { HH[k] = P.Y[pi] - 1.5; GK[k] = 1; } }
     else if (tun || e >= RB || culee) { HH[k] = h; GK[k] = tun && e < RB ? 3 : 0; }
     else {   // sous le ruban des rives : un peu plus bas, pour ne jamais dépasser
       const f = 1 - lisse(RB - 5, RB, e);

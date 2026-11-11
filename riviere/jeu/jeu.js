@@ -90,8 +90,7 @@ function boucle(now) {
   const tunnel = dansTunnel(S.s);
   COMMUNS.uSombre.value = lerp(COMMUNS.uSombre.value, tunnel ? .86 : 1, clamp(dt * 3, 0, 1));
   animerMonture(T, dt, S); cadrer(dt, S, T); animerPublic(T, S); animerFantome(T); animerGouttes(dt); animerDecor(T);
-  let raide = 0; for (let k = -6; k <= 14; k += 4) raide = Math.max(raide, Math.abs(PISTE.PENTE[idx(S.s + k)]));
-  sonMaj(S.mode && !S.pause ? S.vn : 0, M.liquide, !!tunnel, S.mode && !S.pause ? raide : 0);
+  sonMaj(S.s, !!tunnel);
   dessiner(); hud();
   if (BANC && !BANC.fini) bancImage(ecoule);
   FPS.n++; FPS.t += vraiDt;

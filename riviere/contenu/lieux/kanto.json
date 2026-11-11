@@ -42,18 +42,6 @@
     "e": 9.2
    },
    {
-    "o": "fleurs",
-    "a": 11.5,
-    "e": 11,
-    "couleur": "rouge"
-   },
-   {
-    "o": "fleurs",
-    "a": 22.5,
-    "e": 11,
-    "couleur": "rouge"
-   },
-   {
     "o": "arbre",
     "a": 28.5,
     "e": 17
@@ -102,12 +90,6 @@
     "e": 7.4
    },
    {
-    "o": "fleurs",
-    "a": 44.5,
-    "e": 11,
-    "couleur": "blanc"
-   },
-   {
     "o": "arbre",
     "a": 51,
     "e": 16
@@ -141,18 +123,6 @@
     "num": 4,
     "a": 75.4,
     "e": 4.2
-   },
-   {
-    "o": "fleurs",
-    "a": 62,
-    "e": 12,
-    "couleur": "rouge"
-   },
-   {
-    "o": "fleurs",
-    "a": 78.5,
-    "e": 13,
-    "couleur": "rouge"
    },
    {
     "o": "eolienne",
@@ -210,11 +180,6 @@
     "e": 6.5
    },
    {
-    "o": "fleurs",
-    "a": 24,
-    "e": 11
-   },
-   {
     "o": "lampadaire",
     "a": 30,
     "e": 5
@@ -235,18 +200,6 @@
     "num": 113,
     "a": 40.6,
     "e": 12.6
-   },
-   {
-    "o": "fleurs",
-    "a": 35,
-    "e": 13.5,
-    "couleur": "rouge"
-   },
-   {
-    "o": "fleurs",
-    "a": 51,
-    "e": 13.5,
-    "couleur": "rouge"
    },
    {
     "o": "lampadaire",
