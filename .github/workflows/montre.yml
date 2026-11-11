@@ -1,6 +1,9 @@
 # Fichier de la montre (data/pokemon/montre.json dans le dépôt privé) : lancé par le script Google après chaque récolte,
 # et une fois par heure en secours. Secret nécessaire : SANTE_TOKEN (jeton qui peut écrire dans kikitmt-bit/sante).
 # Dépôt public : montre.py n'affiche aucune donnée dans le journal.
+# Le job « amis » relance aussi la récolte des amis (recolte-amis.yml) : les tâches programmées de GitHub ne partent que
+# 2 ou 3 fois par jour (constaté le 11/11), alors que ce fichier-ci est lancé par le script Google toutes les quelques
+# minutes. Au plus une relance toutes les 25 min, rien la nuit.
 name: Fichier de la montre
 on:
   workflow_dispatch:
@@ -26,3 +29,19 @@ jobs:
       - run: python montre.py github
         env:
           SANTE_TOKEN: ${{ secrets.SANTE_TOKEN }}
+  amis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      actions: write
+    steps:
+      - name: Relancer la récolte des amis
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          h=$(date -u +%H); h=${h#0}
+          if [ "$h" -lt 5 ] || [ "$h" -gt 22 ]; then echo "La nuit : rien."; exit 0; fi
+          quand=$(gh run list --workflow recolte-amis.yml --status completed -L 1 --json createdAt --jq '.[0].createdAt')
+          if [ -n "$quand" ] && [ $(( $(date -u +%s) - $(date -u -d "$quand" +%s) )) -lt 1500 ]; then echo "Faite il y a moins de 25 min."; exit 0; fi
+          gh workflow run recolte-amis.yml && echo "Récolte des amis relancée."
