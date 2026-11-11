@@ -1,0 +1,520 @@
+{
+ "nom": "Kanto",
+ "note": "Une région = ses couleurs, ses sortes de rive, et les règles qui posent le décor tout seul. Un niveau ne fait que nommer les rives. profil : [distance au bord de l'eau (m), hauteur (m)]. sols : [nom du sol, jusqu'à quelle distance]. regles : objets (avec leur poids), sur quelles rives, bande = distance au bord de l'eau (m), pas = un essai tous les N mètres de rive. Une règle « derriere » pose son objet juste derrière un arbre déjà posé (un Pokémon qui dépasse du tronc).",
+ "ciel": {
+  "haut": "#3E86E2",
+  "bas": "#D8EEF9",
+  "montagnes": [
+   "#AFC8E6",
+   "#8FB4D9"
+  ]
+ },
+ "brume": "#D8EEF9",
+ "eau": {
+  "c1": "#3C90EC",
+  "c2": "#327EDC",
+  "clair": "#6CBCF6",
+  "reflet": "#B4E0FF",
+  "ecume": "#F4FCFF"
+ },
+ "sols": {
+  "herbe": {
+   "c": [
+    "#84D45C",
+    "#76C852"
+   ]
+  },
+  "herbe_foret": {
+   "c": [
+    "#62B84A",
+    "#56AA42"
+   ]
+  },
+  "sable": {
+   "c": [
+    "#F2E2AC",
+    "#E8D69C"
+   ]
+  },
+  "terre": {
+   "c": [
+    "#B48C5C",
+    "#A67E52"
+   ]
+  },
+  "roche": {
+   "c": [
+    "#A39C96",
+    "#938C86"
+   ]
+  }
+ },
+ "rives": {
+  "mer": {
+   "profil": [
+    [
+     0,
+     -1.5
+    ],
+    [
+     60,
+     -3
+    ]
+   ],
+   "sols": [
+    [
+     "sable",
+     999
+    ]
+   ],
+   "paroi": "sable"
+  },
+  "plage": {
+   "profil": [
+    [
+     0,
+     0.04
+    ],
+    [
+     3,
+     0.3
+    ],
+    [
+     9,
+     0.8
+    ],
+    [
+     16,
+     1.4
+    ],
+    [
+     45,
+     2.6
+    ],
+    [
+     110,
+     4
+    ]
+   ],
+   "sols": [
+    [
+     "sable",
+     10
+    ],
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "sable",
+   "bosses": 1.2
+  },
+  "pre": {
+   "profil": [
+    [
+     0,
+     0.25
+    ],
+    [
+     0.4,
+     0.55
+    ],
+    [
+     2.5,
+     0.8
+    ],
+    [
+     30,
+     1.6
+    ],
+    [
+     110,
+     4
+    ]
+   ],
+   "sols": [
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "terre",
+   "bosses": 1.5
+  },
+  "bourg": {
+   "profil": [
+    [
+     0,
+     0.25
+    ],
+    [
+     0.4,
+     0.6
+    ],
+    [
+     2,
+     0.8
+    ],
+    [
+     50,
+     1.1
+    ],
+    [
+     110,
+     5
+    ]
+   ],
+   "sols": [
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "terre",
+   "bosses": 0.6
+  },
+  "foret": {
+   "profil": [
+    [
+     0,
+     0.3
+    ],
+    [
+     0.5,
+     0.7
+    ],
+    [
+     3,
+     1.1
+    ],
+    [
+     30,
+     2.6
+    ],
+    [
+     110,
+     7
+    ]
+   ],
+   "sols": [
+    [
+     "herbe_foret",
+     999
+    ]
+   ],
+   "paroi": "terre",
+   "bosses": 2.5
+  },
+  "montagne": {
+   "profil": [
+    [
+     0,
+     0.2
+    ],
+    [
+     0.6,
+     6.6
+    ],
+    [
+     2,
+     8.3
+    ],
+    [
+     10,
+     13
+    ],
+    [
+     30,
+     22
+    ],
+    [
+     70,
+     30
+    ],
+    [
+     110,
+     26
+    ]
+   ],
+   "sols": [
+    [
+     "roche",
+     2.5
+    ],
+    [
+     "herbe_foret",
+     999
+    ]
+   ],
+   "paroi": "roche",
+   "bosses": 7
+  }
+ },
+ "palette": {
+  "feuilles": [
+   "#3C9A4E",
+   "#62C262",
+   "#A2E27A"
+  ],
+  "herbes": [
+   "#3A9A4A",
+   "#58B85C"
+  ],
+  "tronc": [
+   "#6A4428",
+   "#8A5E36"
+  ],
+  "pierre": [
+   "#7C7872",
+   "#A29C96",
+   "#C6C0BA"
+  ],
+  "blanc": "#F2F0E6",
+  "planche": "#E8D4A0",
+  "chemin": "#E6D2A0",
+  "vitre": "#4C9CEC",
+  "fleurs": {
+   "rouge": "#E8483C",
+   "blanc": "#FFFFFF",
+   "jaune": "#F8D048"
+  },
+  "murs": {
+   "creme": "#F4ECD8",
+   "blanc": "#F6F6F2",
+   "gris": "#DCDEE4",
+   "jaune": "#F6E0A0",
+   "pierre": "#E2E4EA"
+  },
+  "toits": {
+   "rouge": "#E0503C",
+   "bleu": "#3C8CE4",
+   "vert": "#4CAC6C",
+   "orange": "#F09048",
+   "brun": "#A8744A",
+   "paille": "#D8B070",
+   "gris": "#9CB0C4"
+  },
+  "portes": {
+   "gris": "#B8BCC8",
+   "vert": "#3E9A5C",
+   "rouge": "#C8483C",
+   "violet": "#5C68C0"
+  },
+  "vitre_claire": "#A4E0F8",
+  "cadre": "#3C4660",
+  "lumiere": "#FFF2B0"
+ },
+ "regles": [
+  {
+   "nom": "forêt",
+   "objets": {
+    "arbre": 5
+   },
+   "sur": [
+    "foret"
+   ],
+   "bande": [
+    2.5,
+    30
+   ],
+   "pas": 1.2,
+   "echelle": [
+    0.85,
+    1.3
+   ],
+   "serre": 0.8
+  },
+  {
+   "nom": "fond de forêt",
+   "objets": {
+    "arbre_loin": 3
+   },
+   "sur": [
+    "foret"
+   ],
+   "bande": [
+    30,
+    95
+   ],
+   "pas": 2,
+   "echelle": [
+    1.1,
+    1.7
+   ]
+  },
+  {
+   "nom": "arbres des prés",
+   "objets": {
+    "arbre": 4,
+    "buisson": 2
+   },
+   "sur": [
+    "pre",
+    "plage"
+   ],
+   "bande": [
+    9,
+    40
+   ],
+   "pas": 4.5,
+   "echelle": [
+    0.9,
+    1.3
+   ]
+  },
+  {
+   "nom": "bois au loin",
+   "objets": {
+    "arbre_loin": 4
+   },
+   "sur": [
+    "pre",
+    "plage",
+    "bourg"
+   ],
+   "bande": [
+    42,
+    100
+   ],
+   "pas": 3,
+   "echelle": [
+    1.1,
+    1.7
+   ]
+  },
+  {
+   "nom": "hautes herbes",
+   "objets": {
+    "herbes": 1
+   },
+   "sur": [
+    "pre"
+   ],
+   "bande": [
+    2.5,
+    16
+   ],
+   "pas": 3,
+   "serre": 0.8
+  },
+  {
+   "nom": "fleurs",
+   "objets": {
+    "fleurs": 1
+   },
+   "sur": [
+    "pre",
+    "bourg"
+   ],
+   "bande": [
+    1.5,
+    16
+   ],
+   "pas": 8
+  },
+  {
+   "nom": "roseaux",
+   "objets": {
+    "roseaux": 1
+   },
+   "sur": [
+    "pre",
+    "foret",
+    "bourg"
+   ],
+   "bande": [
+    0.1,
+    0.4
+   ],
+   "pas": 12,
+   "pente": 2
+  },
+  {
+   "nom": "rochers",
+   "objets": {
+    "rocher": 1
+   },
+   "sur": [
+    "plage",
+    "pre",
+    "foret",
+    "montagne"
+   ],
+   "bande": [
+    1,
+    12
+   ],
+   "pas": 16,
+   "echelle": [
+    0.7,
+    1.4
+   ],
+   "pente": 0.8
+  },
+  {
+   "nom": "arbres de montagne",
+   "objets": {
+    "arbre": 3,
+    "rocher": 1
+   },
+   "sur": [
+    "montagne"
+   ],
+   "bande": [
+    5,
+    95
+   ],
+   "pas": 1.6,
+   "echelle": [
+    0.9,
+    1.5
+   ],
+   "pente": 0.75
+  },
+  {
+   "nom": "Pokémon de la plage (le seul endroit où il y en a beaucoup)",
+   "objets": {
+    "pokemon": 1
+   },
+   "nums": [
+    98,
+    54,
+    79,
+    120,
+    98
+   ],
+   "sur": [
+    "plage"
+   ],
+   "bande": [
+    1.2,
+    7
+   ],
+   "pas": 13
+  },
+  {
+   "nom": "Pokémon cachés derrière un arbre",
+   "objets": {
+    "pokemon": 1
+   },
+   "nums": [
+    10,
+    13,
+    25,
+    43
+   ],
+   "sur": [
+    "foret"
+   ],
+   "derriere": [
+    "arbre",
+    "sapin"
+   ],
+   "bande": [
+    2.5,
+    9
+   ],
+   "pas": 45
+  }
+ ]
+}

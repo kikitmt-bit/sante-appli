@@ -1,0 +1,300 @@
+{
+ "note": "Les lieux de la région, décrits une seule fois. Un niveau en pose un en une ligne : {\"lieu\": \"bourg-palette\", \"cote\": \"g\", \"a\": 4}. long, prof : la place réservée le long de la rive et en profondeur (les règles n'y posent rien). Chaque objet : a = mètres le long de la rive depuis le début du lieu, e = mètres depuis le bord de l'eau. haut = mètres au-dessus du sol (un Pokémon sur un toit). Habitants : sprites de Rouge Feu (nom du fichier : mom, prof_oak, blue, nurse, clerk, old_man_1, youngster, lass, little_girl, fisher…).",
+ "bourg-palette": {
+  "long": 94,
+  "prof": 40,
+  "objets": [
+   {
+    "o": "panneau",
+    "a": 4,
+    "e": 2.2,
+    "texte": "BOURG PALETTE",
+    "face": "arrivant"
+   },
+   {
+    "o": "maison",
+    "a": 18,
+    "e": 15,
+    "toit": "rouge",
+    "mur": "creme"
+   },
+   {
+    "o": "barriere",
+    "a": 12,
+    "e": 9.5,
+    "long": 5
+   },
+   {
+    "o": "barriere",
+    "a": 21.6,
+    "e": 9.5,
+    "long": 7
+   },
+   {
+    "o": "boite_lettres",
+    "a": 14.2,
+    "e": 8.8
+   },
+   {
+    "o": "habitant",
+    "nom": "mom",
+    "a": 17.4,
+    "e": 9.2
+   },
+   {
+    "o": "fleurs",
+    "a": 11.5,
+    "e": 11,
+    "couleur": "rouge"
+   },
+   {
+    "o": "fleurs",
+    "a": 22.5,
+    "e": 11,
+    "couleur": "rouge"
+   },
+   {
+    "o": "arbre",
+    "a": 28.5,
+    "e": 17
+   },
+   {
+    "o": "buisson",
+    "a": 29,
+    "e": 8
+   },
+   {
+    "o": "maison",
+    "a": 40,
+    "e": 15,
+    "toit": "rouge",
+    "mur": "gris"
+   },
+   {
+    "o": "pokemon",
+    "num": 16,
+    "a": 41.5,
+    "e": 15,
+    "haut": 6.75,
+    "pose": true
+   },
+   {
+    "o": "barriere",
+    "a": 34,
+    "e": 9.5,
+    "long": 5
+   },
+   {
+    "o": "barriere",
+    "a": 43.6,
+    "e": 9.5,
+    "long": 7
+   },
+   {
+    "o": "boite_lettres",
+    "a": 36.2,
+    "e": 8.8
+   },
+   {
+    "o": "habitant",
+    "nom": "blue",
+    "a": 39.6,
+    "e": 7.4
+   },
+   {
+    "o": "fleurs",
+    "a": 44.5,
+    "e": 11,
+    "couleur": "blanc"
+   },
+   {
+    "o": "arbre",
+    "a": 51,
+    "e": 16
+   },
+   {
+    "o": "panneau",
+    "a": 56,
+    "e": 5,
+    "texte": "LABO DU PROF. CHEN",
+    "large": 4.4
+   },
+   {
+    "o": "labo",
+    "a": 68,
+    "e": 21
+   },
+   {
+    "o": "habitant",
+    "nom": "prof_oak",
+    "a": 72.6,
+    "e": 9.5
+   },
+   {
+    "o": "pokemon",
+    "num": 1,
+    "a": 67.6,
+    "e": 4
+   },
+   {
+    "o": "pokemon",
+    "num": 4,
+    "a": 75.4,
+    "e": 4.2
+   },
+   {
+    "o": "fleurs",
+    "a": 62,
+    "e": 12,
+    "couleur": "rouge"
+   },
+   {
+    "o": "fleurs",
+    "a": 78.5,
+    "e": 13,
+    "couleur": "rouge"
+   },
+   {
+    "o": "eolienne",
+    "a": 87,
+    "e": 31
+   },
+   {
+    "o": "barriere",
+    "a": 86,
+    "e": 9,
+    "long": 9
+   },
+   {
+    "o": "arbre",
+    "a": 91,
+    "e": 15
+   }
+  ]
+ },
+ "jadielle": {
+  "long": 100,
+  "prof": 40,
+  "objets": [
+   {
+    "o": "panneau",
+    "a": 4,
+    "e": 2.2,
+    "texte": "JADIELLE",
+    "face": "arrivant",
+    "large": 2.8
+   },
+   {
+    "o": "maison",
+    "a": 16,
+    "e": 15,
+    "toit": "vert",
+    "mur": "creme"
+   },
+   {
+    "o": "barriere",
+    "a": 10,
+    "e": 9.5,
+    "long": 5
+   },
+   {
+    "o": "barriere",
+    "a": 19.6,
+    "e": 9.5,
+    "long": 7
+   },
+   {
+    "o": "habitant",
+    "nom": "youngster",
+    "a": 21,
+    "e": 6.5
+   },
+   {
+    "o": "fleurs",
+    "a": 24,
+    "e": 11
+   },
+   {
+    "o": "lampadaire",
+    "a": 30,
+    "e": 5
+   },
+   {
+    "o": "centre",
+    "a": 43,
+    "e": 19
+   },
+   {
+    "o": "habitant",
+    "nom": "nurse",
+    "a": 45.2,
+    "e": 13
+   },
+   {
+    "o": "pokemon",
+    "num": 113,
+    "a": 40.6,
+    "e": 12.6
+   },
+   {
+    "o": "fleurs",
+    "a": 35,
+    "e": 13.5,
+    "couleur": "rouge"
+   },
+   {
+    "o": "fleurs",
+    "a": 51,
+    "e": 13.5,
+    "couleur": "rouge"
+   },
+   {
+    "o": "lampadaire",
+    "a": 55,
+    "e": 5
+   },
+   {
+    "o": "habitant",
+    "nom": "old_man_1",
+    "a": 58,
+    "e": 7
+   },
+   {
+    "o": "boutique",
+    "a": 70,
+    "e": 18.5
+   },
+   {
+    "o": "habitant",
+    "nom": "clerk",
+    "a": 72,
+    "e": 13
+   },
+   {
+    "o": "lampadaire",
+    "a": 80,
+    "e": 5
+   },
+   {
+    "o": "maison",
+    "a": 90,
+    "e": 15,
+    "toit": "orange",
+    "mur": "jaune",
+    "etage": false
+   },
+   {
+    "o": "barriere",
+    "a": 90,
+    "e": 9.5,
+    "long": 9
+   },
+   {
+    "o": "habitant",
+    "nom": "lass",
+    "a": 84,
+    "e": 8
+   }
+  ]
+ }
+}

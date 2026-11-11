@@ -1,0 +1,142 @@
+{
+ "nom": "De Bourg Palette à Jadielle",
+ "biome": "kanto",
+ "lieux": "kanto",
+ "graine": 7,
+ "nageur": 7,
+ "note": "Un niveau = cette liste de pièces, rien d'autre. long = mètres ; virage = degrés sur toute la pièce (+ à droite, - à gauche) ; eau = largeur de la rivière ; g, d = la rive à gauche et à droite (voir la région) ; tunnel = la rivière passe sous la montagne ; lieux = les lieux posés sur cette pièce ; une pièce sans nom prolonge la précédente. allure = de combien le décor défile plus vite que le rameur (la distance affichée reste la vraie). objets : cote = g, d, c (dans l'eau, e = écart au milieu) ou portail (perché au-dessus de l'entrée de la grotte ; sortie = au-dessus de la sortie).",
+ "pieces": [
+  {
+   "nom": "Route 21",
+   "long": 50,
+   "virage": 0,
+   "eau": 26,
+   "g": "mer",
+   "d": "mer"
+  },
+  {
+   "long": 40,
+   "virage": -10,
+   "eau": 17,
+   "g": "plage",
+   "d": "plage"
+  },
+  {
+   "nom": "Bourg Palette",
+   "long": 100,
+   "virage": 14,
+   "eau": 13,
+   "g": "bourg",
+   "d": "pre",
+   "lieux": [
+    {
+     "lieu": "bourg-palette",
+     "cote": "g",
+     "a": 4
+    }
+   ]
+  },
+  {
+   "nom": "Route 1",
+   "long": 70,
+   "virage": -32,
+   "eau": 11,
+   "g": "pre",
+   "d": "pre",
+   "objets": [
+    {
+     "o": "panneau",
+     "a": 5,
+     "cote": "d",
+     "e": 2,
+     "texte": "ROUTE 1",
+     "face": "arrivant",
+     "large": 2.6
+    }
+   ]
+  },
+  {
+   "long": 50,
+   "virage": 28,
+   "eau": 10,
+   "g": "foret",
+   "d": "foret"
+  },
+  {
+   "nom": "Grotte de la Route 1",
+   "long": 74,
+   "virage": 10,
+   "eau": 8,
+   "g": "montagne",
+   "d": "montagne",
+   "tunnel": true,
+   "objets": [
+    {
+     "o": "pokemon",
+     "num": 74,
+     "cote": "portail"
+    },
+    {
+     "o": "pokemon",
+     "num": 66,
+     "cote": "portail",
+     "sortie": true,
+     "e": -1.5
+    }
+   ]
+  },
+  {
+   "nom": "Jadielle",
+   "long": 112,
+   "virage": -14,
+   "eau": 14,
+   "g": "bourg",
+   "d": "pre",
+   "lieux": [
+    {
+     "lieu": "jadielle",
+     "cote": "g",
+     "a": 8
+    }
+   ],
+   "objets": [
+    {
+     "o": "panneau",
+     "a": 100,
+     "cote": "d",
+     "e": 2,
+     "texte": "ROUTE 2",
+     "face": "arrivant",
+     "large": 2.6
+    }
+   ]
+  },
+  {
+   "nom": "Lac de Jadielle",
+   "long": 70,
+   "virage": 16,
+   "eau": 36,
+   "g": "plage",
+   "d": "foret",
+   "objets": [
+    {
+     "o": "pokemon",
+     "num": 131,
+     "cote": "c",
+     "a": 38,
+     "e": 10,
+     "haut": -0.9
+    },
+    {
+     "o": "pokemon",
+     "num": 129,
+     "cote": "c",
+     "a": 20,
+     "e": -9,
+     "haut": -0.25
+    }
+   ]
+  }
+ ],
+ "allure": 2
+}

@@ -288,6 +288,9 @@ def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=No
     donnees = {"lien": lien_tablette, "modele": m, "images": images, "sacha": sacha, "progression": progression(seances, aujourd, m),
                "region": (voyage or {}).get("carte", {}).get("region") or "Kanto", "lieu": voyage["lieux"][voyage["ici"]]["nom"] if voyage else None,
                "arenes": arenes(voyage, scenes) if voyage else [], "dresseur": dresseur, "kiki": kiki, "jour": str(aujourd)}
+    if page_html.startswith("riviere/"):  # le nouveau moteur 3D « La Rivière » (dossier riviere/, essai : ?ecran=rameur&riviere=1), un niveau = un fichier
+        from riviere import page as riviere_page
+        return riviere_page.page(donnees, page_html.split("/", 1)[1])
     if page_html.startswith("rameur/"):  # le rameur en pseudo-3D (dossier rameur/, niveau « baie » : ?ecran=rameur&pseudo=1), assemblé en une seule page
         import rameur_page
         return rameur_page.page(donnees, page_html.split("/", 1)[1])

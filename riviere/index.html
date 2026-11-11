@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Rivière de Bourg Palette</title>
+<link href="https://fonts.googleapis.com/css2?family=Jersey+15&display=swap" rel="stylesheet">
+<style>
+:root { color-scheme: dark; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); box-sizing: border-box; font-family: "Jersey 15", monospace; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+#c { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+.hud { position: fixed; color: #fff; line-height: .92; pointer-events: none; -webkit-text-stroke: .16em #1B2440; paint-order: stroke fill; text-shadow: .06em .08em 0 #1B2440; }
+.hud small { display: block; font-size: .34em; color: #F8C838; letter-spacing: .06em; }
+.hud .fixe { display: inline-block; min-width: 1.7em; text-align: right; }
+.hud .unite { font-size: .4em; margin-left: .2em; }
+#hTemps { left: max(2.2vw, env(safe-area-inset-left, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px)); font-size: min(9vh, 7vw); }
+#hMilieu { left: 50%; top: calc(1.6vh + env(safe-area-inset-top, 0px)); transform: translateX(-50%); font-size: min(11vh, 8.4vw); display: flex; gap: .7em; white-space: nowrap; }
+#hDist { right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px)); font-size: min(9vh, 7vw); text-align: right; }
+#hTour { left: max(2.2vw, env(safe-area-inset-left, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(13vh, 10vw)); font-size: min(4.6vh, 3.6vw); line-height: 1.15; }
+#hTour #vTours { font-size: .72em; color: #F8C838; }
+#annonce { left: 50%; top: 30vh; transform: translateX(-50%); font-size: min(11vh, 8.5vw); color: #F8C838; white-space: nowrap; opacity: 0; }
+#annonce.vu { animation: annonce 2.6s ease-out; }
+@keyframes annonce { 0% { opacity: 0; transform: translateX(-50%) scale(.7); } 12% { opacity: 1; transform: translateX(-50%) scale(1.06); } 20% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
+#hLieu { left: max(2.2vw, env(safe-area-inset-left, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); font-size: min(5.4vh, 4.4vw); }
+#vFps { left: 50%; bottom: 1vh; transform: translateX(-50%); font-size: 18px; }
+#credit { position: fixed; right: 84px; bottom: calc(1vh + env(safe-area-inset-bottom, 0px)); font-size: 13px; color: #fff; opacity: .75; text-shadow: 1px 1px 0 #1B2440; pointer-events: none; }
+#bAuto { position: fixed; left: 50%; bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); font: inherit; font-size: min(4.4vh, 3.6vw); padding: .15em .9em; color: #383828; background: #F8F8E8; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
+#bAuto.on { background: #F8C838; }
+#hMontre { right: max(2.2vw, env(safe-area-inset-right, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + 18px); font-size: min(3.6vh, 2.9vw); color: #F8F8E8; opacity: .85; }
+#hMontre.la { color: #48C868; opacity: 1; }
+[hidden] { display: none !important; }
+#voile { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
+#charge { position: fixed; inset: 0; display: grid; place-items: center; background: #22315A; color: #F8F8E8; font-size: 34px; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="hTemps"><small>TEMPS</small><span id="vTemps">0:00</span></div>
+<div class="hud" id="hMilieu"><div><small>CADENCE</small><span class="fixe" id="vCad">0</span><span class="unite">/min</span></div><div><small>ALLURE</small><span class="fixe" id="vVit" style="min-width:2.1em">-:--</span><span class="unite">/500 m</span></div></div>
+<div class="hud" id="hDist"><small>DISTANCE</small><span class="fixe" id="vDist" style="min-width:2.2em">0</span><span class="unite">m</span></div>
+<div class="hud" id="hTour" hidden><div id="vTour"></div><div id="vTours"></div></div>
+<div class="hud" id="annonce"></div>
+<div class="hud" id="hLieu"><span id="vLieu"></span></div>
+<div class="hud" id="vFps"></div>
+<div class="hud" id="hMontre" hidden></div>
+<button id="bAuto">Auto</button>
+<div id="credit">Pokémon : Donjon Mystère (Chunsoft), via PMD SpriteCollab · habitants : Pokémon Rouge Feu</div>
+<div id="voile"></div>
+<div id="charge">Le monde se construit…</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+const D = __DONNEES__, NIVEAU = __NIVEAU__, BIOME = __BIOME__, LIEUX = __LIEUX__, LOT = __LOT__;
+__MODULES__
+</script>
+</body>
+</html>

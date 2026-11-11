@@ -97,8 +97,10 @@ class CapteursActivity : Activity() {
         bouton.setTextColor(Color.WHITE)
         info.text = if (e) {
             val s = (SystemClock.elapsedRealtime() - Enregistreur.debut) / 1000
+            val j = Enregistreur.jeu
             "%d:%02d · %d mesures/s%s".format(s / 60, s % 60, Enregistreur.parSeconde,
-                if (Enregistreur.coeur > 0) " · ♥ ${Enregistreur.coeur}" else "")
+                if (Enregistreur.coeur > 0) " · ♥ ${Enregistreur.coeur}" else "") +
+                (if (j != null) "\n${j.coups} coups · " + (if (j.relie) "jeu relié" else "relais…") else "")
         } else Enregistreur.dernier ?: "Touche la machine pour changer"
     }
 }
@@ -121,7 +123,7 @@ class Enregistreur : Service(), SensorEventListener {
         nm.createNotificationChannel(NotificationChannel("capteurs", "Enregistrement des capteurs", NotificationManager.IMPORTANCE_LOW))
         val tap = PendingIntent.getActivity(this, 11, Intent(this, CapteursActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(this, "capteurs").setSmallIcon(R.drawable.ic_ball).setContentTitle("Capteurs")
-            .setContentText("Enregistrement : $machine").setOngoing(true).setContentIntent(tap).build()
+            .setContentText(if (machine == "rameur") "Rameur : relié au jeu" else "Enregistrement : $machine").setOngoing(true).setContentIntent(tap).build()
         if (android.os.Build.VERSION.SDK_INT >= 34) startForeground(12, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH)
         else startForeground(12, n)
         verrou = getSystemService(PowerManager::class.java)
@@ -135,6 +137,7 @@ class Enregistreur : Service(), SensorEventListener {
             write("# machine=$machine debut=${System.currentTimeMillis()} appareil=${android.os.Build.MODEL}\n")
             write("t,type,v1,v2,v3,v4\n")
         }
+        if (machine == "rameur") jeu = LienJeu(machine)   // le jeu de la tablette reçoit chaque coup, en direct
         lignes = 0; enCours = true; debut = SystemClock.elapsedRealtime(); coeur = 0; parSeconde = 0
 
         val sm = getSystemService(SensorManager::class.java)
@@ -160,12 +163,13 @@ class Enregistreur : Service(), SensorEventListener {
             Sensor.TYPE_ACCELEROMETER -> "$t,a,${f(v[0])},${f(v[1])},${f(v[2])}"
             Sensor.TYPE_GYROSCOPE -> "$t,g,${f(v[0])},${f(v[1])},${f(v[2])}"
             Sensor.TYPE_GAME_ROTATION_VECTOR -> "$t,r,${f(v[0])},${f(v[1])},${f(v[2])},${f(if (v.size > 3) v[3] else 0f)}"
-            Sensor.TYPE_HEART_RATE -> { if (v[0] > 25) coeur = v[0].toInt(); "$t,h,${v[0].toInt()}" }
+            Sensor.TYPE_HEART_RATE -> { if (v[0] > 25) { coeur = v[0].toInt(); jeu?.coeur = coeur }; "$t,h,${v[0].toInt()}" }
             else -> return
         }
         try { o.write(l); o.write("\n") } catch (x: Exception) { }
         lignes++
         if (e.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+            jeu?.mesure(t, v[0], v[1], v[2])
             val s = SystemClock.elapsedRealtime() / 1000
             if (s != seconde) { parSeconde = compteSeconde; compteSeconde = 0; seconde = s }
             compteSeconde++
@@ -180,6 +184,7 @@ class Enregistreur : Service(), SensorEventListener {
         val f = fil
         f?.looper?.let { Handler(it).post { fermer(); f.quitSafely() } } ?: fermer()
         verrou?.let { if (it.isHeld) it.release() }
+        jeu?.fin(); jeu = null
         enCours = false
         val s = (SystemClock.elapsedRealtime() - debut) / 1000
         dernier = "Gardé : %d:%02d\n%s".format(s / 60, s % 60, fichier?.name ?: "")
@@ -201,5 +206,6 @@ class Enregistreur : Service(), SensorEventListener {
         @Volatile var coeur = 0
         @Volatile var parSeconde = 0
         @Volatile var dernier: String? = null
+        @Volatile var jeu: LienJeu? = null
     }
 }

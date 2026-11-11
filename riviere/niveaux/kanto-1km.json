@@ -1,0 +1,191 @@
+{
+ "id": "kanto-1km",
+ "nom": "Le tour de Bourg Palette",
+ "biome": "kanto",
+ "lieux": "kanto",
+ "graine": 11,
+ "nageur": 7,
+ "boucle": "gauche",
+ "distance": 1000,
+ "allure": 2,
+ "elan": 120,
+ "note": "Un circuit : boucle = le sens du tour (gauche : la terre au milieu) ; distance = les VRAIS mètres d'un tour (ceux du rameur) ; allure = le décor défile ce nombre de fois plus vite, donc un tour fait distance × allure mètres de décor ; elan = on part ce nombre de mètres de décor avant la ligne. Les longueurs ci-dessous sont des mètres de décor, à peu près : le jeu les ajuste un peu pour que la boucle se referme (jamais une pièce « fixe », à lieu ou à tunnel), et la pièce au virage « auto » prend le virage qui manque. La ligne est au début de la première pièce. tronc = ton Pokémon saute ; rondins = il passe dessous.",
+ "pieces": [
+  {
+   "nom": "Bourg Palette",
+   "long": 210,
+   "virage": -20,
+   "eau": 13,
+   "g": "bourg",
+   "d": "pre",
+   "lieux": [
+    {
+     "lieu": "bourg-palette",
+     "cote": "g",
+     "a": 70
+    }
+   ],
+   "objets": [
+    {
+     "o": "ligne",
+     "cote": "c",
+     "a": 0
+    }
+   ]
+  },
+  {
+   "nom": "Route 1",
+   "long": 170,
+   "virage": -50,
+   "eau": 11,
+   "g": "pre",
+   "d": "pre",
+   "objets": [
+    {
+     "o": "panneau",
+     "a": 6,
+     "cote": "d",
+     "e": 2,
+     "texte": "ROUTE 1",
+     "face": "arrivant",
+     "large": 2.6
+    },
+    {
+     "o": "tronc",
+     "cote": "c",
+     "a": 90
+    },
+    {
+     "o": "pokemon",
+     "num": 19,
+     "cote": "d",
+     "a": 44,
+     "e": 2.4
+    },
+    {
+     "o": "pokemon",
+     "num": 16,
+     "cote": "g",
+     "a": 130,
+     "e": 3
+    }
+   ]
+  },
+  {
+   "long": 220,
+   "virage": 40,
+   "eau": 9,
+   "g": "foret",
+   "d": "foret"
+  },
+  {
+   "nom": "Forêt de Jade",
+   "long": 190,
+   "virage": -80,
+   "eau": 10,
+   "g": "foret",
+   "d": "foret"
+  },
+  {
+   "nom": "Grotte de la Route 1",
+   "long": 124,
+   "virage": -30,
+   "eau": 8,
+   "g": "montagne",
+   "d": "montagne",
+   "tunnel": true,
+   "objets": [
+    {
+     "o": "pokemon",
+     "num": 74,
+     "cote": "portail"
+    }
+   ]
+  },
+  {
+   "nom": "Jadielle",
+   "long": 220,
+   "virage": -40,
+   "eau": 14,
+   "g": "bourg",
+   "d": "pre",
+   "lieux": [
+    {
+     "lieu": "jadielle",
+     "cote": "g",
+     "a": 50
+    }
+   ]
+  },
+  {
+   "nom": "Lac de Jadielle",
+   "long": 200,
+   "virage": -70,
+   "eau": 34,
+   "g": "plage",
+   "d": "foret",
+   "objets": [
+    {
+     "o": "pokemon",
+     "num": 131,
+     "cote": "c",
+     "a": 110,
+     "e": 11,
+     "haut": -0.9
+    },
+    {
+     "o": "pokemon",
+     "num": 129,
+     "cote": "c",
+     "a": 60,
+     "e": -10,
+     "haut": -0.25
+    }
+   ]
+  },
+  {
+   "nom": "Route 22",
+   "long": 180,
+   "virage": 30,
+   "eau": 11,
+   "g": "pre",
+   "d": "pre",
+   "objets": [
+    {
+     "o": "rondins",
+     "cote": "c",
+     "a": 95
+    },
+    {
+     "o": "pokemon",
+     "num": 32,
+     "cote": "g",
+     "a": 40,
+     "e": 2.6
+    }
+   ]
+  },
+  {
+   "nom": "Route 21",
+   "long": 260,
+   "virage": -90,
+   "eau": 18,
+   "g": "plage",
+   "d": "mer"
+  },
+  {
+   "long": 200,
+   "virage": "auto",
+   "eau": 15,
+   "g": "pre",
+   "d": "plage",
+   "objets": [
+    {
+     "o": "tronc",
+     "cote": "c",
+     "a": 70
+    }
+   ]
+  }
+ ]
+}
