@@ -295,20 +295,19 @@ def derniere(seances):
     return {"quand": d.strftime("%d/%m à %H:%M"), "distance": (s.get("saisi") or {}).get("distance"), "tours": (s.get("jeu") or {}).get("tours")}
 
 
-def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html"):
+def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html", params=None):
     """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé : le modèle des mètres par coup, la progression
     du jeu du rameur, la région et les arènes de Poké Fit, les couleurs du dresseur)."""
     from pathlib import Path
     seances = (fichier or {}).get("seances") or []
+    if page_html.startswith("riviere/"):  # le moteur 3D « La Rivière » (dossier riviere/) : un niveau = un fichier ; params = les options de l'adresse (machine, surface, banc…)
+        from riviere import page as riviere_page
+        return riviere_page.page({"lien": lien_tablette, "m_coup": m_coup_montre(seances), "derniere": derniere(seances), "kiki": kiki, "params": params or {}}, page_html.split("/", 1)[1])
     aujourd = aujourd or dt.date.today()
     m = modele(seances)
     donnees = {"lien": lien_tablette, "modele": m, "images": images, "sacha": sacha, "progression": progression(seances, aujourd, m),
                "region": (voyage or {}).get("carte", {}).get("region") or "Kanto", "lieu": voyage["lieux"][voyage["ici"]]["nom"] if voyage else None,
                "arenes": arenes(voyage, scenes) if voyage else [], "dresseur": dresseur, "kiki": kiki, "jour": str(aujourd)}
-    if page_html.startswith("riviere/"):
-        donnees["m_coup"], donnees["derniere"] = m_coup_montre(seances), derniere(seances)  # le nouveau moteur 3D « La Rivière » (dossier riviere/, essai : ?ecran=rameur&riviere=1), un niveau = un fichier
-        from riviere import page as riviere_page
-        return riviere_page.page(donnees, page_html.split("/", 1)[1])
     if page_html.startswith("rameur/"):  # le rameur en pseudo-3D (dossier rameur/, niveau « baie » : ?ecran=rameur&pseudo=1), assemblé en une seule page
         import rameur_page
         return rameur_page.page(donnees, page_html.split("/", 1)[1])

@@ -1,10 +1,9 @@
 /* ============ le kit d'objets : chacun est une petite recette de volumes, dans son repère (z = vers la rivière, x = dans le sens du courant, y = vers le haut) ============ */
-// Ajouter un objet au jeu = ajouter une recette ici. Les niveaux, les régions et les lieux n'utilisent que des noms d'objets.
+// Ajouter un objet au jeu = ajouter une recette ici, ou déposer un autre fichier dans ce dossier (Object.assign(OBJETS, {…})) : page.py les ramasse tous. Les niveaux, les régions et les lieux n'utilisent que des noms d'objets.
 // F : la Forme où dessiner (déjà placée et tournée) ; o : ses réglages (venus du fichier) ; R : le hasard du niveau ; K : le monde (étiquettes, sprites, objets animés).
-const PAL = couleurs(BIOME.palette);
-const RAYON = {arbre: 2.3, arbre_loin: 3.1, buisson: 1, rocher: 1.2, herbes: 1.6, fleurs: 1, roseaux: .5, maison: 6, labo: 11, centre: 8, boutique: 7, eolienne: 2, panneau: 1.6, barriere: .3, boite_lettres: .4, lampadaire: .4, pokemon: .8, habitant: .6, chemin: 0, tronc: 0, rondins: 0, ligne: 0};
+Object.assign(RAYON, {arbre: 2.3, arbre_loin: 3.1, buisson: 1, rocher: 1.2, herbes: 1.6, fleurs: 1, roseaux: .5, maison: 6, labo: 11, centre: 8, boutique: 7, eolienne: 2, panneau: 1.6, barriere: .3, boite_lettres: .4, lampadaire: .4, pokemon: .8, habitant: .6, chemin: 0, tronc: 0, rondins: 0, ligne: 0});
 const BLANC = [1, 1, 1];
-const EVENEMENTS = {tronc: "saut", rondins: "plongee"};   // ces objets font réagir ton Pokémon quand il arrive dessus
+Object.assign(EVENEMENTS, {tronc: "saut", rondins: "plongee"});   // ces objets font réagir ton Pokémon quand il arrive dessus
 /* les pièces communes aux bâtiments */
 function fenetre(F, x, y, w, h, z, barres = 1) {  // un cadre blanc, une vitre bleue, des montants
   F.plaque(x - w / 2 - .12, y - .12, x + w / 2 + .12, y + h + .12, z + .03, BLANC); F.plaque(x - w / 2, y, x + w / 2, y + h, z + .06, PAL.vitre);
@@ -24,7 +23,7 @@ function batimentPokemon(F, l, p, teinte) {  // le Centre Pokémon et la Boutiqu
   F.boite(0, h - .05, d + .35, 4.6, 1.3, .5, teinte, {haut: clair}); F.disque(0, h + 1.2, d + .6, 2.3, 1.15, teinte, 0, Math.PI, 14); F.disque(0, h + 1.2, d + .1, 2.3, 1.15, sombre, 0, Math.PI, 14);   // le fronton
   pokeball(F, 0, h + 1.05, d + .63, .92, BLANC, sombre);
 }
-const OBJETS = {
+Object.assign(OBJETS, {
   arbre(F, o, R) {  // l'arbre de Kanto : trois étages bien ronds, du plus large au plus petit, vert clair, la pointe en haut
     const t = PAL.feuilles; F.ombre(0, 0, 2.5, 2.3);
     F.cyl(0, -.4, 0, .38, .32, 1.6, 5, PAL.tronc[0], PAL.tronc[1]);
@@ -92,4 +91,4 @@ const OBJETS = {
     for (let k = 0; k < n; k++) for (let j = 0; j < 2; j++) { const z0 = -d + 2 * d * k / n, z1 = -d + 2 * d * (k + 1) / n; F.quad([0, 5.2 + j * c, z0], [0, 5.2 + j * c, z1], [0, 5.2 + (j + 1) * c, z1], [0, 5.2 + (j + 1) * c, z0], (k + j) % 2 ? noir : BLANC, [0, 1, 0]); } },
   pokemon(F, o, R, K) { K.sprite(F, String(o.num).padStart(4, "0") + "/" + (o.anim || "Idle"), o); },
   habitant(F, o, R, K) { K.sprite(F, "h/" + o.nom, o); },
-};
+});

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Rivière de Bourg Palette</title>
+<title>La Rivière</title>
 <link href="https://fonts.googleapis.com/css2?family=Jersey+15&display=swap" rel="stylesheet">
 <style>
 :root { color-scheme: dark; }
@@ -61,6 +61,8 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 #panneau .pave button { padding: 6px; font-size: 30px; background: #fff; color: #383828; box-shadow: 2px 2px 0 #1B2440; }
 #panneau .pave button:disabled { visibility: hidden; }
 #bFin { position: fixed; right: max(2.2vw, env(safe-area-inset-right, 0px)); bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(4.4vh, 3.6vw) * 1.6 + 26px); font: inherit; font-size: min(4.4vh, 3.6vw); padding: .15em .8em; color: #fff; background: #D83830; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
+#bSon { position: fixed; right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(22vh, 17vw)); font: inherit; font-size: min(3.2vh, 2.6vw); padding: .1em .7em; color: #383828; background: #F8F8E8; border: 2px solid #484838; border-radius: 10px 4px; box-shadow: 2px 2px 0 #1B2440; cursor: pointer; opacity: .85; }
+#bSon.off { background: #A8A890; }
 #hPret { left: 50%; top: 34vh; transform: translateX(-50%); font-size: min(7vh, 5.4vw); text-align: center; white-space: nowrap; }
 @media (max-width: 520px) { #panneau .chiffres { grid-template-columns: repeat(2, 1fr); } #panneau h1 { font-size: 32px; } }
 [hidden] { display: none !important; }
@@ -71,7 +73,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 <body>
 <canvas id="c"></canvas>
 <div class="hud" id="hTemps"><small>TEMPS</small><span id="vTemps">0:00</span></div>
-<div class="hud" id="hMilieu"><div><small>CADENCE</small><span class="fixe" id="vCad">0</span><span class="unite">/min</span></div><div><small>ALLURE</small><span class="fixe" id="vVit" style="min-width:2.1em">-:--</span><span class="unite">/500 m</span></div></div>
+<div class="hud" id="hMilieu"><div><small>CADENCE</small><span class="fixe" id="vCad">0</span><span class="unite">/min</span></div><div><small id="lVit">ALLURE</small><span class="fixe" id="vVit" style="min-width:2.1em">-:--</span><span class="unite" id="uVit">/500 m</span></div></div>
 <div class="hud" id="hDist"><small>DISTANCE</small><span class="fixe" id="vDist" style="min-width:2.2em">0</span><span class="unite">m</span><span class="coeur"><small>CŒUR</small><span class="fixe" id="vCoeur">--</span><span class="unite">♥</span></span></div>
 <div class="hud" id="hTour" hidden><div id="vTour"></div><div id="vTours"></div></div>
 <div class="hud" id="annonce"></div>
@@ -81,6 +83,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 <div class="hud" id="hMontre" hidden></div>
 <button id="bAuto" hidden>Auto</button>
 <button id="bFin" hidden>■ Fin</button>
+<button id="bSon">Son</button>
 <div class="hud" id="hPret" hidden>PRÊT ?<small>le chrono part à ton premier coup de rame</small></div>
 <div id="credit">Pokémon : Donjon Mystère (Chunsoft), via PMD SpriteCollab · habitants : Pokémon Rouge Feu</div>
 <div id="voile"></div>
@@ -89,7 +92,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 "use strict";
-const D = __DONNEES__, NIVEAU = __NIVEAU__, BIOME = __BIOME__, LIEUX = __LIEUX__, LOT = __LOT__;
+__DONNEES__
 __MODULES__
 </script>
 </body>

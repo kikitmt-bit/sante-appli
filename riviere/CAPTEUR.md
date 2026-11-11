@@ -57,3 +57,9 @@ toucher « Relier la montre » sur la tablette (Chrome seul, sans appli).
 
 Point de départ côté montre : appli « Capteurs » (`montre/…/Capteurs.kt`, service `Enregistreur`), qui enregistre
 déjà accéléromètre, gyroscope et cœur à 50 mesures/s : il reste la détection des coups sur la montre et l'envoi.
+
+## Depuis le 11/11 au soir (cœur refait)
+- Un sujet par machine : `pokefit/<machine>/<lien>` (`rameur`, `elliptique`) ; un geste = `{"k": "coup"}` ou `{"k": "tour"}`, avec son numéro `n`.
+- Les gestes perdus sont rattrapés : si le numéro saute (jusqu'à 12), ou si un message d'état annonce un numéro plus grand, le jeu compte les manquants, sans éclaboussure.
+- Elliptique : le jeu est prêt (`?machine=elliptique`, 1,3 m par tour, estimé vers le bas) ; il reste, sur la montre, à reconnaître les tours et à les envoyer sur `pokefit/elliptique/…`.
+- À essayer tôt au parc : la montre sans Wi-Fi passe par le téléphone pour atteindre Internet ; le retard des messages n'est pas mesuré.

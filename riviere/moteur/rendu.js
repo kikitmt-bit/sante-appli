@@ -3,8 +3,17 @@
 // jusqu'à 432 si la machine peine : jeu.js), avec un contour sombre
 // autour des formes proches. Un seul matériau pour tout ce qui est solide : la couleur vient de chaque sommet, la lumière est
 // en paliers (comme un sprite), un fin motif de pixels habille les sols et les parois de près.
-let PLAFOND = 720, HAUT = 432;   // la hauteur de l'image : celle de l'écran, entre 432 et 720 pixels (?h= l'impose)
-const hauteurVoulue = () => +PARAMS.get("h") ? clamp(+PARAMS.get("h"), 240, 1080) : clamp(Math.round(innerHeight * (devicePixelRatio || 1)), 432, PLAFOND);
+// L'image fait exactement « l'écran divisé par un nombre entier » (2 sur la tablette : 800 pixels de haut ; 2 sur un téléphone en
+// paysage : 720) : tous les pixels ont la même taille à l'écran. Si la machine peine, on divise par un cran de plus (jeu.js). ?h= impose la hauteur.
+let HAUT = 432;
+const FINESSE = {cran: 0};   // crans de finesse retirés parce que la machine peine
+function tailleImage() {
+  const dpr = devicePixelRatio || 1, w = Math.max(1, innerWidth), h = Math.max(1, innerHeight), asp = clamp(w / h, .4, 2.6), court = Math.min(w, h) * dpr;
+  let petit;
+  if (+PARAMS.get("h")) petit = clamp(+PARAMS.get("h"), 240, 1080);
+  else { let n = Math.max(1, Math.ceil(court / 800)) + (asp < 1 ? 1 : 0); while (n > 1 && court / n < 400) n--; petit = Math.max(300, Math.round(court / (n + FINESSE.cran))); }
+  return asp >= 1 ? [Math.round(petit * asp), petit, asp] : [petit, Math.round(petit / asp), asp];   // en portrait, le petit côté est la largeur
+}
 const CONTOUR = PARAMS.get("contour") !== "0";
 const canvas = $("c"), renderer = new THREE.WebGLRenderer({canvas, antialias: false, powerPreference: "high-performance"});
 renderer.setPixelRatio(1); renderer.info.autoReset = false;
@@ -12,7 +21,7 @@ const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(52, 1.6, .
 const BRUME = hex(BIOME.brume), B0 = 60, B1 = 400;
 scene.fog = new THREE.Fog(new THREE.Color(...BRUME), B0, B1);   // pour les sprites ; le reste a sa brume dans son matériau
 const SOLEIL = new THREE.Vector3(.42, .76, .5).normalize();
-const COMMUNS = {uBrume: {value: new THREE.Vector3(...BRUME)}, uB0: {value: B0}, uB1: {value: B1}, uSombre: {value: 1}, uT: {value: 0}};
+const COMMUNS = {uBrume: {value: new THREE.Vector3(...BRUME)}, uB0: {value: B0}, uB1: {value: B1}, uSombre: {value: 1}, uT: {value: 0}, uTeinte: {value: new THREE.Vector3(1, 1, 1)}};   // uTeinte : la teinte de l'heure du jour (ambiances)
 
 /* le motif de pixels : rouge = touffes (sols), vert = strates (parois), bleu = pavés */
 const DETAIL = (() => { const N = 64, c = toile(N, N), x = c.getContext("2d"), im = x.createImageData(N, N), d = im.data, R = hasard(11), tour = (a, b) => ((a % b) + b) % b;
@@ -28,7 +37,7 @@ const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.Doub
   uniforms: Object.assign({uDetail: {value: DETAIL}, uSoleil: {value: SOLEIL}}, COMMUNS),
   vertexShader: `attribute float mat; varying vec3 vC, vN, vW; varying float vM, vZ;
     void main() { vC = color; vN = mat3(modelMatrix) * normal; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vM = mat; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`,
-  fragmentShader: `uniform sampler2D uDetail; uniform vec3 uSoleil, uBrume; uniform float uB0, uB1, uSombre; varying vec3 vC, vN, vW; varying float vM, vZ;
+  fragmentShader: `uniform sampler2D uDetail; uniform vec3 uSoleil, uBrume, uTeinte; uniform float uB0, uB1, uSombre; varying vec3 vC, vN, vW; varying float vM, vZ;
     void main() { vec3 n = normalize(vN);
       float lum = .6 + .4 * (dot(n, uSoleil) * .5 + .5) + .04 * n.y; lum = floor(lum * 7. + .5) / 7.;   // la lumière en paliers
       float det = 1.;
@@ -39,7 +48,7 @@ const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.Doub
         det = mix(1., .72 + .56 * t, 1. - smoothstep(20., 70., vZ)); }
       vec3 c = vC * lum * det;
       c = mix(c, uBrume, smoothstep(uB0, uB1, vZ) * .94);
-      gl_FragColor = vec4(c * uSombre, 1.); }`});
+      gl_FragColor = vec4(c * uSombre * uTeinte, 1.); }`});
 
 /* ---- le ciel : un anneau peint une fois (bandes, nuages, montagnes au loin), qui fait tout le tour et ne change jamais ---- */
 const CIEL = (() => { const W = 2048, H = 512, c = toile(W, H), x = c.getContext("2d"), im = x.createImageData(W, H), d = im.data;
@@ -72,7 +81,7 @@ const POST = {scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1,
         gl_FragColor = vec4(mix(c, c * .5, bord * .85), 1.); }`})};
 POST.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), POST.mat));
 function tailleEcran() {
-  HAUT = hauteurVoulue(); const asp = clamp(innerWidth / Math.max(1, innerHeight), .6, 2.6), H = HAUT, W = Math.round(H * asp);
+  const [W, H, asp] = tailleImage(); HAUT = H;
   renderer.setSize(W, H, false); camera.aspect = asp; camera.updateProjectionMatrix();
   if (CONTOUR) { if (cible) { cible.depthTexture.dispose(); cible.dispose(); }
     cible = new THREE.WebGLRenderTarget(W, H, {minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter});

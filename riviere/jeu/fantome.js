@@ -30,7 +30,7 @@ function animerFantome(t) {
   if (!F.pantin) return;
   F.pantin.m.visible = F.sG !== null;
   if (F.sG === null) return;
-  const a = pose(F.sG, 1.8), N = F.pantin; N.image(N.pl.image(t * .55)); N.m.position.set(a.x, -N.h * .42 + Math.sin(t * 3 + 1) * .03, a.z); N.regarder();
+  const a = pose(F.sG, 1.8), N = F.pantin; N.image(N.pl.image(t * .55)); N.m.position.set(a.x, hauteurPantin(F.sG, N, t), a.z); N.regarder();
 }
 
 /* ---- le plan du circuit, en bas à gauche : le tracé, le tunnel en gris, la ligne, toi et ton fantôme ---- */

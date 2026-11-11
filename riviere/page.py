@@ -1,6 +1,12 @@
-"""Assemble la page du rameur « La Rivière » : le dossier `riviere/` (page, modules JavaScript, niveau, région, lieux) devient UNE page.
+"""Assemble la page de « La Rivière » : le dossier `riviere/` (page, moteur, jeu, contenu) devient UNE page.
 Sans Streamlit. Les sprites des Pokémon (Pokémon Donjon Mystère, PMD SpriteCollab, CC BY-NC 4.0) ne sont jamais dans ce dépôt :
-ils sont lus en ligne, dernière version, et glissés dans la page (gardés en mémoire, et dans un dossier temporaire de la machine)."""
+ils sont lus en ligne, dernière version, et glissés dans la page (gardés en mémoire, et dans un dossier temporaire de la machine).
+
+Le rangement (voir MOTEUR.md) :
+  moteur/   le cœur : il ne connaît ni Pokémon, ni montre, ni séance. L'ordre de MOTEUR compte.
+  contenu/  ce qu'on ajoute sans toucher au cœur : niveaux/, biomes/ (régions), lieux/ (des fichiers de données),
+            et objets/, surfaces/, montures/, evenements/ (des recettes : tous les .js de ces dossiers sont ramassés).
+  jeu/      la séance, le menu, l'affichage, le fantôme, la montre. L'ordre de JEU compte."""
 import base64
 import json
 import re
@@ -10,8 +16,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent
-# l'ordre compte : chaque module peut s'appuyer sur ceux d'avant
-MODULES = ["outils", "piste", "rendu", "forme", "terrain", "eau", "tunnel", "objets", "decor", "sprites", "jeu", "montre", "seance", "fantome"]
+MOTEUR = ["outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "monture", "camera", "son"]
+RECETTES = ["objets", "surfaces", "montures", "evenements"]
+JEU = ["allure", "jeu", "montre", "seance", "fantome", "banc"]
+PURS = ["outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
 try:  # les tailles officielles des Pokémon (m), pour les afficher à leur échelle
@@ -78,26 +86,54 @@ def _js(o):
     return json.dumps(o, ensure_ascii=False).replace("</", "<\\/")
 
 
+def _module(dossier, nom):
+    return f"/* ----- {dossier}/{nom}.js ----- */\n" + (RACINE / dossier / f"{nom}.js").read_text(encoding="utf-8")
+
+
+def recettes():
+    """Le code du contenu : tous les .js des dossiers de recettes, dans l'ordre des noms."""
+    return "\n".join(_module(f"contenu/{d}", f.stem) for d in RECETTES for f in sorted((RACINE / "contenu" / d).glob("*.js")))
+
+
+def fichiers(niveau):
+    """Le niveau, sa région et ses lieux."""
+    lis = lambda *p: json.loads(RACINE.joinpath("contenu", *p).read_text(encoding="utf-8"))
+    niv = lis("niveaux", f"{niveau}.json")
+    return niv, lis("biomes", f"{niv['biome']}.json"), lis("lieux", f"{niv.get('lieux', niv['biome'])}.json")
+
+
+def donnees_js(donnees, niv, biome, lieux, lot):
+    return f"const D = {_js(donnees or {})}, NIVEAU = {_js(niv)}, BIOME = {_js(biome)}, LIEUX = {_js(lieux)}, LOT = {_js(lot)};"
+
+
 def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
-    """`donnees` : ce que la page reçoit de l'appli (lien du téléphone, modèle des mètres par coup, progression…)."""
+    """`donnees` : ce que la page reçoit de l'appli (lien de la montre, mètres par coup, dernière séance, machine…)."""
     cache = Path(cache or Path(tempfile.gettempdir()) / "riviere-sprites")
     cache.mkdir(parents=True, exist_ok=True)
-    lis = lambda *p: json.loads(RACINE.joinpath(*p).read_text(encoding="utf-8"))
-    niv = lis("niveaux", f"{niveau}.json")
-    biome, lieux = lis("biomes", f"{niv['biome']}.json"), lis("lieux", f"{niv.get('lieux', niv['biome'])}.json")
+    niv, biome, lieux = fichiers(niveau)
     besoins = {(niv.get("nageur", 7), "Walk")}
     for o in (niv, biome, lieux):
         _pokemon(o, besoins)
     lot = {f"{n:04d}/{a}": p for n, a in sorted(b for b in besoins if b[0] != "h") if (p := planche(n, a, cache))}
     lot.update({"h/" + nom: p for h, nom in sorted(b for b in besoins if b[0] == "h") if (p := habitant(nom, cache))})
-    js = "\n".join(f"/* ----- {m}.js ----- */\n" + (RACINE / "js" / f"{m}.js").read_text(encoding="utf-8") for m in MODULES)
+    js = "\n".join([_module("moteur", m) for m in MOTEUR] + [recettes()] + [_module("jeu", m) for m in JEU])
     html = (RACINE / "index.html").read_text(encoding="utf-8")
-    for cle, val in (("__DONNEES__", _js(donnees or {})), ("__NIVEAU__", _js(niv)), ("__BIOME__", _js(biome)), ("__LIEUX__", _js(lieux)), ("__LOT__", _js(lot)), ("__MODULES__", js)):
+    for cle, val in (("__DONNEES__", donnees_js(donnees, niv, biome, lieux, lot)), ("__MODULES__", js)):
         html = html.replace(cle, val)
     if artifact:  # une page à publier sur claude.ai : le contenu seul, sans l'enveloppe du document
         tete, corps = re.search(r"<head>(.*?)</head>", html, re.S).group(1), re.search(r"<body>(.*)</body>", html, re.S).group(1)
         html = '<meta name="claude:viewport-fit-sides" content="cover">' + re.sub(r"<meta[^>]*>\s*", "", tete) + corps
     return html
+
+
+def controle(niveau="kanto-1km", params=""):
+    """Un programme JavaScript SANS navigateur ni dessin : il construit la piste, le champ et pose tout le décor d'un niveau, puis écrit
+    ce qu'il a trouvé (une ligne de JSON). Lancé par les contrôles automatiques avec node : un niveau cassé ou une instruction avalée se voit."""
+    niv, biome, lieux = fichiers(niveau)
+    avant = ('"use strict";\nvar window = globalThis, location = {search: ' + json.dumps(params) + '}, navigator = {}, '
+             'document = {getElementById: () => null, createElement: () => ({getContext: () => null}), addEventListener() {}};\n')
+    apres = (RACINE / "controle.js").read_text(encoding="utf-8")
+    return avant + donnees_js({}, niv, biome, lieux, {}) + "\n" + "\n".join(_module("moteur", m) for m in PURS) + "\n" + recettes() + "\n" + apres
 
 
 if __name__ == "__main__":  # python riviere/page.py <niveau> <fichier.html> [artifact]

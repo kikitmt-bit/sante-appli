@@ -1,7 +1,9 @@
 """Serveur d'essai de « La Rivière » : python riviere/serveur.py [port]
-La page est assemblée à chaque chargement (on retouche un fichier, on recharge). ?niveau=<nom> choisit le niveau."""
+La page est assemblée à chaque chargement (on retouche un fichier, on recharge). ?niveau=<nom> choisit le niveau (sinon : essai).
+?pur=1 : le contrôle sans dessin (le même que les contrôles automatiques), son bilan s'affiche dans la page."""
 import http.server
 import importlib
+import os
 import sys
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
@@ -24,8 +26,15 @@ class H(http.server.BaseHTTPRequestHandler):
             self.send_error(404)
             return
         importlib.reload(page)
+        q = parse_qs(urlparse(self.path).query)
+        niveau = (q.get("niveau") or ["essai"])[0]
         try:
-            octets = page.page(donnees={"lien": lien_local()}, niveau=(parse_qs(urlparse(self.path).query).get("niveau") or ["kanto-1km"])[0]).encode("utf-8")
+            if q.get("pur"):
+                js = page.controle(niveau).split("\n", 2)[2]  # sans les faux « window » et « document » : ici, il y a un vrai navigateur
+                octets = ("<!doctype html><meta charset='utf-8'><pre id='b'>…</pre><script>\"use strict\";\n" + js.replace("</", "<\\/")
+                          + "\ndocument.getElementById('b').textContent = JSON.stringify(globalThis.__bilan, null, 1);</script>").encode("utf-8")
+            else:
+                octets = page.page(donnees={"lien": lien_local()}, niveau=niveau).encode("utf-8")
         except Exception as e:  # un fichier mal écrit : on le dit dans la page
             octets = f"<pre>Erreur : {e}</pre>".encode("utf-8")
         self.send_response(200)
@@ -40,4 +49,5 @@ class H(http.server.BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    http.server.ThreadingHTTPServer(("127.0.0.1", int(sys.argv[1]) if len(sys.argv) > 1 else 8780), H).serve_forever()
+    port = int(os.environ.get("PORT") or (sys.argv[1] if len(sys.argv) > 1 else 8780))  # PORT : le port que donne l'appli Claude quand le 8780 est pris
+    http.server.ThreadingHTTPServer(("127.0.0.1", port), H).serve_forever()

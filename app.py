@@ -996,14 +996,6 @@ if st.query_params.get("ecran") == "rameur":
         print("Séances de rameur illisibles pour la tablette :", type(e).__name__, flush=True)
         fichier_rameur = None
     aujourd_r, voyage_r, dresseur_r = dt.datetime.now(TZ).date(), None, None
-    try:  # la région et les arènes de Poké Fit : le décor et les séances d'arène à débloquer
-        voyage_r = pokemon.charger_jeu(lire, aujourd_r, JOUEUR)[1]["voyage"]
-    except Exception as e:
-        print("Partie illisible pour la tablette :", type(e).__name__, flush=True)
-    try:  # les couleurs de sa carte du dresseur, pour le rameur dessiné dans la barque
-        dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
-    except Exception:
-        pass
     # Quelle version du jeu (11/11, Kiki) : « La Rivière » par défaut (le tour de Bourg Palette, ou &riviere=<niveau>) ;
     # les anciennes restent : &circuit=1 (Circuit de la Baie), &pseudo=1 (pseudo-3D), &ancien=1 (Grande Boucle).
     q = st.query_params
@@ -1015,12 +1007,22 @@ if st.query_params.get("ecran") == "rameur":
         page_rameur = "rameur_circuit.html"
     else:
         page_rameur = "riviere/" + (q.get("riviere") if q.get("riviere") not in (None, "", "1") else "kanto-1km")
+    if not page_rameur.startswith("riviere/"):  # les anciens jeux seulement : La Rivière ne se sert ni de la partie Poké Fit ni de la carte du dresseur
+        try:  # la région et les arènes de Poké Fit : le décor et les séances d'arène à débloquer
+            voyage_r = pokemon.charger_jeu(lire, aujourd_r, JOUEUR)[1]["voyage"]
+        except Exception as e:
+            print("Partie illisible pour la tablette :", type(e).__name__, flush=True)
+        try:  # les couleurs de sa carte du dresseur, pour le rameur dessiné dans la barque
+            dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
+        except Exception:
+            pass
+    options_r = {k: q.get(k) for k in ("machine", "surface", "banc", "eco", "perf", "allure") if q.get(k)}  # les options de La Rivière, passées par l'adresse (&banc=1, &surface=terre, &machine=elliptique…)
     with st.container(key="ecran_rameur"):
         st.iframe(seances_rameur.page_tablette(fichier_rameur, seances_rameur.lien(st.secrets.get("JEU_CLE"), AMI), pokemon.IMAGES,
                                                "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/",
                                                aujourd_r, voyage_r, "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
                                                {k: (dresseur_r or {}).get(k) for k in ("peau", "casquette", "veste", "pantalon")}, AMI is None,
-                                               page_rameur), height=800)
+                                               page_rameur, options_r), height=800)
     st.stop()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "
