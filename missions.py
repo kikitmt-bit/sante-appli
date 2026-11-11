@@ -59,7 +59,7 @@ MISSIONS = {
              "num": 51, "bonus": 35, "phrase": "Une fois, deux fois, trois fois : il ressort toujours quelque part."},
     "ronde": {"famille": "marche", "titre": "La ronde de Nosferapti", "texte": "2 000 pas après 20 h", "seuil": 2000, "jours": TOUS_LES_JOURS, "unite": "pas",
               "num": 41, "bonus": 35, "phrase": "La nuit tombe : c'est l'heure de sortir."},
-    "voyage": {"famille": "marche", "titre": "Le voyage de Lokhlass", "texte": "6 km dans la journée", "seuil": 6, "jours": TOUS_LES_JOURS, "unite": "km",
+    "voyage": {"famille": "marche", "titre": "Le voyage de Lokhlass", "texte": "6 km dans la journée (marche, vélo, rameur… tout compte)", "seuil": 6, "jours": TOUS_LES_JOURS, "unite": "km",
                "num": 131, "bonus": 25, "phrase": "Il connaît toutes les routes, même celles sans eau."},
     "sortie": {"famille": "marche", "titre": "La grande sortie de Dodrio", "texte": "12 000 pas aujourd'hui", "seuil": 12000, "jours": {5, 6}, "unite": "pas",
                "num": 85, "bonus": 40, "phrase": "Trois têtes pour choisir la route : la plus longue a gagné."},
@@ -164,6 +164,8 @@ def valeur(cle, jour, stats, info, gestes=None):
         return ((gestes or {}).get(str(jour)) or {}).get(m["geste"], 0)
     v = {"doduo": e.get("max60"), "trio": e.get("h1000"), "ronde": e.get("pas_soir"), "voyage": s.get("km"), "sortie": s.get("pas"), "fantome": s.get("pas"),
          "course": s.get("pas"), "galop": s.get(cle_zone(jour)), "charge": s.get("seance_max"), "traversee": s.get("min_rameur"), "danse": s.get("min_danse"), "tournee": s.get("min_velo")}[cle]
+    if cle == "voyage" and s.get("km_rameur"):  # toutes les distances : celle de la montre (marche, course, vélo…) + les mètres du rameur
+        v = (v if v is not None and v == v else 0) + s["km_rameur"]
     if cle == "tournee" and v is not None and v == v:  # le premier atteint des deux : 20 min ou 6 km, ramenés en minutes
         v = max(v, (s.get("km_velo") or 0) * m["seuil"] / VELO_KM)
     return None if v is None or v != v else v

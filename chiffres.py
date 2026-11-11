@@ -197,6 +197,8 @@ def stats_jour(r, j=None):
     for cle, mots in (("min_rameur", ("ROWING", "rameur")), ("min_velo", ("BIK", "vélo")), ("min_danse", ("DANC", "danse"))):
         s[cle] = sum(duree(contenu(p).get("activeDuration")) for p in ex if any(m in (contenu(p).get("exerciseType") or "") or m in (contenu(p).get("displayName") or "").lower() for m in mots)) / 60
     s["km_velo"] = sum(num((contenu(p).get("metricsSummary") or {}).get("distanceMillimeters")) or 0 for p in ex if "BIK" in (contenu(p).get("exerciseType") or "") or "vélo" in (contenu(p).get("displayName") or "").lower()) / 1e6
+    # le rameur : la montre ne le met pas dans la distance du jour ; ce que Kiki a entré (distance du rameur) s'y ajoute pour la mission Lokhlass
+    s["km_rameur"] = sum(num((contenu(p).get("metricsSummary") or {}).get("distanceMillimeters")) or 0 for p in ex if "ROWING" in (contenu(p).get("exerciseType") or "") or "rameur" in (contenu(p).get("displayName") or "").lower()) / 1e6
     return s
 
 
