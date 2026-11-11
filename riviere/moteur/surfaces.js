@@ -139,9 +139,12 @@ function construirePonts() {
       for (const [p, q, r, t] of [[0, 1, 2, 3], [4, 5, 6, 7], [0, 3, 4, 7]]) for (const V of [[c[p], c[q], c[r]], [c[p], c[r], c[t]], [c[p], c[r], c[q]], [c[p], c[t], c[r]]]) for (const v of V) F.v(v[0], v[1], v[2], nx, 0, nz, pierre[1], 0);
     }
     for (const [i0, sens] of [[ia, 1], [ib, -1]]) {   // les culées : un massif de pierre sous chaque bout du tablier, qui s'enfonce dans le sol
-      const a = at(i0 + sens * 2), e = a.w + .9, haut = a.y - .9;
-      let sol = Infinity; for (const u of [-e, 0, e]) { const q = pose(i0 + sens * 2, u); sol = Math.min(sol, hauteur(q.x, q.z)); }
-      const bas = Math.min(haut - 2.5, sol - 1); F.poser(a.x, bas, a.z, -a.h, 1).boite(0, 0, 0, e * 2, haut - bas, 4.2, pierre[1], {haut: pierre[2], mat: 0});
+      // plus large que le tablier et enfoncé dans la colline : aucune fente de ciel entre le pont et le sol (11/11)
+      const a = at(i0 + sens * 2.5), e0 = a.w + .9, e = e0 + 2.5;
+      let sol = Infinity; for (const u of [-e, 0, e]) { const q = pose(i0 + sens * 2.5, u); sol = Math.min(sol, hauteur(q.x, q.z)); }
+      const bas = Math.min(a.y - 3.5, sol - 1), G = F.poser(a.x, bas, a.z, -a.h, 1);
+      G.boite(0, 0, 0, e0 * 2, a.y - .9 - bas, 5.2, pierre[1], {haut: pierre[2], mat: 0});                                       // sous le tablier
+      for (const sg of [-1, 1]) G.boite(sg * (e0 + 1.25), 0, 0, 2.5, a.y + .55 - bas, 5.2, pierre[1], {haut: pierre[2], mat: 0});   // les deux ailes, à hauteur du parapet
     }
     for (let i = ia + 4; i < ib - 2; i += 9) {   // les piles : jamais dans la piste qui passe dessous
       const a = at(i), sol = hauteur(a.x, a.z); if (Q.e < 1.5 && !Q.bout) continue;
