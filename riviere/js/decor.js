@@ -20,7 +20,8 @@ function construireDecor() {
     let lacet = Math.atan2(-sg * Math.cos(a.h), -sg * Math.sin(a.h));   // de face pour qui est sur l'eau
     if (o.face === "arrivant") lacet += sg * 62 * Math.PI / 180;        // tourné vers celui qui arrive (un panneau)
     if (o.tourne) lacet += o.tourne * Math.PI / 180;
-    recette(forme(s).poser(q.x, y, q.z, lacet, ech), Object.assign({eau: a.w * 2}, o), R, K_MONDE); if (EVENEMENTS[nom]) MONDE.evenements.push({s: BOUCLE ? idx(s) : s, type: EVENEMENTS[nom]});   // un tronc, des rondins : ton Pokémon saute ou plonge occuper(q.x, q.z, (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech); poses.push({nom, s, cote, e});
+    recette(forme(s).poser(q.x, y, q.z, lacet, ech), Object.assign({eau: a.w * 2}, o), R, K_MONDE); if (EVENEMENTS[nom]) MONDE.evenements.push({s: BOUCLE ? idx(s) : s, type: EVENEMENTS[nom]});   // un tronc, des rondins : ton Pokémon saute ou plonge
+    occuper(q.x, q.z, (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech); poses.push({nom, s, cote, e});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
   }
   // 1) les lieux et les objets que le niveau pose exactement
   for (const pc of P.pieces) {
