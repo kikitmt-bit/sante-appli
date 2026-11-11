@@ -81,6 +81,7 @@ function boucle(now) {
     const e = Math.exp(-vraiDt / TAU), f = 1 - Math.exp(-vraiDt / LISSE); if (!S.capteur) S.v *= e; S.v1 += (S.v - S.v1) * f; S.v2 += (S.v1 - S.v2) * f;
     const pas = S.v2 * vraiDt, A = PISTE.ALL[idx(S.s)] * MACHINE.allure; S.s += pas * A; S.dist += pas; S.vd = S.v2 * A;
   } else S.vd = 0;
+  S.croisiere = MACHINE.cadence * M_COUP / 60 * MACHINE.allure * ALLURE;   // pour le zoom de la caméra : la vitesse du décor à l'allure habituelle
   S.elan = Math.max(0, S.elan - dt * 2.5); S.vL = lerp(S.vL, S.v2, clamp(dt / 1.2, 0, 1)); S.vn = clamp((S.vL - MACHINE.v0) / (MACHINE.v1 - MACHINE.v0), 0, 1.2);
   if (BOUCLE) { if (S.s >= LONG) { S.s -= LONG; if (!BANC) passerLaLigne(); } }
   else {
