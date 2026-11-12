@@ -68,7 +68,9 @@ class Fichiers(unittest.TestCase):
                     self.assertIn(c, b["rives"], f"{nom} : rive inconnue")
                 self.assertGreaterEqual(large, 5, f"{nom} : piste trop étroite")
                 if p.get("surface"):
-                    self.assertIn(p["surface"], SURFACES, f"{nom} : surface inconnue")
+                    self.assertIn(p["surface"], SURFACES | set(b.get("eaux", {})), f"{nom} : surface inconnue")
+                if isinstance(p.get("tunnel"), str):
+                    self.assertIn(p["tunnel"], b.get("grottes", {}), f"{nom} : grotte inconnue")
                 if p.get("raccord"):
                     self.assertTrue(n.get("boucle"), f"{nom} : « raccord » ne sert que dans une boucle")
                     continue

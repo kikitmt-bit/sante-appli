@@ -16,10 +16,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent
-MOTEUR = ["outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "monture", "camera", "son"]
-RECETTES = ["objets", "surfaces", "montures", "evenements"]
-JEU = ["allure", "jeu", "montre", "seance", "fantome", "banc"]
-PURS = ["outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
+MOTEUR = ["depart", "outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "monture", "camera", "son", "ambiance"]
+RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
+JEU = ["allure", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "parcours", "generateur", "editeur", "banc"]
+PURS = ["depart", "outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
 try:  # les tailles officielles des Pokémon (m), pour les afficher à leur échelle
@@ -67,14 +67,17 @@ def habitant(nom, cache):
 
 
 def _pokemon(o, trouves):
-    """Tous les Pokémon cités dans un fichier (num, ou nums pour une règle)."""
+    """Tous les Pokémon cités dans un fichier (num, nums pour une règle, rivaux d'une région)."""
     if isinstance(o, dict):
         if o.get("o") == "pokemon" and "num" in o:
-            trouves.add((o["num"], o.get("anim", "Idle")))
+            trouves.add((o["num"], o.get("anim") or ("Walk" if o.get("bouge") else "Idle")))
         if o.get("o") == "habitant" and "nom" in o:
             trouves.add(("h", o["nom"]))
         for n in o.get("nums", []) if isinstance(o.get("nums"), list) else []:
-            trouves.add((n, "Idle"))
+            trouves.add((n, "Walk" if (o.get("reglages") or {}).get("bouge") else "Idle"))
+        for liste in (o.get("rivaux") or {}).values() if isinstance(o.get("rivaux"), dict) else []:
+            for n in liste:
+                trouves.add((n, "Walk"))
         for v in o.values():
             _pokemon(v, trouves)
     elif isinstance(o, list):
@@ -95,30 +98,74 @@ def recettes():
     return "\n".join(_module(f"contenu/{d}", f.stem) for d in RECETTES for f in sorted((RACINE / "contenu" / d).glob("*.js")))
 
 
+def _lis(*p):
+    return json.loads(RACINE.joinpath("contenu", *p).read_text(encoding="utf-8"))
+
+
+def _dossier(nom):
+    return {f.stem: _lis(nom, f.name) for f in sorted((RACINE / "contenu" / nom).glob("*.json"))}
+
+
+def _fusion(a, b):
+    if not isinstance(a, dict) or not isinstance(b, dict):
+        return a if b is None else b
+    return {**a, **{k: _fusion(a.get(k), v) for k, v in b.items()}}
+
+
+def region(nom, biomes=None, vus=()):
+    """Une région, avec ce qu'elle hérite d'une autre ("herite": "kanto") : la même règle que moteur/depart.js."""
+    biomes = biomes or _dossier("biomes")
+    b = biomes[nom]
+    if not b.get("herite"):
+        return b
+    if nom in vus:
+        raise ValueError(f"La région {nom} hérite d'elle-même.")
+    parent = region(b["herite"], biomes, vus + (nom,))
+    o = _fusion(parent, b)
+    o["regles"] = b["regles"] if "regles" in b else parent.get("regles", []) + b.get("regles_plus", [])
+    return o
+
+
 def fichiers(niveau):
-    """Le niveau, sa région et ses lieux."""
-    lis = lambda *p: json.loads(RACINE.joinpath("contenu", *p).read_text(encoding="utf-8"))
-    niv = lis("niveaux", f"{niveau}.json")
-    return niv, lis("biomes", f"{niv['biome']}.json"), lis("lieux", f"{niv.get('lieux', niv['biome'])}.json")
+    """Le niveau, sa région (héritage fait) et ses lieux."""
+    niv = _lis("niveaux", f"{niveau}.json")
+    biome = region(niv["biome"])
+    return niv, biome, _lis("lieux", f"{niv.get('lieux') or biome.get('lieux') or niv['biome']}.json")
 
 
-def donnees_js(donnees, niv, biome, lieux, lot):
-    return f"const D = {_js(donnees or {})}, NIVEAU = {_js(niv)}, BIOME = {_js(biome)}, LIEUX = {_js(lieux)}, LOT = {_js(lot)};"
+def tout():
+    """Tous les circuits, toutes les régions, tous les lieux : la page les porte tous, on change de circuit sans rien redemander."""
+    niveaux = _dossier("niveaux")
+    for nom, n in niveaux.items():
+        n.setdefault("id", nom)
+    return niveaux, _dossier("biomes"), _dossier("lieux")
+
+
+def donnees_js(donnees, niveaux, biomes, lieux, lot, servi):
+    return (f"const D = {_js(donnees or {})}, NIVEAUX = {_js(niveaux)}, BIOMES = {_js(biomes)}, LIEUX_TOUS = {_js(lieux)}, LOT = {_js(lot)}, "
+            f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})};")
+
+
+def source_piste():
+    """Le code de la piste, en texte : l'éditeur et le générateur le relancent sur un brouillon, sans recharger la page (le même code que le jeu)."""
+    return "const SOURCE_PISTE = " + _js("\n".join(_module("moteur", m) for m in ("outils", "piste"))) + ";"
 
 
 def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
     """`donnees` : ce que la page reçoit de l'appli (lien de la montre, mètres par coup, dernière séance, machine…)."""
     cache = Path(cache or Path(tempfile.gettempdir()) / "riviere-sprites")
     cache.mkdir(parents=True, exist_ok=True)
-    niv, biome, lieux = fichiers(niveau)
-    besoins = {(niv.get("nageur", 7), "Walk")}
-    for o in (niv, biome, lieux):
+    niveaux, biomes, lieux = tout()
+    if niveau not in niveaux:
+        niveau = "kanto-1km"
+    besoins = {(n.get("nageur", 7), "Walk") for n in niveaux.values()}
+    for o in (niveaux, biomes, lieux):
         _pokemon(o, besoins)
     lot = {f"{n:04d}/{a}": p for n, a in sorted(b for b in besoins if b[0] != "h") if (p := planche(n, a, cache))}
     lot.update({"h/" + nom: p for h, nom in sorted(b for b in besoins if b[0] == "h") if (p := habitant(nom, cache))})
-    js = "\n".join([_module("moteur", m) for m in MOTEUR] + [recettes()] + [_module("jeu", m) for m in JEU])
+    js = "\n".join([_module("moteur", m) for m in MOTEUR] + [recettes()] + [source_piste()] + [_module("jeu", m) for m in JEU])
     html = (RACINE / "index.html").read_text(encoding="utf-8")
-    for cle, val in (("__DONNEES__", donnees_js(donnees, niv, biome, lieux, lot)), ("__MODULES__", js)):
+    for cle, val in (("__DONNEES__", donnees_js(donnees, niveaux, biomes, lieux, lot, niveau)), ("__MODULES__", js)):
         html = html.replace(cle, val)
     if artifact:  # une page à publier sur claude.ai : le contenu seul, sans l'enveloppe du document
         tete, corps = re.search(r"<head>(.*?)</head>", html, re.S).group(1), re.search(r"<body>(.*)</body>", html, re.S).group(1)
@@ -130,10 +177,12 @@ def controle(niveau="kanto-1km", params=""):
     """Un programme JavaScript SANS navigateur ni dessin : il construit la piste, le champ et pose tout le décor d'un niveau, puis écrit
     ce qu'il a trouvé (une ligne de JSON). Lancé par les contrôles automatiques avec node : un niveau cassé ou une instruction avalée se voit."""
     niv, biome, lieux = fichiers(niveau)
+    niv.setdefault("id", niveau)
     avant = ('"use strict";\nvar window = globalThis, location = {search: ' + json.dumps(params) + '}, navigator = {}, '
              'document = {getElementById: () => null, createElement: () => ({getContext: () => null}), addEventListener() {}};\n')
     apres = (RACINE / "controle.js").read_text(encoding="utf-8")
-    return avant + donnees_js({}, niv, biome, lieux, {}) + "\n" + "\n".join(_module("moteur", m) for m in PURS) + "\n" + recettes() + "\n" + apres
+    sans = {k: v for k, v in biome.items() if k not in ("herite", "regles_plus")}
+    return avant + donnees_js({"force": True}, {niveau: niv}, {niv["biome"]: sans}, {niv.get("lieux") or biome.get("lieux") or niv["biome"]: lieux}, {}, niveau) + "\n" + "\n".join(_module("moteur", m) for m in PURS) + "\n" + recettes() + "\n" + apres
 
 
 if __name__ == "__main__":  # python riviere/page.py <niveau> <fichier.html> [artifact]

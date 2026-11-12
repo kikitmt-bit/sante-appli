@@ -1017,7 +1017,9 @@ if st.query_params.get("ecran") == "rameur":
             dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
         except Exception:
             pass
-    options_r = {k: q.get(k) for k in ("machine", "surface", "banc", "eco", "perf", "allure") if q.get(k)}  # les options de La Rivière, passées par l'adresse (&banc=1, &surface=terre, &machine=elliptique…)
+    options_r = {k: q.get(k) for k in ("machine", "surface", "banc", "eco", "perf", "allure", "heure", "meteo") if q.get(k)}
+    if q.get("riviere") not in (None, "", "1"):  # l'adresse demande CE circuit : le choix du menu, gardé sur la machine, ne passe pas devant
+        options_r["force"] = "1"  # les options de La Rivière, passées par l'adresse (&banc=1, &surface=terre, &machine=elliptique…)
     with st.container(key="ecran_rameur"):
         st.iframe(seances_rameur.page_tablette(fichier_rameur, seances_rameur.lien(st.secrets.get("JEU_CLE"), AMI), pokemon.IMAGES,
                                                "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/",

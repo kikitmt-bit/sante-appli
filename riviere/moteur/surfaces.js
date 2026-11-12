@@ -19,8 +19,8 @@ const PISTE_VS = `
 /* ---- l'eau : deux bleus en taches, des reflets, l'écume des rives, le sillage, les ronds de chaque coup, l'écume des rapides et des chutes ---- */
 const EAU_U = Object.assign({uC1: {value: new THREE.Vector3(...hex(BIOME.eau.c1))}, uC2: {value: new THREE.Vector3(...hex(BIOME.eau.c2))}, uClair: {value: new THREE.Vector3(...hex(BIOME.eau.clair))},
   uReflet: {value: new THREE.Vector3(...hex(BIOME.eau.reflet))}, uEcume: {value: new THREE.Vector3(...hex(BIOME.eau.ecume))}, uNag: {value: new THREE.Vector4(-999, 0, 0, 0)},
-  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}}, COMMUNS);
-const EAU_FS = `uniform float uT, uB0, uB1, uSombre; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag; uniform vec3 uCoups[4]; uniform float uLong;
+  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}}, COMMUNS);
+const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag; uniform vec3 uCoups[4]; uniform float uLong;
   varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float lelong(float a, float b) { float d = a - b; return uLong > 0. ? mod(d + uLong * .5, uLong) - uLong * .5 : d; }   // de b à a le long de la piste (une boucle se referme)
@@ -49,14 +49,24 @@ const EAU_FS = `uniform float uT, uB0, uB1, uSombre; uniform vec3 uC1, uC2, uCla
     for (int i = 0; i < 4; i++) { float age = uT - uCoups[i].z; if (age < 0. || age > 1.6) continue;
       float d = length(vec2(vSU.y - uCoups[i].y, lelong(vSU.x, uCoups[i].x))), r = .5 + age * 1.9;
       if (abs(d - r) < .08 + .03 * age && h21(floor(vec2(vSU.x * 5., vSU.y * 5.))) > age / 1.6) c = mix(c, uEcume, .9); }
-    c = mix(c, uBrume, smoothstep(uB0, uB1, vZ) * .94);
-    gl_FragColor = vec4(c * uSombre * uTeinte, 1.); }`;
+    if (uPluie > 0. && prox > 0.) { vec2 cel = floor(p / 1.4); float ph = fract(uT * 1.5 + h21(cel) * 7.), tir = floor(uT * 1.5 + h21(cel) * 7.);   // la pluie : un petit rond dans chaque case, de temps en temps
+      vec2 o = (cel + .5 + (vec2(h21(cel + tir), h21(cel - tir)) - .5) * .6) * 1.4;
+      if (h21(cel * 1.3 + tir) < uPluie * .75 && abs(length(p - o) - ph * .5) < .07) c = mix(c, uEcume, .7 * (1. - ph) * prox); }
+    c *= mix(uSombre * uTeinte, vec3(1.), uLuit);   // une eau qui luit (une source dans une grotte) ne s'assombrit pas
+    gl_FragColor = vec4(mix(c, uBrume, smoothstep(uB0, uB1, vZ) * .94 * (1. - .5 * uLuit)), 1.); }`;
 const MAT_EAU = new THREE.ShaderMaterial({uniforms: EAU_U, vertexShader: PISTE_VS, fragmentShader: EAU_FS, side: THREE.DoubleSide});
 const MAT_MER = new THREE.ShaderMaterial({uniforms: EAU_U, vertexShader: PISTE_VS, fragmentShader: EAU_FS, defines: {MER: 1}, side: THREE.DoubleSide});
 SURFACES.eau = {materiau: MAT_EAU, liquide: true, monture: "nageur"};
+/* les autres eaux de la région ("eaux" : un marais vert, une source qui luit dans une grotte, une eau de lagon…) : la même eau, d'autres couleurs.
+   Une pièce du niveau la choisit comme une surface : "surface": "marais". */
+for (const [nom, e] of Object.entries(BIOME.eaux || {})) {
+  const v = (h, d) => ({value: new THREE.Vector3(...hex(h || d))}), E = BIOME.eau;
+  const U = Object.assign({}, EAU_U, {uC1: v(e.c1, E.c1), uC2: v(e.c2, E.c2), uClair: v(e.clair, E.clair), uReflet: v(e.reflet, E.reflet), uEcume: v(e.ecume, E.ecume), uLuit: {value: e.luit || 0}});
+  SURFACES[nom] = {materiau: new THREE.ShaderMaterial({uniforms: U, vertexShader: PISTE_VS, fragmentShader: EAU_FS, side: THREE.DoubleSide}), liquide: true, monture: "nageur", eau: true};
+}
 
 /* ---- la terre ferme : un chemin de terre ou une route (ligne au milieu, bordures rouges et blanches) ---- */
-const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte;
+const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte;
   varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   void main() { vec2 p = vW.xz; float prox = 1. - smoothstep(45., 150., vZ);
@@ -71,8 +81,8 @@ const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode; uniform vec3 uC1, 
     } else {
       if (vBord < .5 + o) c = uBordC;                                                                // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
     }
-    c = mix(c, uBrume, smoothstep(uB0, uB1, vZ) * .94);
-    gl_FragColor = vec4(c * uSombre * uTeinte, 1.); }`;
+    c *= 1. - .16 * uPluie;                                                                           // mouillée, elle fonce
+    gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;
 function matRoute(c1, c2, bord, ligne, mode) {
   const v = h => ({value: new THREE.Vector3(...hex(h))});
   return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}}, COMMUNS), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
@@ -111,7 +121,7 @@ function construirePiste() {
 
 /* ---- les ponts : sous chaque suite de mètres « pont », un tablier de pierre, deux parapets, des piles jusqu'au sol ---- */
 function construirePonts() {
-  const P = PISTE, N = P.N, F = new Forme(), pierre = PAL.pierre, plages = [];
+  const P = PISTE, N = P.N, F = new Forme(), plages = [];
   let debut = -1;
   for (let i = 0; i <= N; i++) {
     const pont = i < N && P.PONT[i];
@@ -120,6 +130,8 @@ function construirePonts() {
   }
   if (BOUCLE && plages.length > 1 && plages[0][0] === 0 && plages[plages.length - 1][1] === N) { plages[0][0] = plages.pop()[0] - N; }   // un pont à cheval sur la ligne
   for (const [ia, ib] of plages) {
+    // le style du pont : "pont": true (pierre), "bois" (planches et poteaux), "arches" (pierre claire et grandes arches dorées, lampes aux piliers)
+    const style = typeof pieceEn(ia).pont === "string" ? pieceEn(ia).pont : "pierre", pierre = style === "bois" ? [PAL.tronc[0], PAL.tronc[1], PAL.planche] : style === "arches" ? [PAL.pierre[1], PAL.pierre[2], PAL.murs.pierre] : PAL.pierre;
     const sec = i => {   // la coupe du pont au mètre i : de gauche à droite, le contour du tablier et de ses parapets
       const a = at(i), rx = Math.cos(a.h), rz = Math.sin(a.h), w = a.w, e = w + .9, pt = (u, y) => [a.x + rx * u, a.y + y, a.z + rz * u];
       return {a, rx, rz, c: [pt(-e, -.9), pt(-e, .6), pt(-w - .05, .6), pt(-w - .05, -.1), pt(w + .05, -.1), pt(w + .05, .6), pt(e, .6), pt(e, -.9)]};
@@ -146,6 +158,19 @@ function construirePonts() {
       G.boite(0, 0, 0, e0 * 2, a.y - .9 - bas, 5.2, pierre[1], {haut: pierre[2], mat: 0});                                       // sous le tablier
       for (const sg of [-1, 1]) G.boite(sg * (e0 + 1.25), 0, 0, 2.5, a.y + .55 - bas, 5.2, pierre[1], {haut: pierre[2], mat: 0});   // les deux ailes, à hauteur du parapet
     }
+    if (style === "arches" || style === "bois") {   // au-dessus des parapets : des poteaux ; pour « arches », une grande arche dorée d'un poteau à l'autre, une lampe sur chaque poteau
+      const pas = style === "arches" ? 10 : 4, or = PAL.or || [PAL.pierre[0], PAL.lumiere, PAL.lumiere], n0 = Math.max(1, Math.round((ib - ia) / pas)), dl = (ib - ia) / n0;
+      for (let k = 0; k <= n0; k++) { const i = ia + k * dl, a = at(i);
+        for (const sg of [-1, 1]) { const u = sg * (a.w + .45), x = a.x + Math.cos(a.h) * u, z = a.z + Math.sin(a.h) * u;
+          F.poser(x, a.y, z, -a.h, 1);
+          if (style === "bois") { F.boite(0, .6, 0, .22, .7, .22, pierre[0], {haut: pierre[2]}); continue; }
+          F.boite(0, .6, 0, .7, 1.3, .7, pierre[2], {haut: pierre[1]}); F.matiere(7).boule(0, 2.25, 0, .38, .38, .38, [or[1], or[2], or[2]], 0).matiere(2); MONDE.lumieres.push({x, y: a.y + 2.25, z, c: PAL.lumiere, t: 4.5, toujours: false});
+          if (k === n0) continue;
+          F.poser(0, 0, 0, 0, 1);
+          const m = 10, pt = (j, r) => { const t = j / m, b = at(i + dl * t), v = sg * (b.w + .45), h = .7 + Math.sin(t * Math.PI) * 2.6; return [b.x + Math.cos(b.h) * (v + r), b.y + h, b.z + Math.sin(b.h) * (v + r)]; };
+          for (let j = 0; j < m; j++) { const A = pt(j, 0), B = pt(j + 1, 0); F.quad([A[0], A[1], A[2]], [B[0], B[1], B[2]], [B[0], B[1] + .34, B[2]], [A[0], A[1] + .34, A[2]], j % 2 ? or[1] : or[0], [sg * Math.cos(at(i).h), 0, sg * Math.sin(at(i).h)]);
+            const C = pt(j, sg * .18), E = pt(j + 1, sg * .18); F.quad([A[0], A[1] + .34, A[2]], [B[0], B[1] + .34, B[2]], [E[0], E[1] + .34, E[2]], [C[0], C[1] + .34, C[2]], or[2], [0, 1, 0]); } } }
+      F.poser(0, 0, 0, 0, 1); }
     for (let i = ia + 4; i < ib - 2; i += 9) {   // les piles : jamais dans la piste qui passe dessous
       const a = at(i), sol = hauteur(a.x, a.z); if (Q.e < 1.5 && !Q.bout) continue;
       const bas = Math.min(sol, a.y - 2) - .6, ht = a.y - .9 - bas; if (ht < .8) continue;
@@ -153,6 +178,13 @@ function construirePonts() {
     }
   }
   F.poser(0, 0, 0, 0, 1);
+  for (const r of RAVINS) {   // la rivière au fond d'un ravin : une eau calme, à plat, que les pentes du ravin viennent border
+    if (!r.eau || r.creux < 3) continue;
+    const cx = r.x + r.ux * r.L / 2, cz = r.z + r.uz * r.L / 2, y = r.y + .8 - r.creux + Math.min(1.6, r.creux * .16), l = r.L * .3, eau = PAL.eau_mare || hex(BIOME.eau.c1);
+    F.poser(cx, y, cz, Math.atan2(-r.uz, r.ux), 1).matiere(6);
+    F.quad([-l, 0, -125], [l, 0, -125], [l, 0, 125], [-l, 0, 125], eau, [0, 1, 0]);
+    F.matiere(2).poser(0, 0, 0, 0, 1);
+  }
   const m = F.maille(); if (m) { m.name = "ponts"; scene.add(m); }
   return plages;
 }

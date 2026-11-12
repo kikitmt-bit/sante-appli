@@ -5,11 +5,13 @@
 // Les registres : le contenu (contenu/objets/*.js) y ajoute ses recettes, sans toucher au moteur.
 const PAL = couleurs(BIOME.palette);
 const OBJETS = {}, RAYON = {}, EVENEMENTS = {};   // les recettes ; la place que prend chaque objet (m) ; les objets qui font réagir la monture ("saut", "plongee")
-const MONDE = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: []};
+const MONDE = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []};
 const K_MONDE = {
   etiquette(F, texte, x, y, z, l, h) { const [X, Z] = F.monde(x, z); MONDE.etiquettes.push({texte, x: X, y: F.oy + y * F.k, z: Z, lacet: F.lacet, l: l * F.k, h: h * F.k}); },
   anime(F, x, y, z, recette, vitesse) { const [X, Z] = F.monde(x, z), P = new Forme(); recette(P); MONDE.animes.push({forme: P, x: X, y: F.oy + y * F.k, z: Z, lacet: F.lacet, vitesse}); },
-  sprite(F, cle, o) { MONDE.sprites.push({cle, x: F.ox, y: F.oy, z: F.oz, taille: o.taille || 1, vole: (o.haut || 0) > 1.5 && !o.pose}); },
+  sprite(F, cle, o) { MONDE.sprites.push({cle, x: F.ox, y: F.oy, z: F.oz, lacet: F.lacet, taille: o.taille || 1, vole: (o.haut || 0) > 1.5 && !o.pose, bouge: o.bouge || null, s: o._s, cote: o._cote, e: o._e}); },
+  son(F, x, y, z, fort = .08, portee = 80) { const [X, Z] = F.monde(x, z); MONDE.sons.push({x: X, y: F.oy + y * F.k, z: Z, fort, portee}); },   // un bruit d'eau qui s'entend selon la distance (une cascade)
+  lumiere(F, x, y, z, couleur, taille = 3, toujours = false) { const [X, Z] = F.monde(x, z); MONDE.lumieres.push({x: X, y: F.oy + y * F.k, z: Z, c: couleur, t: taille * F.k, toujours}); },   // une lueur : la nuit (une lampe, une fenêtre), ou toujours (un cristal, de la lave)
 };
 function poserDecor() {   // tout placer (aucun appel à three.js : se contrôle sans navigateur)
   const P = PISTE, R = hasard((NIVEAU.graine || 1) * 7919 + 1), formes = new Map(), reserves = [], pris = new Map(), poses = [];
@@ -20,11 +22,11 @@ function poserDecor() {   // tout placer (aucun appel à three.js : se contrôle
   function poser(nom, s, cote, e, o = {}, ech = 1) {
     const recette = OBJETS[nom]; if (!recette) { console.warn("Objet inconnu : " + nom); return; }
     const a = at(s), sg = cote === "g" ? -1 : 1, q = cote === "c" || cote === "portail" ? pose(s, e || 0) : pose(s, sg * (a.w + e));
-    const y = (cote === "c" ? a.y : cote === "portail" ? a.y + hRive(idx(s), 0, 2) + .5 : hauteur(q.x, q.z)) + (o.haut || 0);   // « portail » : perché au-dessus de l'entrée d'une grotte ; haut : sur un toit, en l'air
+    const y = (cote === "c" || o.flotte ? a.y : cote === "portail" ? a.y + hRive(idx(s), 0, 2) + .5 : hauteur(q.x, q.z)) + (o.haut || 0);   // flotte : sur l'eau, contre la rive (un bateau, un ponton ; e négatif)   // « portail » : perché au-dessus de l'entrée d'une grotte ; haut : sur un toit, en l'air
     let lacet = Math.atan2(-sg * Math.cos(a.h), -sg * Math.sin(a.h));   // de face pour qui est sur l'eau
     if (o.face === "arrivant") lacet += sg * 62 * Math.PI / 180;        // tourné vers celui qui arrive (un panneau)
     if (o.tourne) lacet += o.tourne * Math.PI / 180;
-    recette(forme(s).poser(q.x, y, q.z, lacet, ech), Object.assign({eau: a.w * 2}, o), R, K_MONDE); if (EVENEMENTS[nom]) MONDE.evenements.push({s: BOUCLE ? idx(s) : s, type: EVENEMENTS[nom]});   // un tronc, des rondins : ton Pokémon saute ou plonge
+    recette(forme(s).poser(q.x, y, q.z, lacet, ech).matiere(2), Object.assign({eau: a.w * 2, _s: s, _cote: cote, _e: e || 0}, o), R, K_MONDE); if (EVENEMENTS[nom]) MONDE.evenements.push({s: BOUCLE ? idx(s) : s, type: EVENEMENTS[nom]});   // un tronc, des rondins : ton Pokémon saute ou plonge
     occuper(q.x, q.z, (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech); poses.push({nom, s, cote, e});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
   }
   // 1) les lieux et les objets que le niveau pose exactement

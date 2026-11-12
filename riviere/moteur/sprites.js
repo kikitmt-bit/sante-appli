@@ -3,9 +3,22 @@
 // une colonne par image d'animation. Un Pokémon dont la planche manque n'est simplement pas affiché.
 const PXM = .036;   // la taille d'un pixel de sprite dans le monde (m)
 const PLANCHES = {};
+const PMD_URL = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/", GENS_URL = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/";
+/* une planche qui n'est pas venue avec la page (un circuit fait dans l'éditeur, un rival) : on la lit en ligne, au même endroit que page.py */
+async function plancheEnLigne(cle) {
+  try {
+    if (cle[0] === "h") return {png: GENS_URL + cle.slice(2) + ".png", fw: 16, fh: 32, dur: [9999]};
+    const [num, anim] = cle.split("/"), base = PMD_URL + num + "/", xml = new DOMParser().parseFromString(await (await fetch(base + "AnimData.xml")).text(), "text/xml"), blocs = {};
+    for (const a of xml.querySelectorAll("Anim")) blocs[a.querySelector("Name").textContent] = a;
+    let a = blocs[anim]; if (!a) return null;
+    const copie = a.querySelector("CopyOf"); if (copie) a = blocs[copie.textContent];
+    return {png: base + a.querySelector("Name").textContent + "-Anim.png", fw: +a.querySelector("FrameWidth").textContent, fh: +a.querySelector("FrameHeight").textContent,
+      dur: [...a.querySelectorAll("Duration")].map(d => +d.textContent), m: TAILLES_PKM[String(+num)]};
+  } catch (e) { return null; }
+}
 function planche(cle) {
   if (PLANCHES[cle]) return PLANCHES[cle];
-  return PLANCHES[cle] = new Promise(ok => { const L = LOT[cle]; if (!L) return ok(null); const im = new Image();
+  return PLANCHES[cle] = new Promise(async ok => { const L = LOT[cle] || await plancheEnLigne(cle); if (!L) return ok(null); const im = new Image(); if (L.png.slice(0, 5) !== "data:") im.crossOrigin = "anonymous";
     im.onload = () => { const c = toile(im.width, im.height, x => x.drawImage(im, 0, 0)), cx = c.getContext("2d"), img = cx.getImageData(0, 0, im.width, im.height), d = img.data;
       const cols = Math.max(1, Math.floor(im.width / L.fw)), rows = Math.max(1, Math.floor(im.height / L.fh)), boites = {};
       const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
@@ -21,27 +34,56 @@ class Pantin {  // un sprite debout dans le monde
   constructor(pl, rang, taille = 1, hauteur = 0) {   // hauteur : en mètres dans le monde (sinon : la taille du dessin)
     this.pl = pl; this.rang = Math.min(rang, pl.rows - 1); this.b = pl.boite(this.rang); this.tex = pl.tex.clone(); this.tex.needsUpdate = true;
     const bw = this.b.x1 - this.b.x0, bh = this.b.y1 - this.b.y0; this.tex.repeat.set(bw / pl.W, bh / pl.H); this.h = hauteur ? hauteur * taille : bh * PXM * taille; this.l = this.h * bw / bh;
-    this.m = new THREE.Mesh(GEO_SPRITE, new THREE.MeshBasicMaterial({map: this.tex, alphaTest: .5, side: THREE.DoubleSide})); this.m.scale.set(this.l, this.h, 1); this.i = -1; this.image(0); scene.add(this.m); }
+    this.m = new THREE.Mesh(GEO_SPRITE, new THREE.MeshBasicMaterial({map: this.tex, alphaTest: .5, side: THREE.DoubleSide})); this.m.scale.set(this.l, this.h, 1); this.i = -1; this.image(0); scene.add(this.m); TEINTES.push(this.m.material); }
   image(i) { if (i === this.i) return; this.i = i; this.tex.offset.set((i * this.pl.fw + this.b.x0) / this.pl.W, 1 - (this.rang * this.pl.fh + this.b.y1) / this.pl.H); }
   rangee(r) { r = Math.min(r, this.pl.rows - 1); if (r === this.rang) return; this.rang = r; this.b = this.pl.boite(r); const bw = this.b.x1 - this.b.x0, bh = this.b.y1 - this.b.y0; this.tex.repeat.set(bw / this.pl.W, bh / this.pl.H); this.l = this.h * bw / bh; this.m.scale.set(this.l, this.h, 1); this.i = -1; }   // changer de direction (0 = face, 4 = dos, 3 et 5 = trois quarts dos)
   regarder() { this.m.rotation.y = Math.atan2(camera.position.x - this.m.position.x, camera.position.z - this.m.position.z); }
 }
 
-/* ---- ton Pokémon (monture.js l'anime) et ceux des rives (qui sautent de joie quand tu passes) ---- */
+/* ---- ton Pokémon (monture.js l'anime) et ceux du monde : ceux des rives sautent de joie quand tu passes, d'autres vivent leur vie ---- */
+// Un Pokémon peut bouger ("bouge" dans le niveau, le lieu ou la règle) :
+//   {"type": "vol", "rayon": 14, "haut": 9, "vitesse": 5}     il tourne dans le ciel
+//   {"type": "ronde", "long": 10, "vitesse": 1.2}             il va et vient le long de la rive
+//   {"type": "nage", "long": 30, "vitesse": 2}                il va et vient dans l'eau, le long de la piste (cote "c")
+//   {"type": "saut", "tous": 5, "haut": 2.2}                  il jaillit de l'eau de temps en temps (un Magicarpe)
+// Il se tourne tout seul dans le sens où il va (les 8 directions des sprites de Donjon Mystère).
 let nageur = null; const PUBLIC = [];
 async function construireSprites() {
   const pl = await planche(String(NIVEAU.nageur || 7).padStart(4, "0") + "/Walk"); if (pl) nageur = new Pantin(pl, 4, 1.5);
   // la taille des Pokémon suit leur vraie taille, adoucie (un Rattata de 30 cm reste visible, un Lokhlass de 2,5 m est énorme) ; un habitant fait 1,5 m
+  await Promise.all(MONDE.sprites.map(o => planche(o.cle)));
   for (const o of MONDE.sprites) {
     const p = await planche(o.cle); if (!p) continue;
     const q = new Pantin(p, 0, o.taille, o.cle[0] === "h" ? 1.5 : p.m ? clamp(1.5 * Math.pow(p.m, .7), .55, 8) : 0);
-    q.vole = o.vole; q.fixe = o.cle[0] === "h"; q.m.position.set(o.x, o.y, o.z); pres(o.x, o.z); q.s = Q.i; q.y0 = o.y; q.ph = Math.random() * 9; PUBLIC.push(q);
+    q.vole = o.vole; q.fixe = o.cle[0] === "h"; q.m.position.set(o.x, o.y, o.z); pres(o.x, o.z); q.s = Q.i; q.y0 = o.y; q.x0 = o.x; q.z0 = o.z; q.ph = Math.random() * 9;
+    if (o.bouge) { q.bouge = Object.assign({}, o.bouge); q.s0 = o.s; q.cote = o.cote; q.e = o.e; q.px = o.x; q.pz = o.z; }
+    PUBLIC.push(q);
   }
 }
-function animerPublic(t, S) {
+function bouger(q, t, S) {   // où est-il maintenant, et vers où regarde-t-il
+  const b = q.bouge, v = b.vitesse || 1.5, p = q.m.position; let x = q.x0, y = q.y0, z = q.z0;
+  if (b.type === "vol") { const r = b.rayon || 14, a = t * v / r + q.ph; x += Math.cos(a) * r; z += Math.sin(a) * r; y += (b.haut || 9) + Math.sin(t * .7 + q.ph) * 1.2; }
+  else if (b.type === "ronde" || b.type === "nage") {
+    const L = b.long || 10, u = ((t * v + q.ph * 3) % (2 * L)), d = u < L ? u : 2 * L - u, eau = b.type === "nage", s = q.s0 + d - L / 2;
+    const a = eau || q.cote === "c" ? pose(s, q.e) : pose(s, (q.cote === "g" ? -1 : 1) * (at(s).w + q.e));
+    x = a.x; z = a.z; y = eau ? a.y - q.h * .4 + Math.sin(t * 3 + q.ph) * .04 : hauteur(a.x, a.z); q.s = idx(s);
+  } else if (b.type === "saut") {
+    const T = b.tous || 5, u = ((t + q.ph) % T) / 1.1;
+    if (u < 1) { y += Math.sin(u * Math.PI) * (b.haut || 2.2) - q.h * .3; if (!q.dehors) { q.dehors = true; if (Math.abs(ecart(q.s, S.s)) < 120) gerbe(q.s, .8, q.e || 0, at(q.s).y); } }
+    else { y -= q.h * 1.4; q.dehors = false; }
+  }
+  const dx = x - q.px, dz = z - q.pz; q.px = x; q.pz = z; p.set(x, y, z);
+  if (dx * dx + dz * dz > 1e-7) {   // sa direction, vue depuis la caméra : 0 = de face, 2 = vers la droite, 4 = de dos, 6 = vers la gauche
+    const fx = x - camera.position.x, fz = z - camera.position.z, l = Math.hypot(fx, fz) || 1, ax = fx / l, az = fz / l, vr = dx * -az + dz * ax, vf = dx * ax + dz * az;
+    q.rangee(((Math.round(Math.atan2(vr, -vf) / (Math.PI / 4)) % 8) + 8) % 8);
+  }
+}
+function animerPublic(t, S, dt) {
   for (const q of PUBLIC) {
-    q.image(q.pl.image(t + q.ph)); const d = Math.abs(ecart(q.s, S.s));
-    q.m.position.y = q.y0 + (q.vole ? Math.sin(t * 2.2 + q.ph) * .35 : d < 22 && S.v > .8 ? Math.abs(Math.sin(t * 8 + q.ph)) * .4 : 0); q.regarder();
+    q.image(q.pl.image(t + q.ph));
+    if (q.bouge) bouger(q, t, S);
+    else { const d = Math.abs(ecart(q.s, S.s)); q.m.position.y = q.y0 + (q.vole ? Math.sin(t * 2.2 + q.ph) * .35 : d < 22 && S.v > .8 ? Math.abs(Math.sin(t * 8 + q.ph)) * .4 : 0); }
+    q.regarder();
     // de loin, un Pokémon rapetisse moins vite que le décor : on le reconnaît avant d'être à côté
     const loin = Math.hypot(camera.position.x - q.m.position.x, camera.position.z - q.m.position.z), k = q.fixe || loin < 12 ? 1 : Math.min(2.2, Math.pow(loin / 12, .5));
     q.m.scale.set(q.l * k, q.h * k, 1);

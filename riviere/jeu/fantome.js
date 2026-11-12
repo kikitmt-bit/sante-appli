@@ -59,6 +59,7 @@ function majCarte() {
     if (nageur) { const pl = nageur.pl, b = pl.boite(0), w = b.x1 - b.x0, hh = b.y1 - b.y0, k = t / Math.max(w, hh); c.globalAlpha = alpha;
       c.drawImage(pl.tex.image, b.x0, b.y0, w, hh, x - w * k / 2, z - hh * k / 2, w * k, hh * k); c.globalAlpha = 1; }
     else { c.globalAlpha = alpha; c.fillStyle = "#F8C838"; c.beginPath(); c.arc(x, z, px * .04, 0, 7); c.fill(); c.globalAlpha = 1; } };
+  if (RIVAUX.t0 !== null) for (const r of RIVAUX.liste) { const a = at(r.s), x = a.x * CARTE.k + CARTE.ox, z = a.z * CARTE.k + CARTE.oz; c.fillStyle = "#1B2440"; c.beginPath(); c.arc(x, z, px * .034, 0, 7); c.fill(); c.fillStyle = r.couleur; c.beginPath(); c.arc(x, z, px * .024, 0, 7); c.fill(); }
   if (FANTOME.sG !== null && FANTOME.sG !== undefined) icone(FANTOME.sG, .45);
   icone(S.s, 1);
 }

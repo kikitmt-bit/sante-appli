@@ -34,13 +34,40 @@ class H(http.server.BaseHTTPRequestHandler):
                 octets = ("<!doctype html><meta charset='utf-8'><pre id='b'>…</pre><script>\"use strict\";\n" + js.replace("</", "<\\/")
                           + "\ndocument.getElementById('b').textContent = JSON.stringify(globalThis.__bilan, null, 1);</script>").encode("utf-8")
             else:
-                octets = page.page(donnees={"lien": lien_local()}, niveau=niveau).encode("utf-8")
+                octets = page.page(donnees={"lien": lien_local(), "force": bool(q.get("niveau"))}, niveau=niveau).encode("utf-8")
+                if q.get("cadre"):  # comme dans l'appli : la page dans un cadre (pour essayer le changement de circuit sans rechargement de l'appli)
+                    import html as _html
+                    octets = ("<!doctype html><meta charset='utf-8'><body style='margin:0'><iframe style='border:0;width:100vw;height:100vh' srcdoc=\"" + _html.escape(octets.decode("utf-8"), quote=True) + "\"></iframe>").encode("utf-8")
         except Exception as e:  # un fichier mal écrit : on le dit dans la page
             octets = f"<pre>Erreur : {e}</pre>".encode("utf-8")
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
         self.send_header("Content-Length", str(len(octets)))
         self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(octets)
+
+    def do_POST(self):
+        """L'éditeur, sur ce PC seulement : « Écrire dans le jeu » range un circuit dans contenu/niveaux (un nom simple, jamais ailleurs)."""
+        import json
+        import re
+        try:
+            if urlparse(self.path).path != "/niveau":
+                raise ValueError("adresse inconnue")
+            n = json.loads(self.rfile.read(int(self.headers.get("Content-Length") or 0)).decode("utf-8"))
+            nom = re.sub(r"[^a-z0-9-]", "", str(n.get("id", "")).lower())[:40]
+            if not nom or not isinstance(n.get("pieces"), list):
+                raise ValueError("ce n'est pas un circuit")
+            n["id"] = nom
+            f = Path(__file__).resolve().parent / "contenu" / "niveaux" / (nom + ".json")
+            f.write_text(json.dumps(n, ensure_ascii=False, indent=1), encoding="utf-8")
+            texte = f"Écrit : contenu/niveaux/{nom}.json (il sera dans le jeu au prochain envoi sur GitHub)."
+        except Exception as e:
+            texte = f"Échec : {e}"
+        octets = texte.encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(octets)))
         self.end_headers()
         self.wfile.write(octets)
 

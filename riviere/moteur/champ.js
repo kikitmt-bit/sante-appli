@@ -63,8 +63,27 @@ function voter(x, z) {
   V.h = sh / sw; V.y = sy / sw; V.a = sa / sw;
   return V;
 }
-function finir(x, z) {  // après le vote : les bosses, puis le lointain (des collines dans le circuit, la mer ou des collines dehors)
+/* les ravins : une pièce « pont » peut passer au-dessus d'un ravin ("ravin": 9 = sa profondeur en mètres) : le sol se creuse sous le pont,
+   en travers, sur une centaine de mètres de chaque côté ; une rivière coule au fond (surfaces.js), sauf "ravin_eau": false */
+const RAVINS = (() => {
+  const P = PISTE, o = []; let debut = -1;
+  for (let i = 0; i <= P.N; i++) {
+    const pont = i < P.N && P.PONT[i] && P.pieces[P.PC[i]].ravin > 0;
+    if (pont && debut < 0) debut = i;
+    if (!pont && debut >= 0) { const a = debut, b = i - 1, dx = P.X[b] - P.X[a], dz = P.Z[b] - P.Z[a], L = Math.hypot(dx, dz) || 1; o.push({ia: a, ib: b, x: P.X[a], z: P.Z[a], ux: dx / L, uz: dz / L, L, creux: P.pieces[P.PC[a]].ravin, y: P.Y[a], eau: P.pieces[P.PC[a]].ravin_eau !== false}); debut = -1; }
+  }
+  return o;
+})();
+function creuser(x, z) {   // de combien le sol descend ici, à cause d'un ravin
+  let c = 0;
+  for (const r of RAVINS) { const dx = x - r.x, dz = z - r.z, u = (dx * r.ux + dz * r.uz) / r.L, v = Math.abs(dx * r.uz - dz * r.ux);
+    if (u <= .04 || u >= .96 || v > 130) continue;
+    c = Math.max(c, r.creux * lisse(.04, .34, u) * (1 - lisse(.66, .96, u)) * (1 - lisse(55, 130, v))); }
+  return c;
+}
+function finir(x, z) {  // après le vote : les bosses, puis les ravins, puis le lointain (des collines dans le circuit, la mer ou des collines dehors)
   const e = Q.e; let h = V.h;
+  if (RAVINS.length) h -= creuser(x, z);
   if (V.a) h += V.a * lisse(4, 34, e) * (fbm(x / 46 + 3, z / 46 + 7) - .42) * 2;
   if (e > 100) {
     if ((BOUCLE && dedans(x, z)) || !ILE) h = lerp(h, V.y + 5 + 5 * (fbm(x / 70 + 1, z / 70 + 4) - .4), lisse(100, 190, e));

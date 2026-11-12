@@ -27,6 +27,10 @@ function sonDemarrer() {   // à appeler depuis un toucher : un navigateur ne jo
     const f2 = ctx.createBiquadFilter(); f2.type = "highpass"; f2.frequency.value = 120;
     n.cascade = ctx.createGain(); n.cascade.gain.value = 0;
     source.connect(f1); f1.connect(f2); f2.connect(n.cascade); n.cascade.connect(n.sortie);
+    const sp = ctx.createBufferSource(); sp.buffer = tampon; sp.loop = true;   // la pluie : le même bruit, plus aigu
+    const f3 = ctx.createBiquadFilter(); f3.type = "bandpass"; f3.frequency.value = 3200; f3.Q.value = .4;
+    n.pluie = ctx.createGain(); n.pluie.gain.value = 0;
+    sp.connect(f3); f3.connect(n.pluie); n.pluie.connect(n.sortie); sp.start(0, .7);
     source.start(); SON.ctx = ctx;
   } catch (e) { SON.actif = false; }
 }
@@ -39,8 +43,9 @@ function sonBasculer() {
 function sonMaj(s, tunnel) {
   const c = SON.ctx; if (!c || !SON.actif || c.state !== "running") return;
   const a = at(s); let g = 0;
-  if (!tunnel) for (const k of CASCADES) { const d = Math.hypot(a.x - k.x, a.y - k.y, a.z - k.z), f = 1 - lisse(4, k.portee, d); g = Math.max(g, k.fort * f * f); }
+  if (!tunnel) for (const L of [CASCADES, MONDE.sons]) for (const k of L) { const d = Math.hypot(a.x - k.x, a.y - k.y, a.z - k.z), f = 1 - lisse(4, k.portee, d); g = Math.max(g, k.fort * f * f); }
   SON.n.cascade.gain.setTargetAtTime(g, c.currentTime, 1.2);
+  SON.n.pluie.gain.setTargetAtTime(tunnel ? 0 : .035 * clamp(AMB.m.pluie, 0, 1), c.currentTime, 1.5);   // la pluie : un bruissement très doux, rien dans une grotte
 }
 function sonCoup(force, liquide) {   // un coup de rame : un petit « flouch » très doux (sur la terre : un pas feutré)
   const c = SON.ctx; if (!c || !SON.actif || c.state !== "running") return;

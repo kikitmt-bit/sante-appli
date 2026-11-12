@@ -6,7 +6,7 @@ const BLANC = [1, 1, 1];
 Object.assign(EVENEMENTS, {tronc: "saut", rondins: "plongee"});   // ces objets font réagir ton Pokémon quand il arrive dessus
 /* les pièces communes aux bâtiments */
 function fenetre(F, x, y, w, h, z, barres = 1) {  // un cadre blanc, une vitre bleue, des montants
-  F.plaque(x - w / 2 - .12, y - .12, x + w / 2 + .12, y + h + .12, z + .03, BLANC); F.plaque(x - w / 2, y, x + w / 2, y + h, z + .06, PAL.vitre);
+  F.plaque(x - w / 2 - .12, y - .12, x + w / 2 + .12, y + h + .12, z + .03, BLANC); F.matiere(3).plaque(x - w / 2, y, x + w / 2, y + h, z + .06, PAL.vitre); F.matiere(2);
   for (let k = 1; k <= barres; k++) { const X = x - w / 2 + w * k / (barres + 1); F.plaque(X - .05, y, X + .05, y + h, z + .09, BLANC); } }
 function pokeball(F, x, y, z, r, fond, trait) {  // l'emblème : une Poké Ball vue de face
   F.disque(x, y, z, r, r, fond, 0, Math.PI * 2, 18); F.plaque(x - r, y - r * .09, x + r, y + r * .09, z + .03, trait); F.disque(x, y, z + .05, r * .36, r * .36, trait, 0, Math.PI * 2, 12); F.disque(x, y, z + .08, r * .2, r * .2, fond, 0, Math.PI * 2, 10); }
@@ -37,7 +37,7 @@ Object.assign(OBJETS, {
     for (let k = 0; k < n; k++) F.boite(-L / 2 + L * k / (n - 1), -.3, 0, .16, 1.15, .16, b, {haut: BLANC});
     F.boite(0, .28, 0, L, .12, .08, b); F.boite(0, .6, 0, L, .12, .08, b); },
   boite_lettres(F) { F.boite(0, -.3, 0, .12, 1.2, .12, PAL.pierre[0]); F.boite(0, .85, 0, .5, .36, .36, PAL.pierre[2], {haut: BLANC}); F.boite(.27, .95, 0, .06, .2, .12, PAL.fleurs.rouge); },
-  lampadaire(F) { F.cyl(0, -.3, 0, .13, .08, 3.5, 6, PAL.cadre); F.boite(0, 3.2, 0, .42, .5, .42, PAL.lumiere, {haut: PAL.cadre}); F.boite(0, 3.7, 0, .56, .1, .56, PAL.cadre); },
+  lampadaire(F, o, R, K) { F.cyl(0, -.3, 0, .13, .08, 3.5, 6, PAL.cadre); F.boite(0, 3.2, 0, .42, .5, .42, PAL.lumiere, {haut: PAL.cadre, mat: 7}); F.boite(0, 3.7, 0, .56, .1, .56, PAL.cadre); K.lumiere(F, 0, 3.45, 0, PAL.lumiere, 5.5); },
   panneau(F, o, R, K) { const L = o.large || 3.4, H = 1.05, b = PAL.tronc;
     F.boite(-L / 2 + .25, -.3, 0, .2, 1.9, .2, b[0]); F.boite(L / 2 - .25, -.3, 0, .2, 1.9, .2, b[0]); F.boite(0, .75, .05, L, H, .14, b[1], {devant: PAL.planche});
     K.etiquette(F, o.texte || "", 0, .75 + H / 2, .14, L - .3, H - .2); },
@@ -85,6 +85,6 @@ Object.assign(OBJETS, {
     const d = (o.eau || 12) / 2 + 1.2, c = .7, n = Math.round(d * 2 / c), noir = PAL.cadre;
     for (const z of [-d, d]) { F.cyl(0, -1, z, .3, .24, 8.2, 7, PAL.blanc, BLANC); F.boule(0, 7.3, z, .5, .5, .5, [PAL.fleurs.rouge, PAL.fleurs.rouge, PAL.fleurs.rouge], 0); }
     for (let k = 0; k < n; k++) for (let j = 0; j < 2; j++) { const z0 = -d + 2 * d * k / n, z1 = -d + 2 * d * (k + 1) / n; F.quad([0, 5.2 + j * c, z0], [0, 5.2 + j * c, z1], [0, 5.2 + (j + 1) * c, z1], [0, 5.2 + (j + 1) * c, z0], (k + j) % 2 ? noir : BLANC, [0, 1, 0]); } },
-  pokemon(F, o, R, K) { K.sprite(F, String(o.num).padStart(4, "0") + "/" + (o.anim || "Idle"), o); },
+  pokemon(F, o, R, K) { K.sprite(F, String(o.num).padStart(4, "0") + "/" + (o.anim || (o.bouge ? "Walk" : "Idle")), o); },
   habitant(F, o, R, K) { K.sprite(F, "h/" + o.nom, o); },
 });

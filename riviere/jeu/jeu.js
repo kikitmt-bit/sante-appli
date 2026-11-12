@@ -6,16 +6,17 @@ const ELAN = BOUCLE ? (NIVEAU.elan === undefined ? 120 : NIVEAU.elan) : 0;   // 
 const S = {s: PARAMS.has("s") ? +PARAMS.get("s") : BOUCLE ? LONG - ELAN : 6, v: 0, vL: 0, vn: 0, vd: 0, t: 0, dist: 0, nb: 0, coupsT: [], auto: false, prochain: .6, elan: 0, fondu: 0, fige: PARAMS.has("fige"),
   tour: 0, tourT0: 0, tours: [], enAir: false, v1: 0, v2: 0,
   mode: null, lance: false, pause: false, debutMur: 0, t0: 0, pauseTot: 0, pauseDebut: 0};   // mode : null = le menu, "vraie" = une vraie séance (la montre), "essai" = sans montre
+function demarrerChrono() { if (S.lance) return; S.lance = true; S.debutMur = Date.now(); S.t0 = performance.now(); S.pauseTot = 0; majBoutons(); if (!BOUCLE) rivauxDepart(); }
 function coup(force = .6, muet = false) {   // un geste de la machine ; muet : un geste rattrapé (il compte, sans éclaboussure)
   if (!S.mode || S.pause) return;
-  if (!S.lance) { S.lance = true; S.debutMur = Date.now(); S.t0 = performance.now(); S.pauseTot = 0; majBoutons(); }   // le chrono de la séance part au premier geste, comme sur l'écran du rameur
+  demarrerChrono();   // le chrono de la séance part au premier geste, comme sur l'écran du rameur
   S.v += M_COUP / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
   if (muet) return;
   S.elan = 1; sonCoup(force, M.liquide);
   if (M.liquide) { gerbe(S.s, force, M.d, M.y); EAU_U.uCoups.value[S.nb % 4].set(S.s - .3, M.d, COMMUNS.uT.value); }
 }
 function vitesseCapteur(v) { S.v = v; S.capteur = true; }   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
-const cadence = () => { const c = S.coupsT, n = c.length; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };
+const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };
 
 /* les tours d'un circuit : le chrono part au premier passage de la ligne ; le meilleur tour est gardé sur cette machine, par machine de sport */
 const CLE_RECORD = "riviere_" + (MACHINE_NOM === "rameur" ? "" : MACHINE_NOM + "_") + (NIVEAU.id || NIVEAU.nom) + "_" + (NIVEAU.distance || Math.round(TOUR_M)) + "m_record";
@@ -23,7 +24,7 @@ let record = 0; try { record = +localStorage.getItem(CLE_RECORD) || 0; } catch (
 const chrono = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0") + "," + Math.floor(s * 10 % 10);
 function annoncer(texte) { const a = $("annonce"); a.textContent = texte; a.classList.remove("vu"); void a.offsetWidth; a.classList.add("vu"); }
 function passerLaLigne() {
-  if (S.tour === 0) { S.tour = 1; S.tourT0 = S.t; fantomeDepart(); annoncer("TOP CHRONO !"); sonTinte([660, 880]); return; }
+  if (S.tour === 0) { S.tour = 1; S.tourT0 = S.t; fantomeDepart(); rivauxDepart(); annoncer("TOP CHRONO !"); sonTinte([660, 880]); return; }
   const t = S.t - S.tourT0, vraie = S.mode === "vraie" && !PARAMS.has("s"), mieux = !record || t < record; S.tours.push(t); S.tour++; S.tourT0 = S.t;
   fantomeTour(t, mieux && vraie);
   if (mieux && vraie) { record = t; try { localStorage.setItem(CLE_RECORD, String(t)); } catch (e) {} }
@@ -36,6 +37,10 @@ function hud() {
   $("vVit").textContent = MACHINE.affiche === "kmh" ? (S.vL * 3.6).toFixed(1) : S.vL > .6 ? fmt(500 / S.vL) : "-:--";
   $("vDist").textContent = Math.round(S.dist); $("vCoeur").textContent = MONTRE.h && performance.now() - MONTRE.vu < 15000 ? MONTRE.h : "--"; majCarte();
   const titre = pieceEn(S.s).titre; if ($("vLieu").textContent !== titre) $("vLieu").textContent = titre;
+  const watts = BT.appareil && BT.puissance !== null && performance.now() - BT.vu < 4000 ? BT.puissance : MACHINE.physique && S.auto && S.mode === "essai" ? 150 : null;
+  if (($("hWatts").hidden = watts === null) === false) $("vWatts").textContent = Math.round(watts);
+  $("vSeg").textContent = texteSegment() || classement(); majProfil();
+  if (!BOUCLE) { const n = S.tours.length; $("vTour").textContent = "Parcours " + (n + 1) + "  " + chrono(Math.max(0, S.t - S.tourT0)); $("vTours").textContent = (n ? "Dernier " + chrono(S.tours[n - 1]) : "") + (record ? (n ? " · " : "") + "Record " + chrono(record) : ""); }
   if (BOUCLE) {
     const n = S.tours.length;
     $("vTour").textContent = S.tour ? "Tour " + S.tour + "  " + chrono(S.t - S.tourT0) : "Élan · " + Math.max(0, Math.round((TOUR_VRAI - vrai(S.s)) / MACHINE.allure)) + " m";
@@ -47,8 +52,8 @@ function hud() {
    Si baisser ne change rien (l'écran est bridé, par exemple en économie d'énergie), on remet et on n'insiste pas ; quand tout va bien, on remonte. ---- */
 const IMAGES_MAX = PARAMS.has("eco") ? 30 : 60;   // jamais plus (un téléphone à 120 images/s chaufferait pour rien) ; ?eco=1 : 30
 const QUALITE = {crans: [], bas: 0, haut: 0, essai: null, gel: 0, bloque: 0};
-function porter(b1) { COMMUNS.uB1.value = b1; scene.fog.far = b1; camera.far = b1 + 20; camera.updateProjectionMatrix(); POST.mat.uniforms.uF.value = camera.far; }   // voir moins loin (la brume se rapproche d'autant) : moins de décor à dessiner
-function cran(nom, sens) { if (nom === "finesse") { FINESSE.cran += sens; tailleEcran(); } else porter(COMMUNS.uB1.value * (sens > 0 ? .82 : 1 / .82)); }
+function porter(b1) { VISION.b1 = b1; camera.far = b1 + 20; camera.updateProjectionMatrix(); POST.mat.uniforms.uF.value = camera.far; }   // voir moins loin (la brume se rapproche d'autant) : moins de décor à dessiner
+function cran(nom, sens) { if (nom === "finesse") { FINESSE.cran += sens; tailleEcran(); } else porter(VISION.b1 * (sens > 0 ? .82 : 1 / .82)); }
 function regler(ips) {   // une fois par seconde
   const q = QUALITE;
   if (BANC || PARAMS.has("h") || VUE.mode !== "jeu" || document.visibilityState !== "visible" || T < 4) { q.bas = q.haut = 0; return; }
@@ -63,7 +68,7 @@ function regler(ips) {   // une fois par seconde
   q.bas = ips < IMAGES_MAX * .75 && ips > 8 ? q.bas + 1 : 0; q.haut = ips >= IMAGES_MAX * .95 ? q.haut + 1 : 0;
   if (q.bas >= 2 && !q.gel && q.crans.length < 6) {
     let nom = q.crans.length % 2 ? "vue" : "finesse";
-    if (nom === "vue" && COMMUNS.uB1.value <= 220) nom = "finesse"; if (nom === "finesse" && HAUT <= 380) nom = COMMUNS.uB1.value > 220 ? "vue" : null;
+    if (nom === "vue" && VISION.b1 <= 220) nom = "finesse"; if (nom === "finesse" && HAUT <= 380) nom = VISION.b1 > 220 ? "vue" : null;
     q.bas = 0; if (!nom) return;
     cran(nom, 1); q.crans.push(nom); q.essai = {nom, sens: 1, avant: ips, attente: 3};
   } else if (q.haut >= 20 && q.crans.length && !q.bloque) { const nom = q.crans.pop(); cran(nom, -1); q.essai = {nom, sens: -1, attente: 3}; q.haut = 0; }
@@ -77,20 +82,21 @@ function boucle(now) {
   if (BANC && !BANC.fini) bancAvance(vraiDt);
   else if (!S.fige && S.mode && !S.pause) {
     if (S.lance || S.mode === "essai") S.t = (now - S.t0 - S.pauseTot) / 1000;   // le temps = la vraie horloge depuis le premier geste, moins les pauses
-    if (S.auto && S.t >= S.prochain) { coup(.5 + Math.random() * .35); S.prochain = S.t + 60 / (MACHINE.cadence * (1 + .12 * Math.sin(S.t * .05))); }
+    if (S.auto && !MACHINE.physique && S.t >= S.prochain) { coup(.5 + Math.random() * .35); S.prochain = S.t + 60 / (MACHINE.cadence * (1 + .12 * Math.sin(S.t * .05))); }
+    capteursMaj(vraiDt);   // un capteur de vitesse ou de puissance (home trainer) : c'est lui qui donne S.v
     const e = Math.exp(-vraiDt / TAU), f = 1 - Math.exp(-vraiDt / LISSE); if (!S.capteur) S.v *= e; S.v1 += (S.v - S.v1) * f; S.v2 += (S.v1 - S.v2) * f;
-    const pas = S.v2 * vraiDt, A = PISTE.ALL[idx(S.s)] * MACHINE.allure; S.s += pas * A; S.dist += pas; S.vd = S.v2 * A;
+    const pas = S.v2 * vraiDt, A = (MACHINE.physique ? PISTE.ALL0 : PISTE.ALL)[idx(S.s)] * MACHINE.allure; S.s += pas * A; S.dist += pas; S.vd = S.v2 * A;   // une machine qui ressent la pente pour de vrai : le décor ne triche plus avec elle
+    parcoursMaj();
   } else S.vd = 0;
-  S.croisiere = MACHINE.cadence * M_COUP / 60 * MACHINE.allure * ALLURE;   // pour le zoom de la caméra : la vitesse du décor à l'allure habituelle
+  S.croisiere = (MACHINE.physique ? 7.5 : MACHINE.cadence * M_COUP / 60) * MACHINE.allure * ALLURE;   // pour le zoom de la caméra : la vitesse du décor à l'allure habituelle
   S.elan = Math.max(0, S.elan - dt * 2.5); S.vL = lerp(S.vL, S.v2, clamp(dt / 1.2, 0, 1)); S.vn = clamp((S.vL - MACHINE.v0) / (MACHINE.v1 - MACHINE.v0), 0, 1.2);
   if (BOUCLE) { if (S.s >= LONG) { S.s -= LONG; if (!BANC) passerLaLigne(); } }
   else {
-    if (S.s > LONG - 14 && !S.fondu) S.fondu = .01;   // au bout d'un niveau ouvert : fondu au blanc, et on repart du début
+    if (S.s > LONG - 14 && !S.fondu) { S.fondu = .01; arrivee(); }   // au bout d'un parcours ouvert : son temps, un fondu au blanc, et on repart du début
     if (S.fondu) { S.fondu += dt * 1.4; if (S.fondu >= 1 && S.s > LONG / 2) { S.s = 6; M.y = null; CAM.y = null; } if (S.fondu >= 2) S.fondu = 0; $("voile").style.opacity = S.fondu ? (S.fondu < 1 ? S.fondu : 2 - S.fondu) : 0; }
   }
   const tunnel = dansTunnel(S.s);
-  COMMUNS.uSombre.value = lerp(COMMUNS.uSombre.value, tunnel ? .86 : 1, clamp(dt * 3, 0, 1));
-  animerMonture(T, dt, S); cadrer(dt, S, T); animerPublic(T, S); animerFantome(T); animerGouttes(dt); animerDecor(T);
+  animerMonture(T, dt, S); cadrer(dt, S, T); ambianceMaj(dt, S.s); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
   sonMaj(S.s, !!tunnel);
   dessiner(); hud();
   if (BANC && !BANC.fini) bancImage(ecoule);
@@ -121,21 +127,21 @@ addEventListener("pointerdown", e => { eveiller(); sonDemarrer(); if (!essai() |
 addEventListener("keydown", e => { if (!essai() || S.pause || e.target.closest("input")) return; if (e.code === "Space") { e.preventDefault(); S.auto = false; majAuto(); coup(.7); } else if (e.key === "a") { S.auto = !S.auto; majAuto(); } });
 window.__aller = s => { S.s = s; S.fondu = 0; M.y = null; CAM.y = null; return s; };
 window.__vue = m => {
-  VUE.mode = m; const loin = m === "haut"; COMMUNS.uB0.value = loin ? 9000 : B0; COMMUNS.uB1.value = loin ? 19000 : B1; scene.fog.near = COMMUNS.uB0.value; scene.fog.far = COMMUNS.uB1.value;
+  VUE.mode = m; const loin = m === "haut"; VISION.b0 = loin ? 9000 : B0; VISION.b1 = loin ? 19000 : B1;
   camera.far = loin ? 6000 : 420; camera.fov = 52; camera.updateProjectionMatrix(); POST.mat.uniforms.uF.value = camera.far; CIEL.m.visible = !loin;
 };
 window.__piste = () => PISTE.pieces.map(p => [p.titre, Math.round(p.long0 || p.long), p.s1 - p.s0, +(+p.virage).toFixed(1), +(+p.monte || 0).toFixed(1)]);   // les pièces : longueur demandée, longueur réelle, virage, montée
 window.__verif = verifier;
-window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); animerPublic(T, S); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
+window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0, S.s); animerPublic(T, S, 0); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
 
 /* ============ le départ : on construit le monde depuis les fichiers, puis on lance ============ */
 (async () => {
   const t0 = performance.now();
   try { await Promise.race([document.fonts.load('20px "Jersey 15"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
-  construireTerrain(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); await construireSprites();
+  construireTerrain(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites();
   window.__pret = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
   const v = verifier(); if (!v.ok) console.warn("Niveau à revoir :\n" + v.erreurs.join("\n"));
-  $("hTour").hidden = !BOUCLE; $("lVit").textContent = MACHINE.affiche === "kmh" ? "VITESSE" : "ALLURE"; $("uVit").textContent = MACHINE.affiche === "kmh" ? "km/h" : "/500 m";
+  $("hTour").hidden = false; construireProfil(); await preparerRivaux(); $("lVit").textContent = MACHINE.affiche === "kmh" ? "VITESSE" : "ALLURE"; $("uVit").textContent = MACHINE.affiche === "kmh" ? "km/h" : "/500 m";
   majAuto(); majSon(); $("charge").hidden = true; requestAnimationFrame(boucle);
   if (BANC) lancerBanc();
   else if (PARAMS.has("s") || PARAMS.has("fige") || VUE.mode !== "jeu") commencer(PARAMS.get("auto") === "0" ? "vraie" : "essai");   // les vues de contrôle partent tout de suite

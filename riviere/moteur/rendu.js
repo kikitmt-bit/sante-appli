@@ -2,7 +2,7 @@
 // Tout le monde est dessiné dans une image de 720 pixels de haut au plus (un seul grain de pixel pour tout ; elle baisse toute seule
 // jusqu'à 432 si la machine peine : jeu.js), avec un contour sombre
 // autour des formes proches. Un seul matériau pour tout ce qui est solide : la couleur vient de chaque sommet, la lumière est
-// en paliers (comme un sprite), un fin motif de pixels habille les sols et les parois de près.
+// en paliers (comme un sprite), un fin motif de pixels habille les sols et les parois de près. Le ciel suit l'heure (ambiance.js).
 // L'image fait exactement « l'écran divisé par un nombre entier » (2 sur la tablette : 800 pixels de haut ; 2 sur un téléphone en
 // paysage : 720) : tous les pixels ont la même taille à l'écran. Si la machine peine, on divise par un cran de plus (jeu.js). ?h= impose la hauteur.
 let HAUT = 432;
@@ -21,7 +21,11 @@ const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(52, 1.6, .
 const BRUME = hex(BIOME.brume), B0 = 60, B1 = 400;
 scene.fog = new THREE.Fog(new THREE.Color(...BRUME), B0, B1);   // pour les sprites ; le reste a sa brume dans son matériau
 const SOLEIL = new THREE.Vector3(.42, .76, .5).normalize();
-const COMMUNS = {uBrume: {value: new THREE.Vector3(...BRUME)}, uB0: {value: B0}, uB1: {value: B1}, uSombre: {value: 1}, uT: {value: 0}, uTeinte: {value: new THREE.Vector3(1, 1, 1)}};   // uTeinte : la teinte de l'heure du jour (ambiances)
+const VISION = {b0: B0, b1: B1};   // jusqu'où on voit : jeu.js la réduit si la machine peine, ambiance.js y ajoute la brume du temps qu'il fait
+// Les réglages partagés par TOUS les matériaux. ambiance.js les fait vivre : l'heure (uTeinte, uNuit), le temps (uPluie, uNeige, la brume), le lieu (uSombre).
+const COMMUNS = {uBrume: {value: new THREE.Vector3(...BRUME)}, uB0: {value: B0}, uB1: {value: B1}, uSombre: {value: 1}, uT: {value: 0}, uTeinte: {value: new THREE.Vector3(1, 1, 1)},
+  uNuit: {value: 0}, uPluie: {value: 0}, uNeige: {value: 0}, uLueur: {value: new THREE.Vector3(1, .92, .6)}};
+const TEINTES = [];   // les matériaux simples (sprites, panneaux) : ambiance.js leur donne la teinte de l'heure
 
 /* le motif de pixels : rouge = touffes (sols), vert = strates (parois), bleu = pavés */
 const DETAIL = (() => { const N = 64, c = toile(N, N), x = c.getContext("2d"), im = x.createImageData(N, N), d = im.data, R = hasard(11), tour = (a, b) => ((a % b) + b) % b;
@@ -33,40 +37,100 @@ const DETAIL = (() => { const N = 64, c = toile(N, N), x = c.getContext("2d"), i
     d[k] = r * 255; d[k + 1] = g * 255; d[k + 2] = b * 255; d[k + 3] = 255; }
   x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; })();
 
+/* Le matériau de tout ce qui est solide. La matière de chaque sommet (attribut mat) choisit le rendu :
+   0 sol naturel (touffes, strates sur les parois) · 1 pavés · 2 uni (murs, toits, feuillages)
+   3 fenêtre (éclairée la nuit, pas toutes) · 7 lampe (allumée la nuit) · 4 lumineux (cristal, lave : brille toujours)
+   5 chute d'eau (l'écume dévale) · 6 eau calme (une mare : des reflets) */
 const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.DoubleSide,
   uniforms: Object.assign({uDetail: {value: DETAIL}, uSoleil: {value: SOLEIL}}, COMMUNS),
   vertexShader: `attribute float mat; varying vec3 vC, vN, vW; varying float vM, vZ;
     void main() { vC = color; vN = mat3(modelMatrix) * normal; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vM = mat; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`,
-  fragmentShader: `uniform sampler2D uDetail; uniform vec3 uSoleil, uBrume, uTeinte; uniform float uB0, uB1, uSombre; varying vec3 vC, vN, vW; varying float vM, vZ;
-    void main() { vec3 n = normalize(vN);
+  fragmentShader: `uniform sampler2D uDetail; uniform vec3 uSoleil, uBrume, uTeinte, uLueur; uniform float uB0, uB1, uSombre, uT, uNuit, uNeige; varying vec3 vC, vN, vW; varying float vM, vZ;
+    float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    void main() { vec3 n = normalize(vN); float brume = smoothstep(uB0, uB1, vZ) * .94; vec3 c;
       float lum = .6 + .4 * (dot(n, uSoleil) * .5 + .5) + .04 * n.y; lum = floor(lum * 7. + .5) / 7.;   // la lumière en paliers
+      if (vM > 6.5) { c = mix(vC * lum * uSombre * uTeinte, uLueur, uNuit); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * uNuit)), 1.); return; }
+      if (vM > 3.5) {
+        if (vM < 4.5) { c = vC * (.9 + .1 * sin(uT * 2.3 + vW.x * .7 + vW.z * .9)); gl_FragColor = vec4(mix(c, uBrume, brume * .5), 1.); return; }
+        if (vM < 5.5) { float lat = abs(n.x) > abs(n.z) ? vW.z : vW.x, col = floor(lat * 4.);
+          float f = h21(vec2(col, floor(vW.y * 3. + uT * (8. + 5. * h21(vec2(col, 3.))))));
+          c = mix(vC, vec3(.95, .98, 1.), step(.58, f)); }
+        else { vec2 q = floor(vW.xz * 4.) / 4.; float o = sin(q.x * .9 + uT * .4) + sin(q.y * 1.1 - uT * .3); c = vC * (o > .7 ? 1.1 : 1.);
+          vec2 g = floor(vW.xz * vec2(1.2, 3.)); if (h21(g + floor(uT * .8 + h21(g) * 5.) * .013) > .94) c = mix(c, vec3(1.), .55); }
+        gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, brume), 1.); return; }
+      if (vM > 2.5) { float allume = uNuit * step(.3, h21(floor(vW.xz * .45) + floor(vW.y * .4)));
+        c = mix(vC * lum * uSombre * uTeinte, uLueur, allume); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * allume)), 1.); return; }
       float det = 1.;
       if (vM < 1.5) { float t;
         if (n.y < .6) t = texture2D(uDetail, vec2(abs(n.x) > abs(n.z) ? vW.z : vW.x, vW.y) / 6.).g;
         else if (vM > .5) t = texture2D(uDetail, vW.xz / 6.).b;
         else t = texture2D(uDetail, vW.xz / 6.).r;
         det = mix(1., .72 + .56 * t, 1. - smoothstep(20., 70., vZ)); }
-      vec3 c = vC * lum * det;
-      c = mix(c, uBrume, smoothstep(uB0, uB1, vZ) * .94);
-      gl_FragColor = vec4(c * uSombre * uTeinte, 1.); }`});
+      c = vC * lum * det;
+      if (uNeige > 0. && n.y > .55 && h21(floor(vW.xz * 2.5)) < uNeige) c = vec3(.92, .95, 1.) * lum;   // la neige tient sur ce qui est à plat
+      gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, brume), 1.); }`});
 
-/* ---- le ciel : un anneau peint une fois (bandes, nuages, montagnes au loin), qui fait tout le tour et ne change jamais ---- */
-const CIEL = (() => { const W = 2048, H = 512, c = toile(W, H), x = c.getContext("2d"), im = x.createImageData(W, H), d = im.data;
-  const haut = hex(BIOME.ciel.haut), bas = hex(BIOME.ciel.bas), m1 = hex(BIOME.ciel.montagnes[0]), m2 = hex(BIOME.ciel.montagnes[1]), HOR = Math.round(H * .952), T2 = Math.PI * 2;
-  const s = (X, a, ph) => Math.sin(X / W * T2 * a + ph), px = (X, Y, col) => { const k = (Y * W + ((X % W) + W) % W) * 4; d[k] = col[0] * 255; d[k + 1] = col[1] * 255; d[k + 2] = col[2] * 255; d[k + 3] = 255; };
-  for (let X = 0; X < W; X++) { const loin = 16 + 34 * (.5 + .5 * (s(X, 3, 1) * .5 + s(X, 7, 2.2) * .3 + s(X, 15, .4) * .2)), presM = 6 + 14 * (.5 + .5 * (s(X, 5, 3) * .55 + s(X, 11, 1.3) * .3 + s(X, 23, 2) * .15));
-    for (let Y = 0; Y < H; Y++) { const e = HOR - Y; let col;
-      if (e < 0) col = bas; else if (e < presM) col = m2; else if (e < loin) col = e > loin - 5 && loin > 40 ? [.96, .98, 1] : m1;
-      else { const u = Math.pow(clamp(e / (HOR * .8), 0, 1), .7); col = melange(bas, haut, Math.round(u * 12) / 12); }
-      px(X, Y, col); } }
-  const R = hasard(4), blanc = [1, 1, 1], gris = [.8, .87, .95];
-  for (let k = 0; k < 30; k++) { const cx0 = R() * W, base = HOR - 70 - R() * 230, n = 3 + Math.floor(R() * 4), lobes = []; let lx = 0;
-    for (let j = 0; j < n; j++) { const r = 9 + R() * 16; lobes.push([lx, r, r * (.55 + R() * .3)]); lx += r * (.9 + R() * .5); }
-    for (let X = -30; X < lx + 30; X++) for (let Y = -34; Y <= 0; Y++) { let dans = false; for (const [ox, rx, ry] of lobes) if ((X - ox) ** 2 / (rx * rx) + (Y * Y) / (ry * ry) < 1) { dans = true; break; }
-      if (dans) px(Math.round(cx0 + X), Math.round(base + Y), Y > -3 ? gris : blanc); } }
-  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
-  const RAYON = 1700, HC = 1800, m = new THREE.Mesh(new THREE.CylinderGeometry(RAYON, RAYON, HC, 64, 1, true), new THREE.MeshBasicMaterial({map: t, side: THREE.BackSide, fog: false, depthWrite: false}));
-  m.frustumCulled = false; const sc = new THREE.Scene(); sc.add(m); renderer.setClearColor(new THREE.Color(...haut)); return {m, y: HC / 2 - HC * .048, scene: sc, cam: new THREE.PerspectiveCamera(52, 1.6, 10, 4000)}; })();
+/* ---- le ciel : un anneau qui fait tout le tour. Le dégradé, le soleil, la lune et les étoiles sont calculés (ils suivent l'heure) ;
+   les montagnes et les nuages sont peints une fois (les nuages défilent avec le vent) ---- */
+const CIEL = (() => { const W = 2048, H = 512, HOR = Math.round(H * .952), T2 = Math.PI * 2;
+  const peindre = dessin => { const c = toile(W, H), x = c.getContext("2d"), im = x.createImageData(W, H), d = im.data;
+    dessin((X, Y, col) => { if (Y < 0 || Y >= H) return; const k = (Y * W + ((X % W) + W) % W) * 4; d[k] = col[0] * 255; d[k + 1] = col[1] * 255; d[k + 2] = col[2] * 255; d[k + 3] = 255; });
+    x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; };
+  const m1 = hex(BIOME.ciel.montagnes[0]), m2 = hex(BIOME.ciel.montagnes[1]), s = (X, a, ph) => Math.sin(X / W * T2 * a + ph), relief = BIOME.ciel.relief === undefined ? 1 : BIOME.ciel.relief;
+  const paysage = peindre(px => { for (let X = 0; X < W; X++) { const loin = (16 + 34 * (.5 + .5 * (s(X, 3, 1) * .5 + s(X, 7, 2.2) * .3 + s(X, 15, .4) * .2))) * relief, presM = (6 + 14 * (.5 + .5 * (s(X, 5, 3) * .55 + s(X, 11, 1.3) * .3 + s(X, 23, 2) * .15))) * relief;
+    for (let e = 0; e < loin; e++) px(X, HOR - e, e < presM ? m2 : e > loin - 5 && loin > 40 ? [.96, .98, 1] : m1); } });
+  const nuages = peindre(px => { const R = hasard(4), blanc = [1, 1, 1], gris = [.8, .87, .95];
+    for (let k = 0; k < 30; k++) { const cx0 = R() * W, base = HOR - 70 - R() * 230, n = 3 + Math.floor(R() * 4), lobes = []; let lx = 0;
+      for (let j = 0; j < n; j++) { const r = 9 + R() * 16; lobes.push([lx, r, r * (.55 + R() * .3)]); lx += r * (.9 + R() * .5); }
+      for (let X = -30; X < lx + 30; X++) for (let Y = -34; Y <= 0; Y++) { let dans = false; for (const [ox, rx, ry] of lobes) if ((X - ox) ** 2 / (rx * rx) + (Y * Y) / (ry * ry) < 1) { dans = true; break; }
+        if (dans) px(Math.round(cx0 + X), Math.round(base + Y), Y > -3 ? gris : blanc); } } });
+  const haut = hex(BIOME.ciel.haut), bas = hex(BIOME.ciel.bas), v3 = c => ({value: new THREE.Vector3(...c)});
+  const U = {tP: {value: paysage}, tN: {value: nuages}, uHaut: v3(haut), uBas: v3(bas), uLoin: v3([1, 1, 1]), uNuage: v3([1, 1, 1]), uGris: v3([.62, .66, .72]), uCouvert: {value: 0}, uEtoiles: {value: 0},
+    uSol: v3([0, -1, 0]), uSolC: v3([1, .97, .8]), uLune: v3([0, -1, 0]), uDefile: {value: 0}, uEclair: {value: 0}, uT: COMMUNS.uT, uHor: {value: 1 - HOR / H}};
+  const mat = new THREE.ShaderMaterial({uniforms: U, side: THREE.BackSide, depthWrite: false, depthTest: false,
+    vertexShader: "varying vec2 vUv; varying vec3 vP; void main() { vUv = uv; vec4 w = modelMatrix * vec4(position, 1.); vP = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }",
+    fragmentShader: `uniform sampler2D tP, tN; uniform vec3 uHaut, uBas, uLoin, uNuage, uGris, uSol, uSolC, uLune; uniform float uCouvert, uEtoiles, uDefile, uEclair, uT, uHor; varying vec2 vUv; varying vec3 vP;
+      float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+      void main() { float e = (vUv.y - uHor) / (1. - uHor); vec3 dir = normalize(vP), c = uBas;
+        if (e > 0.) { float u = pow(clamp(e / .8, 0., 1.), .7); c = mix(uBas, uHaut, floor(u * 12. + .5) / 12.); }   // le dégradé, en bandes
+        c = mix(c, uGris, uCouvert * .82);
+        if (e > .02) {
+          if (uEtoiles > 0.) { vec2 g = floor(vec2(vUv.x * 1400., vUv.y * 340.)); float h = h21(g); if (h > .9972) c = mix(c, vec3(1., 1., .92), uEtoiles * (1. - uCouvert) * (.55 + .45 * sin(uT * (1. + h * 3.) + h * 90.))); }
+          float ds = dot(dir, uSol), k = 1. - uCouvert * .9;
+          if (ds > .9989) c = mix(c, uSolC, k); else if (ds > .9955) c = mix(c, uSolC, .32 * k); else if (ds > .986) c = mix(c, uSolC, .13 * k);
+          float dl = dot(dir, uLune); if (dl > .9992 && dot(dir, normalize(uLune + vec3(.03, .012, .02))) < .9994) c = mix(c, vec3(.96, .97, .88), k); }
+        vec4 n1 = texture2D(tN, vec2(vUv.x + uT * uDefile, vUv.y)), n2 = texture2D(tN, vec2(vUv.x * 2. + uT * uDefile * 1.6 + .37, vUv.y * 1.35 - .28));
+        c = mix(c, n2.rgb * uNuage * .9, n2.a * smoothstep(.25, .8, uCouvert));
+        c = mix(c, n1.rgb * uNuage, n1.a);
+        vec4 p = texture2D(tP, vUv); c = mix(c, mix(p.rgb * uLoin, c, .3 * uCouvert), p.a);
+        gl_FragColor = vec4(c + uEclair * .35, 1.); }`});
+  const RAYON = 1700, HC = 1800, m = new THREE.Mesh(new THREE.CylinderGeometry(RAYON, RAYON, HC, 64, 1, true), mat);
+  m.frustumCulled = false; const sc = new THREE.Scene(), loin = new THREE.Group(); sc.add(m); sc.add(loin); renderer.setClearColor(new THREE.Color(...haut));
+  return {m, U, loin, y: HC / 2 - HC * (1 - HOR / H), scene: sc, cam: new THREE.PerspectiveCamera(52, 1.6, 10, 4000), jour: {haut, bas}, animes: []}; })();
+
+/* ---- le lointain : de grands repères au-delà du monde (un volcan, de hautes montagnes, une ville), toujours dans la même direction.
+   Un niveau les nomme : "lointain": [{"o": "volcan", "cap": 140, "taille": 1}] (cap : en degrés, 0 = droit devant au départ, 90 = à droite).
+   Les recettes sont dans contenu/lointains (LOINTAINS.volcan = (F, o, R, K) => …), en mètres, à 1 400 m de distance. ---- */
+const LOINTAINS = {};
+const MAT_LOIN = new THREE.ShaderMaterial({vertexColors: true, side: THREE.DoubleSide, uniforms: {uSoleil: {value: SOLEIL}, uTeinte: COMMUNS.uTeinte, uVoile: COMMUNS.uBrume, uT: COMMUNS.uT},
+  vertexShader: "attribute float mat; varying vec3 vC, vN; varying float vM, vY; void main() { vC = color; vN = mat3(modelMatrix) * normal; vec4 w = modelMatrix * vec4(position, 1.); vY = w.y - modelMatrix[3].y; vM = mat; gl_Position = projectionMatrix * viewMatrix * w; }",
+  fragmentShader: `uniform vec3 uSoleil, uTeinte, uVoile; uniform float uT; varying vec3 vC, vN; varying float vM, vY;
+    void main() { float lum = .62 + .38 * (dot(normalize(vN), uSoleil) * .5 + .5); lum = floor(lum * 5. + .5) / 5.;
+      bool feu = vM > 3.5; vec3 c = feu ? vC * (.85 + .15 * sin(uT * 1.7 + vY * .03)) : vC * lum * uTeinte;
+      float v = mix(1., .34 + .3 * (1. - smoothstep(0., 300., vY)), smoothstep(-8., 40., vY));   // le pied se perd dans la brume de l'horizon
+      gl_FragColor = vec4(mix(c, uVoile, feu ? v * .35 : v), 1.); }`});
+function construireLointain() {
+  const R = hasard((NIVEAU.graine || 1) * 31 + 5), liste = NIVEAU.lointain || BIOME.lointain || [];
+  for (const o of liste) {
+    const recette = LOINTAINS[o.o]; if (!recette) { console.warn("Repère lointain inconnu : " + o.o); continue; }
+    const cap = (o.cap || 0) * Math.PI / 180, dist = 1400 * (o.dist || 1), F = new Forme(), g = new THREE.Group();
+    recette(F, o, R, {anime(f) { f.groupe = g; CIEL.animes.push(f); }});
+    const m = F.maille(MAT_LOIN); if (!m) continue;
+    m.frustumCulled = false; g.add(m); g.position.set(Math.sin(cap) * dist, o.y || 0, -Math.cos(cap) * dist); g.rotation.y = -cap; g.scale.setScalar(o.taille || 1); CIEL.loin.add(g);
+  }
+  for (const a of CIEL.animes) if (a.forme) { a.maille = a.forme.maille(MAT_LOIN); a.maille.frustumCulled = false; a.groupe.add(a.maille); }
+}
+function animerLointain(t) { for (const a of CIEL.animes) a.maj(a.maille, t); }
 
 /* ---- la petite image, et le contour sombre autour des formes proches ---- */
 let cible = null;
@@ -91,7 +155,7 @@ function tailleEcran() {
 addEventListener("resize", tailleEcran); tailleEcran();
 function dessiner() {  // d'abord le ciel (sa propre caméra, qui ne fait que tourner), puis le monde par-dessus
   renderer.info.reset(); renderer.autoClear = false;
-  CIEL.cam.quaternion.copy(camera.quaternion); CIEL.cam.fov = camera.fov; CIEL.cam.aspect = camera.aspect; CIEL.cam.updateProjectionMatrix(); CIEL.m.position.y = CIEL.y - camera.position.y;
+  CIEL.cam.quaternion.copy(camera.quaternion); CIEL.cam.fov = camera.fov; CIEL.cam.aspect = camera.aspect; CIEL.cam.updateProjectionMatrix(); CIEL.m.position.y = CIEL.y - camera.position.y; CIEL.loin.position.y = -camera.position.y;
   renderer.setRenderTarget(CONTOUR ? cible : null); renderer.clear(); if (CIEL.m.visible) renderer.render(CIEL.scene, CIEL.cam); renderer.clearDepth(); renderer.render(scene, camera);
   if (CONTOUR) { renderer.setRenderTarget(null); renderer.clear(); renderer.render(POST.scene, POST.cam); }
 }

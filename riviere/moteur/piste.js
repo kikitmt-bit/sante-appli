@@ -4,8 +4,11 @@
 //   monte    mètres gagnés sur la pièce (négatif : une descente ; "auto" : ce qui manque pour revenir à la hauteur du départ)
 //   net      la pente n'est pas adoucie (une chute, un tremplin, une cascade)
 //   surface  "eau" (par défaut), "terre", "goudron"… (contenu/surfaces)
-//   pont     la piste est en l'air : le sol ne la suit pas, un tablier est construit ; on peut passer dessous
-//   tunnel   une montagne passe au-dessus
+//   pont     la piste est en l'air : le sol ne la suit pas, un tablier est construit ; on peut passer dessous (true, "bois", "arches")
+//   ravin    avec pont : le sol se creuse de ce nombre de mètres sous le pont, une rivière coule au fond
+//   tunnel   une montagne passe au-dessus (true, ou le nom d'une grotte de la région : "cristal", "terre"… ; tunnel.js)
+//   ambiance l'air du lieu ("sous-bois", "marais"… ; ambiance.js)
+//   segment  un nom : ce bout de piste est chronométré à part (un sprint, une côte), avec son record
 //   allure   le décor défile plus ou moins vite ici (1,4 : des rapides ; 0,7 : une côte), sans toucher aux vrais chiffres
 //   camera   {haut, recul} : la caméra plus haute ou plus loin sur cette pièce
 //   lieux, objets
@@ -107,8 +110,8 @@ const PISTE = (() => {
     const n = ns[ip], k = (p.virage || 0) * Math.PI / 180 / n, w = largeur(p); titre = p.nom || titre;
     for (const c of [p.g, p.d]) if (!TYPES.includes(c)) throw new Error("Rive inconnue dans le niveau : " + c);
     if (!(w > 0)) throw new Error("Pièce sans largeur : « " + titre + " ».");
-    const surf = PARAMS.get("surface") || p.surface || NIVEAU.surface || "eau"; if (!surfaces.includes(surf)) surfaces.push(surf);
-    pieces.push(Object.assign(p, {s0: s, s1: s + n, titre, surface: surf}));
+    const surf = PARAMS.get("surface") || p.surface || NIVEAU.surface || lireReglage("riviere_surface", null) || "eau"; if (!surfaces.includes(surf)) surfaces.push(surf);   // la surface : l'adresse, la pièce, le niveau, sinon celle de la machine choisie au menu
+    pieces.push(Object.assign(p, {s0: s, s1: s + n, titre, surface: surf, grotte: p.tunnel ? (typeof p.tunnel === "string" ? p.tunnel : p.tunnel.style || "roche") : null}));
     for (let i = 0; i < n; i++) {
       X.push(x); Z.push(z); H.push(h); Y0.push(y); W0.push(w / 2); KG.push(TYPES.indexOf(p.g)); KD.push(TYPES.indexOf(p.d));
       TUN.push(p.tunnel && i >= MARGE && i < n - MARGE ? 1 : 0); PONT.push(p.pont ? 1 : 0); NET.push(p.net ? 1 : 0); SF.push(surfaces.indexOf(surf)); PC.push(ip);
@@ -134,9 +137,9 @@ const PISTE = (() => {
   }
   const COURB = adoucir(K0, 5, BOUCLE), W = adoucir(W0, FONDU, BOUCLE), CAMH = adoucir(CH0, 12, BOUCLE), CAMR = adoucir(CR0, 12, BOUCLE);
   // l'allure du décor : celle du niveau, celle de la pièce, et la pente (ça file dans une descente, ça peine dans une côte)
-  const pd = adoucir(PENTE, 5, BOUCLE), al = new Float32Array(N);
-  for (let i = 0; i < N; i++) al[i] = ALLURE * A0[i] * (NIVEAU.allurePente === false ? 1 : clamp(1 - pd[i] * 3.5, .55, 1.7));
-  const ALL = adoucir(al, 8, BOUCLE), VR = new Float64Array(N + 1);   // VR : les vrais mètres depuis la ligne (pour une allure de machine de 1)
+  const pd = adoucir(PENTE, 5, BOUCLE), al = new Float32Array(N), al0 = new Float32Array(N);
+  for (let i = 0; i < N; i++) { al0[i] = ALLURE * A0[i]; al[i] = al0[i] * (NIVEAU.allurePente === false ? 1 : clamp(1 - pd[i] * 3.5, .55, 1.7)); }
+  const ALL = adoucir(al, 8, BOUCLE), ALL0 = adoucir(al0, 8, BOUCLE), VR = new Float64Array(N + 1);   // ALL0 : sans l'effet de la pente (une machine qui la ressent pour de vrai : un home trainer)   // VR : les vrais mètres depuis la ligne (pour une allure de machine de 1)
   for (let i = 0; i < N; i++) VR[i + 1] = VR[i] + 1 / ALL[i];
   // la part de chaque sorte de rive, à chaque mètre
   const poids = K => {
@@ -158,7 +161,10 @@ const PISTE = (() => {
     if (BOUCLE ? PONT[(i + N - 1) % N] : i > 0 && PONT[i - 1]) FR[i] = 2; else if (!BOUCLE && i === 0) FR[i] = 1;
   }
   const CH = new Float32Array(N), SH = new Float32Array(N); for (let i = 0; i < N; i++) { CH[i] = Math.cos(H[i]); SH[i] = Math.sin(H[i]); }
-  return {N, X, Z, Y, H, HFIN: h, W, PG: poids(KG), PD: poids(KD), TUN, PONT, NET, SF, PC, PENTE, COULE, COURB, ALL, VR, CAMH, CAMR, FA, FR, CH, SH, pieces, surfaces, fermeture};
+  // les segments chronométrés : des pièces qui se suivent et portent le même nom de segment
+  const segments = [];
+  for (const p of pieces) { if (!p.segment) continue; const d = segments[segments.length - 1]; if (d && d.nom === p.segment && d.s1 === p.s0) d.s1 = p.s1; else segments.push({nom: p.segment, s0: p.s0, s1: p.s1}); }
+  return {N, X, Z, Y, H, HFIN: h, W, PG: poids(KG), PD: poids(KD), TUN, PONT, NET, SF, PC, PENTE, COULE, COURB, ALL, ALL0, VR, CAMH, CAMR, FA, FR, CH, SH, pieces, surfaces, segments, fermeture};
 })();
 const LONG = BOUCLE ? PISTE.N : PISTE.N - 1;   // la longueur du niveau (un tour, pour une boucle)
 const idx = s => { const i = Math.round(s), N = PISTE.N; return BOUCLE ? ((i % N) + N) % N : clamp(i, 0, N - 1); };          // le mètre de la piste le plus proche de s
@@ -166,6 +172,11 @@ const ecart = (a, b) => { const d = a - b; return BOUCLE ? d - LONG * Math.round
 const surfaceEn = s => PISTE.surfaces[PISTE.SF[idx(s)]];
 const vrai = s => { const N = PISTE.N, t = BOUCLE ? ((s % N) + N) % N : clamp(s, 0, N), i = Math.min(N - 1, Math.floor(t)); return lerp(PISTE.VR[i], PISTE.VR[i + 1], t - i); };   // les vrais mètres depuis la ligne
 const TOUR_VRAI = PISTE.VR[PISTE.N];
+function decorDe(v) {   // l'inverse : à quel mètre de décor est-on après v vrais mètres depuis la ligne
+  const VR = PISTE.VR, N = PISTE.N; v = BOUCLE ? ((v % TOUR_VRAI) + TOUR_VRAI) % TOUR_VRAI : clamp(v, 0, TOUR_VRAI);
+  let a = 0, b = N; while (b - a > 1) { const m = (a + b) >> 1; if (VR[m] <= v) a = m; else b = m; }
+  return a + (VR[a + 1] > VR[a] ? (v - VR[a]) / (VR[a + 1] - VR[a]) : 0);
+}
 
 /* où est le mètre s de la piste (au-delà des deux bouts d'un niveau ouvert : tout droit ; sur une boucle : on refait le tour) */
 function at(s) {

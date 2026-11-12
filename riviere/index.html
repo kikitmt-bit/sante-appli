@@ -18,6 +18,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 #hDist { right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px)); font-size: min(9vh, 7vw); text-align: right; }
 #hTour { left: max(2.2vw, env(safe-area-inset-left, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(13vh, 10vw)); font-size: min(4.6vh, 3.6vw); line-height: 1.15; }
 #hTour #vTours { font-size: .72em; color: #F8C838; }
+#hTour #vSeg { font-size: .72em; color: #8CE0A0; }
+#profil { position: fixed; left: calc(max(1.5vw, env(safe-area-inset-left, 0px)) + min(30vh, 24vw) + 1.5vw); bottom: calc(2vh + env(safe-area-inset-bottom, 0px)); width: min(30vw, 420px); height: min(10vh, 9vw); pointer-events: none; }
+body.relief #hMontre { max-width: 30vw; text-align: right; }
+#hPente { left: calc(max(1.5vw, env(safe-area-inset-left, 0px)) + min(30vh, 24vw) + 1.5vw + min(30vw, 420px) + 1vw); bottom: calc(3.4vh + env(safe-area-inset-bottom, 0px)); font-size: min(4.4vh, 3.6vw); white-space: nowrap; }
+body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(10vh, 9vw)); }
 #annonce { left: 50%; top: 30vh; transform: translateX(-50%); font-size: min(11vh, 8.5vw); color: #F8C838; white-space: nowrap; opacity: 0; }
 #annonce.vu { animation: annonce 2.6s ease-out; }
 @keyframes annonce { 0% { opacity: 0; transform: translateX(-50%) scale(.7); } 12% { opacity: 1; transform: translateX(-50%) scale(1.06); } 20% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
@@ -30,6 +35,12 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 #panneau .fantomes .petit { flex-basis: 100%; margin: 2px 0 0; }
 #panneau button.opt { font-size: 21px; padding: 4px 10px; background: #F8F8E8; color: #383828; box-shadow: 2px 2px 0 #1B2440; }
 #panneau button.opt.on { background: #F8C838; }
+#panneau button.opt:disabled { opacity: .45; }
+#panneau details.pli { margin-top: 10px; border-top: 2px solid #D8D4BC; padding-top: 8px; }
+#panneau details.pli summary { cursor: pointer; font-size: 23px; color: #B05010; list-style: none; }
+#panneau details.pli summary::before { content: "▶ "; font-size: .7em; }
+#panneau details.pli[open] summary::before { content: "▼ "; }
+#panneau details.pli summary::-webkit-details-marker { display: none; }
 #vFps { left: 50%; bottom: 1vh; transform: translateX(-50%); font-size: 18px; }
 #credit { position: fixed; right: 84px; bottom: calc(1vh + env(safe-area-inset-bottom, 0px)); font-size: 13px; color: #fff; opacity: .75; text-shadow: 1px 1px 0 #1B2440; pointer-events: none; }
 #bAuto { position: fixed; left: 50%; bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); font: inherit; font-size: min(4.4vh, 3.6vw); padding: .15em .9em; color: #383828; background: #F8F8E8; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
@@ -65,6 +76,45 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 #bSon.off { background: #A8A890; }
 #hPret { left: 50%; top: 34vh; transform: translateX(-50%); font-size: min(7vh, 5.4vw); text-align: center; white-space: nowrap; }
 @media (max-width: 520px) { #panneau .chiffres { grid-template-columns: repeat(2, 1fr); } #panneau h1 { font-size: 32px; } }
+/* l'éditeur de circuits */
+#editeur { position: fixed; inset: 0; background: #22315A; color: #383828; display: flex; flex-direction: column; font-size: 20px; line-height: 1.1; z-index: 5; }
+#editeur button { font: inherit; font-size: 19px; padding: 4px 10px; border: 2px solid #484838; border-radius: 9px 4px; background: #F8F8E8; color: #383828; box-shadow: 2px 2px 0 #1B2440; cursor: pointer; }
+#editeur button.rouge { background: #D83830; color: #fff; }
+#editeur button.on { background: #F8C838; }
+#editeur .ed-tete { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; color: #F8F8E8; font-size: 28px; }
+#editeur .ed-tete b { font-weight: normal; margin-right: auto; }
+#editeur .ed-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+#editeur .ed-corps { flex: 1; min-height: 0; display: flex; gap: 10px; padding: 0 12px 12px; }
+#editeur .ed-gauche { flex: 1.25; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+#edPlan { flex: 1; min-height: 0; width: 100%; border: 3px solid #484838; border-radius: 12px 5px; background: #8FCF70; touch-action: none; cursor: pointer; }
+#edProfil { height: 54px; width: 100%; border: 3px solid #484838; border-radius: 8px 4px; }
+#edEtat { background: #F8F8E8; border: 3px solid #484838; border-radius: 10px 4px; padding: 5px 10px; font-size: 19px; max-height: 26%; overflow-y: auto; }
+#edEtat.ok { color: #2E8A48; } #edEtat.ko { color: #C03028; } #edEtat b { color: #B05010; font-weight: normal; }
+#edCote { flex: 1; min-width: 0; background: #F8F8E8; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; padding: 8px 10px; overflow-y: auto; }
+#editeur .ed-onglets { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 8px; }
+#editeur .ed-liste { display: flex; flex-wrap: wrap; gap: 4px; max-height: 24vh; overflow-y: auto; }
+#editeur .ed-p { font-size: 17px; padding: 3px 7px; box-shadow: 1px 1px 0 #1B2440; }
+#editeur .ed-barre { display: flex; flex-wrap: wrap; gap: 5px; margin: 7px 0; }
+#editeur .ed-plus summary { cursor: pointer; color: #B05010; font-size: 21px; }
+#editeur .ed-mods { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+#editeur .ed-form { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; border-top: 2px solid #D8D4BC; padding-top: 8px; }
+#editeur .ed-l { display: flex; align-items: center; gap: 6px; }
+#editeur .ed-l > span { flex: 0 0 34%; color: #686850; font-size: 18px; }
+#editeur .ed-l input[type=range] { flex: 1; min-width: 40px; accent-color: #D83830; }
+#editeur .ed-l input[type=text], #editeur .ed-l select, #editeur textarea, #editeur .ed-obj select, #editeur .ed-obj input { flex: 1; min-width: 0; font: inherit; font-size: 18px; padding: 3px 6px; border: 2px solid #A8A890; border-radius: 6px 3px; background: #fff; color: #383828; }
+#editeur .ed-l b { flex: 0 0 4.2em; text-align: right; font-weight: normal; color: #C03028; }
+#editeur .ed-l button { padding: 0 9px; font-size: 22px; }
+#editeur .ed-rapides, #editeur .ed-coches { display: flex; flex-wrap: wrap; gap: 5px 12px; align-items: center; font-size: 18px; }
+#editeur .ed-rapides button { font-size: 16px; padding: 2px 7px; }
+#editeur small, #editeur .ed-note { color: #686850; font-size: 16px; margin: 0; }
+#editeur .ed-objets { display: flex; flex-direction: column; gap: 4px; border-top: 2px solid #D8D4BC; padding-top: 6px; margin-top: 4px; }
+#editeur .ed-objets > span { color: #B05010; }
+#editeur .ed-obj { display: flex; gap: 4px; align-items: center; }
+#editeur .ed-obj b { flex: 1.4; font-weight: normal; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#editeur .ed-obj input[type=number] { flex: 0 0 3.6em; }
+#editeur textarea { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px; }
+body.edite .hud, body.edite #carte, body.edite #profil, body.edite #bSon, body.edite #credit { display: none; }
+@media (max-width: 760px), (orientation: portrait) { #editeur .ed-corps { flex-direction: column; overflow-y: auto; } #editeur .ed-gauche { flex: none; height: 46vh; } #edCote { flex: none; overflow: visible; } #editeur .ed-liste { max-height: none; } }
 [hidden] { display: none !important; }
 #voile { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
 #charge { position: fixed; inset: 0; display: grid; place-items: center; background: #22315A; color: #F8F8E8; font-size: 34px; }
@@ -73,9 +123,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 <body>
 <canvas id="c"></canvas>
 <div class="hud" id="hTemps"><small>TEMPS</small><span id="vTemps">0:00</span></div>
-<div class="hud" id="hMilieu"><div><small>CADENCE</small><span class="fixe" id="vCad">0</span><span class="unite">/min</span></div><div><small id="lVit">ALLURE</small><span class="fixe" id="vVit" style="min-width:2.1em">-:--</span><span class="unite" id="uVit">/500 m</span></div></div>
+<div class="hud" id="hMilieu"><div><small>CADENCE</small><span class="fixe" id="vCad">0</span><span class="unite">/min</span></div><div><small id="lVit">ALLURE</small><span class="fixe" id="vVit" style="min-width:2.1em">-:--</span><span class="unite" id="uVit">/500 m</span></div><div id="hWatts" hidden><small>PUISSANCE</small><span class="fixe" id="vWatts">0</span><span class="unite">W</span></div></div>
 <div class="hud" id="hDist"><small>DISTANCE</small><span class="fixe" id="vDist" style="min-width:2.2em">0</span><span class="unite">m</span><span class="coeur"><small>CŒUR</small><span class="fixe" id="vCoeur">--</span><span class="unite">♥</span></span></div>
-<div class="hud" id="hTour" hidden><div id="vTour"></div><div id="vTours"></div></div>
+<div class="hud" id="hTour" hidden><div id="vTour"></div><div id="vTours"></div><div id="vSeg"></div></div>
+<canvas id="profil" hidden></canvas>
+<div class="hud" id="hPente" hidden></div>
 <div class="hud" id="annonce"></div>
 <canvas id="carte"></canvas>
 <div class="hud" id="hLieu"><span id="vLieu"></span></div>
@@ -88,6 +140,10 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #22315A; pad
 <div id="credit">Pokémon : Donjon Mystère (Chunsoft), via PMD SpriteCollab · habitants : Pokémon Rouge Feu</div>
 <div id="voile"></div>
 <div id="panneau" class="panneau" hidden></div>
+<div id="editeur" class="panneau" hidden>
+  <div class="ed-tete"><b>Éditeur de circuits</b><span class="ed-actions"><button class="rouge" data-act="essayer">▶ Essayer</button><button data-act="garder">Garder</button><button data-act="jouer">Garder et jouer</button><button data-act="fermer">Fermer</button></span></div>
+  <div class="ed-corps"><div class="ed-gauche"><canvas id="edPlan"></canvas><canvas id="edProfil"></canvas><div id="edEtat"></div></div><div id="edCote"></div></div>
+</div>
 <div id="charge">Le monde se construit…</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>

@@ -1,6 +1,6 @@
 {
  "nom": "Kanto",
- "note": "Une région = ses couleurs, ses sortes de rive, et les règles qui posent le décor tout seul. Un niveau ne fait que nommer les rives. profil : [distance au bord de l'eau (m), hauteur (m)]. sols : [nom du sol, jusqu'à quelle distance]. regles : objets (avec leur poids), sur quelles rives, bande = distance au bord de l'eau (m), pas = un essai tous les N mètres de rive. Une règle « derriere » pose son objet juste derrière un arbre déjà posé (un Pokémon qui dépasse du tronc).",
+ "note": "Une région = ses couleurs, ses sortes de rive, et les règles qui posent le décor tout seul. Un niveau ne fait que nommer les rives. profil : [distance au bord de l'eau (m), hauteur (m)]. sols : [nom du sol, jusqu'à quelle distance]. regles : objets (avec leur poids), sur quelles rives, bande = distance au bord de l'eau (m), pas = un essai tous les N mètres de rive. Une règle « derriere » pose son objet juste derrière un arbre déjà posé (un Pokémon qui dépasse du tronc). Depuis le 12/11 : eaux = d'autres eaux que la rivière (une pièce la choisit comme surface) ; grottes = les styles de tunnel (tunnel.js) ; particules sur une rive = ce qui flotte dans l'air le long de cette rive (ambiance.js) ; rivaux = les Pokémon des lièvres, sur l'eau et sur la terre ; herite (dans une autre région) = ne redire que ce qui change.",
  "ciel": {
   "haut": "#3E86E2",
   "bas": "#D8EEF9",
@@ -46,6 +46,49 @@
    "c": [
     "#A39C96",
     "#938C86"
+   ]
+  },
+  "paves": {
+   "c": [
+    "#CFC8BA",
+    "#C3BCAE"
+   ],
+   "mat": 1
+  },
+  "pierre_quai": {
+   "c": [
+    "#A39C92",
+    "#958E84"
+   ]
+  },
+  "herbe_marais": {
+   "c": [
+    "#6FAE5C",
+    "#63A052"
+   ]
+  },
+  "vase": {
+   "c": [
+    "#7C7458",
+    "#70684E"
+   ]
+  },
+  "cendre": {
+   "c": [
+    "#75645F",
+    "#695853"
+   ]
+  },
+  "basalte": {
+   "c": [
+    "#4E4446",
+    "#42393B"
+   ]
+  },
+  "roche_claire": {
+   "c": [
+    "#C9C3BC",
+    "#BAB4AD"
    ]
   }
  },
@@ -203,7 +246,8 @@
     ]
    ],
    "paroi": "terre",
-   "bosses": 2.5
+   "bosses": 2.5,
+   "particules": "feuilles"
   },
   "montagne": {
    "profil": [
@@ -247,6 +291,260 @@
     ]
    ],
    "paroi": "roche",
+   "bosses": 7
+  },
+  "quai": {
+   "profil": [
+    [
+     0,
+     1.0
+    ],
+    [
+     0.3,
+     1.1
+    ],
+    [
+     30,
+     1.25
+    ],
+    [
+     110,
+     3.5
+    ]
+   ],
+   "sols": [
+    [
+     "paves",
+     15
+    ],
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "pierre_quai",
+   "bosses": 0.3,
+   "franc": true
+  },
+  "ville": {
+   "profil": [
+    [
+     0,
+     0.55
+    ],
+    [
+     0.3,
+     0.65
+    ],
+    [
+     60,
+     0.9
+    ],
+    [
+     110,
+     3
+    ]
+   ],
+   "sols": [
+    [
+     "paves",
+     46
+    ],
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "pierre_quai",
+   "bosses": 0.2,
+   "franc": true
+  },
+  "falaise": {
+   "profil": [
+    [
+     0,
+     0.2
+    ],
+    [
+     0.5,
+     7.2
+    ],
+    [
+     1.6,
+     9
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     40,
+     12.5
+    ],
+    [
+     110,
+     17
+    ]
+   ],
+   "sols": [
+    [
+     "roche",
+     1.6
+    ],
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "roche",
+   "bosses": 2.2
+  },
+  "marais": {
+   "profil": [
+    [
+     0,
+     0.05
+    ],
+    [
+     2,
+     0.16
+    ],
+    [
+     12,
+     0.38
+    ],
+    [
+     40,
+     0.9
+    ],
+    [
+     110,
+     3
+    ]
+   ],
+   "sols": [
+    [
+     "vase",
+     1.2
+    ],
+    [
+     "herbe_marais",
+     999
+    ]
+   ],
+   "paroi": "vase",
+   "bosses": 0.45
+  },
+  "dune": {
+   "profil": [
+    [
+     0,
+     0.04
+    ],
+    [
+     4,
+     0.45
+    ],
+    [
+     14,
+     1.3
+    ],
+    [
+     40,
+     2.6
+    ],
+    [
+     110,
+     3.6
+    ]
+   ],
+   "sols": [
+    [
+     "sable",
+     999
+    ]
+   ],
+   "paroi": "sable",
+   "bosses": 1.7
+  },
+  "volcan": {
+   "profil": [
+    [
+     0,
+     0.3
+    ],
+    [
+     0.8,
+     2.4
+    ],
+    [
+     6,
+     4.2
+    ],
+    [
+     30,
+     12
+    ],
+    [
+     70,
+     27
+    ],
+    [
+     110,
+     36
+    ]
+   ],
+   "sols": [
+    [
+     "cendre",
+     999
+    ]
+   ],
+   "paroi": "basalte",
+   "bosses": 6
+  },
+  "calcaire": {
+   "profil": [
+    [
+     0,
+     0.2
+    ],
+    [
+     0.6,
+     6.6
+    ],
+    [
+     2,
+     8.3
+    ],
+    [
+     10,
+     13
+    ],
+    [
+     30,
+     22
+    ],
+    [
+     70,
+     30
+    ],
+    [
+     110,
+     26
+    ]
+   ],
+   "sols": [
+    [
+     "roche_claire",
+     2.5
+    ],
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "roche_claire",
    "bosses": 7
   }
  },
@@ -302,7 +600,33 @@
   },
   "vitre_claire": "#A4E0F8",
   "cadre": "#3C4660",
-  "lumiere": "#FFF2B0"
+  "lumiere": "#FFF2B0",
+  "palmes": [
+   "#2E8A48",
+   "#4CB05C",
+   "#86D870"
+  ],
+  "or": [
+   "#B8881C",
+   "#E8B830",
+   "#FFE070"
+  ],
+  "bois_clair": "#C8A068",
+  "coque": {
+   "rouge": "#D84838",
+   "bleu": "#3C78D0",
+   "blanc": "#F4F2EA"
+  },
+  "eau_chute": "#6CBCF6",
+  "eau_mare": "#4C9CE8",
+  "nenuphar": [
+   "#3E9A4E",
+   "#58B85C"
+  ],
+  "lave": [
+   "#FF7A30",
+   "#FFC850"
+  ]
  },
  "regles": [
   {
@@ -486,6 +810,302 @@
     9
    ],
    "pas": 45
+  },
+  {
+   "nom": "arbres du haut de la falaise",
+   "objets": {
+    "arbre": 4,
+    "buisson": 1
+   },
+   "sur": [
+    "falaise"
+   ],
+   "bande": [
+    5,
+    60
+   ],
+   "pas": 2.6,
+   "echelle": [
+    0.9,
+    1.4
+   ],
+   "pente": 0.6
+  },
+  {
+   "nom": "bois au loin, derrière la falaise",
+   "objets": {
+    "arbre_loin": 3
+   },
+   "sur": [
+    "falaise",
+    "marais"
+   ],
+   "bande": [
+    48,
+    100
+   ],
+   "pas": 3,
+   "echelle": [
+    1.1,
+    1.7
+   ]
+  },
+  {
+   "nom": "roseaux du marais",
+   "objets": {
+    "roseaux": 1
+   },
+   "sur": [
+    "marais"
+   ],
+   "bande": [
+    0.1,
+    2.5
+   ],
+   "pas": 3.2,
+   "pente": 2,
+   "plat": 1.2
+  },
+  {
+   "nom": "mares du marais",
+   "objets": {
+    "mare": 1
+   },
+   "sur": [
+    "marais"
+   ],
+   "bande": [
+    7,
+    26
+   ],
+   "pas": 22,
+   "pente": 0.2
+  },
+  {
+   "nom": "arbres du marais",
+   "objets": {
+    "arbre": 2,
+    "buisson": 3
+   },
+   "sur": [
+    "marais"
+   ],
+   "bande": [
+    10,
+    46
+   ],
+   "pas": 6,
+   "echelle": [
+    0.8,
+    1.2
+   ]
+  },
+  {
+   "nom": "palmiers des dunes",
+   "objets": {
+    "palmier": 5,
+    "rocher": 1
+   },
+   "sur": [
+    "dune"
+   ],
+   "bande": [
+    4,
+    40
+   ],
+   "pas": 5.5,
+   "echelle": [
+    0.85,
+    1.3
+   ],
+   "pente": 0.5
+  },
+  {
+   "nom": "rochers du volcan",
+   "objets": {
+    "rocher": 1
+   },
+   "sur": [
+    "volcan"
+   ],
+   "bande": [
+    1.5,
+    40
+   ],
+   "pas": 5,
+   "echelle": [
+    0.8,
+    2.2
+   ],
+   "pente": 0.9
+  },
+  {
+   "nom": "arbres du calcaire",
+   "objets": {
+    "arbre": 3,
+    "rocher": 1
+   },
+   "sur": [
+    "calcaire"
+   ],
+   "bande": [
+    5,
+    95
+   ],
+   "pas": 2,
+   "echelle": [
+    0.9,
+    1.5
+   ],
+   "pente": 0.75
+  },
+  {
+   "nom": "arbres derrière les quais",
+   "objets": {
+    "arbre": 3,
+    "buisson": 1
+   },
+   "sur": [
+    "quai",
+    "ville"
+   ],
+   "bande": [
+    50,
+    100
+   ],
+   "pas": 3.5,
+   "echelle": [
+    1,
+    1.5
+   ]
   }
- ]
+ ],
+ "eaux": {
+  "marais": {
+   "c1": "#5E9E7A",
+   "c2": "#4F8F6E",
+   "clair": "#8CC8A0",
+   "reflet": "#CFF2D6",
+   "ecume": "#EAFFF0"
+  },
+  "source": {
+   "c1": "#2CC8C0",
+   "c2": "#22B2B4",
+   "clair": "#7CF0E0",
+   "reflet": "#D6FFF8",
+   "ecume": "#F2FFFF",
+   "luit": 0.7
+  },
+  "lagon": {
+   "c1": "#3CCCE4",
+   "c2": "#2EB8D8",
+   "clair": "#8EEAF6",
+   "reflet": "#D8FBFF",
+   "ecume": "#FFFFFF"
+  },
+  "abysse": {
+   "c1": "#2A5CC0",
+   "c2": "#2450AE",
+   "clair": "#4C84DC",
+   "reflet": "#9CC4F4",
+   "ecume": "#E8F4FF"
+  }
+ },
+ "grottes": {
+  "roche": {},
+  "calcaire": {
+   "roche": "roche_claire",
+   "brut": 0.8,
+   "haut": 6.2,
+   "stalactites": 3.5,
+   "stalagmites": 6,
+   "ambiance": {
+    "sombre": 0.8,
+    "particules": "poussiere"
+   }
+  },
+  "cristal": {
+   "roche": [
+    "#3A4A78",
+    "#4A5C90",
+    "#6C80B8"
+   ],
+   "brut": 1,
+   "haut": 6.6,
+   "stalactites": 6,
+   "stalagmites": 9,
+   "cristaux": {
+    "couleurs": [
+     "#7CE8FF",
+     "#B48CFF",
+     "#8CFFD0"
+    ],
+    "pas": 5
+   },
+   "ambiance": {
+    "sombre": 0.72,
+    "teinte": [
+     0.85,
+     0.95,
+     1.15
+    ],
+    "particules": "etincelles"
+   }
+  },
+  "terre": {
+   "roche": [
+    "#8A6A48",
+    "#9C7A54",
+    "#B48C5C"
+   ],
+   "brut": 0.5,
+   "poutres": 9,
+   "ambiance": {
+    "sombre": 0.78,
+    "teinte": [
+     1.05,
+     0.97,
+     0.85
+    ],
+    "particules": "poussiere"
+   }
+  },
+  "glace": {
+   "roche": [
+    "#7CB4E0",
+    "#9CCCF0",
+    "#D0ECFF"
+   ],
+   "brut": 0.9,
+   "haut": 6.2,
+   "stalactites": 3,
+   "stalagmites": 5,
+   "cristaux": {
+    "couleurs": [
+     "#D8F4FF"
+    ],
+    "pas": 9
+   },
+   "ambiance": {
+    "sombre": 0.88,
+    "teinte": [
+     0.9,
+     1,
+     1.15
+    ]
+   }
+  }
+ },
+ "rivaux": {
+  "eau": [
+   8,
+   55,
+   86
+  ],
+  "terre": [
+   58,
+   133,
+   77
+  ]
+ }
 }
