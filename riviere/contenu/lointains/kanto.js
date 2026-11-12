@@ -1,6 +1,6 @@
 /* ============ Kanto, les grands repères du lointain : un volcan, de hautes montagnes, une île ============ */
 // Un niveau les nomme : "lointain": [{"o": "volcan", "cap": 150}, {"o": "pics", "cap": -30}] (cap : degrés, 0 = droit devant au départ).
-// Les recettes dessinent en mètres, pour un repère à 1 400 m ; F.matiere(4) = lumineux (la lave) ; K.anime({forme, maj(maille, t)}) = une pièce qui bouge.
+// Les recettes dessinent en mètres, pour un repère à 1 400 m ; F.matiere(4) = lumineux (la lave) ; K.anime({forme, maj(maille, t)}) = une pièce qui bouge ; K.panache({y, haut, large, vent, duree}) = une fumée qui monte.
 Object.assign(LOINTAINS, {
   volcan(F, o, R, K) {  // un cône tronqué, un cratère qui rougeoie, des coulées, un panache de fumée
     const roche = hex("#6A5258"), ombre = hex("#544046"), lave = PAL.lave || [hex("#FF7A30"), hex("#FFC850")], n = 12, H = 440, R1 = 640, R2 = 120;
@@ -13,9 +13,7 @@ Object.assign(LOINTAINS, {
     for (const i of [1, 4, 8]) { const a = (i + .5) / n * Math.PI * 2, c = Math.cos(a), s = Math.sin(a), w = 16;   // les coulées
       F.poly([[c * R2 - s * w, H + 2, s * R2 + c * w], [c * R2 + s * w, H + 2, s * R2 - c * w], [c * R1 * .5 + s * w * .7, H * .56, s * R1 * .5 - c * w * .7], [c * R1 * .5 - s * w * .7, H * .56, s * R1 * .5 + c * w * .7]], lave[i % 2], [c, .6, s]); }
     F.matiere(2);
-    const fumee = new Forme(), gris = [hex("#8A8490"), hex("#A8A2AC"), hex("#C8C2CA")];
-    for (let k = 0; k < 6; k++) fumee.boule(Math.sin(k * 1.3) * (20 + k * 16), H + 40 + k * 70, Math.cos(k * 1.7) * 14, 60 + k * 26, 44 + k * 16, 60 + k * 26, gris, 0);
-    K.anime({forme: fumee, maj(m, t) { m.position.x = Math.sin(t * .13) * 12; m.scale.y = 1 + .04 * Math.sin(t * .31); }}); },
+    K.panache({y: H - 20, haut: 560, large: 210, vent: 300, duree: 55, n: 24}); },   // la fumée : des bouffées qui montent et s'effacent (Kiki, 12/11 : plus de boules figées)
   pics(F, o, R) {  // une chaîne de hautes montagnes aux sommets enneigés
     const n = o.n || 6, large = o.large || 2300, c1 = hex("#7C9CCC"), c2 = hex("#6688BC"), neige = [.95, .97, 1], neige2 = [.82, .88, .97];
     for (let k = 0; k < n; k++) { const x0 = (k / (n - 1) - .5) * large + (R() - .5) * 160, z0 = (R() - .5) * 300, H = 420 + R() * 420, B = H * (.75 + R() * .35), m = 7, cs = H * (.62 + R() * .1);

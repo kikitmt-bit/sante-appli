@@ -37,7 +37,13 @@ Object.assign(OBJETS, {
     for (let k = 0; k < n; k++) F.boite(-L / 2 + L * k / (n - 1), -.3, 0, .16, 1.15, .16, b, {haut: BLANC});
     F.boite(0, .28, 0, L, .12, .08, b); F.boite(0, .6, 0, L, .12, .08, b); },
   boite_lettres(F) { F.boite(0, -.3, 0, .12, 1.2, .12, PAL.pierre[0]); F.boite(0, .85, 0, .5, .36, .36, PAL.pierre[2], {haut: BLANC}); F.boite(.27, .95, 0, .06, .2, .12, PAL.fleurs.rouge); },
-  lampadaire(F, o, R, K) { F.cyl(0, -.3, 0, .13, .08, 3.5, 6, PAL.cadre); F.boite(0, 3.2, 0, .42, .5, .42, PAL.lumiere, {haut: PAL.cadre, mat: 7}); F.boite(0, 3.7, 0, .56, .1, .56, PAL.cadre); K.lumiere(F, 0, 3.45, 0, PAL.lumiere, 5.5); },
+  lampadaire(F, o, R, K) {  // un réverbère : socle, fût à bagues, lanterne vitrée à quatre montants, chapeau pointu
+    const c = PAL.cadre, c2 = fonce(c, 1.35);
+    F.cyl(0, -.3, 0, .24, .2, .45, 8, c); F.cyl(0, .15, 0, .1, .07, 2.9, 6, c); for (const y of [.25, 1.3, 2.75]) F.cyl(0, y, 0, .13, .13, .1, 6, c2);
+    F.cyl(0, 3.05, 0, .07, .2, .18, 6, c); F.matiere(7).boite(0, 3.2, 0, .36, .5, .36, PAL.lumiere).matiere(2);
+    for (const [dx, dz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) F.boite(dx * .19, 3.2, dz * .19, .05, .5, .05, c);
+    F.cyl(0, 3.7, 0, .3, .3, .06, 4, c); F.cyl(0, 3.76, 0, .27, 0, .32, 4, c); F.cyl(0, 4.08, 0, .04, .04, .14, 4, c2);
+    K.lumiere(F, 0, 3.45, 0, PAL.lumiere, 5.5); },
   panneau(F, o, R, K) { const L = o.large || 3.4, H = 1.05, b = PAL.tronc;
     F.boite(-L / 2 + .25, -.3, 0, .2, 1.9, .2, b[0]); F.boite(L / 2 - .25, -.3, 0, .2, 1.9, .2, b[0]); F.boite(0, .75, .05, L, H, .14, b[1], {devant: PAL.planche});
     K.etiquette(F, o.texte || "", 0, .75 + H / 2, .14, L - .3, H - .2); },

@@ -31,6 +31,22 @@ function relTab(cote, i, e) {
   const u = Math.sqrt(clamp(e, 0, E_MAX) / E_MAX) * (NE - 1), m = Math.min(NE - 2, Math.floor(u)), T = REL[cote], k = i * NE + m;
   return T[k] + (T[k + 1] - T[k]) * (u - m);
 }
+/* les grottes en cavernes (une grotte de la région à parois brutes : "brut" > 0, sans étais) : leur gabarit mètre par mètre.
+   Étroites à l'entrée (l'arche de la façade), elles s'ouvrent en grandes salles ; la rivière n'en occupe que le milieu, des rives de roche de chaque côté.
+   L, R : ce que la salle a de plus que l'eau, à gauche et à droite ; H : sa hauteur ; F : 0 à l'entrée, 1 au cœur. tunnel.js la creuse, ici la montagne passe au-dessus. */
+const CAV = (() => {
+  const P = PISTE, N = P.N, L = new Float32Array(N), R = new Float32Array(N), H = new Float32Array(N), F = new Float32Array(N), G0 = BIOME.grottes || {};
+  const remplir = (ia, ib) => {
+    const G = G0[pieceEn(ia).grotte] || {}; if (!(G.brut > 0) || G.poutres || G.caverne === false) return;
+    const hv = clamp(G.haut || 5.4, 4, 7), gr = (NIVEAU.graine || 1) * 7.3 + ia * .37, amp = G.ampleur || 1;
+    for (let i = ia; i <= ib; i++) { const f = lisse(0, 20, Math.min(i - ia, ib - i)), cl = bruit(i / 30 + gr, 1.3), cr = bruit(i / 30 + gr, 5.7), ch = bruit(i / 42 + gr, 9.1);
+      L[i] = f * (2.5 + 12 * cl * cl) * amp; R[i] = f * (2.5 + 12 * cr * cr) * amp; H[i] = lerp(hv, (7.5 + 9 * ch) * Math.min(amp, 1.3), f); F[i] = f; }
+  };
+  let debut = -1;
+  for (let i = 0; i <= N; i++) { const t = i < N && P.TUN[i]; if (t && debut < 0) debut = i; if (!t && debut >= 0) { remplir(debut, i - 1); debut = -1; } }
+  return {L, R, H, F};
+})();
+
 function relDe(j, lat, av) {  // la hauteur (au-dessus de la piste) que le mètre j propose pour un point à « lat » mètres sur son côté et « av » mètres devant lui
   const P = PISTE, cote = lat > 0 ? 1 : 0, bout = av > 0 ? P.FA[j] : av < 0 ? P.FR[j] : 0;
   if (bout === 2) {   // la culée d'un pont : le sol redescend devant, et reste sous le tablier
@@ -38,7 +54,11 @@ function relDe(j, lat, av) {  // la hauteur (au-dessus de la piste) que le mètr
     return Math.abs(lat) < P.W[j] + 1.2 ? Math.min(r, -.4 - .7 * Math.abs(av)) : r;
   }
   const e = (bout ? Math.hypot(lat, av) : Math.abs(lat)) - P.W[j];
-  if (P.TUN[j] && e < .8) return relTab(cote, j, 2) + .2;   // au-dessus d'un tunnel : le dessus de la montagne
+  if (P.TUN[j]) {
+    const dessus = e < .8 ? relTab(cote, j, 2) + .2 : relTab(cote, j, Math.max(e, 0));   // au-dessus d'un tunnel : le dessus de la montagne
+    if (CAV.F[j] > 0 && e < (cote ? CAV.R[j] : CAV.L[j]) + 7) return Math.max(dessus, CAV.H[j] + 5.5);   // au-dessus d'une caverne : assez haut pour la couvrir
+    if (e < .8) return dessus;
+  }
   return relTab(cote, j, Math.max(e, 0));
 }
 

@@ -96,7 +96,7 @@ function boucle(now) {
     if (S.fondu) { S.fondu += dt * 1.4; if (S.fondu >= 1 && S.s > LONG / 2) { S.s = 6; M.y = null; CAM.y = null; } if (S.fondu >= 2) S.fondu = 0; $("voile").style.opacity = S.fondu ? (S.fondu < 1 ? S.fondu : 2 - S.fondu) : 0; }
   }
   const tunnel = dansTunnel(S.s);
-  animerMonture(T, dt, S); cadrer(dt, S, T); ambianceMaj(dt, S.s); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
+  animerMonture(T, dt, S); cadrer(dt, S, T); ambianceMaj(dt, S.s); lumieresProches(); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
   sonMaj(S.s, !!tunnel);
   dessiner(); hud();
   if (BANC && !BANC.fini) bancImage(ecoule);
@@ -132,7 +132,7 @@ window.__vue = m => {
 };
 window.__piste = () => PISTE.pieces.map(p => [p.titre, Math.round(p.long0 || p.long), p.s1 - p.s0, +(+p.virage).toFixed(1), +(+p.monte || 0).toFixed(1)]);   // les pièces : longueur demandée, longueur réelle, virage, montée
 window.__verif = verifier;
-window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0, S.s); animerPublic(T, S, 0); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
+window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0, S.s); lumieresProches(); animerPublic(T, S, 0); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
 
 /* ============ le départ : on construit le monde depuis les fichiers, puis on lance ============ */
 (async () => {

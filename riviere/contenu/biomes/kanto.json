@@ -546,6 +546,50 @@
    ],
    "paroi": "roche_claire",
    "bosses": 7
+  },
+  "lac": {
+   "profil": [
+    [
+     0,
+     -1.4
+    ],
+    [
+     34,
+     -1.6
+    ],
+    [
+     42,
+     -0.6
+    ],
+    [
+     47,
+     0.1
+    ],
+    [
+     52,
+     0.35
+    ],
+    [
+     75,
+     1.1
+    ],
+    [
+     130,
+     3.5
+    ]
+   ],
+   "sols": [
+    [
+     "sable",
+     51
+    ],
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "sable",
+   "bosses": 0.6
   }
  },
  "palette": {
@@ -978,6 +1022,78 @@
     1,
     1.5
    ]
+  },
+  {
+   "nom": "roseaux du lac",
+   "objets": {
+    "roseaux": 1
+   },
+   "sur": [
+    "lac"
+   ],
+   "bande": [
+    41,
+    48
+   ],
+   "pas": 2.6
+  },
+  {
+   "nom": "arbres au bord du lac",
+   "objets": {
+    "arbre": 4,
+    "buisson": 2
+   },
+   "sur": [
+    "lac"
+   ],
+   "bande": [
+    54,
+    85
+   ],
+   "pas": 5,
+   "echelle": [
+    0.9,
+    1.3
+   ]
+  },
+  {
+   "nom": "bois au loin, derrière le lac",
+   "objets": {
+    "arbre_loin": 3
+   },
+   "sur": [
+    "lac"
+   ],
+   "bande": [
+    86,
+    130
+   ],
+   "pas": 3.4,
+   "echelle": [
+    1.1,
+    1.7
+   ]
+  },
+  {
+   "nom": "Pokémon au bord du lac",
+   "objets": {
+    "pokemon": 1
+   },
+   "nums": [
+    54,
+    60,
+    79,
+    118,
+    61
+   ],
+   "sur": [
+    "lac"
+   ],
+   "bande": [
+    47,
+    52
+   ],
+   "pas": 55
   }
  ],
  "eaux": {
@@ -1040,7 +1156,7 @@
      "#B48CFF",
      "#8CFFD0"
     ],
-    "pas": 5
+    "pas": 16
    },
    "ambiance": {
     "sombre": 0.72,
