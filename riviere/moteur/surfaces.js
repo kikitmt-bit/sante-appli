@@ -83,7 +83,8 @@ for (const [nom, e] of Object.entries(BIOME.eaux || {})) {
 }
 
 /* ---- la terre ferme : un chemin de terre ou une route (ligne au milieu, bordures rouges et blanches) ---- */
-const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte;
+const OMBRE_U = {uOmbre: {value: new THREE.Vector3(0, 0, 0)}};   // l'ombre de ta monture sur la terre : (force, hauteur au-dessus du sol, vélo ?) ; uNag donne où elle est
+const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte, uOmbre; uniform vec4 uNag;
   varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   void main() { vec2 p = vW.xz; float prox = 1. - smoothstep(45., 150., vZ);
@@ -92,22 +93,34 @@ const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie; uniform ve
     vec3 c = mix(uC1, uC2, step(.25, n) * prox);
     if (h21(floor(p * 3.)) > .94) c = mix(c, uC2 * .8, prox);                                       // des graviers
     float o = sin(vSU.x * .9) * .12;
-    if (uMode > .5) {
-      if (vBord < .7) c = mix(uLigne, vec3(.84, .22, .2), step(.5, fract(vSU.x / 3.)));             // les bordures
-      else if (abs(vSU.y) < .1 && fract(vSU.x / 5.) < .5) c = uLigne;                                 // la ligne du milieu
+    bool marque = vBord < 50.;                                                                       // (dans un carrefour : aucune marque)
+    if (uMode > 1.5) {                                                                               // des pavés, une bordure de pierre
+      vec2 g = vec2(vSU.x * 2.4, vSU.y * 2.8); g.x += step(1., mod(floor(g.y), 2.)) * .5; vec2 f = fract(g); float hp = h21(floor(g));
+      c = mix(uC1, uC2, step(.5, hp)) * (.93 + .1 * hp); if (f.x < .1 || f.y < .13) c = uBordC;
+      if (marque && vBord < .3) c = uLigne;
+    } else if (uMode > .5) {
+      if (marque && vBord < .7) c = mix(uLigne, vec3(.84, .22, .2), step(.5, fract(vSU.x / 3.)));   // les bordures
+      else if (marque && abs(vSU.y) < .1 && fract(vSU.x / 5.) < .5) c = uLigne;                       // la ligne du milieu
     } else {
-      if (vBord < .5 + o) c = uBordC;                                                                // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
+      if (marque && vBord < .5 + o) c = uBordC;                                                      // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
     }
+    if (uOmbre.x > 0.) { float ds = vSU.x - uNag.x, du = vSU.y - uNag.y, h = uOmbre.y, k = 1. / (1. + h * .35);   // l'ombre : une ellipse tramée, plus petite et plus pâle quand on saute
+      float e = length(vec2((ds + .1) / ((uOmbre.z > .5 ? 1.05 : .55) * k), du / ((uOmbre.z > .5 ? .34 : .42) * k)));
+      if (e < 1. && h21(floor(vW.xz * 9.)) > smoothstep(.55, 1., e) * .9) c *= 1. - .3 * uOmbre.x * k;
+      if (uOmbre.z > .5 && uMode < .5 && ds < -.9 && ds > -16. && abs(du) < .05) c *= 1. - .16 * (1. + ds / 16.); }   // la trace du pneu, sur un chemin
     c *= 1. - .16 * uPluie;                                                                           // mouillée, elle fonce
     gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;
 function matRoute(c1, c2, bord, ligne, mode) {
   const v = h => ({value: new THREE.Vector3(...hex(h))});
-  return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}}, COMMUNS), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
+  return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}, uNag: EAU_U.uNag}, OMBRE_U, COMMUNS), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
 }
 const TERRES = BIOME.terres || {};
 SURFACES.terre = {materiau: matRoute(...(TERRES.terre || ["#D9B886", "#CBA672", "#B48C5C", "#FFFFFF"]), 0), liquide: false, monture: "coureur", poussiere: (TERRES.terre || ["#D9B886"])[0]};
 SURFACES.goudron = {materiau: matRoute(...(TERRES.goudron || ["#6E7480", "#646A76", "#F8F8E8", "#F8F8E8"]), 1), liquide: false, monture: "coureur", poussiere: "#C8CCD4"};
+SURFACES.paves = {materiau: matRoute(...(TERRES.paves || ["#BCB4A4", "#ACA494", "#7C766C", "#D4CEC0"]), 2), liquide: false, monture: "coureur", poussiere: "#C8C0B0"};   // une rue de village
 const surface = s => SURFACES[surfaceEn(s)] || SURFACES.eau;
+const DESSUS = {};   // le matériau du passage « du dessus » d'un carrefour : le même, dessiné par-dessus l'autre
+function matDessus(nom) { const m = SURFACES[nom].materiau; return DESSUS[nom] || (DESSUS[nom] = new THREE.ShaderMaterial({uniforms: m.uniforms, vertexShader: m.vertexShader, fragmentShader: m.fragmentShader, side: m.side, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4})); }
 
 /* les couleurs de l'eau, mètre par mètre : celles de l'eau de chaque mètre, puis lissées le long de la piste (trois passes de ±30 m) :
    on passe d'une eau à l'autre sans jamais voir de trait (Kiki, 12/11 : « on ne doit pas s'en rendre compte du tout ») */
@@ -130,7 +143,7 @@ function couleursEau() {
 
 /* ---- le ruban de la piste, par tronçons de 40 m (toutes les eaux ensemble, chaque terre à part) ; la mer, un grand plan ---- */
 function construirePiste() {
-  const P = PISTE, rubans = [], EAUX_C = couleursEau(), genre = i => { const nom = P.surfaces[P.SF[idx(i)]], S = SURFACES[nom]; return !S || S.liquide ? "eau" : nom; };
+  const P = PISTE, rubans = [], EAUX_C = couleursEau(), genre = i => { const nom = P.surfaces[P.SF[idx(i)]], S = SURFACES[nom]; return !S || S.liquide ? "eau" : nom + (P.CROIX[idx(i)] === 2 ? "+" : ""); };
   for (let c0 = 0; c0 < LONG; c0 += 40) {
     const fin = Math.min(c0 + 40, LONG); let debut = c0;
     for (let i = c0; i <= fin; i++) {   // un ruban par suite de mètres de même genre (l'eau, quelle qu'elle soit ; ou une terre)
@@ -144,7 +157,7 @@ function construirePiste() {
     for (let i = a0; i <= a1; i++) {
       const o = idx(i) * 16;
       const a = at(i), w = a.w, rx = Math.cos(a.h), rz = Math.sin(a.h), ii = idx(i), pont = P.PONT[ii], eg = pont || hRive(ii, 0, .02) > .02 ? 1 : 0, ed = pont || hRive(ii, 1, .02) > .02 ? 1 : 0;
-      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]);
+      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] ? 99 : w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]);
         if (liquide) { for (let c = 0; c < 5; c++) C[c].push(EAUX_C[o + c * 3], EAUX_C[o + c * 3 + 1], EAUX_C[o + c * 3 + 2]); C[5].push(EAUX_C[o + 15]); } }
     }
     for (let i = 0; i < a1 - a0; i++) for (let j = 0; j < 6; j++) { const a = i * 7 + j, b = a + 7; ind.push(a, a + 1, b, a + 1, b + 1, b); }
@@ -152,9 +165,10 @@ function construirePiste() {
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("aSU", new THREE.Float32BufferAttribute(su, 2)); g.setAttribute("aBord", new THREE.Float32BufferAttribute(bord, 1));
     g.setAttribute("aEc", new THREE.Float32BufferAttribute(ec, 2)); g.setAttribute("aPente", new THREE.Float32BufferAttribute(pente, 1)); g.setIndex(ind);
     if (liquide) ["aC1", "aC2", "aCl", "aRe", "aEcu", "aLuit"].forEach((a, c) => g.setAttribute(a, new THREE.Float32BufferAttribute(C[c], c < 5 ? 3 : 1)));
-    const nom = P.surfaces[P.SF[idx(a0)]], m = new THREE.Mesh(g, liquide ? MAT_EAUX : SURFACES[nom].materiau); m.name = "piste"; scene.add(m);
+    const nom = P.surfaces[P.SF[idx(a0)]], m = new THREE.Mesh(g, liquide ? MAT_EAUX : genre(a0).endsWith("+") ? matDessus(nom) : SURFACES[nom].materiau); m.name = "piste"; scene.add(m);
     if (!SURFACES[nom]) console.warn("Surface inconnue : " + nom);
   }
+  if (DISC_PISTE === "terre") return;   // sur la terre : aucune mer
   const mer = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), MAT_MER); mer.rotation.x = -Math.PI / 2; mer.position.set(P.X[P.N >> 1], -.15, P.Z[P.N >> 1]); mer.name = "mer"; scene.add(mer);
 }
 

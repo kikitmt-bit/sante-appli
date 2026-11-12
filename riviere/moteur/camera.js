@@ -18,8 +18,10 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   if (CAM.z1 === null) { CAM.z1 = zc; CAM.z2 = zc; }
   CAM.z1 += (zc - CAM.z1) * kz; CAM.z2 += (CAM.z1 - CAM.z2) * kz;
   const dz = CAM.z2 - 1;   // -1 à l'arrêt, 0 en croisière, jusqu'à +0,4 en turbo
-  const P = PISTE, i = idx(S.s), recul = 5.5 + S.vn * .8 + dz * .7 + P.CAMR[i], c = pose(S.s - recul, M.d * .6), d = pose(S.s + 10, M.d * .3);
-  const yc = c.y + 1.95 + dz * .15 + P.CAMH[i], yl = d.y + .8, net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
+  // à vélo : de trois-quarts arrière, un peu à droite (le côté de la chaîne) et un peu plus haut, pour voir le vélo, ses roues et ses pédales (12/11)
+  const velo = typeof VELO !== "undefined" && VELO.g && VELO.g.visible, lat = velo ? 1.25 : 0;
+  const P = PISTE, i = idx(S.s), recul = 5.5 + S.vn * .8 + dz * .7 + P.CAMR[i] - (velo ? .9 : 0), c = pose(S.s - recul, M.d * .6 + lat), d = pose(S.s + (velo ? 7 : 10), M.d * .3 - lat * .1);
+  const yc = c.y + 1.95 + (velo ? .75 : 0) + dz * .15 + P.CAMH[i], yl = d.y + (velo ? -.9 : .8), net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
   if (CAM.y === null) { CAM.y = yc; CAM.ly = yl; }
   CAM.y += (yc - CAM.y) * k; CAM.ly += (yl - CAM.ly) * k;
   CAM.saut += ((M.y === null ? 0 : M.y - at(S.s).y) * .55 - CAM.saut) * k;   // un saut : la caméra le suit à moitié

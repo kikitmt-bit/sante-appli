@@ -17,17 +17,17 @@ function majBoutons() { $("bAuto").hidden = S.mode !== "essai"; $("bFin").hidden
 /* le menu : ce qu'on voit en arrivant. En haut l'essentiel (le circuit, la montre, commencer) ; dessous, repliés : l'ambiance, la machine, les adversaires, le fantôme */
 const HEURES_MENU = [["circuit", "Du circuit"], ["reelle", "Heure réelle"], ["matin", "Matin"], ["jour", "Jour"], ["soir", "Soir"], ["nuit", "Nuit"], ["cycle", "Journée qui défile"]];
 const METEOS_MENU = [["circuit", "Du circuit"], ["beau", "Beau"], ["variable", "Variable"], ["nuages", "Nuages"], ["pluie", "Pluie"], ["orage", "Orage"], ["brume", "Brume"], ["neige", "Neige"]];
-const SURFACE_MACHINE = {rameur: null, elliptique: "terre", velo: "terre"};   // sur quoi avance chaque machine, si le circuit ne dit rien
+const ACTIVITE = {rameur: "eau", elliptique: "terre", velo: "terre"};   // l'activité de chaque machine : ses circuits à elle (eau : rivières ; terre : routes et chemins)
 const boutons = (liste, choisi, attr) => liste.map(([k, t]) => `<button class="opt${choisi === k ? " on" : ""}" data-${attr}="${k}">${t}</button>`).join("");
 function choisirCircuit(id) {   // un autre circuit : on le garde pour les prochaines fois, et la page repart avec lui
-  if (FORCE) { try { sessionStorage.setItem("riviere_niveau_une_fois", id); } catch (e) {} } else ecrireReglage("riviere_niveau", id);
+  if (FORCE) { try { sessionStorage.setItem("riviere_niveau_une_fois", id); } catch (e) {} } else ecrireReglage("riviere_niveau_" + disciplineDe(NIVEAUX[id] || CIRCUITS_PERSO[id]), id);
   relancer();
 }
 function ouvrirMenu() {
   S.mode = null; S.pause = false; majBoutons();
   const enc = lireLS(ENCOURS, null), reprise = enc && enc.nb > 0 && Date.now() - enc.maj < 12 * 3600e3 ? enc : null;
   const attend = (lireLS(ATTENTE, []) || []).length, der = D.derniere;
-  const circuits = Object.entries(NIVEAUX).filter(([k, n]) => !n.cache).map(([k, n]) => [k, n.nom || k]).concat(Object.entries(CIRCUITS_PERSO).map(([k, n]) => [k, "✏️ " + (n.nom || k)]));
+  const circuits = Object.entries(NIVEAUX).filter(([k, n]) => !n.cache && disciplineDe(n) === DISCIPLINE).map(([k, n]) => [k, n.nom || k]).concat(Object.entries(CIRCUITS_PERSO).filter(([k, n]) => disciplineDe(n) === DISCIPLINE).map(([k, n]) => [k, "✏️ " + (n.nom || k)]));
   const hChoix = PARAMS.get("heure") || lireReglage("riviere_heure", "circuit") || "circuit", mChoix = PARAMS.get("meteo") || lireReglage("riviere_meteo", "circuit") || "circuit";
   const p = panneau(`<h1>${NIVEAU.nom}${NIVEAU.brouillon ? " <small style='font-size:.5em;color:#B05010'>(brouillon)</small>" : ""}</h1>
     <p class="sous">${MACHINE.nom}${BOUCLE ? " · un tour = " + metres(TOUR_M) + " m" : " · " + metres(TOUR_M) + " m"}${record ? " · record " + chrono(record) : ""}</p>
@@ -47,7 +47,8 @@ function ouvrirMenu() {
       <div class="fantomes"><small>L'HEURE</small>${boutons(HEURES_MENU, hChoix, "h")}</div>
       <div class="fantomes"><small>LE TEMPS</small>${boutons(METEOS_MENU, mChoix, "m")}</div></details>
     <details class="pli"><summary>Machine : ${MACHINE.nom}</summary>
-      <div class="fantomes">${boutons(Object.entries(MACHINES).map(([k, m]) => [k, m.nom]), MACHINE_NOM, "machine")}</div>
+      <div class="fantomes"><small>SUR L'EAU (les rivières)</small>${boutons([["rameur", MACHINES.rameur.nom]], MACHINE_NOM, "machine")}</div>
+      <div class="fantomes"><small>SUR LA TERRE (routes, chemins, rues : d'autres circuits)</small>${boutons(Object.entries(MACHINES).filter(([k]) => ACTIVITE[k] === "terre").map(([k, m]) => [k, m.nom]), MACHINE_NOM, "machine")}</div>
       <div class="fantomes"><small>CAPTEUR BLUETOOTH (home trainer, rameur ou elliptique connecté, ceinture cardio)</small>
         <button class="opt" id="mBT" ${BT_OK ? "" : "disabled"}>Relier un capteur</button><p class="petit" id="mBTetat">${BT_OK ? BT.etat || "Rien de relié." : "Ce navigateur ne parle pas Bluetooth (Chrome ou Edge le font)."}</p></div></details>
     <details class="pli"><summary>Adversaires et fantôme</summary>
@@ -64,7 +65,7 @@ function ouvrirMenu() {
   p.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { if (b.dataset.c !== NIVEAU.id || NIVEAU.brouillon) { b.textContent = "Chargement…"; choisirCircuit(b.dataset.c); } });
   un("[data-h]", null, b => { ecrireReglage("riviere_heure", b.dataset.h); reglerAmbiance(b.dataset.h === "circuit" ? NIVEAU.heure || "jour" : b.dataset.h, null); });   // on voit le ciel changer derrière le menu
   un("[data-m]", null, b => { ecrireReglage("riviere_meteo", b.dataset.m); reglerAmbiance(null, b.dataset.m === "circuit" ? NIVEAU.meteo || "beau" : b.dataset.m); });
-  p.querySelectorAll("[data-machine]").forEach(b => b.onclick = () => { if (b.dataset.machine === MACHINE_NOM) return; ecrireReglage("riviere_machine", b.dataset.machine); ecrireReglage("riviere_surface", SURFACE_MACHINE[b.dataset.machine] || null); b.textContent = "Chargement…"; relancer(); });
+  p.querySelectorAll("[data-machine]").forEach(b => b.onclick = () => { if (b.dataset.machine === MACHINE_NOM) return; ecrireReglage("riviere_machine", b.dataset.machine); if (ACTIVITE[b.dataset.machine] === "terre") ecrireReglage("riviere_machine_terre", b.dataset.machine); ecrireReglage("riviere_surface", null); b.textContent = "Chargement…"; relancer(); });
   un("[data-r]", null, b => choisirRivaux(b.dataset.r));
   un("[data-f]", null, b => { choisirFantome(b.dataset.f); majTexteFantome(); });
   p.querySelector("#mBT").onclick = async e => { const el = $("mBTetat"), t = setInterval(() => { if (el.isConnected) el.textContent = BT.etat; }, 300); await relierCapteur(); clearInterval(t); if (el.isConnected) el.textContent = BT.etat; };

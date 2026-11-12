@@ -12,6 +12,7 @@
 //   allure   le décor défile plus ou moins vite ici (1,4 : des rapides ; 0,7 : une côte), sans toucher aux vrais chiffres
 //   camera   {haut, recul} : la caméra plus haute ou plus loin sur cette pièce
 //   lieux, objets
+// "boucle": "huit" (un circuit en 8, sur la terre : il se croise à niveau, un carrefour) : la dernière pièce au virage "auto" prend ce qui manque pour que les virages s'annulent.
 // La dernière pièce d'un circuit peut être {"raccord": true} : le moteur calcule le chemin qui referme la boucle, sans déformer les autres.
 // (Ancienne façon, toujours acceptée : une pièce au virage "auto", et les longueurs s'ajustent.)
 // Tout le reste (terrain, surfaces, décor) se déduit de cette ligne : le niveau ne contient aucune forme.
@@ -22,13 +23,14 @@ const FONDU = 10;   // deux rives voisines se fondent l'une dans l'autre sur 2 �
 const ALLURE = clamp(+PARAMS.get("allure") || NIVEAU.allure || 2, 1, 4);
 const BOUCLE = !!NIVEAU.boucle, SENS = NIVEAU.boucle === "droite" ? 1 : -1;
 const largeur = p => p.large !== undefined ? p.large : p.eau;
+const DISC_PISTE = NIVEAU.discipline || (["terre", "goudron", "paves"].includes(NIVEAU.surface) ? "terre" : "eau");   // l'activité du circuit (la même règle que depart.js)
 
 /* l'ancienne fermeture d'une boucle : la pièce « auto » prend le virage qui manque pour faire un tour complet, puis les longueurs
    s'ajustent (le moins possible, jamais celles des pièces « fixe », à lieu ou à tunnel) pour que la piste retombe sur son départ. */
 function fermer(pieces) {
   const autos = pieces.filter(p => p.virage === "auto"), somme = pieces.reduce((t, p) => t + (p.virage === "auto" ? 0 : p.virage || 0), 0);
   if (!autos.length) throw new Error("Une boucle a besoin d'une pièce « raccord » à la fin (ou d'une pièce au virage « auto »).");
-  for (const p of autos) p.virage = (SENS * 360 - somme) / autos.length;
+  for (const p of autos) p.virage = ((NIVEAU.boucle === "huit" ? 0 : SENS * 360) - somme) / autos.length;   // un 8 ("boucle": "huit") : ses virages s'annulent
   let h = 0;
   const V = pieces.map(p => { const A = p.virage * Math.PI / 180, f = Math.abs(A) < 1e-9 ? 1 : Math.sin(A / 2) / (A / 2), v = [f * Math.sin(h + A / 2), -f * Math.cos(h + A / 2)]; h += A; return v; });
   const W = pieces.map(p => p.fixe || p.lieux || p.tunnel ? 0 : p.long * p.long), M = [[0, 0], [0, 0]], r = [0, 0];
@@ -110,7 +112,7 @@ const PISTE = (() => {
     const n = ns[ip], k = (p.virage || 0) * Math.PI / 180 / n, w = largeur(p); titre = p.nom || titre;
     for (const c of [p.g, p.d]) if (!TYPES.includes(c)) throw new Error("Rive inconnue dans le niveau : " + c);
     if (!(w > 0)) throw new Error("Pièce sans largeur : « " + titre + " ».");
-    const surf = PARAMS.get("surface") || p.surface || NIVEAU.surface || lireReglage("riviere_surface", null) || "eau"; if (!surfaces.includes(surf)) surfaces.push(surf);   // la surface : l'adresse, la pièce, le niveau, sinon celle de la machine choisie au menu
+    const surf = p.surface || NIVEAU.surface || (DISC_PISTE === "terre" ? "terre" : "eau"); if (!surfaces.includes(surf)) surfaces.push(surf);   // la surface : la pièce, sinon le circuit (12/11 : la machine ne change plus un circuit d'eau en chemin)
     pieces.push(Object.assign(p, {s0: s, s1: s + n, titre, surface: surf, grotte: p.tunnel ? (typeof p.tunnel === "string" ? p.tunnel : p.tunnel.style || "roche") : null}));
     for (let i = 0; i < n; i++) {
       X.push(x); Z.push(z); H.push(h); Y0.push(y); W0.push(w / 2); KG.push(TYPES.indexOf(p.g)); KD.push(TYPES.indexOf(p.d));
@@ -153,6 +155,21 @@ const PISTE = (() => {
     }
     return o;
   };
+  // un pont qui enjambe la piste commence et finit assez loin de l'eau qu'il enjambe : ses culées (le massif de pierre de chaque bout)
+  // ne tombent jamais dans la rivière d'en dessous (12/11 : sur le Huit, la rivière passait sous le tout premier mètre du pont)
+  const enjambe = [];
+  for (let i = 0; i < N; i++) { if (!PONT[i]) continue;
+    for (let j = 0; j < N; j++) { const ds = Math.abs(i - j), d2 = BOUCLE ? Math.min(ds, N - ds) : ds; if (d2 < 40 || PONT[j] || Y[i] - Y[j] < 3) continue;
+      if (Math.hypot(X[i] - X[j], Z[i] - Z[j]) < W[j] + 1) enjambe.push([i, Math.ceil(W[j] + 9)]); } }
+  for (const [i, m] of enjambe) for (let k = -m; k <= m; k++) { const kk = BOUCLE ? ((i + k) % N + N) % N : i + k; if (kk >= 0 && kk < N) PONT[kk] = 1; }
+  // les carrefours (sur la terre) : deux passages de la piste à la même hauteur se croisent à niveau (un circuit en 8). 1 : le passage du dessous, 2 : celui du dessus (dessiné par-dessus)
+  const CROIX = new Uint8Array(N);
+  if (DISC_PISTE === "terre") { const G = 6, cases = new Map();
+    for (let i = 0; i < N; i++) { const k = Math.floor(X[i] / G) + "," + Math.floor(Z[i] / G); if (!cases.has(k)) cases.set(k, []); cases.get(k).push(i); }
+    for (let i = 0; i < N; i++) { const cx = Math.floor(X[i] / G), cz = Math.floor(Z[i] / G);
+      for (let a = -3; a <= 3; a++) for (let b = -3; b <= 3; b++) for (const j of cases.get((cx + a) + "," + (cz + b)) || []) { const ds = Math.abs(i - j), d2 = BOUCLE ? Math.min(ds, N - ds) : ds;
+        if (d2 < 30 || PONT[i] || PONT[j] || Math.abs(Y[i] - Y[j]) > 1.5) continue;
+        if (Math.hypot(X[i] - X[j], Z[i] - Z[j]) < W[i] + W[j] + 2.5) CROIX[i] = Math.max(CROIX[i], i > j ? 2 : 1); } } }
   // les bouts : 1 = le bout d'un niveau ouvert, 2 = la culée d'un pont (le sol s'arrête, la piste continue en l'air)
   const FA = new Uint8Array(N), FR = new Uint8Array(N);
   for (let i = 0; i < N; i++) {
@@ -164,7 +181,7 @@ const PISTE = (() => {
   // les segments chronométrés : des pièces qui se suivent et portent le même nom de segment
   const segments = [];
   for (const p of pieces) { if (!p.segment) continue; const d = segments[segments.length - 1]; if (d && d.nom === p.segment && d.s1 === p.s0) d.s1 = p.s1; else segments.push({nom: p.segment, s0: p.s0, s1: p.s1}); }
-  return {N, X, Z, Y, H, HFIN: h, W, PG: poids(KG), PD: poids(KD), TUN, PONT, NET, SF, PC, PENTE, COULE, COURB, ALL, ALL0, VR, CAMH, CAMR, FA, FR, CH, SH, pieces, surfaces, segments, fermeture};
+  return {N, X, Z, Y, H, HFIN: h, W, PG: poids(KG), PD: poids(KD), TUN, PONT, NET, SF, PC, PENTE, COULE, COURB, ALL, ALL0, VR, CAMH, CAMR, FA, FR, CH, SH, CROIX, pieces, surfaces, segments, fermeture};
 })();
 const LONG = BOUCLE ? PISTE.N : PISTE.N - 1;   // la longueur du niveau (un tour, pour une boucle)
 const idx = s => { const i = Math.round(s), N = PISTE.N; return BOUCLE ? ((i % N) + N) % N : clamp(i, 0, N - 1); };          // le mètre de la piste le plus proche de s
@@ -254,9 +271,12 @@ function verifier() {
     const j2 = BOUCLE ? (j + pas) % N : Math.min(N - 1, j + pas);
     if (j2 === j || !coupe(i, i + pas, j, j2)) continue;
     if (croisements.some(c => Math.abs(c.s1 - i) < 12 && Math.abs(c.s2 - j) < 12)) continue;
-    const dy = P.Y[j] - P.Y[i], dessus = dy > 0 ? j : i, dessous = dy > 0 ? i : j, bon = (P.PONT[dessus] || P.TUN[dessous]) && Math.abs(dy) >= 4.5;
-    croisements.push({s1: i, s2: j, ecart: +Math.abs(dy).toFixed(1), bon: !!bon});
-    if (!bon) erreurs.push("La piste se croise au mètre " + i + " et au mètre " + j + " sans pont : il faut une pièce « pont » au-dessus, 4,5 m plus haut au moins (ici " + Math.abs(dy).toFixed(1) + " m).");
+    const dy = P.Y[j] - P.Y[i], dessus = dy > 0 ? j : i, dessous = dy > 0 ? i : j, angle = Math.abs(Math.sin(P.H[i] - P.H[j]));
+    const carrefour = DISC_PISTE === "terre" && Math.abs(dy) < .8 && angle > .42 && !P.PONT[i] && !P.PONT[j];   // sur la terre : un carrefour à niveau, s'il n'est pas trop rasant
+    const bon = carrefour || (P.PONT[dessus] || P.TUN[dessous]) && Math.abs(dy) >= 4.5;
+    croisements.push({s1: i, s2: j, ecart: +Math.abs(dy).toFixed(1), bon: !!bon, carrefour});
+    if (!bon && DISC_PISTE === "terre") erreurs.push(Math.abs(dy) < .8 ? "Le carrefour des mètres " + i + " et " + j + " est trop rasant : les deux passages doivent se croiser franchement (plus de 25°)." : "La piste se croise aux mètres " + i + " et " + j + " à des hauteurs différentes (" + Math.abs(dy).toFixed(1) + " m) : à la même hauteur (un carrefour), ou un pont 4,5 m plus haut au moins.");
+    else if (!bon) erreurs.push("La piste se croise au mètre " + i + " et au mètre " + j + " sans pont : il faut une pièce « pont » au-dessus, 4,5 m plus haut au moins (ici " + Math.abs(dy).toFixed(1) + " m).");
   }
   return {ok: !erreurs.length, erreurs, croisements, longueur: N, tourVrai: +TOUR_VRAI.toFixed(1), haut: +haut.toFixed(1), penteMax: +penteMax.toFixed(3), rayonMin: +rayonMin.toFixed(1), fermeture: +P.fermeture.toFixed(2)};
 }

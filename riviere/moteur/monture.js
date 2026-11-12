@@ -4,6 +4,7 @@
 const MONTURES = {
   nageur: {enfonce: .42, foulee: 0},     // dans l'eau jusqu'à mi-corps
   coureur: {enfonce: 0, foulee: .09},    // posé sur le sol, il rebondit à chaque foulée
+  cycliste: {enfonce: 0, foulee: 0, velo: true},   // sur un vélo (velo.js) : la machine « vélo » le demande, sur la terre
 };
 const PESANTEUR = 7;   // celle du jeu (m/s²) : un peu plus douce que la vraie, les sauts durent
 const M = {y: null, vy: 0, air: false, d: 0, sorti: 0, trace: 0, liquide: true, couleur: null};
@@ -11,10 +12,10 @@ const M = {y: null, vy: 0, air: false, d: 0, sorti: 0, trace: 0, liquide: true, 
 /* la corde : dans un virage, il se décale vers l'intérieur */
 function trajectoire(s) { const P = PISTE, i = idx(s + 4); return clamp(P.COURB[i] * 60, -1, 1) * P.W[i] * .42; }
 function retomber(S, choc) {
-  gerbe(S.s, clamp(choc / 5, .4, 1.4), M.d, M.y); sonPlouf(clamp(choc / 6, .35, 1), M.liquide); CAM.choc = Math.min(.5, choc * .07);
+  gerbe(S.s, clamp(choc / 5, .4, 1.4), M.d, M.y); sonPlouf(clamp(choc / 6, .35, 1), M.liquide); CAM.choc = Math.min(.5, choc * .07); VELO.choc = Math.min(1, choc * .25);
 }
 function animerMonture(t, dt, S) {
-  const a = at(S.s), sol = a.y, surf = surface(S.s), mt = MONTURES[surf.monture] || MONTURES.nageur;
+  const a = at(S.s), sol = a.y, surf = surface(S.s), nomM = !surf.liquide && typeof MACHINE !== "undefined" && MACHINE.monture || surf.monture, mt = MONTURES[nomM] || MONTURES.nageur;
   M.liquide = !!surf.liquide;
   const couleur = M.liquide ? "#F2FBFF" : surf.poussiere || "#D9B886";
   if (couleur !== M.couleur) { M.couleur = couleur; GOUTTES.m.material.color.set(couleur); }
@@ -43,8 +44,8 @@ function animerMonture(t, dt, S) {
   // la poussière de la course, sur la terre
   if (!M.liquide && !S.enAir && S.vd > 1) {
     M.trace += S.vd * dt;
-    if (M.trace > 1.1) {
-      M.trace = 0; const p = pose(S.s - .4, M.d), G = GOUTTES;
+    if (M.trace > (mt.velo ? (surfaceEn(S.s) === "terre" ? .9 : 4) : 1.1)) {   // à vélo : la poussière part de la roue arrière, beaucoup sur un chemin, un peu sur la route
+      M.trace = 0; const p = pose(S.s - (mt.velo ? .65 * ECH_VELO : .4), M.d), G = GOUTTES;
       for (let j = 0; j < 3; j++) {
         const k = G.k = (G.k + 1) % G.n; G.p[k * 3] = p.x + (Math.random() - .5) * .5; G.p[k * 3 + 1] = M.y + .08; G.p[k * 3 + 2] = p.z + (Math.random() - .5) * .5; G.sol[k] = M.y - .1;
         G.v[k * 3] = (Math.random() - .5) * 1.2; G.v[k * 3 + 1] = 1 + Math.random() * 1.4; G.v[k * 3 + 2] = (Math.random() - .5) * 1.2; G.vie[k] = 1;
@@ -52,6 +53,9 @@ function animerMonture(t, dt, S) {
     }
   }
   EAU_U.uNag.value.set(S.s, M.d, S.vn, S.enAir || !M.liquide ? 1 : 0);
+  OMBRE_U.uOmbre.value.set(M.liquide ? 0 : mt.velo ? 1 : .55, Math.max(0, M.y + bond - sol), mt.velo ? 1 : 0);   // l'ombre au sol (et, à vélo, la trace du pneu)
+  if (mt.velo) { animerVelo(t, dt, S, pose(S.s, M.d), M.y + Math.max(0, bond), nageur); return; }
+  cacherVelo();
   const N = nageur; if (!N) return;
   const p = pose(S.s, M.d), k = PISTE.COURB[idx(S.s + 2)];
   N.rangee(k > .028 ? 3 : k < -.028 ? 5 : 4);   // dans un virage serré, il se tourne du côté du virage

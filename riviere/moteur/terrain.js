@@ -67,6 +67,8 @@ function construireRives() {
     }
     o = {pts, segs}; memo[cote].set(i, o); return o;
   };
+  const PRES_X = new Uint8Array(P.N); for (let i = 0; i < P.N; i++) if (P.CROIX[i]) for (let k = -25; k <= 25; k++) PRES_X[BOUCLE ? ((i + k) % P.N + P.N) % P.N : clamp(i + k, 0, P.N - 1)] = 1;   // près d'un carrefour
+  const surAutre = (V, i) => { const x = (V[0][0] + V[2][0]) / 2, z = (V[0][2] + V[2][2]) / 2; pres(x, z); return Q.e < .5 && Math.abs(ecart(Q.i, i)) > 20; };   // ce bout de rive tomberait sur l'autre route
   for (let c0 = 0; c0 < LONG; c0 += 40) {
     const F = new Forme();
     for (const cote of [0, 1]) {
@@ -87,10 +89,22 @@ function construireRives() {
         const A = coupe(i, cote), B = coupe(j, cote);
         for (let s = 0; s < nS - 1; s++) {
           const sa = A.segs[s], sb = B.segs[s], V = [[A.pts[s], sa.N, sa.c0], [A.pts[s + 1], sa.N, sa.c1], [B.pts[s + 1], sb.N, sb.c1], [B.pts[s], sb.N, sb.c0]];
+          if (PRES_X[idx(i)] && surAutre([A.pts[s], A.pts[s + 1], B.pts[s + 1]], i)) continue;
           for (const k of [0, 1, 2, 0, 2, 3]) { const [p, N, c] = V[k]; F.v(p[0], p[1], p[2], N[0], N[1], N[2], c, c[3]); }
         }
       }
     }
     const m = F.maille(); if (m) { m.name = "rives"; scene.add(m); }
   }
+}
+
+/* le cratère d'une montagne au milieu du circuit (champ.js : MASSIF) : de la lave au fond, sa lueur, une fumée qui monte */
+function construireMassif() {
+  if (!MASSIF || !MASSIF.cratere) return;
+  const y = hSol(MASSIF.x, MASSIF.z), F = new Forme(), lave = PAL.lave || [hex("#FF7A30"), hex("#FFC850")], rl = MASSIF.r * .06, bord = [];
+  for (let k = 0; k < 14; k++) bord.push(.8 + .35 * h2(k, 9));
+  F.matiere(4).rond(MASSIF.x, y + 1.2, MASSIF.z, rl, rl, lave[0], 14, bord).rond(MASSIF.x, y + 1.3, MASSIF.z, rl * .55, rl * .55, lave[1], 10).matiere(2);
+  const m = F.maille(); if (m) { m.name = "cratere"; scene.add(m); }
+  MONDE.lumieres.push({x: MASSIF.x, y: y + 4, z: MASSIF.z, c: lave[0], t: rl * 1.2, toujours: true});
+  panache(scene, {x: MASSIF.x, y: y + 2, z: MASSIF.z, haut: MASSIF.h * 1.3, large: MASSIF.r * .2, vent: MASSIF.h * .6, duree: 45, n: 20});
 }

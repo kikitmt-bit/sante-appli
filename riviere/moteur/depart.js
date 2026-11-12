@@ -24,15 +24,25 @@ function region(nom, vus = []) {
   o.regles = b.regles || (parent.regles || []).concat(b.regles_plus || []);   // regles : à la place de celles du parent ; regles_plus : en plus
   return o;
 }
+/* deux activités, deux sortes de circuits (Kiki, 12/11) : « eau » (le rameur, sur une rivière) et « terre » (vélo, elliptique : routes, chemins, rues).
+   Un circuit est de l'une ou de l'autre ("discipline" ; sinon : terre si sa surface est terre, goudron ou pavés) ; la machine choisie au menu
+   dit de laquelle on veut : le circuit gardé pour cette activité (riviere_niveau_eau / riviere_niveau_terre), sinon le premier qui convient. */
+const disciplineDe = n => n ? n.discipline || (["terre", "goudron", "paves"].includes(n.surface) ? "terre" : "eau") : "eau";
+const ARGS = (() => { const a = new URLSearchParams(location.search); for (const [k, v] of Object.entries((D && D.params) || {})) if (!a.has(k)) a.set(k, v); return a; })();
+const MACHINE_VOULUE = ARGS.get("machine") || lireReglage("riviere_machine", null) || D.machine || "rameur";
+const DISC_VOULUE = MACHINE_VOULUE === "rameur" ? "eau" : "terre";
 const NIVEAU = (() => {
   let brouillon = null, unefois = null;
   try { brouillon = JSON.parse(sessionStorage.getItem("riviere_essai") || "null"); sessionStorage.removeItem("riviere_essai"); } catch (e) {}
   if (brouillon && Array.isArray(brouillon.pieces)) return Object.assign(brouillon, {brouillon: true});
   try { unefois = sessionStorage.getItem("riviere_niveau_une_fois"); sessionStorage.removeItem("riviere_niveau_une_fois"); } catch (e) {}
-  const garde = unefois || (FORCE ? null : lireReglage("riviere_niveau", null));
-  const n = CIRCUITS_PERSO[garde] || NIVEAUX[garde] || NIVEAUX[NIVEAU_SERVI] || Object.values(NIVEAUX)[0];
-  return CIRCUITS_PERSO[garde] === n ? Object.assign({}, n, {perso: true}) : n;
+  const garde = unefois || (FORCE ? null : lireReglage("riviere_niveau_" + DISC_VOULUE, null) || (DISC_VOULUE === "eau" ? lireReglage("riviere_niveau", null) : null));
+  let n = CIRCUITS_PERSO[garde] || NIVEAUX[garde] || NIVEAUX[NIVEAU_SERVI] || Object.values(NIVEAUX)[0];
+  if (!unefois && !FORCE && disciplineDe(n) !== DISC_VOULUE) {   // la machine d'une autre activité : un circuit de son activité
+    const bon = [NIVEAUX[NIVEAU_SERVI]].concat(Object.values(NIVEAUX), Object.values(CIRCUITS_PERSO)).find(x => x && !x.cache && disciplineDe(x) === DISC_VOULUE); if (bon) n = bon; }
+  return Object.values(CIRCUITS_PERSO).includes(n) ? Object.assign({}, n, {perso: true}) : n;
 })();
+const DISCIPLINE = disciplineDe(NIVEAU);
 const BIOME = region(BIOMES[NIVEAU.biome] ? NIVEAU.biome : Object.keys(BIOMES)[0]);
 const LIEUX = LIEUX_TOUS[NIVEAU.lieux] || LIEUX_TOUS[BIOME.lieux] || LIEUX_TOUS[NIVEAU.biome] || {};
 /* relancer la page (changer de circuit, de machine) : dans l'appli, la page est dans un cadre qu'on recharge sans recharger l'appli */

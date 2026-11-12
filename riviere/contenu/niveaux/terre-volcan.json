@@ -1,0 +1,33 @@
+{
+ "id": "terre-volcan",
+ "nom": "Le tour du volcan",
+ "discipline": "terre",
+ "biome": "kanto-routes",
+ "lieux": "kanto",
+ "graine": 21,
+ "nageur": 7,
+ "boucle": "gauche",
+ "allure": 1,
+ "elan": 60,
+ "surface": "goudron",
+ "massif": {"haut": 190, "rayon": 0.82, "cratere": true},
+ "note": "Le premier circuit sur la terre (12/11, vélo et elliptique) : on fait le tour du volcan de Cramois'Île. Départ dans la rue pavée du village, les champs, un sous-bois en chemin de terre, puis la route monte à flanc de volcan (talus de roche à gauche, ravin et glissières à droite) jusqu'au col des cendres et son belvédère, et redescend par les bois. Le volcan est au milieu du circuit (« massif ») : il fume, son cratère rougeoie.",
+ "pieces": [
+  {"nom": "Le village", "long": 150, "virage": 0, "large": 9, "g": "trottoir", "d": "trottoir", "surface": "paves",
+   "objets": [{"o": "ligne", "cote": "c", "a": 0}, {"o": "panneau", "cote": "d", "a": 12, "e": 2.6, "texte": "CRAMOIS'ÎLE", "face": "arrivant", "large": 3.6},
+    {"o": "centre", "cote": "g", "a": 60, "e": 9}, {"o": "boutique", "cote": "d", "a": 95, "e": 9},
+    {"o": "habitant", "nom": "nurse", "cote": "g", "a": 64, "e": 2.6}]},
+  {"nom": "Les champs", "long": 170, "virage": -40, "large": 8, "g": "champ", "d": "bas_cote", "monte": 2},
+  {"nom": "Le sous-bois", "long": 180, "virage": -35, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": 8,
+   "objets": [{"o": "mare", "cote": "g", "a": 90, "e": 12}, {"o": "pokemon", "num": 60, "cote": "g", "a": 92, "e": 9.5}]},
+  {"nom": "La montée", "long": 220, "virage": -55, "large": 7, "g": "talus", "d": "ravin", "monte": 18, "segment": "La montée du volcan",
+   "objets": [{"o": "panneau", "cote": "d", "a": 10, "e": 1.8, "texte": "COL DES CENDRES 1 KM", "face": "arrivant", "large": 4.4}]},
+  {"nom": "Le col des cendres", "long": 170, "virage": -60, "large": 7, "g": "cendres", "d": "ravin", "monte": 8, "segment": "La montée du volcan",
+   "objets": [{"o": "pokemon", "num": 22, "cote": "d", "a": 60, "e": 14, "bouge": {"type": "vol", "rayon": 26, "haut": 18, "vitesse": 7}}]},
+  {"nom": "Le belvédère", "long": 90, "virage": -20, "large": 8, "g": "cendres", "d": "ravin",
+   "objets": [{"o": "panneau", "cote": "d", "a": 30, "e": 2.2, "texte": "BELVÉDÈRE", "face": "arrivant", "large": 3.4}, {"o": "pokemon", "num": 37, "cote": "g", "a": 50, "e": 4}]},
+  {"nom": "La descente", "long": 240, "virage": -45, "large": 7, "g": "talus", "d": "ravin", "monte": -22, "segment": "La descente"},
+  {"nom": "Le bois", "long": 150, "virage": -10, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": -8},
+  {"nom": "Retour au village", "raccord": true, "rayon": 45, "large": 8, "g": "bas_cote", "d": "champ", "monte": "auto"}
+ ]
+}
