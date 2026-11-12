@@ -1,6 +1,6 @@
 /* ============ le vélo : la monture « cycliste ». Ton Pokémon pédale sur un vrai vélo en volumes (12/11, Kiki) ============ */
 // Le vélo est construit une fois, en pièces qui bougent : le cadre, la roue arrière, l'avant (fourche, roue, guidon, panier) qui braque,
-// le pédalier qui tourne. Le Pokémon est assis dessus : son animation de marche suit le pédalier (un pas = un demi-tour de pédale).
+// le pédalier qui tourne. Ton dresseur est dessus (cycliste.js : un personnage articulé dont les pieds suivent les pédales), ton Pokémon dans le panier.
 // Ce qui bouge : les roues selon la vitesse ; le pédalier selon la vitesse (roue libre en descente rapide, arrêt) ; le vélo penche dans
 // les virages (comme un vrai : selon la vitesse et la courbe), le guidon braque ; dans une côte raide, il se met en danseuse
 // (debout, le vélo bascule d'un côté à l'autre à chaque coup de pédale) ; il se cabre au saut et s'écrase un peu à la réception ;
@@ -79,6 +79,10 @@ function animerVelo(t, dt, S, p, y, N) {
   VELO.roue += v / (ROUE * ECH_VELO) * dt;
   const braquet = 1 + clamp(pente / .08, 0, 1) * .9;   // dans une côte, un petit braquet : les pédales tournent plus vite pour la même vitesse
   if (roule && !libre) VELO.pedale += v / TOUR_PEDALE * braquet * Math.PI * 2 * dt;
+  else {   // en roue libre, les pédales se mettent à plat ; à l'arrêt, la pédale gauche remonte devant, prête à repartir (cycliste.js : le pied droit à terre)
+    const c0 = VELO.pedale, cible = libre ? Math.round((c0 - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2 : Math.round((c0 - 1) / (Math.PI * 2)) * Math.PI * 2 + 1;
+    VELO.pedale += (cible - c0) * clamp(dt * 3, 0, 1);
+  }
   VELO.cadence = roule && !libre ? v / TOUR_PEDALE * braquet * 60 : 0;   // tours de pédale par minute (sans capteur de cadence, c'est elle qui s'affiche)
   VELO.debout += ((debout ? 1 : 0) - VELO.debout) * clamp(dt * 3, 0, 1);
   VELO.groupe = (VELO.groupe || 0) + (((libre && v > 9) ? 1 : 0) - (VELO.groupe || 0)) * clamp(dt * 3, 0, 1);   // en roue libre rapide : il se ramasse sur le vélo
@@ -95,12 +99,8 @@ function animerVelo(t, dt, S, p, y, N) {
   g.updateMatrixWorld();
   // le phare
   const ph = g.localToWorld(VELO.pos.set(.62, 1, 0)); Object.assign(VELO.lampe, {x: ph.x, y: ph.y, z: ph.z});
-  // ton Pokémon : assis sur la selle (debout en danseuse), ses jambes suivent les pédales
-  if (!N) return;
-  N.rangee(PARAMS.has("rang") ? +PARAMS.get("rang") : 3);   // de trois-quarts dos, comme la caméra le voit
-  const n = Math.max(1, N.pl.cols), phase = ((c / (Math.PI * 2)) % 1 + 1) % 1;
-  N.image(roule && !libre ? Math.floor(phase * n) % n : 0);
-  const assis = g.localToWorld(VELO.pos.set(-.3 + VELO.debout * .12, .27 + VELO.debout * .12 + Math.abs(Math.sin(c)) * .012 * (1 - VELO.debout) - VELO.groupe * .07, balance * .05));
-  N.m.position.copy(assis); N.regarder(); N.m.rotation.z = -(VELO.incl + balance * .09) * .9; N.m.scale.set(N.l * .92, N.h * .92, 1);   // un peu plus petit qu'à la nage : il tient sur la selle
+  // ton dresseur sur la selle (cycliste.js : il pédale, tient le guidon, se met en danseuse…), ton Pokémon dans le panier
+  const e = {c, v, roule, libre, balance, vibre};
+  animerCycliste(t, dt, S, e); g.updateMatrixWorld(); animerPanier(t, dt, S, N, e);
 }
-function cacherVelo() { if (VELO.g) { VELO.g.visible = false; VELO.lampe.y = -999; } if (typeof nageur !== "undefined" && nageur && nageur.m.rotation.z) { nageur.m.rotation.z = 0; nageur.m.scale.set(nageur.l, nageur.h, 1); } }
+function cacherVelo() { if (VELO.g) { VELO.g.visible = false; VELO.lampe.y = -999; } if (typeof cacherFantomeVelo === "function") cacherFantomeVelo(); if (typeof nageur !== "undefined" && nageur && nageur.m.rotation.z) { nageur.m.rotation.z = 0; nageur.m.scale.set(nageur.l, nageur.h, 1); } }

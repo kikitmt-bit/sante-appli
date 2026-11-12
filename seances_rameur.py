@@ -302,7 +302,8 @@ def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=No
     seances = (fichier or {}).get("seances") or []
     if page_html.startswith("riviere/"):  # le moteur 3D « La Rivière » (dossier riviere/) : un niveau = un fichier ; params = les options de l'adresse (machine, surface, banc…)
         from riviere import page as riviere_page
-        return riviere_page.page({"lien": lien_tablette, "m_coup": m_coup_montre(seances), "derniere": derniere(seances), "kiki": kiki, "params": params or {}}, page_html.split("/", 1)[1])
+        return riviere_page.page({"lien": lien_tablette, "m_coup": m_coup_montre(seances), "derniere": derniere(seances), "kiki": kiki, "params": params or {},
+                                  "dresseur": {k: v for k, v in (dresseur or {}).items() if v}}, page_html.split("/", 1)[1])  # dresseur : les couleurs du cycliste
     aujourd = aujourd or dt.date.today()
     m = modele(seances)
     donnees = {"lien": lien_tablette, "modele": m, "images": images, "sacha": sacha, "progression": progression(seances, aujourd, m),

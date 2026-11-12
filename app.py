@@ -1008,15 +1008,15 @@ if st.query_params.get("ecran") == "rameur":
         page_rameur = "rameur_circuit.html"
     else:
         page_rameur = "riviere/" + (q.get("riviere") if q.get("riviere") not in (None, "", "1") else "kanto-1km")
-    if not page_rameur.startswith("riviere/"):  # les anciens jeux seulement : La Rivière ne se sert ni de la partie Poké Fit ni de la carte du dresseur
+    if not page_rameur.startswith("riviere/"):  # les anciens jeux seulement : La Rivière ne se sert pas de la partie Poké Fit
         try:  # la région et les arènes de Poké Fit : le décor et les séances d'arène à débloquer
             voyage_r = pokemon.charger_jeu(lire, aujourd_r, JOUEUR)[1]["voyage"]
         except Exception as e:
             print("Partie illisible pour la tablette :", type(e).__name__, flush=True)
-        try:  # les couleurs de sa carte du dresseur, pour le rameur dessiné dans la barque
-            dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
-        except Exception:
-            pass
+    try:  # les couleurs de sa carte du dresseur : le rameur dessiné dans la barque, le cycliste de La Rivière (12/11)
+        dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
+    except Exception:
+        pass
     options_r = {k: q.get(k) for k in ("machine", "surface", "banc", "eco", "perf", "allure", "heure", "meteo") if q.get(k)}
     if q.get("riviere") not in (None, "", "1"):  # l'adresse demande CE circuit : le choix du menu, gardé sur la machine, ne passe pas devant
         options_r["force"] = "1"  # les options de La Rivière, passées par l'adresse (&banc=1, &surface=terre, &machine=elliptique…)
