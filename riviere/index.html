@@ -56,6 +56,16 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #panneau .alerte { color: #C03028; font-size: 20px; min-height: 0; }
 #panneau .etat-montre { font-size: 22px; color: #686850; }
 #panneau .etat-montre.la { color: #2E8A48; }
+#panneau h2 .num { display: inline-block; width: 1.15em; height: 1.15em; line-height: 1.15em; margin-right: 8px; text-align: center; border-radius: 50%; background: #D83830; color: #fff; font-size: .8em; vertical-align: .08em; }
+#panneau h2 { margin-top: 16px; }
+#panneau .machines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+#panneau button.machine, #panneau button.circuit { background: #fff; color: #383828; text-align: left; padding: 8px 12px; box-shadow: 2px 2px 0 #1B2440; }
+#panneau button.machine b, #panneau button.circuit b { display: block; font-weight: normal; font-size: 28px; }
+#panneau button.machine small, #panneau button.circuit small { display: block; font-size: 17px; color: #686850; line-height: 1.05; margin-top: 2px; }
+#panneau button.machine.on, #panneau button.circuit.on { background: #F8C838; }
+#panneau .circuits { display: flex; flex-direction: column; gap: 6px; }
+#panneau .depart { margin-top: 16px; border-top: 3px solid #484838; padding-top: 10px; }
+#panneau button:disabled { opacity: .45; cursor: default; }
 #panneau .choix { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 #panneau button { font: inherit; font-size: 26px; padding: 8px 14px; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
 #panneau button.rouge { background: #D83830; color: #fff; }
@@ -75,7 +85,7 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #bSon { position: fixed; right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(22vh, 17vw)); font: inherit; font-size: min(3.2vh, 2.6vw); padding: .1em .7em; color: #383828; background: #F8F8E8; border: 2px solid #484838; border-radius: 10px 4px; box-shadow: 2px 2px 0 #1B2440; cursor: pointer; opacity: .85; }
 #bSon.off { background: #A8A890; }
 #hPret { left: 50%; top: 34vh; transform: translateX(-50%); font-size: min(7vh, 5.4vw); text-align: center; white-space: nowrap; }
-@media (max-width: 520px) { #panneau .chiffres { grid-template-columns: repeat(2, 1fr); } #panneau h1 { font-size: 32px; } }
+@media (max-width: 520px) { #panneau .machines { grid-template-columns: 1fr; } #panneau button.machine b { font-size: 26px; } #panneau .chiffres { grid-template-columns: repeat(2, 1fr); } #panneau h1 { font-size: 32px; } }
 /* l'éditeur de circuits */
 #editeur { position: fixed; inset: 0; background: #22315A; color: #383828; display: flex; flex-direction: column; font-size: 20px; line-height: 1.1; z-index: 5; }
 #editeur button { font: inherit; font-size: 19px; padding: 4px 10px; border: 2px solid #484838; border-radius: 9px 4px; background: #F8F8E8; color: #383828; box-shadow: 2px 2px 0 #1B2440; cursor: pointer; }

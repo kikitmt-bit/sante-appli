@@ -16,7 +16,7 @@ const MACHINES = {
   // À l'elliptique, ton Pokémon court (par défaut) ou roule sur le vélo : au choix dans le menu (Kiki, 12/11), gardé sur la machine.
   elliptique: {nom: "Elliptique", monture: lireReglage("riviere_monture_elliptique", "coureur") === "cycliste" ? "cycliste" : undefined, geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: false},
 };
-const MACHINE_NOM = (() => { const m = MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";
+const MACHINE_NOM = (() => { const m = MACHINES[MACHINE_MENU] ? MACHINE_MENU : MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";
   if (DISCIPLINE === "eau") return "rameur";   // un circuit sur l'eau se rame ; un circuit sur la terre se fait à vélo ou à l'elliptique
   return m !== "rameur" ? m : MACHINES[lireReglage("riviere_machine_terre", null)] ? lireReglage("riviere_machine_terre", null) : "velo"; })();   // l'adresse, sinon le choix du menu, sinon l'appli
 const MACHINE = MACHINES[MACHINE_NOM];

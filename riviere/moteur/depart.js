@@ -29,7 +29,10 @@ function region(nom, vus = []) {
    dit de laquelle on veut : le circuit gardé pour cette activité (riviere_niveau_eau / riviere_niveau_terre), sinon le premier qui convient. */
 const disciplineDe = n => n ? n.discipline || (["terre", "goudron", "paves"].includes(n.surface) ? "terre" : "eau") : "eau";
 const ARGS = (() => { const a = new URLSearchParams(location.search); for (const [k, v] of Object.entries((D && D.params) || {})) if (!a.has(k)) a.set(k, v); return a; })();
-const MACHINE_VOULUE = ARGS.get("machine") || lireReglage("riviere_machine", null) || D.machine || "rameur";
+// la machine : celle choisie au menu pendant cette visite, sinon celle de l'adresse, sinon celle gardée sur l'appareil
+const MACHINE_MENU = (() => { try { return sessionStorage.getItem("riviere_machine_menu"); } catch (e) { return null; } })();
+const MACHINE_CHOISIE = !!(MACHINE_MENU || ARGS.get("machine") || lireReglage("riviere_machine", null));   // sinon le menu demande d'abord la machine
+const MACHINE_VOULUE = MACHINE_MENU || ARGS.get("machine") || lireReglage("riviere_machine", null) || D.machine || "rameur";
 const DISC_VOULUE = MACHINE_VOULUE === "rameur" ? "eau" : "terre";
 const NIVEAU = (() => {
   let brouillon = null, unefois = null;
