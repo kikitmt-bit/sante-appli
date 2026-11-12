@@ -15,13 +15,13 @@ function fermerPanneau() { $("panneau").hidden = true; $("panneau").innerHTML = 
 function majBoutons() { $("bAuto").hidden = S.mode !== "essai"; $("bFin").hidden = !S.mode || S.pause; $("hPret").hidden = !(S.mode === "vraie" && !S.lance && !S.pause); }
 
 /* le menu : ce qu'on voit en arrivant (refait le 12/11, Kiki : « cohérent et pratique »). Il se lit de haut en bas, dans l'ordre où l'on choisit :
-   1. la machine (trois grands boutons : rameur, elliptique, vélo) ; 2. les circuits de cette machine seulement (l'eau pour le rameur, la terre
-   pour l'elliptique et le vélo), créer ou générer le sien ; 3. les réglages, repliés (ambiance, adversaires, fantôme, capteur Bluetooth, son) ;
+   1. la machine (trois grands boutons : rameur, skieur de fond, vélo) ; 2. les circuits de cette machine seulement (l'eau pour le rameur, la terre
+   pour le skieur de fond et le vélo), créer ou générer le sien ; 3. les réglages, repliés (ambiance, adversaires, fantôme, capteur Bluetooth, son) ;
    tout en bas, l'état de la montre et « Commencer la séance ». Tant qu'aucune machine n'a été choisie sur cet appareil, seule la 1re étape se montre. */
 const HEURES_MENU = [["circuit", "Du circuit"], ["reelle", "Heure réelle"], ["matin", "Matin"], ["jour", "Jour"], ["soir", "Soir"], ["nuit", "Nuit"], ["cycle", "Journée qui défile"]];
 const METEOS_MENU = [["circuit", "Du circuit"], ["beau", "Beau"], ["variable", "Variable"], ["nuages", "Nuages"], ["pluie", "Pluie"], ["orage", "Orage"], ["brume", "Brume"], ["neige", "Neige"]];
 const ACTIVITE = {rameur: "eau", elliptique: "terre", velo: "terre"};   // l'activité de chaque machine : ses circuits à elle (eau : rivières ; terre : routes et chemins)
-const MACHINES_MENU = [["rameur", "Rameur", "Sur l'eau · la montre compte tes coups"], ["elliptique", "Elliptique", "Sur la terre · la montre compte tes tours"], ["velo", "Vélo", "Sur la terre · home trainer Bluetooth"]];
+const MACHINES_MENU = [["rameur", "Rameur", "Sur l'eau · la montre compte tes coups"], ["elliptique", "Skieur de fond", "L'appareil du parc, pieds à plat · la montre compte tes tours"], ["velo", "Vélo", "Sur la terre · home trainer Bluetooth"]];
 const boutons = (liste, choisi, attr) => liste.map(([k, t]) => `<button class="opt${choisi === k ? " on" : ""}" data-${attr}="${k}">${t}</button>`).join("");
 const libelle = (liste, k) => ((liste.find(x => x[0] === k) || liste[0])[1]).toLowerCase();
 function choisirCircuit(id) {   // un autre circuit : on le garde pour les prochaines fois, et la page repart avec lui
@@ -36,19 +36,20 @@ function choisirMachine(m) {   // une autre machine : gardée sur l'appareil ; p
 }
 function ouvrirMenu() {
   S.mode = null; S.pause = false; majBoutons();
-  const enc = lireLS(ENCOURS, null), reprise = enc && enc.nb > 0 && Date.now() - enc.maj < 12 * 3600e3 ? enc : null;
+  const enc = lireLS(ENCOURS, null), reprise = enc && enc.nb > 0 && Date.now() - enc.maj < 12 * 3600e3 && (enc.machine || "rameur") === MACHINE_NOM && MACHINE.enregistre ? enc : null;
+  if (enc && !reprise && (enc.machine || "rameur") === MACHINE_NOM) ecrireLS(ENCOURS, null);   // une séance qui ne s'enregistre pas (skieur de fond) ou trop vieille : rien à récupérer
   const attend = (lireLS(ATTENTE, []) || []).length, der = D.derniere;
   const choisie = MACHINE_CHOISIE || !!lireReglage("riviere_machine", null), disc = ACTIVITE[MACHINE_NOM], bonne = disc === DISCIPLINE;
   const circuits = Object.entries(NIVEAUX).filter(([k, n]) => !n.cache && disciplineDe(n) === disc).map(([k, n]) => [k, n.nom || k, false])
     .concat(Object.entries(CIRCUITS_PERSO).filter(([k, n]) => disciplineDe(n) === disc).map(([k, n]) => [k, n.nom || k, true]));
   const courant = k => bonne && !NIVEAU.brouillon && (NIVEAU.id || "") === k;
   const hChoix = PARAMS.get("heure") || lireReglage("riviere_heure", "circuit") || "circuit", mChoix = PARAMS.get("meteo") || lireReglage("riviere_meteo", "circuit") || "circuit";
-  const pour = {rameur: "le rameur", elliptique: "l'elliptique", velo: "le vélo"}[MACHINE_NOM];
+  const pour = {rameur: "le rameur", elliptique: "le skieur de fond", velo: "le vélo"}[MACHINE_NOM];
   const p = panneau(`<h1>Ta séance</h1>
     ${attend ? `<p class="alerte">Une séance attend d'être envoyée : recharge la page.</p>` : ""}
     <h2><span class="num">1</span>Ta machine</h2>
     <div class="machines">${MACHINES_MENU.map(([k, t, s]) => `<button class="machine${choisie && k === MACHINE_NOM ? " on" : ""}" data-machine="${k}"><b>${t}</b><small>${s}</small></button>`).join("")}</div>
-    ${choisie && MACHINE_NOM === "elliptique" ? `<div class="fantomes"><small>TON POKÉMON</small>${boutons([["coureur", "Il court"], ["cycliste", "À vélo"]], MACHINE.monture === "cycliste" ? "cycliste" : "coureur", "monture")}</div>` : ""}
+    ${choisie && MACHINE_NOM === "elliptique" ? `<div class="fantomes"><small>CE QUE TU VOIS</small>${boutons([["patineur", "En rollers"], ["coureur", "Ton Pokémon court"], ["cycliste", "À vélo"]], MACHINE.monture || "coureur", "monture")}<p class="petit">${VISUEL ? "Le décor défile comme sur un vélo (15 km/h à ton allure habituelle) ; les chiffres restent tes vrais mètres." : "Ton Pokémon court à ta vraie vitesse."}</p></div>` : ""}
     ${!choisie ? `<p class="petit">Choisis ta machine : ses circuits apparaîtront ensuite.</p>` : `
     <h2><span class="num">2</span>Ton circuit</h2>
     ${NIVEAU.brouillon ? `<p class="petit">Tu essaies un brouillon de l'éditeur : ${NIVEAU.nom}.</p>` : ""}
@@ -70,7 +71,7 @@ function ouvrirMenu() {
       <p class="etat-montre" id="mMontre"></p>
       ${der ? `<p class="petit">Dernière séance : ${der.quand}${der.distance ? " · " + metres(der.distance) + " m" : ""}${der.tours ? " · " + der.tours + " tour" + (der.tours > 1 ? "s" : "") : ""}</p>` : ""}
       <div class="choix">
-        ${reprise ? `<button class="rouge" id="mReprise">▶ Récupérer la séance interrompue (${fmt(reprise.t)})</button>` : ""}
+        ${reprise ? `<button class="rouge" id="mReprise">▶ Récupérer la séance interrompue (${fmt(reprise.t)})</button><button class="sec" id="mJeter">Annuler la séance interrompue</button>` : ""}
         <button class="rouge" id="mGo" ${bonne ? "" : "disabled"}>▶ Commencer la séance</button>
         <button class="sec" id="mEssai" ${bonne ? "" : "disabled"}>Essayer sans montre</button>
       </div></div>`}`);
@@ -81,10 +82,12 @@ function ouvrirMenu() {
   p.querySelector("#mGo").onclick = e => { if (reprise && ++sur < 2) { e.target.textContent = "La séance interrompue sera perdue : touche encore"; return; } ecrireLS(ENCOURS, null); commencer("vraie"); };
   p.querySelector("#mEssai").onclick = () => commencer("essai");
   if (reprise) p.querySelector("#mReprise").onclick = () => ouvrirFin(reprise, true);
+  let jet = 0;   // deux touchers : elle ne compterait jamais
+  if (reprise) p.querySelector("#mJeter").onclick = e => { if (++jet < 2) { e.target.textContent = "Elle ne comptera pas : touche encore pour l'annuler"; return; } ecrireLS(ENCOURS, null); ouvrirMenu(); };
   if (NIVEAU.brouillon) p.querySelector("#mEditeur2").onclick = () => ouvrirEditeur();
   p.querySelector("#mEditeur").onclick = () => ouvrirEditeur();
   p.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { if (!courant(b.dataset.c)) { b.querySelector("b").textContent = "Chargement…"; choisirCircuit(b.dataset.c); } });
-  p.querySelectorAll("[data-monture]").forEach(b => b.onclick = () => { if (b.dataset.monture === (MACHINE.monture === "cycliste" ? "cycliste" : "coureur")) return; ecrireReglage("riviere_monture_elliptique", b.dataset.monture); b.textContent = "Chargement…"; relancer(); });
+  p.querySelectorAll("[data-monture]").forEach(b => b.onclick = () => { if (b.dataset.monture === (MACHINE.monture || "coureur")) return; ecrireReglage("riviere_monture_elliptique", b.dataset.monture); b.textContent = "Chargement…"; relancer(); });
   un("[data-h]", null, b => { ecrireReglage("riviere_heure", b.dataset.h); reglerAmbiance(b.dataset.h === "circuit" ? NIVEAU.heure || "jour" : b.dataset.h, null); });   // on voit le ciel changer derrière le menu
   un("[data-m]", null, b => { ecrireReglage("riviere_meteo", b.dataset.m); reglerAmbiance(null, b.dataset.m === "circuit" ? NIVEAU.meteo || "beau" : b.dataset.m); });
   un("[data-r]", null, b => choisirRivaux(b.dataset.r));
@@ -100,7 +103,7 @@ function majMenuMontre() {
   const la = MONTRE.sujet && MONTRE.vu && performance.now() - MONTRE.vu < 12000;
   el.className = "etat-montre" + (la ? " la" : "");
   if (MACHINE_NOM === "velo") { el.className = "etat-montre" + (BT.appareil ? " la" : ""); el.textContent = BT.appareil ? BT.nom + " relié" : "Relie ton home trainer : Réglages, Capteur Bluetooth"; return; }
-  el.textContent = !MONTRE.sujet ? "Pas de lien avec la montre ici : seul l'essai marche." : la ? "Montre reliée" + (MONTRE.h ? " · ♥ " + MONTRE.h : "") : "Sur la montre : « Capteurs », " + MACHINE.nom + ", ● Enregistrer";
+  el.textContent = !MONTRE.sujet ? "Pas de lien avec la montre ici : seul l'essai marche." : la ? "Montre reliée" + (MONTRE.h ? " · ♥ " + MONTRE.h : "") : "Sur la montre : « Capteurs », " + (MACHINE.montre || MACHINE.nom) + ", ● Enregistrer";
 }
 setInterval(majMenuMontre, 1000);
 
@@ -115,8 +118,8 @@ function commencer(mode) {
 }
 
 /* pendant la séance : on la garde sur la machine toutes les 10 s (un onglet fermé, une coupure : on la récupère au menu) */
-const bilanDe = () => ({debutMur: S.debutMur, t: S.t, nb: S.nb, dist: MACHINE.continu ? S.dist : Math.max(S.dist, S.nb * M_COUP), tours: S.tours.slice(), segments: SEG.faits.slice(), maj: Date.now()});
-setInterval(() => { if (S.mode === "vraie" && S.lance && !S.pause) ecrireLS(ENCOURS, bilanDe()); }, 10000);
+const bilanDe = () => ({machine: MACHINE_NOM, debutMur: S.debutMur, t: S.t, nb: S.nb, dist: MACHINE.continu ? S.dist : Math.max(S.dist, S.nb * M_COUP), tours: S.tours.slice(), segments: SEG.faits.slice(), maj: Date.now()});
+setInterval(() => { if (S.mode === "vraie" && S.lance && !S.pause && MACHINE.enregistre) ecrireLS(ENCOURS, bilanDe()); }, 10000);
 
 function mettrePause() { S.pause = true; S.pauseDebut = performance.now(); majBoutons(); }
 function reprendre() { S.pauseTot += performance.now() - S.pauseDebut; S.pause = false; fermerPanneau(); majBoutons(); }
@@ -133,9 +136,10 @@ function resume(b) {
     ${(b.segments || []).length ? `<div class="tours">${b.segments.map(g => `<span>${g.nom} · ${chrono(g.t)}</span>`).join("")}</div>` : ""}`;
 }
 function finEssai() {
-  const p = panneau(`<h1>Fin de l'essai</h1>${resume(bilanDe())}<p class="petit">${S.mode === "essai" ? "Un essai n'est jamais enregistré." : "Les séances de cette machine ne sont pas encore enregistrées dans l'appli."}</p>
-    <div class="choix"><button class="rouge" id="fMenu">▶ Retour au menu</button><button class="sec" id="fReprendre">Reprendre</button></div>`);
-  p.querySelector("#fMenu").onclick = ouvrirMenu;
+  const essai = S.mode === "essai";
+  const p = panneau(`<h1>${essai ? "Fin de l'essai" : "Fin de la séance"}</h1>${resume(bilanDe())}<p class="petit">${essai ? "Un essai n'est jamais enregistré." : "Les séances de cette machine ne sont pas encore enregistrées dans l'appli : celle-ci ne comptera nulle part."}</p>
+    <div class="choix"><button class="rouge" id="fMenu">▶ ${essai ? "Retour au menu" : "Terminer (rien n'est gardé)"}</button><button class="sec" id="fReprendre">Reprendre</button></div>`);
+  p.querySelector("#fMenu").onclick = () => { ecrireLS(ENCOURS, null); ouvrirMenu(); };
   p.querySelector("#fReprendre").onclick = reprendre;
 }
 
@@ -143,7 +147,8 @@ function finEssai() {
 function ouvrirFin(b, recuperee) {
   if (!b.nb) { ecrireLS(ENCOURS, null); ouvrirMenu(); return; }
   const champs = {dist: "", min: "", sec: "", kcal: ""}; let actif = "dist", jeter = 0;
-  const p = panneau(`<h1>${recuperee ? "Séance interrompue" : "Fin de la séance"}</h1>${resume(b)}
+  const p = panneau(`<h1>${recuperee ? "Séance interrompue" : "Fin de la séance"}</h1>
+    <div class="choix"><button class="sec" id="fJeter">✕ Annuler la séance (elle ne comptera pas)</button></div>${resume(b)}
     <h2>Ce qu'affiche ton rameur</h2>
     <div class="saisie">
       <label data-c="dist"><small>DISTANCE</small><span></span> m</label>
@@ -156,7 +161,6 @@ function ouvrirFin(b, recuperee) {
     <div class="choix">
       <button class="rouge" id="fGarder">▶ Enregistrer la séance</button>
       ${recuperee ? "" : `<button class="sec" id="fReprendre">Reprendre</button>`}
-      <button class="sec" id="fJeter">Jeter la séance</button>
     </div>`);
   const maj = () => p.querySelectorAll(".saisie label").forEach(l => { const c = l.dataset.c; l.classList.toggle("actif", c === actif); l.querySelector("span").textContent = champs[c] || (c === "dist" ? "—" : c === "kcal" ? "—" : "--"); });
   p.querySelectorAll(".saisie label").forEach(l => l.onclick = () => { actif = l.dataset.c; maj(); });
@@ -165,7 +169,7 @@ function ouvrirFin(b, recuperee) {
     if (actif === "sec" && +champs.sec > 59) champs.sec = "59"; maj(); });
   maj();
   if (!recuperee) p.querySelector("#fReprendre").onclick = reprendre;
-  p.querySelector("#fJeter").onclick = e => { if (++jeter < 2) { e.target.textContent = "Sûr ? Touche encore pour jeter"; return; } ecrireLS(ENCOURS, null); ouvrirMenu(); };
+  p.querySelector("#fJeter").onclick = e => { if (++jeter < 2) { e.target.textContent = "Sûr ? Touche encore : rien ne sera gardé"; return; } ecrireLS(ENCOURS, null); ouvrirMenu(); };
   p.querySelector("#fGarder").onclick = () => {
     const n = c => (+champs[c] > 0 ? +champs[c] : null), temps = n("min") || n("sec") ? (n("min") || 0) * 60 + (n("sec") || 0) : null;
     const err = garder(b, {distance: n("dist"), temps_s: temps, kcal: n("kcal")});

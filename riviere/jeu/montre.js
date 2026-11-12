@@ -64,7 +64,7 @@ function majMontre() {
   const el = $("hMontre"); if (!el) return;
   const la = MONTRE.vu && performance.now() - MONTRE.vu < 12000;
   el.classList.toggle("la", !!la);
-  el.textContent = la ? "MONTRE RELIÉE" : "Montre : ouvre « Capteurs », " + MACHINE.nom + ", ● Enregistrer";
+  el.textContent = la ? "MONTRE RELIÉE" : "Montre : ouvre « Capteurs », " + (MACHINE.montre || MACHINE.nom) + ", ● Enregistrer";
 }
 if (MONTRE.sujet) { $("hMontre").hidden = false; RELAIS.forEach(ecouterRelais); majMontre(); setInterval(majMontre, 1000); }
 window.__montre = () => Object.assign({}, MONTRE);

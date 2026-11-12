@@ -173,6 +173,17 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
 - **Monture** : `MONTURES.velo = {enfonce: 0, foulee: 0}` ; une surface choisit sa monture.
 - **Machine de sport** : `jeu/allure.js`, `MACHINES` (vrais mètres par geste, allure du décor, records à part). `?machine=elliptique`, `?machine=velo`.
   Une machine `continu` reçoit une vitesse ; `physique` : des watts deviennent une vitesse (poids, pente, air) et le décor ne triche plus avec la pente.
+- **Le skieur de fond** (12/11, Kiki : son appareil du parc n'est pas un elliptique, les pieds restent à plat, mouvement de ski de fond) : la clé
+  reste `elliptique` (sujet de la montre, records), seul le nom affiché change (`nom`, `montre` = le nom sur la montre). Au menu, « Ce que tu
+  vois » : **en rollers** (par défaut, monture `patineur` : ton dresseur de cycliste.js sans le vélo, `animerPatineur`, poussées en V
+  synchronisées sur la cadence, ton Pokémon court à côté : `animerCompagnon`), ton Pokémon qui court (l'ancienne vue), ou à vélo.
+  **Vitesse vue** (`VISUEL`, `kmhVus`, `allureVue` dans allure.js) en rollers et à vélo : 15 km/h de décor à l'allure habituelle (55 tours/min),
+  20 à +25 %, 25 à +50 %, 30 au plus ; une vraie côte freine jusqu'à ~5-6 km/h (`1 - pente × 6`, au moins 0,38), une descente lance.
+  Les chiffres affichés restent les vrais. Records et fantômes à part par vue (`CLE_MACHINE`).
+- **Plein écran** (jeu.js, `PLEIN`) : demandé au premier toucher (dans l'appli : la page de l'appli entière), petit bouton sous « Son » pour
+  en sortir ou y revenir ; sorti une fois, il ne revient plus tout seul pendant la visite (`riviere_plein_non`, sessionStorage).
+- **Annuler une séance** : à la fin d'une vraie séance au rameur, « ✕ Annuler la séance » en haut (deux touchers) ; au menu, « Annuler la
+  séance interrompue ». Une machine qui n'enregistre pas (skieur de fond) n'écrit plus de séance interrompue (`riviere_encours`, avec `machine`).
 - **Capteur Bluetooth** (`jeu/capteurs.js`, Chrome ou Edge) : home trainer, vélo, rameur ou elliptique connecté (FTMS), capteur de puissance,
   de cadence, ceinture cardio. Un home trainer pilotable reçoit la pente du circuit (`BT.difficulte`, 50 %). **Écrit sans appareil** : la
   lecture des trames se contrôle par `window.__trames()`, à essayer sur un vrai home trainer.

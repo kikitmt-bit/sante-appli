@@ -19,7 +19,7 @@ function vitesseCapteur(v) { S.v = v; S.capteur = true; }   // pour un capteur d
 const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (MACHINE.monture === "cycliste" && MACHINE.physique && n < 2) return VELO.cadence || 0; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };   // (à vélo sans capteur de cadence : celle des pédales qu'on voit tourner)
 
 /* les tours d'un circuit : le chrono part au premier passage de la ligne ; le meilleur tour est gardé sur cette machine, par machine de sport */
-const CLE_RECORD = "riviere_" + (MACHINE_NOM === "rameur" ? "" : MACHINE_NOM + "_") + (NIVEAU.id || NIVEAU.nom) + "_" + (NIVEAU.distance || Math.round(TOUR_M)) + "m_record";
+const CLE_RECORD = "riviere_" + (MACHINE_NOM === "rameur" ? "" : CLE_MACHINE + "_") + (NIVEAU.id || NIVEAU.nom) + "_" + (NIVEAU.distance || Math.round(TOUR_M)) + "m_record";
 let record = 0; try { record = +localStorage.getItem(CLE_RECORD) || 0; } catch (e) {}
 const chrono = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0") + "," + Math.floor(s * 10 % 10);
 function annoncer(texte) { const a = $("annonce"); a.textContent = texte; a.classList.remove("vu"); void a.offsetWidth; a.classList.add("vu"); }
@@ -85,7 +85,7 @@ function boucle(now) {
     if (S.auto && !MACHINE.physique && S.t >= S.prochain) { coup(.5 + Math.random() * .35); S.prochain = S.t + 60 / (MACHINE.cadence * (1 + .12 * Math.sin(S.t * .05))); }
     capteursMaj(vraiDt);   // un capteur de vitesse ou de puissance (home trainer) : c'est lui qui donne S.v
     const e = Math.exp(-vraiDt / TAU), f = 1 - Math.exp(-vraiDt / LISSE); if (!S.capteur) S.v *= e; S.v1 += (S.v - S.v1) * f; S.v2 += (S.v1 - S.v2) * f;
-    const pas = S.v2 * vraiDt, A = (MACHINE.physique ? PISTE.ALL0 : PISTE.ALL)[idx(S.s)] * MACHINE.allure; S.s += pas * A; S.dist += pas; S.vd = S.v2 * A;   // une machine qui ressent la pente pour de vrai : le décor ne triche plus avec elle
+    const pas = S.v2 * vraiDt, A = VISUEL ? allureVue(idx(S.s), S.v2) : (MACHINE.physique ? PISTE.ALL0 : PISTE.ALL)[idx(S.s)] * MACHINE.allure; S.s += pas * A; S.dist += pas; S.vd = S.v2 * A;   // une machine qui ressent la pente pour de vrai : le décor ne triche plus avec elle
     parcoursMaj();
   } else S.vd = 0;
   S.croisiere = (MACHINE.physique ? 7.5 : MACHINE.cadence * M_COUP / 60) * MACHINE.allure * ALLURE;   // pour le zoom de la caméra : la vitesse du décor à l'allure habituelle
@@ -113,6 +113,26 @@ function majAuto() { $("bAuto").classList.toggle("on", S.auto); }
 $("bAuto").addEventListener("pointerdown", e => { e.stopPropagation(); S.auto = !S.auto; S.prochain = S.t + .3; majAuto(); });
 function majSon() { $("bSon").classList.toggle("off", !SON.actif); $("bSon").textContent = SON.actif ? "Son" : "Son coupé"; }
 $("bSon").addEventListener("pointerdown", e => { e.stopPropagation(); sonBasculer(); majSon(); });
+/* le plein écran (Kiki, 12/11) : demandé tout seul au premier toucher (un navigateur ne l'accorde qu'après un geste) ; le petit bouton sous « Son »
+   en sort ou y revient. Dans l'appli, c'est la page de l'appli qui passe en plein écran (le jeu la recouvre déjà) ; si tu en sors (bouton, Échap),
+   il ne revient plus tout seul pendant cette visite. */
+const PLEIN = {doc: (() => { try { return window.parent !== window && window.parent.document.documentElement ? window.parent.document : document; } catch (e) { return document; } })(), non: false, voulu: false};
+try { PLEIN.non = sessionStorage.getItem("riviere_plein_non") === "1"; } catch (e) {}
+const enPlein = () => !!(PLEIN.doc.fullscreenElement || PLEIN.doc.webkitFullscreenElement);
+function pleinEcran(oui) {
+  const d = PLEIN.doc, el = d.documentElement;
+  try {
+    if (oui && !enPlein()) { const f = el.requestFullscreen || el.webkitRequestFullscreen; if (f) { PLEIN.voulu = true; const r = f.call(el, {navigationUI: "hide"}); if (r && r.catch) r.catch(() => {}); } }
+    else if (!oui && enPlein()) { const f = d.exitFullscreen || d.webkitExitFullscreen; if (f) f.call(d); }
+  } catch (e) {}
+}
+function majPlein() { $("bPlein").textContent = enPlein() ? "✕ Plein écran" : "⛶ Plein écran"; $("bPlein").hidden = !(PLEIN.doc.fullscreenEnabled || PLEIN.doc.webkitFullscreenEnabled); }
+function pasEnPlein(oui) { PLEIN.non = oui; try { sessionStorage.setItem("riviere_plein_non", oui ? "1" : "0"); } catch (e) {} }
+for (const ev of ["pointerup", "click"]) addEventListener(ev, e => { if (!PLEIN.non && !enPlein() && e.target !== $("bPlein")) pleinEcran(true); }, true);
+for (const ev of ["fullscreenchange", "webkitfullscreenchange"]) PLEIN.doc.addEventListener(ev, () => { if (!enPlein() && PLEIN.voulu) pasEnPlein(true); majPlein(); });
+$("bPlein").addEventListener("pointerdown", e => e.stopPropagation());
+$("bPlein").addEventListener("click", e => { e.stopPropagation(); const oui = !enPlein(); pasEnPlein(!oui); pleinEcran(oui); });
+majPlein();
 /* l'écran ne s'éteint pas pendant la séance : on le redemande à chaque retour sur la page (la demande se perd dès qu'on la quitte) */
 const VEILLE = {verrou: null};
 async function eveiller() {

@@ -112,7 +112,7 @@ function edPanneau() {
     h += `<div class="ed-form"><label class="ed-l"><span>Nom du circuit</span><input type="text" data-n="nom" value="${esc(n.nom)}"></label>`
       + choix("Forme", "n:boucle", n.boucle === "huit" ? "huit" : n.boucle ? "boucle" : "ouvert", [["boucle", "une boucle (des tours)"], ["ouvert", "un parcours de A à B"]].concat(disciplineDe(n) === "terre" ? [["huit", "un 8 (un carrefour)"]] : []))
       + (Object.keys(BIOMES).length > 1 ? choix("Région", "n:biome", n.biome, Object.keys(BIOMES).map(k => [k, BIOMES[k].nom || k])) : "")
-      + choix("Activité", "n:discipline", disciplineDe(n), [["eau", "rameur : une rivière"], ["terre", "vélo, elliptique : routes et chemins"]])
+      + choix("Activité", "n:discipline", disciplineDe(n), [["eau", "rameur : une rivière"], ["terre", "vélo, skieur de fond : routes et chemins"]])
       + (disciplineDe(n) === "terre" ? choix("Revêtement", "n:surface", n.surface || "terre", [["terre", "chemin de terre"], ["goudron", "route goudronnée"], ["paves", "rue pavée"]]) : "")
       + choix("Heure", "n:heure", n.heure || "jour", HEURES_MENU.filter(x => x[0] !== "circuit")) + choix("Temps", "n:meteo", n.meteo || "beau", METEOS_MENU.filter(x => x[0] !== "circuit"))
       + `<label class="ed-l"><span>Décor (la graine)</span><button data-act="graine">🎲 Autre tirage du décor</button><b>${n.graine || 1}</b></label>`
@@ -124,7 +124,7 @@ function edPanneau() {
       ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"]]
       : [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"]];
     h += `<div class="ed-form"><p class="ed-note">Choisis l'activité, coche ce que tu veux y trouver, puis « Générer ». Le circuit obtenu se retouche pièce par pièce.</p>`
-      + choix("Activité", "g:activite", G.activite || "eau", [["eau", "rameur : une rivière"], ["terre", "vélo, elliptique : routes et chemins"]])
+      + choix("Activité", "g:activite", G.activite || "eau", [["eau", "rameur : une rivière"], ["terre", "vélo, skieur de fond : routes et chemins"]])
       + (terre ? `<p class="ed-note">Sur la terre : des routes posées sur le sol, des rues pavées, des chemins en sous-bois, des cols ; un volcan au milieu d'une boucle ; un 8 qui se croise à un carrefour.</p>` : "")
       + champ("Longueur", "g:km", G.km, .4, terre ? 6 : 4, .1, " km")
       + choix("Virages", "g:virages", G.virages || "quelques", [["droit", "presque droit"], ["quelques", "quelques virages"], ["sinueux", "sinueux"], ["tres", "très sinueux (épingles)"]])

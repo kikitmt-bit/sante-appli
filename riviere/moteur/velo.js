@@ -66,6 +66,7 @@ function construireVelo() {
   for (const [dx, dz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) A.boite(bx + dx * l / 2, by, dz * p / 2, .02, h, .02, blanc);
   av.add(A.maille());
   VELO.roueAv = roueVelo(roues); VELO.roueAv.position.set(FR[0], FR[1], 0); av.add(VELO.roueAv);
+  VELO.pieces = g.children.slice();   // les pièces du vélo (le cycliste viendra s'ajouter au groupe) : cachées quand il est en rollers
   MONDE.lumieres.push(VELO.lampe = {x: 0, y: -999, z: 0, c: PAL.lumiere, t: 3, toujours: false});   // la lumière du phare, qui suit le vélo
 }
 
@@ -74,11 +75,13 @@ function animerVelo(t, dt, S, p, y, N) {
   if (!VELO.g) construireVelo();
   const g = VELO.g, i = idx(S.s), v = Math.max(0, S.vd || 0), k = PISTE.COURB[idx(S.s + 3)], pente = PISTE.PENTE[i], k1 = clamp(dt * 4, 0, 1), surf = surfaceEn(S.s);
   g.visible = true;
+  const patins = typeof MACHINE !== "undefined" && MACHINE.monture === "patineur";   // en rollers : le même groupe (il penche, suit la pente, saute), sans le vélo
+  if (VELO.patins !== patins) { VELO.patins = patins; for (const m of VELO.pieces) m.visible = !patins; }
   // pédaler ou non : roue libre dans une descente rapide, rien à l'arrêt ; en danseuse dans une côte raide
-  const roule = v > .25, libre = pente < -.035 && v > 5, debout = pente > .055 && roule && !S.enAir;
+  const roule = v > .25, libre = pente < -.035 && v > 5, debout = pente > .055 && roule && !S.enAir && !patins;
   VELO.roue += v / (ROUE * ECH_VELO) * dt;
   const braquet = 1 + clamp(pente / .08, 0, 1) * .9;   // dans une côte, un petit braquet : les pédales tournent plus vite pour la même vitesse
-  if (roule && !libre) VELO.pedale += v / TOUR_PEDALE * braquet * Math.PI * 2 * dt;
+  if (roule && !libre) VELO.pedale += v / ((typeof MACHINE !== "undefined" && MACHINE.tourVu) || TOUR_PEDALE) * (patins ? 1 : braquet) * Math.PI * 2 * dt;   // au skieur de fond : un tour de jambes de la machine = un tour de pédale (ou deux poussées)
   else {   // en roue libre, les pédales se mettent à plat ; à l'arrêt, la pédale gauche remonte devant, prête à repartir (cycliste.js : le pied droit à terre)
     const c0 = VELO.pedale, cible = libre ? Math.round((c0 - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2 : Math.round((c0 - 1) / (Math.PI * 2)) * Math.PI * 2 + 1;
     VELO.pedale += (cible - c0) * clamp(dt * 3, 0, 1);
@@ -88,7 +91,7 @@ function animerVelo(t, dt, S, p, y, N) {
   VELO.groupe = (VELO.groupe || 0) + (((libre && v > 9) ? 1 : 0) - (VELO.groupe || 0)) * clamp(dt * 3, 0, 1);   // en roue libre rapide : il se ramasse sur le vélo
   const c = VELO.pedale, balance = Math.sin(c) * VELO.debout;
   // pencher dans le virage (comme un vrai vélo : selon la vitesse et la courbe), braquer, se cabrer dans les sauts
-  const incl = roule ? clamp(Math.atan(v * v * k / 9.8) * 1.5, -.42, .42) : .12;
+  const incl = roule ? clamp(Math.atan(v * v * k / 9.8) * 1.5, -.42, .42) : patins ? 0 : .12;
   VELO.incl += (incl - VELO.incl) * k1; VELO.braq += (clamp(k * 7, -.3, .3) - VELO.braq) * k1;
   const tang = Math.atan(pente) + (M.air ? clamp(M.vy * .05, -.3, .35) : 0); VELO.tangage += (tang - VELO.tangage) * clamp(dt * 6, 0, 1);
   VELO.choc *= Math.exp(-dt * 7);
@@ -98,10 +101,11 @@ function animerVelo(t, dt, S, p, y, N) {
   VELO.roueAr.rotation.z = -VELO.roue; VELO.roueAv.rotation.z = -VELO.roue; VELO.pedalier.rotation.z = -c; VELO.avant.rotation.y = -VELO.braq + balance * .06;
   g.updateMatrixWorld();
   // le phare
-  const ph = g.localToWorld(VELO.pos.set(.62, 1, 0)); Object.assign(VELO.lampe, {x: ph.x, y: ph.y, z: ph.z});
+  const ph = g.localToWorld(VELO.pos.set(.62, 1, 0)); Object.assign(VELO.lampe, {x: ph.x, y: patins ? -999 : ph.y, z: ph.z});
   // ton dresseur sur la selle (cycliste.js : il pédale, tient le guidon, se met en danseuse…), ton Pokémon dans le panier
   const e = {c, v, roule, libre, balance, vibre};
   if (typeof animerCycliste !== "function") return;   // une page assemblée pendant une mise à jour de l'appli (12/11) : le vélo seul, plutôt qu'un plantage
+  if (patins && typeof animerPatineur === "function") { animerPatineur(t, dt, S, e); g.updateMatrixWorld(); animerCompagnon(t, dt, S, N, e); return; }
   animerCycliste(t, dt, S, e); g.updateMatrixWorld(); animerPanier(t, dt, S, N, e);
 }
 function cacherVelo() { if (VELO.g) { VELO.g.visible = false; VELO.lampe.y = -999; } if (typeof cacherFantomeVelo === "function") cacherFantomeVelo(); if (typeof nageur !== "undefined" && nageur && nageur.m.rotation.z) { nageur.m.rotation.z = 0; nageur.m.scale.set(nageur.l, nageur.h, 1); } }
