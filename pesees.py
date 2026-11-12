@@ -18,7 +18,7 @@ def noter(fichier, quand, kg, gras=None):
     jour = quand.date().isoformat()
     lignes = [p for p in (fichier or {}).get("pesees") or [] if p.get("jour") != jour]
     lignes.append({"jour": jour, "quand": quand.isoformat(), "heures": quand.hour, "minutes": quand.minute, "kg": round(float(kg), 1), **({"gras": round(float(gras), 1)} if gras is not None else {})})
-    return {"pesees": sorted(lignes, key=lambda p: p["jour"])}
+    return {**(fichier or {}), "pesees": sorted(lignes, key=lambda p: p["jour"])}  # garde aussi les pas corrigés
 
 
 def du_jour(fichier, jour):
@@ -29,9 +29,19 @@ def du_jour(fichier, jour):
 def fusionner(resumes, fichier):
     """Les résumés par jour, avec les pesées notées à la main, au format de Google (le fichier reçu n'est pas modifié)."""
     lignes = (fichier or {}).get("pesees") or []
-    if not lignes:
+    pas = (fichier or {}).get("pas_corriges") or {}
+    if not lignes and not pas:
         return resumes
     sortie = dict(resumes)
+    # Pas corrigés à la main (Kiki, 12/11 : Google Health montrait 10 148 pas, ses serveurs 9 871 à 23 h 30) : on garde le plus grand des deux,
+    # donc rien n'est compté deux fois quand Google rattrape.
+    for jour, n in pas.items():
+        r = dict(sortie.get(jour) or {})
+        vu = [x for x in (r.get("steps:jour") or []) if isinstance(x, dict)]
+        avant = int(float(((vu[0] if vu else {}).get("steps") or {}).get("countSum") or 0))
+        if n > avant:
+            r["steps:jour"] = [{**(vu[0] if vu else {}), "steps": {"countSum": str(int(n))}}]
+            sortie[jour] = r
     for p in lignes:
         r = dict(sortie.get(p["jour"]) or {})
         temps = {"physicalTime": p["quand"], "civilTime": {"time": {"hours": p["heures"], "minutes": p["minutes"]}}}
