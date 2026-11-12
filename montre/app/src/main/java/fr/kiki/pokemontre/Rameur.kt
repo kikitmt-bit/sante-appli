@@ -119,7 +119,8 @@ class LienJeu(private val machine: String) {
     private val fil = HandlerThread("relais").apply { start() }
     private val h = Handler(fil.looper)
     private val relais = listOf("broker.hivemq.com", "broker.emqx.io").map { Relai(it, h) }
-    private val sujet = "pokefit/$machine/" +   // un sujet par machine ; le nom qui suit est le même (seances_rameur.lien) MessageDigest.getInstance("SHA-256")
+    // un sujet par machine ; le nom qui suit est le même pour toutes (seances_rameur.lien)
+    private val sujet = "pokefit/$machine/" + MessageDigest.getInstance("SHA-256")
         .digest("rameur|${BuildConfig.JEU_CLE}|kiki".toByteArray()).joinToString("") { "%02x".format(it) }.take(20)
     val detecteur = Detecteur.pour(machine)
     private val geste = if (machine == "elliptique") "tour" else "coup"
