@@ -111,7 +111,8 @@ class Voyage:
         self.pokemon = region.variante(graine) if graine and region.variante else [lieu["pokemon"] for lieu in region.lieux]  # les Pokémon de chaque lieu pour ce joueur
         self.badges = {}      # numéro d'arène (1 à 9, 9 = Ligue) -> date du badge
         self.arrivee = None   # date d'arrivée à l'arène en cours
-        self.histo = []       # (date, chiffres du jour) depuis l'arrivée à l'arène : pour les défis
+        self.histo = []       # (date, chiffres pour les voies du défi, chiffres du jour entier) depuis l'arrivée à l'arène ; le jour de l'arrivée, les voies ne
+                              # comptent que ce qui suit l'arrivée (dès DEFI_MINUTE) ; le plan B et les jours actifs comptent toujours le jour entier
         self.pos = 0.0
         self.cumul = 0.0      # les points d'effort vus jusqu'ici (pour n'ajouter que ceux du jour)
         self.exploits = {}    # lieu d'un sanctuaire atteint -> jours d'exploit depuis
@@ -129,12 +130,13 @@ class Voyage:
     def valeur(self, d, jour):
         """Où en est une voie (ou le plan B), depuis l'arrivée à l'arène."""
         f, _, mode = DEFIS[d["defi"]]
-        vals = [float(f(j)) for x, j in self.histo if x <= jour]
+        plein = d is self.r.lieux[self.arene_suivante()]["arene"]["b"]  # le plan B : le jour entier
+        vals = [float(f(jd if plein else jv)) for x, jv, jd in self.histo if x <= jour]
         return (sum(vals) if mode == "somme" else max(vals, default=0)) if vals else 0
 
     def jours_actifs(self, jour):
         """Les jours actifs depuis l'arrivée à l'arène."""
-        return sum(1 for x, j in self.histo if x <= jour and j["pas"] >= JOUR_ACTIF)
+        return sum(1 for x, _, j in self.histo if x <= jour and j["pas"] >= JOUR_ACTIF)
 
     def defi(self, jour):
         """(les valeurs de chaque voie de chaque épreuve, la valeur du plan B) de l'arène où l'on est arrivé."""
@@ -153,9 +155,11 @@ class Voyage:
             return True
         return self.defi(jour)[1] >= a["b"]["cible"] or self.par_defi(jour)
 
-    def avancer(self, jour, j, cumul):
+    def avancer(self, jour, j, cumul, detail=None):
         """Un jour de plus : j = chiffres du jour, cumul = points d'effort depuis le début de la région. -> [(numéro, lieu)] des
-        badges gagnés ce jour-là ; self.sanct_du_jour = les sanctuaires réussis ce jour-là."""
+        badges gagnés ce jour-là ; self.sanct_du_jour = les sanctuaires réussis ce jour-là. detail = une fonction qui donne la journée minute
+        par minute (pokemon.Journee), seulement lue le jour d'une arrivée à une arène ou d'une victoire : le défi ne compte que ce qui suit
+        l'arrivée, et la carte repart avec les points faits après la victoire (Kiki, 12/11). Sans detail : le jour entier, comme avant."""
         dist = self.r.dist
         gagnes, gain, self.cumul = [], max(cumul - self.cumul, 0), cumul
         self.debut = self.debut or jour
@@ -166,26 +170,58 @@ class Voyage:
             en_plus = max(gain, VELO_MIN - gain, 0)
             gain += en_plus
             self.bonus += en_plus
+        D, lu = None, False
+
+        def journee():
+            nonlocal D, lu
+            if not lu:
+                D, lu = (detail() if detail else None), True
+            return D
+        t0, debut_defi = -1, 0  # la minute jusqu'où les points du jour ont déjà servi ; la minute où le défi en cours a commencé aujourd'hui
         while True:
             i = self.arene_suivante()
+            base = gain * (journee().part(t0) if t0 >= 0 and journee() else 0)  # les points du jour déjà passés (route, défi)
+            reste = gain - base if t0 < 1439 else 0
             if i is None:
-                self.pos = min(self.pos + gain, dist[-1])
+                self.pos = min(self.pos + reste, dist[-1])
                 break
-            # on avance, mais jamais au-delà de l'arène tant que son badge n'est pas gagné (le reste est perdu pour la carte)
-            self.pos, gain = min(self.pos + gain, dist[i]), 0
-            if self.pos < dist[i]:
-                break
-            if not self.arrivee:
-                self.arrivee, self.histo = jour, []
-            if not self.histo or self.histo[-1][0] != jour:
-                self.histo.append((jour, j))
+            if not self.arrivee:  # sur la route : on avance, jamais au-delà de l'arène
+                if self.pos + reste < dist[i]:
+                    self.pos += reste
+                    break
+                besoin = dist[i] - self.pos
+                self.pos, self.arrivee, self.histo = dist[i], jour, []
+                if journee():  # la minute où il arrive : le défi commence là
+                    debut_defi = t0 = next((t for t in range(max(t0, 0), 1440) if gain * D.part(t) - base >= besoin - 1e-9), 1439)
+                else:
+                    debut_defi = t0 = 0
+            # à l'arène : ce que le défi compte aujourd'hui (depuis l'arrivée si c'est aujourd'hui, sinon le jour entier)
+            depuis = debut_defi if self.arrivee == jour else 0
+            jv = journee().j(depuis, 1439) if depuis > 0 and journee() else j
+            self.histo = [h for h in self.histo if h[0] != jour] + [(jour, jv, j)]
             if not self.reussi(jour):
                 break
+            t_v = 1439
+            if journee():  # la minute de la victoire : la première où le défi est réussi
+                D_ = journee()
+                bas, haut = max(depuis, 0), 1439
+                while bas < haut:
+                    mi = (bas + haut) // 2
+                    self.histo[-1] = (jour, D_.j(depuis, mi), D_.j(0, mi))
+                    if self.reussi(jour):
+                        haut = mi
+                    else:
+                        bas = mi + 1
+                t_v = bas
+                self.histo[-1] = (jour, D_.j(depuis, t_v), D_.j(0, t_v))
             k = self.r.arenes.index(i) + 1
             if self.par_defi(jour):
                 self.nets.add(k)
             self.badges[k], self.arrivee, self.histo = jour, None, []
             gagnes.append((k, self.r.lieux[i]))
+            if not journee():  # sans le détail de la journée : la carte repart demain (comme avant)
+                break
+            t0, debut_defi = t_v, 0
         self.sanct_du_jour = []
         for i in self.r.sanct_index:
             if self.pos >= dist[i] and i not in self.sanct_faits:

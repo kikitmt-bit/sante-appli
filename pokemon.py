@@ -367,6 +367,110 @@ def chronologie(fichier, resume, jour):
     return sortie
 
 
+DEFI_MINUTE = dt.date(2026, 11, 12)  # dès ce jour (Kiki) : un défi d'arène ne compte que ce qui est fait après son apparition, et la carte repart à la minute de la victoire
+
+
+class Journee:
+    """Une journée minute par minute, pour les défis d'arène (Kiki, 12/11) : ce qui a été fait entre deux minutes (`j(a, t)`, mêmes clés que le
+    jour entier donné à Voyage.avancer) et la part des points d'effort du jour déjà faite à une minute (`part(t)`). Chaque chiffre est ramené au
+    vrai total du jour ; ce dont on ne connaît pas l'heure (pompes d'un vieux jour, jour sans fichier) est placé à la dernière minute : il ne
+    compte qu'à la fin de la journée, jamais plus tôt."""
+
+    def __init__(self, fichier, resume, jour, m, j, g):
+        self.jour, self.m, self.plein = jour, m, j
+        t = (fichier or {}).get("types") or {}
+
+        def serie(cle, col=2, garder=lambda _: True):
+            a = [0.0] * 1440
+            for ligne in ((t.get(cle) or {}).get("lignes") or []):
+                i = _minute(ligne[0])
+                if i is not None and garder(ligne) and isinstance(ligne[col], (int, float)):
+                    a[i] += float(ligne[col])
+            return a
+        neuf = nouveau(jour)
+        zone = serie("active-zone-minutes", 3, (lambda l: l[2] in ("CARDIO", "PEAK")) if neuf else (lambda l: True))
+        if neuf:
+            zone = [1.0 if v else 0.0 for v in zone]
+        self.c = {k: self._cumul(a, j.get(k) or 0) for k, a in (("pas", serie("steps")), ("zone", zone), ("etages", serie("floors")),
+                                                                 ("km", [v / 1e6 for v in serie("distance")]))}
+        chrono = chronologie(fichier, resume, jour) or []
+        total = chrono[-1][2] if chrono else 0
+        self.pts = [x[2] / total for x in chrono] if total > 0 else [0.0] * 1439 + [1.0]
+        self.seances = []  # (début, fin, minutes, eau, force)
+        for p in (resume or {}).get("exercise") or []:
+            c = chiffres.contenu(p)
+            minutes, iv = chiffres.duree(c.get("activeDuration")) / 60, c.get("interval") or {}
+            if minutes < REGLAGES["seance_min"] or (equitable(jour) and chiffres.est_marche(c)):
+                continue
+            try:
+                d0 = dt.datetime.fromisoformat(iv["startTime"].replace("Z", "+00:00")).astimezone(chiffres.TZ)
+                d1 = dt.datetime.fromisoformat(iv["endTime"].replace("Z", "+00:00")).astimezone(chiffres.TZ)
+            except (KeyError, ValueError):
+                continue
+            if d0.date() != jour:
+                continue
+            ty = c.get("exerciseType") or ""
+            self.seances.append((d0.hour * 60 + d0.minute, d1.hour * 60 + d1.minute if d1.date() == jour else 1439, minutes,
+                                 "ROWING" in ty or "SWIM" in ty, est_force(c)))
+        self.gestes = {}  # pompes, tractions : [(minute, nombre)] ; ce qui manque est mis à la dernière minute
+        for k in ("pompes", "tractions"):
+            vus = [(mi, n) for mi, kk, n in (g or {}).get("moments") or [] if kk == k]
+            reste = (j.get(k) or 0) - sum(n for _, n in vus)
+            self.gestes[k] = vus + ([(1439, reste)] if reste > 0 else [])
+
+    @staticmethod
+    def _cumul(a, total):
+        """Le cumul minute par minute, ramené au vrai total du jour (rien de connu : tout à la dernière minute)."""
+        s = sum(a)
+        if s <= 0:
+            return [0.0] * 1439 + [float(total)]
+        out, c = [], 0.0
+        for v in a:
+            c += v * total / s
+            out.append(c)
+        return out
+
+    def _entre(self, cle, a, t):
+        c = self.c[cle]
+        return c[t] - (c[a - 1] if a > 0 else 0.0)
+
+    def part(self, t):
+        """La part des points d'effort du jour faite à la fin de la minute t (0 à 1)."""
+        return 0.0 if t < 0 else min(max(self.pts[min(t, 1439)], 0.0), 1.0)
+
+    def _seances(self, a, t, quoi=None):
+        """Les minutes de chaque séance faites entre a et t (une séance commencée avant a ne compte que pour la suite)."""
+        out = []
+        for d0, d1, minutes, eau, force in self.seances:
+            if quoi == "eau" and not eau or quoi == "force" and not force:
+                continue
+            dedans = max(0, min(d1, t) - max(d0, a) + 1)
+            out.append(minutes * dedans / max(d1 - d0 + 1, 1))
+        return out
+
+    def j(self, a, t):
+        """Ce qui a été fait de la minute a à la minute t comprises (mêmes clés que le jour entier)."""
+        if a <= 0 and t >= 1439:
+            return self.plein
+        m, R = self.m, REGLAGES
+        pas, zone = self._entre("pas", a, t), self._entre("zone", a, t)
+        seance = max(self._seances(a, t), default=0)
+        eau = sum(self._seances(a, t, "eau"))
+        eau_plein, eau_vu = self.plein.get("eau") or 0, sum(self._seances(0, 1439, "eau"))
+        if eau_vu > 0:
+            eau *= eau_plein / eau_vu
+        soir = self._entre("pas", max(a, 1200), t) if t >= 1200 else 0.0
+        if self.plein.get("soir") and self._entre("pas", 1200, 1439) > 0:
+            soir *= self.plein["soir"] / self._entre("pas", 1200, 1439)
+        ges = {k: sum(n for mi, n in v if a <= mi <= t) for k, v in self.gestes.items()}
+        _, obj_z, exp_z = seuils_zone(m)
+        hyper = bool(self.plein.get("hyper")) and (seance >= R["exploit_seance"] or zone >= exp_z or pas >= R["exploit_pas"])
+        ok = bool(self.plein.get("ok")) and (pas >= obj_pas(m) or zone >= obj_z or hyper)
+        return {"pas": pas, "zone": zone, "etages": self._entre("etages", a, t), "eau": eau, "force_min": sum(self._seances(a, t, "force")),
+                "seance": seance, "soir": soir, "km": self._entre("km", a, t), "pompes": ges["pompes"], "tractions": ges["tractions"],
+                "ok": ok, "double": pas >= obj_pas(m) and zone >= obj_z, "hyper": hyper}
+
+
 def moment(cle, chrono, m, avant, apres):
     """Les points cumulés (depuis le début du jeu) au moment où la ball spéciale `cle` a été gagnée ce jour-là, d'après
     la chronologie (ramenée au vrai total du jour) ; sans chronologie : la fin de la journée."""
@@ -497,13 +601,16 @@ def gestes_du(ancien, ouvertes, ami, aujourd):
                 du_jour[cle] = max(du_jour.get(cle, 0), int(s[3]))
                 continue
             t[m[1]] += int(m[2])
+            if m[1] in ("pompes", "tractions"):  # l'heure de chaque série : la minute de la victoire d'un défi d'arène (Journee)
+                h = dt.datetime.fromtimestamp(int(m[3]) / 1000, chiffres.TZ)
+                t.setdefault("_moments", []).append([h.hour * 60 + h.minute, m[1], int(m[2])])
             if m[1] == "pompes":
                 t["_touches"].append((int(m[3]), int(m[2])))
     limite = str(aujourd - dt.timedelta(days=18))
     for j, t in traces.items():
         if j >= limite:
-            touches = t.pop("_touches")
-            jours[j] = {k: max(v, 0) for k, v in t.items()} | {"series": series_de(touches)} | ({"scores": scores[j]} if j in scores else {})
+            touches, moments = t.pop("_touches"), t.pop("_moments", [])
+            jours[j] = {k: max(v, 0) for k, v in t.items()} | {"series": series_de(touches)} | ({"moments": moments} if moments else {}) | ({"scores": scores[j]} if j in scores else {})
     return jours
 
 
@@ -557,7 +664,7 @@ def debut_de(joueur):
     return max(joueur["debut"], REGLAGES["debut"]) if joueur else REGLAGES["debut"]
 
 
-def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None, materiel=None):
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None, materiel=None, lire_jour=None):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
     figées sont reprises telles quelles ; les autres sont tirées. Chaque capture a « c » = les points cumulés au moment
@@ -739,9 +846,16 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         p0 = voyage.pos
         soir = ((missions_jours or {}).get(str(jour)) or {}).get("pas_soir") or 0
         km = s.get("km") if s.get("km") == s.get("km") and s.get("km") else 0  # None ou NaN : pas de distance ce jour-là
-        badges = voyage.avancer(jour, {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"], "force_min": m["force"],
-                                       "seance": m["seance_max"], "soir": soir, "km": km, "pompes": g.get("pompes", 0), "tractions": g.get("tractions", 0),
-                                       "ok": ok, "double": double_ok(m), "hyper": exploit(m) is not None}, cumul)
+        jd = {"pas": m["pas"], "zone": m["zone"], "etages": m["etages"], "eau": m["eau"], "force_min": m["force"],
+              "seance": m["seance_max"], "soir": soir, "km": km, "pompes": g.get("pompes", 0), "tractions": g.get("tractions", 0),
+              "ok": ok, "double": double_ok(m), "hyper": exploit(m) is not None}
+
+        def detail(jour=jour, m=m, jd=jd, g=g):  # la journée minute par minute, lue seulement le jour d'une arrivée à une arène ou d'une victoire
+            f = (fichiers_jour or {}).get(jour)
+            if f is None and lire_jour:
+                f = lire_jour(jour)
+            return Journee(f, resumes.get(str(jour)), jour, m, jd, g) if f else None
+        badges = voyage.avancer(jour, jd, cumul, detail if jour >= DEFI_MINUTE else None)
         en_defi = voyage.arrivee is not None and voyage.arrivee < jour and not badges
         limite = jour - dt.timedelta(days=R["rend"] - 1)
         if etait_en_defi:
@@ -985,7 +1099,8 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     gestes = gestes_du(f.get(GESTES), (f.get(OUVERTES) or {}).get("ouvertes", {}), ami, aujourd)
     materiel = missions.materiel_de({"materiel": (f.get(missions.FICHIER) or {}).get("materiel")}, ami)  # écrit par montre.py avec la mission
     return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"),
-                 {j: f.get(c) for j, c in recents.items()}, joueur, anniv, gestes, materiel)
+                 {j: f.get(c) for j, c in recents.items()}, joueur, anniv, gestes, materiel,
+                 lambda j: lire([f"data/jour/{j.year}/{j}.json"])[f"data/jour/{j.year}/{j}.json"])  # le jour d'une arrivée ou d'une victoire à une arène
 
 
 def figer(dossier):
