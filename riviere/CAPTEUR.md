@@ -61,5 +61,5 @@ déjà accéléromètre, gyroscope et cœur à 50 mesures/s : il reste la détec
 ## Depuis le 11/11 au soir (cœur refait)
 - Un sujet par machine : `pokefit/<machine>/<lien>` (`rameur`, `elliptique`) ; un geste = `{"k": "coup"}` ou `{"k": "tour"}`, avec son numéro `n`.
 - Les gestes perdus sont rattrapés : si le numéro saute (jusqu'à 12), ou si un message d'état annonce un numéro plus grand, le jeu compte les manquants, sans éclaboussure.
-- Elliptique : le jeu est prêt (`?machine=elliptique`, 1,3 m par tour, estimé vers le bas) ; il reste, sur la montre, à reconnaître les tours et à les envoyer sur `pokefit/elliptique/…`.
+- Elliptique (12/11, montre v20) : `Detecteur.pour("elliptique")` (filtre 0,3-2,5 Hz, 0,45 s au moins entre deux tours, sommet ≥ 1 m/s²), rejoué sur l'enregistrement du 10/11 : 524 tours sur 527, la pause de 15 s bien vue, aucun tour en trop ; chaque tour part en `{"k": "tour"}` sur `pokefit/elliptique/<lien>` (même lien que le rameur). Dans le jeu : 1,3 m par tour, menu « Ton Pokémon à l'elliptique » : il court ou à vélo (`riviere_monture_elliptique`). Séances d'elliptique pas encore enregistrées dans l'appli.
 - À essayer tôt au parc : la montre sans Wi-Fi passe par le téléphone pour atteindre Internet ; le retard des messages n'est pas mesuré.
