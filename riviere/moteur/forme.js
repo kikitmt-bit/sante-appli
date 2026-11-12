@@ -17,7 +17,9 @@ class Forme {
   v(x, y, z, nx, ny, nz, col, mat) { this.p.push(x, y, z); this.n.push(nx, ny, nz); this.c.push(col[0], col[1], col[2]); this.m.push(mat); }   // un sommet, dans le monde
   l(P, N, col, mat) { const {cs, sn, k} = this; this.v(this.ox + (P[0] * cs + P[2] * sn) * k, this.oy + P[1] * k, this.oz + (-P[0] * sn + P[2] * cs) * k, N[0] * cs + N[2] * sn, N[1], -N[0] * sn + N[2] * cs, col, mat); }   // un sommet, dans le repère de l'objet
   tri(a, b, c, col, N, mat = this.md) { this.l(a, N, col, mat); this.l(b, N, col, mat); this.l(c, N, col, mat); }
-  quad(a, b, c, d, col, N, mat = this.md) { this.tri(a, b, c, col, N, mat); this.tri(a, c, d, col, N, mat); }
+  quad(a, b, c, d, col, N, mat = this.md) {
+    if (mat === 3) mat = 3.02 + .4 * h2(Math.round((a[0] + c[0]) * 3.1 + this.ox * .7), Math.round((a[1] + c[1]) * 2.3 + (a[2] + c[2]) * 1.7 + this.oz * .7));   // une fenêtre : son propre tirage (allumée ou non la nuit, et à quelle heure), le même pour toute la vitre
+    this.tri(a, b, c, col, N, mat); this.tri(a, c, d, col, N, mat); }
   poly(pts, col, vers, mat = this.md) {  // un polygone plat ; « vers » : de quel côté il regarde, à peu près
     const a = pts[0], b = pts[1], c = pts[2], u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], w = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
     let N = nrm([u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2], u[0] * w[1] - u[1] * w[0]]); if (N[0] * vers[0] + N[1] * vers[1] + N[2] * vers[2] < 0) N = [-N[0], -N[1], -N[2]];

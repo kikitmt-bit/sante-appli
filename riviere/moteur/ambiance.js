@@ -174,7 +174,10 @@ function construireAmbiance() {
     vertexShader: `attribute vec3 color; attribute float aT, aJ, aPh; uniform float uEch, uNuit, uT, uB1; varying vec3 vC; varying float vA;
       void main() { vec4 mv = modelViewMatrix * vec4(position, 1.); gl_Position = projectionMatrix * mv; float d = -mv.z; gl_PointSize = clamp(aT * uEch / d, 3., 96.);
         vA = mix(uNuit, 1., aJ) * (1. - smoothstep(uB1 * .6, uB1 * .95, d)) * (.86 + .14 * sin(uT * 3. + aPh)); vC = color; }`,
-    fragmentShader: "varying vec3 vC; varying float vA; void main() { float r = length(gl_PointCoord - .5) * 2.; float a = r < .28 ? .55 : r < .58 ? .27 : r < 1. ? .11 : 0.; if (a * vA < .01) discard; gl_FragColor = vec4(vC * a * vA, 1.); }"}));
+    // une lueur douce, en points tramés (plus d'anneaux : Kiki, 12/11)
+    fragmentShader: `varying vec3 vC; varying float vA; void main() { float r = length(gl_PointCoord - .5) * 2.; if (r >= 1.) discard;
+      vec2 f = mod(floor(gl_FragCoord.xy), 4.); float b = mod(f.x * 2. + f.y * 3. + f.x * f.y, 4.) / 4.;   // une trame 4 × 4
+      float a = (1. - r) * (1. - r) * .5; a = floor(a * 6. + b) / 6.; if (a * vA < .01) discard; gl_FragColor = vec4(vC * a * vA, 1.); }`}));
   HALOS.m.frustumCulled = false; HALOS.m.name = "halos"; scene.add(HALOS.m);
 }
 
