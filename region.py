@@ -94,11 +94,20 @@ class Region:
                     v["unite"], v["mode"] = DEFIS[v["defi"]][1:]
 
 
+# Avec ce matériel, une voie en écarte une autre de la même épreuve (Kiki, 12/11 : avec un rameur, Ondine demande le rameur, pas 5 km)
+REMPLACE = {"eau": ("rameur", "km")}
+
+
+def voie_ecartee(v, voies, materiel):
+    """La voie v n'est pas proposée à ce joueur : son matériel en rend une autre de l'épreuve possible (REMPLACE)."""
+    return any(o["defi"] in REMPLACE and REMPLACE[o["defi"]][0] in (materiel or ()) and v["defi"] == REMPLACE[o["defi"]][1] for o in voies)
+
+
 class Voyage:
     """L'état du voyage dans une région, mis à jour jour après jour par pokemon.jouer."""
 
-    def __init__(self, region, graine=None):
-        self.r = region
+    def __init__(self, region, graine=None, materiel=None):
+        self.r, self.materiel = region, materiel
         self.pokemon = region.variante(graine) if graine and region.variante else [lieu["pokemon"] for lieu in region.lieux]  # les Pokémon de chaque lieu pour ce joueur
         self.badges = {}      # numéro d'arène (1 à 9, 9 = Ligue) -> date du badge
         self.arrivee = None   # date d'arrivée à l'arène en cours
@@ -136,7 +145,7 @@ class Voyage:
         """Le vrai défi du champion est-il réussi (une voie de chaque épreuve) ? C'est la victoire nette, qui rapporte une Super Ball en plus."""
         a = self.r.lieux[self.arene_suivante()]["arene"]
         ep, _ = self.defi(jour)
-        return all(any(x >= v["cible"] for x, v in zip(vals, e["voies"])) for vals, e in zip(ep, a["epreuves"]))
+        return all(any(x >= v["cible"] and not voie_ecartee(v, e["voies"], self.materiel) for x, v in zip(vals, e["voies"])) for vals, e in zip(ep, a["epreuves"]))
 
     def reussi(self, jour):
         a = self.r.lieux[self.arene_suivante()]["arene"]

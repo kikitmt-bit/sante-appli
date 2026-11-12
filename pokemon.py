@@ -571,7 +571,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     jours_ok, shiny_balls, depuis_master = [], 0, debut  # Shiny Ball : jours avec l'objectif dans la fenêtre
     reg_i, region, debut_region, depart = 0, regions.REGIONS[0], debut, False  # la région en cours ; depart = l'appel du professeur est accepté : la suivante commence demain
     graine_lieux = f"{R['partie']}-{ami or 'kiki'}"  # ses Pokémon dans chaque lieu : pas exactement les mêmes que ceux des autres joueurs
-    voyage = Voyage(region, graine_lieux)
+    voyage = Voyage(region, graine_lieux, materiel)
     listes = {region.nom: voyage.especes()}  # les Pokémon de chaque région pour ce joueur
     sport_vu = False  # une minute de sport au moins depuis le début : sinon, la montre ne les mesure peut-être pas (rival.py)
     derniers = []  # les 14 derniers jours, pour les moqueries du rival (rival.py)
@@ -671,7 +671,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
     while jour <= aujourd:
         if depart:  # l'appel a été accepté hier : la nouvelle région commence à minuit, sac vide et barre à zéro
             reg_i, region, debut_region, depart = reg_i + 1, regions.REGIONS[reg_i + 1], jour, False
-            voyage, cumul, avant, frise, starter, chance_prise, sans_rattrapage = Voyage(region, graine_lieux), 0.0, 0.0, [], None, False, 0
+            voyage, cumul, avant, frise, starter, chance_prise, sans_rattrapage = Voyage(region, graine_lieux, materiel), 0.0, 0.0, [], None, False, 0
             listes[region.nom] = voyage.especes()
             carnet = nouveau_carnet()
         s = stats.loc[jour].to_dict() if jour in stats.index else {}

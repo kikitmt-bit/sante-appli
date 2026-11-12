@@ -3566,7 +3566,9 @@ function voiesDefi() {  // chaque épreuve du défi en cours : ses voies avec o�
   const d = V.defi, a = LIEUX[d.lieu].arene, g = gestesAuj();
   return a.epreuves.map((e, i) => { const voies = e.voies.map((o, k) => ({...o, v: ((d.epreuves[i] || [])[k] || 0) + (g[o.defi] !== undefined ? Math.max(g[o.defi] - ((D.gestes_jour || {})[o.defi] || 0), 0) : 0)}));
     // une voie sans son matériel n'est pas proposée (sauf si elle est déjà commencée, ou si c'est la seule) : le plan B et les autres voies restent
-    const mat = materielDe(), montrees = voies.filter(o => !DEFI_MATERIEL[o.defi] || mat.includes(DEFI_MATERIEL[o.defi]) || o.v > 0);
+    // et une voie que ton matériel remplace n'est jamais proposée (DEFI_REMPLACE, comme region.REMPLACE : avec un rameur, Ondine = rameur ou plan B)
+    const mat = materielDe(), remplacee = o => voies.some(x => DEFI_REMPLACE[x.defi] && mat.includes(DEFI_REMPLACE[x.defi][0]) && o.defi === DEFI_REMPLACE[x.defi][1]);
+    const montrees = voies.filter(o => !remplacee(o) && (!DEFI_MATERIEL[o.defi] || mat.includes(DEFI_MATERIEL[o.defi]) || o.v > 0));
     return {qui: e.qui, voies: montrees.length ? montrees : voies, fait: voies.some(o => o.v >= o.cible)}; });
 }
 // Le défi est gagné d'après ce que le téléphone vient de compter (pompes, tractions) : le serveur ne le sait qu'en relisant. Le badge vient de lui : on recharge, et la scène se lance toute seule.
@@ -4222,7 +4224,8 @@ const MATERIELS = [["rameur", "Rameur"], ["tapis", "Tapis de danse"], ["velo", "
 const BALANCES = [["connectee", "Connectée"], ["manuelle", "Normale"], ["aucune", "Aucune"]];
 const balanceDe = (d = DRESSEUR) => d.balance || (D.kiki ? "connectee" : "aucune");  // pas encore réglé : la balance connectée de Kiki, rien pour un ami
 const materielDe = (d = DRESSEUR) => Array.isArray(d.materiel) ? d.materiel : D.kiki ? MATERIELS.map(m => m[0]) : [];
-const DEFI_MATERIEL = {eau: "rameur", tractions: "barre"};  // une voie de défi qui demande du matériel
+const DEFI_MATERIEL = {eau: "rameur", tractions: "barre"};
+const DEFI_REMPLACE = {eau: ["rameur", "km"]};  // avec un rameur, la voie « km » de la même épreuve disparaît (region.REMPLACE)  // une voie de défi qui demande du matériel
 const IMAGES_DRESSEUR = new Map();  // feuille + couleurs -> image recoloriée (data URL)
 function feuilleColoree(feuille, d = DRESSEUR) {
   const cle = [feuille, d.peau, d.casquette, d.veste, d.pantalon].join("|");
