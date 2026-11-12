@@ -158,7 +158,14 @@ body.edite .hud, body.edite #carte, body.edite #profil, body.edite #bSon, body.e
 <script>
 /* jamais d'écran « Le monde se construit… » muet : une erreur au démarrage s'écrit à l'écran (12/11 : la page restait bloquée sans rien dire) */
 window.__erreurDepart = m => { const c = document.getElementById("charge"); if (c && !c.hidden && !c.dataset.erreur) { c.dataset.erreur = 1; c.style.cssText += ";font-size:20px;padding:24px;text-align:center"; c.textContent = "Le jeu ne démarre pas : " + m; } };
-addEventListener("error", e => { if (e.message) window.__erreurDepart(e.message); });
+/* une erreur pendant le jeu (le monde construit, l'écran de chargement caché) : écrite en bas de l'écran, une fois par message, avec l'endroit
+   du code (12/11 : écran tout noir chez Kiki sous Firefox, impossible à reproduire ici ; sans ça, rien ne disait pourquoi) */
+window.__erreurJeu = (m, ou) => { const c = document.getElementById("charge"); if (c && !c.hidden) return false;
+  const vus = window.__erreursVues = window.__erreursVues || {}; if (vus[m]) return true; vus[m] = 1;
+  let b = document.getElementById("erreurJeu"); if (!b) { b = document.createElement("div"); b.id = "erreurJeu"; b.style.cssText = "position:fixed;left:8px;right:8px;top:40%;z-index:99;background:#F8F8E8;color:#C03028;border:3px solid #484838;border-radius:12px 5px;padding:10px 14px;font:18px/1.2 sans-serif;white-space:pre-wrap;max-height:40vh;overflow:auto"; document.body.appendChild(b); b.textContent = "Le jeu a un souci. Envoie une capture de ce cadre à Claude :"; }
+  b.textContent += "\n• " + m + (ou ? "\n   " + ou : ""); console.error(m, ou); return true; };
+const __ou = e => { const st = String(e && e.error && e.error.stack || e && e.stack || "").split("\n").filter(l => /\d+:\d+/.test(l)).slice(0, 3).map(l => l.trim().replace(/about:srcdoc|https?:\/\/[^ )]+/g, "")).join(" · "); return st || (e && e.lineno ? "ligne " + e.lineno + ":" + e.colno : ""); };
+addEventListener("error", e => { if (!e.message) return; if (!window.__erreurJeu(e.message, __ou(e))) window.__erreurDepart(e.message); });
 addEventListener("unhandledrejection", e => window.__erreurDepart(String(e.reason && e.reason.message || e.reason)));
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
