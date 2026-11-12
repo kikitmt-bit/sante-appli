@@ -16,7 +16,7 @@ function coup(force = .6, muet = false) {   // un geste de la machine ; muet : u
   if (M.liquide) { gerbe(S.s, force, M.d, M.y); EAU_U.uCoups.value[S.nb % 4].set(S.s - .3, M.d, COMMUNS.uT.value); }
 }
 function vitesseCapteur(v) { S.v = v; S.capteur = true; }   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
-const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };
+const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (MACHINE.monture === "cycliste" && MACHINE.physique && n < 2) return VELO.cadence || 0; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };   // (à vélo sans capteur de cadence : celle des pédales qu'on voit tourner)
 
 /* les tours d'un circuit : le chrono part au premier passage de la ligne ; le meilleur tour est gardé sur cette machine, par machine de sport */
 const CLE_RECORD = "riviere_" + (MACHINE_NOM === "rameur" ? "" : MACHINE_NOM + "_") + (NIVEAU.id || NIVEAU.nom) + "_" + (NIVEAU.distance || Math.round(TOUR_M)) + "m_record";
@@ -138,7 +138,7 @@ window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0,
 (async () => {
   const t0 = performance.now();
   try { await Promise.race([document.fonts.load('20px "Jersey 15"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
-  construireTerrain(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites();
+  construireTerrain(); construireMassif(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites();
   window.__pret = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
   const v = verifier(); if (!v.ok) console.warn("Niveau à revoir :\n" + v.erreurs.join("\n"));
   $("hTour").hidden = false; construireProfil(); await preparerRivaux(); $("lVit").textContent = MACHINE.affiche === "kmh" ? "VITESSE" : "ALLURE"; $("uVit").textContent = MACHINE.affiche === "kmh" ? "km/h" : "/500 m";

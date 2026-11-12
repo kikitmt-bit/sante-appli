@@ -66,9 +66,9 @@ const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.Doub
         c = mix(vC * lum * uSombre * uTeinte, uLueur, allume); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * allume)), 1.); return; }
       float det = 1.;
       if (vM < 1.5) { float t;
-        if (n.y < .6 && vM > .5) t = texture2D(uDetail, vec2(abs(n.x) > abs(n.z) ? vW.z : vW.x, vW.y) / 3.).b;   // un mur maçonné (un tunnel) : des pierres
+        if (n.y < .6 && vM > 1.2) t = texture2D(uDetail, vec2(abs(n.x) > abs(n.z) ? vW.z : vW.x, vW.y) / 3.).b;   // un mur maçonné (un tunnel) : des pierres
         else if (n.y < .6) t = texture2D(uDetail, vec2(abs(n.x) > abs(n.z) ? vW.z : vW.x, vW.y) / 6.).g;
-        else if (vM > .5) t = texture2D(uDetail, vW.xz / 6.).b;
+        else if (vM > .5) t = texture2D(uDetail, vW.xz / 6.).b;   // (1 : des pavés ; 1,3 : un mur maçonné, seulement les tunnels)
         else t = texture2D(uDetail, vW.xz / 6.).r;
         det = mix(1., .72 + .56 * t, 1. - smoothstep(20., 70., vZ)); }
       c = vC * lum * det;

@@ -7,7 +7,7 @@
 //   - « Essayer » lance le jeu sur le brouillon ; « Garder » le range dans « Mes circuits » (sur cette machine), il apparaît au menu ;
 //   - « Exporter » donne le texte du circuit (à coller ailleurs, ou à donner à Claude pour qu'il entre dans le jeu) ; « Importer » le relit.
 // Sur le serveur d'essai du PC, « Écrire dans le jeu » range le fichier dans contenu/niveaux.
-const ED = {n: null, sel: 0, res: null, onglet: "pieces", gen: {km: 1, relief: "vallonne", avec: {grotte: true, cascade: true, pont: true, lac: true}, graine: 1}, msg: ""};
+const ED = {n: null, sel: 0, res: null, onglet: "pieces", gen: {activite: DISCIPLINE, forme: "boucle", km: 1, virages: "quelques", denivele: 15, avec: {grotte: true, cascade: true, pont: true, lac: true}, graine: 1}, msg: ""};
 const ED_CLE = "riviere_brouillon";
 const propre = n => { const o = JSON.parse(JSON.stringify(n)); for (const k of ["brouillon", "perso", "cache"]) delete o[k]; for (const p of o.pieces) for (const k of ["s0", "s1", "titre", "grotte", "long0"]) delete p[k]; return o; };
 const idDe = nom => "perso-" + (nom || "circuit").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 30);
@@ -75,13 +75,13 @@ function edEtat() {
 const champ = (nom, cle, v, min, max, pas, unite = "") => `<label class="ed-l"><span>${nom}</span><button data-pm="${cle}" data-d="${-pas}">−</button><input type="range" data-k="${cle}" min="${min}" max="${max}" step="${pas}" value="${v}"><button data-pm="${cle}" data-d="${pas}">+</button><b data-v="${cle}">${v}${unite}</b></label>`;
 const choix = (nom, cle, v, liste) => `<label class="ed-l"><span>${nom}</span><select data-k="${cle}">${liste.map(([k, t]) => `<option value="${esc(k)}"${String(v) === String(k) ? " selected" : ""}>${esc(t)}</option>`).join("")}</select></label>`;
 function edPanneau() {
-  const n = ED.n, B = region(n.biome), el = $("edCote"), p = n.pieces[ED.sel] || n.pieces[0], rives = Object.keys(B.rives).map(k => [k, k]);
+  const n = ED.n, B = region(n.biome), el = $("edCote"), p = n.pieces[ED.sel] || n.pieces[0], rives = Object.keys(B.rives).filter(k => disciplineDe(n) === "terre" ? B.rives[k].pour === "terre" || k === "montagne" : !B.rives[k].pour).map(k => [k, k]);   // les rives de l'activité (plus la montagne, pour un tunnel)
   const onglets = [["pieces", "Pièces"], ["circuit", "Circuit"], ["generer", "Générer"], ["mes", "Mes circuits"]].map(([k, t]) => `<button class="ed-o${ED.onglet === k ? " on" : ""}" data-onglet="${k}">${t}</button>`).join("");
   let h = `<div class="ed-onglets">${onglets}</div>`;
   if (ED.onglet === "pieces") {
     h += `<div class="ed-liste">${n.pieces.map((q, i) => `<button class="ed-p${i === ED.sel ? " on" : ""}" data-sel="${i}">${i + 1}. ${esc(q.nom || (q.raccord ? "raccord" : "suite"))}${q.raccord ? " ↺" : ""}${q.tunnel ? " ◗" : ""}${q.pont ? " ⌒" : ""}${q.net ? " ⇅" : ""}</button>`).join("")}</div>
       <div class="ed-barre"><button data-act="haut">↑</button><button data-act="bas">↓</button><button data-act="double">Doubler</button><button data-act="retire">Retirer</button></div>
-      <details class="ed-plus"><summary>+ Ajouter après cette pièce</summary><div class="ed-mods">${Object.entries(MODULES).map(([k, m]) => `<button data-mod="${k}">${m.nom}</button>`).join("")}</div></details>`;
+      <details class="ed-plus"><summary>+ Ajouter après cette pièce</summary><div class="ed-mods">${Object.entries(MODULES).filter(([k, m]) => (m.act || "eau") === disciplineDe(n)).map(([k, m]) => `<button data-mod="${k}">${m.nom}</button>`).join("")}</div></details>`;
     if (p) {
       const raccord = !!p.raccord;
       h += `<div class="ed-form"><label class="ed-l"><span>Nom</span><input type="text" data-k="nom" value="${esc(p.nom)}" placeholder="(suite de la pièce d'avant)"></label>`;
@@ -95,7 +95,7 @@ function edPanneau() {
       if (!raccord) h += choix("Grotte", "tunnel", p.tunnel === true ? "roche" : p.tunnel || "", [["", "non"]].concat(Object.keys(Object.assign({roche: {}}, B.grottes)).map(k => [k, k])))
         + choix("Pont", "pont", p.pont === true ? "pierre" : p.pont || "", [["", "non"], ["pierre", "pierre"], ["bois", "bois"], ["arches", "arches dorées"]])
         + (p.pont ? champ("Ravin dessous", "ravin", p.ravin || 0, 0, 14, 1, " m") : "");
-      h += choix("Surface", "surface", p.surface || "", [["", "celle du circuit"], ["eau", "eau"]].concat(Object.keys(B.eaux || {}).map(k => [k, "eau : " + k]), [["terre", "terre"], ["goudron", "goudron"]]))
+      h += choix("Surface", "surface", p.surface || "", disciplineDe(n) === "terre" ? [["", "celle du circuit"], ["terre", "chemin de terre"], ["goudron", "route goudronnée"], ["paves", "rue pavée"]] : [["", "celle du circuit"], ["eau", "eau"]].concat(Object.keys(B.eaux || {}).map(k => [k, "eau : " + k])))
         + choix("Ambiance", "ambiance", p.ambiance || "", [["", "aucune"]].concat(Object.keys(AMBIANCES).filter(k => k !== "grotte").map(k => [k, k])))
         + champ("Vitesse du décor", "allure", p.allure || 1, .6, 1.6, .05, " ×")
         + `<label class="ed-l"><span>Segment chronométré</span><input type="text" data-k="segment" value="${esc(p.segment)}" placeholder="(aucun)"></label>`;
@@ -110,21 +110,26 @@ function edPanneau() {
   } else if (ED.onglet === "circuit") {
     const loin = Object.keys(LOINTAINS);
     h += `<div class="ed-form"><label class="ed-l"><span>Nom du circuit</span><input type="text" data-n="nom" value="${esc(n.nom)}"></label>`
-      + choix("Forme", "n:boucle", n.boucle ? "boucle" : "ouvert", [["boucle", "une boucle (des tours)"], ["ouvert", "un parcours de A à B"]])
+      + choix("Forme", "n:boucle", n.boucle === "huit" ? "huit" : n.boucle ? "boucle" : "ouvert", [["boucle", "une boucle (des tours)"], ["ouvert", "un parcours de A à B"]].concat(disciplineDe(n) === "terre" ? [["huit", "un 8 (un carrefour)"]] : []))
       + (Object.keys(BIOMES).length > 1 ? choix("Région", "n:biome", n.biome, Object.keys(BIOMES).map(k => [k, BIOMES[k].nom || k])) : "")
-      + choix("Surface", "n:surface", n.surface || "", [["", "eau (rivière)"], ["terre", "terre (chemin)"], ["goudron", "goudron (route)"]])
+      + choix("Activité", "n:discipline", disciplineDe(n), [["eau", "rameur : une rivière"], ["terre", "vélo, elliptique : routes et chemins"]])
+      + (disciplineDe(n) === "terre" ? choix("Revêtement", "n:surface", n.surface || "terre", [["terre", "chemin de terre"], ["goudron", "route goudronnée"], ["paves", "rue pavée"]]) : "")
       + choix("Heure", "n:heure", n.heure || "jour", HEURES_MENU.filter(x => x[0] !== "circuit")) + choix("Temps", "n:meteo", n.meteo || "beau", METEOS_MENU.filter(x => x[0] !== "circuit"))
       + `<label class="ed-l"><span>Décor (la graine)</span><button data-act="graine">🎲 Autre tirage du décor</button><b>${n.graine || 1}</b></label>`
       + champ("Élan avant la ligne", "n:elan", n.elan === undefined ? 120 : n.elan, 0, 200, 10, " m")
       + `<div class="ed-objets"><span>Repères au loin</span>${(n.lointain || []).map((o, i) => `<div class="ed-obj"><b>${esc(o.o)}</b><input type="number" data-lk="${i}" value="${o.cap || 0}" title="cap, en degrés : 0 = droit devant au départ, 90 = à droite"><button data-lretire="${i}">×</button></div>`).join("")}
         <div class="ed-obj"><select id="edLoin">${loin.map(k => `<option>${k}</option>`).join("")}</select><button data-act="loin">+ Ajouter</button></div><small>cap en degrés : 0 = droit devant au départ, 90 = à droite, 180 = derrière</small></div></div>`;
   } else if (ED.onglet === "generer") {
-    const G = ED.gen, cases = [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"]];
-    h += `<div class="ed-form"><p class="ed-note">Coche ce que tu veux y trouver, puis « Générer ». Le circuit obtenu se retouche pièce par pièce.</p>`
-      + champ("Longueur", "g:km", G.km, .4, 4, .1, " km")
-      + choix("Relief", "g:relief", G.relief, [["plat", "plat"], ["vallonne", "vallonné"], ["montagne", "montagneux"]])
-      + choix("Forme", "g:boucle", G.boucle === false ? "ouvert" : "boucle", [["boucle", "une boucle"], ["ouvert", "de A à B"]])
-      + choix("Sur", "g:terre", G.terre ? "terre" : "eau", [["eau", "l'eau (rameur)"], ["terre", "la terre (elliptique, vélo)"]])
+    const G = ED.gen, terre = G.activite === "terre", cases = terre
+      ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"]]
+      : [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"]];
+    h += `<div class="ed-form"><p class="ed-note">Choisis l'activité, coche ce que tu veux y trouver, puis « Générer ». Le circuit obtenu se retouche pièce par pièce.</p>`
+      + choix("Activité", "g:activite", G.activite || "eau", [["eau", "rameur : une rivière"], ["terre", "vélo, elliptique : routes et chemins"]])
+      + (terre ? `<p class="ed-note">Sur la terre : des routes posées sur le sol, des rues pavées, des chemins en sous-bois, des cols ; un volcan au milieu d'une boucle ; un 8 qui se croise à un carrefour.</p>` : "")
+      + champ("Longueur", "g:km", G.km, .4, terre ? 6 : 4, .1, " km")
+      + choix("Virages", "g:virages", G.virages || "quelques", [["droit", "presque droit"], ["quelques", "quelques virages"], ["sinueux", "sinueux"], ["tres", "très sinueux (épingles)"]])
+      + champ("Dénivelé", "g:denivele", Math.min(G.denivele ?? 15, terre ? 250 : 80), 0, terre ? 250 : 80, 5, " m")
+      + choix("Forme", "g:forme", G.forme === "huit" && !terre ? "boucle" : G.forme || "boucle", [["boucle", "une boucle"], ["ouvert", "de A à B"]].concat(terre ? [["huit", "un 8 (qui se croise à un carrefour)"]] : []))
       + `<div class="ed-coches">${cases.map(([k, t]) => `<label><input type="checkbox" data-g="${k}"${G.avec[k] ? " checked" : ""}> ${t}</label>`).join("")}</div>`
       + choix("Heure", "g:heure", G.heure || "jour", HEURES_MENU.filter(x => x[0] !== "circuit")) + choix("Temps", "g:meteo", G.meteo || "beau", METEOS_MENU.filter(x => x[0] !== "circuit"))
       + `<div class="ed-barre"><button class="rouge" data-act="generer">▶ Générer</button><button data-act="autre">🎲 Un autre</button></div></div>`;
@@ -143,9 +148,11 @@ function edPanneau() {
 function edPiece() { return ED.n.pieces[ED.sel]; }
 function edRegler(cle, v) {   // un réglage change : cle = un champ de la pièce, ou « n:… » (le circuit), « g:… » (le générateur)
   const n = ED.n, p = edPiece(), num = x => Math.round(+x * 100) / 100;
-  if (cle.startsWith("g:")) { const k = cle.slice(2), G = ED.gen; if (k === "km") G.km = +v; else if (k === "boucle") G.boucle = v === "boucle"; else if (k === "terre") G.terre = v === "terre"; else G[k] = v; return false; }
+  if (cle.startsWith("g:")) { const k = cle.slice(2), G = ED.gen; if (k === "km" || k === "denivele") G[k] = +v; else if (k === "forme") { G.forme = v; G.boucle = v !== "ouvert"; } else G[k] = v; return k === "activite"; }
   if (cle.startsWith("n:")) { const k = cle.slice(2);
-    if (k === "boucle") { if (v === "boucle") { n.boucle = "gauche"; if (!n.pieces.some(q => q.raccord || q.virage === "auto")) n.pieces.push({nom: "Le retour", raccord: true, rayon: 30, eau: 12, g: "pre", d: "pre", monte: "auto"}); } else { delete n.boucle; n.pieces = n.pieces.filter(q => !q.raccord); ED.sel = Math.min(ED.sel, n.pieces.length - 1); } return true; }
+    if (k === "boucle" && v === "huit") { n.boucle = "huit"; n.pieces = n.pieces.filter(q => !q.raccord); n.pieces.forEach(q => { if (q.virage === "auto") q.virage = 0; }); n.pieces[n.pieces.length - 1].virage = "auto"; ED.sel = Math.min(ED.sel, n.pieces.length - 1); return true; }   // un 8 : la dernière pièce prend le virage qui annule les autres
+    if (k === "boucle") { if (v === "boucle") { if (n.boucle === "huit") n.pieces.forEach(q => { if (q.virage === "auto") q.virage = 0; }); n.boucle = "gauche"; if (!n.pieces.some(q => q.raccord || q.virage === "auto")) n.pieces.push(disciplineDe(n) === "terre" ? {nom: "Le retour", raccord: true, rayon: 34, large: 8, g: "bas_cote", d: "bas_cote", monte: "auto"} : {nom: "Le retour", raccord: true, rayon: 30, eau: 12, g: "pre", d: "pre", monte: "auto"}); } else { delete n.boucle; n.pieces = n.pieces.filter(q => !q.raccord); ED.sel = Math.min(ED.sel, n.pieces.length - 1); } return true; }
+    if (k === "discipline") { if (v === "terre") { n.discipline = "terre"; n.biome = REGION_TERRE(n.biome); n.surface = n.surface && n.surface !== "eau" ? n.surface : "goudron"; } else { delete n.discipline; delete n.surface; n.biome = n.biome.replace(/-routes$/, ""); if (n.boucle === "huit") n.boucle = "gauche"; } return true; }
     if (k === "elan") n.elan = +v; else if (v === "" || v === "jour" && k === "heure" || v === "beau" && k === "meteo") delete n[k]; else n[k] = v;
     return k === "biome"; }
   if (!p) return false;

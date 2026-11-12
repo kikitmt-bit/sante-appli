@@ -1,0 +1,49 @@
+{
+ "nom": "Kanto, routes et chemins",
+ "herite": "kanto",
+ "note": "La région des circuits sur la terre (vélo, elliptique ; 12/11, Kiki : « ce n'est pas le lit de la rivière sans l'eau »). Mêmes couleurs que Kanto, d'autres rives : la route est posée sur le sol (rives à peine plus hautes qu'elle), un talus qui monte vers la montagne, un ravin qui tombe sous la route, des trottoirs et des maisons, des champs à barrières, des sous-bois. Aucune règle d'eau (ni roseaux, ni Pokémon d'eau). « pour » : les rives qu'on propose dans l'éditeur et le générateur pour un circuit sur la terre.",
+ "lieux": "kanto",
+ "terres": {
+  "terre": ["#D2B080", "#C4A070", "#A88658", "#FFFFFF"],
+  "goudron": ["#6E7480", "#666C78", "#F2F0E2", "#F2F0E2"],
+  "paves": ["#BCB4A4", "#ACA494", "#7C766C", "#D4CEC0"]
+ },
+ "rives": {
+  "bas_cote": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.05], [3, 0.12], [25, 0.8], [110, 4]], "sols": [["terre", 0.7], ["herbe", 999]], "paroi": "terre", "bosses": 1.4},
+  "champ": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.15], [40, 0.6], [110, 3]], "sols": [["terre", 0.6], ["herbe", 999]], "paroi": "terre", "bosses": 0.5},
+  "sous_bois": {"pour": "terre", "profil": [[0, 0.04], [0.5, 0.1], [3, 0.35], [30, 2], [110, 6]], "sols": [["terre", 0.4], ["herbe_foret", 999]], "paroi": "terre", "bosses": 2.2, "particules": "feuilles"},
+  "trottoir": {"pour": "terre", "profil": [[0, 0.16], [0.08, 0.17], [2.4, 0.19], [2.6, 0.2], [30, 0.4], [110, 3]], "sols": [["paves", 2.5], ["herbe", 999]], "paroi": "pierre_quai", "bosses": 0.2, "franc": true},
+  "talus": {"pour": "terre", "profil": [[0, 0.03], [0.8, 0.08], [1.5, 0.25], [2.4, 3.2], [5, 6.2], [20, 13], [60, 26], [110, 38]], "sols": [["terre", 1.4], ["roche", 8], ["herbe_foret", 999]], "paroi": "roche", "bosses": 4},
+  "ravin": {"pour": "terre", "profil": [[0, 0.03], [0.8, 0.06], [1.6, 0.0], [3.5, -2.5], [10, -9], [30, -20], [110, -34]], "sols": [["terre", 1], ["herbe", 3], ["roche", 14], ["herbe_foret", 999]], "paroi": "roche", "bosses": 2.5},
+  "cendres": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.5], [30, 3], [110, 12]], "sols": [["cendre", 3], ["basalte", 999]], "paroi": "basalte", "bosses": 2, "particules": "braises"}
+ },
+ "regles": [
+  {"nom": "arbres le long de la route", "objets": {"arbre": 4, "buisson": 2}, "sur": ["bas_cote"], "bande": [5, 40], "pas": 6, "echelle": [0.9, 1.3]},
+  {"nom": "buissons du bas-côté", "objets": {"buisson": 1}, "sur": ["bas_cote", "champ"], "bande": [1.5, 5], "pas": 11},
+  {"nom": "poteaux", "objets": {"poteau": 1}, "sur": ["bas_cote", "champ"], "bande": [1.6, 1.8], "pas": 32},
+  {"nom": "bornes", "objets": {"borne": 1}, "sur": ["bas_cote", "champ", "talus", "ravin"], "bande": [0.6, 0.7], "pas": 110},
+  {"nom": "rochers", "objets": {"rocher": 1}, "sur": ["bas_cote", "sous_bois"], "bande": [2, 14], "pas": 22, "echelle": [0.7, 1.4], "pente": 0.8},
+  {"nom": "une mare, au loin", "objets": {"mare": 1}, "sur": ["bas_cote", "sous_bois", "champ"], "bande": [9, 26], "pas": 90, "pente": 0.15},
+  {"nom": "bois au loin", "objets": {"arbre_loin": 3}, "sur": ["bas_cote", "champ", "trottoir", "sous_bois", "ravin"], "bande": [42, 110], "pas": 3.2, "echelle": [1.1, 1.7]},
+  {"nom": "Pokémon des routes", "objets": {"pokemon": 1}, "nums": [16, 19, 21, 29, 32, 25], "sur": ["bas_cote"], "bande": [2, 6], "pas": 70},
+  {"nom": "barrières des champs", "objets": {"barriere": 1}, "sur": ["champ"], "bande": [1.3, 1.4], "pas": 7},
+  {"nom": "bottes de foin", "objets": {"meule": 1}, "sur": ["champ"], "bande": [8, 30], "pas": 34},
+  {"nom": "arbres des champs", "objets": {"arbre": 1}, "sur": ["champ"], "bande": [30, 60], "pas": 14, "echelle": [1, 1.4]},
+  {"nom": "Pokémon des champs", "objets": {"pokemon": 1}, "nums": [128, 84, 77, 83, 19], "sur": ["champ"], "bande": [4, 14], "pas": 60},
+  {"nom": "sous-bois", "objets": {"arbre": 5, "buisson": 2}, "sur": ["sous_bois"], "bande": [1.6, 30], "pas": 1.1, "echelle": [0.85, 1.3], "serre": 0.8},
+  {"nom": "fond du sous-bois", "objets": {"arbre_loin": 3}, "sur": ["sous_bois"], "bande": [30, 95], "pas": 2, "echelle": [1.1, 1.7]},
+  {"nom": "Pokémon cachés derrière un arbre", "objets": {"pokemon": 1}, "nums": [10, 13, 25, 43, 46, 48, 1], "sur": ["sous_bois"], "derriere": ["arbre"], "bande": [2, 9], "pas": 40},
+  {"nom": "réverbères", "objets": {"lampadaire": 1}, "sur": ["trottoir"], "bande": [0.6, 0.7], "pas": 18},
+  {"nom": "maisons de la rue", "objets": {"maison": 1}, "sur": ["trottoir"], "bande": [8.5, 10], "pas": 16},
+  {"nom": "boîtes aux lettres", "objets": {"boite_lettres": 1}, "sur": ["trottoir"], "bande": [2.2, 2.3], "pas": 24},
+  {"nom": "arbres derrière les maisons", "objets": {"arbre": 3, "buisson": 1}, "sur": ["trottoir"], "bande": [20, 40], "pas": 5, "echelle": [1, 1.4]},
+  {"nom": "Pokémon du village", "objets": {"pokemon": 1}, "nums": [52, 58, 133, 35, 39, 25], "sur": ["trottoir"], "bande": [1.2, 2], "pas": 45},
+  {"nom": "rochers du talus", "objets": {"rocher": 1}, "sur": ["talus"], "bande": [1.2, 4], "pas": 9, "echelle": [0.7, 1.3], "pente": 2},
+  {"nom": "arbres de la montagne", "objets": {"arbre": 3, "rocher": 1}, "sur": ["talus"], "bande": [7, 95], "pas": 2.4, "echelle": [0.9, 1.5], "pente": 0.75},
+  {"nom": "Pokémon de la montagne", "objets": {"pokemon": 1}, "nums": [74, 66, 27, 104, 111], "sur": ["talus"], "bande": [1.6, 3], "pas": 60, "pente": 2},
+  {"nom": "glissières du ravin", "objets": {"glissiere": 1}, "sur": ["ravin"], "bande": [0.45, 0.5], "pas": 3.3, "pente": 3},
+  {"nom": "arbres en contrebas", "objets": {"arbre": 3, "buisson": 1}, "sur": ["ravin"], "bande": [6, 60], "pas": 3, "echelle": [0.9, 1.4], "pente": 1.2},
+  {"nom": "rochers du volcan", "objets": {"rocher": 1}, "sur": ["cendres"], "bande": [1.5, 40], "pas": 5, "echelle": [0.8, 2.2], "pente": 0.9},
+  {"nom": "Pokémon du volcan", "objets": {"pokemon": 1}, "nums": [58, 77, 126, 37, 4], "sur": ["cendres"], "bande": [3, 10], "pas": 60}
+ ]
+}

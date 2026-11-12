@@ -99,7 +99,7 @@ function construireTunnels() {
         let N = [0, 1, 0];
         if (brut) { const a = V[0][0], b = V[1][0], c = V[3][0], e1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], e2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]]; N = nrm([e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]]);
           const vers = [A.x - a[0], A.y + 2 - a[1], A.z - a[2]]; if (N[0] * vers[0] + N[1] * vers[1] + N[2] * vers[2] < 0) N = [-N[0], -N[1], -N[2]]; }   // les facettes regardent l'intérieur
-        for (const j of [0, 1, 2, 0, 2, 3]) F.v(V[j][0][0], V[j][0][1], V[j][0][2], N[0], N[1], N[2], fonce(V[j][1], ton), brut ? 0 : 1); }   // un tunnel lisse est maçonné (des pierres : rendu.js)
+        for (const j of [0, 1, 2, 0, 2, 3]) F.v(V[j][0][0], V[j][0][1], V[j][0][2], N[0], N[1], N[2], fonce(V[j][1], ton), brut ? 0 : 1.3); }   // un tunnel lisse est maçonné (matière 1,3 : des pierres sur les murs, rendu.js)
       avant = apres; }
     // ce qui habite la grotte : stalactites, stalagmites, cristaux, étais
     const plafond = (C, u) => { for (let k = 1; k < C.pts.length - 2; k++) { const [u0, y0] = C.pts[k], [u1, y1] = C.pts[k + 1]; if (u >= u0 && u <= u1) return lerp(y0, y1, (u - u0) / Math.max(.001, u1 - u0)); } return PIED; };

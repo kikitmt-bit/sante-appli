@@ -17,6 +17,8 @@ OBJETS = {n for f in (C / "objets").glob("*.js") for n in re.findall(r"^  (\w+)\
 SURFACES = set(re.findall(r"^SURFACES\.(\w+) = ", (R / "moteur" / "surfaces.js").read_text(encoding="utf-8"), re.M))
 NIVEAUX = sorted(f.stem for f in (C / "niveaux").glob("*.json"))
 sys.path.insert(0, str(R))
+import page as _page  # noqa: E402
+region = lambda nom: _page.region(nom)  # une région avec ce dont elle hérite (comme le jeu)
 
 
 class Fichiers(unittest.TestCase):
@@ -28,7 +30,7 @@ class Fichiers(unittest.TestCase):
 
     def test_regions(self):
         for f in (C / "biomes").glob("*.json"):
-            b = lis("biomes", f.name)
+            b = region(f.stem)
             for nom, rive in b["rives"].items():
                 self.assertIn(rive["paroi"], b["sols"], f"{f.name} : paroi de {nom}")
                 for sol, _ in rive["sols"]:
@@ -54,7 +56,7 @@ class Fichiers(unittest.TestCase):
     def test_niveaux(self):
         for nom in NIVEAUX:
             n = lis("niveaux", nom + ".json")
-            b, lieux = lis("biomes", n["biome"] + ".json"), lis("lieux", n.get("lieux", n["biome"]) + ".json")
+            b, lieux = region(n["biome"]), lis("lieux", n.get("lieux", n["biome"]) + ".json")
             pieces = n["pieces"]
             if n.get("boucle"):  # une boucle se referme par une pièce « raccord » à la fin (ou, à l'ancienne, par une pièce au virage « auto »)
                 autos = sum(1 for p in pieces if p.get("virage") == "auto")

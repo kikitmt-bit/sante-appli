@@ -19,6 +19,7 @@ function poserDecor() {   // tout placer (aucun appel à three.js : se contrôle
   const libre = (x, z, r) => { const ci = Math.floor(x / 8), cj = Math.floor(z / 8); for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) for (const o of pris.get(i + "," + j) || []) if (Math.hypot(o.x - x, o.z - z) < r + o.r) return false; return true; };
   const occuper = (x, z, r) => { const k = Math.floor(x / 8) + "," + Math.floor(z / 8); if (!pris.has(k)) pris.set(k, []); pris.get(k).push({x, z, r}); };
   for (let i = 0; i < P.N; i += 3) if (P.PONT[i]) occuper(P.X[i], P.Z[i], P.W[i] + 3);   // rien ne pousse à travers un pont
+  for (let i = 0; i < P.N; i += 2) if (P.CROIX[i]) occuper(P.X[i], P.Z[i], P.W[i] + 2);   // ni au milieu d'un carrefour
   function poser(nom, s, cote, e, o = {}, ech = 1) {
     const recette = OBJETS[nom]; if (!recette) { console.warn("Objet inconnu : " + nom); return; }
     const a = at(s), sg = cote === "g" ? -1 : 1, q = cote === "c" || cote === "portail" ? pose(s, e || 0) : pose(s, sg * (a.w + e));
@@ -49,7 +50,7 @@ function poserDecor() {   // tout placer (aucun appel à three.js : se contrôle
         const e = lerp(r.bande[0], r.bande[1], R()), ech = r.echelle ? lerp(r.echelle[0], r.echelle[1], R()) : 1; let nom = Object.keys(r.objets)[0], t = R() * total; for (const [k, v] of Object.entries(r.objets)) { if ((t -= v) <= 0) { nom = k; break; } }
         if (reserve(s, cote, e) || (r.sauf || []).includes(pieceEn(s).titre)) continue;
         const q = pose(s, sg * (at(s).w + e)); pres(q.x, q.z); if (Math.abs(Q.e - e) > 1.5) continue;   // dans un virage serré, ce point est en fait plus près d'un autre bout de rivière
-        const y = hauteur(q.x, q.z); if (y - P.Y[Q.i] < .15) continue;
+        const y = hauteur(q.x, q.z); if (Q.e < .3 || y - P.Y[Q.i] < (DISC_PISTE === "terre" ? -90 : .15)) continue;   // jamais sur une route ; sur l'eau, jamais au ras de l'eau
         if (r.plat !== undefined) { const q3 = pose(s, sg * (at(s).w + 3)); if (hauteur(q3.x, q3.z) - P.Y[Q.i] > r.plat) continue; }   // plat : la rive, à 3 m du bord, ne monte pas plus haut (des roseaux jamais au pied d'une paroi)
         const pente = Math.max(Math.abs(hauteur(q.x + 1.5, q.z) - hauteur(q.x - 1.5, q.z)), Math.abs(hauteur(q.x, q.z + 1.5) - hauteur(q.x, q.z - 1.5))) / 3; if (pente > (r.pente || .45)) continue;
         const rayon = (RAYON[nom] || 1) * ech * (r.serre || 1); if (!libre(q.x, q.z, rayon)) continue;

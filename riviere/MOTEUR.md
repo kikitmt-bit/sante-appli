@@ -99,6 +99,7 @@ La distance, le temps, la cadence et l'allure affichés sont ceux de la machine 
 | `pont` | `true` (pierre), `"bois"`, `"arches"` (grandes arches dorées, lampes) ; avec `"ravin": 10` le sol se creuse dessous et une rivière coule au fond |
 | `surface` | aussi les autres eaux de la région : `"marais"`, `"source"` (elle luit), `"lagon"`, `"abysse"`. Les couleurs se fondent d'une eau à l'autre sur ~100 m (`couleursEau`, une seule matière d'eau pour toute la piste) : jamais de trait |
 | rive `lac` | (12/11) l'eau s'étend jusqu'à ~45 m de chaque côté (la rive passe sous l'eau, l'eau du large la remplace, mêmes couleurs : `couleursEau`), puis une plage, des roseaux, des arbres ; on y fait un vrai tour (rayon ≥ demi-largeur + 1,5 m, comme partout). Objet `ilot` (`"cote": "c"`, `"e"` : sa distance au milieu, `"r"` : sa taille) ; arbres et Pokémon dessus avec `"haut": 0.9` |
+| `pont` au-dessus de la piste | (12/11) le moteur l'allonge tout seul pour que ses culées restent à W + 9 m de l'eau qu'il enjambe |
 | saut utile | une impasse : tremplin court `net` (+0,6 m) puis chute `net` (−5,5 m sur 3 m) ; l'objet `barrage` (`"cote": "c"` à la crête, `"chute"`) dessine les tours, la passerelle des vannes et les bajoyers. Exemple : vitrine, « Le barrage » |
 | `ambiance` | l'air du lieu : `"sous-bois"`, `"marais"`, `"plage"`, `"volcan"`, `"sommet"` (teinte, brume, particules) |
 | `segment` | un nom : ce bout est chronométré à part, avec son record (plusieurs pièces qui se suivent, même nom = un segment) |
@@ -108,6 +109,23 @@ La distance, le temps, la cadence et l'allure affichés sont ceux de la machine 
 (cap en degrés, 0 = droit devant au départ). Le menu peut imposer l'heure et le temps (gardés sur la machine). Sur un objet : `"flotte": true`
 (sur l'eau contre la rive : bateau, ponton ; `e` négatif), `"bouge"` pour un Pokémon (`vol`, `ronde`, `nage`, `saut` : sprites.js).
 Modèle complet : `contenu/niveaux/vitrine.json` (la Baie de Carmin).
+
+## Deux activités, deux sortes de circuits : l'eau et la terre (12/11)
+
+Kiki : un circuit de vélo n'est pas « la rivière sans l'eau ». Chaque circuit est de l'une ou de l'autre :
+- **eau** (par défaut) : le rameur, sur une rivière ; région `kanto`, rives au-dessus de l'eau, eaux de couleur, roseaux, Pokémon d'eau, la mer au loin.
+- **terre** (`"discipline": "terre"`, ou une surface `terre` / `goudron` / `paves`) : vélo et elliptique ; région `kanto-routes` (elle hérite des couleurs de Kanto) : la route est **posée sur le sol** (rives à 3 cm au-dessus d'elle), aucune mer (`ILE` faux : des collines au loin), aucune règle d'eau. Rives : `bas_cote`, `champ`, `sous_bois`, `trottoir` (rue, maisons, réverbères), `talus` (la montagne qui monte), `ravin` (le vide sous la route, glissières), `cendres` ; plus `montagne` pour un tunnel. Revêtements : `terre`, `goudron`, `paves`.
+
+La machine choisie au menu dit l'activité (rameur → eau ; vélo, elliptique → terre) : le menu ne propose que les circuits de cette activité, et chaque activité garde son circuit (`riviere_niveau_eau` / `riviere_niveau_terre`). Un circuit d'eau ne se change jamais en chemin (l'ancien `riviere_surface` et `?surface=` ne servent plus).
+
+Possibilités propres à la terre :
+- **un 8** (`"boucle": "huit"`) : la dernière pièce au virage `"auto"` annule les virages des autres ; la piste se croise **à niveau** (un carrefour : `CROIX` dans piste.js, aucun marquage dans le carrefour, le passage du dessus dessiné par-dessus, pas de rive ni de décor sur l'autre route). Le contrôleur accepte un croisement à la même hauteur (moins de 0,8 m d'écart) s'il est franc (plus de 25°) ; sinon un pont 4,5 m plus haut.
+- **une montagne au milieu d'une boucle** (`"massif": {"haut": 190, "rayon": 0.82, "cratere": true}`) : un volcan dont on fait le tour, cendre en haut, herbe au pied, un cratère qui rougeoie et fume (`MASSIF` dans champ.js, `construireMassif` dans terrain.js).
+- des pentes jusqu'à 10 % (le générateur en met jusqu'à 250 m de montée).
+
+**Le vélo** (`moteur/velo.js`, la monture `cycliste`, demandée par la machine vélo : `monture` dans `MACHINES`) : un vrai vélo en volumes (cadre rouge, roues à rayons, garde-boue et feu arrière, pédalier, guidon qui braque, phare allumé la nuit, panier) et ton Pokémon dessus, vu de trois-quarts dos ; ses jambes (l'animation de marche) suivent le pédalier. Roues et pédales selon la vitesse, petit braquet dans les côtes, roue libre en descente rapide (il se ramasse), danseuse au-dessus de 5,5 % (le vélo bascule à chaque coup de pédale), inclinaison réelle dans les virages (vitesse et courbe), cabrage au saut et amorti à la réception, vibrations sur les pavés, penché à l'arrêt. Au sol : ombre tramée (`OMBRE_U`), trace du pneu et poussière sur un chemin. À vélo, la caméra se met de trois-quarts arrière (1,25 m à droite, plus haute). Sans capteur de cadence, la cadence affichée est celle des pédales. L'elliptique garde le Pokémon qui court.
+
+Exemples : `terre-volcan.json` (« Le tour du volcan ») et `terre-huit.json` (« Le Huit de Jadielle »).
 
 ## Créer un circuit sans écrire de fichier : l'éditeur et le générateur
 
@@ -146,6 +164,8 @@ un fichier `contenu/biomes/<nom>.json` (couleurs du ciel, de l'eau, des sols ; `
 objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisissent leur région : `"biome": "johto"`.
 
 ## Ajouter une surface, une monture, une machine
+
+(12/11) `paves` : une rue pavée à bordure de pierre (mode 2 de `matRoute`). Les couleurs des revêtements d'une région : `terres` dans sa fiche.
 
 - **Surface** : `SURFACES.sable = {materiau, liquide: false, monture: "coureur", poussiere: "#E8D69C"}` (voir `matRoute` dans `surfaces.js`).
 - **Monture** : `MONTURES.velo = {enfonce: 0, foulee: 0}` ; une surface choisit sa monture.

@@ -5,7 +5,16 @@
 // le sol passe donc en douceur de l'un à l'autre, sans cassure. Un pont ne vote pas : le sol passe dessous.
 // Ce fichier ne dessine rien (aucun appel à three.js) : il se contrôle sans navigateur.
 const SOLS = Object.fromEntries(Object.entries(BIOME.sols).map(([k, v]) => [k, {c: v.c.map(hex), mat: v.mat || 0}]));
-const ILE = NIVEAU.loin !== "terres";   // au loin, hors du circuit : la mer (par défaut) ou des collines ("loin": "terres")
+const ILE = NIVEAU.loin ? NIVEAU.loin !== "terres" : DISC_PISTE !== "terre";   // un circuit sur la terre n'est jamais une île : des collines au loin, aucune mer
+/* une montagne au milieu d'un circuit en boucle ("massif": {"haut": 140, "rayon": 0.9, "cratere": true}) : un volcan dont on fait le tour (Kiki, 12/11 : « faire le tour du volcan »).
+   Son centre : le milieu du circuit (dx, dz pour le décaler) ; rayon : par rapport à la distance moyenne du circuit à ce milieu ; sol, roche : ses couleurs en haut */
+const MASSIF = (() => { const m = NIVEAU.massif, P = PISTE; if (!m) return null; let x = 0, z = 0, y = 0, d = 0;
+  for (let i = 0; i < P.N; i++) { x += P.X[i]; z += P.Z[i]; y += P.Y[i]; } x /= P.N; z /= P.N; y /= P.N;
+  for (let i = 0; i < P.N; i++) d += Math.hypot(P.X[i] - x, P.Z[i] - z); d /= P.N;
+  return {x: x + (m.dx || 0), z: z + (m.dz || 0), y, h: m.haut || 120, r: (m.rayon || .9) * d, cratere: m.cratere !== false, sol: m.sol || "cendre", roche: m.roche || "basalte"}; })();
+function massifEn(x, z) { const r = Math.hypot(x - MASSIF.x, z - MASSIF.z) / MASSIF.r; if (r >= 1) return -1e9;
+  const rc = MASSIF.cratere ? .1 : 0, haut = MASSIF.y + MASSIF.h * Math.pow(1 - Math.max(r, rc), 1.35) + 7 * r * (fbm(x / 40 + 5, z / 40 + 1) - .45);
+  return r < rc ? haut - MASSIF.h * .16 * (1 - (r / rc) ** 2) : haut; }   // au loin, hors du circuit : la mer (par défaut) ou des collines ("loin": "terres")
 function profil(pts, e) {
   if (e <= pts[0][0]) return pts[0][1];
   for (let k = 1; k < pts.length; k++) if (e < pts[k][0]) return lerp(pts[k - 1][1], pts[k][1], (e - pts[k - 1][0]) / (pts[k][0] - pts[k - 1][0]));
@@ -109,6 +118,7 @@ function finir(x, z) {  // après le vote : les bosses, puis les ravins, puis le
     if ((BOUCLE && dedans(x, z)) || !ILE) h = lerp(h, V.y + 5 + 5 * (fbm(x / 70 + 1, z / 70 + 4) - .4), lisse(100, 190, e));
     else h = lerp(h, -3, lisse(120, 170, e));
   }
+  if (MASSIF) { const m = massifEn(x, z); if (m > h) h = lerp(h, m, lisse(8, 40, e)); }
   return h;
 }
 function hSol(x, z) { voter(x, z); return finir(x, z); }   // le sol, sans creuser le lit de la piste (pour les rives)
@@ -145,6 +155,9 @@ function couleurSol(i, cote, e, ny, x, z) {  // la couleur du sol : celle de la 
   if (e > 100 && ((BOUCLE && dedans(x, z)) || !ILE)) {   // au loin, dans les collines : la même herbe partout
     const k = lisse(100, 190, e), c = SOLS.herbe.c[tache % SOLS.herbe.c.length]; r = lerp(r, c[0], k); g = lerp(g, c[1], k); b = lerp(b, c[2], k);
   }
+  if (MASSIF && e > 8) { const rr = Math.hypot(x - MASSIF.x, z - MASSIF.z) / MASSIF.r;   // la montagne : de l'herbe au pied, de la cendre en haut, sa roche dans les pentes raides
+    if (rr < 1.05) { const k = lisse(8, 40, e) * (1 - lisse(.8, 1.05, rr)), S = SOLS[rr < .55 + .08 * (bruit(x / 30, z / 30) - .5) ? MASSIF.sol : "herbe"] || SOLS.herbe, Pa = SOLS[MASSIF.roche] || SOLS.roche, c = melange(S.c[tache % S.c.length], Pa.c[tache % Pa.c.length], raide);
+      r = lerp(r, c[0], k); g = lerp(g, c[1], k); b = lerp(b, c[2], k); } }
   COUL[0] = r; COUL[1] = g; COUL[2] = b; COUL[3] = m > .5 ? 1 : 0; return COUL;
 }
 function couleurEn(x, z) { pres(x, z); const c = couleurSol(Q.i, Q.d > 0 ? 1 : 0, Math.max(Q.e, 0), 1, x, z); return [c[0], c[1], c[2]]; }
