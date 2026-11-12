@@ -22,10 +22,20 @@ import kotlin.math.sqrt
  * impossible à deviner sans la clé, il ne dit rien de Kiki. Les messages ne contiennent que le numéro du coup, sa force
  * relative et le cœur.
  */
-class Detecteur(private val ecart: Double = 1.2, private val k: Double = 0.8, private val tau: Double = 15.0) {
-    private val sos = arrayOf(
-        doubleArrayOf(0.005970418741051477, 0.011940837482102954, 0.005970418741051477, -1.7936524423952442, 0.8199561260632414),
-        doubleArrayOf(1.0, -2.0, 1.0, -1.9672388810552122, 0.96800180399168))
+class Detecteur(private val ecart: Double = 1.2, private val k: Double = 0.8, private val tau: Double = 15.0,
+                private val minimum: Double = 2.0, private val sos: Array<DoubleArray> = SOS_RAMEUR) {
+    companion object {
+        /** rameur : 0,2-1,5 Hz */
+        val SOS_RAMEUR = arrayOf(
+            doubleArrayOf(0.005970418741051477, 0.011940837482102954, 0.005970418741051477, -1.7936524423952442, 0.8199561260632414),
+            doubleArrayOf(1.0, -2.0, 1.0, -1.9672388810552122, 0.96800180399168))
+        /** elliptique : 0,3-2,5 Hz (12/11 : rejoué sur l'enregistrement du 10/11, 524 tours retrouvés sur 527, pause de 15 s bien vue) */
+        val SOS_ELLIPTIQUE = arrayOf(
+            doubleArrayOf(0.015914556664710318, 0.031829113329420636, 0.015914556664710318, -1.641420154565193, 0.710896504616027),
+            doubleArrayOf(1.0, -2.0, 1.0, -1.9498488280757402, 0.9515270755131162))
+        /** Le bon réglage pour chaque machine : un coup de rame toutes les 1,2 s au plus ; un tour d'elliptique toutes les 0,45 s au plus. */
+        fun pour(machine: String) = if (machine == "elliptique") Detecteur(ecart = 0.45, minimum = 1.0, sos = SOS_ELLIPTIQUE) else Detecteur()
+    }
     private val z = Array(2) { Array(2) { DoubleArray(3) } }
     private val c = Array(3) { i -> DoubleArray(3) { j -> if (i == j) 1e-3 else 0.0 } }
     private var v = doubleArrayOf(1.0, 0.0, 0.0)
@@ -53,7 +63,7 @@ class Detecteur(private val ecart: Double = 1.2, private val k: Double = 0.8, pr
             if (p > prec) monte = true
             else if (monte) {   // on vient de passer un sommet
                 monte = false
-                if (arme && prec > seuil && prec > 2.0 && tPrec - dernier >= ecart) { coup = true; force = prec / r; dernier = tPrec; arme = false }
+                if (arme && prec > seuil && prec > minimum && tPrec - dernier >= ecart) { coup = true; force = prec / r; dernier = tPrec; arme = false }
             }
         }
         prec = p; tPrec = t
@@ -109,9 +119,10 @@ class LienJeu(private val machine: String) {
     private val fil = HandlerThread("relais").apply { start() }
     private val h = Handler(fil.looper)
     private val relais = listOf("broker.hivemq.com", "broker.emqx.io").map { Relai(it, h) }
-    private val sujet = "pokefit/rameur/" + MessageDigest.getInstance("SHA-256")
+    private val sujet = "pokefit/$machine/" +   // un sujet par machine ; le nom qui suit est le même (seances_rameur.lien) MessageDigest.getInstance("SHA-256")
         .digest("rameur|${BuildConfig.JEU_CLE}|kiki".toByteArray()).joinToString("") { "%02x".format(it) }.take(20)
-    val detecteur = Detecteur()
+    val detecteur = Detecteur.pour(machine)
+    private val geste = if (machine == "elliptique") "tour" else "coup"
     @Volatile var coups = 0; private set
     @Volatile var coeur = 0
     val relie get() = relais.any { it.relie }
@@ -126,7 +137,7 @@ class LienJeu(private val machine: String) {
     fun mesure(t: Long, ax: Float, ay: Float, az: Float) {
         if (detecteur.mesure(t / 1000.0, ax, ay, az)) {
             coups++
-            envoyer("""{"k":"coup","m":"$machine","n":$coups,"f":${"%.2f".format(java.util.Locale.US, detecteur.force)},"h":$coeur,"t":$t}""")
+            envoyer("""{"k":"$geste","m":"$machine","n":$coups,"f":${"%.2f".format(java.util.Locale.US, detecteur.force)},"h":$coeur,"t":$t}""")
         }
     }
 

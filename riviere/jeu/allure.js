@@ -13,7 +13,8 @@ const MACHINES = {
   // Le vélo (home trainer) : une machine CONTINUE. Sa vitesse vient d'un capteur Bluetooth (jeu/capteurs.js) : des watts et la physique (poids, pente, air),
   // ou la vitesse que donne l'appareil. En essai, un toucher = un tour de pédale (6 m), « Auto » = 150 watts. masse : toi et le vélo (kg).
   velo: {nom: "Vélo", monture: "cycliste", geste: "tour", gestes: "TOURS", metres: 6, tau: 2.2, lisse: .5, allure: 1, cadence: 60, v0: 2.5, v1: 9.5, affiche: "kmh", enregistre: false, continu: true, physique: true, masse: clamp(+lireReglage("riviere_masse", 85) || 85, 40, 160)},
-  elliptique: {nom: "Elliptique", geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: false},
+  // À l'elliptique, ton Pokémon court (par défaut) ou roule sur le vélo : au choix dans le menu (Kiki, 12/11), gardé sur la machine.
+  elliptique: {nom: "Elliptique", monture: lireReglage("riviere_monture_elliptique", "coureur") === "cycliste" ? "cycliste" : undefined, geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: false},
 };
 const MACHINE_NOM = (() => { const m = MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";
   if (DISCIPLINE === "eau") return "rameur";   // un circuit sur l'eau se rame ; un circuit sur la terre se fait à vélo ou à l'elliptique

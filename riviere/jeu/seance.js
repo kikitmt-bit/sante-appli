@@ -49,6 +49,7 @@ function ouvrirMenu() {
     <details class="pli"><summary>Machine : ${MACHINE.nom}</summary>
       <div class="fantomes"><small>SUR L'EAU (les rivières)</small>${boutons([["rameur", MACHINES.rameur.nom]], MACHINE_NOM, "machine")}</div>
       <div class="fantomes"><small>SUR LA TERRE (routes, chemins, rues : d'autres circuits)</small>${boutons(Object.entries(MACHINES).filter(([k]) => ACTIVITE[k] === "terre").map(([k, m]) => [k, m.nom]), MACHINE_NOM, "machine")}</div>
+      ${MACHINE_NOM === "elliptique" ? `<div class="fantomes"><small>TON POKÉMON À L'ELLIPTIQUE</small>${boutons([["coureur", "Il court"], ["cycliste", "À vélo"]], MACHINE.monture === "cycliste" ? "cycliste" : "coureur", "monture")}</div>` : ""}
       <div class="fantomes"><small>CAPTEUR BLUETOOTH (home trainer, rameur ou elliptique connecté, ceinture cardio)</small>
         <button class="opt" id="mBT" ${BT_OK ? "" : "disabled"}>Relier un capteur</button><p class="petit" id="mBTetat">${BT_OK ? BT.etat || "Rien de relié." : "Ce navigateur ne parle pas Bluetooth (Chrome ou Edge le font)."}</p></div></details>
     <details class="pli"><summary>Adversaires et fantôme</summary>
@@ -66,6 +67,7 @@ function ouvrirMenu() {
   un("[data-h]", null, b => { ecrireReglage("riviere_heure", b.dataset.h); reglerAmbiance(b.dataset.h === "circuit" ? NIVEAU.heure || "jour" : b.dataset.h, null); });   // on voit le ciel changer derrière le menu
   un("[data-m]", null, b => { ecrireReglage("riviere_meteo", b.dataset.m); reglerAmbiance(null, b.dataset.m === "circuit" ? NIVEAU.meteo || "beau" : b.dataset.m); });
   p.querySelectorAll("[data-machine]").forEach(b => b.onclick = () => { if (b.dataset.machine === MACHINE_NOM) return; ecrireReglage("riviere_machine", b.dataset.machine); if (ACTIVITE[b.dataset.machine] === "terre") ecrireReglage("riviere_machine_terre", b.dataset.machine); ecrireReglage("riviere_surface", null); b.textContent = "Chargement…"; relancer(); });
+  p.querySelectorAll("[data-monture]").forEach(b => b.onclick = () => { if (b.dataset.monture === (MACHINE.monture === "cycliste" ? "cycliste" : "coureur")) return; ecrireReglage("riviere_monture_elliptique", b.dataset.monture); b.textContent = "Chargement…"; relancer(); });
   un("[data-r]", null, b => choisirRivaux(b.dataset.r));
   un("[data-f]", null, b => { choisirFantome(b.dataset.f); majTexteFantome(); });
   p.querySelector("#mBT").onclick = async e => { const el = $("mBTetat"), t = setInterval(() => { if (el.isConnected) el.textContent = BT.etat; }, 300); await relierCapteur(); clearInterval(t); if (el.isConnected) el.textContent = BT.etat; };

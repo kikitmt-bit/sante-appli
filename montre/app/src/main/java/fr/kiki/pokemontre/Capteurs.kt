@@ -100,7 +100,7 @@ class CapteursActivity : Activity() {
             val j = Enregistreur.jeu
             "%d:%02d · %d mesures/s%s".format(s / 60, s % 60, Enregistreur.parSeconde,
                 if (Enregistreur.coeur > 0) " · ♥ ${Enregistreur.coeur}" else "") +
-                (if (j != null) "\n${j.coups} coups · " + (if (j.relie) "jeu relié" else "relais…") else "")
+                (if (j != null) "\n${j.coups} " + (if (choix == "rameur") "coups" else "tours") + " · " + (if (j.relie) "jeu relié" else "relais…") else "")
         } else Enregistreur.dernier ?: "Touche la machine pour changer"
     }
 }
@@ -123,7 +123,7 @@ class Enregistreur : Service(), SensorEventListener {
         nm.createNotificationChannel(NotificationChannel("capteurs", "Enregistrement des capteurs", NotificationManager.IMPORTANCE_LOW))
         val tap = PendingIntent.getActivity(this, 11, Intent(this, CapteursActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(this, "capteurs").setSmallIcon(R.drawable.ic_ball).setContentTitle("Capteurs")
-            .setContentText(if (machine == "rameur") "Rameur : relié au jeu" else "Enregistrement : $machine").setOngoing(true).setContentIntent(tap).build()
+            .setContentText((if (machine == "rameur") "Rameur" else "Elliptique") + " : relié au jeu").setOngoing(true).setContentIntent(tap).build()
         if (android.os.Build.VERSION.SDK_INT >= 34) startForeground(12, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH)
         else startForeground(12, n)
         verrou = getSystemService(PowerManager::class.java)
@@ -137,7 +137,7 @@ class Enregistreur : Service(), SensorEventListener {
             write("# machine=$machine debut=${System.currentTimeMillis()} appareil=${android.os.Build.MODEL}\n")
             write("t,type,v1,v2,v3,v4\n")
         }
-        if (machine == "rameur") jeu = LienJeu(machine)   // le jeu de la tablette reçoit chaque coup, en direct
+        jeu = LienJeu(machine)   // le jeu reçoit chaque coup de rame ou chaque tour d'elliptique, en direct
         lignes = 0; enCours = true; debut = SystemClock.elapsedRealtime(); coeur = 0; parSeconde = 0
 
         val sm = getSystemService(SensorManager::class.java)
