@@ -18,15 +18,16 @@ async function plancheEnLigne(cle) {
 }
 function planche(cle) {
   if (PLANCHES[cle]) return PLANCHES[cle];
-  return PLANCHES[cle] = new Promise(async ok => { const L = LOT[cle] || await plancheEnLigne(cle); if (!L) return ok(null); const im = new Image(); if (L.png.slice(0, 5) !== "data:") im.crossOrigin = "anonymous";
-    im.onload = () => { const c = toile(im.width, im.height, x => x.drawImage(im, 0, 0)), cx = c.getContext("2d"), img = cx.getImageData(0, 0, im.width, im.height), d = img.data;
+  return PLANCHES[cle] = new Promise(async ok => { setTimeout(() => ok(null), 12000);   // une image en ligne qui ne vient pas ne bloque jamais le départ (12/11)
+    const L = LOT[cle] || await plancheEnLigne(cle); if (!L) return ok(null); const im = new Image(); if (L.png.slice(0, 5) !== "data:") im.crossOrigin = "anonymous";
+    im.onload = () => { try { const c = toile(im.width, im.height, x => x.drawImage(im, 0, 0)), cx = c.getContext("2d"), img = cx.getImageData(0, 0, im.width, im.height), d = img.data;
       const cols = Math.max(1, Math.floor(im.width / L.fw)), rows = Math.max(1, Math.floor(im.height / L.fh)), boites = {};
       const tex = new THREE.CanvasTexture(c); tex.magFilter = THREE.NearestFilter; tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false;
       ok({tex, W: im.width, H: im.height, fw: L.fw, fh: L.fh, cols, rows, dur: L.dur, m: L.m, total: L.dur.reduce((a, b) => a + b, 0) / 60,
         boite(r) { r = Math.min(r, rows - 1); if (boites[r]) return boites[r]; let x0 = 1e9, x1 = -1, y0 = 1e9, y1 = -1;   // le cadre utile d'une rangée (sans les marges vides)
           for (let i = 0; i < cols; i++) for (let Y = 0; Y < L.fh; Y++) for (let X = 0; X < L.fw; X++) if (d[((r * L.fh + Y) * im.width + i * L.fw + X) * 4 + 3] > 20) { x0 = Math.min(x0, X); x1 = Math.max(x1, X + 1); y0 = Math.min(y0, Y); y1 = Math.max(y1, Y + 1); }
           return boites[r] = x1 < 0 ? {x0: 0, x1: L.fw, y0: 0, y1: L.fh} : {x0, x1, y0, y1}; },
-        image(t) { let s = (t % this.total) * 60, i = 0; while (i < this.dur.length - 1 && s >= this.dur[i]) { s -= this.dur[i]; i++; } return Math.min(i, cols - 1); }}); };
+        image(t) { let s = (t % this.total) * 60, i = 0; while (i < this.dur.length - 1 && s >= this.dur[i]) { s -= this.dur[i]; i++; } return Math.min(i, cols - 1); }}); } catch (e) { ok(null); } };
     im.onerror = () => ok(null); im.src = L.png; });
 }
 const GEO_SPRITE = new THREE.PlaneGeometry(1, 1).translate(0, .5, 0);

@@ -145,7 +145,18 @@ body.edite .hud, body.edite #carte, body.edite #profil, body.edite #bSon, body.e
   <div class="ed-corps"><div class="ed-gauche"><canvas id="edPlan"></canvas><canvas id="edProfil"></canvas><div id="edEtat"></div></div><div id="edCote"></div></div>
 </div>
 <div id="charge">Le monde se construit…</div>
+<script>
+/* jamais d'écran « Le monde se construit… » muet : une erreur au démarrage s'écrit à l'écran (12/11 : la page restait bloquée sans rien dire) */
+window.__erreurDepart = m => { const c = document.getElementById("charge"); if (c && !c.hidden && !c.dataset.erreur) { c.dataset.erreur = 1; c.style.cssText += ";font-size:20px;padding:24px;text-align:center"; c.textContent = "Le jeu ne démarre pas : " + m; } };
+addEventListener("error", e => { if (e.message) window.__erreurDepart(e.message); });
+addEventListener("unhandledrejection", e => window.__erreurDepart(String(e.reason && e.reason.message || e.reason)));
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>if (!window.THREE) document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');   /* cdnjs bloqué (VPN, bloqueur de pub) : l'autre source */</script>
+<script>
+if (!window.THREE) window.__erreurDepart("three.js (le moteur 3D) n'a pas pu être chargé. Un bloqueur de pub ou un VPN l'empêche peut-être.");
+setTimeout(() => window.__erreurDepart("le monde met plus de 60 s à se construire. Recharge la page ; si ça recommence, envoie une capture à Claude."), 60000);
+</script>
 <script>
 "use strict";
 __DONNEES__
