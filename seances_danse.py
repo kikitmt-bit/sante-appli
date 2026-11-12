@@ -1,7 +1,8 @@
 """Les séances de danse sur le vrai tapis, dans la page Santé (Kiki seul, sans Streamlit).
 
-Le jeu du tapis, sur le PC de Kiki, écrit une séance par fichier dans data/danse/sessions/AAAA-MM-JJ-HHMMSS.json. Elles ne donnent aucun point :
-tout est affiché en HTML pur, replié, pour qu'ouvrir une séance ne recharge jamais la page.
+Le jeu du tapis, sur le PC de Kiki, écrit une séance par fichier dans data/danse/sessions/AAAA-MM-JJ-HHMMSS.json. Affichées en HTML pur,
+repliées, pour qu'ouvrir une séance ne recharge jamais la page. Pour le jeu (12/11, Kiki : la mission Mélofée), `fusionner` ajoute au résumé
+du jour le temps dansé (`danse_tapis_s`) : chiffres.stats_jour garde le plus grand de la montre et du tapis (jamais compté deux fois).
 """
 import datetime as dt
 from html import escape
@@ -22,6 +23,26 @@ def fichiers_periode(liste, debut, fin):
         if nom.endswith(".json") and debut <= jour <= fin:
             chemins.append(f"{DOSSIER}/{nom}")
     return sorted(chemins)
+
+
+def fusionner(resumes, lire, debut, fin):
+    """Les résumés des jours, avec le temps dansé sur le tapis en plus (danse_tapis_s). Une copie ; une erreur ici ne casse rien."""
+    try:
+        chemins = fichiers_periode(lire([DOSSIER])[DOSSIER], debut, fin)
+        if not chemins:
+            return resumes
+        out = dict(resumes)
+        for s in lire(chemins).values():
+            if not s or not s.get("danse_s"):
+                continue
+            jour = s["debut"][:10]
+            r = dict(out.get(jour) or {})
+            r["danse_tapis_s"] = (r.get("danse_tapis_s") or 0) + s["danse_s"]
+            out[jour] = r
+        return out
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError) as e:
+        print("Danse du tapis non comptée :", type(e).__name__, flush=True)
+        return resumes
 
 
 def _heure(iso):

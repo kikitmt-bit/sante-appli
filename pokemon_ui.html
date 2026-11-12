@@ -217,7 +217,7 @@ img.ball-pix{display:block;width:100%;height:100%;object-fit:contain;image-rende
   border-bottom:7px solid transparent}
 @keyframes pk-bandeau{50%{box-shadow:0 0 0 2px #FFCB05 inset,0 0 18px 2px rgba(255,203,5,.45)}}
 /* la boule de cristal (dans une grotte) : on y voit le dresseur marcher sous la montagne */
-.carte-wrap .boule{position:absolute;width:calc(24% / var(--z));aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
+.carte-wrap .boule{position:absolute;width:calc(19% / var(--z));aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;
   overflow:hidden;z-index:4;box-shadow:0 0 0 2px #FFE7A0,0 0 0 4px #9C7426,0 0 0 5.5px rgba(40,25,5,.6),0 0 16px 5px rgba(255,214,120,.55),
   0 6px 12px rgba(0,0,0,.55);animation:pk-boule 2.4s ease-in-out infinite}
 .carte-wrap .boule canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
@@ -4463,10 +4463,10 @@ function heros(P = POSE) {  // le dresseur à la pose P (poseA) ; .suit = ce qui
   const {x, y, dir, enRoute, arrete, mode} = P;
   const pos = `left:${x / LARG * 100}%;top:${y / HC * 100}%`;
   const ombre = `<div class="ombre-heros suit" style="${pos}"></div>`;
-  if (mode === "grotte") {  // sous la montagne : on le voit marcher dans une boule de cristal qui avance sur le trait
-    const d = dir === "gauche" ? "gauche" : "droite";
-    return `<div class="boule suit" style="${pos}"><canvas class="cave" width="64" height="64" data-dir="${d}"></canvas>
-      ${sacha("red_normal", d, true)}</div>`;
+  if (mode === "grotte") {  // sous la montagne : une boule de cristal ; il n'y marche que pendant le film du voyage (P.enMarche), sinon il attend (Kiki, 12/11)
+    const d = dir === "gauche" ? "gauche" : "droite", m = !!P.enMarche;
+    return `<div class="boule suit" style="${pos}"><canvas class="cave" width="64" height="64" data-dir="${d}" ${m ? "" : 'data-fige="1"'}></canvas>
+      ${sacha("red_normal", d, m)}</div>`;
   }
   if (mode === "vol" || mode === "surf") {  // en vol ou en mer : sur le dos du Pokémon (ou à vélo, en bateau, sur un Lokhlass sauvage)
     const m = monture(mode);
@@ -4692,7 +4692,8 @@ const GROTTE = (() => {
 (function grotteAnimee(t) {
   document.querySelectorAll("canvas.cave").forEach(cv => {
     const g = cv.getContext("2d"), {c, W, cristaux} = GROTTE, sens = cv.dataset.dir === "gauche" ? -1 : 1;
-    const off = (((t / 45) * sens) % W + W) % W;  // ~22 px par seconde
+    if (cv.dataset.fige && cv.dataset.off == null) cv.dataset.off = 0;  // à l'arrêt : la grotte ne défile plus (les cristaux brillent encore)
+    const off = cv.dataset.fige ? +cv.dataset.off : (((t / 45) * sens) % W + W) % W;  // ~22 px par seconde
     g.imageSmoothingEnabled = false;
     g.drawImage(c, -Math.floor(off), 0); g.drawImage(c, W - Math.floor(off), 0);
     cristaux.forEach(([x, y, [col, clair], ph]) => {  // un petit groupe de cristaux qui brille
@@ -4898,10 +4899,10 @@ function voyagerDepuis(el, v, centrer, immediat) {
     if (now < avant && !vite) return requestAnimationFrame(pas);
     u = Math.min(1, u + Math.max(now - avant, 0) / (vite ? 450 : duree)); avant = now;
     const e = u < .5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
-    const c = u >= 1 ? c1 : c0 + (c1 - c0) * e, p = u >= 1 ? V.pos : posDeC(c), P = poseA(p);
+    const c = u >= 1 ? c1 : c0 + (c1 - c0) * e, p = u >= 1 ? V.pos : posDeC(c), P = {...poseA(p), enMarche: u < 1};
     g.innerHTML = trajet(p0, p).map(x => traitFait(x, T)).join("");
     POSE = P;
-    const k = [P.mode, P.dir, P.enRoute, P.arrete].join();
+    const k = [P.mode, P.dir, P.enRoute, P.arrete, P.enMarche].join();
     if (k !== cle) { cle = k; ancre.innerHTML = heros(P); colorerDresseur(ancre); }
     else ancre.querySelectorAll(".suit").forEach(x => { x.style.left = P.x / LARG * 100 + "%"; x.style.top = P.y / HC * 100 + "%"; });
     if (suivre) centrer(P);

@@ -21,6 +21,7 @@ import chiffres
 import missions
 import pokemon
 import pesees
+import seances_danse
 import seances_rameur
 from pokedex import LEGENDAIRES, POKEMON
 
@@ -266,6 +267,7 @@ def calculer_missions(lire, aujourd, ami=None, materiel=None):
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
     resumes = pesees.fusionner(seances_rameur.fusionner(resumes, f.get(seances_rameur.FICHIER)), f.get(pesees.FICHIER))
+    resumes = seances_danse.fusionner(resumes, lire, missions.DEPUIS, aujourd)
     cache = {}
 
     def stats(j):

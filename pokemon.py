@@ -47,6 +47,7 @@ import chiffres
 import missions
 import regions
 import pesees
+import seances_danse
 import seances_rameur
 from pokedex import LEGENDAIRES, POKEMON
 from region import Voyage
@@ -974,6 +975,7 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     for y in annees:
         resumes.update(f.get(f"data/resume/{y}.json") or {})
     resumes = pesees.fusionner(seances_rameur.fusionner(resumes, f.get(seances_rameur.FICHIER)), f.get(pesees.FICHIER))
+    resumes = seances_danse.fusionner(resumes, lire, debut, aujourd)
     jours =[debut + dt.timedelta(days=i) for i in range((aujourd - debut).days + 1)]
     lignes_m = (f.get(missions.FICHIER) or {}).get("jours") or {}
     stats = pd.DataFrame({j: missions.avec_coeur(chiffres.stats_jour(resumes.get(str(j))), lignes_m.get(str(j)), j) for j in jours}).T
