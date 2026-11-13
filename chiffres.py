@@ -30,6 +30,7 @@ def chez(lire, prefixe):
     def lire_chez(chemins):
         lu = lire([prefixe + c for c in chemins])
         return {c: lu[prefixe + c] for c in chemins}
+    lire_chez.racine = getattr(lire, "racine", lire)  # sans préfixe : seulement pour les défis en équipe (equipe.py), qui lisent les pas du jour du coéquipier
     return lire_chez
 
 

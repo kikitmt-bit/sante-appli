@@ -436,6 +436,19 @@ h2{color:#fff;font-size:21px;text-shadow:2px 2px 0 #141C38;margin:16px 2px 8px}
 .speciale.ok .reste{color:#2F8F4E !important}
 .speciale .verrou{color:#C03028 !important}
 .speciale.defi .garde-champ{border-top:2px dashed #C8C8A8}
+.speciale.equipe{grid-column:1/-1;position:relative;border-color:#B87838 !important}
+.speciale.equipe .eq-doduo{position:absolute;right:8px;top:6px;width:64px;height:64px;object-fit:contain;image-rendering:pixelated}
+.speciale.equipe .m-titre,.speciale.equipe .gain{padding-right:62px}
+.eq-duo{display:flex;align-items:center;gap:6px;margin:9px 0 6px}.eq-plus{font-size:20px;color:#B05010}
+.eq-p{flex:1;min-width:0;display:flex;align-items:center;gap:6px;padding:5px 6px;border:2px solid #D8D4B8;border-radius:12px 5px;background:#FFFEF4}
+.eq-p>span:last-child{min-width:0;font-size:15px;line-height:1.15;overflow-wrap:anywhere}.eq-p small{display:block;font-size:13px;color:#686850}
+.eq-av{flex:none;position:relative;width:24px;height:32px}.eq-av canvas{position:absolute;left:0;bottom:0;width:24px;height:32px;image-rendering:pixelated}
+.eq-av.petit{width:17px;height:23px}.eq-av.petit canvas{width:17px;height:23px}
+.eq-phrase{margin:7px 0 4px;font-size:14px;color:#383828;line-height:1.3}
+.eq-autre{display:flex;align-items:center;gap:6px;margin-top:9px;padding-top:7px;border-top:2px dashed #C8C8A8}
+.eq-avs{display:flex;flex:none}.eq-at{flex:1;min-width:0;font-size:13px;line-height:1.2;overflow-wrap:anywhere}.eq-at small{display:block;color:#686850}
+.eq-sc{flex:none;text-align:right;font-size:16px;color:#383828}.eq-sc small{display:block;font-size:12px;color:#686850}
+.jauge.fine{height:6px !important;margin-top:4px}
 .speciale.defi .regle-champ{display:flex;gap:8px;align-items:flex-start;margin:9px 0 4px;padding:8px 10px;border:2px solid #C03028;border-radius:12px 5px;background:#FBE6DF;color:#383828 !important;font-size:13px;line-height:1.35}
 .speciale.defi .regle-champ b{color:#C03028 !important}.speciale.defi .regle-champ .cadenas{color:#C03028;width:16px;height:16px;flex:0 0 16px;margin-top:1px}
 .mini .nm,.starter-carte .l1 b,.prochains .tx b,#voyage .entete .titre,#barre .titre,#aouvrir .titre,.infos-lieu .nom,.speciale .tete{color:#383828 !important}
@@ -3874,7 +3887,7 @@ function dessinerSpeciales() {
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(rel.cible)}</span></div>${j(J.pas, rel.cible)}
       <div class="lien">ou</div>
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${rel.sport} min</span></div>${j(J.zone, rel.sport)}</div>` : "";
-  document.getElementById("speciales").innerHTML = carteRelance + carteDefi() + carteMission(gris, champ, cadenas) + `
+  document.getElementById("speciales").innerHTML = carteEquipe() + carteRelance + carteDefi() + carteMission(gris, champ, cadenas) + `
     <div class="speciale balle ${sup ? "ok" : ""} ${gris ? "grise" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}<span>Super Ball<small>shiny ×2</small></span></div>
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
@@ -3902,6 +3915,49 @@ function dessinerSpeciales() {
   brancherGestes(document.getElementById("speciales"));
   rognerImages(document.getElementById("speciales"));
   document.querySelectorAll("#speciales canvas[data-sprite]").forEach(cv => championAnime(cv, cv.dataset.sprite, true, true));
+  document.querySelectorAll("#speciales canvas[data-eq]").forEach(cv => { const j = (D.joueurs || []).find(x => x.id === cv.dataset.eq);
+    apercuDresseur(cv, j && !j.moi ? {...DRESSEUR, ...j.couleurs} : DRESSEUR, false, CADRE_DRESSEUR); });
+}
+// Le défi en équipe (Kiki, 13/11 : « Le Défi Doduo » du 14/11) : deux joueurs additionnent leurs pas, peu importe qui les fait.
+// Ce jour-là, chacun voit les pas de tous les joueurs du défi (voulu : on se chambre dans le groupe). Le lendemain : le résultat.
+function carteEquipe() {
+  const e = G.equipe; if (!e) return "";
+  const qui = id => (D.joueurs || []).find(j => j.id === id) || {id, nom: id === "kiki" ? "Kiki" : "Dresseur", couleurs: {}, moi: false};
+  const fr = n => Math.round(n || 0).toLocaleString("fr-FR");
+  const tot = eq => eq.reduce((a, p) => a + (p.pas || 0), 0);
+  const mien = e.equipes[e.mienne], autres = e.equipes.filter((_, i) => i !== e.mienne);
+  const moi = mien.find(p => qui(p.id).moi) || mien[0], lui = mien.find(p => p !== moi) || mien[1];
+  const nom = p => nomJoueur(qui(p.id)), noms = eq => eq.map(nom).join(" et ");
+  const hier = e.jour !== D.aujourdhui, total = tot(mien), pct = Math.min(total / e.cible * 100, 100);
+  // la petite phrase, selon qui a marché (Kiki : de quoi se chambrer gentiment)
+  const tete = [...mien].sort((a, b) => (b.pas || 0) - (a.pas || 0)), part = total ? (tete[0].pas || 0) / total : 0;
+  let phrase;
+  if (e.ok) phrase = `Doduo a couru ses ${fr(e.cible)} pas !${part >= .8 ? ` … surtout grâce à ${nom(tete[0])}.` : ""}`;
+  else if (!total) phrase = hier ? "Doduo n'a jamais quitté son nid." : "Doduo n'a pas quitté son nid.";
+  else if (part >= .8) phrase = `${nom(tete[0])} tire Doduo tout seul. L'autre tête fait la sieste.`;
+  else if (part <= .65) phrase = "Les deux têtes marchent au même pas. Doduo file !";
+  else phrase = `${nom(tete[0])} mène la marche, ${nom(tete[1])} suit comme il peut.`;
+  const devant = autres.find(eq => tot(eq) > total);
+  if (!e.ok && !hier && devant) phrase += ` ${noms(devant)} ont de l'avance. Doduo s'impatiente.`;
+  const av = (p, petit) => `<span class="eq-av${petit ? " petit" : ""}"><canvas width="14" height="19" data-eq="${p.id}"></canvas></span>`;
+  const perso = p => `<span class="eq-p">${av(p)}<span>${nom(p)}<small>${p.pas == null ? "pas encore reçus" : `${fr(p.pas)} pas`}</small></span></span>`;
+  const autre = eq => { const t = tot(eq); return `<div class="eq-autre"><span class="eq-avs">${eq.map(p => av(p, true)).join("")}</span>
+    <span class="eq-at">${noms(eq)}<small>${eq.map(p => `${qui(p.id).nom} ${p.pas == null ? "—" : fr(p.pas)}`).join(" · ")}</small></span><span class="eq-sc">${fr(t)}<small>/ ${fr(e.cible)}</small></span></div>
+    <div class="jauge fine"><div class="${t >= e.cible ? "ok" : ""}" style="width:${Math.min(t / e.cible * 100, 100)}%"></div></div>`; };
+  const texte = hier
+    ? `Hier, tu marchais en équipe avec ${nom(lui)} : ${fr(e.cible)} pas à deux. ${e.ok ? "Réussi : <b>une Super Ball pour chacun</b> !" : "Raté : Doduo fera mieux la prochaine fois."}`
+    : `Aujourd'hui, tu marches en équipe avec ${nom(lui)}. Deux têtes, une seule paire de pattes : <b>${fr(e.cible)} pas à deux</b>, peu importe qui les fait. Réussi avant minuit : <b>une Super Ball pour chacun</b>.`;
+  return `<div class="speciale equipe ${e.ok ? "ok" : ""}">${e.ok ? '<span class="tampon">✅</span>' : ""}
+    <img class="eq-doduo" src="${IMG.anim(e.pokemon || 84, false)}" ${repli(e.pokemon || 84, false)} alt="">
+    <div class="tete">${ico("super")}${hier ? "Défi en équipe · hier" : "Défi en équipe · aujourd'hui"}</div>
+    <div class="m-titre">${e.nom}</div>
+    <div class="gain">${texte}</div>
+    <div class="eq-duo">${perso(moi)}<span class="eq-plus">+</span>${perso(lui)}</div>
+    <div class="ligne"><span><b>Ton équipe</b></span><span>${fr(total)} / ${fr(e.cible)}</span></div>
+    <div class="jauge"><div class="${e.ok ? "ok" : ""}" style="width:${pct}%"></div></div>
+    <div class="eq-phrase">${phrase}</div>
+    ${autres.map(autre).join("")}
+    ${hier ? "" : `<div class="petit gris" style="margin-top:6px">Les pas des autres arrivent avec 30 à 60 minutes de retard.</div>`}</div>`;
 }
 // La pesée de la semaine (29/10) : 3 pesées le matin du lundi au dimanche = une Poké Ball ; et la dernière pesée
 // comparée à des Pokémon (poids officiels du Pokédex), une combinaison différente chaque jour
@@ -5021,6 +5077,14 @@ function testGrise() {  // le lendemain de l'arrivée : les cartes grisées, ave
   Object.assign(G, {defi_grise: true, retenues: [{ball: "super", jour: D.aujourdhui}, {ball: "hyper", jour: D.aujourdhui}], missions_gardees: 25, sac: ["poke", "poke"]});
   redessinerTest();
 }
+function testEquipe() {  // le Défi Doduo, avec les vrais joueurs (ou des noms d'essai)
+  entrerTest();
+  const moi = (D.joueurs || []).find(j => j.moi), autres = (D.joueurs || []).map(j => j.id).filter(i => !moi || i !== moi.id);
+  const m = moi ? moi.id : "kiki", [a, b, c] = [autres[0] || "t1", autres[1] || "t2", autres[2] || "t3"];
+  G.equipe = {jour: D.aujourdhui, nom: "Le Défi Doduo", pokemon: 84, cible: 15000, mienne: 0, ok: false, total: 10700,
+    equipes: [[{id: m, pas: 9800}, {id: a, pas: 900}], [{id: b, pas: 6400}, {id: c, pas: 5900}]]};
+  redessinerTest();
+}
 function testChasse() {  // tout est attrapé dans le coin : le sac et la chasse aux shiny
   entrerTest();
   Object.assign(G, {defi_grise: false, retenues: [], missions_gardees: 0, sac: ["poke"], chasse: {actif: true, chaine: 2, chance: .3, garantie: 5}});
@@ -5047,7 +5111,8 @@ function testBadge() {  // le défi est réussi : le Badge Roche attend d'être 
 }
 function quitterTest() {
   if (!TEST) return;
-  Object.keys(V).forEach(k => delete V[k]); Object.assign(V, TEST.V); Object.assign(G, TEST.G);
+  Object.keys(V).forEach(k => delete V[k]); Object.assign(V, TEST.V);
+  Object.keys(G).forEach(k => { if (!(k in TEST.G)) delete G[k]; }); Object.assign(G, TEST.G);  // ce qu'un essai a ajouté (le défi en équipe) s'efface aussi
   for (let i = CAPTURES.length - 1; i >= 0; i--) if (CAPTURES[i].id.startsWith("test")) { ouvertes.delete(CAPTURES[i].id); CAPTURES.splice(i, 1); }
   TEST = null; redessinerTest();
 }
@@ -5791,6 +5856,7 @@ function apprentissage(type) {
 // Les nouveautés à tester (Kiki, 06/11) : leurs boutons sont en rouge dans 🧪 jusqu'au premier toucher, 7 jours au plus.
 // À CHAQUE MODIFICATION testable : ajouter ici la date, le sélecteur de ses boutons (dans #tests) et ce qui a changé.
 const NOUVEAUTES = [
+  {date: "2026-11-13", sel: ".t-equipe", quoi: "le Défi Doduo : 15 000 pas en équipe, samedi 14/11"},
   {date: "2026-11-13", sel: ".t-chasse", quoi: "sac d'une seule ball, chasse aux shiny à 10 %, 20 %… shiny garanti à la 7e"},
   {date: "2026-11-13", sel: ".t-arrivee", quoi: "arène : ce que le champion bloque, dit en grand"},
   {date: "2026-11-13", sel: ".t-grise", quoi: "arène : ce que le champion bloque, dit en grand"},
@@ -5854,7 +5920,7 @@ function dessinerTests() {
     <div class="boutons-t">${b("t-entr\" data-e=\"pompes", "Pompes (nez)")}${b("t-entr\" data-e=\"squats", "Squats")}${b("t-entr\" data-e=\"planche", "Planche")}${b("t-entr\" data-e=\"tractions", "Tractions (poche)")}${b(`t-entr" data-e="squats" data-s="1`, "Combat : un shiny")}${Object.keys(DUELS).map(q => b(`t-entr" data-e="pompes" data-c="${q}`, `Arène : ${q}`)).join("")}${Object.keys(DECORS_COMBAT).map(l => b(`t-entr" data-e="pompes" data-d="${l}`, `Combat : ${l}`)).join("")}</div>
     <div class="groupe">La carte<small>Arriver à l'arène de Pierre, puis gagner le Badge Roche (« Quitter le test » remet tout comme avant).</small></div>
     <div class="boutons-t">${b("t-arrivee", `${ico("carte", "p")} 1. Arriver à l'arène de Pierre`)}${b("t-grise", `${ico(IMG.badge(1), "p")} 2. Le lendemain : cartes grisées`)}${b("t-badge", `${ico(IMG.badge(1), "p")} 3. Gagner le Badge Roche`)}
-      ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${b("t-victoire", `${ico(IMG.badge(1), "p")} 4. Défi gagné : la suite immédiate`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
+      ${b("t-chasse", `${ico("radar", "p")} Sac, chasse aux shiny, sanctuaire`)}${b("t-equipe", `${ico("super", "p")} Le Défi Doduo (en équipe)`)}${b("t-victoire", `${ico(IMG.badge(1), "p")} 4. Défi gagné : la suite immédiate`)}${TEST ? b("t-fin", "Quitter le test") : ""}</div>
     <div class="groupe">Les ouvertures<small>Les nouveautés : une scène à part pour les légendaires, la Shiny Ball, le raté de la chasse.</small></div>
     <div class="boutons-t">${b("t-leg", `${ico("master", "p")} Légendaire surprise`)}${b("t-sball", `${ico("sball", "p")} Shiny Ball`)}${b("t-rate", `${ico("radar", "p")} Ball ratée`)}${b("t-evo", `${ico("effort", "p")} Évolution du starter`)}</div>`;
   const el = document.getElementById("tests"), on = (sel, f) => el.querySelectorAll(sel).forEach(x => x.onclick = () => f(x));
@@ -5881,7 +5947,7 @@ function dessinerTests() {
   on(".t-pantheon", () => scenePantheon());
   on(".t-victoire", () => sceneBadge(1, null, false, () => { const b2 = P.querySelector("#pkm-badge"); setTimeout(() => { if (b2) b2.remove();
     ouvrir(captureEssai(CHAMPIONS[1] && LIEUX.filter(l => l.arene)[0].arene.pokemon || 95, {ball: "hyper", champion: true, champN: 1, fond: (EN_JOHTO ? "jarene" : "arene") + 1, raison: "🏅 Aperçu"}), false, true); }, 900); }));
-  on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse);
+  on(".t-arrivee", testArrivee); on(".t-badge", testBadge); on(".t-fin", quitterTest); on(".t-grise", testGrise); on(".t-chasse", testChasse); on(".t-equipe", testEquipe);
   on(".t-leg", () => ouvrir(captureEssai(auHasard([144, 145, 146]), {ball: "poke", shiny: false, chance: true, lieu: LIEUX[V.ici].nom, raison: "⚡ Aperçu : un oiseau par surprise"})));
   on(".t-sball", () => ouvrir(captureEssai(pokeDuType("Normal"), {ball: "shiny", shiny: true, fond: "prairie", raison: "👑 Aperçu : Shiny Ball"})));
   on(".t-evo", () => { const l = (G.starter || {ligne: [4, 5, 6]}).ligne, k = formeStarter() ? Math.min(l.indexOf(formeStarter()) + 1, 2) : 1; sceneEvolution(captureEssai(l[k], {ball: "evo", shiny: false, raison: "Aperçu"})); });

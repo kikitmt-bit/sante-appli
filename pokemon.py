@@ -44,6 +44,7 @@ from pathlib import Path
 import pandas as pd
 
 import chiffres
+import equipe
 import missions
 import regions
 import pesees
@@ -670,7 +671,7 @@ def debut_de(joueur):
     return max(joueur["debut"], REGLAGES["debut"]) if joueur else REGLAGES["debut"]
 
 
-def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None, materiel=None, lire_jour=None):
+def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour=None, joueur=None, anniversaires=(), gestes=None, materiel=None, lire_jour=None, equipes=()):
     """Rejoue le jeu du premier jour à aujourd'hui. stats = DataFrame par jour (chiffres.stats_jour), resumes = {jour:
     résumé}, fichiers_jour = {jour: fichier du jour} (facultatif : moment des Super / Hyper Balls). Les captures
     figées sont reprises telles quelles ; les autres sont tirées. Chaque capture a « c » = les points cumulés au moment
@@ -895,6 +896,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
         dues = balls_du_jour(jour, m, avant, cumul, shiny_ball, badges, debut_region, sanct, region)
         dues += [{"cle": f"net{k}", "ball": "super", "types": None, "raison": f"⚔️ Victoire nette : le défi de {lieu['arene']['champion']} réussi"}
                  for k, lieu in badges if k in voyage.nets]  # le vrai défi réussi, pas seulement « le champion te laisse passer »
+        dues += [equipe.ball(d) for d in equipes or () if d["ok"] and d["jour"] == str(jour)]  # défi en équipe réussi : une Super Ball chacun
         if reprise:
             dues.append({"cle": "reprise", "ball": "poke", "types": None, "raison": "🔄 Poké Ball de la reprise"})
         if equitable(jour) and jour < LANCEMENT.date() and not sem["hebdo"] and sem["jours_ok"] >= R["hebdo_jours"]:
@@ -1014,6 +1016,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "bonus": bonus, "mission": etat_mission(aujourd, stats, mission_du, gestes), "cumul": round(cumul, 1),
                       "frise": frise[-30:],
                       "defi_grise": en_defi, "perdues": perdues,
+                      "equipe": next((d for d in reversed(list(equipes or ())) if d["jour"] in (str(aujourd), str(aujourd - dt.timedelta(days=1)))), None),
                       "retenues": [{"ball": mi["ball"], "jour": str(mi["jour"])} for mi in retenues],
                       "missions_gardees": sum(p for _, (_, _, p) in missions_gardees),
                       "sac": [mi["ball"] for mi in en_attente],
@@ -1106,7 +1109,8 @@ def charger_jeu(lire, aujourd, joueur=None, anniversaire=False):
     materiel = missions.materiel_de({"materiel": (f.get(missions.FICHIER) or {}).get("materiel")}, ami)  # écrit par montre.py avec la mission
     return jouer(stats, resumes, aujourd, figees, (f.get(missions.FICHIER) or {}).get("jours"),
                  {j: f.get(c) for j, c in recents.items()}, joueur, anniv, gestes, materiel,
-                 lambda j: lire([f"data/jour/{j.year}/{j}.json"])[f"data/jour/{j.year}/{j}.json"])  # le jour d'une arrivée ou d'une victoire à une arène
+                 lambda j: lire([f"data/jour/{j.year}/{j}.json"])[f"data/jour/{j.year}/{j}.json"],  # le jour d'une arrivée ou d'une victoire à une arène
+                 equipe.du_joueur(getattr(lire, "racine", lire), ami or equipe.KIKI, aujourd))  # racine : lit aussi les pas du coéquipier
 
 
 def figer(dossier):

@@ -370,6 +370,7 @@ def lire(paths, recents=()):
     return {p: lu[PREFIXE + p] for p in paths}
 
 
+
 def ecrire_depot(path, objet, message):
     """Écrit un petit fichier JSON dans la branche data (le jeton GitHub de l'appli a le droit d'écrire). -> réussi ?"""
     s = st.secrets
@@ -464,6 +465,15 @@ def lire_depot(paths, recents=()):
     if any(p not in c for p in paths):
         raise Panne
     return {p: c[p][1] for p in paths}
+
+
+lire.racine = lire_depot  # seulement pour les défis en équipe (equipe.py) : les pas du jour des joueurs du même défi
+
+
+def avec_racine(f):
+    """Une fonction de lecture qui garde l'accès aux pas du jour du coéquipier (défis en équipe)."""
+    f.racine = lire_depot
+    return f
 
 
 def bloc_danse(debut, fin, un_jour, j_ref, lire_vite):
@@ -1076,7 +1086,7 @@ if not AMI:  # L'apprentissage du téléphone (entraînement) : ses mesures, ran
 envoyer_rameur()
 if DIRECT:
     with st.container(key="page_jeu"):
-        ecran_pokemon.afficher(lambda chemins: lire(chemins, {pokemon.FIGEES, pokemon.OUVERTES, seances_rameur.FICHIER}), dt.datetime.now(TZ).date(), JOUEUR, None, PROFIL["anniversaire"], profil=PROFIL, direct=True)
+        ecran_pokemon.afficher(avec_racine(lambda chemins: lire(chemins, {pokemon.FIGEES, pokemon.OUVERTES, seances_rameur.FICHIER})), dt.datetime.now(TZ).date(), JOUEUR, None, PROFIL["anniversaire"], profil=PROFIL, direct=True)
     st.stop()
 page_jeu, page_sante = st.container(key="page_jeu"), st.container(key="page_sante")
 
@@ -1105,7 +1115,7 @@ with page_sante:
     recents = {f"data/jour/{x.year}/{x}.json" for x in (aujourd, aujourd - dt.timedelta(days=1))}
     recents |= {f"data/resume/{aujourd.year}.json", "data/profil.json",
                 chemin_analyse("Jour", aujourd - dt.timedelta(days=1)), pokemon.FIGEES, pokemon.OUVERTES, seances_rameur.FICHIER, seances_danse.DOSSIER, pesees.FICHIER}
-    lire_vite = lambda chemins: lire(chemins, recents)  # noqa: E731
+    lire_vite = avec_racine(lambda chemins: lire(chemins, recents))  # noqa: E731
     with st.spinner("Lecture des données…"):
         donnees = charger(lire_vite, periode, st.session_state["ref"], aujourd)
         du_jour = (lire_vite([f"data/jour/{aujourd.year}/{aujourd}.json"]).popitem()[1] or {}).get("types", {})
