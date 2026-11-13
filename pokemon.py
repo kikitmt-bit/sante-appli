@@ -61,8 +61,8 @@ REGLAGES = {
     "shiny_max": 0.5,
     "nuit": 420, "shiny_nuit": 1.5,  # nuit d'au moins 7 h : shiny ×1,5 toute la journée
     "part_lieu": 0.8,                # chance de tirer dans le lieu actuel plutôt qu'en rattrapage (s'il reste des deux)
-    "sac": 3,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau
-    "chasse": 0.03,                  # chasse aux shiny : chance de la 1re ball, puis autant en plus à chaque ball ratée
+    "sac": 1,                        # balls qui attendent le lieu suivant quand il n'y a plus rien de nouveau (3 avant le 13/11, Kiki : le lieu suivant se vidait d'un coup)
+    "chasse": (0.1, 0.2, 0.3, 0.4, 0.6, 0.8, 1.0),  # chasse aux shiny : chance de la 1re, 2e… ball ; shiny garanti à la 7e (Kiki, 13/11 ; avant : 3 % de plus à chaque raté, sans fin)
     "niveau_depart": 1, "evolutions": (16, 36),  # le starter : niveaux réglés sur la carte de sa région (pts_niveau), forme finale toujours avant la fin de la carte (Kiki, 05/11)
     # La relance (idée de Kiki, 05/11) : 5 jours de suite sans objectif = pendant 7 jours un objectif à sa portée (sa moyenne de pas + 20 %, entre 2 000 et 5 000, ou 5 min de sport) ; réussi, le jour compte et donne une Poké Ball. Une fois tous les 14 jours au plus : s'arrêter ne doit pas devenir une astuce.
     "relance_jours": 5, "relance_duree": 7, "relance_ecart": 14, "relance_min": 2000, "relance_max": 5000, "relance_sport": 5,
@@ -295,6 +295,12 @@ def tirer(graine, possedees, ici, passes, types=None, shiny=0.03, p_nouvelle=0.0
     return {"num": num, "shiny": est_shiny, "nouvelle": num not in especes}
 
 
+def chance_chasse(chaine):
+    """La chance de shiny de la prochaine ball de chasse, après `chaine` ratés de suite."""
+    c = REGLAGES["chasse"]
+    return c[min(chaine, len(c) - 1)]
+
+
 def chasser(graine, possedees, ici, passes, chaine):
     """Une ball de la chasse aux shiny : Pokémon déjà attrapé pas encore en shiny, chance qui monte à chaque ball ratée. ->
     capture (« rate » = il s'enfuit), ou None s'il n'y a plus rien à chasser."""
@@ -304,7 +310,7 @@ def chasser(graine, possedees, ici, passes, chaine):
     if not pool:
         return None
     num = rng.choice(pool)
-    if rng.random() < REGLAGES["chasse"] * (chaine + 1):
+    if rng.random() < chance_chasse(chaine):
         return {"num": num, "shiny": True, "nouvelle": False, "chasse": True}
     return {"num": num, "shiny": False, "nouvelle": False, "chasse": True, "rate": True}
 
@@ -1012,7 +1018,7 @@ def jouer(stats, resumes, aujourd, figees=(), missions_jours=None, fichiers_jour
                       "missions_gardees": sum(p for _, (_, _, p) in missions_gardees),
                       "sac": [mi["ball"] for mi in en_attente],
                       "chasse": {"actif": bool(plus_rien) and not en_defi, "chaine": chaine,
-                                 "chance": round(min(R["chasse"] * (chaine + 1), 1), 2)},
+                                 "chance": chance_chasse(chaine), "garantie": max(len(R["chasse"]) - chaine, 1)},
                       "carnet": carnet, "derniers": derniers, "sport_vu": sport_vu, "moments": moments_du_jour((missions_jours or {}).get(str(aujourd))) if region.moments else None, "semaine": sem, "semaine_passee": semaine_passee, "danse": meilleurs_scores({j: v for j, v in (gestes or {}).items() if j >= str(debut)}),
                       "fini": 9 in voyage.badges, "hier": hier, "region": {"index": reg_i, "nom": region.nom, "debut": str(debut_region), "depart": depart,
                                                                            "suivante": regions.REGIONS[reg_i + 1].nom if reg_i + 1 < len(regions.REGIONS) else None}, "gestes_jour": (gestes or {}).get(str(aujourd)) or {"pompes": 0, "tractions": 0, "squats": 0, "series": 0},

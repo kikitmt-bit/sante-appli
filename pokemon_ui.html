@@ -436,6 +436,8 @@ h2{color:#fff;font-size:21px;text-shadow:2px 2px 0 #141C38;margin:16px 2px 8px}
 .speciale.ok .reste{color:#2F8F4E !important}
 .speciale .verrou{color:#C03028 !important}
 .speciale.defi .garde-champ{border-top:2px dashed #C8C8A8}
+.speciale.defi .regle-champ{display:flex;gap:8px;align-items:flex-start;margin:9px 0 4px;padding:8px 10px;border:2px solid #C03028;border-radius:12px 5px;background:#FBE6DF;color:#383828 !important;font-size:13px;line-height:1.35}
+.speciale.defi .regle-champ b{color:#C03028 !important}.speciale.defi .regle-champ .cadenas{color:#C03028;width:16px;height:16px;flex:0 0 16px;margin-top:1px}
 .mini .nm,.starter-carte .l1 b,.prochains .tx b,#voyage .entete .titre,#barre .titre,#aouvrir .titre,.infos-lieu .nom,.speciale .tete{color:#383828 !important}
 .starter-carte .l1 i{color:#C03028 !important}
 .prochains .tx small{color:#B05010 !important}
@@ -1715,7 +1717,7 @@ function ouvrir(c, rejouer = false, direct = false) {  // direct : on arrive de 
     carte.className = "carte jeu fuite";
     carte.innerHTML = `<div class="l1"><b class="et" style="background:#3A5BB8;box-shadow:0 2px 0 #1F2E66">CHASSE AUX SHINY</b></div>
       <div class="phrase">Oh ! <b>${c.nom}</b> s'est enfui !</div>
-      <div class="l2"><span class="cpt" style="margin-left:0">Le Poké Radar s'affole : ta chance de shiny monte.</span></div>
+      <div class="l2"><span class="cpt" style="margin-left:0">Le Poké Radar s'affole : ${G.chasse.garantie <= 1 ? "shiny garanti à la prochaine ball !" : `prochaine ball à ${Math.round(chance)} %, shiny garanti dans ${G.chasse.garantie} balls au plus.`}</span></div>
       <div class="radar"><i style="width:${chance}%"></i></div>
       <div class="boutons">${suite ? `<button class="suite">SUIVANTE (${reste.length})</button>` : ""}<button class="ok">OK</button></div>`;
     setTimeout(() => carte.classList.add("vu"), 100);
@@ -3798,26 +3800,19 @@ function dessinerAOuvrir() {
     el.innerHTML = blocBadges; badgesPropres(el); brancherSpeciaux();
     return;
   }
-  const route = CAPTURES.filter(c => EN_ROUTE.has(c.id) && !estOuverte(c)).length;
-  const rappel = route ? `<button class="en-route">${ico("carte")}<span><b>${route === 1 ? "Une Poké Ball t'attend" : `${route} Poké Balls t'attendent`}
-    sur ta route</b><small>Regarde ton voyage pour les récupérer</small></span><i></i></button>` : "";
-  const brancherRappel = () => { const b = el.querySelector(".en-route"); if (b) b.onclick = () => {
-    document.getElementById("voyage").scrollIntoView({behavior: "smooth", block: "start"}); setTimeout(() => lancerVoyage(false), 350); }; };
-  if (!liste.length && route) { el.classList.remove("vide"); el.innerHTML = blocBadges + rappel; brancherRappel(); badgesPropres(el);
-    brancherSpeciaux(); return; }
+  // les balls encore sur la route : rien ici, le gros bouton ▶ de la carte suffit (Kiki, 13/11 : l'encadré répétait la carte)
   if (!liste.length) {
     el.innerHTML = blocSac() || `<div class="titre" style="font-size:16px">Aucune Poké Ball à ouvrir</div>
       <div class="petit gris" style="margin-top:4px">Remplis ta barre d'effort, ou décroche une Super / Hyper Ball !</div>`;
     return;
   }
-  el.innerHTML = blocBadges + rappel + (G.fini ? `<div class="petit" style="margin-bottom:8px"><b>Professeur ${PROFESSEURS[CADEAU].prof} :</b> « Quel voyage ! Il te reste des Poké Balls : ouvre-les toutes, il manque peut-être encore des Pokémon à ton Pokédex ! »</div>` : "") + blocSac() + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
+  el.innerHTML = blocBadges + (G.fini ? `<div class="petit" style="margin-bottom:8px"><b>Professeur ${PROFESSEURS[CADEAU].prof} :</b> « Quel voyage ! Il te reste des Poké Balls : ouvre-les toutes, il manque peut-être encore des Pokémon à ton Pokédex ! »</div>` : "") + blocSac() + `<div class="titre">${liste.length === 1 ? "Une Poké Ball t'attend !" : `${liste.length} Poké Balls t'attendent !`}</div>
     <div class="rang">${liste.slice(0, 12).map((c, i) => `<button class="bouton-ball" data-i="${CAPTURES.indexOf(c)}"
       style="animation-delay:${i * .25}s">${spriteBall(c.ball)}<span class="q">${c.quand}</span></button>`).join("")}</div>
     <button class="gros-bouton">Ouvrir ${liste.length === 1 ? "la Poké Ball" : "la première"}</button>`;
   rognerImages(el);
   el.querySelectorAll(".bouton-ball").forEach(b => b.onclick = () => lancer(CAPTURES[b.dataset.i]));
   el.querySelector(".gros-bouton").onclick = () => lancer(aOuvrir().filter(c => !estBadge(c) && !estEvo(c))[0]);
-  brancherRappel();
   brancherSpeciaux(); badgesPropres(el);
 }
 
@@ -3979,8 +3974,9 @@ function carteChasse() {
   const c = G.chasse; if (!c || !c.actif) return "";
   const pct = Math.round(c.chance * 100);
   return `<div class="speciale chasse"><div class="tete">${ico("radar")}Chasse aux shiny</div>
-    <div class="gain">${G.fini ? `Tu as attrapé tout ${REG.nom} : tes balls cherchent des shiny.` : `Tu as attrapé tous les Pokémon du coin ! Dès que ton sac est plein (${R.sac} balls), les suivantes cherchent des shiny.`} Un raté n'est jamais perdu : le Poké Radar s'affole.</div>
+    <div class="gain">${G.fini ? `Tu as attrapé tout ${REG.nom} : tes balls cherchent des shiny.` : `Tu as attrapé tous les Pokémon du coin ! ${R.sac === 1 ? "Une ball attend le prochain lieu dans ton sac" : `${R.sac} balls attendent le prochain lieu dans ton sac`}, les suivantes cherchent des shiny.`} Chaque raté fait monter ta chance.</div>
     <div class="ligne"><span>${ico("shiny", "p brille")} Prochaine ball</span><span>${pct} % de shiny</span></div>
+    <div class="ligne"><span>${c.garantie <= 1 ? "Shiny garanti à la prochaine ball !" : `Shiny garanti dans ${c.garantie} balls au plus`}</span></div>
     <div class="jauge"><div style="width:${Math.min(pct, 100)}%;background:linear-gradient(90deg,#FFCB05,#E8382F)"></div></div></div>`;
 }
 // Les sanctuaires : un légendaire au bout d'un petit défi qui ne bloque jamais
@@ -3993,6 +3989,15 @@ function carteSanctuaire(s) {
       <div class="jauge"><div class="${s.valeur >= s.cible ? "ok" : ""}" style="width:${Math.min(s.valeur / s.cible * 100, 100)}%"></div></div></div>`;
 }
 // 3. Le défi de l'arène où l'on est arrivé, cumulé depuis l'arrivée (ou son plan B)
+// Ce que bloque le champion, dit en grand (Kiki, 13/11 : à l'arène d'Ondine, rien ne le montrait)
+function regleChampion(ch, ok) {
+  if (ok) return "";
+  const cad = `<svg class="cadenas" viewBox="0 0 16 16"><path d="M4 7V5a4 4 0 0 1 8 0v2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="2.5" y="7" width="11" height="8" rx="1.5" fill="currentColor"/></svg>`;
+  const quoi = `Super Ball, Hyper Ball et mission du jour`;
+  return `<div class="regle-champ">${cad}<span>${G.defi_grise
+    ? `<b>${ch.nom} bloque ta route.</b> Tant que tu ne l'as pas battu : ${quoi} sont gardées par ${ch.nom}, et ta carte n'avance plus. Tes Poké Balls s'ouvrent toujours. Quand tu le bats, il te rend les ${R.rend} derniers jours ; le reste est perdu.`
+    : `<b>Dès demain, ${ch.nom} bloque ta route.</b> Tant que tu ne l'as pas battu : ${quoi} seront gardées par ${ch.nom}, et ta carte n'avancera plus. Aujourd'hui, tout compte encore.`}</span></div>`;
+}
 function carteDefi() {
   const d = V.defi; if (!d || !d.arrive) return "";
   const a = LIEUX[d.lieu].arene, ch = CHAMPIONS[d.numero], ligue = !a.type;
@@ -4010,7 +4015,7 @@ function carteDefi() {
   return `<div class="speciale defi ${ok ? "ok" : ""}" style="--c:${ligue ? "#B8860B" : COUL[a.type]}">
     <div class="portrait">${portraitChamp(ch)}</div>
     <div class="tete">${a.image ? ico(IMG.badge(a.image)) : ico("ligue")}Défi de l'arène · ${ch.nom}</div>
-    <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté depuis ton arrivée · réussi avant qu'il te laisse passer : une Super Ball en plus</div>${conseil4}
+    <div class="gain">${ligue ? "La Ligue : une Master Ball et un légendaire" : `${a.badge} + une Hyper Ball type ${a.type}`} · compté depuis ton arrivée · réussi avant qu'il te laisse passer : une Super Ball en plus</div>${regleChampion(ch, ok)}${conseil4}
     ${ep.map(e => `<div class="epreuve ${e.fait ? "faite" : ""}">${e.qui ? `<div class="qui-e">${e.qui}${e.fait ? " ✅" : ""}</div>` : ""}${e.voies.map(voie).join(`<div class="ou-e">ou</div>`)}</div>`).join("")}
     ${types.length && !ok ? blocGestes(types) : ""}
     ${d.max ? "" : `<div class="ou-e">ou plan B</div><div class="ligne"><span>${a.b.texte}</span><span style="white-space:nowrap">${String(d.valeur_b).replace(".", ",")} / ${a.b.cible}</span></div>${j(d.valeur_b, a.b.cible)}`}
@@ -5018,7 +5023,7 @@ function testGrise() {  // le lendemain de l'arrivée : les cartes grisées, ave
 }
 function testChasse() {  // tout est attrapé dans le coin : le sac et la chasse aux shiny
   entrerTest();
-  Object.assign(G, {defi_grise: false, retenues: [], missions_gardees: 0, sac: ["poke", "super", "poke"], chasse: {actif: true, chaine: 2, chance: .09}});
+  Object.assign(G, {defi_grise: false, retenues: [], missions_gardees: 0, sac: ["poke"], chasse: {actif: true, chaine: 2, chance: .3, garantie: 5}});
   (V.sanctuaires || []).forEach((s, i) => { if (!i) Object.assign(s, {atteint: true, valeur: 2}); });
   redessinerTest();
 }
@@ -5069,7 +5074,7 @@ function dessinerRegles() {
       au Plateau Indigo (de 3 à 7 mois selon ton rythme). Rien à choisir : bouge, tu avances.</li>
     <li>${ico("poke", "p")} Les balls ne donnent que des Pokémon des lieux où tu es déjà passé : surtout ici, parfois ceux que tu as ratés plus tôt, et plus souvent ceux des types de ta journée.
       Les ${ico("rare", "p")} rares sortent 3 fois moins. Tous les Pokémon du coin attrapés = ★ sur la carte.</li>
-    <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> Tes ${R.sac} premières balls attendent dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : la chance monte à chaque Pokémon qui s'enfuit.</li>
+    <li>${ico("radar", "p")} <b>Plus rien de nouveau autour de toi ?</b> ${R.sac === 1 ? "Ta première ball attend" : `Tes ${R.sac} premières balls attendent`} dans ton sac le lieu suivant, les autres partent en <b>chasse aux shiny</b> : 10 % de chances à la première, puis 20, 30, 40, 60, 80 %, et le shiny est garanti à la 7e. Après un shiny, on repart à 10 %.</li>
     ${EN_JOHTO ? `<li>${ico("carte", "p")} <b>Le jour et la nuit</b> : à ${REG.nom}, certains Pokémon sortent plutôt tôt ou tard. 2 000 pas le matin ou après 20 h les rendent trois fois plus fréquents ce jour-là.</li>` : ""}
     <li>${ico(IMG.badge(EN_JOHTO ? 9 : 1), "p")} <b>Arènes</b> : chaque champion a son exploit, faisable vite (et une autre voie s'il faut du matériel). Sinon, le champion te laisse passer après quelques jours à 2 000 pas, et un exploit compte double. Réussir son vrai défi avant qu'il te laisse passer rapporte une Super Ball en plus. La Ligue : 5 épreuves, dans l'ordre que tu veux.</li>
     <li>💪 <b>Pompes, tractions, squats et planche</b> : la montre ne les compte pas : lance une série depuis l'onglet Muscu, le téléphone compte pour toi. Ils donnent des points d'effort ; pompes et tractions ouvrent aussi une voie chez certains champions.</li>
@@ -5786,6 +5791,9 @@ function apprentissage(type) {
 // Les nouveautés à tester (Kiki, 06/11) : leurs boutons sont en rouge dans 🧪 jusqu'au premier toucher, 7 jours au plus.
 // À CHAQUE MODIFICATION testable : ajouter ici la date, le sélecteur de ses boutons (dans #tests) et ce qui a changé.
 const NOUVEAUTES = [
+  {date: "2026-11-13", sel: ".t-chasse", quoi: "sac d'une seule ball, chasse aux shiny à 10 %, 20 %… shiny garanti à la 7e"},
+  {date: "2026-11-13", sel: ".t-arrivee", quoi: "arène : ce que le champion bloque, dit en grand"},
+  {date: "2026-11-13", sel: ".t-grise", quoi: "arène : ce que le champion bloque, dit en grand"},
   {date: "2026-11-06", sel: ".t-arene:not([data-n='9'])", quoi: "phrases des champions variées"},
   {date: "2026-11-06", sel: ".t-velo", quoi: "dresseur à vélo à la bonne taille sur la carte"},
   {date: "2026-11-06", sel: ".t-entree:not([data-n='9'])", quoi: "entrée des champions (de dos, puis de face)"},
