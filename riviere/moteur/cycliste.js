@@ -329,13 +329,14 @@ function copierCycliste(sG, pantin, t) {
     VELO.g.traverse(o => G.src.push(o)); G.g.traverse(o => G.dst.push(o));
     G.avant = G.dst[G.src.indexOf(VELO.avant)];
   }
-  G.g.visible = sG !== null; if (sG === null) return;
+  G.g.visible = sG !== null; if (sG === null) { if (typeof peindreFantomePixels === "function") peindreFantomePixels(G, false); return; }
   for (let i = 1; i < G.src.length; i++) { const a = G.src[i], b = G.dst[i]; if (!b) continue;
     b.visible = a.visible;
     if (a.matrixAutoUpdate) { b.position.copy(a.position); b.quaternion.copy(a.quaternion); b.scale.copy(a.scale); } else { b.matrix.copy(a.matrix); b.matrixWorldNeedsUpdate = true; } }
   const p = pose(sG, 1.8), i = idx(sG), k = PISTE.COURB[idx(sG + 3)];
   G.g.position.set(p.x, p.y, p.z); G.g.rotation.set(clamp(k * 22, -.3, .3), Math.PI / 2 - at(sG).h, Math.atan(PISTE.PENTE[i]));
   G.g.updateMatrixWorld();
+  if (typeof peindreFantomePixels === "function") peindreFantomePixels(G, true);   // le dresseur en pixels du fantôme (pixel.js)
   if (pantin && VELO.patins) {   // en rollers : son Pokémon court à côté de lui
     cy_p.set(1.6, 0, -1.05); G.g.localToWorld(cy_p); pantin.m.position.copy(cy_p); pantin.regarder(); pantin.rangee(4); pantin.image(pantin.pl.image(t * 1.2));
     const h = Math.min(pantin.h, .95); pantin.m.scale.set(pantin.l * h / pantin.h, h, 1);

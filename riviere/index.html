@@ -64,6 +64,12 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #panneau button.machine small, #panneau button.circuit small { display: block; font-size: 17px; color: #686850; line-height: 1.05; margin-top: 2px; }
 #panneau button.machine.on, #panneau button.circuit.on { background: #F8C838; }
 #panneau .circuits { display: flex; flex-direction: column; gap: 6px; }
+#panneau .nageurs { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; margin-top: 8px; }
+#panneau button.nageur { background: #fff; color: #383828; padding: 4px 2px 5px; box-shadow: 2px 2px 0 #1B2440; display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 0; }
+#panneau button.nageur canvas { width: 48px; height: 48px; image-rendering: pixelated; }
+#panneau button.nageur b { font-weight: normal; font-size: 17px; line-height: 1; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#panneau button.nageur small { font-size: 14px; color: #686850; line-height: 1; }
+#panneau button.nageur.on { background: #F8C838; }
 #panneau .depart { margin-top: 16px; border-top: 3px solid #484838; padding-top: 10px; }
 #panneau button:disabled { opacity: .45; cursor: default; }
 #panneau .choix { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }

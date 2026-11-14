@@ -12,8 +12,8 @@ function coup(force = .6, muet = false) {   // un geste de la machine ; muet : u
   demarrerChrono();   // le chrono de la séance part au premier geste, comme sur l'écran du rameur
   S.v += M_COUP / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
   if (muet) return;
-  S.elan = 1; sonCoup(force, M.liquide);
-  if (M.liquide) { gerbe(S.s, force, M.d, M.y); EAU_U.uCoups.value[S.nb % 4].set(S.s - .3, M.d, COMMUNS.uT.value); }
+  S.elan = 1; S.coupT = T; sonCoup(force, M.liquide);
+  if (M.liquide) { gerbe(S.s, force, M.d, M.y, GABARIT.hw); EAU_U.uCoups.value[S.nb % 4].set(S.s - .3, M.d, COMMUNS.uT.value); }
 }
 function vitesseCapteur(v) { S.v = v; S.capteur = true; }   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
 const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (MACHINE.monture === "cycliste" && MACHINE.physique && n < 2) return VELO.cadence || 0; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };   // (à vélo sans capteur de cadence : celle des pédales qu'on voit tourner)
@@ -90,13 +90,14 @@ function boucle(now) {
   } else S.vd = 0;
   S.croisiere = (MACHINE.physique ? 7.5 : MACHINE.cadence * M_COUP / 60) * MACHINE.allure * ALLURE;   // pour le zoom de la caméra : la vitesse du décor à l'allure habituelle
   S.elan = Math.max(0, S.elan - dt * 2.5); S.vL = lerp(S.vL, S.v2, clamp(dt / 1.2, 0, 1)); S.vn = clamp((S.vL - MACHINE.v0) / (MACHINE.v1 - MACHINE.v0), 0, 1.2);
+  S.phi = S.coupT === undefined || !S.mode ? 9 : (T - S.coupT) / clamp(60 / (cadence() || MACHINE.cadence || 24), 1.2, 4);   // où on en est du geste : 0 = il vient de partir, 1 = le suivant est attendu (monture.js : la nage suit tes coups)
   if (BOUCLE) { if (S.s >= LONG) { S.s -= LONG; if (!BANC) passerLaLigne(); } }
   else {
     if (S.s > LONG - 14 && !S.fondu) { S.fondu = .01; arrivee(); }   // au bout d'un parcours ouvert : son temps, un fondu au blanc, et on repart du début
     if (S.fondu) { S.fondu += dt * 1.4; if (S.fondu >= 1 && S.s > LONG / 2) { S.s = 6; M.y = null; CAM.y = null; } if (S.fondu >= 2) S.fondu = 0; $("voile").style.opacity = S.fondu ? (S.fondu < 1 ? S.fondu : 2 - S.fondu) : 0; }
   }
   const tunnel = dansTunnel(S.s);
-  animerMonture(T, dt, S); cadrer(dt, S, T); ambianceMaj(dt, S.s); lumieresProches(); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
+  animerMonture(T, dt, S); cadrer(dt, S, T); majDresseurPixels(); ambianceMaj(dt, S.s); lumieresProches(); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
   sonMaj(S.s, !!tunnel);
   dessiner(); hud();
   if (BANC && !BANC.fini) bancImage(ecoule);

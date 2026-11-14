@@ -171,6 +171,22 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
 
 - **Surface** : `SURFACES.sable = {materiau, liquide: false, monture: "coureur", poussiere: "#E8D69C"}` (voir `matRoute` dans `surfaces.js`).
 - **Monture** : `MONTURES.velo = {enfonce: 0, foulee: 0}` ; une surface choisit sa monture.
+- **Les nageurs** (14/11, Kiki : « plus immersif », chaque Pokémon à sa vraie taille) : `contenu/nageurs.json` = la liste des Pokémon qui
+  peuvent nager (17, choisis par Kiki sur la planche claude.ai/artifact/AeSgitR57qjcJZ1vSQEwUs) : `num`, `nom`, `enfonce` (la part du corps
+  sous l'eau), `style` (`NAGES` de monture.js : `glisse`, `brasse`, `ondule`), `part` (un serpent : sa taille officielle est sa longueur,
+  son sprite dressé n'en montre que 0,6). **La taille n'est pas dans la fiche : c'est celle du Pokédex** (`pokedex.TAILLES`, ajoutée par
+  `page.nageurs()`). Ajouter un nageur = une ligne (page.py met sa planche dans la page). Choix au menu du rameur (« Ton Pokémon »,
+  `riviere_nageur`, changé tout de suite : `changerNageur`), `?nageur=131` pour essayer. Sur la terre : le Pokémon du circuit, comme avant.
+  - `sprites.js` : `Nageur` (un `Pantin` à deux matériaux : au-dessus de l'eau tel quel avec un liseré d'écume à la surface ; dessous,
+    bleuté, effacé avec la profondeur, ondulant, dessiné sans contrôle de profondeur), `GABARIT` (`f` : le recul de la caméra, taille^0,42,
+    de 0,76 à 1,85 ; `hw` : la demi-largeur du corps à la ligne d'eau, lue sur le sprite), gouttes de plusieurs tailles (`gerbe(…, large, nb)`).
+  - `monture.js` : `nager` : la nage suit **les coups de rame** (`S.phi` de jeu.js : 0 = le coup part, 1 = le suivant est attendu) : il
+    s'élance, sort un peu de l'eau, roule d'un bord sur l'autre, s'étire, son animation fait un cycle par coup ; sans coup depuis
+    1,7 période, elle tourne au ralenti. Embruns continus à fond.
+  - `surfaces.js` : le sillage à la largeur du corps (`uCorps` : demi-largeur, élan du coup) : eau brassée, deux bras en pointillés
+    d'écume accrochés à l'eau, frange claire, col autour du corps, vague poussée devant à chaque coup, ronds des coups à sa taille.
+  - `camera.js` : recul, hauteur et point visé multipliés par `GABARIT.f` (filtre de 0,9 s) ; sous une voûte, jamais plus haut que 2,9 m.
+  - Le fantôme a la taille et l'enfoncement du nageur (`fantomeOublier` quand on en change). Les adversaires : inchangés.
 - **Machine de sport** : `jeu/allure.js`, `MACHINES` (vrais mètres par geste, allure du décor, records à part). `?machine=elliptique`, `?machine=velo`.
   Une machine `continu` reçoit une vitesse ; `physique` : des watts deviennent une vitesse (poids, pente, air) et le décor ne triche plus avec la pente.
 - **Le skieur de fond** (12/11, Kiki : son appareil du parc n'est pas un elliptique, les pieds restent à plat, mouvement de ski de fond) : la clé
@@ -214,6 +230,7 @@ Segments, profil d'altitude (dès 1,5 m de relief) et arrivée d'un parcours de 
 | `?surface=terre`, `?machine=elliptique`, `?machine=velo`, `?eco=1` | le circuit sur la terre, une autre machine, 30 images par seconde |
 | `?vitrine=1`, `?tenue=Peau,Casquette,Veste,Pantalon` | à vélo : la caméra tourne autour du cycliste ; une autre tenue (noms de la carte du dresseur) |
 | `?heure=nuit&meteo=pluie`, `__ambiance(h, m)` | une ambiance |
+| `?nageur=131`, `changerNageur(130)` | un autre Pokémon dans l'eau (ceux de `contenu/nageurs.json`), à sa vraie taille |
 | `__generer({km, relief, avec})`, `__trames()` | le générateur ; la lecture des trames Bluetooth |
 | `?cadre=1` (serveur d'essai) | la page dans un cadre, comme dans l'appli |
 

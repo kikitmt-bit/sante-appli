@@ -1,0 +1,23 @@
+{
+ "_": "Les Pokémon qui peuvent nager au rameur (choisis par Kiki le 14/11, sur la planche des nageurs). Chacun garde sa VRAIE taille : celle du Pokédex (pokedex.TAILLES), ajoutée par page.py. « part » : pour un serpent, la taille officielle est sa longueur ; son sprite, dressé, n'en montre qu'une part. « enfonce » : la part du corps sous l'eau. « style » : sa façon de nager (moteur/monture.js, NAGES) : glisse, brasse ou ondule.",
+ "defaut": 7,
+ "liste": [
+  {"num": 131, "nom": "Lokhlass", "enfonce": 0.3, "style": "glisse"},
+  {"num": 130, "nom": "Léviator", "enfonce": 0.45, "style": "ondule", "part": 0.6},
+  {"num": 86, "nom": "Otaria", "enfonce": 0.38, "style": "glisse"},
+  {"num": 87, "nom": "Lamantine", "enfonce": 0.4, "style": "glisse"},
+  {"num": 134, "nom": "Aquali", "enfonce": 0.42, "style": "glisse"},
+  {"num": 60, "nom": "Ptitard", "enfonce": 0.4, "style": "ondule"},
+  {"num": 7, "nom": "Carapuce", "enfonce": 0.42, "style": "brasse"},
+  {"num": 8, "nom": "Carabaffe", "enfonce": 0.42, "style": "brasse"},
+  {"num": 9, "nom": "Tortank", "enfonce": 0.4, "style": "brasse"},
+  {"num": 147, "nom": "Minidraco", "enfonce": 0.4, "style": "ondule", "part": 0.6},
+  {"num": 148, "nom": "Draco", "enfonce": 0.42, "style": "ondule", "part": 0.6},
+  {"num": 118, "nom": "Poissirène", "enfonce": 0.45, "style": "ondule"},
+  {"num": 120, "nom": "Stari", "enfonce": 0.35, "style": "glisse"},
+  {"num": 121, "nom": "Staross", "enfonce": 0.35, "style": "glisse"},
+  {"num": 54, "nom": "Psykokwak", "enfonce": 0.42, "style": "brasse"},
+  {"num": 55, "nom": "Akwakwak", "enfonce": 0.42, "style": "brasse"},
+  {"num": 79, "nom": "Ramoloss", "enfonce": 0.45, "style": "brasse"}
+ ]
+}

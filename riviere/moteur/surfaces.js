@@ -24,9 +24,9 @@ const PISTE_VS = `
 
 /* ---- l'eau : deux bleus en taches, des reflets, l'écume des rives, le sillage, les ronds de chaque coup, l'écume des rapides et des chutes ---- */
 const EAU_U = Object.assign({uC1: {value: new THREE.Vector3(...hex(BIOME.eau.c1))}, uC2: {value: new THREE.Vector3(...hex(BIOME.eau.c2))}, uClair: {value: new THREE.Vector3(...hex(BIOME.eau.clair))},
-  uReflet: {value: new THREE.Vector3(...hex(BIOME.eau.reflet))}, uEcume: {value: new THREE.Vector3(...hex(BIOME.eau.ecume))}, uNag: {value: new THREE.Vector4(-999, 0, 0, 0)},
+  uReflet: {value: new THREE.Vector3(...hex(BIOME.eau.reflet))}, uEcume: {value: new THREE.Vector3(...hex(BIOME.eau.ecume))}, uNag: {value: new THREE.Vector4(-999, 0, 0, 0)}, uCorps: {value: new THREE.Vector4(.45, 0, 0, 0)},
   uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}}, COMMUNS);
-const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag; uniform vec3 uCoups[4]; uniform float uLong;
+const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag, uCorps; uniform vec3 uCoups[4]; uniform float uLong;
   varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
   #ifdef PARSOMMET
   varying vec3 vC1, vC2, vCl, vRe, vEcu; varying float vLuit;
@@ -56,14 +56,21 @@ const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit; uniform vec3
     if (ec > .5) { c = mix(c, CL, .5 * (1. - smoothstep(0., 2.6, vBord)));
       float o = sin(vSU.x * 1.3 + uT * 1.6) * .1 + sin(vSU.x * .37 - uT) * .08;
       if (vBord < .3 + o) c = EC; else if (vBord > .8 + o && vBord < .98 + o && h21(vec2(floor(vSU.x / .9), 1.)) > .35) c = mix(c, EC, .8); }
-    float ds = lelong(uNag.x, vSU.x), du = vSU.y - uNag.y, vit = uNag.z;
-    if (ds > -.9 && ds < 26.) { float a = (1. - ds / 26.) * vit;
-      if (ds > .3 && ds < 16. && abs(abs(du) - (.4 + ds * .3)) < .06 + ds * .006 && h21(floor(vec2(vSU.x * 2.5, vSU.y * 6.)) + floor(uT * 5.)) < (1. - ds / 16.) * (.2 + vit) * .75) c = mix(c, EC, .9);                       // les deux bras du sillage
-      if (ds > .2 && ds < 7. && abs(du) < .28 + ds * .05 && h21(floor(vec2(vSU.x * 3., vSU.y * 6.)) * 1.7 + floor(uT * 7.)) < .34 * (1. - ds / 7.) * (.2 + vit)) c = mix(c, EC, .85);   // l'eau brassée, juste derrière
-      float col = length(vec2(du, ds * 1.1 + .1) / vec2(.86, .62)); if (uNag.w < .5 && col < 1. && col > .7 + .12 * sin(uT * 7. + du * 6.)) c = EC; }     // le col d'écume autour du corps
+    // Le sillage (refait le 14/11). ds : derrière lui, du : à côté ; hw : sa demi-largeur à la ligne d'eau ; el : l'élan du coup de rame (de 1 à 0).
+    // Les pixels d'écume sont accrochés à l'eau : ils restent en arrière quand il avance.
+    float ds = lelong(uNag.x, vSU.x), du = vSU.y - uNag.y, vit = uNag.z, hw = uCorps.x, el = uCorps.y, lg = 1. + hw;
+    if (ds > -2. * lg && ds < 36.) {
+      vec2 gp = floor(vec2(vSU.x * 4., vSU.y * 10.)); float hz = h21(gp + floor(uT * 2.) * .37), q = 1. - ds / (7. + 12. * hw);
+      if (ds > .15 && q > 0. && abs(du) < hw * .85 + ds * .09 && hz < q * .42 * (.2 + vit) * (.6 + .5 * el)) c = mix(c, hz < q * .1 ? EC : CL, .9);   // l'eau brassée, juste derrière
+      float bras = abs(abs(du) - (hw + .1 + ds * .33)); q = 1. - ds / 32.;
+      if (ds > 0. && q > 0. && bras < (ds < 3. * lg ? .09 : .05) * (.6 + .4 * lg) && h21(gp + 17.) < q * (.2 + .5 * vit) * (.6 + .4 * el)) c = mix(c, EC, .92);   // les deux bras du sillage : épais près de lui, ils s'ouvrent et s'effacent
+      else if (ds > 0. && q > 0. && bras < .22 * lg && hz < q * .2 * (.2 + vit)) c = mix(c, CL, .8);   // leur frange claire
+      if (uNag.w < .5) { float col = length(vec2(du / (hw + .32 + .12 * el), (ds * 1.1 + .1) / (.5 + .25 * hw + .1 * el)));
+        if (col < 1. && col > .76 + .1 * sin(uT * 7. + du * 6.)) c = EC;   // le col d'écume autour du corps
+        else if (ds < 0. && col > 1.12 && col < 1.12 + .3 * el && hz < .7) c = mix(c, CL, .85); } }   // la vague qu'il pousse devant lui à chaque coup
     for (int i = 0; i < 4; i++) { float age = uT - uCoups[i].z; if (age < 0. || age > 1.6) continue;
-      float d = length(vec2(vSU.y - uCoups[i].y, lelong(vSU.x, uCoups[i].x))), r = .5 + age * 1.9;
-      if (abs(d - r) < .08 + .03 * age && h21(floor(vec2(vSU.x * 5., vSU.y * 5.))) > age / 1.6) c = mix(c, EC, .9); }
+      float d = length(vec2(vSU.y - uCoups[i].y, lelong(vSU.x, uCoups[i].x))), r = .3 + hw + age * (1.5 + hw);
+      if (abs(d - r) < (.08 + .03 * age) * (1. + .5 * hw) && h21(floor(vec2(vSU.x * 5., vSU.y * 5.))) > age / 1.6) c = mix(c, EC, .9); }
     if (uPluie > 0. && prox > 0.) { vec2 cel = floor(p / 1.4); float ph = fract(uT * 1.5 + h21(cel) * 7.), tir = floor(uT * 1.5 + h21(cel) * 7.);   // la pluie : un petit rond dans chaque case, de temps en temps
       vec2 o = (cel + .5 + (vec2(h21(cel + tir), h21(cel - tir)) - .5) * .6) * 1.4;
       if (h21(cel * 1.3 + tir) < uPluie * .75 && abs(length(p - o) - ph * .5) < .07) c = mix(c, EC, .7 * (1. - ph) * prox); }

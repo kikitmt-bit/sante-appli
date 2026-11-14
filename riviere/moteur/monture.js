@@ -53,16 +53,39 @@ function animerMonture(t, dt, S) {
       }
     }
   }
-  EAU_U.uNag.value.set(S.s, M.d, S.vn, S.enAir || !M.liquide ? 1 : 0);
+  EAU_U.uNag.value.set(S.s, M.d, S.vn, S.enAir || !M.liquide ? 1 : 0); EAU_U.uCorps.value.set(GABARIT.hw, 0, 0, 0);
   OMBRE_U.uOmbre.value.set(M.liquide ? 0 : mt.velo ? 1 : .55, Math.max(0, M.y + bond - sol), mt.velo && !mt.patins ? 1 : 0);   // l'ombre au sol (et, à vélo, la trace du pneu)
   if (mt.velo) { animerVelo(t, dt, S, pose(S.s, M.d), M.y + Math.max(0, bond), nageur); return; }
   cacherVelo();
   const N = nageur; if (!N) return;
   const p = pose(S.s, M.d), k = PISTE.COURB[idx(S.s + 2)];
   N.rangee(k > .028 ? 3 : k < -.028 ? 5 : 4);   // dans un virage serré, il se tourne du côté du virage
+  if (N.fiche && M.liquide) { nager(N, t, dt, S, sol, bond, k); return; }
+  if (N.fiche) { N.mouiller(sol, false); N.m.rotation.z = 0; N.m.scale.set(N.l, N.h, 1); }   // un nageur sur la terre ferme : le sprite entier, il court
   N.image(N.pl.image(t * (M.liquide ? .45 + S.vn * .2 : .7 + S.vn * 1.2)));
   const corps = M.liquide ? (-N.h * mt.enfonce + Math.sin(t * 3) * .03 + S.elan * .03) * (1 - M.sorti) : Math.abs(Math.sin(t * (5 + S.vn * 7))) * mt.foulee * (S.vd > .4 ? 1 : 0) * (1 - M.sorti);
   N.m.position.set(p.x, M.y + corps + bond * (bond > 0 ? 1 : N.h), p.z); N.regarder();
 }
+/* ---- la nage (14/11, Kiki : « plus immersif ») : ton Pokémon nage au rythme de TES coups de rame. À chaque coup il s'élance vers l'avant,
+   sort un peu de l'eau, roule d'un bord sur l'autre et s'étire ; puis il glisse et se renfonce. Son animation fait un cycle par coup
+   (vite pendant la poussée) ; sans coup depuis un moment, elle tourne au ralenti. S.phi (jeu.js) : où on en est du coup, 0 = il vient
+   de partir, 1 = le suivant est attendu. La fiche du Pokémon (contenu/nageurs.json) choisit sa façon de nager : "style". ---- */
+const NAGES = {glisse: {leve: .08, elan: .3, roulis: .035}, brasse: {leve: .14, elan: .22, roulis: .07}, ondule: {leve: .06, elan: .3, roulis: .1}};
+const elanCoup = f => f < .22 ? Math.sin(f / .22 * Math.PI / 2) : f < 1 ? Math.pow(1 - (f - .22) / .78, 2) : 0;
+const rythmeCoup = f => f < .4 ? .62 * f / .4 : .62 + .38 * (Math.min(f, 1) - .4) / .6;
+function nager(N, t, dt, S, sol, bond, k) {
+  const st = NAGES[N.fiche.style] || NAGES.brasse, f = S.phi === undefined ? 9 : S.phi, e = elanCoup(f), g = Math.sqrt(N.h), dans = 1 - M.sorti;
+  if (f > 1.7 && !M.repos) M.reposT = t;
+  M.repos = f > 1.7;
+  N.image(N.pl.image(M.repos ? (t - M.reposT) * .35 : rythmeCoup(f) * N.pl.total * .999));
+  const avance = e * st.elan * g, enf = Math.max(0, N.enfonce - st.leve * e), p = pose(S.s + avance, M.d), emerge = N.h * (1 - enf);
+  const haut = bond > 0 ? bond * clamp(g, 1, 1.6) : bond / 1.7 * (emerge + .3);   // un tronc : un grand Pokémon saute plus haut ; des rondins : il plonge juste assez pour passer dessous
+  N.m.position.set(p.x, M.y + (-N.h * enf + Math.sin(t * 2.2) * .02 * g) * dans + haut, p.z); N.regarder();
+  N.m.rotation.z = ((S.nb % 2 ? 1 : -1) * e * st.roulis - clamp(k * 2.2, -.12, .12) * Math.min(1, S.vn)) * dans;
+  N.m.scale.set(N.l * (1 - .03 * e), N.h * (1 + .05 * e), 1);
+  N.mouiller(sol, M.sorti < .5);
+  EAU_U.uNag.value.x = S.s + avance; EAU_U.uCorps.value.set(GABARIT.hw, e, 0, 0);
+  if (dt > 0 && S.vn > .8 && !S.enAir && Math.random() < dt * 30 * (S.vn - .7)) gerbe(S.s + avance, .25, M.d, M.y, GABARIT.hw, 2);   // à fond : des embruns sans arrêt
+}
 /* à quelle hauteur dessiner un autre pantin au mètre s (le fantôme) */
-function hauteurPantin(s, N, t) { return at(s).y + (surface(s).liquide ? -N.h * .42 + Math.sin(t * 3 + 1) * .03 : 0); }
+function hauteurPantin(s, N, t) { return at(s).y + (surface(s).liquide ? -N.h * (N.enfonce === undefined ? .42 : N.enfonce) + Math.sin(t * 3 + 1) * .03 : 0); }

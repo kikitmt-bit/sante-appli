@@ -28,6 +28,20 @@ class Fichiers(unittest.TestCase):
         self.assertIn("eau", SURFACES)
         self.assertIn("terre", SURFACES)
 
+    def test_nageurs(self):
+        """Les Pokémon qui nagent : chacun a sa vraie taille (celle du Pokédex), une part du corps sous l'eau et une façon de nager connue."""
+        nages = set(re.findall(r"(\w+): \{leve:", (R / "moteur" / "monture.js").read_text(encoding="utf-8")))
+        n = _page.nageurs()
+        nums = [p["num"] for p in n["liste"]]
+        self.assertEqual(len(nums), len(set(nums)), "un nageur est cité deux fois")
+        self.assertIn(n["defaut"], nums)
+        for p in n["liste"]:
+            self.assertTrue(p.get("nom"), p)
+            self.assertTrue(p.get("taille") and 0.2 <= p["taille"] <= 9, f"{p['nom']} : pas de taille au Pokédex")
+            self.assertTrue(0 <= p.get("enfonce", 0.42) <= 0.7, p["nom"])
+            self.assertTrue(0.3 <= p.get("part", 1) <= 1, p["nom"])
+            self.assertIn(p.get("style", "brasse"), nages, p["nom"])
+
     def test_regions(self):
         for f in (C / "biomes").glob("*.json"):
             b = region(f.stem)

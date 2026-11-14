@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent
-MOTEUR = ["depart", "outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
+MOTEUR = ["depart", "outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "velo", "cycliste", "pixel", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
 JEU = ["allure", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "parcours", "generateur", "editeur", "banc"]
 PURS = ["depart", "outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
@@ -141,9 +141,15 @@ def tout():
     return niveaux, _dossier("biomes"), _dossier("lieux")
 
 
+def nageurs():
+    """Les Pokémon qui peuvent nager (contenu/nageurs.json), chacun avec sa vraie taille : celle du Pokédex."""
+    n = _lis("nageurs.json")
+    return {"defaut": n.get("defaut", 7), "liste": [{**p, "taille": p.get("taille") or TAILLES.get(p["num"])} for p in n["liste"]]}
+
+
 def donnees_js(donnees, niveaux, biomes, lieux, lot, servi):
     return (f"const D = {_js(donnees or {})}, NIVEAUX = {_js(niveaux)}, BIOMES = {_js(biomes)}, LIEUX_TOUS = {_js(lieux)}, LOT = {_js(lot)}, "
-            f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})};")
+            f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})}, NAGEURS = {_js(nageurs())};")
 
 
 def source_piste():
@@ -158,7 +164,7 @@ def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
     niveaux, biomes, lieux = tout()
     if niveau not in niveaux:
         niveau = "kanto-1km"
-    besoins = {(n.get("nageur", 7), "Walk") for n in niveaux.values()}
+    besoins = {(n.get("nageur", 7), "Walk") for n in niveaux.values()} | {(p["num"], "Walk") for p in nageurs()["liste"]}
     for o in (niveaux, biomes, lieux):
         _pokemon(o, besoins)
     lot = {f"{n:04d}/{a}": p for n, a in sorted(b for b in besoins if b[0] != "h") if (p := planche(n, a, cache))}
