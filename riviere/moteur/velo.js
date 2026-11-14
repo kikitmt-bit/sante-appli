@@ -5,7 +5,7 @@
 // les virages (comme un vrai : selon la vitesse et la courbe), le guidon braque ; dans une côte raide, il se met en danseuse
 // (debout, le vélo bascule d'un côté à l'autre à chaque coup de pédale) ; il se cabre au saut et s'écrase un peu à la réception ;
 // il vibre sur les pavés ; à l'arrêt, il penche sur le côté. Au sol : son ombre (surfaces.js : uOmbre), sa trace et sa poussière sur la terre.
-const ROUE = .33, ECH_VELO = 1.05, TOUR_PEDALE = 6.2;   // rayon d'une roue (m), taille du vélo, mètres parcourus par tour de pédale
+const ROUE = .31, PNEU = .034, ECH_VELO = 1.05, TOUR_PEDALE = 6.2;   // rayon d'une roue (m), demi-largeur du pneu, taille du vélo, mètres parcourus par tour de pédale
 const VELO = {g: null, roueAr: null, roueAv: null, avant: null, pedalier: null, roue: 0, pedale: 0, incl: 0, tangage: 0, braq: 0, choc: 0, debout: 0, pos: new THREE.Vector3()};
 
 function tube(F, a, b, r, col, n = 5) {   // un tube de a à b (dans le repère du vélo)
@@ -17,53 +17,75 @@ function tube(F, a, b, r, col, n = 5) {   // un tube de a à b (dans le repère 
     F.quad(m(a, o0), m(a, o1), m(b, o1), m(b, o0), col, N);
   }
 }
-function roueVelo(couleurs) {   // une roue, son axe sur z : pneu épais à facettes, jante, rayons, moyeu
-  const F = new Forme(), n = 16, w = .05, r0 = ROUE, r1 = ROUE - .065, r2 = ROUE - .085, [pneu, jante, rayon] = couleurs;
+function roueVelo(couleurs) {   // une roue, son axe sur z : un pneu étroit à facettes, une jante claire, cinq bâtons épais (on les voit tourner, sans scintiller), le moyeu
+  const F = new Forme(), n = 16, w = PNEU, r0 = ROUE, r1 = ROUE - .06, r2 = ROUE - .1, wj = w * .72, [pneu, jante, baton] = couleurs;
   for (let k = 0; k < n; k++) {
     const a0 = k / n * Math.PI * 2, a1 = (k + 1) / n * Math.PI * 2, c0 = Math.cos(a0), s0 = Math.sin(a0), c1 = Math.cos(a1), s1 = Math.sin(a1), cm = Math.cos((a0 + a1) / 2), sm = Math.sin((a0 + a1) / 2);
     const P = (r, z, c, s) => [c * r, s * r, z], ton = k % 2 ? pneu : fonce(pneu, .85);
     F.quad(P(r0, -w, c0, s0), P(r0, -w, c1, s1), P(r0, w, c1, s1), P(r0, w, c0, s0), ton, [cm, sm, 0]);   // la bande de roulement
-    for (const z of [-w, w]) { F.quad(P(r1, z, c0, s0), P(r1, z, c1, s1), P(r0, z, c1, s1), P(r0, z, c0, s0), ton, [0, 0, Math.sign(z)]);   // les flancs du pneu
-      F.quad(P(r2, z * .5, c0, s0), P(r2, z * .5, c1, s1), P(r1, z, c1, s1), P(r1, z, c0, s0), jante, [0, 0, Math.sign(z)]); }   // la jante
+    F.quad(P(r2, -wj, c0, s0), P(r2, -wj, c1, s1), P(r2, wj, c1, s1), P(r2, wj, c0, s0), fonce(jante, .8), [-cm, -sm, 0]);   // le dedans de la jante
+    for (const sg of [-1, 1]) {
+      F.quad(P(r1, sg * w, c0, s0), P(r1, sg * w, c1, s1), P(r0, sg * w, c1, s1), P(r0, sg * w, c0, s0), ton, [0, 0, sg]);   // les flancs du pneu
+      F.quad(P(r2, sg * wj, c0, s0), P(r2, sg * wj, c1, s1), P(r1, sg * w, c1, s1), P(r1, sg * w, c0, s0), jante, [0, 0, sg]);   // la jante
+    }
   }
-  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2 + .2; tube(F, [0, 0, k % 2 ? .02 : -.02], [Math.cos(a) * r2, Math.sin(a) * r2, 0], .007, rayon, 3); }   // les rayons
-  F.boite(0, -.035, 0, .07, .07, .1, jante);
+  for (let k = 0; k < 5; k++) { const a = k / 5 * Math.PI * 2 + .3; tube(F, [Math.cos(a) * .03, Math.sin(a) * .03, 0], [Math.cos(a) * (r2 + .008), Math.sin(a) * (r2 + .008), 0], .018, baton, 4); }   // les bâtons
+  tube(F, [0, 0, -.052], [0, 0, .052], .05, jante, 8);
+  for (const sg of [-1, 1]) F.disque(0, 0, sg * .053, .05, .05, fonce(jante, .9), 0, Math.PI * 2, 8);
   return F.maille();
 }
+function gardeBoue(F, cx, cy, deg0, deg1, n, col) {   // un garde-boue : un arc au-dessus d'une roue, de l'angle deg0 (0 = vers l'arrière) à deg1
+  const r = ROUE + .04, l = PNEU + .008;
+  for (let k = 0; k < n; k++) { const a0 = (deg0 + (deg1 - deg0) * k / n) * Math.PI / 180, a1 = (deg0 + (deg1 - deg0) * (k + 1) / n) * Math.PI / 180, P = (a, z) => [cx - Math.cos(a) * r, cy + Math.sin(a) * r, z];
+    F.quad(P(a0, -l), P(a1, -l), P(a1, l), P(a0, l), k % 2 ? col : fonce(col, .9), [-Math.cos((a0 + a1) / 2), Math.sin((a0 + a1) / 2), 0]); }
+}
+/* Le vélo (refait le 14/11, Kiki : « les pneus rentrent dans le cadre, c'est un peu fouillis »). Rien ne se traverse plus : la tête de
+   fourche est au-dessus du pneu avant, la fourche et les haubans passent de chaque côté du pneu, les garde-boue aussi. Moins de petites
+   pièces qui scintillent : des roues à bâtons au lieu de fins rayons, un carter blanc à la place de la chaîne, un panier plein en lattes.
+   Ce que cycliste.js attend n'a pas bougé : le pédalier en (-.02, .3), la selle, les poignées, le fond du panier, le pivot de l'avant en x = .43. */
 function construireVelo() {
   const g = new THREE.Group(); g.rotation.order = "YXZ"; g.visible = false; g.scale.setScalar(ECH_VELO); scene.add(g); VELO.g = g;
-  const cadre = hex("#D83830"), cadre2 = fonce(cadre, .8), gris = hex("#8A8E98"), noir = hex("#2C2C34"), blanc = hex("#F2F0EA"), roues = [hex("#34343C"), hex("#C8CCD4"), hex("#9EA2AC")];
-  const AR = [-.52, ROUE, 0], PB = [-.02, .3, 0], SEL = [-.2, .84, 0], DIR = [.38, .86, 0], DIRB = [.43, .62, 0];
-  // le cadre, la selle, le garde-boue et son feu, la chaîne
+  const cadre = hex("#D83830"), cadre2 = fonce(cadre, .8), gris = hex("#8A8E98"), noir = hex("#2C2C34"), blanc = hex("#F2F0EA"), blanc2 = hex("#DCD8CC"), roues = [hex("#34343C"), hex("#ECEAE2"), hex("#B4B8C0")];
+  const AR = [-.52, ROUE, 0], PB = [-.02, .3, 0], SEL = [-.2, .84, 0], DIR = [.385, .9, 0], DIRB = [.43, .72, 0], AV = .56, LARGE = PNEU + .03;   // LARGE : où passent la fourche et les haubans, de chaque côté du pneu
+  // le cadre, la selle, le garde-boue et son feu, le carter
   const F = new Forme();
-  tube(F, PB, SEL, .028, cadre); tube(F, SEL, DIR, .026, cadre); tube(F, PB, DIRB, .032, cadre); tube(F, DIRB, DIR, .034, cadre2);
-  for (const z of [-.055, .055]) { tube(F, [PB[0], PB[1], z * .4], [AR[0], AR[1], z], .018, cadre2); tube(F, [SEL[0] + .02, SEL[1] - .06, z * .3], [AR[0], AR[1], z], .016, cadre2); }
+  tube(F, PB, SEL, .028, cadre); tube(F, SEL, DIR, .026, cadre); tube(F, PB, DIRB, .032, cadre); tube(F, DIRB, DIR, .036, cadre2);
+  for (const z of [-1, 1]) { tube(F, [PB[0], PB[1], z * .045], [AR[0], AR[1], z * LARGE], .016, cadre2); tube(F, [SEL[0] - .01, SEL[1] - .1, z * .05], [AR[0], AR[1], z * LARGE], .014, cadre2); }
+  tube(F, [AR[0], AR[1], -LARGE - .012], [AR[0], AR[1], LARGE + .012], .014, gris, 4);   // l'axe arrière
   tube(F, SEL, [SEL[0] - .02, SEL[1] + .07, 0], .018, gris);
   F.boite(-.22, .9, 0, .3, .055, .15, noir, {haut: fonce(noir, 1.35)});   // la selle
-  for (let k = 0; k < 9; k++) { const a0 = (25 + k * 16) * Math.PI / 180, a1 = (25 + (k + 1) * 16) * Math.PI / 180, r = ROUE + .045, P = (a, z) => [AR[0] - Math.cos(a) * r, AR[1] + Math.sin(a) * r, z];   // le garde-boue arrière
-    F.quad(P(a0, -.06), P(a1, -.06), P(a1, .06), P(a0, .06), k % 2 ? cadre : fonce(cadre, .9), [-Math.cos((a0 + a1) / 2), Math.sin((a0 + a1) / 2), 0]); }
-  F.matiere(4).boite(AR[0] - ROUE - .07, AR[1] + .1, 0, .04, .07, .08, hex("#FF3828")).matiere(2);   // le feu arrière (il brille toujours)
-  tube(F, [PB[0], PB[1] + .1, .06], [AR[0], AR[1] + .05, .06], .008, noir, 3); tube(F, [PB[0], PB[1] - .1, .06], [AR[0], AR[1] - .05, .06], .008, noir, 3);   // la chaîne
-  F.disque(PB[0], PB[1], .066, .11, .11, gris, 0, Math.PI * 2, 14);
+  gardeBoue(F, AR[0], AR[1], 20, 168, 9, cadre);
+  F.matiere(4).boite(AR[0] - ROUE - .045, AR[1] + .085, 0, .04, .07, .07, hex("#FF3828")).matiere(2);   // le feu arrière (il brille toujours)
+  // le carter de la chaîne : un disque blanc devant le plateau, une barre jusqu'au moyeu arrière, un petit disque au bout
+  F.disque(PB[0], PB[1], .075, .118, .118, blanc, 0, Math.PI * 2, 12); F.disque(PB[0], PB[1], -.02, .1, .1, gris, 0, Math.PI * 2, 10);
+  F.boite((PB[0] + AR[0]) / 2, PB[1] - .05, .069, AR[0] * -1 + PB[0], .1, .012, blanc, {haut: blanc2}); F.disque(AR[0], PB[1], .075, .05, .05, blanc, 0, Math.PI * 2, 8);
+  F.disque(PB[0], PB[1], .0765, .035, .035, gris, 0, Math.PI * 2, 8);
   g.add(F.maille());
   // la roue arrière
   VELO.roueAr = roueVelo(roues); VELO.roueAr.position.set(AR[0], AR[1], 0); g.add(VELO.roueAr);
-  // le pédalier : deux manivelles opposées, deux pédales
+  // le pédalier : deux manivelles opposées, deux pédales (le milieu d'une pédale à 13,5 cm du cadre : là où cycliste.js pose le pied)
   const P = new Forme();
-  for (const [z, s] of [[.085, 1], [-.085, -1]]) { tube(P, [0, 0, z], [0, -s * .17, z], .016, gris, 4); P.boite(0, -s * .17 - .015, z + Math.sign(z) * .05, .1, .03, .09, noir); }
+  for (const s of [-1, 1]) { tube(P, [0, 0, s * .092], [0, -s * .17, s * .092], .016, gris, 4); P.boite(0, -s * .17 - .015, s * .135, .1, .03, .09, noir); }
   VELO.pedalier = P.maille(); VELO.pedalier.position.set(PB[0], PB[1], 0); g.add(VELO.pedalier);
-  // l'avant, qui braque autour de la douille : fourche, roue, guidon et poignées, phare, panier
+  // l'avant, qui braque autour de la douille : fourche, roue et son garde-boue, potence, guidon et poignées, phare, panier
   const av = new THREE.Group(); av.position.set(DIRB[0], 0, 0); g.add(av); VELO.avant = av;
-  const A = new Forme(), x0 = -DIRB[0], FR = [.52 + x0, ROUE, 0];
-  for (const z of [-.05, .05]) tube(A, [DIRB[0] + x0, DIRB[1], z * .5], [FR[0], FR[1], z], .017, gris);
-  tube(A, [DIR[0] + x0, DIR[1], 0], [DIR[0] + x0 - .03, DIR[1] + .13, 0], .02, gris);
-  tube(A, [DIR[0] + x0 - .03, DIR[1] + .13, -.3], [DIR[0] + x0 - .03, DIR[1] + .13, .3], .017, gris);
-  for (const z of [-1, 1]) tube(A, [DIR[0] + x0 - .03, DIR[1] + .13, z * .2], [DIR[0] + x0 - .03, DIR[1] + .13, z * .32], .026, noir);
-  A.matiere(7).boite(DIR[0] + x0 + .09, DIR[1] + .02, 0, .07, .08, .08, PAL.lumiere).matiere(2);   // le phare (allumé la nuit)
-  const bx = DIR[0] + x0 + .2, by = DIR[1] - .06, l = .3, h = .2, p = .34;   // le panier blanc, ajouré
-  A.boite(bx, by, 0, l, .02, p, blanc);
-  for (let k = 0; k <= 3; k++) { const y = by + .02 + k * h / 3.2; A.boite(bx, y, -p / 2, l, .018, .018, blanc); A.boite(bx, y, p / 2, l, .018, .018, blanc); A.boite(bx + l / 2, y, 0, .018, .018, p, blanc); A.boite(bx - l / 2, y, 0, .018, .018, p, blanc); }
-  for (const [dx, dz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) A.boite(bx + dx * l / 2, by, dz * p / 2, .02, h, .02, blanc);
+  const A = new Forme(), x0 = -DIRB[0], FR = [AV + x0, ROUE, 0], GX = -.08, GY = .99;   // (GX, GY) : le guidon
+  tube(A, [0, DIRB[1], -LARGE - .01], [0, DIRB[1], LARGE + .01], .02, gris, 4);   // la tête de fourche, au-dessus du pneu
+  for (const z of [-1, 1]) tube(A, [0, DIRB[1], z * LARGE], [FR[0], FR[1], z * LARGE], .016, gris);
+  tube(A, [FR[0], FR[1], -LARGE - .012], [FR[0], FR[1], LARGE + .012], .013, gris, 4);   // l'axe avant
+  gardeBoue(A, FR[0], FR[1], 55, 150, 6, cadre);
+  tube(A, [DIR[0] + x0, DIR[1], 0], [GX, GY, 0], .02, gris);   // la potence
+  tube(A, [GX, GY, -.3], [GX, GY, .3], .017, gris);
+  for (const z of [-1, 1]) tube(A, [GX, GY, z * .2], [GX, GY, z * .32], .026, noir);   // les poignées
+  A.matiere(7).boite(.07, DIRB[1] - .02, 0, .07, .08, .08, PAL.lumiere).matiere(2);   // le phare (allumé la nuit), sur la tête de fourche
+  // le panier : un fond, quatre côtés en lattes de deux blancs (sans jour : rien ne scintille, et ton Pokémon dépasse du bord), un rebord
+  const bx = .15, by = .8, l = .3, h = .2, p = .34, nl = 5;
+  A.boite(bx, by, 0, l, .02, p, blanc2);
+  for (let k = 0; k < nl; k++) { const ton = k % 2 ? blanc : blanc2, x = bx - l / 2 + (k + .5) * l / nl, z = -p / 2 + (k + .5) * p / nl;
+    for (const sg of [-1, 1]) { A.boite(x, by + .02, sg * p / 2, l / nl, h, .02, ton); A.boite(bx + sg * l / 2, by + .02, z, .02, h, p / nl, ton); } }
+  for (const sg of [-1, 1]) { A.boite(bx, by + .02 + h, sg * p / 2, l + .04, .025, .04, blanc); A.boite(bx + sg * l / 2, by + .02 + h, 0, .04, .025, p + .04, blanc); }
+  tube(A, [.02, DIRB[1], 0], [bx - .04, by, 0], .014, gris, 4);   // le support du panier
+  for (const z of [-1, 1]) tube(A, [GX, GY, z * .1], [bx - l / 2, by + h * .8, z * .1], .011, gris, 4);
   av.add(A.maille());
   VELO.roueAv = roueVelo(roues); VELO.roueAv.position.set(FR[0], FR[1], 0); av.add(VELO.roueAv);
   VELO.pieces = g.children.slice();   // les pièces du vélo (le cycliste viendra s'ajouter au groupe) : cachées quand il est en rollers

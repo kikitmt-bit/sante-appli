@@ -1,12 +1,19 @@
-/* ============ le cycliste : ton dresseur sur le vélo, ton Pokémon dans le panier (12/11, Kiki : « un vrai effet waouh ») ============ */
-// Un personnage en volumes, dans le style du monde (couleurs unies, lumière en paliers, contour sombre), aux proportions d'un jeu Pokémon :
-// grosse tête, casquette à visière, veste, sac à dos jaune frappé d'une Poké Ball, sac de couchage roulé dessus. Il porte les couleurs de
-// TA carte du dresseur (peau, casquette, veste, pantalon : D.dresseur, donné par l'appli ; ?tenue=Claire,Bleu,Vert,Noir pour essayer).
+/* ============ le cycliste : ton dresseur sur le vélo, ton Pokémon dans le panier (12/11 ; refait le 14/11, Kiki : « le même style low poly que le vélo ») ============ */
+// Un personnage en volumes à facettes, comme le vélo et les arbres (couleurs unies, une couleur par facette, lumière en paliers), aux
+// proportions d'un jeu Pokémon : grosse tête, grands yeux, mèches en pointes. Plus de rendu en pixels par-dessus (pixel.js, retiré le 14/11).
+// Il porte les couleurs de TA carte du dresseur (peau, casquette = la couleur d'accent, veste = le haut, pantalon : D.dresseur, donné
+// par l'appli ; ?tenue=Claire,Bleu,Vert,Noir pour essayer).
+// LA GARDE-ROBE (14/11, Kiki : « un personnage évolutif, auquel on pourra changer les vêtements, les accessoires ») : le corps est nu
+// et toujours le même ; chaque vêtement ou accessoire occupe UN emplacement (cheveux, haut, bas, chaussures, tete, dos, poignets) et
+// dit ce qu'il dessine sur chaque membre (GARDE_ROBE). La tenue de base (TENUE_BASE) : t-shirt, pantalon, baskets, bracelets, sans
+// casquette ni sac. Ajouter un habit = ajouter une entrée dans GARDE_ROBE ; le choisir : D.dresseur.habits (plus tard) ou, pour
+// essayer, ?habits=casquette,sac,short (emplacement deviné par le nom). La casquette et le sac à dos de la première version y sont.
 // Il est articulé : chaque membre est un volume rigide, posé à chaque image par cinématique inverse (deux os) dans le repère du vélo :
 //   les pieds suivent les pédales (la cheville joue un peu), les mains tiennent le guidon (qui braque), le bassin roule à chaque coup ;
-//   danseuse dans les côtes (debout, le corps compense la bascule du vélo) ; en descente rapide, il se ramasse, pédales à plat ;
-//   la tête regarde dans le virage et reste plus droite que le vélo ; il se soulève au saut et amortit à la réception ;
-//   à l'arrêt : il glisse de la selle, pose le pied à terre du côté où le vélo penche, et regarde son Pokémon, qui se retourne vers lui.
+//   il est ASSIS SUR la selle (ASSISE : le bas des fesses touche le dessus de la selle) ; danseuse dans les côtes (debout, le corps
+//   compense la bascule du vélo) ; en descente rapide, il se ramasse, pédales à plat ; la tête regarde dans le virage et reste plus
+//   droite que le vélo ; il se soulève au saut et amortit à la réception ; à l'arrêt : il glisse de la selle, pose le pied à terre du
+//   côté où le vélo penche, et regarde son Pokémon, qui se retourne vers lui.
 // Ton Pokémon (le sprite du nageur) voyage dans le panier : il regarde la route, se retourne de temps en temps vers toi, saute de joie
 // à fond de train et à chaque tour. Au menu, la caméra tourne lentement autour de vous deux (camera.js : VITRINE).
 // Le fantôme (fantome.js) est une copie de ce vélo et de ce cycliste, en transparence (copierCycliste).
@@ -25,16 +32,18 @@ function tenue() {
   const peau = choix("peau", 0, "Claire"), cas = choix("casquette", 1, "Rouge"), ves = choix("veste", 2, "Rouge"), pan = choix("pantalon", 3, "Jean");
   const P = TENUES.peau[peau].map(hex), C = TENUES.tissu[cas].map(hex), V = TENUES.tissu[ves].map(hex), J = TENUES.pantalon[pan].map(hex);
   const sacBleu = ves === "Jaune" || ves === "Orange";   // le sac jaune ne doit jamais se perdre sur la veste
-  return {peau: P[1], peauC: P[0], peauO: P[2], cas: C[1], casO: C[0], ves: V[1], vesO: V[0], vesC: V[2], pan: melange(J[0], J[1], .68), panC: melange(J[1], [1, 1, 1], .25),
-    chaussure: fonce(C[1], .9), cheveux: peau === "Foncée" || peau === "Très foncée" ? hex("#1E1614") : hex("#3E2C26"),
+  const accBlanc = cas === ves;   // une couleur d'accent identique au haut : les détails passent en blanc, sinon on ne les voit plus
+  return {peau: P[1], peauC: P[0], peauO: P[2], cas: C[1], casO: C[0], ves: V[1], vesO: V[0], vesC: V[2], pan: melange(J[0], J[1], .68), panO: melange(J[0], J[1], .42), panC: melange(J[1], [1, 1, 1], .25),
+    acc: accBlanc ? hex("#F4F2EC") : C[1], accO: accBlanc ? hex("#C8C6C0") : C[0],
+    chaussure: C[1], cheveux: peau === "Foncée" || peau === "Très foncée" ? hex("#241A16") : hex("#4A3226"),
     sac: hex(sacBleu ? "#3E6CC8" : "#F2C030"), sacO: hex(sacBleu ? "#2C4C96" : "#C8931C"), couchage: hex(sacBleu ? "#C8503C" : "#4C8A44"),
-    blanc: hex("#F4F2EC"), noir: hex("#26242E"), gant: hex("#30303C"), rouge: hex("#E03C30"), sangle: hex("#3A3A46")};
+    blanc: hex("#F4F2EC"), blancO: hex("#C9C6BE"), noir: hex("#26242E"), oeil: hex("#2A2236"), gant: hex("#30303C"), rouge: hex("#E03C30"), sangle: hex("#3A3A46")};
 }
 
-/* ---- les volumes du personnage (dans le repère de chaque membre) ---- */
-// un fuseau : une section en ellipse (a sur x, b sur z) de y0 à y1 ; lisse : ombré en rond (les membres), sinon à facettes (le sac)
+/* ---- les volumes à facettes (dans le repère de chaque membre) ---- */
+// un fuseau : une section en ellipse (a sur x, b sur z) de y0 à y1, n facettes ; lisse : ombré en rond (rare), sinon à facettes (le style du vélo)
 function fuseau(F, o) {
-  const {cx = 0, cz = 0, y0, y1, a0, b0, a1 = a0, b1 = b0, col, n = 10, ph = Math.PI / n, lisse: L = true, bas = false, haut = false} = o, col2 = o.col2 || col;
+  const {cx = 0, cz = 0, y0, y1, a0, b0, a1 = a0, b1 = b0, col, n = 7, ph = Math.PI / n, lisse: L = false, bas = false, haut = false} = o, col2 = o.col2 || col;
   const pente = ((a0 + b0) - (a1 + b1)) / 2 / Math.max(.001, y1 - y0);
   const P = (t, y, a, b) => [cx + Math.cos(t) * a, y, cz + Math.sin(t) * b], Nr = t => nrm([Math.cos(t) * (b0 + b1), pente * (a0 + b0), Math.sin(t) * (a0 + a1)]);
   for (let i = 0; i < n; i++) {
@@ -45,17 +54,23 @@ function fuseau(F, o) {
     if (haut) F.tri([cx, y1, cz], E, C, col2, [0, 1, 0]);
   }
 }
-// une boule (ellipsoïde) ombrée en rond ; couleur(n) : la couleur selon la direction ; garde(n) : ne garder qu'une partie (une calotte)
-function boule3(F, cx, cy, cz, rx, ry, rz, couleur, garde = null, nl = 14, nb = 9) {
+// une suite de fuseaux : anneaux [y, a, b] (et une couleur par tronçon) : un torse, une manche, une jambe qui s'affine
+function anneaux(F, R, col, o = {}) {
+  for (let i = 0; i < R.length - 1; i++) { const [y0, a0, b0] = R[i], [y1, a1, b1] = R[i + 1];
+    fuseau(F, {cx: o.cx || 0, cz: o.cz || 0, y0, y1, a0, b0, a1, b1, col: typeof col === "function" ? col(i) : col, n: o.n || 7, bas: o.bas && i === 0, haut: o.haut && i === R.length - 2}); }
+}
+// une boule (ellipsoïde), couleur(n) : la couleur selon la direction ; garde(n) : ne garder qu'une partie ; plat : à facettes (par défaut)
+function boule3(F, cx, cy, cz, rx, ry, rz, couleur, garde = null, nl = 10, nb = 6, plat = true) {
   const U = (i, j) => { const th = i / nl * Math.PI * 2, ph = -Math.PI / 2 + j / nb * Math.PI; return [Math.cos(ph) * Math.cos(th), Math.sin(ph), Math.cos(ph) * Math.sin(th)]; };
   const P = u => [cx + u[0] * rx, cy + u[1] * ry, cz + u[2] * rz], N = u => nrm([u[0] / rx, u[1] / ry, u[2] / rz]), col = typeof couleur === "function" ? couleur : () => couleur;
   for (let j = 0; j < nb; j++) for (let i = 0; i < nl; i++) {
     const A = U(i, j), B = U(i + 1, j), C = U(i + 1, j + 1), E = U(i, j + 1), m = nrm([A[0] + B[0] + C[0] + E[0], A[1] + B[1] + C[1] + E[1], A[2] + B[2] + C[2] + E[2]]);
     if (garde && !garde(m)) continue;
-    const c = col(m); F.l(P(A), N(A), c, F.md); F.l(P(B), N(B), c, F.md); F.l(P(C), N(C), c, F.md); F.l(P(A), N(A), c, F.md); F.l(P(C), N(C), c, F.md); F.l(P(E), N(E), c, F.md);
+    const c = col(m), nf = N(m), n = plat ? () => nf : N;
+    F.l(P(A), n(A), c, F.md); F.l(P(B), n(B), c, F.md); F.l(P(C), n(C), c, F.md); F.l(P(A), n(A), c, F.md); F.l(P(C), n(C), c, F.md); F.l(P(E), n(E), c, F.md);
   }
 }
-// un disque à plat, tourné vers +x (la visière, l'emblème de la casquette) ou vers une direction donnée (axes u, v du plan)
+// un disque à plat, dans le plan (u, v)
 function disqueVers(F, c, u, v, r, couleur, n = 14) {
   const N = nrm([u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]]), col = typeof couleur === "function" ? couleur : () => couleur;
   for (let i = 0; i < n; i++) { const a0 = i / n * Math.PI * 2, a1 = (i + 1) / n * Math.PI * 2, p = a => [c[0] + (u[0] * Math.cos(a) + v[0] * Math.sin(a)) * r, c[1] + (u[1] * Math.cos(a) + v[1] * Math.sin(a)) * r, c[2] + (u[2] * Math.cos(a) + v[2] * Math.sin(a)) * r];
@@ -64,99 +79,173 @@ function disqueVers(F, c, u, v, r, couleur, n = 14) {
 // une Poké Ball à plat (le haut rouge, le bas blanc, la bande et le bouton) : c le centre, u vers le haut de l'emblème, v sur le côté
 function emblemePokeball(F, c, u, v, r, T, decal) {
   const sur = k => [c[0] + decal[0] * k, c[1] + decal[1] * k, c[2] + decal[2] * k];
-  disqueVers(F, c, u, v, r, T.noir, 16);
-  disqueVers(F, sur(1), u, v, r * .86, a => Math.sin(a) > .12 ? T.rouge : Math.sin(a) < -.12 ? T.blanc : T.noir, 16);
-  disqueVers(F, sur(2), u, v, r * .3, T.noir, 10); disqueVers(F, sur(3), u, v, r * .18, T.blanc, 10);
+  disqueVers(F, c, u, v, r, T.noir, 12);
+  disqueVers(F, sur(1), u, v, r * .86, a => Math.sin(a) > .12 ? T.rouge : Math.sin(a) < -.12 ? T.blanc : T.noir, 12);
+  disqueVers(F, sur(2), u, v, r * .3, T.noir, 8); disqueVers(F, sur(3), u, v, r * .18, T.blanc, 8);
+}
+// une mèche : une pyramide à 4 pans (une couleur par pan : la lumière en paliers), de la base b vers la pointe, axe d, largeur r
+function meche(F, b, d, l, r, col) {
+  const A = nrm(d), ref = Math.abs(A[1]) < .9 ? [0, 1, 0] : [1, 0, 0], U = nrm([A[1] * ref[2] - A[2] * ref[1], A[2] * ref[0] - A[0] * ref[2], A[0] * ref[1] - A[1] * ref[0]]), W = [A[1] * U[2] - A[2] * U[1], A[2] * U[0] - A[0] * U[2], A[0] * U[1] - A[1] * U[0]];
+  const S = [b[0] + A[0] * l, b[1] + A[1] * l, b[2] + A[2] * l], K = k => { const a = k * Math.PI / 2 + Math.PI / 4, c = Math.cos(a) * r, s = Math.sin(a) * r * .7; return [b[0] + U[0] * c + W[0] * s, b[1] + U[1] * c + W[1] * s, b[2] + U[2] * c + W[2] * s]; };
+  for (let k = 0; k < 4; k++) { const p = K(k), q = K(k + 1), m = [(p[0] + q[0]) / 2 - b[0], (p[1] + q[1]) / 2 - b[1], (p[2] + q[2]) / 2 - b[2]]; F.tri(p, q, S, k % 2 ? col : fonce(col, .86), nrm([m[0] + A[0] * r * .4, m[1] + A[1] * r * .4, m[2] + A[2] * r * .4])); }
 }
 
-const CY = {g: null, T: null, parts: {}, arret: 1, lacet: 0, tangage: 0, sac: 0, sacV: 0, regard: 0, prochainRegard: 9, saut: 0, joie: 0, tour: 0, pk: new THREE.Vector3()};
+const CY = {g: null, T: null, parts: {}, habits: null, arret: 1, lacet: 0, tangage: 0, sac: 0, sacV: 0, regard: 0, prochainRegard: 9, saut: 0, joie: 0, tour: 0, pk: new THREE.Vector3()};
 const LONGUEURS = {cuisse: .46, tibia: .45, bras: .29, avantBras: .28};
-function membre(nom, F) { const m = F.maille(); m.matrixAutoUpdate = false; m.name = "cycliste-" + nom; CY.g.add(m); CY.parts[nom] = m; return m; }
+const ASSISE = 1.035;   // la hauteur du bassin assis, dans le repère du vélo : le dessus de la selle est à .955 (velo.js), le bas des fesses 8 cm sous le bassin
+const MEMBRES = ["torse", "tete", "dos", "cuisse-1", "cuisse1", "tibia-1", "tibia1", "pied-1", "pied1", "patin-1", "patin1", "bras-1", "bras1", "avantBras-1", "avantBras1"];
 
+/* ---- le corps : le même pour tous, sous les habits ----
+   Repères : torse = l'origine au bassin, y le long du dos, z vers l'avant, x vers sa gauche ; tete = son centre, x vers l'avant, y en haut,
+   z vers sa droite ; membres = y le long du membre, de l'articulation de départ à celle d'arrivée ; pied = y vers la pointe, z vers le haut. */
+const CORPS = {
+  torse(F, T, s, cache) {   // le bassin, le tronc (cachés par les habits qui les couvrent : sinon leurs facettes passeraient au travers), le cou
+    if (!cache.has("bassin")) anneaux(F, [[-.075, .118, .092], [.02, .142, .108]], T.peau, {bas: true});
+    if (!cache.has("tronc")) anneaux(F, [[.02, .142, .108], [.2, .15, .108], [.36, .17, .118], [.43, .13, .1], [.47, .07, .065]], T.peau, {haut: true});
+    fuseau(F, {y0: .44, y1: .57, a0: .05, b0: .048, a1: .046, b1: .044, col: T.peau});   // le cou
+  },
+  tete(F, T) {
+    // un crâne un peu plus large en haut, un menton plus étroit (la tête n'est pas une boule)
+    boule3(F, 0, 0, 0, .148, .155, .142, T.peau, null, 10, 7);
+    boule3(F, .02, -.06, 0, .118, .095, .112, T.peau, null, 8, 5);   // la mâchoire, les joues
+    for (const s of [-1, 1]) {
+      boule3(F, -.008, -.02, s * .14, .03, .044, .026, T.peau, null, 6, 4);   // les oreilles
+      // les yeux : grands, un peu en amande, bien écartés (on les voit de trois-quarts), un reflet blanc ; le sourcil au-dessus, décidé
+      boule3(F, .128, -.012, s * .064, .022, .042, .026, T.oeil, null, 6, 5);
+      boule3(F, .146, .004, s * .058, .008, .013, .009, T.blanc, null, 5, 3);
+      F.boite(.135, .046 + .004, s * .066 - .028, .02, .016, .056, fonce(T.cheveux, .9));
+      boule3(F, .112, -.066, s * .084, .012, .011, .02, melange(T.peau, hex("#FF7070"), .35), null, 6, 4);   // les joues roses
+    }
+    meche(F, [.142, -.045, 0], [1, -.6, 0], .016, .014, fonce(T.peau, .88));   // le nez, tout petit
+    // le sourire : un petit croissant sombre, plus haut aux coins
+    for (let i = 0; i < 5; i++) { const z0 = -.034 + i * .017, z1 = z0 + .017, y = z => -.098 + Math.pow(z / .034, 2) * .014;
+      F.quad([.133, y(z0), z0], [.133, y(z1), z1], [.131, y(z1) - .008, z1], [.131, y(z0) - .008, z0], melange(T.peauO, hex("#C04848"), .4), [1, 0, 0]); }
+  },
+  bras(F, T, s) { boule3(F, 0, 0, 0, .062, .062, .062, T.peau, null, 7, 4); anneaux(F, [[0, .058, .058], [.15, .05, .05], [LONGUEURS.bras, .044, .044]], T.peau, {n: 6}); },
+  avantBras(F, T, s) {
+    const L = LONGUEURS.avantBras; boule3(F, 0, 0, 0, .046, .046, .046, T.peau, null, 7, 4); anneaux(F, [[0, .044, .044], [.12, .045, .043], [L - .02, .035, .033]], T.peau, {n: 6});
+    // la main fermée sur la poignée : une moufle à facettes et le pouce par-dessus
+    boule3(F, 0, L + .03, .004, .046, .058, .042, T.peau, null, 7, 4);
+    boule3(F, -s * .0, L + .02, .042, .018, .03, .018, T.peau, null, 5, 3);
+  },
+  cuisse(F, T, s, cache) { if (cache.has("cuisse")) return; boule3(F, 0, 0, 0, .085, .085, .085, T.peau, null, 7, 4); anneaux(F, [[0, .086, .086], [.25, .074, .076], [LONGUEURS.cuisse, .06, .062]], T.peau); },
+  tibia(F, T, s, cache) { if (cache.has("tibia")) return; boule3(F, 0, 0, 0, .062, .062, .062, T.peau, null, 7, 4); anneaux(F, [[0, .058, .06], [.14, .056, .06], [LONGUEURS.tibia, .038, .04]], T.peau); },
+  pied(F, T, s, cache) { if (cache.has("pied")) return; boule3(F, 0, .02, -.03, .045, .11, .04, T.peau, null, 6, 4); },
+  patin(F, T, s) {   // le roller (même repère que la chaussure) : une platine à la couleur d'accent, quatre roues, le frein au talon
+    F.boite(0, -.025, -.098, .05, .29, .022, T.accO);
+    for (const x of [-.032, .032]) F.boite(x, -.025, -.118, .012, .27, .03, T.acc);
+    for (const y of [-.135, -.06, .015, .09]) { boule3(F, 0, y, -.15, .022, .036, .036, hex("#F2C030"), null, 8, 4); boule3(F, 0, y, -.15, .026, .014, .014, T.sangle, null, 6, 3); }
+    F.boite(0, -.19, -.13, .045, .04, .05, T.noir);
+  },
+};
+
+/* ---- la garde-robe : chaque habit = un emplacement et ce qu'il dessine sur chaque membre (mêmes repères que le corps) ---- */
+const GARDE_ROBE = {
+  cheveux: {
+    // des cheveux en pointes : une masse à facettes sur le crâne et la nuque, une frange en mèches sur le front, des pointes rabattues
+    // vers l'arrière par le vent (de dos, c'est ce qu'on voit le plus : il faut qu'elles aient de l'allure)
+    pointes: {tete(F, T, s, cache) {
+      const c = T.cheveux, c2 = fonce(c, .82);
+      boule3(F, -.012, .012, 0, .16, .165, .153, m => m[1] > .45 ? melange(c, [1, 1, 1], .1) : c, m => m[0] < .42 && m[1] > -.5 && !(m[0] > .1 && m[1] < .2) && !(cache.has("dessus") && m[1] > .05), 10, 7);
+      boule3(F, -.05, -.07, 0, .12, .1, .13, c2, m => m[0] < -.1, 8, 5);   // la nuque
+      if (!cache.has("dessus")) for (const [z, l, a] of [[-.09, .085, -.3], [-.035, .1, -.1], [.025, .1, .12], [.08, .08, .35]]) meche(F, [.1, .09, z], [.55, -.75, a * .5], l, .042, c);   // la frange
+      for (const [y, z, l] of [[.12, 0, .13], [.07, -.08, .12], [.07, .08, .12], [.0, -.11, .11], [.0, .11, .11], [-.06, -.05, .1], [-.06, .05, .1], [.15, -.06, .1], [.15, .06, .1]]) if (!cache.has("dessus") || y < .05)   // sous un chapeau : seules celles de la nuque
+        meche(F, [-.08, y, z], [-1, .18 - y * .9, z * 2.2], l, .05, (y * 100 + z * 50) % 2 > .5 ? c : c2);
+      for (const s of [-1, 1]) meche(F, [.03, .02, s * .14], [-.1, -1, s * .25], .07, .03, c2);   // les pattes, devant les oreilles
+    }},
+  },
+  haut: {
+    // le t-shirt : à la couleur de ta veste, col rond et bords des manches à la couleur d'accent, une bande sur la poitrine et dans le dos
+    tshirt: {cache: ["tronc"],
+      torse(F, T) {
+        const R = [[-.04, .126, .1], [.03, .15, .114], [.13, .153, .114], [.2, .157, .115], [.24, .163, .118], [.36, .182, .126], [.43, .14, .108], [.468, .082, .072]];
+        anneaux(F, R, i => i === 0 ? T.vesO : i === 3 ? T.acc : T.ves, {n: 8, haut: true});
+        fuseau(F, {y0: .455, y1: .49, a0: .083, b0: .074, a1: .075, b1: .068, col: T.acc, n: 8});   // le col
+      },
+      bras(F, T, s) { boule3(F, 0, 0, 0, .076, .076, .076, T.ves, m => m[1] < .6, 8, 5); anneaux(F, [[0, .074, .074], [.11, .068, .068]], T.ves, {n: 7}); fuseau(F, {y0: .11, y1: .135, a0: .07, b0: .07, col: T.acc, n: 7}); },
+    },
+  },
+  bas: {
+    // le pantalon : plus large en haut, un revers clair, la couture plus sombre sur le côté
+    pantalon: {cache: ["bassin", "cuisse", "tibia"],
+      torse(F, T) { anneaux(F, [[-.082, .124, .098], [.0, .148, .114], [.06, .152, .116]], T.pan, {n: 8, bas: true}); fuseau(F, {y0: .045, y1: .07, a0: .155, b0: .118, col: T.panO, n: 8}); },   // la ceinture
+      cuisse(F, T, s) { boule3(F, 0, 0, 0, .092, .092, .092, T.pan, null, 7, 4); anneaux(F, [[0, .093, .093], [.25, .08, .082], [LONGUEURS.cuisse, .068, .07]], T.pan); },
+      tibia(F, T, s) { boule3(F, 0, 0, 0, .07, .07, .07, T.pan, null, 7, 4); anneaux(F, [[0, .066, .068], [.3, .06, .062], [.37, .062, .064]], T.pan); fuseau(F, {y0: .36, y1: .41, a0: .068, b0: .07, col: T.panC}); },
+    },
+    short: {cache: ["bassin"],
+      torse(F, T) { GARDE_ROBE.bas.pantalon.torse(F, T); },
+      cuisse(F, T, s) { boule3(F, 0, 0, 0, .092, .092, .092, T.pan, null, 7, 4); anneaux(F, [[0, .093, .093], [.24, .086, .088]], T.pan); fuseau(F, {y0: .23, y1: .26, a0: .088, b0: .09, col: T.panC}); },
+    },
+  },
+  chaussures: {
+    // des baskets : à la couleur d'accent, semelle épaisse blanche, bout arrondi, une bande blanche sur le côté, la languette, une chaussette blanche
+    baskets: {cache: ["pied"],
+      tibia(F, T, s) { fuseau(F, {y0: .405, y1: LONGUEURS.tibia + .01, a0: .044, b0: .046, col: T.blanc}); },
+      pied(F, T, s) {
+        const c = T.chaussure, cO = fonce(c, .82);
+        F.boite(0, -.1, -.072, .112, .25, .032, T.blanc, {haut: T.blanc});                    // la semelle
+        F.boite(0, -.095, -.04, .1, .2, .07, c);                                                 // le dessus
+        boule3(F, 0, .1, -.042, .056, .065, .05, c, m => m[2] > -.4 || m[1] > .2, 7, 4);       // le bout arrondi
+        boule3(F, 0, .118, -.06, .058, .05, .022, T.blanc, null, 7, 3);                         // le bout de semelle
+        F.boite(0, -.1, .015, .09, .1, .045, cO);                                                // le talon, jusqu'à la cheville
+        for (const x of [-.051, .051]) F.boite(x, -.03, -.035, .006, .1, .028, T.blanc);        // la bande sur le côté
+        F.boite(0, -.02, .03, .07, .1, .012, T.blanc);                                           // la languette
+      },
+    },
+  },
+  poignets: {
+    bracelets: {avantBras(F, T, s) { fuseau(F, {y0: LONGUEURS.avantBras - .045, y1: LONGUEURS.avantBras - .005, a0: .042, b0: .04, col: T.acc, n: 7}); }},
+  },
+  tete: {
+    // la casquette de la première version : une calotte à la couleur d'accent, le devant blanc frappé d'une Poké Ball, une visière
+    casquette: {cache: ["dessus"], tete(F, T) {
+      const cy = .03, c = T.cas;
+      boule3(F, -.004, cy, 0, .168, .14, .164, m => m[0] > .52 && m[1] < .86 ? T.blanc : c, m => m[1] > -.08, 10, 5);
+      boule3(F, -.004, cy + .138, 0, .022, .016, .022, T.casO, null, 6, 3);
+      emblemePokeball(F, [.158, cy + .062, 0], [0, 1, 0], [0, 0, 1], .036, T, [.0025, 0, 0]);
+      const arc = 6, vis = (a, r, y) => [Math.cos(a) * r * 1.02, y, Math.sin(a) * r * .9];
+      for (let i = 0; i < arc; i++) { const a0 = -1.15 + 2.3 * i / arc, a1 = -1.15 + 2.3 * (i + 1) / arc;
+        F.quad(vis(a0, .14, cy + .012), vis(a1, .14, cy + .012), vis(a1, .28, cy - .012), vis(a0, .28, cy - .012), c, [.15, 1, 0]);
+        F.quad(vis(a0, .14, cy - .002), vis(a1, .14, cy - .002), vis(a1, .28, cy - .026), vis(a0, .28, cy - .026), T.casO, [-.1, -1, 0]); }
+    }},
+  },
+  dos: {
+    // le sac à dos de la première version : jaune (bleu sur une veste jaune), une poche frappée d'une Poké Ball, le sac de couchage roulé dessus
+    sac: {
+      torse(F, T) { for (const s of [-1, 1]) { tube(F, [s * .1, .47, -.11], [s * .105, .49, 0], .022, T.sangle, 4); tube(F, [s * .105, .49, 0], [s * .1, .36, .132], .022, T.sangle, 4); tube(F, [s * .1, .36, .132], [s * .12, .2, .13], .02, T.sangle, 4); } },
+      dos(F, T) {
+        fuseau(F, {cz: -.215, y0: .05, y1: .37, a0: .15, b0: .088, a1: .158, b1: .092, col: T.sac, n: 8, bas: true, haut: true});
+        fuseau(F, {cz: -.222, y0: .27, y1: .4, a0: .166, b0: .1, a1: .155, b1: .094, col: T.sacO, n: 8, haut: true});
+        fuseau(F, {cz: -.31, y0: .1, y1: .25, a0: .108, b0: .036, col: T.sac, n: 8, bas: true, haut: true});
+        emblemePokeball(F, [0, .175, -.348], [0, 1, 0], [1, 0, 0], .056, T, [0, 0, -.0025]);
+        tube(F, [-.19, .455, -.2], [.19, .455, -.2], .064, T.couchage, 8);
+        for (const x of [-.19, .19]) disqueVers(F, [x, .455, -.2], [0, 1, 0], [0, 0, 1], .064, fonce(T.couchage, .78), 8);
+      },
+    },
+  },
+};
+const TENUE_BASE = {cheveux: "pointes", haut: "tshirt", bas: "pantalon", chaussures: "baskets", poignets: "bracelets", tete: null, dos: null};
+function habitsChoisis() {   // la tenue de base, puis ce que demande la carte du dresseur (plus tard : D.dresseur.habits), puis ?habits= pour essayer
+  const H = Object.assign({}, TENUE_BASE), d = (typeof D === "object" && D && D.dresseur) || {};
+  const dire = v => { for (const [empl, liste] of Object.entries(GARDE_ROBE)) if (liste[v]) H[empl] = v; else if (v === "sans-" + empl) H[empl] = null; };
+  if (Array.isArray(d.habits)) d.habits.forEach(dire);
+  (PARAMS.get("habits") || "").split(",").filter(Boolean).forEach(dire);
+  return H;
+}
+
+function membre(nom, F) { const m = F.maille() || new THREE.Mesh(); m.matrixAutoUpdate = false; m.name = "cycliste-" + nom; CY.g.add(m); CY.parts[nom] = m; return m; }
 function construireCycliste() {
   const T = CY.T = tenue(), g = CY.g = new THREE.Group(); g.name = "cycliste"; VELO.g.add(g);
-  // le tronc (repère : l'origine au bassin, y le long du dos, z vers l'avant, x vers sa gauche) : bassin, veste, col, cou, bretelles
-  let F = new Forme();
-  fuseau(F, {y0: -.08, y1: .07, a0: .145, b0: .11, a1: .155, b1: .115, col: T.pan, bas: true});
-  fuseau(F, {y0: .055, y1: .1, a0: .162, b0: .124, col: T.vesO});                                  // le bas de la veste
-  fuseau(F, {y0: .1, y1: .38, a0: .158, b0: .118, a1: .178, b1: .124, col: T.ves});
-  fuseau(F, {y0: .38, y1: .47, a0: .178, b0: .124, a1: .1, b1: .085, col: T.ves, haut: true});      // les épaules, arrondies
-  fuseau(F, {y0: .43, y1: .5, a0: .088, b0: .08, a1: .082, b1: .074, col: T.blanc});                 // le col blanc
-  fuseau(F, {y0: .46, y1: .56, a0: .048, b0: .046, col: T.peau});                                    // le cou
-  for (const s of [-1, 1]) {   // les bretelles du sac, sur les épaules jusqu'à la poitrine
-    tube(F, [s * .1, .47, -.11], [s * .105, .49, 0], .022, T.sangle, 5); tube(F, [s * .105, .49, 0], [s * .1, .36, .128], .022, T.sangle, 5);
-    tube(F, [s * .1, .36, .128], [s * .12, .2, .126], .02, T.sangle, 5);
+  const H = CY.habits = habitsChoisis(), portes = Object.entries(H).filter(([, v]) => v).map(([e, v]) => GARDE_ROBE[e][v]);
+  const cache = new Set(portes.flatMap(h => h.cache || []));   // ce que les habits couvrent : le corps ne le dessine pas
+  for (const nom of MEMBRES) {
+    const base = nom.replace(/-?1$/, ""), s = nom.endsWith("-1") ? -1 : 1, F = new Forme();
+    if (CORPS[base]) CORPS[base](F, T, s, cache);
+    for (const h of portes) if (h[base]) h[base](F, T, s, cache);
+    membre(nom, F);
   }
-  F.boite(0, .07, .124, .03, .3, .012, T.blanc);   // la fermeture éclair
-  membre("torse", F);
-  // le sac à dos (même repère : il est derrière, z négatif), son rabat, sa poche frappée d'une Poké Ball, le sac de couchage roulé dessus
-  F = new Forme();
-  fuseau(F, {cz: -.215, y0: .05, y1: .37, a0: .15, b0: .088, a1: .158, b1: .092, col: T.sac, n: 8, lisse: false, bas: true, haut: true});
-  fuseau(F, {cz: -.222, y0: .27, y1: .4, a0: .166, b0: .1, a1: .155, b1: .094, col: T.sacO, n: 8, lisse: false, haut: true});   // le rabat
-  fuseau(F, {cz: -.31, y0: .1, y1: .25, a0: .108, b0: .036, col: T.sac, n: 8, lisse: false, bas: true, haut: true});            // la poche
-  emblemePokeball(F, [0, .175, -.348], [0, 1, 0], [1, 0, 0], .056, T, [0, 0, -.0025]);
-  tube(F, [-.19, .455, -.2], [.19, .455, -.2], .064, T.couchage, 10);                                                            // le sac de couchage
-  for (const x of [-.19, .19]) disqueVers(F, [x, .455, -.2], [0, 1, 0], [0, 0, 1], .064, fonce(T.couchage, .78), 10);
-  for (const x of [-.11, .11]) tube(F, [x - .016, .455, -.2], [x + .016, .455, -.2], .07, T.sangle, 10);   // ses sangles (deux anneaux)
-  membre("sac", F);
-  // la tête (repère : son centre, x vers l'avant, y en haut, z vers sa droite) : visage, yeux, oreilles, cheveux, casquette à visière
-  F = new Forme();
-  const R = .155;
-  boule3(F, 0, 0, 0, .15, R, .145, T.peau);
-  for (const s of [-1, 1]) {
-    boule3(F, -.005, -.015, s * .143, .035, .045, .025, T.peau, null, 8, 6);                                           // les oreilles
-    boule3(F, .124, -.018, s * .068, .018, .04, .024, T.noir, null, 8, 6);                                             // les yeux (bien écartés : on les voit de profil)
-    boule3(F, .138, -.002, s * .062, .007, .012, .009, T.blanc, null, 6, 4);                                           // leur reflet
-    boule3(F, .112, -.068, s * .095, .012, .014, .026, melange(T.peau, hex("#FF7070"), .4), null, 8, 5);              // les joues
-  }
-  boule3(F, .145, -.075, 0, .006, .006, .018, T.peauO, null, 6, 4);                                                    // la bouche
-  // les cheveux : une masse derrière, sous la casquette, et des mèches en pointes qui dépassent sur la nuque et les tempes
-  boule3(F, -.012, -.005, 0, .158, .158, .152, T.cheveux, m => m[0] < -.15 && m[1] > -.62 && m[1] < .55);
-  for (const [a, y, l] of [[0, -.07, .1], [.5, -.06, .09], [-.5, -.06, .09], [1, -.04, .08], [-1, -.04, .08], [1.45, .0, .07], [-1.45, .0, .07]]) {
-    const th = Math.PI + a, dx = Math.cos(th), dz = Math.sin(th);
-    F.pointe(dx * .12, y, dz * .12, dx, -.55 - Math.abs(a) * .15, dz, .045, l, 5, T.cheveux, fonce(T.cheveux, .8));
-  }
-  // la casquette : une calotte à la couleur de ta casquette, le devant blanc frappé d'une Poké Ball, un bouton, une visière
-  const cy = .03;
-  boule3(F, -.004, cy, 0, .162, .135, .158, m => m[0] > .52 && m[1] < .86 ? T.blanc : T.cas, m => m[1] > -.08);
-  boule3(F, -.004, cy + .132, 0, .022, .016, .022, T.casO, null, 8, 5);
-  emblemePokeball(F, [.152, cy + .062, 0], [0, 1, 0], [0, 0, 1], .036, T, [.0025, 0, 0]);
-  const arc = 9, vis = (a, r, y) => [Math.cos(a) * r * 1.02, y, Math.sin(a) * r * .9];
-  for (let i = 0; i < arc; i++) {   // la visière : un dessus à la couleur de la casquette, un dessous plus sombre, une tranche
-    const a0 = -1.15 + 2.3 * i / arc, a1 = -1.15 + 2.3 * (i + 1) / arc;
-    F.quad(vis(a0, .14, cy + .012), vis(a1, .14, cy + .012), vis(a1, .27, cy - .012), vis(a0, .27, cy - .012), T.cas, [.15, 1, 0]);
-    F.quad(vis(a0, .14, cy - .002), vis(a1, .14, cy - .002), vis(a1, .27, cy - .026), vis(a0, .27, cy - .026), T.casO, [-.1, -1, 0]);
-    F.quad(vis(a0, .27, cy - .012), vis(a1, .27, cy - .012), vis(a1, .27, cy - .026), vis(a0, .27, cy - .026), fonce(T.cas, .8), [Math.cos((a0 + a1) / 2), 0, Math.sin((a0 + a1) / 2)]);
-  }
-  F.boite(-.158, cy - .03, 0, .02, .035, .09, T.casO);   // la patte de réglage, derrière
-  const tete = membre("tete", F); tete.matrixAutoUpdate = true; tete.rotation.order = "YZX"; tete.scale.setScalar(1.08);   // une tête un peu grosse, comme dans les jeux
-  // les membres, de chaque côté (repère : y le long du membre, de son articulation de départ à celle d'arrivée)
-  for (const s of [-1, 1]) {
-    const L = LONGUEURS;
-    F = new Forme(); boule3(F, 0, 0, 0, .082, .082, .082, T.pan, null, 10, 6); fuseau(F, {y0: 0, y1: L.cuisse, a0: .08, b0: .08, a1: .064, b1: .064, col: T.pan}); membre("cuisse" + s, F);
-    F = new Forme(); boule3(F, 0, 0, 0, .066, .066, .066, T.pan, null, 10, 6); fuseau(F, {y0: 0, y1: .37, a0: .063, b0: .063, a1: .054, b1: .054, col: T.pan});
-    fuseau(F, {y0: .36, y1: .42, a0: .066, b0: .066, col: T.panC});                                     // le revers du pantalon
-    fuseau(F, {y0: .42, y1: L.tibia + .01, a0: .046, b0: .046, col: T.blanc}); membre("tibia" + s, F);   // la chaussette
-    // la chaussure (repère : y vers la pointe, z vers le haut) : semelle blanche, bout blanc arrondi, une bande blanche sur le côté
-    F = new Forme();
-    F.boite(0, -.07, -.018, .1, .225, .095, T.chaussure);
-    F.boite(0, -.075, -.066, .108, .245, .028, T.blanc);
-    boule3(F, 0, .15, -.03, .053, .05, .045, T.blanc, m => m[1] > -.2, 10, 6);
-    for (const x of [-.051, .051]) F.boite(x, .0, -.02, .006, .12, .022, T.blanc);
-    F.boite(0, -.072, .03, .086, .11, .05, T.chaussure); membre("pied" + s, F);   // le talon, qui monte jusqu'à la cheville
-    // le roller (même repère que la chaussure) : une platine à la couleur de ta casquette sous la semelle, quatre roues, le frein au talon
-    F = new Forme();
-    F.boite(0, -.025, -.098, .05, .29, .022, T.casO);
-    for (const x of [-.032, .032]) F.boite(x, -.025, -.118, .012, .27, .03, T.cas);
-    for (const y of [-.135, -.06, .015, .09]) { boule3(F, 0, y, -.15, .022, .036, .036, hex("#F2C030"), null, 10, 6); boule3(F, 0, y, -.15, .026, .014, .014, T.sangle, null, 6, 4); }
-    F.boite(0, -.19, -.13, .045, .04, .05, T.noir);
-    membre("patin" + s, F).visible = false;
-    // le bras : l'épaule et la manche courte (une bande blanche au bord), puis la peau ; l'avant-bras, le gant et son poignet
-    F = new Forme(); boule3(F, 0, 0, 0, .074, .074, .074, T.ves, null, 10, 6); fuseau(F, {y0: 0, y1: .12, a0: .07, b0: .07, a1: .064, b1: .064, col: T.ves});
-    fuseau(F, {y0: .11, y1: .14, a0: .066, b0: .066, col: T.blanc}); fuseau(F, {y0: .1, y1: L.bras, a0: .046, b0: .046, a1: .043, b1: .043, col: T.peau}); membre("bras" + s, F);
-    F = new Forme(); boule3(F, 0, 0, 0, .046, .046, .046, T.peau, null, 8, 5); fuseau(F, {y0: 0, y1: .2, a0: .043, b0: .043, a1: .038, b1: .038, col: T.peau});
-    fuseau(F, {y0: .19, y1: .235, a0: .048, b0: .048, col: T.ves}); boule3(F, 0, L.avantBras, 0, .05, .056, .05, T.gant, null, 10, 6); membre("avantBras" + s, F);
-  }
+  const tete = CY.parts.tete; tete.matrixAutoUpdate = true; tete.rotation.order = "YZX"; tete.scale.setScalar(1.14);   // une tête un peu grosse, comme dans les jeux
+  for (const s of [-1, 1]) CY.parts["patin" + s].visible = false;
 }
 
 /* ---- la pose, à chaque image (tout dans le repère du vélo : x vers l'avant, y en haut, z vers la droite) ---- */
@@ -183,8 +272,8 @@ function animerCycliste(t, dt, S, e) {   // e : ce que velo.js sait (c pédalier
   const P = CY.parts, k = x => clamp(dt * x, 0, 1), L = LONGUEURS, c = e.c, deb = VELO.debout, grp = VELO.groupe || 0, air = M.sorti || 0, choc = VELO.choc;
   CY.arret += ((e.roule ? 0 : 1) - CY.arret) * k(2.2); const arr = lisse(0, 1, CY.arret), pedale = 1 - arr;
   // le bassin : sur la selle ; debout en danseuse ; reculé et bas quand il se ramasse ; glissé vers l'avant à l'arrêt
-  cy_P.set(-.235, 1 + .008 * Math.abs(Math.sin(c)) * (1 - deb) * pedale, 0);
-  cy_P.lerp(cy_p.set(-.13, 1.1, -e.balance * .07), deb).lerp(cy_p.set(-.275, .985, 0), grp * (1 - deb)).lerp(cy_p.set(-.1, .925, .03), arr);
+  cy_P.set(-.235, ASSISE + .008 * Math.abs(Math.sin(c)) * (1 - deb) * pedale, 0);
+  cy_P.lerp(cy_p.set(-.13, 1.1, -e.balance * .07), deb).lerp(cy_p.set(-.275, ASSISE - .01, 0), grp * (1 - deb)).lerp(cy_p.set(-.1, .925, .03), arr);
   cy_P.y += .05 * air - .06 * choc;
   // le dos : penché vers le guidon, il roule un peu à chaque coup de pédale (et, en danseuse, contre la bascule du vélo)
   const th = lerp(lerp(lerp(.52, .8, deb), .98, grp * (1 - deb)), .2, arr) + .22 * choc, ro = (.05 * Math.sin(c) * (1 - deb) - e.balance * .16) * pedale;
@@ -194,7 +283,7 @@ function animerCycliste(t, dt, S, e) {   // e : ce que velo.js sait (c pédalier
   CY.sacV += (-CY.sac * 160 - CY.sacV * 9 + (choc > .05 ? -choc * 30 : 0) + (e.vibre || 0) * 600) * Math.min(dt, .05); CY.sac = clamp(CY.sac + CY.sacV * Math.min(dt, .05), -.12, .12);
   const ang = CY.sac + .025 * Math.sin(2 * c) * pedale * (e.roule ? 1 : 0);
   cy_sac.makeTranslation(0, .42, -.12).multiply(cy_m.makeRotationX(ang)).multiply(cy_m.makeTranslation(0, -.42, .12));
-  P.sac.matrix.copy(P.torse.matrix).multiply(cy_sac); P.sac.matrixWorldNeedsUpdate = true;
+  P.dos.matrix.copy(P.torse.matrix).multiply(cy_sac); P.dos.matrixWorldNeedsUpdate = true;
   // la tête : au bout du cou, presque droite ; elle regarde dans le virage, vers le haut quand il se ramasse, vers son Pokémon à l'arrêt
   cy_H.copy(cy_P).addScaledVector(cy_Y, .47).addScaledVector(cy_p.copy(cy_Y).lerp(cy_q.set(0, 1, 0), .75).normalize(), .18);
   const tete = P.tete; tete.position.copy(cy_H);
@@ -252,7 +341,7 @@ function animerPatineur(t, dt, S, e) {
   // le sac tressaute à chaque poussée
   CY.sacV += (-CY.sac * 160 - CY.sacV * 9 + (choc > .05 ? -choc * 30 : 0)) * Math.min(dt, .05); CY.sac = clamp(CY.sac + CY.sacV * Math.min(dt, .05), -.12, .12);
   cy_sac.makeTranslation(0, .42, -.12).multiply(cy_m.makeRotationX(CY.sac + .03 * Math.sin(2 * c) * va)).multiply(cy_m.makeTranslation(0, -.42, .12));
-  P.sac.matrix.copy(P.torse.matrix).multiply(cy_sac); P.sac.matrixWorldNeedsUpdate = true;
+  P.dos.matrix.copy(P.torse.matrix).multiply(cy_sac); P.dos.matrixWorldNeedsUpdate = true;
   // la tête : droite, elle regarde loin devant (plus haut quand il est penché) et dans le virage
   cy_H.copy(cy_P).addScaledVector(cy_Y, .47).addScaledVector(cy_p.copy(cy_Y).lerp(cy_q.set(0, 1, 0), .75).normalize(), .18);
   const tete = P.tete; tete.position.copy(cy_H);
@@ -329,14 +418,13 @@ function copierCycliste(sG, pantin, t) {
     VELO.g.traverse(o => G.src.push(o)); G.g.traverse(o => G.dst.push(o));
     G.avant = G.dst[G.src.indexOf(VELO.avant)];
   }
-  G.g.visible = sG !== null; if (sG === null) { if (typeof peindreFantomePixels === "function") peindreFantomePixels(G, false); return; }
+  G.g.visible = sG !== null; if (sG === null) { return; }
   for (let i = 1; i < G.src.length; i++) { const a = G.src[i], b = G.dst[i]; if (!b) continue;
     b.visible = a.visible;
     if (a.matrixAutoUpdate) { b.position.copy(a.position); b.quaternion.copy(a.quaternion); b.scale.copy(a.scale); } else { b.matrix.copy(a.matrix); b.matrixWorldNeedsUpdate = true; } }
   const p = pose(sG, 1.8), i = idx(sG), k = PISTE.COURB[idx(sG + 3)];
   G.g.position.set(p.x, p.y, p.z); G.g.rotation.set(clamp(k * 22, -.3, .3), Math.PI / 2 - at(sG).h, Math.atan(PISTE.PENTE[i]));
   G.g.updateMatrixWorld();
-  if (typeof peindreFantomePixels === "function") peindreFantomePixels(G, true);   // le dresseur en pixels du fantôme (pixel.js)
   if (pantin && VELO.patins) {   // en rollers : son Pokémon court à côté de lui
     cy_p.set(1.6, 0, -1.05); G.g.localToWorld(cy_p); pantin.m.position.copy(cy_p); pantin.regarder(); pantin.rangee(4); pantin.image(pantin.pl.image(t * 1.2));
     const h = Math.min(pantin.h, .95); pantin.m.scale.set(pantin.l * h / pantin.h, h, 1);

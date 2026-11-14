@@ -6,7 +6,7 @@ const ELAN = BOUCLE ? (NIVEAU.elan === undefined ? 120 : NIVEAU.elan) : 0;   // 
 const S = {s: PARAMS.has("s") ? +PARAMS.get("s") : BOUCLE ? LONG - ELAN : 6, v: 0, vL: 0, vn: 0, vd: 0, t: 0, dist: 0, nb: 0, coupsT: [], auto: false, prochain: .6, elan: 0, fondu: 0, fige: PARAMS.has("fige"),
   tour: 0, tourT0: 0, tours: [], enAir: false, v1: 0, v2: 0,
   mode: null, lance: false, pause: false, debutMur: 0, t0: 0, pauseTot: 0, pauseDebut: 0};   // mode : null = le menu, "vraie" = une vraie séance (la montre), "essai" = sans montre
-function demarrerChrono() { if (S.lance) return; S.lance = true; S.debutMur = Date.now(); S.t0 = performance.now(); S.pauseTot = 0; majBoutons(); if (!BOUCLE) rivauxDepart(); }
+function demarrerChrono() { if (S.lance) return; S.lance = true; S.debutMur = Date.now(); S.t0 = performance.now(); S.pauseTot = 0; S.t = 0; majBoutons(); if (!BOUCLE) rivauxDepart(); }
 function coup(force = .6, muet = false) {   // un geste de la machine ; muet : un geste rattrapé (il compte, sans éclaboussure)
   if (!S.mode || S.pause) return;
   demarrerChrono();   // le chrono de la séance part au premier geste, comme sur l'écran du rameur
@@ -97,7 +97,7 @@ function boucle(now) {
     if (S.fondu) { S.fondu += dt * 1.4; if (S.fondu >= 1 && S.s > LONG / 2) { S.s = 6; M.y = null; CAM.y = null; } if (S.fondu >= 2) S.fondu = 0; $("voile").style.opacity = S.fondu ? (S.fondu < 1 ? S.fondu : 2 - S.fondu) : 0; }
   }
   const tunnel = dansTunnel(S.s);
-  animerMonture(T, dt, S); cadrer(dt, S, T); majDresseurPixels(); ambianceMaj(dt, S.s); lumieresProches(); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
+  animerMonture(T, dt, S); cadrer(dt, S, T); ambianceMaj(dt, S.s); lumieresProches(); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
   sonMaj(S.s, !!tunnel);
   dessiner(); hud();
   if (BANC && !BANC.fini) bancImage(ecoule);

@@ -16,7 +16,7 @@ const MACHINES = {
   // « elliptique » = la machine du parc de Kiki : un SKIEUR DE FOND (air walker), les pieds restent à plat et glissent d'avant en arrière, les bras
   // poussent les poignées (12/11, Kiki : ce n'est pas un elliptique). La clé reste "elliptique" : c'est le sujet de la montre et la clé des records.
   // Ce qu'on y voit, au choix du menu (gardé sur la machine) : ton dresseur en rollers (par défaut), ton Pokémon qui court, ou ton dresseur à vélo.
-  elliptique: {nom: "Skieur de fond", montre: "Elliptique", monture: (m => m === "coureur" ? undefined : m === "cycliste" ? "cycliste" : "patineur")(lireReglage("riviere_monture_elliptique", "patineur")),
+  elliptique: {nom: "Skieur de fond", montre: "Elliptique", monture: (m => m === "coureur" ? undefined : m === "patineur" ? "patineur" : "cycliste")(lireReglage("riviere_monture_elliptique", "cycliste")),
     geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: false},
 };
 const MACHINE_NOM = (() => { const m = MACHINES[MACHINE_MENU] ? MACHINE_MENU : MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";

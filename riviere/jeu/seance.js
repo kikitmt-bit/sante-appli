@@ -60,8 +60,7 @@ function ouvrirMenu() {
     ${choisie && MACHINE_NOM === "rameur" && DISCIPLINE === "eau" && NAGEUR.fiche ? `<details class="pli"><summary id="mNageur">Ton Pokémon : ${texteNageur()}</summary>
       <div class="nageurs">${NAGEURS.liste.map(n => `<button class="nageur${n.num === NAGEUR.num ? " on" : ""}" data-nageur="${n.num}"><canvas width="48" height="48"></canvas><b>${n.nom}</b><small>${metresNageur(n)}</small></button>`).join("")}</div>
       <p class="petit">Chacun nage à sa vraie taille. Les temps et les records ne changent pas.</p></details>` : ""}
-    ${choisie && MACHINE_NOM === "elliptique" ? `<div class="fantomes"><small>CE QUE TU VOIS</small>${boutons([["patineur", "En rollers"], ["coureur", "Ton Pokémon court"], ["cycliste", "À vélo"]], MACHINE.monture || "coureur", "monture")}<p class="petit">${VISUEL ? "Le décor défile comme sur un vélo (15 km/h à ton allure habituelle) ; les chiffres restent tes vrais mètres." : "Ton Pokémon court à ta vraie vitesse."}</p></div>` : ""}
-    ${choisie && (MACHINE.monture === "cycliste" || MACHINE.monture === "patineur") ? `<div class="fantomes"><small>TON DRESSEUR</small>${boutons([["pixels", "En pixels"], ["volumes", "En volumes"]], PIX.actif ? "pixels" : "volumes", "rendu")}</div>` : ""}
+    ${choisie && MACHINE_NOM === "elliptique" ? `<div class="fantomes"><small>CE QUE TU VOIS</small>${boutons([["cycliste", "À vélo"], ["patineur", "En rollers"], ["coureur", "Ton Pokémon court"]], MACHINE.monture || "coureur", "monture")}<p class="petit">${VISUEL ? "Le décor défile comme sur un vélo (15 km/h à ton allure habituelle) ; les chiffres restent tes vrais mètres." : "Ton Pokémon court à ta vraie vitesse."}</p></div>` : ""}
     ${!choisie ? `<p class="petit">Choisis ta machine : ses circuits apparaîtront ensuite.</p>` : `
     <h2><span class="num">2</span>Ton circuit</h2>
     ${NIVEAU.brouillon ? `<p class="petit">Tu essaies un brouillon de l'éditeur : ${NIVEAU.nom}.</p>` : ""}
@@ -106,7 +105,6 @@ function ouvrirMenu() {
   un("[data-h]", null, b => { ecrireReglage("riviere_heure", b.dataset.h); reglerAmbiance(b.dataset.h === "circuit" ? NIVEAU.heure || "jour" : b.dataset.h, null); });   // on voit le ciel changer derrière le menu
   un("[data-m]", null, b => { ecrireReglage("riviere_meteo", b.dataset.m); reglerAmbiance(null, b.dataset.m === "circuit" ? NIVEAU.meteo || "beau" : b.dataset.m); });
   un("[data-r]", null, b => choisirRivaux(b.dataset.r));
-  un("[data-rendu]", null, b => choisirRenduDresseur(b.dataset.rendu === "pixels"));   // tout de suite, sans recharger : on le voit derrière le menu
   un("[data-f]", null, b => { choisirFantome(b.dataset.f); majTexteFantome(); });
   p.querySelector("#mBT").onclick = async e => { const el = $("mBTetat"), t = setInterval(() => { if (el.isConnected) el.textContent = BT.etat; }, 300); await relierCapteur(); clearInterval(t); if (el.isConnected) el.textContent = BT.etat; };
   p.querySelector("#mSon").onclick = e => { const oui = sonBasculer(); e.target.classList.toggle("on", oui); e.target.textContent = oui ? "Bruitages" : "Coupé"; majSon(); };
