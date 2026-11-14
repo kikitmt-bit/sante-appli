@@ -17,6 +17,18 @@ FICHIER = "data/rameur/seances.json"
 BRUT = "data/rameur/brut/{}.json"
 MIN_COUPS_APPRENTISSAGE = 20  # en dessous, le rapport distance / coups ne veut rien dire
 
+# Toutes les machines de « La Rivière » (14/11, étape 1 du plan) : une séance a le même format sur chacune, avec "machine" en plus (absent = le rameur).
+# Le rameur reste dans FICHIER (son apprentissage, Carapuce, la mission Otaria, la carte de Santé ne lisent que lui) ; les autres vont dans AUTRES.
+# Pour Poké Fit, chacune devient la séance de la montre qui lui ressemble, avec ses règles à elle (aucune règle nouvelle) :
+# machine -> (type de séance Google, nom, ce qu'on compte). Distance : celle lue sur la machine (`saisi`) ou mesurée par un capteur Bluetooth
+# (`capteur`) compte ; celle que le jeu estime (`estime`, le skieur de fond n'a pas d'écran) s'affiche avec ≈ et ne compte jamais.
+AUTRES = "data/machines/seances.json"
+MACHINES = {"rameur": ("ROWING_MACHINE", "Rameur", "coups"), "elliptique": ("ELLIPTICAL", "Skieur de fond", "tours"), "velo": ("BIKING_STATIONARY", "Vélo", "tours")}
+
+
+def machine_de(s):
+    return s.get("machine") if s.get("machine") in MACHINES else "rameur"
+
 
 def _date(iso):
     return dt.datetime.fromisoformat(iso.replace("Z", "+00:00"))
@@ -38,35 +50,46 @@ def _recouvre(a0, a1, b0, b1):
     return commun > 0 and commun > min((a1 - a0).total_seconds(), (b1 - b0).total_seconds()) / 2
 
 
+def _vraie_distance(s):
+    """La distance qui compte : lue sur la machine, sinon mesurée par un capteur. Jamais celle que le jeu estime."""
+    return (s.get("saisi") or {}).get("distance") or (s.get("capteur") or {}).get("distance")
+
+
 def texte_details(s):
     d = s.get("saisi") or {}
     out = []
-    if d.get("distance"):
-        out.append(f"{round(d['distance'])} m")
+    if _vraie_distance(s):
+        out.append(f"{round(_vraie_distance(s))} m")
+    elif (s.get("estime") or {}).get("distance"):
+        out.append(f"≈ {round(s['estime']['distance'])} m")
     if s.get("cadence"):
-        out.append(f"{round(s['cadence'])} coups/min")
-    if d.get("watts"):
-        out.append(f"{round(d['watts'])} W")
+        out.append(f"{round(s['cadence'])} {MACHINES[machine_de(s)][2]}/min")
+    watts = d.get("watts") or (s.get("capteur") or {}).get("watts")
+    if watts:
+        out.append(f"{round(watts)} W")
     return out
 
 
 def point_de(s, montre=None):
-    """Une séance du téléphone -> une séance comme celles de la montre, dont elle garde le cœur et les calories si elle l'a vue aussi."""
+    """Une séance d'une machine -> une séance comme celles de la montre, dont elle garde le cœur et les calories si elle l'a vue aussi.
+    La clé "rameur" (le nom vient du premier, le rameur) = ce qu'on en sait, en texte, pour la page Santé."""
     debut, fin = _date(s["debut"]).astimezone(dt.timezone.utc), _date(s["fin"]).astimezone(dt.timezone.utc)
     resume = dict(sd_contenu(montre).get("metricsSummary") or {}) if montre else {}
     saisi = s.get("saisi") or {}
-    if saisi.get("distance"):
-        resume["distanceMillimeters"] = saisi["distance"] * 1000
+    if _vraie_distance(s):
+        resume["distanceMillimeters"] = _vraie_distance(s) * 1000
     if saisi.get("kcal"):
         resume["caloriesKcal"] = saisi["kcal"]
-    return {"exercise": {"exerciseType": "ROWING_MACHINE", "displayName": "Rameur", "activeDuration": f"{round(s['duree_s'])}s",
+    type_, nom, _ = MACHINES[machine_de(s)]
+    return {"exercise": {"exerciseType": type_, "displayName": nom, "activeDuration": f"{round(s['duree_s'])}s",
                          "interval": {"startTime": debut.strftime("%Y-%m-%dT%H:%M:%SZ"), "endTime": fin.strftime("%Y-%m-%dT%H:%M:%SZ")},
                          "metricsSummary": resume, "rameur": texte_details(s)}}
 
 
-def fusionner(resumes, fichier):
-    """Les résumés des jours, avec les séances du téléphone en plus. Une copie : les résumés lus restent gardés tels quels en mémoire."""
-    seances = (fichier or {}).get("seances") or []
+def fusionner(resumes, fichier, autres=None):
+    """Les résumés des jours, avec les séances des machines en plus (fichier = le rameur, autres = skieur de fond et vélo). Une copie : les
+    résumés lus restent gardés tels quels en mémoire."""
+    seances = ((fichier or {}).get("seances") or []) + ((autres or {}).get("seances") or [])
     if not seances:
         return resumes
     out = dict(resumes)
@@ -95,16 +118,23 @@ def fusionner(resumes, fichier):
 
 
 def ranger(texte, lire, ecrire):
-    """Ce que le téléphone a laissé (localStorage pkm_rameur) -> les fichiers du dépôt. Rejouable : une séance déjà rangée est simplement remplacée. -> réussi ?"""
-    attente = {a["seance"]["id"]: a for a in json.loads(texte)}  # plusieurs copies d'une même séance : la dernière, écrite une seule fois
-    seances = (lire(FICHIER) or {}).get("seances") or []
-    for a in attente.values():
-        s = a["seance"]
-        _date(s["debut"])
-        if a.get("brut") and not ecrire(BRUT.format(s["id"]), {"id": s["id"], "debut": s["debut"], "colonnes": ["x", "y", "z"], "unite": "cm/s²", "hz": 20, "lignes": a["brut"], "coups": a.get("coups") or []}, "rameur : capteurs"):
+    """Ce que le téléphone ou le jeu a laissé (localStorage pkm_rameur) -> les fichiers du dépôt : le rameur dans FICHIER, les autres machines dans
+    AUTRES. Rejouable : une séance déjà rangée est simplement remplacée. -> réussi ?"""
+    attente = {(machine_de(a["seance"]), a["seance"]["id"]): a for a in json.loads(texte)}  # plusieurs copies d'une même séance : la dernière, écrite une seule fois
+    for chemin, rameur in ((FICHIER, True), (AUTRES, False)):
+        les_siennes = [a for (m, _), a in attente.items() if (m == "rameur") == rameur]
+        if not les_siennes:
+            continue
+        seances = (lire(chemin) or {}).get("seances") or []
+        for a in les_siennes:
+            s = a["seance"]
+            _date(s["debut"])
+            if a.get("brut") and not ecrire(BRUT.format(s["id"]), {"id": s["id"], "debut": s["debut"], "colonnes": ["x", "y", "z"], "unite": "cm/s²", "hz": 20, "lignes": a["brut"], "coups": a.get("coups") or []}, "rameur : capteurs"):
+                return False
+            seances = [x for x in seances if not (x.get("id") == s["id"] and machine_de(x) == machine_de(s))] + [s]
+        if not ecrire(chemin, {"seances": sorted(seances, key=lambda x: x["debut"])}, "rameur : séance" if rameur else "machines : séance"):
             return False
-        seances = [x for x in seances if x.get("id") != s["id"]] + [s]
-    return ecrire(FICHIER, {"seances": sorted(seances, key=lambda x: x["debut"])}, "rameur : séance")
+    return True
 
 
 # ---------- Apprendre le rameur : les chiffres entrés par Kiki servent à deviner ceux qu'il n'entre pas ----------
@@ -292,17 +322,20 @@ def derniere(seances):
         return None
     s = max(seances, key=lambda x: x["debut"])
     d = _date(s["debut"]).astimezone(TZ)
-    return {"quand": d.strftime("%d/%m à %H:%M"), "distance": (s.get("saisi") or {}).get("distance"), "tours": (s.get("jeu") or {}).get("tours")}
+    return {"quand": d.strftime("%d/%m à %H:%M"), "distance": _vraie_distance(s), "estime": (s.get("estime") or {}).get("distance"), "tours": (s.get("jeu") or {}).get("tours")}
 
 
-def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html", params=None):
+def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html", params=None, autres=None):
     """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé : le modèle des mètres par coup, la progression
     du jeu du rameur, la région et les arènes de Poké Fit, les couleurs du dresseur)."""
     from pathlib import Path
     seances = (fichier or {}).get("seances") or []
     if page_html.startswith("riviere/"):  # le moteur 3D « La Rivière » (dossier riviere/) : un niveau = un fichier ; params = les options de l'adresse (machine, surface, banc…)
         from riviere import page as riviere_page
-        return riviere_page.page({"lien": lien_tablette, "m_coup": m_coup_montre(seances), "derniere": derniere(seances), "kiki": kiki, "params": params or {},
+        autres_s = (autres or {}).get("seances") or []
+        dernieres = {"rameur": derniere(seances), **{m: derniere([s for s in autres_s if machine_de(s) == m]) for m in MACHINES if m != "rameur"}}  # le menu : celle de SA machine
+        return riviere_page.page({"lien": lien_tablette, "m_coup": m_coup_montre(seances), "derniere": dernieres["rameur"], "kiki": kiki, "params": params or {},
+                                  "dernieres": {m: d for m, d in dernieres.items() if d},
                                   "dresseur": {k: v for k, v in (dresseur or {}).items() if v}}, page_html.split("/", 1)[1])  # dresseur : les couleurs du cycliste
     aujourd = aujourd or dt.date.today()
     m = modele(seances)

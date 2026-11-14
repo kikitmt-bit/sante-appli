@@ -5,19 +5,21 @@
 //   tau       en combien de secondes l'élan d'un geste s'épuise ; lisse : le filtre qui rend la glisse continue
 //   allure    le décor défile ce nombre de fois plus vite que les vrais mètres (une machine lente garde un décor vivant)
 //   cadence   gestes par minute de l'essai automatique ; v0, v1 : les vitesses « lente » et « rapide » (m/s), pour les effets
-//   affiche   "500" (temps aux 500 m) ou "kmh" ; enregistre : la séance est-elle gardée dans l'appli
+//   affiche   "500" (temps aux 500 m) ou "kmh" ; enregistre : la séance est-elle gardée dans l'appli (14/11 : les trois machines)
+//   saisie    à la fin, on entre ce qu'affiche la machine (le rameur seul : le skieur de fond n'a pas d'écran, le home trainer donne tout)
+//   capteurRequis : gardée seulement si un vrai capteur Bluetooth a donné la vitesse (le vélo : jamais les 150 W de l'essai)
 // Records et fantômes sont séparés par machine. ?machine=elliptique choisit la machine (sinon : D.machine, sinon le rameur).
 const MACHINES = {
-  rameur: {nom: "Rameur", geste: "coup", gestes: "COUPS", metres: clamp(+D.m_coup || 9, 4, 16), tau: 3.5, lisse: .8, allure: 1, cadence: 24, v0: 1, v1: 4.2, affiche: "500", enregistre: true},
+  rameur: {nom: "Rameur", geste: "coup", gestes: "COUPS", metres: clamp(+D.m_coup || 9, 4, 16), tau: 3.5, lisse: .8, allure: 1, cadence: 24, v0: 1, v1: 4.2, affiche: "500", enregistre: true, saisie: true},
   // L'elliptique du parc n'affiche rien : 1,3 m par tour de pédale (deux pas de 65 cm), soit environ 4,3 km/h à 55 tours/min. Estimé vers le bas (Kiki, 11/11).
   // Le vélo (home trainer) : une machine CONTINUE. Sa vitesse vient d'un capteur Bluetooth (jeu/capteurs.js) : des watts et la physique (poids, pente, air),
   // ou la vitesse que donne l'appareil. En essai, un toucher = un tour de pédale (6 m), « Auto » = 150 watts. masse : toi et le vélo (kg).
-  velo: {nom: "Vélo", monture: "cycliste", geste: "tour", gestes: "TOURS", metres: 6, tau: 2.2, lisse: .5, allure: 1, cadence: 60, v0: 2.5, v1: 9.5, affiche: "kmh", enregistre: false, continu: true, physique: true, masse: clamp(+lireReglage("riviere_masse", 85) || 85, 40, 160)},
+  velo: {nom: "Vélo", monture: "cycliste", geste: "tour", gestes: "TOURS", metres: 6, tau: 2.2, lisse: .5, allure: 1, cadence: 60, v0: 2.5, v1: 9.5, affiche: "kmh", enregistre: true, capteurRequis: true, continu: true, physique: true, masse: clamp(+lireReglage("riviere_masse", 85) || 85, 40, 160)},
   // « elliptique » = la machine du parc de Kiki : un SKIEUR DE FOND (air walker), les pieds restent à plat et glissent d'avant en arrière, les bras
   // poussent les poignées (12/11, Kiki : ce n'est pas un elliptique). La clé reste "elliptique" : c'est le sujet de la montre et la clé des records.
   // Ce qu'on y voit, au choix du menu (gardé sur la machine) : ton dresseur en rollers (par défaut), ton Pokémon qui court, ou ton dresseur à vélo.
   elliptique: {nom: "Skieur de fond", montre: "Elliptique", monture: (m => m === "coureur" ? undefined : m === "patineur" ? "patineur" : "cycliste")(lireReglage("riviere_monture_elliptique", "cycliste")),
-    geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: false},
+    geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: true},
 };
 const MACHINE_NOM = (() => { const m = MACHINES[MACHINE_MENU] ? MACHINE_MENU : MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";
   if (DISCIPLINE === "eau") return "rameur";   // un circuit sur l'eau se rame ; un circuit sur la terre se fait à vélo ou à l'elliptique

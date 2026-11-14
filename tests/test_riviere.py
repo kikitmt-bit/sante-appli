@@ -2,6 +2,7 @@
 Deux sortes de contrôles : la lecture des fichiers (toujours), et le moteur lancé pour de vrai, sans navigateur ni dessin
 (avec node, présent sur GitHub : la piste, le terrain et tout le décor de chaque niveau sont construits ; passé si node manque)."""
 import json
+import time
 import re
 import shutil
 import subprocess
@@ -159,6 +160,23 @@ class Moteur(unittest.TestCase):
         self.assertEqual(b["longueur"], 2000)
         self.assertEqual(b["haut"], 0)
         self.assertEqual(b["evenements"], 3)
+
+    # Budgets (14/11/2026, mesurés sur ce PC : 0,7 à 1,8 s, 36 000 à 146 000 triangles, page de 1 265 Ko) : environ 1,5 fois l'état
+    # actuel. Un dépassement n'est pas une panne, c'est un signal : la page ou la construction a grossi d'un coup (page ×4 et
+    # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
+    BUDGET_TRIANGLES = 220000
+    BUDGET_SECONDES = 8
+    BUDGET_PAGE_KO = 1900
+
+    def test_budgets(self):
+        import page
+        for nom in NIVEAUX:
+            t = time.time()
+            b = self.bilan(nom)
+            self.assertLess(time.time() - t, self.BUDGET_SECONDES, f"{nom} : construction trop lente")
+            self.assertLess(b["triangles"], self.BUDGET_TRIANGLES, f"{nom} : trop de triangles ({b['triangles']})")
+        ko = len(page.page(niveau=NIVEAUX[0]).encode("utf-8")) // 1024
+        self.assertLess(ko, self.BUDGET_PAGE_KO, f"la page pèse {ko} Ko")
 
 
 if __name__ == "__main__":

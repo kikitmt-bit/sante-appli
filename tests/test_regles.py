@@ -1012,5 +1012,71 @@ class TestRameur(unittest.TestCase):
         self.assertEqual(chiffres.seance(seances_rameur.sd_contenu(seances_rameur.point_de(self.S)))["details"][1:], ["4000 m", "24 coups/min"])
 
 
+class TestMachines(unittest.TestCase):
+    """Toutes les machines de La Rivière (14/11, étape 1) : même format que le rameur, chacune la séance de la montre qui lui ressemble, une seule fois,
+    rangées à part du rameur (son apprentissage et Carapuce ne les voient jamais) ; une distance estimée ne compte jamais."""
+    JOUR = dt.date(2026, 11, 21)
+    SKI = {"id": "2026-11-21-100000", "version": 1, "machine": "elliptique", "source": "montre", "debut": "2026-11-21T10:00:00+01:00", "fin": "2026-11-21T10:20:00+01:00",
+           "duree_s": 1200, "actif_s": 1200, "coups": 1100, "cadence": 55, "saisi": {"distance": None, "temps_s": None, "watts": None, "kcal": None},
+           "estime": {"distance": 1430}, "jeu": {"mode": "riviere", "niveau": "terre-volcan", "dist": 1430, "tours": 0}}
+    VELO = {**SKI, "id": "2026-11-21-180000", "machine": "velo", "source": "capteur", "debut": "2026-11-21T18:00:00+01:00", "fin": "2026-11-21T18:30:00+01:00",
+            "duree_s": 1800, "actif_s": 1800, "coups": 0, "cadence": None, "estime": None, "capteur": {"distance": 12500}}
+    VIDE = {"pas": 0, "zone": 0, "zone_sport": 0, "etages": 0, "sommeil": 0}
+
+    def exos(self, r):
+        return [seances_rameur.sd_contenu(p) for p in r[str(self.JOUR)]["exercise"]]
+
+    def test_skieur_de_fond_compte_comme_un_elliptique(self):
+        r = seances_rameur.fusionner({}, None, {"seances": [self.SKI]})
+        e = self.exos(r)[0]
+        self.assertEqual((e["exerciseType"], e["displayName"]), ("ELLIPTICAL", "Skieur de fond"))
+        self.assertNotIn("distanceMillimeters", e["metricsSummary"])  # estimée : jamais comptée
+        m = pokemon.mesures(self.VIDE, self.exos(r), self.JOUR)
+        self.assertEqual(m["points"]["sport"], 20)  # 1 point par minute, comme toute séance de 10 min
+        self.assertEqual(m["eau"], 0)
+        self.assertEqual(pokemon.sport_principal(m)[2], ["Psy", "Spectre", "Fée"])
+        s = chiffres.stats_jour(r[str(self.JOUR)])
+        self.assertEqual((s["min_rameur"], s["min_velo"]), (0, 0))
+        self.assertEqual(chiffres.seance(e)["details"][1:], ["≈ 1430 m", "55 tours/min"])
+
+    def test_velo_compte_ses_km_mesures(self):
+        r = seances_rameur.fusionner({}, None, {"seances": [self.VELO]})
+        s = chiffres.stats_jour(r[str(self.JOUR)])
+        self.assertEqual(s["min_velo"], 30)  # mission Roucoups
+        self.assertAlmostEqual(s["km_velo"], 12.5)
+        self.assertEqual(pokemon.sport_principal(pokemon.mesures(self.VIDE, self.exos(r), self.JOUR))[2], ["Vol", "Normal"])
+
+    def test_la_montre_ne_compte_pas_une_deuxieme_fois(self):
+        montre = {"exercise": {"exerciseType": "ELLIPTICAL", "activeDuration": "1150s", "interval": {"startTime": "2026-11-21T09:01:00Z", "endTime": "2026-11-21T09:20:00Z"},
+                               "metricsSummary": {"averageHeartRateBeatsPerMinute": 128, "caloriesKcal": 150}}}
+        r = seances_rameur.fusionner({str(self.JOUR): {"exercise": [montre]}}, None, {"seances": [self.SKI]})
+        e = self.exos(r)
+        self.assertEqual(len(e), 1)
+        self.assertEqual((e[0]["displayName"], e[0]["metricsSummary"]["averageHeartRateBeatsPerMinute"]), ("Skieur de fond", 128))  # son cœur est gardé
+
+    def test_rameur_et_machines_ensemble(self):
+        r = seances_rameur.fusionner({}, {"seances": [{**TestRameur.S, "debut": "2026-11-21T07:00:00+01:00", "fin": "2026-11-21T07:20:00+01:00"}]}, {"seances": [self.SKI, self.VELO]})
+        self.assertEqual(sorted(e["displayName"] for e in self.exos(r)), ["Rameur", "Skieur de fond", "Vélo"])
+
+    def test_ranger_met_chaque_machine_a_sa_place(self):
+        depot = {}
+        ecrire = lambda p, o, m: depot.__setitem__(p, o) or True  # noqa: E731
+        texte = json.dumps([{"seance": TestRameur.S}, {"seance": self.SKI}, {"seance": self.SKI}, {"seance": self.VELO}])
+        for _ in range(2):
+            self.assertTrue(seances_rameur.ranger(texte, depot.get, ecrire))
+        self.assertEqual([s["id"] for s in depot[seances_rameur.FICHIER]["seances"]], [TestRameur.S["id"]])  # le rameur seul dans son fichier
+        self.assertEqual([s["machine"] for s in depot[seances_rameur.AUTRES]["seances"]], ["elliptique", "velo"])
+
+    def test_une_seance_sans_machine_reste_le_rameur(self):
+        ecritures = []
+        self.assertTrue(seances_rameur.ranger(json.dumps([{"seance": TestRameur.S}]), lambda p: None, lambda p, o, m: ecritures.append(p) or True))
+        self.assertEqual(ecritures, [seances_rameur.FICHIER])
+
+    def test_le_menu_montre_la_derniere_de_sa_machine(self):
+        d = seances_rameur.derniere([self.SKI])
+        self.assertEqual((d["distance"], d["estime"]), (None, 1430))
+        self.assertEqual(seances_rameur.derniere([self.VELO])["distance"], 12500)
+
+
 if __name__ == "__main__":
     unittest.main()

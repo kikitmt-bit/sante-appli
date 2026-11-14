@@ -1,0 +1,1 @@
+{"version": "0.0.1", "configurations": [{"name": "rameur", "runtimeExecutable": "python", "runtimeArgs": ["rameur/serveur.py", "8770"], "port": 8770}, {"name": "riviere", "runtimeExecutable": "python", "runtimeArgs": ["riviere/serveur.py", "8780"], "port": 8780}]}

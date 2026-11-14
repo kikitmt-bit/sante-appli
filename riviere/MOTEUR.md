@@ -200,8 +200,17 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
   Les chiffres affichés restent les vrais. Records et fantômes à part par vue (`CLE_MACHINE`).
 - **Plein écran** (jeu.js, `PLEIN`) : demandé au premier toucher (dans l'appli : la page de l'appli entière), petit bouton sous « Son » pour
   en sortir ou y revenir ; sorti une fois, il ne revient plus tout seul pendant la visite (`riviere_plein_non`, sessionStorage).
-- **Annuler une séance** : à la fin d'une vraie séance au rameur, « ✕ Annuler la séance » en haut (deux touchers) ; au menu, « Annuler la
-  séance interrompue ». Une machine qui n'enregistre pas (skieur de fond) n'écrit plus de séance interrompue (`riviere_encours`, avec `machine`).
+- **Annuler une séance** : à la fin d'une vraie séance, « ✕ Annuler la séance » en haut (deux touchers) ; au menu, « Annuler la
+  séance interrompue » (`riviere_encours`, avec `machine` : seule la machine du moment la propose).
+- **Les séances enregistrées, toutes machines** (14/11, étape 1 du plan) : `jeu/seance.js`, `garder` écrit dans `pkm_rameur` une séance au même
+  format pour les trois machines, avec `machine` ; l'appli l'envoie (`seances_rameur.ranger`) : le rameur dans `data/rameur/seances.json`,
+  les autres dans `data/machines/seances.json`. Côté machine (`MACHINES` d'allure.js) : `enregistre` (les trois), `saisie` (le pavé de fin :
+  le rameur seul), `capteurRequis` (le vélo : gardé seulement si un vrai capteur Bluetooth a fait avancer la séance, `S.capteurVu`, posé par
+  `vitesseCapteur` en vraie séance ; sinon la fin dit pourquoi rien n'est gardé). Distances : `saisi.distance` (lue sur le rameur), `capteur.distance`
+  (vélo) comptent ; `estime.distance` (skieur de fond, l'estimation vers le bas) s'affiche avec ≈ et ne compte jamais. Pour Poké Fit
+  (`seances_rameur.MACHINES`) : rameur = `ROWING_MACHINE`, skieur de fond = `ELLIPTICAL`, vélo = `BIKING_STATIONARY`, chacune avec les règles
+  de ce type ; une séance de la montre recouverte à plus de 50 % est remplacée (cœur et calories gardés). Le menu montre la dernière séance de
+  sa machine (`D.dernieres`). Ajouter une machine : une ligne dans chacun des deux `MACHINES`.
 - **Capteur Bluetooth** (`jeu/capteurs.js`, Chrome ou Edge) : home trainer, vélo, rameur ou elliptique connecté (FTMS), capteur de puissance,
   de cadence, ceinture cardio. Un home trainer pilotable reçoit la pente du circuit (`BT.difficulte`, 50 %). **Écrit sans appareil** : la
   lecture des trames se contrôle par `window.__trames()`, à essayer sur un vrai home trainer.

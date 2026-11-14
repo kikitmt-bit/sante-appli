@@ -15,7 +15,7 @@ function coup(force = .6, muet = false) {   // un geste de la machine ; muet : u
   S.elan = 1; S.coupT = T; sonCoup(force, M.liquide);
   if (M.liquide) { gerbe(S.s, force, M.d, M.y, GABARIT.hw); EAU_U.uCoups.value[S.nb % 4].set(S.s - .3, M.d, COMMUNS.uT.value); }
 }
-function vitesseCapteur(v) { S.v = v; S.capteur = true; }   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
+function vitesseCapteur(v) { S.v = v; S.capteur = true; if (S.mode === "vraie") S.capteurVu = true; }   // capteurVu : un vrai capteur a fait avancer cette séance (elle peut être gardée)   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
 const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (MACHINE.monture === "cycliste" && MACHINE.physique && n < 2) return VELO.cadence || 0; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };   // (à vélo sans capteur de cadence : celle des pédales qu'on voit tourner)
 
 /* les tours d'un circuit : le chrono part au premier passage de la ligne ; le meilleur tour est gardé sur cette machine, par machine de sport */
@@ -78,7 +78,8 @@ let T = 0, dernier = performance.now(); const FPS = {n: 0, t: 0, v: 0};
 function boucle(now) {
   requestAnimationFrame(boucle);
   if (now - dernier < 1000 / IMAGES_MAX - 1.2) return;   // pas plus de 60 images par seconde
-  const ecoule = (now - dernier) / 1000, vraiDt = clamp(ecoule, 0, 1), dt = Math.min(vraiDt, .05); dernier = now; T += dt; COMMUNS.uT.value = T;   // le temps, la cadence et la distance suivent la vraie horloge, même si la machine rame (les animations, elles, sont bornées)
+  const ecoule = (now - dernier) / 1000, vraiDt = clamp(ecoule, 0, 1), dt = Math.min(vraiDt, .05); dernier = now; if (!S.fige) T += dt; COMMUNS.uT.value = T;   // ?fige=1 fige aussi le temps des animations (les captures de référence en ont besoin)
+  //   // le temps, la cadence et la distance suivent la vraie horloge, même si la machine rame (les animations, elles, sont bornées)
   if (BANC && !BANC.fini) bancAvance(vraiDt);
   else if (!S.fige && S.mode && !S.pause) {
     if (S.lance || S.mode === "essai") S.t = (now - S.t0 - S.pauseTot) / 1000;   // le temps = la vraie horloge depuis le premier geste, moins les pauses
