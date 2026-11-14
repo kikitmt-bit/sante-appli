@@ -139,7 +139,7 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "danse": [{"cle": c["cle"], "sm": c["sm"]} for c in chansons],
         "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd, seances_rameur.lien(st.secrets.get("JEU_CLE"), joueur["id"] if joueur else None)),
         "matin": {"hier": etat["hier"], "conseil": conseil, "voix": infirmiere.recap(aujourd, m.get("sommeil"), etat["hier"], sum(1 for c in captures if etat["hier"] and c["jour"] == etat["hier"]["jour"] and not c.get("rate")), etat["sport_vu"], joueur["id"] if joueur else "")},
-        "jeu_etat": {k: etat[k] for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance")},
+        "jeu_etat": {k: etat.get(k) for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance", "equipe")},
         "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
