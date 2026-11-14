@@ -4,7 +4,9 @@
 // dans quelle bande de distance au bord, tous les combien de mètres. Même niveau, même graine : toujours le même décor.
 // Les registres : le contenu (contenu/objets/*.js) y ajoute ses recettes, sans toucher au moteur.
 const PAL = couleurs(BIOME.palette);
-const OBJETS = {}, RAYON = {}, EVENEMENTS = {};   // les recettes ; la place que prend chaque objet (m) ; les objets qui font réagir la monture ("saut", "plongee")
+// les registres : les recettes ; la place que prend chaque objet (m) ; les objets qui font réagir la monture ("saut", "plongee") ;
+// les grands repères au loin (contenu/lointains, dessinés par rendu.js). Tous ici : decor.js est un module pur, que le contrôle sans dessin charge.
+const OBJETS = {}, RAYON = {}, EVENEMENTS = {}, LOINTAINS = {};
 const MONDE = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []};
 const K_MONDE = {
   etiquette(F, texte, x, y, z, l, h) { const [X, Z] = F.monde(x, z); MONDE.etiquettes.push({texte, x: X, y: F.oy + y * F.k, z: Z, lacet: F.lacet, l: l * F.k, h: h * F.k}); },

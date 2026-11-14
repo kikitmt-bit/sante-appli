@@ -7,14 +7,21 @@
   for (const p of MONDE.poses) objets[p.nom] = (objets[p.nom] || 0) + 1;
   let triangles = 0; for (const F of formes.values()) triangles += F.p.length / 9;
   // le sol, point par point : jamais de valeur absurde, jamais de mur entre deux bouts de piste qui se font face
+  // (le cratère d'un massif est un creux voulu, à parois raides : il ne compte pas comme une cassure)
+  const cratere = (x, z) => !!(MASSIF && MASSIF.cratere && Math.hypot(x - MASSIF.x, z - MASSIF.z) / MASSIF.r < .12);
   let points = 0, absurdes = 0, cassures = 0, pire = 0;
   for (let z = G.za - 110; z < G.zb + 110; z += 4) {
-    let h0 = null, i0 = 0, e0 = 0;
+    let h0 = null, i0 = 0, e0 = 0, c0 = false;
     for (let x = G.xa - 110; x < G.xb + 110; x += 3) {
-      const h = hauteur(x, z), i = Q.i, e = Q.e;
+      const h = hauteur(x, z), i = Q.i, e = Q.e, c = cratere(x, z);
       if (!(h > -50 && h < 200)) absurdes++;
-      if (h0 !== null && e > 14 && e0 > 14 && Math.abs(ecart(i, i0)) > 60) { points++; const d = Math.abs(h - h0); pire = Math.max(pire, d); if (d > 4) cassures++; }
-      h0 = h; i0 = i; e0 = e;
+      if (h0 !== null && e > 14 && e0 > 14 && !c && !c0 && Math.abs(ecart(i, i0)) > 60) {
+        points++;
+        const d = Math.abs(h - h0);
+        pire = Math.max(pire, d);
+        if (d > 4) cassures++;
+      }
+      h0 = h; i0 = i; e0 = e; c0 = c;
     }
   }
   let serres = 0; for (const L of LIBRE) for (let i = 0; i < P.N; i++) if (L[i] < 50) serres++;

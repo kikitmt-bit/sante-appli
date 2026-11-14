@@ -75,15 +75,17 @@ function relDe(j, lat, av) {  // la hauteur (au-dessus de la piste) que le mètr
 const V = {h: 0, y: 0, a: 0};
 function voter(x, z) {
   pres(x, z);
-  const P = PISTE, G = CASES, i1 = Q.i, e1 = Q.e, d1 = Math.hypot(Q.d, Q.av);
+  const P = PISTE, G = CASES, e1 = Q.e, d1 = Math.hypot(Q.d, Q.av);
   const B = Math.min(5 + .45 * Math.max(0, e1), 70), rmax = d1 + B, pas = Math.max(1, Math.floor(e1 / 12));   // loin de la piste : on vote large, et un point de piste sur « pas » suffit
-  let sw = 1, sh = P.Y[i1] + relDe(i1, Q.d, Q.av), sy = P.Y[i1], sa = AMP[Q.d > 0 ? 1 : 0][i1];
+  // Le point le plus proche n'a pas de place à part (14/11) : loin de la piste, il votait toujours, les autres un sur « pas » ; quand le plus
+  // proche changeait de branche, un point passait d'un coup de 0 à tout son poids (une marche de 5 m dans la vitrine). Près de la piste (pas = 1) : inchangé.
+  let sw = 0, sh = 0, sy = 0, sa = 0;
   const ca = clamp(Math.floor((x - rmax - G.x0) / G.C), 0, G.nx - 1), cb = clamp(Math.floor((x + rmax - G.x0) / G.C), 0, G.nx - 1);
   const za = clamp(Math.floor((z - rmax - G.z0) / G.C), 0, G.nz - 1), zb = clamp(Math.floor((z + rmax - G.z0) / G.C), 0, G.nz - 1);
   for (let cz = za; cz <= zb; cz++) for (let cx = ca; cx <= cb; cx++) {
     const L = G.cases[cz * G.nx + cx];
     for (let n = 0; n < L.length; n++) {
-      const k = L[n]; if (k === i1 || (pas > 1 && k % pas)) continue;
+      const k = L[n]; if (pas > 1 && k % pas) continue;
       const dx = x - P.X[k], dz = z - P.Z[k], d = Math.sqrt(dx * dx + dz * dz); if (d >= rmax) continue;
       const u = 1 - (d - d1) / B, w = u * u, lat = dx * P.CH[k] + dz * P.SH[k], av = dx * P.SH[k] - dz * P.CH[k];
       sw += w; sh += w * (P.Y[k] + relDe(k, lat, av)); sy += w * P.Y[k]; sa += w * AMP[lat > 0 ? 1 : 0][k];

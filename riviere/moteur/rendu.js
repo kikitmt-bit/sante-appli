@@ -132,7 +132,7 @@ const CIEL = (() => { const W = 2048, H = 512, HOR = Math.round(H * .952), T2 = 
 /* ---- le lointain : de grands repères au-delà du monde (un volcan, de hautes montagnes, une ville), toujours dans la même direction.
    Un niveau les nomme : "lointain": [{"o": "volcan", "cap": 140, "taille": 1}] (cap : en degrés, 0 = droit devant au départ, 90 = à droite).
    Les recettes sont dans contenu/lointains (LOINTAINS.volcan = (F, o, R, K) => …), en mètres, à 1 400 m de distance. ---- */
-const LOINTAINS = {};
+// (le registre LOINTAINS est déclaré dans decor.js, avec les autres : le contrôle sans dessin charge les recettes sans ce fichier)
 const MAT_LOIN = new THREE.ShaderMaterial({vertexColors: true, side: THREE.DoubleSide, uniforms: {uSoleil: {value: SOLEIL}, uTeinte: COMMUNS.uTeinte, uVoile: COMMUNS.uBrume, uT: COMMUNS.uT},
   vertexShader: "attribute float mat; varying vec3 vC, vN; varying float vM, vY; void main() { vC = color; vN = mat3(modelMatrix) * normal; vec4 w = modelMatrix * vec4(position, 1.); vY = w.y - modelMatrix[3].y; vM = mat; gl_Position = projectionMatrix * viewMatrix * w; }",
   fragmentShader: `uniform vec3 uSoleil, uTeinte, uVoile; uniform float uT; varying vec3 vC, vN; varying float vM, vY;

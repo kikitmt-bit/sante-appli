@@ -39,8 +39,9 @@ Ensuite, il peut devenir un vrai « Zwift Pokémon » multi-machines, et bien pl
 1. **Les contrôles automatiques sont cassés depuis le 12/11 et personne ne l'a vu.** Sur GitHub, les tests échouent à chaque envoi
    depuis 3 jours (21 envois) : le contrôle qui fait vraiment tourner le moteur plante sur une variable manquante (`LOINTAINS`). Sur ce PC,
    ces tests sont sautés (node n'est pas installé). Toute la refonte du 12 au 14/11 a donc été faite **sans filet**.
-2. **Le monde met trop longtemps à se construire.** Mesuré : 2,3 s pour `kanto-1km`, mais **10,8 s pour la Baie de Carmin** (vitrine). Sur
-   un téléphone, compter 2 à 3 fois plus. Tout est calculé d'un bloc, au démarrage, sans rien montrer.
+2. **Le monde se construit d'un bloc, au démarrage, sans rien montrer.** Mesuré : environ 2 s (`kanto-1km` 2,3 s, vitrine 2,1 s), mais
+   une fois **10,8 s** pour la vitrine au tout premier chargement (à froid). Sur un téléphone, compter 2 à 3 fois plus. Ça va encore,
+   mais ça grandira avec chaque circuit plus riche. *(Corrigé le 14/11 au soir : la première version de ce rapport donnait 10,8 s comme temps habituel.)*
 3. **La page pèse 1,27 Mo** (4 fois plus que le 11/11), dont 758 Ko de sprites mis dans la page. Elle dépend aussi d'Internet (three.js
    et la police viennent de serveurs extérieurs) : au parc en 4G, chaque ouverture recharge tout, et sans réseau, rien ne s'affiche.
 4. **Le code est très dense et tout est mélangé dans un seul espace.** 398 noms globaux partagés par 28 fichiers ; certaines lignes font
@@ -86,8 +87,8 @@ puis le « Zwift » (chantiers 10-11), puis le spectaculaire (4 à 9), puis la c
 | Densité | 65 à 148 caractères par ligne en moyenne, max 592 (`editeur.js`), 447 (`seance.js`), 436 (`generateur.js`), 405 (`piste.js`) | |
 | Poids de la page assemblée (vitrine) | **1 265 Ko**, dont 758 Ko de sprites en base64 | ~300 Ko le 11/11 |
 | Assemblage par `page.py` | 0,9 s (sprites en cache local) | |
-| Construction du monde (`__pret`) | **kanto-1km 2,3 s · vitrine 10,8 s** | panneau masqué : un peu pessimiste, mais l'ordre de grandeur est sûr |
-| Dont pose du décor (`poserDecor`) | 2,3 s (vitrine) | ~6 appels à `hauteur()` par candidat |
+| Construction du monde (`__pret`) | **kanto-1km 2,3 s · vitrine 2,1 s** (une fois 10,8 s à froid) | panneau masqué : mesures instables, à refaire avec `?banc=1` |
+| Dont champ + pose du décor, sans dessin | 0,2 à 0,8 s selon le circuit (contrôle sans dessin) ; une mesure isolée à 2,3 s | ~6 appels à `hauteur()` par candidat |
 | Coût d'un appel à `hauteur(x, z)` (le vote) | 38 µs | appelé des dizaines de milliers de fois au démarrage |
 | Coût d'une image (vitrine, 7 endroits) | **3,8 à 7,9 ms** | budget 16,7 ms : grande marge |
 | Triangles à l'écran / appels de dessin | 33 000 à 114 000 / 42 à 100 | |
@@ -124,6 +125,13 @@ puis le « Zwift » (chantiers 10-11), puis le spectaculaire (4 à 9), puis la c
   (`test_chaque_niveau`, `test_le_huit`, `test_anciens_niveaux`) échouent. Correctif probable : déclarer tous les registres (`OBJETS`,
   `RAYON`, `EVENEMENTS`, `LOINTAINS`, `SURFACES`, `MONTURES`…) dans un module pur (ex. `moteur/registres.js`, premier de `PURS`), ou ne
   pas ramasser `lointains/` dans le contrôle. **Puis vérifier que les 4 circuits passent encore** : rien ne l'a vérifié depuis 3 jours.
+  **Fait le 14/11 au soir (Opus)** : `LOINTAINS` déclaré dans `decor.js` ; contrôle rejoué dans le navigateur sur les 6 circuits. Il a
+  révélé ce qu'il ne voyait plus : le test `?surface=terre` du Huit était devenu faux (règle du 12/11, mis à jour), les 2 « cassures »
+  du tour du volcan étaient son cratère (exclu du contrôle), et **une vraie marche de 5 m dans le sol de la vitrine** (à 75 m de l'eau,
+  entre le pont des Arches et les rapides). Cause : dans `voter()` (champ.js), le point de piste le plus proche compte toujours, les
+  autres seulement un sur « pas » ; quand le plus proche change de branche, un point passe d'un coup de 0 à tout son poids.
+  Corrigé avec l'accord de Kiki : le plus proche vote comme les autres. Rien ne change à moins de 24 m de l'eau ; sur `kanto-1km`, le sol
+  bouge de 76 cm au plus loin de l'eau et 3 arbres lointains (~50 m de l'eau) sont remplacés par 2 autres.
 - **A2. Personne n'a vu l'échec.** Il faut une alerte visible (badge dans le README, notification, ou un contrôle exécuté par Claude
   avant chaque commit via un hook), sinon ça se reproduira.
 - **A3. node absent sur le PC de Kiki** : les contrôles du moteur ne tournent qu'en ligne. Un node portable (installé hors du dépôt) ou un contrôle par le navigateur d'essai (`?pur=1` lu par script) rendrait la vérification locale possible avant l'envoi.
@@ -155,7 +163,7 @@ puis le « Zwift » (chantiers 10-11), puis le spectaculaire (4 à 9), puis la c
 
 ### C. Construction du monde (gravité : haute sur téléphone)
 
-- **C1. Tout sur le fil principal, d'un bloc.** Terrain, rives, piste, ponts, tunnels, décor, lointain, sprites : 10,8 s sur la vitrine
+- **C1. Tout sur le fil principal, d'un bloc.** Terrain, rives, piste, ponts, tunnels, décor, lointain, sprites : ~2 s sur la vitrine (10,8 s une fois, à froid)
   avant la première image. Rien n'est montré pendant ce temps (sauf « chargement »).
 - **C2. Le vote est cher et répété.** 38 µs par appel ; `poserDecor` appelle `hauteur()` jusqu'à 6 fois par candidat (position, rive à
   3 m, 4 pour la pente), et la grille du terrain l'appelle des dizaines de milliers de fois. Aucun cache des hauteurs.
@@ -266,7 +274,7 @@ puis le « Zwift » (chantiers 10-11), puis le spectaculaire (4 à 9), puis la c
 | 1 | `page.py` `controle()` + `contenu/lointains/kanto.js` | `LOINTAINS` non défini dans le contrôle sans dessin : CI rouge depuis le commit `1777222` (12/11) | **haute** |
 | 2 | `.github/workflows/tests.yml` | échecs non signalés à Kiki ni à Claude | haute |
 | 3 | `jeu/allure.js` | `enregistre: false` pour vélo et skieur de fond : séances perdues | haute (produit) |
-| 4 | `moteur/decor.js` `poserDecor` | jusqu'à 6 votes de terrain par candidat (2,3 s sur la vitrine) | moyenne |
+| 4 | `moteur/decor.js` `poserDecor` | jusqu'à 6 votes de terrain par candidat | moyenne |
 | 5 | `moteur/piste.js` | `enjambe` et `verifier` en O(N²) | faible aujourd'hui |
 | 6 | `moteur/piste.js` | courbure intégrée en marches (pas de clothoïde) | faible (vélo, caméra) |
 | 7 | `moteur/piste.js` | `Y -= bas` : la hauteur absolue dépend du point le plus bas de tout le tracé | latente |
@@ -493,7 +501,7 @@ Kiki veut très peu de son et **jamais de musique** : tout reste optionnel, coup
 | Ordre | Chantier | Pourquoi maintenant | Effort |
 |---|---|---|---|
 | 1 | **0 — Filets** (CI réparée, alerte, node local, tests visuels, budgets) | tout le reste en dépend ; la CI est rouge | S |
-| 2 | **2 — Construction rapide** (cache des hauteurs, Worker, cache du monde) | 10,8 s sur la tablette, pire au téléphone | M |
+| 2 | **2 — Construction rapide** (cache des hauteurs, Worker, cache du monde) | ~2 s aujourd'hui, qui grandit avec chaque circuit riche ; pire au téléphone | M |
 | 3 | **3 — Léger et hors ligne** | le parc en 4G | S-M |
 | 4 | **1 — Rangement** (modules, interface moteur ↔ jeu, schémas, doc courte) | chaque séance de travail coûtera moins cher ensuite | M |
 | 5 | **10 + 11 (début)** — séances de toutes les machines enregistrées, records et fantômes sur le serveur, sources unifiées, relais privé | le cœur du « Zwift multi-machines » | M |

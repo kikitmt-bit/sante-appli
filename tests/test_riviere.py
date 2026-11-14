@@ -143,14 +143,15 @@ class Moteur(unittest.TestCase):
                 self.assertLess(b["fermeture"], 3, f"{nom} : la boucle se referme mal")
 
     def test_le_huit(self):
-        """Le circuit d'essai : un croisement, avec un pont au-dessus ; il se joue aussi sur la terre."""
+        """Le circuit d'essai : un croisement, avec un pont au-dessus. C'est un circuit d'eau : depuis le 12/11 (Kiki), un circuit
+        d'eau ne devient jamais un chemin, même avec ?surface=terre dans l'adresse (ce réglage ne sert plus)."""
         b = self.bilan("essai")
         self.assertEqual(len(b["croisements"]), 1)
         self.assertTrue(b["croisements"][0]["bon"])
         self.assertGreater(b["ponts"], 30)
         self.assertGreater(b["haut"], 5)
         self.assertGreater(b["rives_serrees"], 20, "l'épingle doit rétrécir ses rives")
-        self.assertEqual(self.bilan("essai", "?surface=terre")["surfaces"], ["terre"])
+        self.assertEqual(self.bilan("essai", "?surface=terre")["surfaces"], ["eau"])
 
     def test_anciens_niveaux(self):
         """Un ancien fichier de niveau marche toujours : le tour de Bourg Palette fait 2 000 m, à plat."""
