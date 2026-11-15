@@ -142,7 +142,7 @@ function commencer(mode) {
     lance: false, pause: false, capteurVu: false, debutMur: 0, t0: performance.now(), pauseTot: 0, auto: mode === "essai" && PARAMS.get("auto") !== "0", prochain: .6});
   M.y = null; CAM.y = null; sonDemarrer(); eveiller();
   S.capteur = false; BT.v = 0; BT.coups = null; RIVAUX.t0 = null; for (const r of RIVAUX.liste) r.vr = 0; SEG.actif = null; SEG.faits = []; SEG.dernier = null;
-  fermerPanneau(); majAuto(); majBoutons(); fantomeChoisi();
+  fermerPanneau(); majAuto(); majBoutons(); fantomeChoisi(); fourchesDepart(); filmDepart();
   if (mode === "essai") annoncer("ESSAI : TOUCHE L'ÉCRAN");
 }
 
@@ -153,9 +153,10 @@ setInterval(() => { if (S.mode === "vraie" && S.lance && !S.pause && MACHINE.enr
 function mettrePause() { S.pause = true; S.pauseDebut = performance.now(); majBoutons(); }
 function reprendre() { S.pauseTot += performance.now() - S.pauseDebut; S.pause = false; fermerPanneau(); majBoutons(); }
 $("bFin").addEventListener("pointerdown", e => { e.stopPropagation();
-  if (S.mode === "essai" || !gardable(bilanDe())) { mettrePause(); finEssai(); return; }
+  if (FILM.actif) return;
+  if (S.mode === "essai" || !gardable(bilanDe())) { mettrePause(); filmJouer(finEssai); return; }   // d'abord le film de la séance (film.js), puis le résumé
   mettrePause(); if (S.lance) ecrireLS(ENCOURS, bilanDe());
-  ouvrirFin(bilanDe(), false); });
+  filmJouer(() => ouvrirFin(bilanDe(), false)); });
 
 function resume(b) {
   const meilleur = b.tours.length ? Math.min(...b.tours) : 0;
@@ -167,15 +168,16 @@ function resume(b) {
 function finEssai() {
   const essai = S.mode === "essai";
   const p = panneau(`<h1>${essai ? "Fin de l'essai" : "Fin de la séance"}</h1>${resume(bilanDe())}<p class="petit">${essai ? "Un essai n'est jamais enregistré." : MACHINE.capteurRequis ? "Aucun capteur Bluetooth n'a donné ta vitesse : sans lui, je ne sais pas ce que tu as vraiment fait, cette séance ne comptera nulle part." : "Les séances de cette machine ne sont pas encore enregistrées dans l'appli : celle-ci ne comptera nulle part."}</p>
-    <div class="choix"><button class="rouge" id="fMenu">▶ ${essai ? "Retour au menu" : "Terminer (rien n'est gardé)"}</button><button class="sec" id="fReprendre">Reprendre</button></div>`);
+    <div class="choix"><button class="rouge" id="fMenu">▶ ${essai ? "Retour au menu" : "Terminer (rien n'est gardé)"}</button><button class="sec" id="fReprendre">Reprendre</button>${filmRevoirBouton()}</div>`);
+  if (p.querySelector("#fFilm")) p.querySelector("#fFilm").onclick = () => { fermerPanneau(); filmJouer(finEssai); };
   p.querySelector("#fMenu").onclick = () => { ecrireLS(ENCOURS, null); ouvrirMenu(); };
   p.querySelector("#fReprendre").onclick = reprendre;
 }
 
 /* la fin d'une vraie séance : ce qu'affiche le rameur, au pavé numérique (la tablette n'a pas toujours de clavier) */
-function ouvrirFin(b, recuperee) {
+function ouvrirFin(b, recuperee, deja) {   // deja : ce qui était entré avant « Revoir le film »
   if (!aDuContenu(b)) { ecrireLS(ENCOURS, null); ouvrirMenu(); return; }
-  const champs = {dist: "", min: "", sec: "", kcal: ""}; let actif = "dist", jeter = 0;
+  const champs = Object.assign({dist: "", min: "", sec: "", kcal: ""}, deja); let actif = "dist", jeter = 0;
   const p = panneau(`<h1>${recuperee ? "Séance interrompue" : "Fin de la séance"}</h1>
     <div class="choix"><button class="sec" id="fJeter">✕ Annuler la séance (elle ne comptera pas)</button></div>${resume(b)}
     ${MACHINE.saisie ? `<h2>Ce qu'affiche ton rameur</h2>
@@ -189,8 +191,9 @@ function ouvrirFin(b, recuperee) {
     <p class="alerte" id="fErreur"></p>
     <div class="choix">
       <button class="rouge" id="fGarder">▶ Enregistrer la séance</button>
-      ${recuperee ? "" : `<button class="sec" id="fReprendre">Reprendre</button>`}
+      ${recuperee ? "" : `<button class="sec" id="fReprendre">Reprendre</button>${filmRevoirBouton()}`}
     </div>`);
+  if (!recuperee && p.querySelector("#fFilm")) p.querySelector("#fFilm").onclick = () => { const c = Object.assign({}, champs); fermerPanneau(); filmJouer(() => ouvrirFin(b, false, c)); };
   const maj = () => p.querySelectorAll(".saisie label").forEach(l => { const c = l.dataset.c; l.classList.toggle("actif", c === actif); l.querySelector("span").textContent = champs[c] || (c === "dist" ? "—" : c === "kcal" ? "—" : "--"); });
   p.querySelectorAll(".saisie label").forEach(l => l.onclick = () => { actif = l.dataset.c; maj(); });
   p.querySelectorAll(".touche").forEach(t => t.onclick = () => { const k = t.dataset.k, max = {dist: 6, min: 3, sec: 2, kcal: 4}[actif];

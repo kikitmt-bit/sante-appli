@@ -22,6 +22,7 @@ async function preparerRivaux() {
 function rivauxDepart() { RIVAUX.t0 = S.t; for (const r of RIVAUX.liste) r.vr = 0; }
 function animerRivaux(t, dt) {
   const L = RIVAUX.liste; if (!L.length) return;
+  if (PISTE.NF && !RIVAUX.calme) { RIVAUX.calme = true; try { return surVoie(0, () => animerRivaux(t, dt)); } finally { RIVAUX.calme = false; } }   // dans une fourche, ils prennent toujours la voie calme
   const parti = RIVAUX.t0 !== null && S.mode && !S.pause;
   for (const r of L) {
     if (parti) r.vr += r.v * MACHINE.allure * dt;

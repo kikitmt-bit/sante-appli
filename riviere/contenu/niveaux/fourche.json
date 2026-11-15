@@ -1,0 +1,45 @@
+{
+ "id": "fourche",
+ "nom": "L'île aux rapides",
+ "biome": "kanto",
+ "lieux": "kanto",
+ "graine": 8,
+ "nageur": 7,
+ "boucle": "gauche",
+ "allure": 1,
+ "elan": 60,
+ "note": "Le circuit d'essai des fourches (15/11, étape 7 du plan). La rivière se sépare autour d'une île : à gauche le bras tranquille (la voie « calme », qui fait partie de la ligne), à droite les rapides, un tremplin et une chute (la voie « force », prise si on rame plus fort que sa croisière à l'annonce). Les deux voies ont le même nombre de mètres et finissent à la même hauteur : la calme descend doucement de 3 m, la voie « force » les perd d'un coup à la chute. La Cascade, plus loin, les fait regagner. Règles d'une fourche : mêmes longueurs que la calme et virages inverses (le moteur ajuste le reste), rien de spécial (pente, grotte, pont, chute) dans les 30 premiers et derniers mètres, là où les deux eaux se touchent encore.",
+ "pieces": [
+  {"nom": "Le départ", "long": 90, "virage": 0, "eau": 12, "g": "pre", "d": "pre",
+   "objets": [{"o": "ligne", "cote": "c", "a": 0}, {"o": "pokemon", "num": 60, "cote": "d", "a": 50, "e": 2.2}]},
+  {"nom": "Le bois", "long": 70, "virage": -60, "eau": 11, "g": "foret", "d": "foret"},
+  {"nom": "L'approche", "long": 45, "virage": 0, "eau": 12, "g": "foret", "d": "pre"},
+  {"fourche": "L'île aux rapides", "annonce": "LES RAPIDES",
+   "calme": [
+    {"nom": "Le bras tranquille", "long": 30, "virage": -35, "eau": 9, "g": "foret", "d": "pre"},
+    {"long": 30, "virage": 35, "eau": 9, "g": "foret", "d": "pre", "monte": -1},
+    {"long": 50, "virage": 0, "eau": 9, "g": "foret", "d": "pre", "monte": -1,
+     "objets": [{"o": "pokemon", "num": 54, "cote": "d", "a": 25, "e": 2.5}]},
+    {"long": 30, "virage": 35, "eau": 9, "g": "foret", "d": "pre", "monte": -1},
+    {"long": 30, "virage": -35, "eau": 9, "g": "foret", "d": "pre"}
+   ],
+   "force": [
+    {"nom": "Les rapides", "long": 30, "virage": 35, "eau": 9, "g": "pre", "d": "pre"},
+    {"long": 30, "virage": -35, "eau": 8, "g": "pre", "d": "montagne"},
+    {"long": 30, "virage": 0, "eau": 7, "g": "pre", "d": "montagne", "monte": -0.6, "allure": 1.3,
+     "objets": [{"o": "rocher", "surface": "eau", "cote": "c", "a": 8, "e": 2.2, "haut": -0.2}, {"o": "rocher", "surface": "eau", "cote": "c", "a": 20, "e": -2.2, "haut": -0.2}]},
+    {"nom": "Le tremplin", "long": 5, "virage": 0, "eau": 7, "g": "montagne", "d": "montagne", "monte": 0.7, "net": true},
+    {"long": 3, "virage": 0, "eau": 7, "g": "montagne", "d": "montagne", "monte": -3.1, "net": true},
+    {"nom": "Le bassin", "long": 12, "virage": 0, "eau": 8, "g": "pre", "d": "montagne"},
+    {"long": 30, "virage": -35, "eau": 9, "g": "pre", "d": "pre"},
+    {"long": 30, "virage": 35, "eau": 9, "g": "pre", "d": "pre"}
+   ]},
+  {"nom": "Le confluent", "long": 50, "virage": 0, "eau": 12, "g": "plage", "d": "pre"},
+  {"nom": "Le grand virage", "long": 80, "virage": -90, "eau": 11, "g": "pre", "d": "falaise"},
+  {"nom": "La Cascade", "long": 10, "virage": 0, "eau": 8, "g": "montagne", "d": "pre", "monte": 3, "net": true},
+  {"nom": "Le lac", "long": 90, "virage": -70, "eau": 24, "g": "plage", "d": "foret", "camera": {"haut": 0.8, "recul": 1},
+   "objets": [{"o": "pokemon", "surface": "eau", "num": 131, "cote": "c", "a": 50, "e": 7, "haut": -0.9}]},
+  {"nom": "Le sous-bois", "long": 70, "virage": -40, "eau": 9, "g": "foret", "d": "foret", "ambiance": "sous-bois"},
+  {"nom": "Le retour", "raccord": true, "rayon": 28, "eau": 12, "g": "pre", "d": "plage"}
+ ]
+}

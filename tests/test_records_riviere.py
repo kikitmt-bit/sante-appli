@@ -43,6 +43,16 @@ class TestRecords(unittest.TestCase):
         self.assertEqual(r["tour"], {"t": 100.4, "jour": "2026-11-14", "pts": TRACE})
         self.assertEqual((r["machine"], r["niveau"]), ("rameur", "kanto-1km"))
 
+    def test_voies_des_fourches_gardees(self):
+        """Les voies prises aux fourches pendant le tour (étape 7 du plan) sont gardées avec la trace : le fantôme les reprend. Sans trace : rien."""
+        d = Depot()
+        sr.garder_records([({CLE: {"tour": {"t": 100.0, "pts": TRACE, "v": [1, 0, 7]}}}, "2026-11-15")], d.lire, d.ecrire)
+        self.assertEqual(d.f[sr.RECORDS]["records"][CLE]["tour"]["v"], [1, 0, 1])
+        sr.garder_records([({CLE: {"tour": {"t": 99.0, "v": [1]}}}, "2026-11-15")], d.lire, d.ecrire)
+        self.assertNotIn("v", d.f[sr.RECORDS]["records"][CLE]["tour"])
+        sr.garder_records([({CLE: {"tour": {"t": 98.0, "pts": TRACE, "v": "x"}}}, "2026-11-15")], d.lire, d.ecrire)
+        self.assertNotIn("v", d.f[sr.RECORDS]["records"][CLE]["tour"])
+
     def test_jamais_un_temps_moins_bon(self):
         d = Depot({sr.RECORDS: {"records": {CLE: {"tour": {"t": 90.0, "jour": "2026-11-10", "pts": TRACE}}}}})
         self.assertTrue(sr.garder_records([({CLE: {"tour": {"t": 95.0, "pts": [0, 0, 95, 2000]}}}, "2026-11-14")], d.lire, d.ecrire))

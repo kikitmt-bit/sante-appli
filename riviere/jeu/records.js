@@ -9,6 +9,7 @@ const EMPREINTE = (() => {
   const mix = v => { h = Math.imul(h ^ (v | 0), 16777619); };
   mix(P.N); mix(Math.round(TOUR_M)); mix(BOUCLE ? 1 : 0);
   for (let i = 0; i < P.N; i += 10) { mix(Math.round(P.X[i])); mix(Math.round(P.Z[i])); mix(Math.round(P.Y[i])); }   // au mètre près : le même sur toutes les machines
+  for (const v of P.voies) for (let i = v.dec + v.a; i < v.dec + v.b; i += 10) { mix(Math.round(P.X[i])); mix(Math.round(P.Z[i])); mix(Math.round(P.Y[i])); }   // la voie « force » de chaque fourche en fait partie
   return (h >>> 0).toString(36);
 })();
 const CLE_CIRCUIT = (MACHINE_NOM === "rameur" ? "" : CLE_MACHINE + "_") + String(NIVEAU.id || NIVEAU.nom).replace(/[^\w.-]/g, "-") + "_" + (NIVEAU.distance || Math.round(TOUR_M)) + "m_" + EMPREINTE;
@@ -25,7 +26,7 @@ function recordsAEnvoyer() {   // ce qui bat ce que le serveur a (null : rien) ;
   const o = {}, ts = tourServeur(), segS = SERVEUR.segments || {}, r1 = t => Math.round(t * 10) / 10;
   if (record && (!ts || record < ts.t - .05)) {
     const f = FANTOME.record && Math.abs(FANTOME.record.t - record) < .05 && FANTOME.record.pts && FANTOME.record.pts.length >= 4 ? FANTOME.record : null;
-    o.tour = {t: r1(record), ...(f ? {pts: alleger(f.pts)} : {})};
+    o.tour = {t: r1(record), ...(f ? {pts: alleger(f.pts), ...(f.v ? {v: Array.from(f.v)} : {})} : {})};   // v : les voies prises aux fourches pendant ce tour
   }
   const segs = {}; for (const [nom, t] of Object.entries(SEG.records || {})) if (t > 0 && (!segS[nom] || t < segS[nom] - .05)) segs[nom] = r1(t);
   if (Object.keys(segs).length) o.segments = segs;

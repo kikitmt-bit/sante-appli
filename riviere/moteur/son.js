@@ -9,7 +9,7 @@ const CASCADES = (() => {
   const o = [];
   for (const p of PISTE.pieces) {
     const m = +p.monte || 0; if (!p.net || Math.abs(m) < 2) continue;
-    const a = at((p.s0 + p.s1) / 2); o.push({x: a.x, y: a.y, z: a.z, fort: m < 0 ? .1 : .035, portee: m < 0 ? 80 : 60});
+    const a = p.voie ? surLaVoie(p.voie - 1, () => at((p.s0 + p.s1) / 2)) : at((p.s0 + p.s1) / 2); o.push({x: a.x, y: a.y, z: a.z, fort: m < 0 ? .1 : .035, portee: m < 0 ? 80 : 60});
   }
   return o;
 })();

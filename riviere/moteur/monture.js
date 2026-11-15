@@ -34,6 +34,7 @@ function animerMonture(t, dt, S) {
   // un tronc : il saute par-dessus, comme un dauphin ; des rondins : il passe dessous (la hauteur dépend de sa position, pas du temps)
   let bond = 0;
   for (const e of MONDE.evenements) {
+    if (e.vo && PISTE.VO[idx(e.s)] !== e.vo) continue;   // il est sur l'autre voie d'une fourche
     const d = ecart(S.s, e.s);
     if (e.type === "saut" && d > -4.5 && d < 4.5) bond = Math.sin((d + 4.5) / 9 * Math.PI) * 1.9;
     else if (e.type === "plongee" && d > -3.5 && d < 4) bond = -Math.sin((d + 3.5) / 7.5 * Math.PI) * 1.7;
@@ -54,6 +55,7 @@ function animerMonture(t, dt, S) {
     }
   }
   EAU_U.uNag.value.set(S.s, M.d, S.vn, S.enAir || !M.liquide ? 1 : 0); EAU_U.uCorps.value.set(GABARIT.hw, 0, 0, 0);
+  if (PISTE.NF) EAU_U.uVoie.value = PISTE.VO[idx(S.s + 4)] || PISTE.VO[idx(S.s)] || PISTE.VO[idx(S.s - 38)];   // dans une fourche : le sillage et l'ombre ne se dessinent que sur ta voie
   OMBRE_U.uOmbre.value.set(M.liquide ? 0 : mt.velo ? 1 : .55, Math.max(0, M.y + bond - sol), mt.velo && !mt.patins ? 1 : 0);   // l'ombre au sol (et, à vélo, la trace du pneu)
   if (mt.velo) { animerVelo(t, dt, S, pose(S.s, M.d), M.y + Math.max(0, bond), nageur); return; }
   cacherVelo();

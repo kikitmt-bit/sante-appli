@@ -30,7 +30,9 @@ def code_a_jour():
     empreinte = sorted((str(f.relative_to(ici)), f.stat().st_mtime_ns, f.stat().st_size) for f in [*ici.glob("*.py"), *ici.glob("*/*.py")])
     if getattr(sys, "_empreinte_appli", None) != empreinte:
         for nom, m in list(sys.modules.items()):
-            fichier = getattr(m, "__file__", None)
+            # un dossier sans __init__.py (riviere/) n'a pas de __file__ : il faut aussi l'oublier, sinon « from riviere import page » reprend
+            # l'ancien module qu'il garde en attribut (15/11 : « CLE_CIRCUIT is not defined », l'ancien page.py sans records.js)
+            fichier = getattr(m, "__file__", None) or next(iter(getattr(m, "__path__", None) or []), None)
             if nom != "__main__" and fichier and Path(fichier).resolve().is_relative_to(ici):
                 sys.modules.pop(nom, None)  # une autre visite au même moment a pu le retirer avant
         sys._empreinte_appli = empreinte

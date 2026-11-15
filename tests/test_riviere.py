@@ -79,7 +79,21 @@ class Fichiers(unittest.TestCase):
             self.assertEqual(sum(1 for p in pieces[:-1] if p.get("raccord")), 0, f"{nom} : « raccord » ne se met qu'à la fin")
             if n.get("surface"):
                 self.assertIn(n["surface"], SURFACES, f"{nom} : surface inconnue")
-            for p in pieces:
+            toutes, dans_voie = [], set()
+            for p in pieces:  # une fourche (étape 7 du plan) : deux voies, de vraies pièces dans chacune, les mêmes longueurs et le même virage au total
+                if not p.get("fourche"):
+                    toutes.append(p)
+                    continue
+                self.assertTrue(p.get("calme") and len(p.get("force", [])) >= 3, f"{nom} : une fourche a une voie calme et une voie « force » d'au moins trois pièces")
+                self.assertFalse(any(q.get("fourche") or q.get("raccord") for q in p["calme"] + p["force"]), f"{nom} : ni fourche ni raccord dans une fourche")
+                self.assertFalse(any(q.get("virage") == "auto" for q in p["calme"]), f"{nom} : pas de virage « auto » dans la voie calme")
+                lc, lf = sum(q["long"] for q in p["calme"]), sum(q["long"] for q in p["force"])
+                self.assertLess(abs(lc - lf), .25 * lc, f"{nom} : les deux voies d'une fourche ont à peu près la même longueur")
+                if not any(q.get("virage") == "auto" for q in p["force"]):
+                    self.assertAlmostEqual(sum(q.get("virage", 0) for q in p["calme"]), sum(q.get("virage", 0) for q in p["force"]), delta=.5, msg=f"{nom} : les deux voies tournent d'autant")
+                toutes += p["calme"] + p["force"]
+                dans_voie.update(id(q) for q in p["force"])
+            for p in toutes:
                 large = p.get("large", p.get("eau"))
                 for c in (p["g"], p["d"]):
                     self.assertIn(c, b["rives"], f"{nom} : rive inconnue")
@@ -92,7 +106,7 @@ class Fichiers(unittest.TestCase):
                     self.assertTrue(n.get("boucle"), f"{nom} : « raccord » ne sert que dans une boucle")
                     continue
                 if p.get("virage") == "auto":
-                    self.assertTrue(n.get("boucle"), f"{nom} : « auto » ne sert que dans une boucle")
+                    self.assertTrue(n.get("boucle") or id(p) in dans_voie, f"{nom} : « auto » ne sert que dans une boucle (ou dans la voie « force » d'une fourche)")
                 elif p.get("virage"):  # les rives se rétrécissent toutes seules dans une épingle : il suffit que la piste ne se replie pas sur elle-même
                     rayon = p["long"] / abs(p["virage"] * 3.14159 / 180)
                     self.assertGreater(rayon, large / 2 + 1.5, f"{nom} : virage trop serré ({p.get('nom', '')})")
@@ -201,6 +215,50 @@ class Moteur(unittest.TestCase):
             self.assertTrue(0 <= n["note"] <= 100, nom)
             self.assertGreater(len(n["sequences"]), 1, f"{nom} : un seul paysage ?")
             self.assertAlmostEqual(sum(s["t"] for s in n["sequences"]), n["duree"], delta=len(n["sequences"]) + 2, msg=f"{nom} : les séquences ne couvrent pas le tour")
+
+    def test_fourches(self):
+        """Les fourches (étape 7 du plan) : la voie « force » rejoint la ligne, à la même hauteur, avec autant de mètres et les MÊMES vrais mètres que la
+        voie calme (un seul record par circuit) ; elle a son décor ; un circuit sans fourche n'en porte aucune trace ; le générateur sait en poser une."""
+        b = self.bilan("fourche")
+        self.assertTrue(b["ok"], b["erreurs"])
+        self.assertEqual(len(b["fourches"]), 1)
+        f, v = b["fourches"][0], b["voies"][0]
+        self.assertLess(f["ecart"], 1, "la voie « force » doit arriver sur la ligne")
+        self.assertEqual(b["metres"], b["longueur"] + f["a"] - f["de"], "la voie « force » a autant de mètres que la calme")
+        self.assertAlmostEqual(v["calme"], v["force"], delta=.02, msg="les deux voies comptent les mêmes vrais mètres")
+        self.assertEqual(v["bouts"], [0, 0], "aux deux bouts, les deux voies sont à la même hauteur")
+        self.assertGreater(v["ecart_haut"], 1.5, "la voie « force » a sa chute")
+        self.assertGreater(v["poses"], 20, "la voie « force » a son décor")
+        self.assertIn("fourche", [x["quoi"] for x in b["note"]["forts"]])
+        k = self.bilan("kanto-1km")
+        self.assertEqual((k["fourches"], k["voies"], k["metres"]), ([], [], k["longueur"]))
+        g = self.generer({"km": 1.5, "avec": {"fourche": True}, "graine": 2, "tirages": 2})
+        self.assertNotIn("erreur", g)
+        fourches = [p for p in g["niveau"]["pieces"] if p.get("fourche")]
+        self.assertEqual(len(fourches), 1, "la case « fourche » en pose une")
+        self.assertFalse(any(k in fourches[0] for k in ("long", "virage", "fixe")), "des marques de travail sont restées sur la fourche")
+        bilan = self.controle_de(g["niveau"])
+        self.assertTrue(bilan["ok"], bilan["erreurs"])
+        self.assertEqual(bilan["cassures"], 0)
+        self.assertAlmostEqual(bilan["voies"][0]["calme"], bilan["voies"][0]["force"], delta=.02)
+        self.assertEqual(bilan["note"]["note"], g["note"]["note"])
+        t = self.generer({"activite": "terre", "km": 1.5, "avec": {"fourche": True}, "denivele": 5, "graine": 5, "tirages": 2})
+        self.assertTrue(any(p.get("fourche") for p in t["niveau"]["pieces"]))
+        self.assertTrue(self.controle_de(t["niveau"])["ok"])
+
+    def test_fourche_impossible(self):
+        """Une fourche mal dessinée est refusée avec une phrase claire (elle ne casse jamais le jeu en silence)."""
+        import page
+        n = lis("niveaux", "fourche.json")
+        fourche = next(p for p in n["pieces"] if p.get("fourche"))
+        for p in fourche["force"]:
+            p["virage"] = 0
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "controle.js"
+            f.write_text(page.controle(circuit=n), encoding="utf-8")
+            r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8", timeout=120)
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn("Fourche", r.stderr)
 
     def generer(self, options):
         import page

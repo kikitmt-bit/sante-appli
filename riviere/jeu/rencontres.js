@@ -6,7 +6,7 @@
 const RENC = {liste: [], boite: null};
 function construireRencontres() {
   for (const r of typeof RENCONTRES === "undefined" ? [] : RENCONTRES) {
-    const q = PUBLIC.find(p => Math.abs(p.x0 - r.x) < .01 && Math.abs(p.z0 - r.z) < .01), e = MONDE.evenements.find(v => v.type === "saut" && Math.abs(ecart(v.s, idx(r.s))) < 1);
+    const q = PUBLIC.find(p => Math.abs(p.x0 - r.x) < .01 && Math.abs(p.z0 - r.z) < .01), e = MONDE.evenements.find(v => v.type === "saut" && (v.vo || 0) === (r.vo || 0) && Math.abs(ecart(v.s, r.s)) < 1);
     if (!q) continue;
     RENC.liste.push(Object.assign({}, r, {q, ev: e || null, etat: "dort", t0: 0, debout: null, joie: null, lat: 0}));
   }
@@ -45,13 +45,14 @@ function rencontresMaj(t, dt) {
   let montree = null;
   const jeu = S.mode && !S.pause && !PARAMS.has("s") && !S.fige;
   for (const r of RENC.liste) {
-    const devant = ecart(idx(r.s), idx(S.s)), zone = Math.max(60, 25 * (S.croisiere || 3.6));
+    if (r.vo && PISTE.VO[idx(r.s)] !== r.vo) { if (r.demande) { finirEffort(); r.demande = null; } continue; }   // il dort sur l'autre voie d'une fourche
+    const devant = ecart(r.s, S.s), zone = Math.max(60, 25 * (S.croisiere || 3.6));
     if (r.etat === "dort") {
       if (jeu && devant > 4 && devant < zone) {
-        if (!r.demande) { r.demande = demanderEffort({seuil: 1.08, duree: 5, reussi: () => reveiller(r, t)}); annoncer("RONFLEX !"); }
-        montree = r;
+        if (!r.demande && !EFFORT.demande) { r.demande = demanderEffort({seuil: 1.08, duree: 5, reussi: () => reveiller(r, T)}); annoncer("RONFLEX !"); }
+        if (r.demande) montree = r;
       } else if (r.demande && devant <= 4) {   // trop tard : il dort toujours, tu rebondis sur son ventre
-        finirEffort(); r.demande = null; r.etat = "passe"; annoncer("BOING !");
+        finirEffort(); r.demande = null; r.etat = "passe"; annoncer("BOING !"); filmEvenement({type: "boing", i: RENC.liste.indexOf(r)});
       } else if (r.demande && devant >= zone) { finirEffort(); r.demande = null; }
     } else if (r.etat === "reveil" || r.etat === "debout") {
       const u = t - r.t0, D2 = r.debout, J = r.joie, a = at(r.s), cote = r.cote || 1, bord = cote * (a.w + 3.2);
@@ -77,7 +78,7 @@ function reveiller(r, t) {
   r.etat = "reveil"; r.t0 = t; r.demande = null; finirEffort(); r.px = r.pz = undefined;
   r.cote = (M.d || 0) > r.e ? -1 : 1;   // il s'en va du côté où tu n'es pas
   r.q.m.visible = false; if (r.ev) { const k = MONDE.evenements.indexOf(r.ev); if (k >= 0) MONDE.evenements.splice(k, 1); }
-  annoncer("RONFLEX SE RÉVEILLE !"); sonTinte([523, 659, 784]);
+  annoncer("RONFLEX SE RÉVEILLE !"); sonTinte([523, 659, 784]); filmEvenement({type: "ronflex", i: RENC.liste.indexOf(r), cote: r.cote});
 }
 function rendormir(r) {
   r.etat = "dort"; r.q.m.visible = true; if (r.debout) r.debout.m.visible = false; if (r.joie) r.joie.m.visible = false;

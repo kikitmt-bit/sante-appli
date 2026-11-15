@@ -80,7 +80,7 @@ function construireCaverne(F, ia, ib, G, roche, brut, R, sombre) {
 function construireTunnels() {
   const P = PISTE, F = new Forme(), plages = []; let debut = -1;
   for (let i = 0; i < P.N; i++) { if (P.TUN[i] && debut < 0) debut = i; if (debut >= 0 && (!P.TUN[i] || i === P.N - 1)) { plages.push([debut, P.TUN[i] ? i : i - 1]); debut = -1; } }
-  for (const [ia, ib] of plages) {
+  const unTunnel = (ia, ib) => {
     const G = GROTTES[pieceEn(ia).grotte] || {}, hv = clamp(G.haut || HV, 4, 7), brut = clamp(G.brut || 0, 0, 1), R = hasard((NIVEAU.graine || 1) * 131 + ia);
     const roche = Array.isArray(G.roche) ? G.roche.map(hex) : SOLS[G.roche || RIVES[TYPES.indexOf(NIVEAU.rocheTunnel || "montagne")].paroi].c;
     const fonduBout = i => lisse(0, 8, Math.min(i - ia, ib - i));
@@ -153,7 +153,9 @@ function construireTunnels() {
       const ext = ([u, y], k) => { const g = lg(k), gr = (hv - PIED + g) / (hv - PIED); return y <= PIED ? [u + Math.sign(u) * g, y] : [u * (1 + g / (w - .05)), PIED + (y - PIED) * gr]; };
       for (let k = 0; k < S.length - 1; k++) { const av = caverne ? .45 : .2, V = [pt(S[k][0], S[k][1], .2), pt(S[k + 1][0], S[k + 1][1], .2), pt(...ext(S[k + 1], k + 1), av), pt(...ext(S[k], k), av)];
         for (const j of [0, 1, 2, 0, 2, 3]) F.v(V[j][0], V[j][1], V[j][2], fx, 0, fz, k % 2 ? clair : fonce(clair, .9), 2); } }
-  }
+  };
+  for (const [ia, ib] of plages) unTunnel(ia, ib);
+  P.voies.forEach((v, nf) => surLaVoie(nf, () => { let d = -1; for (let s = v.a; s <= v.b; s++) { const t = s < v.b && P.TUN[idx(s)]; if (t && d < 0) d = s; if (!t && d >= 0) { unTunnel(d, s - 1); d = -1; } } }));   // les grottes d'une voie « force »
   const m = F.maille(); if (m) { m.name = "tunnels"; scene.add(m); }
   return plages;
 }

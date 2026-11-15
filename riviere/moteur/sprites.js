@@ -115,18 +115,19 @@ async function construireSprites() {
   for (const o of MONDE.sprites) {
     const p = await planche(o.cle); if (!p) continue;
     const q = new Pantin(p, 0, o.taille, o.cle[0] === "h" ? 1.5 : p.m ? clamp(1.5 * Math.pow(p.m, .7), .55, 8) : 0);
-    q.vole = o.vole; q.fixe = o.cle[0] === "h"; q.m.position.set(o.x, o.y, o.z); pres(o.x, o.z); q.s = Q.i; q.y0 = o.y; q.x0 = o.x; q.z0 = o.z; q.ph = Math.random() * 9;
+    q.vole = o.vole; q.fixe = o.cle[0] === "h"; q.m.position.set(o.x, o.y, o.z); pres(o.x, o.z); q.s = sLigne(Q.i); q.v = o.v || null; q.y0 = o.y; q.x0 = o.x; q.z0 = o.z; q.ph = Math.random() * 9;
     if (o.bouge) { q.bouge = Object.assign({}, o.bouge); q.s0 = o.s; q.cote = o.cote; q.e = o.e; q.px = o.x; q.pz = o.z; }
     PUBLIC.push(q);
   }
 }
 function bouger(q, t, S) {   // où est-il maintenant, et vers où regarde-t-il
+  if (q.v && !q.surSaVoie) { q.surSaVoie = true; try { return surVoie(q.v, () => bouger(q, t, S)); } finally { q.surSaVoie = false; } }   // dans une fourche : il vit sur sa voie, pas sur celle que tu prends
   const b = q.bouge, v = b.vitesse || 1.5, p = q.m.position; let x = q.x0, y = q.y0, z = q.z0;
   if (b.type === "vol") { const r = b.rayon || 14, a = t * v / r + q.ph; x += Math.cos(a) * r; z += Math.sin(a) * r; y += (b.haut || 9) + Math.sin(t * .7 + q.ph) * 1.2; }
   else if (b.type === "ronde" || b.type === "nage") {
     const L = b.long || 10, u = ((t * v + q.ph * 3) % (2 * L)), d = u < L ? u : 2 * L - u, eau = b.type === "nage", s = q.s0 + d - L / 2;
     const a = eau || q.cote === "c" ? pose(s, q.e) : pose(s, (q.cote === "g" ? -1 : 1) * (at(s).w + q.e));
-    x = a.x; z = a.z; y = eau ? a.y - q.h * .4 + Math.sin(t * 3 + q.ph) * .04 : hauteur(a.x, a.z); q.s = idx(s);
+    x = a.x; z = a.z; y = eau ? a.y - q.h * .4 + Math.sin(t * 3 + q.ph) * .04 : hauteur(a.x, a.z); q.s = sLigne(idx(s));
   } else if (b.type === "saut") {
     const T = b.tous || 5, u = ((t + q.ph) % T) / 1.1;
     if (u < 1) { y += Math.sin(u * Math.PI) * (b.haut || 2.2) - q.h * .3; if (!q.dehors) { q.dehors = true; if (Math.abs(ecart(q.s, S.s)) < 120) gerbe(q.s, .8, q.e || 0, at(q.s).y); } }

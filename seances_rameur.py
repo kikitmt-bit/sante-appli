@@ -159,7 +159,10 @@ def garder_records(envois, lire, ecrire):
             tour = r.get("tour") if isinstance(r.get("tour"), dict) else {}
             ancien = (ici.get("tour") or {}).get("t")
             if _temps(tour.get("t")) and (ancien is None or tour["t"] < ancien):
-                ici["tour"] = {"t": round(tour["t"], 1), "jour": jour, **({"pts": _trace(tour.get("pts"))} if _trace(tour.get("pts")) else {})}
+                voies = tour.get("v")  # les voies prises aux fourches pendant ce tour (étape 7 du plan) : le fantôme les reprend
+                voies = [1 if v else 0 for v in voies] if isinstance(voies, list) and 0 < len(voies) <= 16 and _trace(tour.get("pts")) else None
+                ici["tour"] = {"t": round(tour["t"], 1), "jour": jour, **({"pts": _trace(tour.get("pts"))} if _trace(tour.get("pts")) else {}),
+                               **({"v": voies} if voies else {})}
                 change = True
             segs = dict(ici.get("segments") or {})
             for nom, t in (r.get("segments") or {}).items() if isinstance(r.get("segments"), dict) else ():

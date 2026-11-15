@@ -51,7 +51,7 @@ function noterCircuit(P, niveau, biome, tourVrai) {
       + (a.ambiance !== b.ambiance ? .05 : 0) + (a.pont !== b.pont ? .2 : 0) + Math.abs(a.large - b.large) * .06, 0, 1);
   };
   /* ---- les séquences : des pièces qui se suivent sans que le paysage change ---- */
-  const pieces = P.pieces.filter(p => p.s1 > p.s0), V = pieces.map(visage), seqs = [];
+  const pieces = P.pieces.filter(p => p.s1 > p.s0 && !p.voie), V = pieces.map(visage), seqs = [];   // (la voie « force » d'une fourche ne fait pas partie de la ligne : elle compte plus bas, comme un moment fort)
   pieces.forEach((p, i) => {
     const d = seqs[seqs.length - 1], e = d ? ecartVisages(d.v, V[i]) : 1;
     if (d && sec(p.s0, p.s1) < 4) { d.s1 = p.s1; d.pieces.push(i); }   // une pièce de quelques mètres (un tremplin, une chute) n'est pas un paysage
@@ -96,6 +96,7 @@ function noterCircuit(P, niveau, biome, tourVrai) {
     if ((p.allure || 1) >= 1.15) forts.push({t: milieu(p), quoi: "rapides"});
     if (p.segment) forts.push({t: milieu(p), quoi: "sprint"});
   }
+  for (const v of P.voies || []) { reperes.push({t: sec(0, v.a), quoi: "fourche"}); forts.push({t: sec(0, v.a), quoi: "fourche"}); }   // une fourche : on la reconnaît, et il s'y passe quelque chose
   const unis = liste => { liste.sort((a, b) => a.t - b.t); return liste.filter((x, i) => !i || x.quoi !== liste[i - 1].quoi || x.t - liste[i - 1].t > 12); };
   const trou = liste => { if (!liste.length) return duree; let m = 0; for (let i = 1; i < liste.length; i++) m = Math.max(m, liste[i].t - liste[i - 1].t); return Math.max(m, boucle ? liste[0].t + duree - liste[liste.length - 1].t : Math.max(liste[0].t, duree - liste[liste.length - 1].t)); };
   const R = unis(reperes), F = unis(forts), loin = (niveau.lointain || []).length + (niveau.massif ? 1 : 0), sortes = new Set(R.map(x => x.quoi)).size;

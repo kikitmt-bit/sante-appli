@@ -4,14 +4,14 @@
 const CLE_FANTOME = CLE_RECORD.replace(/_record$/, "_fantome"), CLE_CHOIX = "riviere_fantome_choix";
 const FANTOME = {choix: "record", record: null, seance: null, actuel: null, trace: [], derniere: 0, pantin: null};
 try { FANTOME.choix = localStorage.getItem(CLE_CHOIX) || "record"; const r = JSON.parse(localStorage.getItem(CLE_FANTOME) || "null"); if (r && r.t && r.pts) FANTOME.record = r; } catch (e) {}
-{ const ts = tourServeur(); if (ts && ts.pts && (!FANTOME.record || ts.t < FANTOME.record.t)) FANTOME.record = {t: ts.t, pts: ts.pts}; }   // celui du serveur, s'il est meilleur (records.js)
+{ const ts = tourServeur(); if (ts && ts.pts && (!FANTOME.record || ts.t < FANTOME.record.t)) FANTOME.record = {t: ts.t, pts: ts.pts, ...(ts.v ? {v: ts.v} : {})}; }   // celui du serveur, s'il est meilleur (records.js)
 
 function choisirFantome(k) { FANTOME.choix = k; try { localStorage.setItem(CLE_CHOIX, k); } catch (e) {} }
 function prendreFantome() { const F = FANTOME; F.actuel = F.choix === "aucun" ? null : F.choix === "record" ? (F.record || F.seance) : F.seance; }
 function fantomeChoisi() { FANTOME.seance = null; FANTOME.trace = []; prendreFantome(); }   // une nouvelle séance : plus de meilleur tour de séance
-function fantomeDepart() { FANTOME.trace = [0, 0]; FANTOME.derniere = 0; prendreFantome(); }
+function fantomeDepart() { FANTOME.trace = [0, 0]; FANTOME.derniere = 0; prendreFantome(); if (PISTE.NF) FOURCHES.tour.set(VOIES.prise); }   // (les voies déjà prises au passage de la ligne comptent pour ce tour)
 function fantomeTour(t, nouveauRecord) {
-  const F = FANTOME; F.trace.push(Math.round(t * 10) / 10, LONG); const tour = {t, pts: F.trace};
+  const F = FANTOME; F.trace.push(Math.round(t * 10) / 10, LONG); const tour = PISTE.NF ? {t, pts: F.trace, v: Array.from(FOURCHES.tour)} : {t, pts: F.trace};   // v : les voies prises aux fourches (le fantôme les reprendra)
   if (!F.seance || t < F.seance.t) F.seance = tour;
   if (nouveauRecord) { F.record = tour; try { localStorage.setItem(CLE_FANTOME, JSON.stringify(tour)); } catch (e) {} }
   fantomeDepart();
@@ -21,8 +21,10 @@ function sFantome(f, tau) {   // où était le fantôme tau secondes après la l
   let a = 0, b = n - 1; while (b - a > 1) { const m = (a + b) >> 1; if (p[m * 2] <= tau) a = m; else b = m; }
   const ta = p[a * 2], tb = p[b * 2]; return p[a * 2 + 1] + (p[b * 2 + 1] - p[a * 2 + 1]) * (tb > ta ? (tau - ta) / (tb - ta) : 0);
 }
+const voiesFantome = () => { const f = FANTOME.actuel; if (!f || !f.v) return 0; return f.vT || (f.vT = Uint8Array.from({length: PISTE.NF}, (_, k) => f.v[k] ? 1 : 0)); };
 function animerFantome(t) {
   const F = FANTOME;
+  if (PISTE.NF && !F.surSaVoie) { F.surSaVoie = true; try { return surVoie(voiesFantome(), () => animerFantome(t)); } finally { F.surSaVoie = false; } }   // dans une fourche, le fantôme reprend la voie qu'il avait prise
   if (S.tour > 0 && !S.pause) { const tau = S.t - S.tourT0; if (tau - F.derniere >= .1) { F.derniere = tau; F.trace.push(Math.round(tau * 10) / 10, Math.round(S.s * 10) / 10); } }
   F.sG = F.actuel && S.tour > 0 ? sFantome(F.actuel, S.t - S.tourT0) : null;
   if (F.sG !== null && !F.pantin && nageur) {   // le même Pokémon, presque blanc avec une pointe de bleu, en transparence
@@ -43,13 +45,14 @@ function construireCarte() {
   const cv = $("carte"), px = Math.round(cv.clientWidth * devicePixelRatio); if (!px) return;
   cv.width = cv.height = px; CARTE.taille = px;
   const P = PISTE, N = P.N; let xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9;
-  for (let i = 0; i < N; i++) { xa = Math.min(xa, P.X[i]); xb = Math.max(xb, P.X[i]); za = Math.min(za, P.Z[i]); zb = Math.max(zb, P.Z[i]); }
+  for (let i = 0; i < P.M; i++) { xa = Math.min(xa, P.X[i]); xb = Math.max(xb, P.X[i]); za = Math.min(za, P.Z[i]); zb = Math.max(zb, P.Z[i]); }
   const marge = px * .1; CARTE.k = (px - 2 * marge) / Math.max(xb - xa, zb - za, 1); CARTE.ox = marge + ((px - 2 * marge) - (xb - xa) * CARTE.k) / 2 - xa * CARTE.k; CARTE.oz = marge + ((px - 2 * marge) - (zb - za) * CARTE.k) / 2 - za * CARTE.k;
   const f = document.createElement("canvas"); f.width = f.height = px; const c = f.getContext("2d"), X = i => P.X[i] * CARTE.k + CARTE.ox, Z = i => P.Z[i] * CARTE.k + CARTE.oz;
   const trait = (couleur, l, garde) => { c.strokeStyle = couleur; c.lineWidth = l; c.lineJoin = c.lineCap = "round"; c.beginPath(); let dedans = false;
     for (let i = 0; i <= N; i++) { const j = i % N, ok = garde(j); if (ok && !dedans) { c.moveTo(X(j), Z(j)); dedans = true; } else if (ok) c.lineTo(X(j), Z(j)); else dedans = false; if (!BOUCLE && i === N - 1) break; } c.stroke(); };
   const u = px / 100;
-  trait("#1B2440", 7 * u, () => true); trait("#F8F8E8", 3.2 * u, () => true); trait("#9098A8", 3.2 * u, j => P.TUN[j]);
+  const voies = (couleur, l) => { for (const v of P.voies) { c.strokeStyle = couleur; c.lineWidth = l; c.lineJoin = c.lineCap = "round"; c.beginPath(); c.moveTo(X(v.a), Z(v.a)); for (let s = v.a + 1; s < v.b; s++) c.lineTo(X(v.dec + s), Z(v.dec + s)); c.lineTo(X(v.b), Z(v.b)); c.stroke(); } };   // la voie « force » de chaque fourche
+  trait("#1B2440", 7 * u, () => true); voies("#1B2440", 7 * u); trait("#F8F8E8", 3.2 * u, () => true); voies("#F8E8A0", 3.2 * u); trait("#9098A8", 3.2 * u, j => P.TUN[j]);
   const h = P.H[0], cx = X(0), cz = Z(0);   // la ligne : un petit damier en travers
   for (let k = -2; k < 2; k++) for (let l = 0; l < 2; l++) { c.fillStyle = (k + l) & 1 ? "#1B2440" : "#fff"; const d = (k + .5) * 1.6 * u, e = (l - .5) * 1.6 * u;
     c.fillRect(cx + Math.cos(h) * d - Math.sin(h) * e - .8 * u, cz + Math.sin(h) * d + Math.cos(h) * e - .8 * u, 1.6 * u, 1.6 * u); }
@@ -63,7 +66,7 @@ function majCarte() {
     if (nageur) { const pl = nageur.pl, b = pl.boite(0), w = b.x1 - b.x0, hh = b.y1 - b.y0, k = t / Math.max(w, hh); c.globalAlpha = alpha;
       c.drawImage(pl.tex.image, b.x0, b.y0, w, hh, x - w * k / 2, z - hh * k / 2, w * k, hh * k); c.globalAlpha = 1; }
     else { c.globalAlpha = alpha; c.fillStyle = "#F8C838"; c.beginPath(); c.arc(x, z, px * .04, 0, 7); c.fill(); c.globalAlpha = 1; } };
-  if (RIVAUX.t0 !== null) for (const r of RIVAUX.liste) { const a = at(r.s), x = a.x * CARTE.k + CARTE.ox, z = a.z * CARTE.k + CARTE.oz; c.fillStyle = "#1B2440"; c.beginPath(); c.arc(x, z, px * .034, 0, 7); c.fill(); c.fillStyle = r.couleur; c.beginPath(); c.arc(x, z, px * .024, 0, 7); c.fill(); }
-  if (FANTOME.sG !== null && FANTOME.sG !== undefined) icone(FANTOME.sG, .45);
+  if (RIVAUX.t0 !== null) for (const r of RIVAUX.liste) { const a = PISTE.NF ? surVoie(0, () => at(r.s)) : at(r.s), x = a.x * CARTE.k + CARTE.ox, z = a.z * CARTE.k + CARTE.oz; c.fillStyle = "#1B2440"; c.beginPath(); c.arc(x, z, px * .034, 0, 7); c.fill(); c.fillStyle = r.couleur; c.beginPath(); c.arc(x, z, px * .024, 0, 7); c.fill(); }
+  if (FANTOME.sG !== null && FANTOME.sG !== undefined) { if (PISTE.NF) surVoie(voiesFantome(), () => icone(FANTOME.sG, .45)); else icone(FANTOME.sG, .45); }
   icone(S.s, 1);
 }

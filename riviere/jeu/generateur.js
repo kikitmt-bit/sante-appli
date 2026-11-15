@@ -20,7 +20,7 @@ function essayerNiveau(niveau) {
    seule (tout le terrain est parcouru) : le générateur ne le demande que pour les tirages qu'il s'apprête à retenir. */
 function solNiveau(niveau) {
   try {
-    const f = new Function("NIVEAU", "BIOME", "D", "location", "scannerSol", SOURCE_PISTE + "\n" + SOURCE_CHAMP + "\nreturn scannerSol(hauteur, Q, CASES, ecart, MASSIF);");
+    const f = new Function("NIVEAU", "BIOME", "D", "location", "scannerSol", SOURCE_PISTE + "\n" + SOURCE_CHAMP + "\nreturn scannerSol(hauteur, Q, CASES, (a, b) => ecart(sLigne(a), sLigne(b)), MASSIF);");
     return f(JSON.parse(JSON.stringify(niveau)), region(BIOMES[niveau.biome] ? niveau.biome : Object.keys(BIOMES)[0]), {}, {search: ""}, scannerSol);
   } catch (e) { return {ok: false, erreur: e && e.message || String(e)}; }
 }
@@ -75,6 +75,21 @@ const MODULES = {
   pont_t: {nom: "Pont sur un ravin", pour: "pont", act: "terre", pieces: (R, o) => [{nom: "Le pont", long: 18, virage: 0, large: 8, g: "bas_cote", d: "bas_cote"}, {long: 70 + Math.round(R() * 20), virage: clamp(o.v, -25, 25), large: 8, g: "bas_cote", d: "bas_cote", pont: ["arches", "bois", true][Math.floor(R() * 3)], ravin: 9 + Math.round(R() * 4), segment: "Le pont"}, {long: 18, virage: 0, large: 8, g: "bas_cote", d: "bas_cote"}]},
   ronflex_t: {nom: "Ronflex sur la route", pour: "ronflex", act: "terre", pieces: (R, o) => [{nom: "La sieste de Ronflex", long: 120 + Math.round(R() * 30), virage: clamp(o.v, -20, 20), large: 8, g: o.g, d: o.d,
     objets: [{o: "ronflex", cote: "c", a: 85}]}]},
+  fourche: {nom: "Fourche autour d'une île", act: "eau", pour: "fourche", pieces: (R, o) => {   // (étape 7 du plan) la rivière se sépare : le bras tranquille, ou les rapides et leur chute si on force ; mêmes longueurs, virages inverses
+    const A = 32 + Math.round(R() * 8), L = 30, S = 40 + Math.round(R() * 30), c = R() < .5 ? -1 : 1, h = 2.5 + Math.round(R() * 2) / 2, w = 9;
+    const voie = (cote, g, d, milieu) => [{long: L, virage: cote * A, eau: w, g, d}, {long: L, virage: -cote * A, eau: w, g, d}, ...milieu, {long: L, virage: -cote * A, eau: w, g, d}, {long: L, virage: cote * A, eau: w, g, d}];
+    const cg = c < 0 ? o.g : "pre", cd = c < 0 ? "pre" : o.d, fg = c < 0 ? "pre" : "montagne", fd = c < 0 ? "montagne" : "pre";   // l'île au milieu : des prés ; la voie des rapides longe une paroi
+    const calme = voie(c, cg, cd, [{long: S, virage: 0, eau: w, g: cg, d: cd, monte: -h}]); calme[0].nom = "Le bras tranquille";
+    const force = voie(-c, c < 0 ? "pre" : o.g, c < 0 ? o.d : "pre", [{long: S - 20, virage: 0, eau: 7, g: fg, d: fd, monte: -.6, allure: 1.3}, {nom: "Le tremplin", long: 5, virage: 0, eau: 7, g: fg, d: fd, monte: .7, net: true},
+      {long: 3, virage: 0, eau: 7, g: fg, d: fd, monte: -h - .1, net: true}, {nom: "Le bassin", long: 12, virage: 0, eau: 8, g: fg, d: fd}]); force[0].nom = "Les rapides";
+    return [{fourche: "L'île aux rapides", annonce: "LES RAPIDES", calme, force, nom: "L'île aux rapides", long: 4 * L + S, virage: 0, eau: 12, g: o.g, d: o.d, monte: -h, fixe: true}]; }},
+  fourche_t: {nom: "Fourche : la route ou le chemin", act: "terre", pour: "fourche", pieces: (R, o) => {   // la route se sépare : la route, ou un chemin de terre à bosses si on force
+    const A = 30 + Math.round(R() * 8), L = 30, S = 54 + Math.round(R() * 30), c = R() < .5 ? -1 : 1;
+    const voie = (cote, b, milieu) => [Object.assign({long: L, virage: cote * A}, b), Object.assign({long: L, virage: -cote * A}, b), ...milieu, Object.assign({long: L, virage: -cote * A}, b), Object.assign({long: L, virage: cote * A}, b)];
+    const bc = {large: 7, g: c < 0 ? o.g : "champ", d: c < 0 ? "champ" : o.d}, bf = {large: 5, surface: "terre", g: c < 0 ? "champ" : "sous_bois", d: c < 0 ? "sous_bois" : "champ"}, bosse = nom => [Object.assign({long: 5, virage: 0, monte: .6, net: true}, bf, nom ? {nom} : null), Object.assign({long: 4, virage: 0, monte: -.6, net: true}, bf)];
+    const calme = voie(c, bc, [Object.assign({long: S, virage: 0}, bc)]); calme[0].nom = "La route";
+    const force = voie(-c, bf, [Object.assign({long: S - 34, virage: 0}, bf), ...bosse("Les bosses"), Object.assign({long: 16, virage: 0}, bf), ...bosse()]); force[0].nom = "Le chemin des bosses";
+    return [{fourche: "Le chemin des bosses", annonce: "LE CHEMIN DES BOSSES", calme, force, nom: "La fourche", long: 4 * L + S, virage: 0, large: 8, g: o.g, d: o.d, fixe: true}]; }},
   cendres_t: {nom: "Col des cendres", pour: "volcan", act: "terre", pieces: (R, o) => [{nom: "Le col des cendres", long: 130 + Math.round(R() * 40), virage: o.v, large: 7, g: o.v < 0 ? "cendres" : "ravin", d: o.v < 0 ? "ravin" : "cendres", ambiance: "volcan"}]},
 };
 
@@ -96,7 +111,7 @@ const BOUTS_LIBRES = ["droite", "virage", "s", "epingle", "route", "virage_t", "
 function habiller(niveau, r, biome, terre, existe, sansParoi) {
   const P = r.PISTE, src = niveau.pieces, B = region(biome), noter = () => noterCircuit(P, niveau, B, r.tour), dernier = src.length - 1;
   const haute = n => n === "falaise", habits = (terre ? HABITS.terre : HABITS.eau).filter(h => existe(h[0]) && existe(h[1]) && !(sansParoi && (haute(h[0]) || haute(h[1]))));
-  const mettre = (i, g, d) => { src[i].g = g; src[i].d = d; const cibles = src[i].raccord ? P.pieces.slice(dernier) : [P.pieces[i]]; for (const q of cibles) if (q) { q.g = g; q.d = d; } };
+  const mettre = (i, g, d) => { src[i].g = g; src[i].d = d; const cibles = P.pieces.filter(q => q._i === i); for (const q of cibles) { q.g = g; q.d = d; } };   // (_i : la pièce du fichier dont vient chaque pièce construite)
   const serre = p => p.virage && typeof p.virage === "number" && Math.abs(p.virage) / p.long > 1.3;   // pas de falaise dans un virage très serré
   if (sansParoi) src.forEach((p, i) => { if ((p.libre || p.raccord) && (haute(p.g) || haute(p.d))) mettre(i, haute(p.g) ? "pre" : p.g, haute(p.d) ? "pre" : p.d); });   // on repart sans les falaises
   let note = noter();
@@ -120,7 +135,7 @@ function habiller(niveau, r, biome, terre, existe, sansParoi) {
    virage et sa ligne droite deviennent de vraies pièces d'une centaine de mètres, que habiller() peut varier ; un petit raccord referme la
    boucle au bout (les 50 derniers mètres et le dernier virage). Le tracé ne change pas. Si le moteur n'en veut pas : on garde l'ancien. */
 function deplierRetour(niveau, r) {
-  const P = niveau.pieces, i0 = P.length - 1, modele = P[i0], bouts = r.PISTE.pieces.slice(i0), neufs = [];
+  const P = niveau.pieces, i0 = P.length - 1, modele = P[i0], bouts = r.PISTE.pieces.filter(q => q._i === i0), neufs = [];
   if (!modele.raccord || r.PISTE.N - bouts[0].s0 < 170) return r;
   const piece = (long, virage) => { const q = {long, virage, g: modele.g, d: modele.d, libre: true}; if (modele.large !== undefined) q.large = modele.large; else q.eau = modele.eau; if (modele.monte === "auto") q.monte = "auto"; return q; };
   for (const b of bouts) {
@@ -151,7 +166,7 @@ function genererCircuit(o) {
     const graine = (o.graine || 1) * 1000 + essai, R = hasard(graine), cible = clamp(o.km || 1, .3, 6) * 1000, pieces = [];
     // la liste des modules : ce qui est coché, complété par des lignes droites, des virages et des S ; mélangée
     const voulus = Object.keys(o.avec || {}).filter(k => o.avec[k]), liste = [];
-    for (const k of voulus) { const m = Object.keys(MODULES).filter(n => MODULES[n].pour === k && MODULES[n].act === (terre ? "terre" : "eau")); if (m.length) liste.push(m[Math.floor(R() * m.length)]); }
+    for (const k of voulus) { if (k === "fourche" && huit) continue; const m = Object.keys(MODULES).filter(n => MODULES[n].pour === k && MODULES[n].act === (terre ? "terre" : "eau")); if (m.length) liste.push(m[Math.floor(R() * m.length)]); }
     const D = clamp(o.denivele !== undefined ? +o.denivele : {plat: 0, vallonne: 15, montagne: 40}[o.relief] ?? 15, 0, terre ? 250 : 80), SIN = SINUEUX[o.virages] || SINUEUX.quelques, BOUTS = terre ? SIN.terre : SIN.bouts;
     if (!terre && D >= 20) liste.push("rapides");
     if (!terre && D >= 35) liste.push("chute", "saut");
@@ -181,7 +196,7 @@ function genererCircuit(o) {
       if (huit && k === iCroix + 1) debutLobe2.push(pieces.length);
       const morceau = MODULES[nom].pieces(R, {v: virageDe(k), eau: 9 + Math.round(R() * 5), g: decor[0], d: decor[1], lieux, terre: !!o.terre, grotte: o.grotte});
       if (huit && (k === 0 || k === iCroix)) for (const p of morceau) { p.virage = 0; p.long = Math.max(p.long, 150); delete p.monte; }   // les deux lignes droites du carrefour, à plat
-      for (const p of morceau) { for (const c of ["g", "d"]) if (!a(p[c])) p[c] = terre ? "bas_cote" : "pre"; if (p.surface === undefined) delete p.surface; haut += +p.monte || 0;
+      for (const p of morceau) { for (const q of [p].concat(p.calme || [], p.force || [])) for (const c of ["g", "d"]) if (!a(q[c])) q[c] = terre ? "bas_cote" : "pre"; if (p.surface === undefined) delete p.surface; haut += +p.monte || 0;
         if (BOUTS_LIBRES.includes(nom) && !(huit && (k === 0 || k === iCroix))) p.libre = true;
         pieces.push(p); }
     });
@@ -216,7 +231,7 @@ function genererCircuit(o) {
     if (r.erreur || !r.verif.ok || (o.boucle !== false && r.verif.fermeture >= 3)) { raisons.push(r.erreur || (r.verif.erreurs[0] || "boucle mal refermée").replace(/[0-9.,]+/g, "#")); continue; }
     if (o.boucle !== false && !huit && o.deplier !== false) r = deplierRetour(niveau, r);
     // parmi les tirages qui tiennent debout, on garde le mieux noté (à note égale : le plus ramassé, celui dont le retour est le plus court)
-    const racc = r.PISTE.pieces[pieces.length - 1], retour = o.boucle === false || huit || !racc ? 0 : r.PISTE.N - racc.s0;
+    const racc = r.PISTE.pieces.find(q => q._i === pieces.length - 1), retour = o.boucle === false || huit || !racc ? 0 : r.PISTE.N - racc.s0;
     const note = o.habiller === false ? noterCircuit(r.PISTE, niveau, region(biome), r.tour) : habiller(niveau, r, biome, terre, a);
     valables.push({niveau, r, long: r.PISTE.N, retour, note, rang: bons});
     if (++bons >= VOULUS) break;
@@ -231,7 +246,7 @@ function genererCircuit(o) {
     if (c.sol.ok) { mieux = c; break; }
   }
   mieux = mieux || valables[0];
-  window.__raisons = raisons; if (mieux) { for (const p of mieux.niveau.pieces) { delete p.fixe; delete p.libre; } return {niveau: mieux.niveau, long: mieux.long, retour: mieux.retour, note: mieux.note, sol: mieux.sol || null, essais, bons}; }
+  window.__raisons = raisons; if (mieux) { for (const p of mieux.niveau.pieces) { delete p.fixe; delete p.libre; if (p.fourche) for (const k of ["long", "virage", "eau", "large", "g", "d", "monte", "nom"]) delete p[k]; } return {niveau: mieux.niveau, long: mieux.long, retour: mieux.retour, note: mieux.note, sol: mieux.sol || null, essais, bons}; }
   window.__raisons = raisons;
   return {erreur: "Pas de circuit trouvé avec ces réglages : essaie « Un autre », moins de virages, ou une longueur plus courte."};
 }

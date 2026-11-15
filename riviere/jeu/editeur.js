@@ -50,31 +50,32 @@ function edPlan() {
     for (let i = 0; i <= N; i++) { if (!r.boucle && i === N) break; const j = i % N, ok = garde(j); if (ok && !dedans) { c.moveTo(X(j), Z(j)); dedans = true; } else if (ok) c.lineTo(X(j), Z(j)); else dedans = false; } c.stroke(); };
   // les rives (la couleur de leur sol), puis la piste, les grottes, les ponts, la pièce choisie
   for (const cote of [0, 1]) for (const p of P.pieces) { const nom = cote ? p.d : p.g; c.strokeStyle = nom === "mer" ? "#3C90EC" : solDe(nom); c.lineWidth = 30 * k + 4; c.lineCap = "butt"; c.beginPath();
-    for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { const sg = cote ? 1 : -1, x = (P.X[i] + sg * P.CH[i] * (P.W[i] + 15)) * k + ox, z = (P.Z[i] + sg * P.SH[i] * (P.W[i] + 15)) * k + oz; if (i === p.s0) c.moveTo(x, z); else c.lineTo(x, z); } c.stroke(); }
+    for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { const sg = cote ? 1 : -1, x = (P.X[edJ(P, p, i)] + sg * P.CH[edJ(P, p, i)] * (P.W[edJ(P, p, i)] + 15)) * k + ox, z = (P.Z[edJ(P, p, i)] + sg * P.SH[edJ(P, p, i)] * (P.W[edJ(P, p, i)] + 15)) * k + oz; if (i === p.s0) c.moveTo(x, z); else c.lineTo(x, z); } c.stroke(); }
   const larg = i => Math.max(5, P.W[i] * 2 * k), eau = s => !["terre", "goudron"].includes(s);
-  for (const p of P.pieces) { c.strokeStyle = "#1B2440"; c.lineWidth = larg(p.s0) + 5; c.lineCap = "round"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(i), Z(i)); else c.lineTo(X(i), Z(i)); } if (r.boucle && p.s1 >= N) c.lineTo(X(0), Z(0)); c.stroke(); }
+  for (const p of P.pieces) { c.strokeStyle = "#1B2440"; c.lineWidth = larg(edJ(P, p, p.s0)) + 5; c.lineCap = "round"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); else c.lineTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); } if (r.boucle && p.s1 >= N) c.lineTo(X(0), Z(0)); c.stroke(); }
   P.pieces.forEach((p, ip) => { const couleur = p.tunnel ? "#8088A0" : p.pont ? "#D8C8A0" : p.surface === "terre" ? "#D9B886" : p.surface === "goudron" ? "#6E7480" : (B.eaux && B.eaux[p.surface] ? B.eaux[p.surface].c1 : "#3C90EC");
-    c.strokeStyle = couleur; c.lineWidth = larg(p.s0); c.lineCap = "butt"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(i), Z(i)); else c.lineTo(X(i), Z(i)); } if (r.boucle && p.s1 >= N) c.lineTo(X(0), Z(0)); c.stroke(); });
+    c.strokeStyle = couleur; c.lineWidth = larg(p.s0); c.lineCap = "butt"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); else c.lineTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); } if (r.boucle && p.s1 >= N) c.lineTo(X(0), Z(0)); c.stroke(); });
   const choisie = P.pieces.filter(p => p._i === ED.sel || edIndex(p) === ED.sel);
-  for (const p of choisie) { c.strokeStyle = "#F8C838"; c.lineWidth = Math.max(4, 3 * devicePixelRatio); c.setLineDash([8, 6]); c.lineCap = "butt"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(i), Z(i)); else c.lineTo(X(i), Z(i)); } c.stroke(); c.setLineDash([]); }
+  for (const p of choisie) { c.strokeStyle = "#F8C838"; c.lineWidth = Math.max(4, 3 * devicePixelRatio); c.setLineDash([8, 6]); c.lineCap = "butt"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); else c.lineTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); } c.stroke(); c.setLineDash([]); }
   // le départ (un damier), le sens (des flèches), les croisements, les noms
   const fl = (i, taille, couleur) => { const a = Math.atan2(P.Z[Math.min(N - 1, i + 2)] - P.Z[i], P.X[Math.min(N - 1, i + 2)] - P.X[i]); c.save(); c.translate(X(i), Z(i)); c.rotate(a); c.fillStyle = couleur; c.beginPath(); c.moveTo(taille, 0); c.lineTo(-taille * .7, taille * .7); c.lineTo(-taille * .7, -taille * .7); c.fill(); c.restore(); };
   for (let i = 30; i < N - 5; i += 90) fl(i, 6 * devicePixelRatio, "#FFFFFF");
   c.save(); c.translate(X(0), Z(0)); c.rotate(P.H[0]); const u = 5 * devicePixelRatio; for (let a = -2; a < 2; a++) for (let b = 0; b < 2; b++) { c.fillStyle = (a + b) & 1 ? "#1B2440" : "#fff"; c.fillRect(a * u, (b - 1) * u, u, u); } c.restore();
   for (const x of r.verif.croisements) { c.strokeStyle = x.bon ? "#2E8A48" : "#D83830"; c.lineWidth = 3 * devicePixelRatio; c.beginPath(); c.arc(X(x.s1), Z(x.s1), 9 * devicePixelRatio, 0, 7); c.stroke(); }
   c.font = Math.round(13 * devicePixelRatio) + 'px "Jersey 15", monospace'; c.textAlign = "center"; c.lineWidth = 3 * devicePixelRatio; c.strokeStyle = "#1B2440"; c.fillStyle = "#fff";
-  for (const p of P.pieces) { if (!p.nom) continue; const i = Math.min(N - 1, Math.round((p.s0 + p.s1) / 2)); c.strokeText(p.nom, X(i), Z(i) - 10 * devicePixelRatio); c.fillText(p.nom, X(i), Z(i) - 10 * devicePixelRatio); }
+  for (const p of P.pieces) { if (!p.nom) continue; const i = Math.min(N - 1, Math.round((p.s0 + p.s1) / 2)); c.strokeText(p.nom, X(edJ(P, p, i)), Z(edJ(P, p, i)) - 10 * devicePixelRatio); c.fillText(p.nom, X(edJ(P, p, i)), Z(edJ(P, p, i)) - 10 * devicePixelRatio); }
   edProfil(r);
 }
-function edIndex(p) {   // à quelle pièce du brouillon correspond une pièce de la piste (le raccord en devient plusieurs)
-  const r = ED.res.PISTE.pieces, src = ED.n.pieces, i = r.indexOf(p);
+const edJ = (P, p, i) => p.voie && i < P.voies[p.voie - 1].b ? P.voies[p.voie - 1].dec + i : i;   // l'indice du mètre i d'une pièce (une pièce de la voie « force » d'une fourche a ses mètres à part)
+function edIndex(p) {   // à quelle pièce du brouillon correspond une pièce de la piste (le raccord en devient plusieurs, une fourche aussi)
+  const r = ED.res.PISTE.pieces, src = ED.n.pieces, i = p._i !== undefined ? p._i : r.indexOf(p);
   return Math.min(i, src.length - 1);
 }
 function edProfil(r) {
   const cv = $("edProfil"), l = cv.width = Math.round(cv.clientWidth * devicePixelRatio), h = cv.height = Math.round(cv.clientHeight * devicePixelRatio), c = cv.getContext("2d");
   c.fillStyle = "#22315A"; c.fillRect(0, 0, l, h); if (!r) return;
   const P = r.PISTE, N = P.N, max = Math.max(4, r.verif.haut), X = i => 4 + (l - 8) * i / (N - 1), Y = y => h - 5 - (h - 12) * y / max;
-  P.pieces.forEach((p, ip) => { c.fillStyle = edIndex(p) === ED.sel ? "#F8C838" : p.tunnel ? "#9098A8" : p.pont ? "#C8B890" : ip % 2 ? "#7CC860" : "#6CB854"; c.beginPath(); c.moveTo(X(p.s0), h); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) c.lineTo(X(i), Y(P.Y[i])); c.lineTo(X(Math.min(p.s1, N - 1)), h); c.fill(); });
+  P.pieces.forEach((p, ip) => { c.fillStyle = edIndex(p) === ED.sel ? "#F8C838" : p.tunnel ? "#9098A8" : p.pont ? "#C8B890" : ip % 2 ? "#7CC860" : "#6CB854"; c.beginPath(); c.moveTo(X(p.s0), h); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) c.lineTo(X(i), Y(P.Y[edJ(P, p, i)])); c.lineTo(X(Math.min(p.s1, N - 1)), h); c.fill(); });
 }
 function edEtat() {
   const r = ED.res, el = $("edEtat");
@@ -95,10 +96,12 @@ function edPanneau() {
   const onglets = [["pieces", "Pièces"], ["circuit", "Circuit"], ["generer", "Générer"], ["mes", "Mes circuits"]].map(([k, t]) => `<button class="ed-o${ED.onglet === k ? " on" : ""}" data-onglet="${k}">${t}</button>`).join("");
   let h = `<div class="ed-onglets">${onglets}</div>`;
   if (ED.onglet === "pieces") {
-    h += `<div class="ed-liste">${n.pieces.map((q, i) => `<button class="ed-p${i === ED.sel ? " on" : ""}" data-sel="${i}">${i + 1}. ${esc(q.nom || (q.raccord ? "raccord" : "suite"))}${q.raccord ? " ↺" : ""}${q.tunnel ? " ◗" : ""}${q.pont ? " ⌒" : ""}${q.net ? " ⇅" : ""}</button>`).join("")}</div>
+    h += `<div class="ed-liste">${n.pieces.map((q, i) => `<button class="ed-p${i === ED.sel ? " on" : ""}" data-sel="${i}">${i + 1}. ${esc(q.fourche ? "⑂ " + q.fourche : q.nom || (q.raccord ? "raccord" : "suite"))}${q.raccord ? " ↺" : ""}${q.tunnel ? " ◗" : ""}${q.pont ? " ⌒" : ""}${q.net ? " ⇅" : ""}</button>`).join("")}</div>
       <div class="ed-barre"><button data-act="haut">↑</button><button data-act="bas">↓</button><button data-act="double">Doubler</button><button data-act="retire">Retirer</button></div>
       <details class="ed-plus"><summary>+ Ajouter après cette pièce</summary><div class="ed-mods">${Object.entries(MODULES).filter(([k, m]) => (m.act || "eau") === disciplineDe(n)).map(([k, m]) => `<button data-mod="${k}">${m.nom}</button>`).join("")}</div></details>`;
-    if (p) {
+    if (p && p.fourche) h += `<div class="ed-form"><label class="ed-l"><span>Nom</span><input type="text" data-k="fourche" value="${esc(p.fourche)}"></label><label class="ed-l"><span>Annonce</span><input type="text" data-k="annonce" value="${esc(p.annonce || "")}" placeholder="LA VOIE RAPIDE"></label>
+      <p class="ed-note">Une fourche : la piste se sépare en deux voies qui se rejoignent. La voie calme (${p.calme.length} pièces) fait partie de la ligne ; la voie « force » (${p.force.length} pièces, en jaune pâle sur le plan) se prend en forçant plus que sa croisière. Elles ont le même nombre de mètres. Pour retoucher leurs pièces : « Exporter », le texte, puis « Importer ».</p></div>`;
+    else if (p) {
       const raccord = !!p.raccord;
       h += `<div class="ed-form"><label class="ed-l"><span>Nom</span><input type="text" data-k="nom" value="${esc(p.nom)}" placeholder="(suite de la pièce d'avant)"></label>`;
       if (raccord) h += `<p class="ed-note">Le raccord referme la boucle tout seul : un virage, une ligne droite, un virage.</p>` + champ("Rayon", "rayon", p.rayon || 30, 12, 80, 2, " m");
@@ -137,8 +140,8 @@ function edPanneau() {
         <div class="ed-obj"><select id="edLoin">${loin.map(k => `<option>${k}</option>`).join("")}</select><button data-act="loin">+ Ajouter</button></div><small>cap en degrés : 0 = droit devant au départ, 90 = à droite, 180 = derrière</small></div></div>`;
   } else if (ED.onglet === "generer") {
     const G = ED.gen, terre = G.activite === "terre", cases = terre
-      ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la route"]]
-      : [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la rivière"]];
+      ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la route"], ["fourche", "une fourche (un chemin à bosses, si on force)"]]
+      : [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la rivière"], ["fourche", "une fourche (des rapides, si on force)"]];
     h += `<div class="ed-form"><p class="ed-note">Choisis l'activité, coche ce que tu veux y trouver, puis « Générer ». Le circuit obtenu se retouche pièce par pièce.</p>`
       + choix("Activité", "g:activite", G.activite || "eau", [["eau", "rameur : une rivière"], ["terre", "vélo, skieur de fond : routes et chemins"]])
       + (terre ? `<p class="ed-note">Sur la terre : des routes posées sur le sol, des rues pavées, des chemins en sous-bois, des cols ; un volcan au milieu d'une boucle ; un 8 qui se croise à un carrefour.</p>` : "")
@@ -176,7 +179,7 @@ function edRegler(cle, v) {   // un réglage change : cle = un champ de la pièc
   if (cle === "tunnel") { if (v) { p.tunnel = v === "roche" ? true : v; delete p.pont; delete p.ravin; } else delete p.tunnel; return true; }
   if (cle === "pont") { if (v) { p.pont = v === "pierre" ? true : v; delete p.tunnel; } else { delete p.pont; delete p.ravin; } return true; }
   if (cle === "lieu") { if (v) { const [lieu, cote] = v.split("|"); p.lieux = [{lieu, cote, a: 10}]; const L = (LIEUX_TOUS[n.lieux] || LIEUX_TOUS[n.biome] || {})[lieu]; if (L && p.long < L.long + 30) p.long = L.long + 30; } else delete p.lieux; return true; }
-  if (["nom", "segment", "surface", "ambiance", "g", "d"].includes(cle)) { if (v === "") delete p[cle]; else p[cle] = v; return false; }
+  if (["nom", "segment", "surface", "ambiance", "g", "d", "fourche", "annonce"].includes(cle)) { if (cle === "fourche" && v === "") return false; if (v === "") delete p[cle]; else p[cle] = v; return false; }
   if (cle === "monte") { if (+v === 0) delete p.monte; else p.monte = num(v); return false; }
   if (cle === "allure") { if (+v === 1) delete p.allure; else p.allure = num(v); return false; }
   if (cle === "ravin") { if (+v === 0) delete p.ravin; else p.ravin = num(v); return false; }
@@ -224,7 +227,7 @@ function edAction(act, bouton) {
   const n = ED.n, P = n.pieces, i = ED.sel, p = P[i];
   if (act === "haut" && i > 0 && !p.raccord) { [P[i - 1], P[i]] = [P[i], P[i - 1]]; ED.sel--; }
   else if (act === "bas" && i < P.length - 1 && !P[i + 1].raccord) { [P[i + 1], P[i]] = [P[i], P[i + 1]]; ED.sel++; }
-  else if (act === "double" && p && !p.raccord) { const c = JSON.parse(JSON.stringify(p)); delete c.lieux; delete c.objets; P.splice(i + 1, 0, c); ED.sel++; }
+  else if (act === "double" && p && !p.raccord && !p.fourche) { const c = JSON.parse(JSON.stringify(p)); delete c.lieux; delete c.objets; P.splice(i + 1, 0, c); ED.sel++; }
   else if (act === "retire" && P.length > 1) { if (p.raccord && n.boucle) { ED.msg = "Une boucle a besoin de son raccord : passe en « parcours de A à B » dans l'onglet Circuit pour l'enlever."; edEtat(); return; } P.splice(i, 1); ED.sel = Math.max(0, i - 1); }
   else if (act === "objet") { const nom = $("edObj").value, num = +$("edNum").value, o = {o: nom, cote: ["ligne", "tronc", "rondins", "nenuphars", "ronflex"].includes(nom) ? "c" : "g", a: Math.round((p.long || 40) / 2)};
     if (o.cote !== "c") o.e = ({cascade: 2, bateau: -1.6, ponton: -3.6, phare: 7, maison: 15, immeuble: 17, entrepot: 15, centre: 19, boutique: 18, labo: 21}[nom]) || 3;

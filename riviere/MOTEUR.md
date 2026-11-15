@@ -29,7 +29,8 @@ machine, `riviere_niveau`), sinon celui que l'appli a servi. Si l'adresse nomme 
 ## Le moteur en une phrase
 
 On ne dirige jamais : tout le monde se déduit d'**une ligne**, la piste, et la position du joueur est un seul nombre, `s`, ses
-mètres le long de cette ligne.
+mètres le long de cette ligne. (Une fourche ajoute une deuxième voie entre deux mètres de cette ligne, de la même longueur : `s` reste
+un seul nombre. Voir « Une fourche ».)
 
 | Fichier | Ce qu'il fait | Dessine ? |
 |---|---|---|
@@ -80,6 +81,41 @@ chaque côté, définie dans la région). Et, au choix :
 
 **Refermer une boucle** : la dernière pièce est `{"raccord": true}`. Le moteur calcule le chemin (virage, ligne droite, virage, de
 rayon `rayon`) qui ramène au départ ; aucune autre pièce n'est déformée. (L'ancienne façon, une pièce au virage `"auto"`, marche toujours.)
+
+**Une fourche** (15/11, étape 7 du plan) : la piste se sépare en deux voies qui se rejoignent ; on prend la voie « force » en forçant plus
+que sa croisière, sinon la voie calme. Dans la liste des pièces :
+
+```json
+{"fourche": "L'île aux rapides", "annonce": "LES RAPIDES", "effort": {"seuil": 1.08, "duree": 5},
+ "calme": [{"long": 30, "virage": -35, "eau": 9, "g": "foret", "d": "pre"}, {"long": 30, "virage": 35, …}, {"long": 50, "virage": 0, …}, {"long": 30, "virage": 35, …}, {"long": 30, "virage": -35, …}],
+ "force": [{"long": 30, "virage": 35, …}, {"long": 30, "virage": -35, …}, {"long": 50, "virage": 0, "allure": 1.3, …}, {"long": 30, "virage": -35, …}, {"long": 30, "virage": 35, …}]}
+```
+
+- **La voie calme fait partie de la ligne**, comme si ses pièces étaient écrites à la suite : sans fourche prise, le circuit est exactement
+  celui-là (adversaires, plan, profil, segments, note). **La voie « force »** est une deuxième suite de pièces entre les deux mêmes points.
+- **Elle a exactement autant de mètres que la calme** : ses longueurs sont ajustées par le moteur, le moins possible (`resoudreVoie`), pour
+  qu'elle arrive au bon endroit. Le plus simple : **les mêmes longueurs que la calme et les virages inverses** (un S d'un côté, son miroir de
+  l'autre). Les deux voies tournent d'autant au total (ou une pièce de la voie « force » au virage `"auto"`), et finissent à la même hauteur
+  (ou une pièce au `monte: "auto"`). Exemple : la calme descend doucement de 3 m, la voie « force » les perd d'un coup à sa chute.
+- **Les deux voies comptent exactement les mêmes vrais mètres** : l'allure du décor de la voie « force » est réglée pour ça (`voies[].allure`,
+  entre 0,72 et 1,4, sinon le contrôleur refuse). Un seul record par circuit, et il reste juste ; un segment chronométré vaut pour les deux.
+- **Tant que les deux voies se touchent** (une trentaine de mètres après la séparation et avant la jonction : `gA`, `gB`), la voie « force »
+  prend la hauteur, la largeur, les rives, l'eau et le revêtement de la calme : les deux rubans sont dans le même plan, sans écume ni marque
+  du côté de l'autre voie, et la pointe de l'île sort de l'eau peu à peu. Donc : **ni pente propre, ni grotte, ni pont, ni chute dans ces
+  mètres-là** (refusé avec une phrase), et les deux premières et dernières pièces de la calme gardent les rives de la pièce d'avant et d'après.
+- Tout le reste est permis dans une voie : rives, surface (un chemin de terre à côté de la route), `allure`, tremplin et chute (`net`), grotte,
+  pont, `lieux`, `objets`, `ambiance`. Pas de fourche dans une fourche, pas de raccord, pas de ligne de départ ; une pièce avant, une après.
+  Ronflex dans une voie : il y dort, mais ne se réveille que si l'on est sur sa voie.
+- **Dans le code** : les mètres de la voie « force » sont rangés à la suite de ceux de la ligne dans tous les tableaux de `PISTE` (indices
+  `N`… `M-1`, `PISTE.voies[f].dec + s`). `idx(s)` et `at(s)` suivent **la voie prise** (`VOIES.prise[f]`, celle du joueur) ; pour un autre
+  (fantôme, adversaire) ou pour construire : `surVoie(choix, f)`, `surLaVoie(f, …)`. `sLigne(i)` rend le `s` d'un indice (`pres()` peut
+  rendre un indice de voie dans `Q.i`). `PISTE.voisin(i, j)` : le mètre à `j` mètres d'un indice, le long de sa voie. `PISTE.VO` (0 hors
+  fourche, 2f+1 la calme, 2f+2 la voie « force »), `PISTE.INT` (le côté de l'autre voie), `PISTE.GARDE`. Les rubans (rives, eau, ponts,
+  grottes) et le décor sont construits pour la ligne, puis pour chaque voie entre les mêmes `s`. Un objet, un sprite, un événement
+  (`tronc`…) connaissent leur voie (`_v`, `vo`).
+- **Un circuit sans fourche n'en porte aucune trace** : mêmes tableaux, même décor, même image, même empreinte (contrôlé le 15/11 sur les
+  six circuits : signature chiffrée de la piste, du sol et du décor, et maillages construits identiques au bit près).
+- Exemple : `contenu/niveaux/fourche.json` (« L'île aux rapides »). Le jeu : `jeu/fourches.js`, voir « Le jeu ».
 
 **Les règles de dessin**, vérifiées par le contrôleur :
 - rayon d'un virage > demi-largeur de la piste + 1,5 m (les rives se rétrécissent toutes seules à l'intérieur d'une épingle) ;
@@ -138,7 +174,8 @@ code de la piste, contrôleur en direct, pièces à régler au curseur, modules 
 « Essayer » joue le brouillon, « Garder » le range sur la machine (`riviere_circuits`, il apparaît au menu), « Exporter » donne son texte
 (à donner à Claude pour qu'il devienne un fichier du jeu) ; sur le serveur d'essai du PC, « Écrire dans le jeu » crée le fichier.
 Onglet « Générer » (`jeu/generateur.js`, `genererCircuit`) : longueur, relief, boucle ou A→B, eau ou terre, et des cases (port, village, lac,
-sous-bois, marais, plage, cascade, grotte, pont sur un ravin). Il assemble des **modules** (`MODULES`), fait construire chaque tirage par le
+sous-bois, marais, plage, cascade, grotte, pont sur un ravin, Ronflex, **une fourche** : modules `fourche` (une île, le bras tranquille ou
+les rapides et leur chute) et `fourche_t` (la route ou un chemin de terre à bosses)). Il assemble des **modules** (`MODULES`), fait construire chaque tirage par le
 moteur, jette ceux qui ne tiennent pas debout et garde **le mieux noté** (15/11, étape 4 du plan). Mêmes options, même circuit, sur toutes les
 machines : la recherche compte ses tirages (`tirages` : 8 valables par défaut), jamais le temps. Ajouter un module = une entrée.
 
@@ -283,6 +320,27 @@ Segments, profil d'altitude (dès 1,5 m de relief) et arrivée d'un parcours de 
   circuit du jour d'hier devient celui d'aujourd'hui (`duJour` de depart.js).
 - Essai sur le PC : `python riviere/outils/circuit_du_jour.py --sortie riviere/outils/jour-essai.json` (~1 min), puis le serveur d'essai `?jour=1`.
 
+**Les fourches** (`jeu/fourches.js`, 15/11, étape 7 du plan) : environ 28 s avant la séparation (à ton allure), « FOURCHE ! », la distance
+restante et une jauge bleue (la brique « effort » : `seuil` 1,08 et `duree` 5 s par défaut, réglables dans la fourche du niveau). Pleine :
+`VOIES.prise[f] = 1`, l'annonce de la fourche (« LES RAPIDES ! »), et tu prends la voie « force ». Sinon la voie calme, sans rien perdre :
+rien ne ralentit jamais, et les vrais chiffres sont les mêmes. Le choix est arrêté 26 m avant la séparation (`DECIDE` : la caméra regarde
+déjà plus loin) et oublié 45 m après la jonction. Une seule demande d'effort à la fois (Ronflex ou une fourche : la première arrivée).
+**Le fantôme** garde les voies de son tour (`v` à côté de `pts`, aussi sur le serveur : `seances_rameur.garder_records`) et les reprend ;
+les adversaires prennent toujours la voie calme ; le plan montre la voie « force » en jaune pâle ; le sillage, les ronds des coups et
+l'ombre ne se dessinent que sur ta voie (`uVoie`). L'empreinte du tracé (`EMPREINTE`) compte aussi la voie « force ».
+Le circuit du jour a une fourche deux jours sur cinq (`jour.options`, jamais dans un 8).
+
+**Le résumé de séance** (`jeu/film.js`, 15/11, étape 10 du plan) : à « ■ Fin », avant le résumé (essai) ou la saisie (vraie séance), un film de
+20 à 30 s rejoue 3 à 5 moments dans le vrai décor, puis tes chiffres ; « Passer » à tout moment, « 🎬 Revoir le film » dans le résumé.
+- **Ce qui est gardé** (en mémoire seulement, jamais envoyé) : le trajet toutes les 0,2 s (`filmNoter` dans `boucle` : temps, `S.s`, `S.dist`, voies
+  prises), l'heure des coups, et les moments signalés par `filmEvenement({type, …})` : `tour` (jeu.js), `ronflex` et `boing` (rencontres.js),
+  `fourche` (fourches.js). Un nouveau moment = un `filmEvenement` là où il arrive + une ligne dans `filmChoisir` (score, plan, titre).
+- **Retrouvé dans le trajet** : sauts (pièce `net` avec 1,5 m de chute au moins), entrées de tunnel, nouveaux paysages (titre des pièces), plus gros effort.
+- **Rejouer** : `filmAvance` remplace l'avance de la séance (`S.s` lu dans le trajet, voies posées, coups rejoués, Ronflex remis comme il était) ;
+  `filmCadrer` remplace la caméra après `cadrer` : plans `face`, `cote`, `haut`, `fixe`, `jeu`. Ralenti au sommet d'un saut (`FILM.rate`, passé aux
+  animations). À la fin, `filmFinir` remet tout comme avant le film, puis appelle la suite.
+- Essai sans ramer : `window.__filmEssai(minutes)` (fausse séance à allure régulière, voie calme), `filmPlan(k)` pour sauter à un plan.
+
 **Ronflex et la brique « effort »** (15/11, étape 6 du plan) :
 - **L'effort** (`jeu/effort.js`) : ta croisière = ta vitesse habituelle de la séance (de vrais m/s ; au départ, l'allure habituelle de la machine, puis
   la tienne, sur ~1 min 30) ; `EFFORT.ratio` = ta vitesse des 2-3 dernières secondes ÷ ta croisière. `demanderEffort({seuil: 1.08, duree: 5, reussi})` :
@@ -309,6 +367,7 @@ Segments, profil d'altitude (dès 1,5 m de relief) et arrivée d'un parcours de 
 | `?surface=terre`, `?machine=elliptique`, `?machine=velo`, `?eco=1` | le circuit sur la terre, une autre machine, 30 images par seconde |
 | `?vitrine=1`, `?tenue=Peau,Casquette,Veste,Pantalon`, `?habits=casquette,sac,short` | à vélo : la caméra tourne autour du cycliste ; une autre tenue (noms de la carte du dresseur) ; des habits de la garde-robe |
 | `?heure=nuit&meteo=pluie`, `__ambiance(h, m)` | une ambiance |
+| `?voie=1`, `?voie=0` | dans une fourche : toujours la voie « force » (pour la regarder, avec `?s=` et `?fige=1`), toujours la calme ; sans rien : c'est l'effort qui choisit |
 | `?nageur=131`, `changerNageur(130)` | un autre Pokémon dans l'eau (ceux de `contenu/nageurs.json`), à sa vraie taille |
 | `__generer({km, relief, avec})`, `__trames()` | le générateur ; la lecture des trames Bluetooth |
 | `python riviere/outils/generer.py --notes` | la note de chaque circuit du jeu et ses raisons ; sans `--notes` : génère un circuit sans navigateur |
@@ -325,5 +384,8 @@ avec des temps qui avancent de 16,7 ms.
 
 - La vraie séance : menu, tours, record, fantôme, plan, saisie de fin, enregistrement (`pkm_rameur`), calibrage `M_COUP`.
 - Un ancien fichier de niveau doit toujours marcher (`kanto-1km`, `bourg-palette` : contrôlés).
+- Un circuit sans fourche reste identique au mètre et à l'image près : tout ce qui touche aux fourches est derrière `PISTE.NF`, `PISTE.INT`
+  ou `PISTE.VO` (qui valent zéro sans fourche). Après une retouche du cœur : `python riviere/outils/captures.py compare` (les Pokémon, les particules et le cycliste à l'arrêt bougent d'une
+  prise à l'autre : jusqu'à ~1 % de pixels isolés n'est pas un défaut ; un pan de décor qui change en est un).
 - Une instruction par ligne quand c'est possible, et **jamais de code derrière un commentaire de fin de ligne** (contrôlé).
 - Dépôt public : aucune donnée, aucun jeton. Les sprites sont lus en ligne (CC BY-NC), jamais copiés ici.

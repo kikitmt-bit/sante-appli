@@ -19,7 +19,7 @@ class CircuitDuJour(unittest.TestCase):
 
     def test_reglages_raisonnables(self):
         import datetime as dt
-        ronflex = 0
+        ronflex = fourche = 0
         for k in range(60):
             j = dt.date(2026, 11, 1) + dt.timedelta(days=k)
             e, t = J.options(j, "eau"), J.options(j, "terre")
@@ -27,7 +27,10 @@ class CircuitDuJour(unittest.TestCase):
             self.assertEqual(t["activite"], "terre")
             self.assertGreaterEqual(len(e["avec"]), 2)
             ronflex += "ronflex" in e["avec"]
+            fourche += "fourche" in e["avec"]
+            self.assertFalse("fourche" in t["avec"] and t["forme"] == "huit", "jamais de fourche dans un 8")
         self.assertTrue(15 < ronflex < 45, "Ronflex : environ un jour sur deux")
+        self.assertTrue(12 < fourche < 36, "une fourche : environ deux jours sur cinq")
 
     def test_classement(self):
         jour = {"jour": "2026-11-16", "eau": {"id": "jour-eau-2026-11-16", "pieces": [{}]}, "terre": {"id": "jour-terre-2026-11-16", "pieces": [{}]}}

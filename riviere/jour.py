@@ -41,7 +41,8 @@ def nom_du_jour(jour):
 
 def options(jour, activite, essai=0):
     """Les réglages du générateur pour ce jour (`essai` : un autre tirage le même jour, si le premier ne passe pas le contrôle).
-    Eau : ~2 km de décor (un tour de 8 à 10 min au rameur) ; terre : ~3,5 km. Ronflex dort sur la route un jour sur deux (étape 6)."""
+    Eau : ~2 km de décor (un tour de 8 à 10 min au rameur) ; terre : ~3,5 km. Ronflex dort sur la route un jour sur deux (étape 6) ;
+    une fourche (la voie spectaculaire si on force, étape 7) deux jours sur cinq."""
     jour = str(jour)
     graine = int(jour.replace("-", "")) % 100000 * 10 + essai
     if activite == "terre":
@@ -54,6 +55,8 @@ def options(jour, activite, essai=0):
              "denivele": _un(jour, "den", [0, 10, 15, 25, 40]), "forme": "boucle"}
     if _des(jour, "ronflex") < .5:
         avec.append("ronflex")
+    if o["forme"] == "boucle" and _des(jour, "fourche") < .4:  # une fourche (étape 7 du plan) : deux jours sur cinq, jamais dans un 8
+        avec.append("fourche")
     o.update({"boucle": o["forme"] != "ouvert", "avec": {k: True for k in avec}, "graine": graine, "tirages": 24, "nom": nom_du_jour(jour),
               "heure": _un(jour, "heure", ["jour", "jour", "jour", "matin", "soir"]), "meteo": _un(jour, "meteo", ["beau", "beau", "beau", "nuages", "variable"])})
     return o

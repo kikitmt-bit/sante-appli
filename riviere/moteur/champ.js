@@ -27,10 +27,10 @@ function hRive(i, cote, e) {  // la hauteur de la rive au-dessus de la piste, à
 }
 /* les mêmes profils, rangés d'avance pour chaque mètre de piste (le vote en lit des dizaines par point du monde) */
 const NE = 40, E_MAX = 200;
-const REL = [0, 1].map(() => new Float32Array(PISTE.N * NE)), AMP = [0, 1].map(() => new Float32Array(PISTE.N));
+const REL = [0, 1].map(() => new Float32Array(PISTE.M * NE)), AMP = [0, 1].map(() => new Float32Array(PISTE.M));   // (M : tous les mètres, ceux des voies « force » des fourches compris)
 for (let cote = 0; cote < 2; cote++) {
   const PW = cote ? PISTE.PD : PISTE.PG;
-  for (let i = 0; i < PISTE.N; i++) {
+  for (let i = 0; i < PISTE.M; i++) {
     for (let m = 0; m < NE; m++) REL[cote][i * NE + m] = hRive(i, cote, E_MAX * (m / (NE - 1)) ** 2);
     let a = 0; for (let t = 0; t < NT; t++) a += PW[i * NT + t] * (RIVES[t].bosses || 0);
     AMP[cote][i] = a;
@@ -44,15 +44,16 @@ function relTab(cote, i, e) {
    Étroites à l'entrée (l'arche de la façade), elles s'ouvrent en grandes salles ; la rivière n'en occupe que le milieu, des rives de roche de chaque côté.
    L, R : ce que la salle a de plus que l'eau, à gauche et à droite ; H : sa hauteur ; F : 0 à l'entrée, 1 au cœur. tunnel.js la creuse, ici la montagne passe au-dessus. */
 const CAV = (() => {
-  const P = PISTE, N = P.N, L = new Float32Array(N), R = new Float32Array(N), H = new Float32Array(N), F = new Float32Array(N), G0 = BIOME.grottes || {};
+  const P = PISTE, N = P.N, L = new Float32Array(P.M), R = new Float32Array(P.M), H = new Float32Array(P.M), F = new Float32Array(P.M), G0 = BIOME.grottes || {};
   const remplir = (ia, ib) => {
-    const G = G0[pieceEn(ia).grotte] || {}; if (!(G.brut > 0) || G.poutres || G.caverne === false) return;
+    const G = G0[P.pieces[P.PC[ia]].grotte] || {}; if (!(G.brut > 0) || G.poutres || G.caverne === false) return;
     const hv = clamp(G.haut || 5.4, 4, 7), gr = (NIVEAU.graine || 1) * 7.3 + ia * .37, amp = G.ampleur || 1;
     for (let i = ia; i <= ib; i++) { const f = lisse(0, 20, Math.min(i - ia, ib - i)), cl = bruit(i / 30 + gr, 1.3), cr = bruit(i / 30 + gr, 5.7), ch = bruit(i / 42 + gr, 9.1);
       L[i] = f * (2.5 + 12 * cl * cl) * amp; R[i] = f * (2.5 + 12 * cr * cr) * amp; H[i] = lerp(hv, (7.5 + 9 * ch) * Math.min(amp, 1.3), f); F[i] = f; }
   };
   let debut = -1;
   for (let i = 0; i <= N; i++) { const t = i < N && P.TUN[i]; if (t && debut < 0) debut = i; if (!t && debut >= 0) { remplir(debut, i - 1); debut = -1; } }
+  for (const v of P.voies) for (let i = v.dec + v.a; i <= v.dec + v.b; i++) { const t = i < v.dec + v.b && P.TUN[i]; if (t && debut < 0) debut = i; if (!t && debut >= 0) { remplir(debut, i - 1); debut = -1; } }   // les grottes d'une voie « force »
   return {L, R, H, F};
 })();
 
@@ -133,7 +134,7 @@ function hauteur(x, z) {  // la hauteur du sol en un point du monde (dans la pis
 /* la largeur libre de chaque rive : à l'intérieur d'un virage serré, les rives s'arrêtent là où un autre bout de piste devient plus proche (99 : rien ne gêne) */
 const LARGE_RIVE = 13.5;
 const LIBRE = [0, 1].map(cote => {
-  const P = PISTE, N = P.N, o = new Float32Array(N).fill(99), sg = cote ? 1 : -1;
+  const P = PISTE, N = P.M, o = new Float32Array(N).fill(99), sg = cote ? 1 : -1;
   const bon = (i, e) => { const d = P.W[i] + e; pres(P.X[i] + sg * P.CH[i] * d, P.Z[i] + sg * P.SH[i] * d); return Q.e > e - .4; };
   for (let i = 0; i < N; i++) {
     if (P.PONT[i] || bon(i, LARGE_RIVE)) continue;
@@ -141,7 +142,7 @@ const LIBRE = [0, 1].map(cote => {
     o[i] = a;
   }
   const f = new Float32Array(N);   // le plus petit des voisins : une limite régulière
-  for (let i = 0; i < N; i++) { let m = 99; for (let j = -2; j <= 2; j++) m = Math.min(m, o[BOUCLE ? ((i + j) % N + N) % N : clamp(i + j, 0, N - 1)]); f[i] = m; }
+  for (let i = 0; i < N; i++) { let m = 99; for (let j = -2; j <= 2; j++) m = Math.min(m, o[P.voisin(i, j)]); f[i] = m; }
   return f;
 });
 

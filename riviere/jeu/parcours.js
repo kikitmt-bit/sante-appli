@@ -55,7 +55,7 @@ function majProfil() {
   if (!PROFIL.ok) return;
   const cv = $("profil"); if (!PROFIL.fond || Math.abs(Math.round(cv.clientWidth * devicePixelRatio) - PROFIL.l) > 2) construireProfil(); if (!PROFIL.fond) return;
   const c = cv.getContext("2d"), {l, h} = PROFIL; c.clearRect(0, 0, l, h); c.drawImage(PROFIL.fond, 0, 0);
-  const point = (s, couleur, r) => { const i = idx(s); c.fillStyle = "#1B2440"; c.beginPath(); c.arc(PROFIL.X(i), PROFIL.Y(PISTE.Y[i]), r + h * .035, 0, 7); c.fill(); c.fillStyle = couleur; c.beginPath(); c.arc(PROFIL.X(i), PROFIL.Y(PISTE.Y[i]), r, 0, 7); c.fill(); };
+  const point = (s, couleur, r) => { const i = idx(s); c.fillStyle = "#1B2440"; c.beginPath(); c.arc(PROFIL.X(sLigne(i)), PROFIL.Y(PISTE.Y[i]), r + h * .035, 0, 7); c.fill(); c.fillStyle = couleur; c.beginPath(); c.arc(PROFIL.X(sLigne(i)), PROFIL.Y(PISTE.Y[i]), r, 0, 7); c.fill(); };
   for (const r of RIVAUX.liste) if (RIVAUX.t0 !== null) point(r.s, r.couleur, h * .05);
   if (FANTOME.sG !== null && FANTOME.sG !== undefined) point(FANTOME.sG, "#CFE2FF", h * .055);
   point(S.s, "#FFFFFF", h * .085);

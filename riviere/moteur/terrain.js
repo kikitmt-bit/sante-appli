@@ -5,7 +5,7 @@ const RB = 12, STATIONS = [0, .02, .4, 1.2, 3, 6, 10, LARGE_RIVE];   // le ruban
 
 function construireTerrain() {
   const P = PISTE, C = BOUCLE ? 3 : 2.5, M = 185, T = 24; let xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9;
-  for (let i = 0; i < P.N; i++) { xa = Math.min(xa, P.X[i]); xb = Math.max(xb, P.X[i]); za = Math.min(za, P.Z[i]); zb = Math.max(zb, P.Z[i]); }
+  for (let i = 0; i < P.M; i++) { xa = Math.min(xa, P.X[i]); xb = Math.max(xb, P.X[i]); za = Math.min(za, P.Z[i]); zb = Math.max(zb, P.Z[i]); }
   const x0 = Math.floor((xa - M) / C) * C, z0 = Math.floor((za - M) / C) * C, nx = Math.ceil((xb + M - x0) / C) + 1, nz = Math.ceil((zb + M - z0) / C) + 1, n = nx * nz;
   const HH = new Float32Array(n), GI = new Int32Array(n), GE = new Float32Array(n), GC = new Uint8Array(n), GK = new Uint8Array(n);
   // 1 = le lit de la piste à ciel ouvert, 2 = le dessus d'un tunnel, 3 = les flancs d'un tunnel, 0 = le reste
@@ -50,13 +50,15 @@ function construireRives() {
   const P = PISTE, nS = STATIONS.length, iMer = TYPES.indexOf("mer"), memo = [new Map(), new Map()];
   const coupe = (i, cote) => {
     let o = memo[cote].get(i); if (o) return o;
-    const sg = cote ? 1 : -1, a = at(i), ii = idx(i), ox = sg * Math.cos(a.h), oz = sg * Math.sin(a.h), libre = LIBRE[cote][ii], serre = libre < 50, lim = serre ? Math.max(libre, .6) + .7 : 99, es = [], pts = [];
+    const sg = cote ? 1 : -1, a = at(i), ii = idx(i), ox = sg * Math.cos(a.h), oz = sg * Math.sin(a.h), libre = LIBRE[cote][ii], serre = libre < 50, pointe = serre && P.INT[ii] === cote + 1, lim = serre ? (pointe ? Math.max(libre, .05) : Math.max(libre, .6) + .7) : 99, es = [], pts = [];
+    const sort = pointe ? lisse(.1, 1.8, libre) : 1;   // la pointe de l'île d'une fourche : la rive sort de l'eau peu à peu, là où les deux voies se quittent
     for (let j = 0; j < nS; j++) {
       const e = Math.min(STATIONS[j], lim), x = a.x + ox * (a.w + e), z = a.z + oz * (a.w + e); let y;
       if (j === 0) y = a.y - .8;
       else {
         const sol = hSol(x, z), exact = a.y + hRive(ii, cote, e) + AMP[cote][ii] * lisse(4, 34, e) * (fbm(x / 46 + 3, z / 46 + 7) - .42) * 2;
         y = lerp(exact, sol, Math.max(lisse(1.2, 9, e), serre ? lisse(.35 * lim, lim, e) : 0)) - (j === nS - 1 && !serre ? .9 : 0);
+        if (pointe) y = a.y - .8 + (y - a.y + .8) * sort;
       }
       es.push(e); pts.push([x, y, z]);
     }
@@ -67,25 +69,28 @@ function construireRives() {
     }
     o = {pts, segs}; memo[cote].set(i, o); return o;
   };
-  const PRES_X = new Uint8Array(P.N); for (let i = 0; i < P.N; i++) if (P.CROIX[i]) for (let k = -25; k <= 25; k++) PRES_X[BOUCLE ? ((i + k) % P.N + P.N) % P.N : clamp(i + k, 0, P.N - 1)] = 1;   // près d'un carrefour
-  const surAutre = (V, i) => { const x = (V[0][0] + V[2][0]) / 2, z = (V[0][2] + V[2][2]) / 2; pres(x, z); return Q.e < .5 && Math.abs(ecart(Q.i, i)) > 20; };   // ce bout de rive tomberait sur l'autre route
-  for (let c0 = 0; c0 < LONG; c0 += 40) {
+  const PRES_X = new Uint8Array(P.M); for (let i = 0; i < P.N; i++) if (P.CROIX[i]) for (let k = -25; k <= 25; k++) PRES_X[BOUCLE ? ((i + k) % P.N + P.N) % P.N : clamp(i + k, 0, P.N - 1)] = 1;   // près d'un carrefour
+  const surAutre = (V, i) => { const x = (V[0][0] + V[2][0]) / 2, z = (V[0][2] + V[2][2]) / 2; pres(x, z); return Q.e < .5 && Math.abs(ecart(sLigne(Q.i), i)) > 20; };   // ce bout de rive tomberait sur l'autre route
+  // la ligne, de s0 à s1 ; puis la voie « force » de chaque fourche, entre les deux mêmes mètres (idx et at la suivent : surLaVoie)
+  const ruban = (s0, s1) => { memo[0].clear(); memo[1].clear();
+   for (let c0 = s0; c0 < s1; c0 += 40) {
     const F = new Forme();
     for (const cote of [0, 1]) {
       const PW = cote ? P.PD : P.PG;
-      for (let i = c0; i < Math.min(c0 + 40, LONG); i++) {
-        const j = BOUCLE ? (i + 1) % P.N : i + 1;
-        if (P.TUN[i] && P.TUN[j]) continue;
-        if (P.PONT[i] || P.PONT[j]) {   // la culée d'un pont : le ruban s'arrête, une jupe ferme son bout
-          const k = P.PONT[i] ? j : i; if (P.PONT[k]) continue;
-          const A = coupe(k, cote), a = at(k), nx = Math.sin(a.h) * (P.PONT[i] ? -1 : 1), nz = -Math.cos(a.h) * (P.PONT[i] ? -1 : 1);
+      for (let i = c0; i < Math.min(c0 + 40, s1); i++) {
+        const j = BOUCLE ? (i + 1) % P.N : i + 1, ii = idx(i), jj = idx(j);
+        if (P.TUN[ii] && P.TUN[jj]) continue;
+        if (P.INT[ii] === cote + 1 && LIBRE[cote][ii] < .1 && LIBRE[cote][jj] < .1) continue;   // une fourche : du côté de l'autre voie, pas de rive tant que les deux eaux se touchent
+        if (P.PONT[ii] || P.PONT[jj]) {   // la culée d'un pont : le ruban s'arrête, une jupe ferme son bout
+          const k = P.PONT[ii] ? j : i; if (P.PONT[idx(k)]) continue;
+          const A = coupe(k, cote), a = at(k), nx = Math.sin(a.h) * (P.PONT[ii] ? -1 : 1), nz = -Math.cos(a.h) * (P.PONT[ii] ? -1 : 1);
           for (let s = 0; s < nS - 1; s++) {
             const c = fonce(A.segs[s].c0, .8), V = [A.pts[s], A.pts[s + 1], [A.pts[s + 1][0], A.pts[s + 1][1] - 4, A.pts[s + 1][2]], [A.pts[s][0], A.pts[s][1] - 4, A.pts[s][2]]];
             for (const q of [0, 1, 2, 0, 2, 3]) F.v(V[q][0], V[q][1], V[q][2], nx, 0, nz, c, 0);
           }
           continue;
         }
-        if (PW[i * NT + iMer] > .97 && PW[j * NT + iMer] > .97) continue;
+        if (PW[ii * NT + iMer] > .97 && PW[jj * NT + iMer] > .97) continue;
         const A = coupe(i, cote), B = coupe(j, cote);
         for (let s = 0; s < nS - 1; s++) {
           const sa = A.segs[s], sb = B.segs[s], V = [[A.pts[s], sa.N, sa.c0], [A.pts[s + 1], sa.N, sa.c1], [B.pts[s + 1], sb.N, sb.c1], [B.pts[s], sb.N, sb.c0]];
@@ -95,7 +100,10 @@ function construireRives() {
       }
     }
     const m = F.maille(); if (m) { m.name = "rives"; scene.add(m); }
-  }
+   }
+  };
+  ruban(0, LONG);
+  P.voies.forEach((v, nf) => surLaVoie(nf, () => ruban(v.a, v.b)));
 }
 
 /* le cratère d'une montagne au milieu du circuit (champ.js : MASSIF) : de la lave au fond, sa lueur, une fumée qui monte */

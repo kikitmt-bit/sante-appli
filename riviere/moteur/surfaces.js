@@ -5,29 +5,29 @@
 const SURFACES = {};
 const PISTE_VS = `
   #ifndef MER
-  attribute vec2 aSU; attribute float aBord; attribute vec2 aEc; attribute float aPente;
+  attribute vec2 aSU; attribute float aBord; attribute vec2 aEc; attribute float aPente, aVoie;
   #endif
   #ifdef PARSOMMET
   attribute vec3 aC1, aC2, aCl, aRe, aEcu; attribute float aLuit; varying vec3 vC1, vC2, vCl, vRe, vEcu; varying float vLuit;
   #endif
-  varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
+  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
   void main() { vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vec4 mv = viewMatrix * w; vZ = -mv.z;
   #ifdef PARSOMMET
     vC1 = aC1; vC2 = aC2; vCl = aCl; vRe = aRe; vEcu = aEcu; vLuit = aLuit;
   #endif
   #ifdef MER
-    vSU = vec2(-9999., 0.); vBord = 99.; vEc = vec2(0.); vPente = 0.;
+    vSU = vec2(-9999., 0.); vBord = 99.; vEc = vec2(0.); vPente = 0.; vVoie = 0.;
   #else
-    vSU = aSU; vBord = aBord; vEc = aEc; vPente = aPente;
+    vSU = aSU; vBord = aBord; vEc = aEc; vPente = aPente; vVoie = aVoie;
   #endif
     gl_Position = projectionMatrix * mv; }`;
 
 /* ---- l'eau : deux bleus en taches, des reflets, l'écume des rives, le sillage, les ronds de chaque coup, l'écume des rapides et des chutes ---- */
 const EAU_U = Object.assign({uC1: {value: new THREE.Vector3(...hex(BIOME.eau.c1))}, uC2: {value: new THREE.Vector3(...hex(BIOME.eau.c2))}, uClair: {value: new THREE.Vector3(...hex(BIOME.eau.clair))},
   uReflet: {value: new THREE.Vector3(...hex(BIOME.eau.reflet))}, uEcume: {value: new THREE.Vector3(...hex(BIOME.eau.ecume))}, uNag: {value: new THREE.Vector4(-999, 0, 0, 0)}, uCorps: {value: new THREE.Vector4(.45, 0, 0, 0)},
-  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}}, COMMUNS);
-const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag, uCorps; uniform vec3 uCoups[4]; uniform float uLong;
-  varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
+  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}, uVoie: {value: 0}}, COMMUNS);   // uVoie : la voie où l'on est, dans une fourche (PISTE.VO)
+const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit, uVoie; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag, uCorps; uniform vec3 uCoups[4]; uniform float uLong;
+  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
   #ifdef PARSOMMET
   varying vec3 vC1, vC2, vCl, vRe, vEcu; varying float vLuit;
   #endif
@@ -59,7 +59,8 @@ const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit; uniform vec3
     // Le sillage (refait le 14/11). ds : derrière lui, du : à côté ; hw : sa demi-largeur à la ligne d'eau ; el : l'élan du coup de rame (de 1 à 0).
     // Les pixels d'écume sont accrochés à l'eau : ils restent en arrière quand il avance.
     float ds = lelong(uNag.x, vSU.x), du = vSU.y - uNag.y, vit = uNag.z, hw = uCorps.x, el = uCorps.y, lg = 1. + hw;
-    if (ds > -2. * lg && ds < 36.) {
+    bool ici = vVoie < .5 || abs(vVoie - uVoie) < .5;   // dans une fourche : seulement sur la voie où l'on est
+    if (ici && ds > -2. * lg && ds < 36.) {
       vec2 gp = floor(vec2(vSU.x * 4., vSU.y * 10.)); float hz = h21(gp + floor(uT * 2.) * .37), q = 1. - ds / (7. + 12. * hw);
       if (ds > .15 && q > 0. && abs(du) < hw * .85 + ds * .09 && hz < q * .42 * (.2 + vit) * (.6 + .5 * el)) c = mix(c, hz < q * .1 ? EC : CL, .9);   // l'eau brassée, juste derrière
       float bras = abs(abs(du) - (hw + .1 + ds * .33)); q = 1. - ds / 32.;
@@ -68,7 +69,7 @@ const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit; uniform vec3
       if (uNag.w < .5) { float col = length(vec2(du / (hw + .32 + .12 * el), (ds * 1.1 + .1) / (.5 + .25 * hw + .1 * el)));
         if (col < 1. && col > .76 + .1 * sin(uT * 7. + du * 6.)) c = EC;   // le col d'écume autour du corps
         else if (ds < 0. && col > 1.12 && col < 1.12 + .3 * el && hz < .7) c = mix(c, CL, .85); } }   // la vague qu'il pousse devant lui à chaque coup
-    for (int i = 0; i < 4; i++) { float age = uT - uCoups[i].z; if (age < 0. || age > 1.6) continue;
+    for (int i = 0; i < 4; i++) { float age = uT - uCoups[i].z; if (!ici || age < 0. || age > 1.6) continue;
       float d = length(vec2(vSU.y - uCoups[i].y, lelong(vSU.x, uCoups[i].x))), r = .3 + hw + age * (1.5 + hw);
       if (abs(d - r) < (.08 + .03 * age) * (1. + .5 * hw) && h21(floor(vec2(vSU.x * 5., vSU.y * 5.))) > age / 1.6) c = mix(c, EC, .9); }
     if (uPluie > 0. && prox > 0.) { vec2 cel = floor(p / 1.4); float ph = fract(uT * 1.5 + h21(cel) * 7.), tir = floor(uT * 1.5 + h21(cel) * 7.);   // la pluie : un petit rond dans chaque case, de temps en temps
@@ -91,8 +92,8 @@ for (const [nom, e] of Object.entries(BIOME.eaux || {})) {
 
 /* ---- la terre ferme : un chemin de terre ou une route (ligne au milieu, bordures rouges et blanches) ---- */
 const OMBRE_U = {uOmbre: {value: new THREE.Vector3(0, 0, 0)}};   // l'ombre de ta monture sur la terre : (force, hauteur au-dessus du sol, vélo ?) ; uNag donne où elle est
-const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte, uOmbre; uniform vec4 uNag;
-  varying vec3 vW; varying float vZ, vBord, vPente; varying vec2 vSU, vEc;
+const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie, uVoie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte, uOmbre; uniform vec4 uNag;
+  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   void main() { vec2 p = vW.xz; float prox = 1. - smoothstep(45., 150., vZ);
     vec2 q = floor(p * 3.) / 3.;
@@ -111,7 +112,7 @@ const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie; uniform ve
     } else {
       if (marque && vBord < .5 + o) c = uBordC;                                                      // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
     }
-    if (uOmbre.x > 0.) { float ds = vSU.x - uNag.x, du = vSU.y - uNag.y, h = uOmbre.y, k = 1. / (1. + h * .35);   // l'ombre : une ellipse tramée, plus petite et plus pâle quand on saute
+    if (uOmbre.x > 0. && (vVoie < .5 || abs(vVoie - uVoie) < .5)) { float ds = vSU.x - uNag.x, du = vSU.y - uNag.y, h = uOmbre.y, k = 1. / (1. + h * .35);   // l'ombre : une ellipse tramée, plus petite et plus pâle quand on saute
       float e = length(vec2((ds + .1) / ((uOmbre.z > .5 ? 1.05 : .55) * k), du / ((uOmbre.z > .5 ? .34 : .42) * k)));
       if (e < 1. && h21(floor(vW.xz * 9.)) > smoothstep(.55, 1., e) * .9) c *= 1. - .3 * uOmbre.x * k;
       if (uOmbre.z > .5 && uMode < .5 && ds < -.9 && ds > -16. && abs(du) < .05) c *= 1. - .16 * (1. + ds / 16.); }   // la trace du pneu, sur un chemin
@@ -119,7 +120,7 @@ const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie; uniform ve
     gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;
 function matRoute(c1, c2, bord, ligne, mode) {
   const v = h => ({value: new THREE.Vector3(...hex(h))});
-  return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}, uNag: EAU_U.uNag}, OMBRE_U, COMMUNS), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
+  return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}, uNag: EAU_U.uNag, uVoie: EAU_U.uVoie}, OMBRE_U, COMMUNS), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
 }
 const TERRES = BIOME.terres || {};
 SURFACES.terre = {materiau: matRoute(...(TERRES.terre || ["#D9B886", "#CBA672", "#B48C5C", "#FFFFFF"]), 0), liquide: false, monture: "coureur", poussiere: (TERRES.terre || ["#D9B886"])[0]};
@@ -132,49 +133,56 @@ function matDessus(nom) { const m = SURFACES[nom].materiau; return DESSUS[nom] |
 /* les couleurs de l'eau, mètre par mètre : celles de l'eau de chaque mètre, puis lissées le long de la piste (trois passes de ±30 m) :
    on passe d'une eau à l'autre sans jamais voir de trait (Kiki, 12/11 : « on ne doit pas s'en rendre compte du tout ») */
 function couleursEau() {
-  const P = PISTE, N = P.N, E = BIOME.eau, n = 16, pal = nom => { const e = (BIOME.eaux || {})[nom] || {}; return [...hex(e.c1 || E.c1), ...hex(e.c2 || E.c2), ...hex(e.clair || E.clair), ...hex(e.reflet || E.reflet), ...hex(e.ecume || E.ecume), e.luit || 0]; };
-  const memo = {}; let T = new Float32Array(N * n);
-  for (let i = 0; i < N; i++) { const nom = P.surfaces[P.SF[i]]; T.set(memo[nom] || (memo[nom] = pal(nom)), i * n); }
+  const P = PISTE, N = P.N, M = P.M, E = BIOME.eau, n = 16, pal = nom => { const e = (BIOME.eaux || {})[nom] || {}; return [...hex(e.c1 || E.c1), ...hex(e.c2 || E.c2), ...hex(e.clair || E.clair), ...hex(e.reflet || E.reflet), ...hex(e.ecume || E.ecume), e.luit || 0]; };
+  const memo = {}; let T = new Float32Array(M * n);
+  for (let i = 0; i < M; i++) { const nom = P.surfaces[P.SF[i]]; T.set(memo[nom] || (memo[nom] = pal(nom)), i * n); }
   const R = 30, at2 = k => BOUCLE ? ((k % N) + N) % N : clamp(k, 0, N - 1);
-  for (let passe = 0; passe < 3; passe++) { const O = new Float32Array(N * n), som = new Float64Array(n);
+  for (let passe = 0; passe < 3; passe++) { const O = new Float32Array(M * n), som = new Float64Array(n);
     for (let k = -R; k <= R; k++) for (let c = 0; c < n; c++) som[c] += T[at2(k) * n + c];
     for (let i = 0; i < N; i++) { for (let c = 0; c < n; c++) O[i * n + c] = som[c] / (2 * R + 1);
       const sort = at2(i - R), entre = at2(i + R + 1); for (let c = 0; c < n; c++) som[c] += T[entre * n + c] - T[sort * n + c]; }
+    for (let i = N; i < M; i++) for (let c = 0; c < n; c++) { let t = 0; for (let k = -R; k <= R; k++) t += T[P.voisin(i, k) * n + c]; O[i * n + c] = t / (2 * R + 1); }   // les voies « force » des fourches
     T = O; }
+  for (let i = N; i < M; i++) for (let c = 0; c < n; c++) T[i * n + c] = lerp(T[i * n + c], T[P.SM[i] * n + c], P.GARDE[i]);   // aux deux bouts d'une voie : exactement l'eau de la voie calme
   // là où les rives s'ouvrent sur une eau libre (un lac, la mer : rive sous l'eau), la piste prend exactement l'eau du large (MAT_MER) : aucune limite entre les deux
-  const base = pal("eau"), ouv = new Float32Array(N);
-  for (let i = 0; i < N; i++) ouv[i] = Math.max(lisse(-.2, -1, hRive(i, 0, 3)), lisse(-.2, -1, hRive(i, 1, 3)));
-  for (let i = 0; i < N; i++) { let m = 0; for (let k = -12; k <= 12; k++) m = Math.max(m, ouv[at2(i + k)] * (1 - Math.abs(k) / 13)); for (let c = 0; c < n; c++) T[i * n + c] = lerp(T[i * n + c], base[c], m); }
+  const base = pal("eau"), ouv = new Float32Array(M);
+  for (let i = 0; i < M; i++) ouv[i] = Math.max(lisse(-.2, -1, hRive(i, 0, 3)), lisse(-.2, -1, hRive(i, 1, 3)));
+  for (let i = 0; i < M; i++) { let m = 0; for (let k = -12; k <= 12; k++) m = Math.max(m, ouv[P.voisin(i, k)] * (1 - Math.abs(k) / 13)); for (let c = 0; c < n; c++) T[i * n + c] = lerp(T[i * n + c], base[c], m); }
   return T;
 }
 
 /* ---- le ruban de la piste, par tronçons de 40 m (toutes les eaux ensemble, chaque terre à part) ; la mer, un grand plan ---- */
 function construirePiste() {
   const P = PISTE, rubans = [], EAUX_C = couleursEau(), genre = i => { const nom = P.surfaces[P.SF[idx(i)]], S = SURFACES[nom]; return !S || S.liquide ? "eau" : nom + (P.CROIX[idx(i)] === 2 ? "+" : ""); };
-  for (let c0 = 0; c0 < LONG; c0 += 40) {
-    const fin = Math.min(c0 + 40, LONG); let debut = c0;
+  const sorte = i => genre(i) + "/" + P.VO[idx(i)];   // dans une fourche, chaque voie a ses rubans (le sillage ne se dessine que sur la voie où l'on est)
+  const decouper = (s0, s1, nf) => { for (let c0 = s0; c0 < s1; c0 += 40) {
+    const fin = Math.min(c0 + 40, s1); let debut = c0;
     for (let i = c0; i <= fin; i++) {   // un ruban par suite de mètres de même genre (l'eau, quelle qu'elle soit ; ou une terre)
-      if (i < fin && genre(i) === genre(debut)) continue;
-      if (i > debut) rubans.push([debut, i]);
+      if (i < fin && sorte(i) === sorte(debut)) continue;
+      if (i > debut) rubans.push([debut, i, nf]);
       debut = i;
     }
-  }
-  for (const [a0, a1] of rubans) {
-    const pos = [], su = [], bord = [], ec = [], pente = [], ind = [], liquide = genre(a0) === "eau", C = [[], [], [], [], [], []];
+  } };
+  decouper(0, LONG, -1);
+  P.voies.forEach((v, nf) => surLaVoie(nf, () => decouper(v.a, v.b, nf)));   // la voie « force » de chaque fourche, entre les mêmes mètres
+  const unRuban = (a0, a1) => {
+    const pos = [], su = [], bord = [], ec = [], pente = [], voie = [], ind = [], liquide = genre(a0) === "eau", C = [[], [], [], [], [], []], vo = P.VO[idx(a0)];
     for (let i = a0; i <= a1; i++) {
       const o = idx(i) * 16;
-      const a = at(i), w = a.w, rx = Math.cos(a.h), rz = Math.sin(a.h), ii = idx(i), pont = P.PONT[ii], eg = pont || hRive(ii, 0, .02) > .02 ? 1 : 0, ed = pont || hRive(ii, 1, .02) > .02 ? 1 : 0;
-      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] ? 99 : w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]);
+      const a = at(i), w = a.w, rx = Math.cos(a.h), rz = Math.sin(a.h), ii = idx(i), pont = P.PONT[ii], colle = P.INT[ii] && LIBRE[P.INT[ii] - 1][ii] < .6;   // colle : dans une fourche, l'autre voie touche encore celle-ci (ni écume ni marque de ce côté)
+      const eg = (pont || hRive(ii, 0, .02) > .02) && !(colle && P.INT[ii] === 1) ? 1 : 0, ed = (pont || hRive(ii, 1, .02) > .02) && !(colle && P.INT[ii] === 2) ? 1 : 0;
+      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] || (colle && !liquide) ? 99 : w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]); voie.push(vo);
         if (liquide) { for (let c = 0; c < 5; c++) C[c].push(EAUX_C[o + c * 3], EAUX_C[o + c * 3 + 1], EAUX_C[o + c * 3 + 2]); C[5].push(EAUX_C[o + 15]); } }
     }
     for (let i = 0; i < a1 - a0; i++) for (let j = 0; j < 6; j++) { const a = i * 7 + j, b = a + 7; ind.push(a, a + 1, b, a + 1, b + 1, b); }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("aSU", new THREE.Float32BufferAttribute(su, 2)); g.setAttribute("aBord", new THREE.Float32BufferAttribute(bord, 1));
-    g.setAttribute("aEc", new THREE.Float32BufferAttribute(ec, 2)); g.setAttribute("aPente", new THREE.Float32BufferAttribute(pente, 1)); g.setIndex(ind);
+    g.setAttribute("aEc", new THREE.Float32BufferAttribute(ec, 2)); g.setAttribute("aPente", new THREE.Float32BufferAttribute(pente, 1)); g.setAttribute("aVoie", new THREE.Float32BufferAttribute(voie, 1)); g.setIndex(ind);
     if (liquide) ["aC1", "aC2", "aCl", "aRe", "aEcu", "aLuit"].forEach((a, c) => g.setAttribute(a, new THREE.Float32BufferAttribute(C[c], c < 5 ? 3 : 1)));
     const nom = P.surfaces[P.SF[idx(a0)]], m = new THREE.Mesh(g, liquide ? MAT_EAUX : genre(a0).endsWith("+") ? matDessus(nom) : SURFACES[nom].materiau); m.name = "piste"; scene.add(m);
     if (!SURFACES[nom]) console.warn("Surface inconnue : " + nom);
-  }
+  };
+  for (const [a0, a1, nf] of rubans) { if (nf < 0) unRuban(a0, a1); else surLaVoie(nf, () => unRuban(a0, a1)); }
   if (DISC_PISTE === "terre") return;   // sur la terre : aucune mer
   const mer = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), MAT_MER); mer.rotation.x = -Math.PI / 2; mer.position.set(P.X[P.N >> 1], -.15, P.Z[P.N >> 1]); mer.name = "mer"; scene.add(mer);
 }
@@ -189,7 +197,7 @@ function construirePonts() {
     if (!pont && debut >= 0) { plages.push([debut, i]); debut = -1; }
   }
   if (BOUCLE && plages.length > 1 && plages[0][0] === 0 && plages[plages.length - 1][1] === N) { plages[0][0] = plages.pop()[0] - N; }   // un pont à cheval sur la ligne
-  for (const [ia, ib] of plages) {
+  const unPont = (ia, ib) => {
     // le style du pont : "pont": true (pierre), "bois" (planches et poteaux), "arches" (pierre claire et grandes arches dorées, lampes aux piliers)
     const style = typeof pieceEn(ia).pont === "string" ? pieceEn(ia).pont : "pierre", pierre = style === "bois" ? [PAL.tronc[0], PAL.tronc[1], PAL.planche] : style === "arches" ? [PAL.pierre[1], PAL.pierre[2], PAL.murs.pierre] : PAL.pierre;
     const sec = i => {   // la coupe du pont au mètre i : de gauche à droite, le contour du tablier et de ses parapets
@@ -236,7 +244,9 @@ function construirePonts() {
       const bas = Math.min(sol, a.y - 2) - .6, ht = a.y - .9 - bas; if (ht < .8) continue;
       F.poser(a.x, bas, a.z, -a.h, 1).boite(0, 0, 0, a.w * 2 + 1.2, ht, 1.7, pierre[1], {haut: pierre[2], mat: 0});
     }
-  }
+  };
+  for (const [ia, ib] of plages) unPont(ia, ib);
+  P.voies.forEach((v, nf) => surLaVoie(nf, () => { let d = -1; for (let s = v.a; s <= v.b; s++) { const pont = s < v.b && P.PONT[idx(s)]; if (pont && d < 0) d = s; if (!pont && d >= 0) { unPont(d, s); d = -1; } } }));   // les ponts d'une voie « force »
   F.poser(0, 0, 0, 0, 1);
   for (const r of RAVINS) {   // la rivière au fond d'un ravin : une eau calme, à plat, que les pentes du ravin viennent border
     if (!r.eau || r.creux < 3) continue;
