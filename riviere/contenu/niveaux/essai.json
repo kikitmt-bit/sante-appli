@@ -30,7 +30,7 @@
   {"nom": "Le grand saut", "long": 5, "virage": 0, "eau": 8, "g": "montagne", "d": "montagne", "monte": 0.8, "net": true},
   {"long": 3, "virage": 0, "eau": 8, "g": "montagne", "d": "montagne", "monte": -4.3, "net": true},
   {"long": 60, "virage": 0, "eau": 10, "g": "pre", "d": "foret",
-   "objets": [{"o": "pokemon", "num": 54, "cote": "d", "a": 30, "e": 2.2}]},
+   "objets": [{"o": "pokemon", "num": 54, "cote": "d", "a": 30, "e": 2.2}, {"o": "ronflex", "cote": "c", "a": 46, "haut": -0.35}]},
   {"nom": "La grotte", "long": 90, "virage": -90, "eau": 8, "g": "montagne", "d": "montagne", "tunnel": true,
    "objets": [{"o": "pokemon", "num": 74, "cote": "portail"}]},
   {"nom": "Le lac", "long": 80, "virage": -60, "eau": 26, "g": "plage", "d": "foret", "camera": {"haut": 0.8, "recul": 1},

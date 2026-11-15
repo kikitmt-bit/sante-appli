@@ -14,7 +14,7 @@ from pathlib import Path
 R = Path(__file__).resolve().parent.parent / "riviere"
 C = R / "contenu"
 lis = lambda *p: json.loads(C.joinpath(*p).read_text(encoding="utf-8"))
-OBJETS = {n for f in (C / "objets").glob("*.js") for n in re.findall(r"^  (\w+)\(F", f.read_text(encoding="utf-8"), re.M)}
+OBJETS = {n for d in ("objets", "evenements") for f in (C / d).glob("*.js") for n in re.findall(r"^  (\w+)\(F", f.read_text(encoding="utf-8"), re.M)}  # les recettes : objets/ et evenements/ (Ronflex)
 SURFACES = set(re.findall(r"^SURFACES\.(\w+) = ", (R / "moteur" / "surfaces.js").read_text(encoding="utf-8"), re.M))
 NIVEAUX = sorted(f.stem for f in (C / "niveaux").glob("*.json"))
 sys.path.insert(0, str(R))

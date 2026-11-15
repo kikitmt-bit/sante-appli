@@ -1,0 +1,32 @@
+# Le circuit du jour de « La Rivière » (étape 5 du plan, 15/11) : chaque nuit, GitHub tire le circuit du jour (un pour l'eau, un pour la terre)
+# avec le générateur noté, sans navigateur ni crédits, et l'écrit dans la branche data du dépôt privé (data/riviere/jour/AAAA-MM-JJ.json).
+# Secret nécessaire : SANTE_TOKEN (le même que montre.yml). Les tâches programmées de GitHub partent souvent en retard : deux heures prévues,
+# la seconde réécrit le même circuit (même date = même circuit). Tant qu'il n'est pas là, l'appli propose celui de la veille.
+name: Circuit du jour
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 2 * * *"
+    - cron: "50 3 * * *"
+concurrency:
+  group: circuit-du-jour
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  circuit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install -q requests
+      - run: python riviere/outils/circuit_du_jour.py github
+        env:
+          SANTE_TOKEN: ${{ secrets.SANTE_TOKEN }}
+          TZ: Europe/Paris

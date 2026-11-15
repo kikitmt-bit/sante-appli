@@ -18,7 +18,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent
 MOTEUR = ["depart", "outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
-JEU = ["allure", "records", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "parcours", "note", "generateur", "editeur", "banc"]
+JEU = ["allure", "records", "effort", "rencontres", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "parcours", "note", "generateur", "editeur", "banc"]
 PURS = ["depart", "outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
@@ -71,6 +71,8 @@ def _pokemon(o, trouves):
     if isinstance(o, dict):
         if o.get("o") == "pokemon" and "num" in o:
             trouves.add((o["num"], o.get("anim") or ("Walk" if o.get("bouge") else "Idle")))
+        if o.get("o") == "ronflex":  # Ronflex qui dort sur la route (étape 6) : il dort, se réveille, s'en va
+            trouves.update({(143, "Sleep"), (143, "Walk"), (143, "Hop")})
         if o.get("o") == "habitant" and "nom" in o:
             trouves.add(("h", o["nom"]))
         for n in o.get("nums", []) if isinstance(o.get("nums"), list) else []:
@@ -163,6 +165,9 @@ def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
     cache = Path(cache or Path(tempfile.gettempdir()) / "riviere-sprites")
     cache.mkdir(parents=True, exist_ok=True)
     niveaux, biomes, lieux = tout()
+    for n in ((donnees or {}).get("jour") or {}).get("circuits") or []:  # le circuit du jour (étape 5 du plan) : tiré par GitHub cette nuit, donné par l'appli
+        if isinstance(n, dict) and n.get("id") and n.get("pieces"):
+            niveaux[n["id"]] = n
     if niveau not in niveaux:
         niveau = "kanto-1km"
     besoins = {(n.get("nageur", 7), "Walk") for n in niveaux.values()} | {(p["num"], "Walk") for p in nageurs()["liste"]}

@@ -100,7 +100,7 @@ function boucle(now) {
     if (S.fondu) { S.fondu += dt * 1.4; if (S.fondu >= 1 && S.s > LONG / 2) { S.s = 6; M.y = null; CAM.y = null; } if (S.fondu >= 2) S.fondu = 0; $("voile").style.opacity = S.fondu ? (S.fondu < 1 ? S.fondu : 2 - S.fondu) : 0; }
   }
   const tunnel = dansTunnel(S.s);
-  animerMonture(T, dt, S); cadrer(dt, S, T); ambianceMaj(dt, S.s); lumieresProches(); animerPublic(T, S, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
+  animerMonture(T, dt, S); cadrer(dt, S, T); ambianceMaj(dt, S.s); lumieresProches(); animerPublic(T, S, dt); effortMaj(vraiDt); rencontresMaj(T, dt); animerFantome(T); animerRivaux(T, vraiDt); animerGouttes(dt); animerDecor(T); animerLointain(T);
   sonMaj(S.s, !!tunnel);
   dessiner(); hud();
   if (BANC && !BANC.fini) bancImage(ecoule);
@@ -162,7 +162,7 @@ window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0,
 (async () => {
   const t0 = performance.now();
   try { await Promise.race([document.fonts.load('20px "Jersey 15"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
-  construireTerrain(); construireMassif(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites();
+  construireTerrain(); construireMassif(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites(); construireRencontres();
   window.__pret = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
   const v = verifier(); if (!v.ok) console.warn("Niveau à revoir :\n" + v.erreurs.join("\n"));
   $("hTour").hidden = false; construireProfil(); await preparerRivaux(); $("lVit").textContent = MACHINE.affiche === "kmh" ? "VITESSE" : "ALLURE"; $("uVit").textContent = MACHINE.affiche === "kmh" ? "km/h" : "/500 m";

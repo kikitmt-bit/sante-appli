@@ -16,7 +16,7 @@
    "objets": [{"o": "ligne", "cote": "c", "a": 20}, {"o": "panneau", "cote": "d", "a": 30, "e": 2.6, "texte": "JADIELLE", "face": "arrivant", "large": 3.4}, {"o": "centre", "cote": "g", "a": 140, "e": 9}]},
   {"nom": "La boucle des champs", "long": 400, "virage": -270, "large": 8, "g": "bas_cote", "d": "champ", "monte": 0, "segment": "La boucle des champs"},
   {"nom": "La rue du marché", "long": 170, "virage": 0, "large": 9, "g": "trottoir", "d": "trottoir", "surface": "paves",
-   "objets": [{"o": "boutique", "cote": "d", "a": 30, "e": 9}, {"o": "habitant", "nom": "fisher", "cote": "g", "a": 40, "e": 2.4}]},
+   "objets": [{"o": "boutique", "cote": "d", "a": 30, "e": 9}, {"o": "habitant", "nom": "fisher", "cote": "g", "a": 40, "e": 2.4}, {"o": "ronflex", "cote": "c", "a": 140}]},
   {"nom": "La boucle des bois", "long": 400, "virage": "auto", "large": 6, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "segment": "La boucle des bois"}
  ]
 }

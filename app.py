@@ -1028,6 +1028,21 @@ if st.query_params.get("ecran") == "rameur":
         dresseur_r = lire_depot([amis.DRESSEURS.format(AMI or amis.KIKI)])[amis.DRESSEURS.format(AMI or amis.KIKI)]
     except Exception:
         pass
+    jour_r = None
+    if page_rameur.startswith("riviere/"):  # le circuit du jour (étape 5 du plan) : tiré par GitHub cette nuit (celui de la veille tant qu'il n'est pas là), et son classement
+        try:
+            from riviere import jour as riviere_jour
+            hier_r = aujourd_r - dt.timedelta(days=1)
+            fj = lire_depot([riviere_jour.CHEMIN.format(aujourd_r), riviere_jour.CHEMIN.format(hier_r)])
+            fichier_jour = fj[riviere_jour.CHEMIN.format(aujourd_r)] or fj[riviere_jour.CHEMIN.format(hier_r)]
+            if fichier_jour:
+                tous_r = list(amis.joueurs(REGISTRE))
+                rec_p = {i: ("" if i == amis.KIKI else f"data/joueurs/{i}/") + seances_rameur.RECORDS for i in tous_r}
+                lus = lire_depot(list(rec_p.values()) + [amis.DRESSEURS.format(i) for i in tous_r])
+                jour_r = riviere_jour.pour_le_jeu(fichier_jour, riviere_jour.classement(
+                    fichier_jour, {i: lus[c] for i, c in rec_p.items()}, {i: lus[amis.DRESSEURS.format(i)] for i in tous_r}, AMI or amis.KIKI))
+        except Exception as e:  # sans lui, le jeu tourne comme avant
+            print("Circuit du jour illisible :", type(e).__name__, flush=True)
     options_r = {k: q.get(k) for k in ("machine", "surface", "banc", "eco", "perf", "allure", "heure", "meteo") if q.get(k)}
     if q.get("riviere") not in (None, "", "1"):  # l'adresse demande CE circuit : le choix du menu, gardé sur la machine, ne passe pas devant
         options_r["force"] = "1"  # les options de La Rivière, passées par l'adresse (&banc=1, &surface=terre, &machine=elliptique…)
@@ -1036,7 +1051,7 @@ if st.query_params.get("ecran") == "rameur":
                                                "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/",
                                                aujourd_r, voyage_r, "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
                                                {k: (dresseur_r or {}).get(k) for k in ("peau", "casquette", "veste", "pantalon")}, AMI is None,
-                                               page_rameur, options_r, autres=fichier_autres, records=records_r), height=800)
+                                               page_rameur, options_r, autres=fichier_autres, records=records_r, jour=jour_r), height=800)
     st.stop()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "

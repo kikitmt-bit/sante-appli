@@ -41,8 +41,8 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 | 2 | Records et fantômes sur le serveur | le record suit Kiki de la tablette au téléphone | une empreinte du tracé dans la clé du record | 11.2 | faible | 1 à 2 | **faite le 14/11** (à essayer : tablette puis téléphone) |
 | 3 | Fantômes des amis, classement par circuit | le meilleur tour d'un ami nage à côté de soi | aucune de plus | 11.3, 11.5 | moyen | 1 | **mise de côté le 14/11** (Kiki joue seul ; à reprendre dès qu'il parle d'amis ou de multijoueur) |
 | 4 | Générateur noté | une planche d'images et une note par circuit | le générateur tourne sans navigateur | 12.1, 12.2 | faible | 2 | **faite le 15/11** (à essayer : dire si le classement colle, en regardant les planches) |
-| 5 | Circuit du jour | chaque matin le même circuit pour tous et son classement, fabriqué par GitHub sans crédits | l'étape 4 | 11.4 | faible | 1 | à faire |
-| 6 | Ronflex et premiers lieux de Kanto | Ronflex bloque la route et se réveille quand on accélère | la brique « effort » (forcer plus que sa croisière) | 7.5, 7.6, 10.7 | faible | 1 à 2 par lot | à faire |
+| 5 | Circuit du jour | chaque matin le même circuit pour tous et son classement, fabriqué par GitHub sans crédits | l'étape 4 | 11.4 | faible | 1 | **faite le 15/11** (à essayer : le menu de la tablette demain matin) |
+| 6 | Ronflex et premiers lieux de Kanto | Ronflex bloque la route et se réveille quand on accélère | la brique « effort » (forcer plus que sa croisière) | 7.5, 7.6, 10.7 | faible | 1 à 2 par lot | **Ronflex et l'effort faits le 15/11** (lieux de Kanto : lot suivant) |
 | 7 | Embranchements à l'effort | une fourche : la voie spectaculaire si on force | les captures de référence de l'étape 0 | 5.1 | **élevé** (le cœur) | 3 à 4 | à faire |
 | 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | à faire (voir « En suspens ») |
 | 9 | Forêts, vent, ombres, eau qui coule | un effet à la fois | aucune (les instances existent déjà dans three.js r128) | 4 | moyen | 3 à 5 | à faire |
@@ -177,3 +177,20 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   les repères au-dessus, les moments forts dessous, une légende. Tout vient de `noterCircuit` : rien d'inventé. ~2 min par circuit. Un circuit
   du générateur : `generer.py … --ecrire <nom>` puis `planche.py <nom>`. Test : `test_planche` (assemblage sans navigateur). Le jeu n'a pas
   changé (ni moteur, ni `kanto-1km`, ni séance). **Reste à essayer par Kiki** : regarder les 6 planches et dire si le classement lui paraît juste.
+- **Étape 5 — Circuit du jour (15/11/2026, Opus, enchaînée avec la 6 à la demande de Kiki, sans plan court).** `riviere/jour.py` (réglages tirés de la date,
+  classement), `riviere/outils/circuit_du_jour.py` (générateur noté, 24 tirages, contrôle complet, 4 essais ; ~1 min pour les deux), tâche GitHub
+  `circuit-du-jour.yml` (3 h 20 et 4 h 50, `SANTE_TOKEN`) → `data/riviere/jour/AAAA-MM-JJ.json` (branche data, dépôt privé). L'appli le lit (celui de
+  la veille tant qu'il manque), calcule le classement depuis les records de chaque joueur (étape 2) et le donne au jeu (`D.jour`) : en tête du menu,
+  sa note, le classement de ta machine. Décidé par Claude : pas de classement dans la page Dresseur (Kiki joue seul ; le menu suffit), pas de planche
+  sur GitHub (rien ne la regarderait). Tests : `tests/test_circuit_du_jour.py` (5). Essayé : le circuit du 15/11 tiré sur ce PC (eau 74/100, terre
+  68/100), le menu et le classement au serveur d'essai (`?jour=1`). **Pas encore essayé** : la tâche sur GitHub (lancer « Circuit du jour » à la main
+  une première fois dans l'onglet Actions, ou attendre la nuit), le menu dans l'appli. **À essayer par Kiki** : ouvrir La Rivière le matin, choisir
+  « ☀️ Circuit du jour », faire une vraie séance, voir son temps au classement à la visite suivante.
+- **Étape 6 — Ronflex et la brique « effort », premier lot (15/11/2026, Opus).** `jeu/effort.js` (croisière qui s'ajuste, `demanderEffort`), `jeu/rencontres.js`
+  et `contenu/evenements/ronflex.js` : Ronflex dort sur la route ; forcer 8 % au-dessus de sa croisière pendant 5 s le réveille (il saute, s'en va sur la
+  rive, saute de joie), sinon on rebondit sur son ventre. Posé dans le Huit (`essai`), `terre-huit`, case du générateur, et dans le circuit du jour un jour
+  sur deux. `kanto-1km` inchangé (aucun objet ajouté ; seules deux fonctions vides tournent). Essayé dans le navigateur (réveil en forçant, rebond à
+  l'allure habituelle, rendormi derrière soi). **Reste du lot suivant** : les lieux iconiques de Kanto (Lavanville et sa tour, pont Pépite, Parmanie…)
+  en modules. **À essayer par Kiki** : le Huit au rameur, accélérer quand « RONFLEX ! » s'affiche ; dire si 8 % pendant 5 s est trop dur ou trop facile
+  (réglage : `seuil` et `duree` dans rencontres.js).
+

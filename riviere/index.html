@@ -61,6 +61,13 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #panneau .machines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 #panneau button.machine, #panneau button.circuit { background: #fff; color: #383828; text-align: left; padding: 8px 12px; box-shadow: 2px 2px 0 #1B2440; }
 #panneau button.machine b, #panneau button.circuit b { display: block; font-weight: normal; font-size: 28px; }
+#panneau button.circuit.dujour { background: #FFF6D0; }
+#panneau .classement { margin: 8px 0 4px; padding: 6px 10px; background: #fff; border: 2px solid #484838; border-radius: 12px 5px; }
+#panneau .classement small { color: #B05010; font-size: 17px; letter-spacing: .04em; }
+#panneau .classement ol { margin: 2px 0 0; padding-left: 1.6em; font-size: 22px; }
+#panneau .classement li span { display: inline-block; min-width: 9em; }
+#panneau .classement li.moi { color: #C03028; }
+#panneau .classement .petit { margin: 2px 0; font-size: 17px; }
 #panneau button.machine small, #panneau button.circuit small { display: block; font-size: 17px; color: #686850; line-height: 1.05; margin-top: 2px; }
 #panneau button.machine.on, #panneau button.circuit.on { background: #F8C838; }
 #panneau .circuits { display: flex; flex-direction: column; gap: 6px; }

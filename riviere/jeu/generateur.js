@@ -53,6 +53,8 @@ const MODULES = {
     {o: "bateau", cote: "g", a: 26, e: -1.6, flotte: true}, {o: "bateau", cote: "g", a: 42, e: -1.6, flotte: true, voile: true}, {o: "ponton", cote: "g", a: 62, e: -3.6, flotte: true, tourne: 90, long: 7}, {o: "bateau", cote: "g", a: 74, e: -1.7, flotte: true},
     {o: "caisses", cote: "g", a: 34, e: 4}, {o: "entrepot", cote: "g", a: 30, e: 15}, {o: "immeuble", cote: "g", a: 60, e: 17}, {o: "immeuble", cote: "g", a: 86, e: 18}, {o: "immeuble", cote: "g", a: 110, e: 17},
     {o: "phare", cote: "g", a: 122, e: 7}, {o: "pokemon", num: 129, cote: "c", a: 90, e: 5.5, bouge: {type: "saut", tous: 5, haut: 2.3}}]}]},
+  ronflex: {nom: "Ronflex sur la rivière", act: "eau", pour: "ronflex", pieces: (R, o) => [{nom: "La sieste de Ronflex", long: 110 + Math.round(R() * 30), virage: clamp(o.v, -20, 20), eau: 12, g: o.g, d: o.d,
+    objets: [{o: "ronflex", cote: "c", a: 80, haut: -.35}]}]},   // étape 6 : forcer pour le réveiller (jeu/rencontres.js)
   // ---- la terre : routes, rues, chemins (des rives posées au niveau de la route : kanto-routes) ----
   route: {nom: "Route", act: "terre", pieces: (R, o) => [{long: 80 + Math.round(R() * 50), virage: o.v, large: 8, g: o.g, d: o.d}]},
   virage_t: {nom: "Virage", act: "terre", pieces: (R, o) => [{long: 70 + Math.round(R() * 40), virage: o.v, large: 8, g: o.g, d: o.d}]},
@@ -71,6 +73,8 @@ const MODULES = {
   descente_t: {nom: "Descente", pour: "montagne", act: "terre", pieces: (R, o) => [{nom: "La descente", long: 180 + Math.round(R() * 60), virage: o.v, large: 7, g: o.v < 0 ? "talus" : "ravin", d: o.v < 0 ? "ravin" : "talus", monte: -14}]},
   tunnel_t: {nom: "Tunnel", pour: "tunnel", act: "terre", pieces: (R, o) => [{nom: "Le tunnel", long: 110 + Math.round(R() * 20), virage: clamp(o.v, -50, 50), large: 7, g: "montagne", d: "montagne", tunnel: true, fixe: true}]},
   pont_t: {nom: "Pont sur un ravin", pour: "pont", act: "terre", pieces: (R, o) => [{nom: "Le pont", long: 18, virage: 0, large: 8, g: "bas_cote", d: "bas_cote"}, {long: 70 + Math.round(R() * 20), virage: clamp(o.v, -25, 25), large: 8, g: "bas_cote", d: "bas_cote", pont: ["arches", "bois", true][Math.floor(R() * 3)], ravin: 9 + Math.round(R() * 4), segment: "Le pont"}, {long: 18, virage: 0, large: 8, g: "bas_cote", d: "bas_cote"}]},
+  ronflex_t: {nom: "Ronflex sur la route", pour: "ronflex", act: "terre", pieces: (R, o) => [{nom: "La sieste de Ronflex", long: 120 + Math.round(R() * 30), virage: clamp(o.v, -20, 20), large: 8, g: o.g, d: o.d,
+    objets: [{o: "ronflex", cote: "c", a: 85}]}]},
   cendres_t: {nom: "Col des cendres", pour: "volcan", act: "terre", pieces: (R, o) => [{nom: "Le col des cendres", long: 130 + Math.round(R() * 40), virage: o.v, large: 7, g: o.v < 0 ? "cendres" : "ravin", d: o.v < 0 ? "ravin" : "cendres", ambiance: "volcan"}]},
 };
 

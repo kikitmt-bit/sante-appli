@@ -52,7 +52,7 @@ function ouvrirMenu() {
   if (enc && !reprise && (enc.machine || "rameur") === MACHINE_NOM) ecrireLS(ENCOURS, null);   // une séance qui ne s'enregistre pas (skieur de fond) ou trop vieille : rien à récupérer
   const attend = (lireLS(ATTENTE, []) || []).length, der = (D.dernieres || {})[MACHINE_NOM] || (MACHINE_NOM === "rameur" ? D.derniere : null);
   const choisie = MACHINE_CHOISIE || !!lireReglage("riviere_machine", null), disc = ACTIVITE[MACHINE_NOM], bonne = disc === DISCIPLINE;
-  const circuits = Object.entries(NIVEAUX).filter(([k, n]) => !n.cache && disciplineDe(n) === disc).map(([k, n]) => [k, n.nom || k, false])
+  const circuits = Object.entries(NIVEAUX).filter(([k, n]) => !n.cache && disciplineDe(n) === disc).sort((x, y) => (y[1].jour ? 1 : 0) - (x[1].jour ? 1 : 0)).map(([k, n]) => [k, n.nom || k, false])
     .concat(Object.entries(CIRCUITS_PERSO).filter(([k, n]) => disciplineDe(n) === disc).map(([k, n]) => [k, n.nom || k, true]));
   const courant = k => bonne && !NIVEAU.brouillon && (NIVEAU.id || "") === k;
   const hChoix = PARAMS.get("heure") || lireReglage("riviere_heure", "circuit") || "circuit", mChoix = PARAMS.get("meteo") || lireReglage("riviere_meteo", "circuit") || "circuit";
@@ -68,7 +68,8 @@ function ouvrirMenu() {
     ${!choisie ? `<p class="petit">Choisis ta machine : ses circuits apparaîtront ensuite.</p>` : `
     <h2><span class="num">2</span>Ton circuit</h2>
     ${NIVEAU.brouillon ? `<p class="petit">Tu essaies un brouillon de l'éditeur : ${NIVEAU.nom}.</p>` : ""}
-    <div class="circuits">${circuits.map(([k, t, perso]) => `<button class="circuit${courant(k) ? " on" : ""}" data-c="${k}"><b>${perso ? "✏️ " : ""}${t}</b>${courant(k) ? `<small>${BOUCLE ? "Un tour = " + metres(TOUR_M) + " m" : metres(TOUR_M) + " m"}${record ? " · record " + chrono(record) : " · pas encore de record"}</small>` : ""}</button>`).join("")}</div>
+    <div class="circuits">${circuits.map(([k, t, perso]) => `<button class="circuit${courant(k) ? " on" : ""}${NIVEAUX[k] && NIVEAUX[k].jour ? " dujour" : ""}" data-c="${k}"><b>${perso ? "✏️ " : NIVEAUX[k] && NIVEAUX[k].jour ? "☀️ " : ""}${t}</b>${NIVEAUX[k] && NIVEAUX[k].jour && !courant(k) ? `<small>Le même pour tout le monde aujourd'hui, avec son classement</small>` : ""}${courant(k) ? `<small>${BOUCLE ? "Un tour = " + metres(TOUR_M) + " m" : metres(TOUR_M) + " m"}${record ? " · record " + chrono(record) : " · pas encore de record"}${NIVEAU.jour && typeof NIVEAU.note === "number" ? " · note " + NIVEAU.note + " / 100" : ""}</small>` : ""}</button>`).join("")}</div>
+    ${classementDuJour()}
     ${circuits.length ? "" : `<p class="alerte">Pas encore de circuit pour ${pour} : crée le tien ou génère-le.</p>`}
     <div class="fantomes">${NIVEAU.brouillon ? `<button class="opt" id="mEditeur2">✏️ Retour à l'éditeur</button>` : ""}<button class="opt" id="mEditeur">✏️ Créer, générer ou modifier un circuit</button></div>
     <h2><span class="num">3</span>Réglages</h2>
@@ -113,6 +114,16 @@ function ouvrirMenu() {
   p.querySelector("#mBT").onclick = async e => { const el = $("mBTetat"), t = setInterval(() => { if (el.isConnected) el.textContent = BT.etat; }, 300); await relierCapteur(); clearInterval(t); if (el.isConnected) el.textContent = BT.etat; };
   p.querySelector("#mSon").onclick = e => { const oui = sonBasculer(); e.target.classList.toggle("on", oui); e.target.textContent = oui ? "Bruitages" : "Coupé"; majSon(); };
   majTexteFantome(); majMenuMontre();
+}
+/* le circuit du jour (15/11, étape 5 du plan) : tiré par GitHub cette nuit, le même pour tout le monde (D.jour, riviere/jour.py) ; son classement =
+   le meilleur tour de chaque joueur sur ce circuit et cette machine, pris dans les records du serveur (un record part avec la séance enregistrée) */
+function classementDuJour() {
+  if (!NIVEAU.jour || !D.jour) return "";
+  const lignes = (((D.jour.classement || {})[DISCIPLINE] || {})[MACHINE_NOM] || []).slice(0, 10), pour = {rameur: "au rameur", elliptique: "au skieur de fond", velo: "à vélo"}[MACHINE_NOM] || "";
+  const esc2 = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  return `<div class="classement"><small>CLASSEMENT DU JOUR ${pour.toUpperCase()}</small>${lignes.length ? `<ol>${lignes.map(l => `<li${l.moi ? ' class="moi"' : ""}><span>${esc2(l.nom)}</span><b>${chrono(l.t)}</b></li>`).join("")}</ol>`
+    : `<p class="petit">Personne n'a encore bouclé un tour aujourd'hui : le premier tour d'une séance enregistrée prend la tête.</p>`}
+    <p class="petit">Un nouveau circuit chaque matin. Ton meilleur tour compte une fois la séance enregistrée.</p></div>`;
 }
 function majTexteFantome() { const el = $("mFantome"); if (!el) return;
   el.textContent = FANTOME.choix === "aucun" ? "Pas de fantôme." : FANTOME.choix === "record" ? (FANTOME.record ? "Ton record (" + chrono(FANTOME.record.t) + ") nage avec toi dès le premier tour." : "Pas encore de record : ton meilleur tour de la séance le remplace dès le 2e tour.") : "Ton meilleur tour de cette séance nage avec toi dès le 2e tour."; }

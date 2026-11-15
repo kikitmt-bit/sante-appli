@@ -384,7 +384,7 @@ def derniere(seances):
     return {"quand": d.strftime("%d/%m à %H:%M"), "distance": _vraie_distance(s), "estime": (s.get("estime") or {}).get("distance"), "tours": (s.get("jeu") or {}).get("tours")}
 
 
-def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html", params=None, autres=None, records=None):
+def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html", params=None, autres=None, records=None, jour=None):
     """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé : le modèle des mètres par coup, la progression
     du jeu du rameur, la région et les arènes de Poké Fit, les couleurs du dresseur)."""
     from pathlib import Path
@@ -395,7 +395,7 @@ def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=No
         dernieres = {"rameur": derniere(seances), **{m: derniere([s for s in autres_s if machine_de(s) == m]) for m in MACHINES if m != "rameur"}}  # le menu : celle de SA machine
         return riviere_page.page({"lien": lien_tablette, "m_coup": m_coup_montre(seances), "derniere": dernieres["rameur"], "kiki": kiki, "params": params or {},
                                   "dernieres": {m: d for m, d in dernieres.items() if d}, "records": records_pour_le_jeu(records),
-                                  "dresseur": {k: v for k, v in (dresseur or {}).items() if v}}, page_html.split("/", 1)[1])  # dresseur : les couleurs du cycliste
+                                  "dresseur": {k: v for k, v in (dresseur or {}).items() if v}, **({"jour": jour} if jour else {})}, page_html.split("/", 1)[1])  # dresseur : les couleurs du cycliste
     aujourd = aujourd or dt.date.today()
     m = modele(seances)
     donnees = {"lien": lien_tablette, "modele": m, "images": images, "sacha": sacha, "progression": progression(seances, aujourd, m),

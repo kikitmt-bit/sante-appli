@@ -270,6 +270,31 @@ Segments, profil d'altitude (dès 1,5 m de relief) et arrivée d'un parcours de 
   n'a changé. Un essai ne fait jamais de record ; une séance annulée n'envoie rien (le record reste sur la machine et part avec la suivante).
 - Format : `{"records": {clé: {"machine", "niveau", "tour": {"t", "jour", "pts": [temps, mètres de décor depuis la ligne, …]}, "segments": {nom: t}}}}`.
 
+**Le circuit du jour** (15/11, étape 5 du plan ; `riviere/jour.py`) : chaque matin le même circuit pour tout le monde, un pour l'eau, un pour la terre.
+- **Fabriqué par GitHub, sans crédits** : `.github/workflows/circuit-du-jour.yml` (3 h 20 et 4 h 50, heure de Paris ; secret `SANTE_TOKEN`) lance
+  `riviere/outils/circuit_du_jour.py github` : le générateur noté (24 tirages valables), contrôlé comme `generer.py --ecrire` (sol, décor), 4 essais au
+  plus, écrit dans `data/riviere/jour/AAAA-MM-JJ.json` (branche data du dépôt privé) = `{jour, fait, eau: niveau, terre: niveau}`. Les réglages
+  (longueur, virages, dénivelé, cases, heure, temps, Ronflex un jour sur deux) viennent de la date seule (`jour.options`) : même jour, même circuit.
+  Un niveau du jour : `id` = `jour-eau-AAAA-MM-JJ`, `nom` = « Circuit du jour · lun. 16/11 », `jour`, `note` (sa note sur 100).
+- **Dans l'appli** (`app.py`, `?ecran=rameur`) : celui du jour, sinon celui de la veille ; `D.jour` = `{jour, circuits, classement}` ; `page.py` ajoute
+  les circuits à `NIVEAUX`. Au menu, il est en tête (fond jaune, ☀️) ; choisi, il montre sa note et **le classement du jour** de ta machine (`classementDuJour`
+  de seance.js) : le meilleur tour de chaque joueur, pris dans ses records du serveur (`jour.classement`, par machine ; pseudo de la carte du dresseur,
+  jamais rien d'autre). Rien de neuf à envoyer : un record du circuit du jour part avec la séance enregistrée, comme ailleurs. Choisi la veille, le
+  circuit du jour d'hier devient celui d'aujourd'hui (`duJour` de depart.js).
+- Essai sur le PC : `python riviere/outils/circuit_du_jour.py --sortie riviere/outils/jour-essai.json` (~1 min), puis le serveur d'essai `?jour=1`.
+
+**Ronflex et la brique « effort »** (15/11, étape 6 du plan) :
+- **L'effort** (`jeu/effort.js`) : ta croisière = ta vitesse habituelle de la séance (de vrais m/s ; au départ, l'allure habituelle de la machine, puis
+  la tienne, sur ~1 min 30) ; `EFFORT.ratio` = ta vitesse des 2-3 dernières secondes ÷ ta croisière. `demanderEffort({seuil: 1.08, duree: 5, reussi})` :
+  une jauge qui se remplit au-dessus du seuil, se vide trois fois plus lentement en dessous ; la croisière ne bouge pas pendant un effort demandé.
+  Jamais de cadence imposée : on se compare à soi. Prévue aussi pour les embranchements (étape 7).
+- **Ronflex** (`contenu/evenements/ronflex.js`, `jeu/rencontres.js`) : `{"o": "ronflex", "cote": "c", "a": 80}` (sur l'eau, `"haut": -0.35`). Il dort au
+  milieu de la piste (sprite `Sleep`, ×0,7). ~25 s avant lui (à ton allure), « RONFLEX ! » et une jauge : 8 % plus vite que ta croisière, 5 s en tout.
+  Réussi : il saute (`Hop`), marche jusqu'à la rive (`Walk`), saute de joie quand tu passes ; raté : « BOING ! », tu rebondis sur son ventre (l'événement
+  `saut` de monture.js, retiré quand il est réveillé). Derrière toi, il se rendort à sa place (au tour suivant, tout recommence). Rien ne ralentit le
+  joueur ; avec `?s=` ou `?fige=1`, rien n'est demandé. Générateur : case « Ronflex » (modules `ronflex`, `ronflex_t`). Dans les circuits : le Huit
+  (`essai`, avant la grotte) et `terre-huit` (rue du marché). Une nouvelle rencontre = une recette qui remplit `RENCONTRES` + sa logique dans rencontres.js.
+
 ## Vérifier sans Kiki
 
 | Outil | Ce qu'il dit |
@@ -289,6 +314,7 @@ Segments, profil d'altitude (dès 1,5 m de relief) et arrivée d'un parcours de 
 | `python riviere/outils/generer.py --notes` | la note de chaque circuit du jeu et ses raisons ; sans `--notes` : génère un circuit sans navigateur |
 | `python riviere/outils/planche.py [circuit…]` | **la planche** d'un circuit (une image dans `riviere/outils/planches/`, hors dépôt) : sa note et ses 7 critères, une vue au milieu de chaque paysage et juste avant chaque moment fort (cadre rouge), la frise du tour (paysages à leur durée, repères dessus, moments forts dessous) ; tout vient de `noterCircuit`. ~2 min par circuit. Un circuit tiré par le générateur : `generer.py … --ecrire <nom>` puis `planche.py <nom>` |
 | `?cadre=1` (serveur d'essai) | la page dans un cadre, comme dans l'appli |
+| `?jour=1` (serveur d'essai) | le circuit du jour de `riviere/outils/jour-essai.json` (`circuit_du_jour.py --sortie …`), avec un faux ami au classement ; `python riviere/outils/circuit_du_jour.py --jour AAAA-MM-JJ` = le bilan d'un jour |
 | `?records=1` (serveur d'essai) | la page reçoit les records de `riviere/outils/records-essai.json` (comme ceux du serveur ; fichier gardé sur ce PC) ; `EMPREINTE`, `CLE_CIRCUIT`, `recordsAEnvoyer()` |
 
 Dans l'appli, ces options se mettent dans l'adresse : `?ecran=rameur&riviere=essai&banc=1`.

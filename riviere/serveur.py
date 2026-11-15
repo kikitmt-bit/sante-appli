@@ -1,7 +1,8 @@
 """Serveur d'essai de « La Rivière » : python riviere/serveur.py [port]
 La page est assemblée à chaque chargement (on retouche un fichier, on recharge). ?niveau=<nom> choisit le niveau (sinon : essai).
 ?pur=1 : le contrôle sans dessin (le même que les contrôles automatiques), son bilan s'affiche dans la page.
-?records=1 : la page reçoit les records de riviere/outils/records-essai.json (comme ceux du serveur ; fichier gardé sur ce PC seulement)."""
+?records=1 : la page reçoit les records de riviere/outils/records-essai.json (comme ceux du serveur ; fichier gardé sur ce PC seulement).
+?jour=1 : la page reçoit le circuit du jour de riviere/outils/jour-essai.json (python riviere/outils/circuit_du_jour.py --sortie riviere/outils/jour-essai.json), avec un faux ami au classement."""
 import http.server
 import importlib
 import os
@@ -37,7 +38,14 @@ class H(http.server.BaseHTTPRequestHandler):
             else:
                 essai = Path(__file__).resolve().parent / "outils" / "records-essai.json"
                 records = __import__("json").loads(essai.read_text(encoding="utf-8")) if q.get("records") and essai.exists() else {}
-                octets = page.page(donnees={"lien": lien_local(), "force": bool(q.get("niveau")), "records": records}, niveau=niveau).encode("utf-8")
+                donnees = {"lien": lien_local(), "force": bool(q.get("niveau")), "records": records}
+                fj = Path(__file__).resolve().parent / "outils" / "jour-essai.json"
+                if q.get("jour") and fj.exists():  # le circuit du jour (étape 5) : outils/circuit_du_jour.py --sortie riviere/outils/jour-essai.json ; classement tiré des records d'essai
+                    import jour as J
+                    fichier = __import__("json").loads(fj.read_text(encoding="utf-8"))
+                    donnees["jour"] = J.pour_le_jeu(fichier, J.classement(fichier, {"kiki": records, "ami": {"records": {"x": {"machine": "rameur", "niveau": (fichier.get("eau") or {}).get("id"), "tour": {"t": 612.4}}}}},
+                                                                         {"kiki": {"nom": "Kiki"}, "ami": {"nom": "Un ami"}}, "kiki"))
+                octets = page.page(donnees=donnees, niveau=niveau).encode("utf-8")
                 if q.get("cadre"):  # comme dans l'appli : la page dans un cadre (pour essayer le changement de circuit sans rechargement de l'appli)
                     import html as _html
                     octets = ("<!doctype html><meta charset='utf-8'><body style='margin:0'><iframe style='border:0;width:100vw;height:100vh' srcdoc=\"" + _html.escape(octets.decode("utf-8"), quote=True) + "\"></iframe>").encode("utf-8")

@@ -137,8 +137,8 @@ function edPanneau() {
         <div class="ed-obj"><select id="edLoin">${loin.map(k => `<option>${k}</option>`).join("")}</select><button data-act="loin">+ Ajouter</button></div><small>cap en degrés : 0 = droit devant au départ, 90 = à droite, 180 = derrière</small></div></div>`;
   } else if (ED.onglet === "generer") {
     const G = ED.gen, terre = G.activite === "terre", cases = terre
-      ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"]]
-      : [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"]];
+      ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la route"]]
+      : [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la rivière"]];
     h += `<div class="ed-form"><p class="ed-note">Choisis l'activité, coche ce que tu veux y trouver, puis « Générer ». Le circuit obtenu se retouche pièce par pièce.</p>`
       + choix("Activité", "g:activite", G.activite || "eau", [["eau", "rameur : une rivière"], ["terre", "vélo, skieur de fond : routes et chemins"]])
       + (terre ? `<p class="ed-note">Sur la terre : des routes posées sur le sol, des rues pavées, des chemins en sous-bois, des cols ; un volcan au milieu d'une boucle ; un 8 qui se croise à un carrefour.</p>` : "")
@@ -226,7 +226,7 @@ function edAction(act, bouton) {
   else if (act === "bas" && i < P.length - 1 && !P[i + 1].raccord) { [P[i + 1], P[i]] = [P[i], P[i + 1]]; ED.sel++; }
   else if (act === "double" && p && !p.raccord) { const c = JSON.parse(JSON.stringify(p)); delete c.lieux; delete c.objets; P.splice(i + 1, 0, c); ED.sel++; }
   else if (act === "retire" && P.length > 1) { if (p.raccord && n.boucle) { ED.msg = "Une boucle a besoin de son raccord : passe en « parcours de A à B » dans l'onglet Circuit pour l'enlever."; edEtat(); return; } P.splice(i, 1); ED.sel = Math.max(0, i - 1); }
-  else if (act === "objet") { const nom = $("edObj").value, num = +$("edNum").value, o = {o: nom, cote: ["ligne", "tronc", "rondins", "nenuphars"].includes(nom) ? "c" : "g", a: Math.round((p.long || 40) / 2)};
+  else if (act === "objet") { const nom = $("edObj").value, num = +$("edNum").value, o = {o: nom, cote: ["ligne", "tronc", "rondins", "nenuphars", "ronflex"].includes(nom) ? "c" : "g", a: Math.round((p.long || 40) / 2)};
     if (o.cote !== "c") o.e = ({cascade: 2, bateau: -1.6, ponton: -3.6, phare: 7, maison: 15, immeuble: 17, entrepot: 15, centre: 19, boutique: 18, labo: 21}[nom]) || 3;
     if (nom === "bateau" || nom === "ponton") o.flotte = true; if (nom === "pokemon") o.num = num > 0 ? num : 25; if (nom === "habitant") o.nom = "youngster"; if (nom === "panneau") o.texte = n.nom.toUpperCase();
     (p.objets = p.objets || []).push(o); }
