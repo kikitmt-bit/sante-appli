@@ -271,3 +271,4 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   navigateur (boucle du jeu avancée à la main : le panneau était caché) : Huit (saut de la cascade, tunnel, Ronflex), « L'île aux rapides »
   (fourche vue d'en haut sur les rapides), `terre-huit` à vélo ; Passer, Revoir, Reprendre ; 176 tests verts. **Pas encore vu** : la fluidité
   réelle (le panneau de Claude ne l'a pas montrée), la tablette, une vraie séance. Pas de ligne dans 🧪 (c'est dans La Rivière).
+  **Envoyé sur GitHub le 15/11** (commit `0ed36ff`, avec l'étape 7 et la correction de `code_a_jour`) : tests verts.
