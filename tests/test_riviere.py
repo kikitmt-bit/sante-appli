@@ -120,8 +120,11 @@ class Fichiers(unittest.TestCase):
     def test_planche(self):
         """La planche (outils/planche.py) s'assemble à partir de ce que rend la note, sans navigateur."""
         sys.path.insert(0, str(R / "outils"))
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow absent (la planche ne sert que sur le PC de Kiki)")
         import planche
-        from PIL import Image
         plan = {"nom": "Essai", "terre": False, "duree": 200, "note": 70,
                 "criteres": [{"nom": "Rythme", "note": 80, "phrase": "ok"}, {"nom": "Relief", "note": 30, "phrase": "plat"}],
                 "sequences": [{"paysage": "pre et foret", "t0": 0, "t1": 120}, {"paysage": "grotte", "t0": 120, "t1": 230}],
