@@ -1,6 +1,7 @@
 """Serveur d'essai de « La Rivière » : python riviere/serveur.py [port]
 La page est assemblée à chaque chargement (on retouche un fichier, on recharge). ?niveau=<nom> choisit le niveau (sinon : essai).
-?pur=1 : le contrôle sans dessin (le même que les contrôles automatiques), son bilan s'affiche dans la page."""
+?pur=1 : le contrôle sans dessin (le même que les contrôles automatiques), son bilan s'affiche dans la page.
+?records=1 : la page reçoit les records de riviere/outils/records-essai.json (comme ceux du serveur ; fichier gardé sur ce PC seulement)."""
 import http.server
 import importlib
 import os
@@ -34,7 +35,9 @@ class H(http.server.BaseHTTPRequestHandler):
                 octets = ("<!doctype html><meta charset='utf-8'><pre id='b'>…</pre><script>\"use strict\";\n" + js.replace("</", "<\\/")
                           + "\ndocument.getElementById('b').textContent = JSON.stringify(globalThis.__bilan, null, 1);</script>").encode("utf-8")
             else:
-                octets = page.page(donnees={"lien": lien_local(), "force": bool(q.get("niveau"))}, niveau=niveau).encode("utf-8")
+                essai = Path(__file__).resolve().parent / "outils" / "records-essai.json"
+                records = __import__("json").loads(essai.read_text(encoding="utf-8")) if q.get("records") and essai.exists() else {}
+                octets = page.page(donnees={"lien": lien_local(), "force": bool(q.get("niveau")), "records": records}, niveau=niveau).encode("utf-8")
                 if q.get("cadre"):  # comme dans l'appli : la page dans un cadre (pour essayer le changement de circuit sans rechargement de l'appli)
                     import html as _html
                     octets = ("<!doctype html><meta charset='utf-8'><body style='margin:0'><iframe style='border:0;width:100vw;height:100vh' srcdoc=\"" + _html.escape(octets.decode("utf-8"), quote=True) + "\"></iframe>").encode("utf-8")

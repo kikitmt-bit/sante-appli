@@ -4,6 +4,7 @@
 const CLE_FANTOME = CLE_RECORD.replace(/_record$/, "_fantome"), CLE_CHOIX = "riviere_fantome_choix";
 const FANTOME = {choix: "record", record: null, seance: null, actuel: null, trace: [], derniere: 0, pantin: null};
 try { FANTOME.choix = localStorage.getItem(CLE_CHOIX) || "record"; const r = JSON.parse(localStorage.getItem(CLE_FANTOME) || "null"); if (r && r.t && r.pts) FANTOME.record = r; } catch (e) {}
+{ const ts = tourServeur(); if (ts && ts.pts && (!FANTOME.record || ts.t < FANTOME.record.t)) FANTOME.record = {t: ts.t, pts: ts.pts}; }   // celui du serveur, s'il est meilleur (records.js)
 
 function choisirFantome(k) { FANTOME.choix = k; try { localStorage.setItem(CLE_CHOIX, k); } catch (e) {} }
 function prendreFantome() { const F = FANTOME; F.actuel = F.choix === "aucun" ? null : F.choix === "record" ? (F.record || F.seance) : F.seance; }

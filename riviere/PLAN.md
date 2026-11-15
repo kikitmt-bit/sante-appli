@@ -38,9 +38,9 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 |---|---|---|---|---|---|---|---|
 | 0 | Filets | Claude dit après chaque envoi si GitHub est vert ; les tests du moteur tournent aussi sur ce PC ; des captures de référence | c'est elle | 0.2, 0.3, 0.4 | nul | ½ | **faite le 14/11** (voir le journal) |
 | 1 | Toutes les machines enregistrées | une séance de skieur de fond ou de vélo apparaît dans Poké Fit, comme le rameur | un seul format de séance pour toutes les machines | 11.1 | faible | 1 à 2 | **faite le 14/11** (à essayer : une vraie séance au parc) |
-| 2 | Records et fantômes sur le serveur | le record suit Kiki de la tablette au téléphone | une empreinte du tracé dans la clé du record | 11.2 | faible | 1 à 2 | à faire |
-| 3 | Fantômes des amis, classement par circuit | le meilleur tour d'un ami nage à côté de soi | aucune de plus | 11.3, 11.5 | moyen | 1 | à faire (voir « En suspens ») |
-| 4 | Générateur noté | une planche d'images et une note par circuit | le générateur tourne sans navigateur | 12.1, 12.2 | faible | 2 | à faire |
+| 2 | Records et fantômes sur le serveur | le record suit Kiki de la tablette au téléphone | une empreinte du tracé dans la clé du record | 11.2 | faible | 1 à 2 | **faite le 14/11** (à essayer : tablette puis téléphone) |
+| 3 | Fantômes des amis, classement par circuit | le meilleur tour d'un ami nage à côté de soi | aucune de plus | 11.3, 11.5 | moyen | 1 | **mise de côté le 14/11** (Kiki joue seul ; à reprendre dès qu'il parle d'amis ou de multijoueur) |
+| 4 | Générateur noté | une planche d'images et une note par circuit | le générateur tourne sans navigateur | 12.1, 12.2 | faible | 2 | **faite le 15/11** (à essayer : dire si le classement colle, en regardant les planches) |
 | 5 | Circuit du jour | chaque matin le même circuit pour tous et son classement, fabriqué par GitHub sans crédits | l'étape 4 | 11.4 | faible | 1 | à faire |
 | 6 | Ronflex et premiers lieux de Kanto | Ronflex bloque la route et se réveille quand on accélère | la brique « effort » (forcer plus que sa croisière) | 7.5, 7.6, 10.7 | faible | 1 à 2 par lot | à faire |
 | 7 | Embranchements à l'effort | une fourche : la voie spectaculaire si on force | les captures de référence de l'étape 0 | 5.1 | **élevé** (le cœur) | 3 à 4 | à faire |
@@ -80,11 +80,17 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
 
 ## En suspens (à décider avec Kiki)
 
+- **Étape 3 mise de côté (14/11, Kiki)** : il est seul à jouer. Dès qu'il parle de multijoueur ou d'amis qui veulent jouer, le lui rappeler
+  et la faire (plan court déjà proposé : option « Les amis » au choix du fantôme, fantômes aux couleurs de leur carte avec pseudo, classement
+  par circuit et par segment sous le nom du circuit, faux ami sur le serveur d'essai). On passe à l'étape 4.
 - **Les amis ne peuvent pas jouer aujourd'hui** : le jeu avance grâce à l'appli « Capteurs » de la Pixel Watch de Kiki. Sans un moyen
   pour eux (le téléphone comme capteur, ou un capteur Bluetooth), l'étape 3 et le classement du jour n'ont que Kiki dedans. Chantier à
   part, à décider avant l'étape 3.
 - **Le home trainer** : le Bluetooth (`jeu/capteurs.js`) a été écrit sans appareil. L'étape 8 n'a de sens qu'avec un vrai home trainer
   sous la main ; sinon elle passe en dernier.
+
+- **Envoyé sur GitHub le 15/11** : étapes 2 et 4 et la note de l'étape 3, ensemble
+  (puis `gh run list --limit 3`).
 
 ## Ce dont Kiki aura besoin de faire
 
@@ -100,11 +106,15 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   (`envoyer_rameur`) la passe à `seances_rameur.ranger` → `data/rameur/seances.json` (branche data). `seances_rameur.fusionner` en fait
   une séance de la journée et remplace celle de la montre qu'elle recouvre. Depuis l'étape 1 : les trois machines, même format (`machine`),
   le skieur de fond et le vélo dans `data/machines/seances.json` (`seances_rameur.AUTRES`) ; détails dans `MOTEUR.md`.
-- **Records, fantômes, segments** : seulement dans le navigateur (`CLE_RECORD` de `jeu/jeu.js`, `CLE_FANTOME` de `jeu/fantome.js`,
-  `CLE_SEGMENTS` de `jeu/parcours.js`). La clé contient le nom et la distance du circuit, pas son tracé.
+- **Records, fantômes, segments** : sur le serveur depuis l'étape 2 (`data/riviere/records.json` du joueur, `seances_rameur.garder_records`),
+  copie dans le navigateur ; tout passe par `jeu/records.js` (`CLE_CIRCUIT` avec l'empreinte du tracé, `SERVEUR`, `recordsAEnvoyer`). Mode d'emploi : `MOTEUR.md`.
 - **Écrire sur le serveur** : `app.ecrire_depot` (le jeton GitHub de l'appli), comme pour `data/dresseurs/`.
-- **Générateur** : `genererCircuit` dans `jeu/generateur.js`. Sa recherche est bornée en temps (12 s) : à vérifier qu'elle donne le
-  même circuit sur deux machines de vitesses différentes avant d'en faire un circuit du jour.
+- **Générateur** : `genererCircuit` dans `jeu/generateur.js`. Depuis l'étape 4, sa recherche compte ses tirages (plus de limite de temps) :
+  mêmes options, même circuit, dans le navigateur comme avec node (vérifié le 15/11). Sans navigateur : `page.generateur(options)`,
+  `python riviere/outils/generer.py` (`--notes`, `--ecrire <nom>`). Pour le circuit du jour (étape 5) : monter `--tirages` (GitHub a le temps).
+- **Note d'un circuit** : `noterCircuit` dans `jeu/note.js` (tables `FAMILLES`, `POIDS_NOTE`, `RYTHME` en tête du fichier) ; elle rend aussi les
+  séquences de paysage (`sequences`), les repères et les moments forts avec leur instant, que dessine la planche.
+- **Planche** : `python riviere/outils/planche.py [circuit…]` → `riviere/outils/planches/<nom>.png` (hors dépôt). Pour l'étape 5 : la faire sur le circuit du jour.
 - **Tests** : `.github/workflows/tests.yml` (« Tests des règles », à chaque envoi). Sur ce PC, node manque : 3 tests du moteur sont sautés.
   `gh` marche ici.
 
@@ -134,3 +144,36 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   (`TestMachines`), 155 au total, tous verts ; essayé dans le navigateur (fin de séance des trois machines, séance passée par `ranger` et
   `fusionner`). Captures de référence pas refaites : rien du dessin n'a changé. **Reste à essayer par Kiki** : une vraie séance de skieur de
   fond au parc, le jeu ouvert depuis l'appli, puis la voir une seule fois dans Santé. Vélo : pas essayable sans home trainer.
+- **Étape 2 — Records et fantômes sur le serveur (14/11/2026, Opus).** Le meilleur tour, son fantôme (allégé à un point par seconde) et les records
+  de segments partent avec une séance enregistrée (`records` à côté de `seance` dans `pkm_rameur`) et sont rangés dans `data/riviere/records.json`
+  du joueur (`seances_rameur.garder_records` : jamais un temps moins bon) ; l'appli les redonne au jeu (`D.records`), qui prend le meilleur du serveur
+  et de la machine (`jeu/records.js`). Clé = machine, circuit, mètres du tour et **empreinte du tracé construit** (`kanto-1km` : `1tlda7a`). Décidé
+  avec Kiki : les anciens records de la tablette (des essais) ne sont pas repris, ils repartent de zéro. Tests : `tests/test_records_riviere.py`
+  (9), 164 au total, tous verts ; essayé dans le navigateur (record, fantôme et segment venus du serveur, menu « Ton record (5:00,0) », séance
+  enregistrée avec sa trace, ~3 Ko). Serveur d'essai : `?records=1`. Captures de référence pas refaites : rien du dessin n'a changé.
+  **Reste à essayer par Kiki** : une vraie séance sur la tablette, puis le jeu ouvert sur le téléphone avec le même record et le même fantôme.
+- **Étape 4 — Générateur noté, première moitié (15/11/2026, Fable).** **La note** (`jeu/note.js`, sur 100, sept critères avec leur raison en clair) :
+  rythme 30 (part du tour passée dans un paysage vu depuis plus de 45 s ; la règle de Kiki : un changement toutes les 20 à 40 s), variété 20,
+  contrastes 10, repères 15, moments forts 15, relief 5, lignes droites 5. Elle ne lit que la piste construite : aucun dessin. Elle s'affiche
+  dans l'éditeur (une ligne sous le plan avec le point faible, le détail dans l'onglet « Générer ») et pour tout circuit. Notes du 15/11 :
+  essai (le Huit) 89, bourg-palette 84, terre-volcan 81, vitrine 74 (son retour : 2 min 32 de ligne droite dans les prés), terre-huit 63,
+  kanto-1km 59 (un changement toutes les 1 min 07). **Kiki, 15/11 : pas encore essayé, « je pense que ça va coller »** : classement accepté de confiance ; s'il ne colle pas à l'usage, régler les tables.
+  **Le générateur** garde le mieux noté de 8 tirages valables au lieu du plus ramassé, et fait trois choses de plus : il **habille les rives**
+  des bouts ordinaires pour que la note monte (`habiller`, `HABITS` : prés, lisières, forêt, falaise, gorges, dunes ; même tirage : 60 → 78),
+  il **déplie le retour** (`deplierRetour` : le raccord de 300 à 500 m devient des pièces d'une centaine de mètres, habillées elles aussi),
+  et il **contrôle le sol** du circuit retenu (`solNiveau`, le même balayage que les tests : `scannerSol`), avec repli sur le suivant.
+  **Sans navigateur** : `python riviere/outils/generer.py` ; même circuit que dans le navigateur (empreinte comparée, eau et terre).
+  Constats : des marches dans le sol existaient déjà dans les circuits générés et personne ne les voyait ; sur la terre avec beaucoup de
+  dénivelé (120 m, col et volcan), presque tous les tirages en ont : le générateur le dit (« son sol a une marche ») et `--ecrire` refuse.
+  Les corriger demanderait de toucher au cœur (`champ.js`) : pas fait. Le cœur (`moteur/`) n'a pas été touché, `kanto-1km` non plus ;
+  captures de référence pas refaites (rien du dessin n'a changé). Tests : 3 de plus (167, tous verts). Durée dans le navigateur : 2 à 3 s
+  pour 2 km, une douzaine de secondes pour 4 km très sinueux. Pas de ligne dans 🧪 (rien à y toucher : c'est dans l'éditeur de La Rivière).
+  **Reste pour finir l'étape (Opus)** : la planche (une quinzaine d'images le long du circuit) et sa frise, dessinée depuis `sequences`.
+  **Reste à essayer par Kiki** : dire si le classement des 6 circuits lui paraît juste ; générer 3 ou 4 circuits et les essayer.
+- **Étape 4 — Générateur noté, fin (15/11/2026, Opus).** **La planche** (`riviere/outils/planche.py`) : une image par circuit, dans
+  `riviere/outils/planches/` (hors dépôt) : le nom, la note et ses sept critères (en vert, orange ou rouge), jusqu'à 16 vues prises dans
+  Chrome sans fenêtre (une au milieu de chaque paysage, une juste avant chaque moment fort, en cadre rouge, avec l'instant du tour ; chiffres
+  et boutons du jeu cachés), puis la frise du tour : chaque paysage en couleur à sa vraie durée (deux couleurs quand les rives diffèrent),
+  les repères au-dessus, les moments forts dessous, une légende. Tout vient de `noterCircuit` : rien d'inventé. ~2 min par circuit. Un circuit
+  du générateur : `generer.py … --ecrire <nom>` puis `planche.py <nom>`. Test : `test_planche` (assemblage sans navigateur). Le jeu n'a pas
+  changé (ni moteur, ni `kanto-1km`, ni séance). **Reste à essayer par Kiki** : regarder les 6 planches et dire si le classement lui paraît juste.

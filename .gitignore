@@ -1,3 +1,5 @@
 .streamlit/secrets.toml
 __pycache__/
 riviere/outils/captures/
+riviere/outils/records-essai.json
+riviere/outils/planches/

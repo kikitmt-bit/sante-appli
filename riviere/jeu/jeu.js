@@ -18,9 +18,11 @@ function coup(force = .6, muet = false) {   // un geste de la machine ; muet : u
 function vitesseCapteur(v) { S.v = v; S.capteur = true; if (S.mode === "vraie") S.capteurVu = true; }   // capteurVu : un vrai capteur a fait avancer cette séance (elle peut être gardée)   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
 const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (MACHINE.monture === "cycliste" && MACHINE.physique && n < 2) return VELO.cadence || 0; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };   // (à vélo sans capteur de cadence : celle des pédales qu'on voit tourner)
 
-/* les tours d'un circuit : le chrono part au premier passage de la ligne ; le meilleur tour est gardé sur cette machine, par machine de sport */
-const CLE_RECORD = "riviere_" + (MACHINE_NOM === "rameur" ? "" : CLE_MACHINE + "_") + (NIVEAU.id || NIVEAU.nom) + "_" + (NIVEAU.distance || Math.round(TOUR_M)) + "m_record";
+/* les tours d'un circuit : le chrono part au premier passage de la ligne ; le meilleur tour, par machine de sport, est gardé sur le serveur
+   (records.js) et sur cette machine : on prend le meilleur des deux */
+const CLE_RECORD = "riviere_" + CLE_CIRCUIT + "_record";
 let record = 0; try { record = +localStorage.getItem(CLE_RECORD) || 0; } catch (e) {}
+if (tourServeur() && (!record || tourServeur().t < record)) record = tourServeur().t;
 const chrono = s => Math.floor(s / 60) + ":" + String(Math.floor(s % 60)).padStart(2, "0") + "," + Math.floor(s * 10 % 10);
 function annoncer(texte) { const a = $("annonce"); a.textContent = texte; a.classList.remove("vu"); void a.offsetWidth; a.classList.add("vu"); }
 function passerLaLigne() {

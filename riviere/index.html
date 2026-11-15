@@ -124,6 +124,9 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #editeur .ed-rapides, #editeur .ed-coches { display: flex; flex-wrap: wrap; gap: 5px 12px; align-items: center; font-size: 18px; }
 #editeur .ed-rapides button { font-size: 16px; padding: 2px 7px; }
 #editeur small, #editeur .ed-note { color: #686850; font-size: 16px; margin: 0; }
+.ed-crit { display: grid; grid-template-columns: 7.2em 1fr 2em; gap: 0 8px; align-items: center; margin: 3px 0; }
+.ed-crit b { font-weight: normal; color: #383828; } .ed-crit em { font-style: normal; text-align: right; color: #383828; } .ed-crit small { grid-column: 1 / -1; }
+.ed-crit i { height: 9px; background: #D8D8C0; border: 2px solid #484838; border-radius: 5px; overflow: hidden; } .ed-crit u { display: block; height: 100%; }
 #editeur .ed-objets { display: flex; flex-direction: column; gap: 4px; border-top: 2px solid #D8D4BC; padding-top: 6px; margin-top: 4px; }
 #editeur .ed-objets > span { color: #B05010; }
 #editeur .ed-obj { display: flex; gap: 4px; align-items: center; }

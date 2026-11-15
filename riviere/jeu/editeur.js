@@ -3,7 +3,9 @@
 //   - à gauche, le plan vu du ciel et le profil d'altitude, redessinés à chaque retouche par le VRAI code de la piste (generateur.js : essayerNiveau) ;
 //     le contrôleur du moteur dit tout de suite ce qui cloche (un virage trop serré, un croisement sans pont, une boucle qui ne se referme pas) ;
 //   - à droite, la liste des pièces et les réglages de la pièce choisie ; « + » ajoute un module tout fait (ligne droite, épingle, lac, grotte, pont…) ;
-//   - « Générer » : quelques cases, un bouton, un circuit complet qu'on retouche ensuite ;
+//   - « Générer » : quelques cases, un bouton, un circuit complet qu'on retouche ensuite ; le générateur garde le mieux noté de ses tirages ;
+//   - la note du brouillon (jeu/note.js : rythme, variété, contrastes, repères, moments forts, relief, lignes droites) se recalcule à chaque
+//     retouche : en une ligne sous le plan, en détail dans l'onglet « Générer » ;
 //   - « Essayer » lance le jeu sur le brouillon ; « Garder » le range dans « Mes circuits » (sur cette machine), il apparaît au menu ;
 //   - « Exporter » donne le texte du circuit (à coller ailleurs, ou à donner à Claude pour qu'il entre dans le jeu) ; « Importer » le relit.
 // Sur le serveur d'essai du PC, « Écrire dans le jeu » range le fichier dans contenu/niveaux.
@@ -19,7 +21,19 @@ function ouvrirEditeur(niveau) {
   ED.sel = 0; ED.msg = ""; $("editeur").hidden = false; document.body.classList.add("edite"); edTout();
 }
 function fermerEditeur() { $("editeur").hidden = true; document.body.classList.remove("edite"); ouvrirMenu(); }
-function edChange() { ecrireReglage(ED_CLE, ED.n); ED.res = essayerNiveau(ED.n); edPlan(); edEtat(); }
+function edChange() {
+  ecrireReglage(ED_CLE, ED.n); ED.res = essayerNiveau(ED.n); ED.note = null;
+  try { const r = ED.res; if (r && !r.erreur && r.verif.ok) ED.note = noterCircuit(r.PISTE, ED.n, region(ED.n.biome), r.tour); } catch (e) {}
+  edPlan(); edEtat(); edNote();
+}
+/* la note du brouillon, en détail (onglet « Générer ») : chaque critère, sa note, sa raison ; les plus faibles en premier */
+function edNoteHTML() {
+  const n = ED.note; if (!n) return `<small>Pas de note tant que le circuit n'est pas jouable.</small>`;
+  const tri = n.criteres.slice().sort((a, b) => (a.note - 100) * a.poids - (b.note - 100) * b.poids);
+  return tri.map(c => `<div class="ed-crit"><b>${c.nom}</b><i><u style="width:${c.note}%;background:${c.note >= 70 ? "#48C868" : c.note >= 40 ? "#F8C838" : "#D83830"}"></u></i><em>${c.note}</em><small>${esc(c.phrase)}</small></div>`).join("")
+    + `<small>Un tour ≈ ${fmt(n.duree)} à ton allure, ${n.sequences.length} paysages qui se suivent. La note juge la construction du circuit, pas sa beauté.</small>`;
+}
+function edNote() { const el = $("edNote"); if (el) { el.innerHTML = edNoteHTML(); const t = $("edNoteTitre"); if (t) t.textContent = ED.note ? "La note de ce circuit : " + ED.note.note + " / 100" : "La note de ce circuit"; } }
 function edTout() { edChange(); edPanneau(); }
 
 /* ---- le plan et le profil ---- */
@@ -67,7 +81,9 @@ function edEtat() {
   if (!r || r.erreur) { el.className = "ko"; el.textContent = "✖ " + (r ? r.erreur : "?"); return; }
   const v = r.verif;
   el.className = v.ok ? "ok" : "ko";
+  const faible = ED.note ? ED.note.criteres.slice().sort((a, b) => (a.note - 100) * a.poids - (b.note - 100) * b.poids)[0] : null;
   el.innerHTML = (v.ok ? "✔ Jouable" : "✖ À corriger") + " · " + v.longueur + " m de décor · " + (r.boucle ? "un tour" : "le parcours") + " ≈ " + Math.round(r.tour) + " vrais m · point haut " + v.haut + " m"
+    + (ED.note ? " · <b>note " + ED.note.note + " / 100</b>" + (faible && faible.note < 70 ? "<br><small>Le point faible : " + faible.nom.toLowerCase() + ". " + esc(faible.phrase) + "</small>" : "") : "")
     + (v.ok ? "" : "<br>" + v.erreurs.map(esc).join("<br>")) + (ED.msg ? "<br><b>" + esc(ED.msg) + "</b>" : "");
 }
 
@@ -132,7 +148,8 @@ function edPanneau() {
       + choix("Forme", "g:forme", G.forme === "huit" && !terre ? "boucle" : G.forme || "boucle", [["boucle", "une boucle"], ["ouvert", "de A à B"]].concat(terre ? [["huit", "un 8 (qui se croise à un carrefour)"]] : []))
       + `<div class="ed-coches">${cases.map(([k, t]) => `<label><input type="checkbox" data-g="${k}"${G.avec[k] ? " checked" : ""}> ${t}</label>`).join("")}</div>`
       + choix("Heure", "g:heure", G.heure || "jour", HEURES_MENU.filter(x => x[0] !== "circuit")) + choix("Temps", "g:meteo", G.meteo || "beau", METEOS_MENU.filter(x => x[0] !== "circuit"))
-      + `<div class="ed-barre"><button class="rouge" data-act="generer">▶ Générer</button><button data-act="autre">🎲 Un autre</button></div></div>`;
+      + `<div class="ed-barre"><button class="rouge" data-act="generer">▶ Générer</button><button data-act="autre">🎲 Un autre</button></div>
+        <div class="ed-objets"><span id="edNoteTitre">${ED.note ? "La note de ce circuit : " + ED.note.note + " / 100" : "La note de ce circuit"}</span><div id="edNote">${edNoteHTML()}</div></div></div>`;
   } else {
     const persos = Object.entries(CIRCUITS_PERSO);
     h += `<div class="ed-form"><div class="ed-objets"><span>Mes circuits (gardés sur cette machine)</span>${persos.length ? persos.map(([k, c]) => `<div class="ed-obj"><b>${esc(c.nom || k)}</b><button data-ouvre="${esc(k)}">Modifier</button><button data-joue="${esc(k)}">Jouer</button><button data-efface="${esc(k)}">×</button></div>`).join("") : "<small>Aucun pour l'instant : « Garder » range le brouillon ici.</small>"}</div>
@@ -220,7 +237,8 @@ function edAction(act, bouton) {
     bouton.textContent = "Je cherche…";
     setTimeout(() => { const r = genererCircuit(Object.assign({biome: n.biome}, ED.gen));
       if (r.erreur) { ED.msg = r.erreur; edPanneau(); edEtat(); return; }
-      ED.n = r.niveau; ED.sel = 0; ED.msg = "Circuit trouvé au " + r.essais + (r.essais > 1 ? "e" : "er") + " tirage. Retouche-le dans « Pièces », ou essaie-le."; edTout(); }, 30);
+      ED.n = r.niveau; ED.sel = 0; ED.msg = (r.bons > 1 ? "Le mieux noté de " + r.bons + " tirages : " : "Circuit trouvé : ") + r.note.note + " / 100. Retouche-le dans « Pièces », ou essaie-le."
+        + (r.sol && !r.sol.ok ? " Attention : son sol a une marche quelque part (aucun tirage n'y échappait) : essaie « Un autre »." : ""); edTout(); }, 30);
     return; }
   else if (act === "vide") { ED.n = {id: idDe("mon circuit " + Math.floor(Math.random() * 900 + 100)), nom: "Mon circuit", biome: n.biome, lieux: n.lieux, graine: 3, nageur: n.nageur || 7, boucle: "gauche", allure: 1, elan: 60,
       pieces: [{nom: "Le départ", long: 100, virage: 0, eau: 12, g: "pre", d: "pre", objets: [{o: "ligne", cote: "c", a: 0}]}, {nom: "Premier virage", long: 80, virage: -90, eau: 11, g: "foret", d: "pre"}, {nom: "Le retour", raccord: true, rayon: 30, eau: 12, g: "pre", d: "pre", monte: "auto"}]}; ED.sel = 0; ED.onglet = "pieces"; }

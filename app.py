@@ -1002,11 +1002,11 @@ if st.query_params.get("ecran") == "rameur":
                 "header,[data-testid='stToolbar'],.st-key-outils{display:none !important}</style>", unsafe_allow_html=True)
     envoyer_rameur()  # une séance finie sur la tablette (« La Rivière ») attend sur cette machine : on l'envoie avant de relire les séances
     try:
-        f_r = lire([seances_rameur.FICHIER, seances_rameur.AUTRES], {seances_rameur.FICHIER, seances_rameur.AUTRES})
-        fichier_rameur, fichier_autres = f_r[seances_rameur.FICHIER], f_r[seances_rameur.AUTRES]
+        f_r = lire([seances_rameur.FICHIER, seances_rameur.AUTRES, seances_rameur.RECORDS], {seances_rameur.FICHIER, seances_rameur.AUTRES, seances_rameur.RECORDS})
+        fichier_rameur, fichier_autres, records_r = f_r[seances_rameur.FICHIER], f_r[seances_rameur.AUTRES], f_r[seances_rameur.RECORDS]  # records_r : ses records de La Rivière (étape 2)
     except Exception as e:  # sans le modèle, le jeu estime les mètres lui-même
         print("Séances de rameur illisibles pour la tablette :", type(e).__name__, flush=True)
-        fichier_rameur = fichier_autres = None
+        fichier_rameur = fichier_autres = records_r = None
     aujourd_r, voyage_r, dresseur_r = dt.datetime.now(TZ).date(), None, None
     # Quelle version du jeu (11/11, Kiki) : « La Rivière » par défaut (le tour de Bourg Palette, ou &riviere=<niveau>) ;
     # les anciennes restent : &circuit=1 (Circuit de la Baie), &pseudo=1 (pseudo-3D), &ancien=1 (Grande Boucle).
@@ -1036,7 +1036,7 @@ if st.query_params.get("ecran") == "rameur":
                                                "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/",
                                                aujourd_r, voyage_r, "https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/scenes/",
                                                {k: (dresseur_r or {}).get(k) for k in ("peau", "casquette", "veste", "pantalon")}, AMI is None,
-                                               page_rameur, options_r, autres=fichier_autres), height=800)
+                                               page_rameur, options_r, autres=fichier_autres, records=records_r), height=800)
     st.stop()
 if st.session_state.pop("memoriser", False):  # retenu sur ce téléphone (sans date d'expiration / 400 jours)
     streamlit_js_eval(js_expressions=f"localStorage.setItem('sante_ok','{JETON}'); document.cookie='sante_ok={JETON}; "

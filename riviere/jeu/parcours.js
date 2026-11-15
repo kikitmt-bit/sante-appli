@@ -6,6 +6,7 @@
 // ARRIVÉE : un parcours ouvert (de A à B) annonce son temps à l'arrivée, garde son record, puis repart du début.
 const CLE_SEGMENTS = CLE_RECORD.replace(/_record$/, "_segments");
 const SEG = {actif: null, t0: 0, records: lireReglage(CLE_SEGMENTS, {}) || {}, faits: [], dernier: null};
+for (const [nom, t] of Object.entries(SERVEUR.segments || {})) if (t > 0 && !(SEG.records[nom] <= t)) SEG.records[nom] = t;   // ceux du serveur, s'ils sont meilleurs (records.js)
 const dansSegment = (g, s) => BOUCLE ? ecart(s, g.s0) >= 0 && ecart(s, g.s1) < 0 : s >= g.s0 && s < g.s1;
 function parcoursMaj() {
   if (!S.mode || S.pause || !S.lance) return;

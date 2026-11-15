@@ -105,6 +105,33 @@ class Fichiers(unittest.TestCase):
                 for o in p.get("objets", []):
                     self.assertIn(o["o"], OBJETS, f"{nom} : objet inconnu")
 
+    def test_note_et_generateur(self):
+        """La note d'un circuit (jeu/note.js) : ses poids font 100 ; les habits que le générateur donne aux rives existent dans leur région."""
+        note = (R / "jeu" / "note.js").read_text(encoding="utf-8")
+        poids = re.search(r"const POIDS_NOTE = \{([^}]*)\}", note).group(1)
+        self.assertEqual(sum(int(v) for v in re.findall(r": (\d+)", poids)), 100)
+        gen = (R / "jeu" / "generateur.js").read_text(encoding="utf-8")
+        for act, biome in (("eau", "kanto"), ("terre", "kanto-routes")):
+            habits = re.search(act + r": \[(\[.*?\])\]", gen[gen.index("const HABITS"):]).group(1)
+            for rive in set(re.findall(r'"(\w+)"', habits)):
+                self.assertIn(rive, region(biome)["rives"], f"habit du générateur ({act}) : rive inconnue")
+        self.assertIn("genererCircuit(", _page.generateur({"km": 1}))
+
+    def test_planche(self):
+        """La planche (outils/planche.py) s'assemble à partir de ce que rend la note, sans navigateur."""
+        sys.path.insert(0, str(R / "outils"))
+        import planche
+        from PIL import Image
+        plan = {"nom": "Essai", "terre": False, "duree": 200, "note": 70,
+                "criteres": [{"nom": "Rythme", "note": 80, "phrase": "ok"}, {"nom": "Relief", "note": 30, "phrase": "plat"}],
+                "sequences": [{"paysage": "pre et foret", "t0": 0, "t1": 120}, {"paysage": "grotte", "t0": 120, "t1": 230}],
+                "reperes": [{"t": 3, "quoi": "bourg-palette"}], "forts": [{"t": 150, "quoi": "grotte"}],
+                "vues": [{"t": 60, "quoi": "pré", "sorte": "paysage"}, {"t": 150, "quoi": "grotte", "sorte": "fort"}]}
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "p.png"
+            planche.assembler(plan, [Image.new("RGB", (960, 540), "#88AACC")] * 2, f)
+            self.assertGreater(Image.open(f).width, 1000)
+
     def test_pas_de_code_avale(self):
         """Une instruction ne doit jamais se retrouver derrière un commentaire de fin de ligne (deux bugs en novembre 2026)."""
         for f in list((R / "moteur").glob("*.js")) + list((R / "jeu").glob("*.js")) + list((C / "objets").glob("*.js")) + [R / "controle.js"]:
@@ -160,6 +187,55 @@ class Moteur(unittest.TestCase):
         self.assertEqual(b["longueur"], 2000)
         self.assertEqual(b["haut"], 0)
         self.assertEqual(b["evenements"], 3)
+
+    def test_notes(self):
+        """Chaque circuit du jeu a sa note (étape 4 du plan) : sept critères de 0 à 100, des séquences de paysage qui couvrent le tour."""
+        for nom in NIVEAUX:
+            n = self.bilan(nom)["note"]
+            self.assertEqual(len(n["criteres"]), 7, nom)
+            for c in n["criteres"]:
+                self.assertTrue(0 <= c["note"] <= 100 and c["phrase"], f"{nom} : {c}")
+            self.assertTrue(0 <= n["note"] <= 100, nom)
+            self.assertGreater(len(n["sequences"]), 1, f"{nom} : un seul paysage ?")
+            self.assertAlmostEqual(sum(s["t"] for s in n["sequences"]), n["duree"], delta=len(n["sequences"]) + 2, msg=f"{nom} : les séquences ne couvrent pas le tour")
+
+    def generer(self, options):
+        import page
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "generateur.js"
+            f.write_text(page.generateur(options), encoding="utf-8")
+            r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8", timeout=300)
+        self.assertEqual(r.returncode, 0, f"le générateur plante\n{r.stderr[-1500:]}")
+        return json.loads([l for l in r.stdout.splitlines() if l.startswith("CIRCUIT ")][-1][8:])
+
+    def controle_de(self, circuit):
+        import page
+        with tempfile.TemporaryDirectory() as d:
+            f = Path(d) / "controle.js"
+            f.write_text(page.controle(circuit=circuit), encoding="utf-8")
+            r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8", timeout=120)
+        self.assertEqual(r.returncode, 0, r.stderr[-1500:])
+        return json.loads([l for l in r.stdout.splitlines() if l.startswith("BILAN ")][-1][6:])
+
+    def test_generateur_sans_navigateur(self):
+        """Le générateur tourne sans navigateur : mêmes options, même circuit (aucune limite de temps) ; ce qu'il rend tient debout, sol compris ;
+        habiller les rives ne fait jamais baisser la note ; le retour d'une boucle est déplié et finit par son raccord."""
+        o = {"km": 2, "avec": {"lac": True, "grotte": True, "cascade": True, "pont": True, "village": True}, "denivele": 25, "graine": 4, "tirages": 4}
+        a, b = self.generer(o), self.generer(o)
+        self.assertNotIn("erreur", a)
+        self.assertEqual(json.dumps(a, sort_keys=True), json.dumps(b, sort_keys=True), "deux tirages aux mêmes options doivent donner le même circuit")
+        self.assertTrue(a["niveau"]["pieces"][-1].get("raccord"))
+        self.assertFalse(any("libre" in p or "fixe" in p for p in a["niveau"]["pieces"]), "des marques de travail sont restées dans le circuit")
+        self.assertTrue(a["sol"]["ok"])
+        bilan = self.controle_de(a["niveau"])
+        self.assertTrue(bilan["ok"], bilan["erreurs"])
+        self.assertEqual(bilan["cassures"], 0)
+        self.assertEqual(bilan["note"]["note"], a["note"]["note"], "la note du générateur et celle du contrôle doivent être la même")
+        nu = self.generer({**o, "habiller": False, "deplier": False, "sol": False})
+        self.assertGreaterEqual(a["note"]["note"], nu["note"]["note"])
+        terre = self.generer({"activite": "terre", "km": 2, "denivele": 40, "avec": {"village": True, "foret": True, "champs": True}, "graine": 3, "tirages": 4})
+        self.assertEqual(terre["niveau"]["discipline"], "terre")
+        self.assertTrue(self.controle_de(terre["niveau"])["ok"])
 
     # Budgets (14/11/2026, mesurés sur ce PC : 0,7 à 1,8 s, 36 000 à 146 000 triangles, page de 1 265 Ko) : environ 1,5 fois l'état
     # actuel. Un dépassement n'est pas une panne, c'est un signal : la page ou la construction a grossi d'un coup (page ×4 et

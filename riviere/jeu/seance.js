@@ -204,7 +204,8 @@ function garder(b, saisi) {
     jeu: {mode: "riviere", niveau: NIVEAU.id, tour_m: Math.round(TOUR_M), dist: Math.round(b.dist), tours: b.tours.length,
       meilleur_tour: meilleur && Math.round(meilleur * 10) / 10, temps_tours: b.tours.map(t => Math.round(t * 10) / 10), segments: b.segments || [], heure: AMB.heure, meteo: AMB.meteo}};
   const deja = (lireLS(ATTENTE, []) || []).filter(a => a.seance && a.seance.id !== s.id);
-  if (!ecrireLS(ATTENTE, [...deja, {seance: s}])) return "Impossible de garder la séance sur cette machine (plus de place ?).";
+  const recs = recordsAEnvoyer();   // tes records battus pendant que le serveur ne les avait pas : ils partent avec la séance (records.js)
+  if (!ecrireLS(ATTENTE, [...deja, {seance: s, ...(recs ? {records: recs} : {})}])) return "Impossible de garder la séance sur cette machine (plus de place ?).";
   ecrireLS(ENCOURS, null);
   // le rechargement de l'appli peut prendre quelques secondes : le formulaire disparaît tout de suite (une seule séance gardée, même si on retouche)
   const p = panneau(`<h1>Séance gardée !</h1>${resume(b)}<p>${DANS_APPLI ? "Je l'envoie et je recharge, ça peut prendre quelques secondes." : "Gardée sur cette machine. Hors de l'appli (essai sur le PC), elle n'est pas envoyée."}</p>

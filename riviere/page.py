@@ -18,7 +18,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent
 MOTEUR = ["depart", "outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
-JEU = ["allure", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "parcours", "generateur", "editeur", "banc"]
+JEU = ["allure", "records", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "parcours", "note", "generateur", "editeur", "banc"]
 PURS = ["depart", "outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
@@ -153,8 +153,9 @@ def donnees_js(donnees, niveaux, biomes, lieux, lot, servi):
 
 
 def source_piste():
-    """Le code de la piste, en texte : l'éditeur et le générateur le relancent sur un brouillon, sans recharger la page (le même code que le jeu)."""
-    return "const SOURCE_PISTE = " + _js("\n".join(_module("moteur", m) for m in ("outils", "piste"))) + ";"
+    """Le code de la piste et du sol, en texte : l'éditeur et le générateur le relancent sur un brouillon, sans recharger la page (le même code que le jeu)."""
+    return ("const SOURCE_PISTE = " + _js("\n".join(_module("moteur", m) for m in ("outils", "piste"))) + ";\n"
+            "const SOURCE_CHAMP = " + _js(_module("moteur", "champ")) + ";")   # le sol : le générateur contrôle celui du circuit qu'il retient
 
 
 def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
@@ -179,16 +180,38 @@ def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
     return html
 
 
-def controle(niveau="kanto-1km", params=""):
+AVANT_NODE = ('"use strict";\nvar window = globalThis, location = {search: %s}, navigator = {}, '
+              'document = {getElementById: () => null, createElement: () => ({getContext: () => null}), addEventListener() {}};\n')
+
+
+def controle(niveau="kanto-1km", params="", circuit=None):
     """Un programme JavaScript SANS navigateur ni dessin : il construit la piste, le champ et pose tout le décor d'un niveau, puis écrit
-    ce qu'il a trouvé (une ligne de JSON). Lancé par les contrôles automatiques avec node : un niveau cassé ou une instruction avalée se voit."""
-    niv, biome, lieux = fichiers(niveau)
-    niv.setdefault("id", niveau)
-    avant = ('"use strict";\nvar window = globalThis, location = {search: ' + json.dumps(params) + '}, navigator = {}, '
-             'document = {getElementById: () => null, createElement: () => ({getContext: () => null}), addEventListener() {}};\n')
+    ce qu'il a trouvé (une ligne de JSON, avec la note du circuit : jeu/note.js). Lancé par les contrôles automatiques avec node : un niveau
+    cassé ou une instruction avalée se voit. `circuit` : un circuit qui n'est pas (encore) un fichier, par exemple sorti du générateur."""
+    if circuit:
+        niv = json.loads(json.dumps(circuit))
+        biome = region(niv["biome"])
+        lieux = _lis("lieux", f"{niv.get('lieux') or biome.get('lieux') or niv['biome']}.json")
+        niveau = niv.setdefault("id", niveau)
+    else:
+        niv, biome, lieux = fichiers(niveau)
+        niv.setdefault("id", niveau)
     apres = (RACINE / "controle.js").read_text(encoding="utf-8")
     sans = {k: v for k, v in biome.items() if k not in ("herite", "regles_plus")}
-    return avant + donnees_js({"force": True}, {niveau: niv}, {niv["biome"]: sans}, {niv.get("lieux") or biome.get("lieux") or niv["biome"]: lieux}, {}, niveau) + "\n" + "\n".join(_module("moteur", m) for m in PURS) + "\n" + recettes() + "\n" + apres
+    return (AVANT_NODE % json.dumps(params) + donnees_js({"force": True}, {niveau: niv}, {niv["biome"]: sans}, {niv.get("lieux") or biome.get("lieux") or niv["biome"]: lieux}, {}, niveau)
+            + "\n" + "\n".join(_module("moteur", m) for m in PURS) + "\n" + recettes() + "\n" + _module("jeu", "note") + "\n" + apres)
+
+
+def generateur(options):
+    """Le générateur de circuits SANS navigateur (étape 4 du plan) : un programme JavaScript pour node, qui tire, construit, note et écrit le
+    meilleur circuit sur une ligne « CIRCUIT {…} ». `options` : celles de genererCircuit (jeu/generateur.js) : km, virages, denivele, avec,
+    graine, activite, forme, boucle, biome, tirages. Mêmes options, même circuit, sur toutes les machines (aucune limite de temps)."""
+    niveaux, biomes, lieux = tout()
+    base = "terre-volcan" if options.get("activite") == "terre" else "kanto-1km"
+    return (AVANT_NODE % '""' + donnees_js({"force": True}, niveaux, biomes, lieux, {}, base) + "\n"
+            + "\n".join(_module("moteur", m) for m in ("depart", "outils", "piste")) + "\n" + source_piste() + "\n"
+            + _module("jeu", "note") + "\n" + _module("jeu", "generateur")
+            + "\nconsole.log('CIRCUIT ' + JSON.stringify(genererCircuit(" + _js(options) + ")));\n")
 
 
 if __name__ == "__main__":  # python riviere/page.py <niveau> <fichier.html> [artifact]

@@ -139,7 +139,37 @@ code de la piste, contrôleur en direct, pièces à régler au curseur, modules 
 (à donner à Claude pour qu'il devienne un fichier du jeu) ; sur le serveur d'essai du PC, « Écrire dans le jeu » crée le fichier.
 Onglet « Générer » (`jeu/generateur.js`, `genererCircuit`) : longueur, relief, boucle ou A→B, eau ou terre, et des cases (port, village, lac,
 sous-bois, marais, plage, cascade, grotte, pont sur un ravin). Il assemble des **modules** (`MODULES`), fait construire chaque tirage par le
-moteur, jette ceux qui ne tiennent pas debout et garde le plus ramassé. Même graine, mêmes cases : même circuit. Ajouter un module = une entrée.
+moteur, jette ceux qui ne tiennent pas debout et garde **le mieux noté** (15/11, étape 4 du plan). Mêmes options, même circuit, sur toutes les
+machines : la recherche compte ses tirages (`tirages` : 8 valables par défaut), jamais le temps. Ajouter un module = une entrée.
+
+**La note d'un circuit** (`jeu/note.js`, `noterCircuit(P, niveau, biome, tourVrai)`) : sur 100, elle juge la construction, pas la beauté.
+| Critère | Poids | Ce qu'il mesure |
+|---|---|---|
+| Rythme | 30 | la part du tour passée dans un paysage qu'on voit depuis plus de 45 s (Kiki : un changement toutes les 20 à 40 s à son allure) |
+| Variété | 20 | le nombre de paysages différents, aucun qui écrase les autres |
+| Contrastes | 10 | la force des changements : ouvert ou fermé, clair ou sombre, ville ou nature |
+| Repères | 15 | village, grotte, pont, lac, phare, cascade… et les repères au loin ; pas de long trou entre deux |
+| Moments forts | 15 | saut, chute, remontée, rapides, pont, grotte, sprint chronométré ; répartis sur le tour |
+| Relief | 5 | du dénivelé, sans côte interminable (90 s sur l'eau, 5 min à vélo) |
+| Lignes droites | 5 | la part du tour passée tout droit depuis plus de 30 s |
+
+Un « paysage » = des pièces qui se suivent et se ressemblent : familles des deux rives (`FAMILLES` : une rive inconnue est devinée d'après son
+profil), ouverture (parois, arbres, largeur), lumière (grotte, sous-bois), ville, eau, pont. Temps comptés à 3,3 m/s sur l'eau et 5,5 m/s sur
+la terre (`RYTHME`). Elle rend la note, chaque critère avec sa phrase, et `sequences`, `reperes`, `forts` (pour une frise). Régler la note =
+les tables en tête du fichier. L'éditeur l'affiche à chaque retouche (sous le plan, et en détail dans l'onglet « Générer »).
+
+**Ce que le générateur fait d'un tirage qui tient debout** : `deplierRetour` (le raccord d'une boucle, souvent 300 à 500 m d'un seul paysage,
+devient de vraies pièces d'une centaine de mètres ; un petit raccord referme la boucle), `habiller` (les rives des bouts ordinaires sont
+rechoisies une à une dans `HABITS` tant que la note monte : les rives ne changent pas le tracé, on renote seulement), puis, pour les mieux
+notés, `solNiveau` (le sol construit par le vrai `champ.js` et parcouru par `scannerSol`, le même balayage que les tests : un tirage dont le sol
+a une marche est écarté, après un essai sans falaises). Si aucun des 5 premiers n'a un sol propre, il rend le mieux noté avec `sol.ok` faux,
+et l'éditeur le dit. Options d'essai : `habiller: false`, `deplier: false`, `sol: false`.
+
+**Sans navigateur** (`page.generateur(options)`, `page.controle(circuit=…)`, avec node) :
+`python riviere/outils/generer.py --km 2 --avec lac,grotte,pont --graine 3` (bilan et note), `--json` (le texte du circuit), `--ecrire <nom>`
+(le range dans `contenu/niveaux/`, seulement si le contrôle complet du moteur ne trouve aucun défaut), `--notes [circuit]` (la note des
+circuits du jeu, du mieux au moins bien noté). Le circuit obtenu est le même que dans le navigateur avec les mêmes options.
+Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (voir « Vérifier sans Kiki »).
 
 ## Ajouter un objet
 
@@ -227,11 +257,24 @@ Tout passe par `COMMUNS` (uTeinte, uNuit, uPluie, uNeige, uSombre, la brume) et 
 Adversaires (`jeu/rivaux.js`, menu) : trois Pokémon de la région (`rivaux`) à allure fixe, réglée sur ton record ; classement sous le tour.
 Segments, profil d'altitude (dès 1,5 m de relief) et arrivée d'un parcours de A à B : `jeu/parcours.js`. Puissance affichée quand il y en a une.
 
+**Records, fantôme et records de segments sur le serveur** (`jeu/records.js`, 14/11, étape 2 du plan) : ils suivent le joueur d'un appareil à l'autre.
+- **La clé d'un circuit** (`CLE_CIRCUIT`) = machine (`CLE_MACHINE`, rien pour le rameur), circuit (`NIVEAU.id`), vrais mètres d'un tour, et
+  l'**empreinte du tracé** (`EMPREINTE` : un hachage de la piste construite, un point tous les 10 m arrondi au mètre, plus sa longueur et `TOUR_M`).
+  Tracé modifié (un virage, une longueur, un changement de `piste.js`) = autre circuit, classement à zéro ; changer le décor ou la région ne change rien.
+  Les clés de la machine en découlent : `riviere_<clé>_record`, `_fantome`, `_segments`.
+- **Lecture** : l'appli donne `D.records` (tout `data/riviere/records.json` du joueur, `seances_rameur.records_pour_le_jeu`) ; le jeu prend le meilleur
+  du serveur et de la machine (record, fantôme, chaque segment). Le localStorage n'est qu'une copie.
+- **Envoi** : à l'enregistrement d'une vraie séance (`garder` de seance.js), `recordsAEnvoyer()` joint ce qui bat le serveur (`records` à côté de
+  `seance` dans `pkm_rameur`) ; la trace du fantôme est allégée à un point par seconde (`alleger`, ~3 Ko pour 5 min). Côté serveur,
+  `seances_rameur.ranger` range la séance puis `garder_records` : jamais un temps moins bon, ce qui est mal formé est ignoré, rien d'écrit si rien
+  n'a changé. Un essai ne fait jamais de record ; une séance annulée n'envoie rien (le record reste sur la machine et part avec la suivante).
+- Format : `{"records": {clé: {"machine", "niveau", "tour": {"t", "jour", "pts": [temps, mètres de décor depuis la ligne, …]}, "segments": {nom: t}}}}`.
+
 ## Vérifier sans Kiki
 
 | Outil | Ce qu'il dit |
 |---|---|
-| `python -m unittest tests.test_riviere` | les fichiers sont cohérents ; avec node (sur GitHub), le moteur construit chaque niveau |
+| `python -m unittest tests.test_riviere` | les fichiers sont cohérents ; avec node, le moteur construit chaque niveau, le note, et le générateur est lancé (même circuit deux fois, sol propre) |
 | `?pur=1&niveau=<nom>` (serveur d'essai) | le même bilan, dans la page : erreurs, croisements, décor posé, cassures du sol |
 | `window.__verif()` | le contrôleur du niveau chargé |
 | `?s=120&fige=1`, `__aller(s)`, `__image()` | se placer à un endroit, redessiner tout de suite (pour une capture) |
@@ -243,7 +286,10 @@ Segments, profil d'altitude (dès 1,5 m de relief) et arrivée d'un parcours de 
 | `?heure=nuit&meteo=pluie`, `__ambiance(h, m)` | une ambiance |
 | `?nageur=131`, `changerNageur(130)` | un autre Pokémon dans l'eau (ceux de `contenu/nageurs.json`), à sa vraie taille |
 | `__generer({km, relief, avec})`, `__trames()` | le générateur ; la lecture des trames Bluetooth |
+| `python riviere/outils/generer.py --notes` | la note de chaque circuit du jeu et ses raisons ; sans `--notes` : génère un circuit sans navigateur |
+| `python riviere/outils/planche.py [circuit…]` | **la planche** d'un circuit (une image dans `riviere/outils/planches/`, hors dépôt) : sa note et ses 7 critères, une vue au milieu de chaque paysage et juste avant chaque moment fort (cadre rouge), la frise du tour (paysages à leur durée, repères dessus, moments forts dessous) ; tout vient de `noterCircuit`. ~2 min par circuit. Un circuit tiré par le générateur : `generer.py … --ecrire <nom>` puis `planche.py <nom>` |
 | `?cadre=1` (serveur d'essai) | la page dans un cadre, comme dans l'appli |
+| `?records=1` (serveur d'essai) | la page reçoit les records de `riviere/outils/records-essai.json` (comme ceux du serveur ; fichier gardé sur ce PC) ; `EMPREINTE`, `CLE_CIRCUIT`, `recordsAEnvoyer()` |
 
 Dans l'appli, ces options se mettent dans l'adresse : `?ecran=rameur&riviere=essai&banc=1`.
 Le panneau de navigateur de l'appli Claude n'anime pas une page masquée : pour faire avancer le jeu, appeler `boucle(t)` soi-même

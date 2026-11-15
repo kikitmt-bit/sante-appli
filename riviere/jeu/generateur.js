@@ -1,7 +1,11 @@
 /* ============ le générateur : quelques cases cochées, un bouton, un circuit qui tient debout ============ */
 // Il ne dessine rien lui-même : il assemble des MODULES (les mêmes que la palette de l'éditeur), puis fait construire le résultat par le
 // vrai code de la piste (SOURCE_PISTE : le même que le jeu) et lit son contrôleur. Un tirage qui se croise ou ne se referme pas est jeté,
-// on en tire un autre : ce qui sort est toujours jouable. Même graine, mêmes cases : même circuit.
+// on en tire un autre : ce qui sort est toujours jouable. Parmi ceux qui tiennent debout, il garde LE MIEUX NOTÉ (jeu/note.js : rythme,
+// variété, contrastes, repères, moments forts, relief, retour), après avoir habillé ses rives pour que le paysage change souvent (habiller).
+// Même graine, mêmes cases : même circuit, sur toutes les machines : la recherche compte ses tirages, jamais le temps (14/11, étape 4 du plan :
+// avant, elle s'arrêtait au bout de 12 s, donc plus tôt sur une machine lente). Il tourne aussi sans navigateur : page.py (generateur),
+// python riviere/outils/generer.py.
 // Ajouter un module = une entrée dans MODULES : {nom, pour (ce qu'il apporte), pieces(R, o) → une liste de pièces}.
 
 /* construire un brouillon avec le vrai code de la piste, sans toucher à la page : {PISTE, verif, erreur} */
@@ -10,6 +14,15 @@ function essayerNiveau(niveau) {
     const f = new Function("NIVEAU", "BIOME", "D", "location", SOURCE_PISTE + "\nreturn {PISTE, verif: verifier(), tour: TOUR_VRAI, boucle: BOUCLE};");
     return f(JSON.parse(JSON.stringify(niveau)), region(BIOMES[niveau.biome] ? niveau.biome : Object.keys(BIOMES)[0]), {}, {search: ""});
   } catch (e) { return {erreur: e && e.message || String(e)}; }
+}
+
+/* le sol d'un brouillon, construit par le vrai code du champ : {ok, cassures, pire, absurdes} (jeu/note.js : scannerSol). Plus lent que la piste
+   seule (tout le terrain est parcouru) : le générateur ne le demande que pour les tirages qu'il s'apprête à retenir. */
+function solNiveau(niveau) {
+  try {
+    const f = new Function("NIVEAU", "BIOME", "D", "location", "scannerSol", SOURCE_PISTE + "\n" + SOURCE_CHAMP + "\nreturn scannerSol(hauteur, Q, CASES, ecart, MASSIF);");
+    return f(JSON.parse(JSON.stringify(niveau)), region(BIOMES[niveau.biome] ? niveau.biome : Object.keys(BIOMES)[0]), {}, {search: ""}, scannerSol);
+  } catch (e) { return {ok: false, erreur: e && e.message || String(e)}; }
 }
 
 /* les modules : des bouts de circuit tout faits. v = le virage qui lui est demandé (degrés), o = les réglages du tirage (rives du moment…).
@@ -69,14 +82,68 @@ const SINUEUX = {   // par réglage : les bouts ajoutés pour faire la longueur 
   quelques: {bouts: ["virage", "virage", "s", "droite", "foret"], terre: ["virage_t", "virage_t", "s_t", "route", "sousbois_t"], ampleur: 40, change: .65},
   sinueux: {bouts: ["virage", "s", "s", "virage", "foret"], terre: ["virage_t", "s_t", "s_t", "virage_t", "sousbois_t"], ampleur: 75, change: .8},
   tres: {bouts: ["s", "s", "virage", "epingle", "s", "virage"], terre: ["s_t", "s_t", "virage_t", "lacet", "s_t", "virage_t"], ampleur: 110, change: .85}};
+/* les habits des rives d'un bout ordinaire (ligne droite, virage, S, épingle, et le retour) : [gauche, droite] */
+const HABITS = {eau: [["pre", "pre"], ["foret", "pre"], ["pre", "foret"], ["foret", "foret"], ["falaise", "pre"], ["falaise", "foret"], ["falaise", "falaise"], ["dune", "pre"], ["plage", "foret"]],
+  terre: [["bas_cote", "bas_cote"], ["champ", "bas_cote"], ["bas_cote", "champ"], ["champ", "champ"], ["sous_bois", "bas_cote"], ["bas_cote", "sous_bois"], ["sous_bois", "sous_bois"]]};
+const BOUTS_LIBRES = ["droite", "virage", "s", "epingle", "route", "virage_t", "s_t", "lacet"];
+/* habiller un tirage qui tient debout : les rives de ses bouts ordinaires sont rechoisies une à une pour que la note monte (le paysage change
+   plus souvent, plus franchement). Les rives ne changent pas le tracé : rien à reconstruire, on renote seulement. Deux passes, dans l'ordre
+   des pièces : aucun hasard, donc le même résultat partout. Rend la note finale. */
+function habiller(niveau, r, biome, terre, existe, sansParoi) {
+  const P = r.PISTE, src = niveau.pieces, B = region(biome), noter = () => noterCircuit(P, niveau, B, r.tour), dernier = src.length - 1;
+  const haute = n => n === "falaise", habits = (terre ? HABITS.terre : HABITS.eau).filter(h => existe(h[0]) && existe(h[1]) && !(sansParoi && (haute(h[0]) || haute(h[1]))));
+  const mettre = (i, g, d) => { src[i].g = g; src[i].d = d; const cibles = src[i].raccord ? P.pieces.slice(dernier) : [P.pieces[i]]; for (const q of cibles) if (q) { q.g = g; q.d = d; } };
+  const serre = p => p.virage && typeof p.virage === "number" && Math.abs(p.virage) / p.long > 1.3;   // pas de falaise dans un virage très serré
+  if (sansParoi) src.forEach((p, i) => { if ((p.libre || p.raccord) && (haute(p.g) || haute(p.d))) mettre(i, haute(p.g) ? "pre" : p.g, haute(p.d) ? "pre" : p.d); });   // on repart sans les falaises
+  let note = noter();
+  for (let passe = 0; passe < 2; passe++) {
+    let mieux = false;
+    src.forEach((p, i) => {
+      if (!p.libre && !p.raccord) return;
+      const avant = [p.g, p.d]; let garde = avant, n0 = note.note;
+      for (const h of habits) {
+        if (h[0] === avant[0] && h[1] === avant[1] || serre(p) && (haute(h[0]) || haute(h[1]))) continue;
+        mettre(i, h[0], h[1]); const n = noter();
+        if (n.note > n0) { n0 = n.note; garde = h; note = n; mieux = true; }
+      }
+      mettre(i, garde[0], garde[1]);
+    });
+    if (!mieux) break;
+  }
+  return noter();
+}
+/* déplier le retour : le raccord d'une boucle (un virage, une ligne droite, un virage) fait souvent 300 à 500 m d'un seul paysage. Son premier
+   virage et sa ligne droite deviennent de vraies pièces d'une centaine de mètres, que habiller() peut varier ; un petit raccord referme la
+   boucle au bout (les 50 derniers mètres et le dernier virage). Le tracé ne change pas. Si le moteur n'en veut pas : on garde l'ancien. */
+function deplierRetour(niveau, r) {
+  const P = niveau.pieces, i0 = P.length - 1, modele = P[i0], bouts = r.PISTE.pieces.slice(i0), neufs = [];
+  if (!modele.raccord || r.PISTE.N - bouts[0].s0 < 170) return r;
+  const piece = (long, virage) => { const q = {long, virage, g: modele.g, d: modele.d, libre: true}; if (modele.large !== undefined) q.large = modele.large; else q.eau = modele.eau; if (modele.monte === "auto") q.monte = "auto"; return q; };
+  for (const b of bouts) {
+    if (!b.droit) { if (b.long >= 12) neufs.push(piece(b.long, +b.virage.toFixed(3))); continue; }
+    const reste = b.long - 50, n = Math.max(1, Math.round(reste / 105));
+    if (reste >= 60) for (let k = 0; k < n; k++) neufs.push(piece(Math.round(reste / n), 0));
+    break;
+  }
+  if (!neufs.some(q => q.virage === 0)) return r;
+  neufs[0].nom = modele.nom || "Le retour";
+  const ancien = modele.nom; modele.nom = "Le dernier virage";
+  P.splice(i0, 0, ...neufs);
+  const r2 = essayerNiveau(niveau);
+  if (!r2.erreur && r2.verif.ok && r2.verif.fermeture < 3) return r2;
+  P.splice(i0, neufs.length); modele.nom = ancien;
+  return r;
+}
 const REGION_TERRE = b => BIOMES[b + "-routes"] ? b + "-routes" : Object.keys(BIOMES).find(k => /routes/.test(k)) || b;   // la région des routes qui va avec une région
 function genererCircuit(o) {
   const terre = o.activite === "terre", huit = terre && o.forme === "huit";
   if (huit) o = Object.assign({}, o, {boucle: true});
   const biome0 = (o.biome || NIVEAU.biome).replace(/-routes$/, ""), biome = terre ? REGION_TERRE(biome0) : biome0, lieux = BIOMES[biome] && BIOMES[biome].lieux || biome0, sens = -1;
   const rives = Object.keys(region(biome).rives), a = n => rives.includes(n);
-  let mieux = null, bons = 0; const raisons = [], t0 = performance.now();
-  for (let essai = 0; essai < 60; essai++) {
+  // la recherche : au plus MAX tirages ; elle s'arrête quand VOULUS tirages tiennent debout, et garde le mieux noté (o.tirages, o.essais : pour chercher plus longtemps)
+  const VOULUS = clamp(Math.round(+o.tirages || 8), 1, 200), MAX = clamp(Math.round(+o.essais || Math.max(60, VOULUS * 6)), 1, 1500);
+  let bons = 0, essais = 0; const raisons = [], valables = [];
+  for (let essai = 0; essai < MAX; essai++) { essais = essai + 1;
     const graine = (o.graine || 1) * 1000 + essai, R = hasard(graine), cible = clamp(o.km || 1, .3, 6) * 1000, pieces = [];
     // la liste des modules : ce qui est coché, complété par des lignes droites, des virages et des S ; mélangée
     const voulus = Object.keys(o.avec || {}).filter(k => o.avec[k]), liste = [];
@@ -110,7 +177,9 @@ function genererCircuit(o) {
       if (huit && k === iCroix + 1) debutLobe2.push(pieces.length);
       const morceau = MODULES[nom].pieces(R, {v: virageDe(k), eau: 9 + Math.round(R() * 5), g: decor[0], d: decor[1], lieux, terre: !!o.terre, grotte: o.grotte});
       if (huit && (k === 0 || k === iCroix)) for (const p of morceau) { p.virage = 0; p.long = Math.max(p.long, 150); delete p.monte; }   // les deux lignes droites du carrefour, à plat
-      for (const p of morceau) { for (const c of ["g", "d"]) if (!a(p[c])) p[c] = terre ? "bas_cote" : "pre"; if (p.surface === undefined) delete p.surface; haut += +p.monte || 0; pieces.push(p); }
+      for (const p of morceau) { for (const c of ["g", "d"]) if (!a(p[c])) p[c] = terre ? "bas_cote" : "pre"; if (p.surface === undefined) delete p.surface; haut += +p.monte || 0;
+        if (BOUTS_LIBRES.includes(nom) && !(huit && (k === 0 || k === iCroix))) p.libre = true;
+        pieces.push(p); }
     });
     if (huit) { pieces.push({nom: "Le retour au carrefour", long: 90, virage: "auto", large: 8, g: decor[0], d: decor[1]}); for (const p of pieces) if (p.monte !== undefined) delete p.monte; }
     // le dénivelé : ce que les bouts de relief n'ont pas apporté se répartit en montées et en descentes douces (7 % au plus) sur les bouts ordinaires
@@ -140,13 +209,25 @@ function genererCircuit(o) {
       if (Math.abs(k - 1) > .08) { for (const p of pieces) if (!p.fixe && !p.net && !p.raccord && !p.pont && p.long > 30) p.long = Math.round(p.long * clamp(k, .6, 2.2)); r = essayerNiveau(niveau); }
     }
     if (!r.erreur && huit && !r.verif.croisements.some(c => c.carrefour)) r.verif.ok = false, r.verif.erreurs = ["pas de carrefour"];   // un 8 doit se croiser pour de bon
-    if (r.erreur || !r.verif.ok || (o.boucle !== false && r.verif.fermeture >= 3)) { raisons.push(r.erreur || (r.verif.erreurs[0] || "boucle mal refermée").replace(/[0-9.,]+/g, "#")); if (performance.now() - t0 > 12000) break; continue; }
-    // parmi les tirages qui tiennent debout, on garde le plus ramassé : celui dont le raccord (la ligne droite du retour) est le plus court
-    const retour = o.boucle === false || huit ? 0 : r.PISTE.N - r.PISTE.pieces[pieces.length - 1].s0;
-    if (!mieux || retour < mieux.retour) mieux = {niveau, essais: essai + 1, long: r.PISTE.N, retour};
-    if (++bons >= 8 || retour < 140 || performance.now() - t0 > 8000) break;
+    if (r.erreur || !r.verif.ok || (o.boucle !== false && r.verif.fermeture >= 3)) { raisons.push(r.erreur || (r.verif.erreurs[0] || "boucle mal refermée").replace(/[0-9.,]+/g, "#")); continue; }
+    if (o.boucle !== false && !huit && o.deplier !== false) r = deplierRetour(niveau, r);
+    // parmi les tirages qui tiennent debout, on garde le mieux noté (à note égale : le plus ramassé, celui dont le retour est le plus court)
+    const racc = r.PISTE.pieces[pieces.length - 1], retour = o.boucle === false || huit || !racc ? 0 : r.PISTE.N - racc.s0;
+    const note = o.habiller === false ? noterCircuit(r.PISTE, niveau, region(biome), r.tour) : habiller(niveau, r, biome, terre, a);
+    valables.push({niveau, r, long: r.PISTE.N, retour, note, rang: bons});
+    if (++bons >= VOULUS) break;
   }
-  window.__raisons = raisons; if (mieux) { for (const p of mieux.niveau.pieces) delete p.fixe; return mieux; }
+  // du mieux noté au moins bien noté : le premier dont le sol n'a ni trou ni marche (au plus 5 essayés ; un tirage que ses falaises font
+  // échouer est rhabillé sans elles avant d'être écarté). Si aucun ne passe : le mieux noté, et on le dit (sol.ok faux).
+  valables.sort((x, y) => y.note.note - x.note.note || x.retour - y.retour || x.rang - y.rang);
+  let mieux = null;
+  for (const c of valables.slice(0, o.sol === false ? 0 : 5)) {
+    c.sol = solNiveau(c.niveau);
+    if (!c.sol.ok && !terre && o.habiller !== false) { c.note = habiller(c.niveau, c.r, biome, terre, a, true); c.sol = solNiveau(c.niveau); }
+    if (c.sol.ok) { mieux = c; break; }
+  }
+  mieux = mieux || valables[0];
+  window.__raisons = raisons; if (mieux) { for (const p of mieux.niveau.pieces) { delete p.fixe; delete p.libre; } return {niveau: mieux.niveau, long: mieux.long, retour: mieux.retour, note: mieux.note, sol: mieux.sol || null, essais, bons}; }
   window.__raisons = raisons;
   return {erreur: "Pas de circuit trouvé avec ces réglages : essaie « Un autre », moins de virages, ou une longueur plus courte."};
 }

@@ -119,8 +119,67 @@ def fusionner(resumes, fichier, autres=None):
 
 def ranger(texte, lire, ecrire):
     """Ce que le téléphone ou le jeu a laissé (localStorage pkm_rameur) -> les fichiers du dépôt : le rameur dans FICHIER, les autres machines dans
-    AUTRES. Rejouable : une séance déjà rangée est simplement remplacée. -> réussi ?"""
-    attente = {(machine_de(a["seance"]), a["seance"]["id"]): a for a in json.loads(texte)}  # plusieurs copies d'une même séance : la dernière, écrite une seule fois
+    AUTRES, les records de « La Rivière » qui l'accompagnent dans RECORDS. Rejouable : une séance déjà rangée est simplement remplacée. -> réussi ?"""
+    envois = json.loads(texte)
+    attente = {(machine_de(a["seance"]), a["seance"]["id"]): a for a in envois}  # plusieurs copies d'une même séance : la dernière, écrite une seule fois
+    if not _ranger_seances(attente, lire, ecrire):
+        return False
+    records = [(a.get("records"), a["seance"]["debut"][:10]) for a in envois if a.get("records")]
+    return not records or garder_records(records, lire, ecrire)
+
+
+# ---------- Les records de « La Rivière » (14/11, étape 2 du plan) : le meilleur tour, son fantôme et les records de segments, sur le serveur ----------
+# Avant, ils n'étaient gardés que dans le navigateur de la machine. RECORDS (dans le dossier du joueur) = {"records": {clé: {"machine", "niveau",
+# "tour": {"t", "jour", "pts"}, "segments": {nom: t}}}}. La clé = machine (sauf le rameur), circuit, vrais mètres du tour et une empreinte du tracé
+# calculée par le jeu (jeu/records.js) : un circuit dont le tracé change repart de zéro. Le jeu n'envoie que ce qui bat ce que le serveur lui a donné,
+# avec une séance enregistrée ; le serveur ne garde jamais un temps moins bon. pts = la trace du fantôme [temps, mètres, temps, mètres…], une par seconde.
+RECORDS = "data/riviere/records.json"
+_CLE_OK = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-.")
+
+
+def _temps(t):
+    return isinstance(t, (int, float)) and not isinstance(t, bool) and 1 <= t <= 36000
+
+
+def _trace(pts):
+    ok = isinstance(pts, list) and 4 <= len(pts) <= 40000 and len(pts) % 2 == 0 and all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in pts)
+    return [round(v, 1) for v in pts] if ok else None
+
+
+def garder_records(envois, lire, ecrire):
+    """envois = [(records envoyés par le jeu, jour de la séance)] -> RECORDS, en gardant toujours le meilleur. Ce qui est mal formé est ignoré. -> réussi ?"""
+    fichier = lire(RECORDS) or {}
+    tous = dict(fichier.get("records") or {})
+    change = False
+    for recs, jour in envois:
+        for cle, r in (recs or {}).items() if isinstance(recs, dict) else ():
+            if not (isinstance(cle, str) and 0 < len(cle) <= 160 and set(cle) <= _CLE_OK and isinstance(r, dict)):
+                continue
+            ici = dict(tous.get(cle) or {})
+            tour = r.get("tour") if isinstance(r.get("tour"), dict) else {}
+            ancien = (ici.get("tour") or {}).get("t")
+            if _temps(tour.get("t")) and (ancien is None or tour["t"] < ancien):
+                ici["tour"] = {"t": round(tour["t"], 1), "jour": jour, **({"pts": _trace(tour.get("pts"))} if _trace(tour.get("pts")) else {})}
+                change = True
+            segs = dict(ici.get("segments") or {})
+            for nom, t in (r.get("segments") or {}).items() if isinstance(r.get("segments"), dict) else ():
+                if isinstance(nom, str) and 0 < len(nom) <= 60 and _temps(t) and (nom not in segs or t < segs[nom]):
+                    segs[nom] = round(t, 1)
+                    change = True
+            if segs:
+                ici["segments"] = segs
+            if ici:
+                ici.update({k: str(r[k])[:60] for k in ("machine", "niveau") if isinstance(r.get(k), str)})
+                tous[cle] = ici
+    return not change or ecrire(RECORDS, {"records": dict(sorted(tous.items()))}, "riviere : records")
+
+
+def records_pour_le_jeu(fichier):
+    """Ce que la page du jeu reçoit : tous les records du joueur (petits : une trace par circuit et par machine)."""
+    return (fichier or {}).get("records") or {}
+
+
+def _ranger_seances(attente, lire, ecrire):
     for chemin, rameur in ((FICHIER, True), (AUTRES, False)):
         les_siennes = [a for (m, _), a in attente.items() if (m == "rameur") == rameur]
         if not les_siennes:
@@ -325,7 +384,7 @@ def derniere(seances):
     return {"quand": d.strftime("%d/%m à %H:%M"), "distance": _vraie_distance(s), "estime": (s.get("estime") or {}).get("distance"), "tours": (s.get("jeu") or {}).get("tours")}
 
 
-def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html", params=None, autres=None):
+def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=None, scenes="", dresseur=None, kiki=False, page_html="rameur_ecran.html", params=None, autres=None, records=None):
     """La page du jeu, prête à afficher : rameur_ecran.html avec ses données (aucune donnée de santé : le modèle des mètres par coup, la progression
     du jeu du rameur, la région et les arènes de Poké Fit, les couleurs du dresseur)."""
     from pathlib import Path
@@ -335,7 +394,7 @@ def page_tablette(fichier, lien_tablette, images, sacha, aujourd=None, voyage=No
         autres_s = (autres or {}).get("seances") or []
         dernieres = {"rameur": derniere(seances), **{m: derniere([s for s in autres_s if machine_de(s) == m]) for m in MACHINES if m != "rameur"}}  # le menu : celle de SA machine
         return riviere_page.page({"lien": lien_tablette, "m_coup": m_coup_montre(seances), "derniere": dernieres["rameur"], "kiki": kiki, "params": params or {},
-                                  "dernieres": {m: d for m, d in dernieres.items() if d},
+                                  "dernieres": {m: d for m, d in dernieres.items() if d}, "records": records_pour_le_jeu(records),
                                   "dresseur": {k: v for k, v in (dresseur or {}).items() if v}}, page_html.split("/", 1)[1])  # dresseur : les couleurs du cycliste
     aujourd = aujourd or dt.date.today()
     m = modele(seances)
