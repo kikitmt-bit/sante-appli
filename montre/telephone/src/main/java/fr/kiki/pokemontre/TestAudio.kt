@@ -8,10 +8,12 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -25,11 +27,20 @@ import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.telecom.CallAudioState
+import android.telecom.Connection
+import android.telecom.ConnectionRequest
+import android.telecom.ConnectionService
+import android.telecom.DisconnectCause
+import android.telecom.PhoneAccount
+import android.telecom.PhoneAccountHandle
+import android.telecom.TelecomManager
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
@@ -78,7 +89,9 @@ class TestAudio : Activity() {
             addView(bouton("① Quels appareils audio ?") { etape1() })
             addView(bouton("② Bips + micro sur la montre (15 s)") { etape2() })
             addView(bouton("③ Brancher la montre et ouvrir Claude") { etape3() })
-            addView(bouton("④ Arrêter et voir le résultat") { etape4() })
+            addView(bouton("④ Faux appel : bips sur la montre (20 s)") { etape5() })
+            addView(bouton("⑤ Ouvrir Claude pendant le faux appel") { etape6() })
+            addView(bouton("⏹ Arrêter et voir le résultat") { etape4() })
             addView(bouton("Copier le résultat") { copier() })
             addView(rapport)
         }
@@ -107,6 +120,8 @@ class TestAudio : Activity() {
         val w = montre(am)
         dire(if (w != null) "✅ Appareil Bluetooth proposé pour le son d'appel : « ${w.productName} »"
              else "❌ Aucun appareil Bluetooth proposé pour le son d'appel (la montre n'apparaît pas).")
+        val bt = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS).filter { decrire(it).contains("Bluetooth") }
+        dire("Sorties Bluetooth connues du téléphone : " + if (bt.isEmpty()) "aucune" else bt.joinToString { decrire(it) })
         profilAppels()
     }
 
@@ -136,7 +151,7 @@ class TestAudio : Activity() {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1); dire("Autorise le micro puis recommence ②."); return
         }
-        if (GardeAudio.actif) { dire("Arrête d'abord ③ (bouton ④)."); return }
+        if (GardeAudio.actif) { dire("Arrête d'abord (bouton ⏹)."); return }
         occupe = true
         dire("—— ② Bips + micro ——")
         Thread {
@@ -151,6 +166,12 @@ class TestAudio : Activity() {
         if (w == null) { dire("❌ Pas d'appareil Bluetooth à brancher : essai impossible."); return }
         val pris = brancher(am, w)
         dire("Branchement de « ${w.productName} » : " + (if (pris) "accepté" else "refusé") + " → son d'appel sur : " + decrire(am.communicationDevice))
+        bipsEtMicro()
+    }
+
+    /** Trois bips, 4 s de micro, réécoute : dit par où le son est vraiment passé. Vrai si tout est passé par le Bluetooth. */
+    @SuppressLint("MissingPermission")
+    private fun bipsEtMicro(): Boolean {
         dire("Trois bips… (les entends-tu sur la montre ?)")
         val sortie = jouer(bips())
         dire("Sortie vraiment utilisée : $sortie")
@@ -171,6 +192,67 @@ class TestAudio : Activity() {
         dire(if (ok) "✅ Le téléphone envoie le son d'une appli à la montre et prend son micro."
              else "❌ Le son ou le micro n'est pas passé par la montre.")
         dire("(Dis-moi aussi ce que tu as entendu, et où.)")
+        return ok
+    }
+
+    // ---------- ④ Faux appel : pendant un appel, Android sait envoyer le son à la montre ----------
+    private fun etape5() {
+        if (occupe) return
+        if (Build.VERSION.SDK_INT < 31) { dire("Android 12 au moins est nécessaire."); return }
+        if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 1); dire("Autorise le micro puis recommence ④."); return
+        }
+        if (GardeAudio.actif) { dire("Arrête d'abord (bouton ⏹)."); return }
+        occupe = true
+        dire("—— ④ Faux appel ——")
+        Thread {
+            try { fauxAppel() } catch (e: Exception) { dire("Erreur : ${e.javaClass.simpleName} ${e.message}"); AppelTest.raccrocher() }
+            finally { occupe = false }
+        }.start()
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun fauxAppel() {
+        AppelTest.raccrocher()
+        val tm = getSystemService(TelecomManager::class.java)
+        val h = PhoneAccountHandle(ComponentName(this, AppelTest::class.java), "test")
+        tm.registerPhoneAccount(PhoneAccount.builder(h, "Test audio montre")
+            .setCapabilities(PhoneAccount.CAPABILITY_SELF_MANAGED).addSupportedUriScheme(PhoneAccount.SCHEME_SIP).build())
+        tm.placeCall(Uri.fromParts(PhoneAccount.SCHEME_SIP, "montre", null),
+            Bundle().apply { putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, h) })
+        var c: AppelConn? = null
+        for (i in 0 until 40) {
+            c = AppelTest.courant
+            if (c != null && c.etatAudio != null && c.state == Connection.STATE_ACTIVE) break
+            Thread.sleep(200)
+        }
+        val st = c?.etatAudio
+        if (c == null || st == null) { dire("❌ Android n'a pas ouvert le faux appel."); AppelTest.raccrocher(); return }
+        val bt = st.supportedBluetoothDevices.toList()
+        dire("Appareils Bluetooth proposés pendant l'appel : " + if (bt.isEmpty()) "aucun" else bt.joinToString { nom(it) })
+        val w = bt.firstOrNull { nom(it).contains("watch", true) } ?: bt.firstOrNull()
+        if (w == null) { dire("❌ Même pendant un appel, la montre n'est pas proposée."); AppelTest.raccrocher(); return }
+        c.requestBluetoothAudio(w)
+        for (i in 0 until 40) {
+            val s = c.etatAudio
+            if (s?.route == CallAudioState.ROUTE_BLUETOOTH && s.activeBluetoothDevice == w) break
+            Thread.sleep(200)
+        }
+        Thread.sleep(800)
+        dire("Sortie de l'appel : " + route(c.etatAudio))
+        if (bipsEtMicro()) dire("L'appel reste ouvert : touche ⑤ pour essayer Claude, ⏹ pour raccrocher.")
+        else AppelTest.raccrocher()
+    }
+
+    // ---------- ⑤ Le mode vocal de Claude pendant le faux appel ----------
+    private fun etape6() {
+        if (AppelTest.courant == null) { dire("Fais d'abord ④ (il faut que le faux appel soit ouvert)."); return }
+        dire("—— ⑤ Claude pendant le faux appel ——")
+        dire("Dans Claude : lance le mode vocal, dis une phrase, écoute d'où sort la réponse (montre ou téléphone), puis reviens ici et touche ⏹.")
+        startForegroundService(Intent(this, GardeAudio::class.java).putExtra(GardeAudio.SEUL, true))
+        val i = packageManager.getLaunchIntentForPackage(CLAUDE)
+        if (i == null) dire("Appli Claude introuvable sur ce téléphone : ouvre-la à la main.")
+        else main.postDelayed({ startActivity(i) }, 1500)
     }
 
     private fun bips(): ShortArray {
@@ -198,7 +280,7 @@ class TestAudio : Activity() {
         if (occupe) return
         if (Build.VERSION.SDK_INT < 31) { dire("Android 12 au moins est nécessaire."); return }
         dire("—— ③ Montre branchée, Claude ouvert ——")
-        dire("Dans Claude : lance le mode vocal, dis une phrase, écoute d'où sort la réponse (montre ou téléphone), puis reviens ici et touche ④.")
+        dire("Dans Claude : lance le mode vocal, dis une phrase, écoute d'où sort la réponse (montre ou téléphone), puis reviens ici et touche ⏹.")
         startForegroundService(Intent(this, GardeAudio::class.java))
         val i = packageManager.getLaunchIntentForPackage(CLAUDE)
         if (i == null) dire("Appli Claude introuvable sur ce téléphone : ouvre-la à la main.")
@@ -206,6 +288,7 @@ class TestAudio : Activity() {
     }
 
     private fun etape4() {
+        AppelTest.raccrocher()
         montrerJournal()
         startService(Intent(this, GardeAudio::class.java).setAction(GardeAudio.STOP))
     }
@@ -237,6 +320,18 @@ class TestAudio : Activity() {
             AudioDeviceInfo.TYPE_WIRED_HEADSET, AudioDeviceInfo.TYPE_WIRED_HEADPHONES, AudioDeviceInfo.TYPE_USB_HEADSET -> "casque filaire"
             AudioDeviceInfo.TYPE_TELEPHONY -> "ligne téléphonique"
             else -> "type ${d.type} « ${d.productName} »"
+        }
+
+        @SuppressLint("MissingPermission")
+        fun nom(d: BluetoothDevice): String = try { d.name ?: "?" } catch (e: Exception) { "?" }
+
+        fun route(s: CallAudioState?): String = when (s?.route) {
+            null -> "inconnue"
+            CallAudioState.ROUTE_BLUETOOTH -> "Bluetooth « " + (s.activeBluetoothDevice?.let { nom(it) } ?: "?") + " »"
+            CallAudioState.ROUTE_EARPIECE -> "écouteur du téléphone"
+            CallAudioState.ROUTE_SPEAKER -> "haut-parleur du téléphone"
+            CallAudioState.ROUTE_WIRED_HEADSET -> "casque filaire"
+            else -> "route ${s.route}"
         }
 
         /** L'appareil Bluetooth que le téléphone propose pour le son d'appel : la montre de préférence. */
@@ -281,6 +376,7 @@ class TestAudio : Activity() {
  */
 class GardeAudio : Service() {
     private var fil: Thread? = null
+    private var seul = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -293,28 +389,29 @@ class GardeAudio : Service() {
             .setContentTitle("Test audio montre en cours").setContentText("La montre est branchée comme micro et haut-parleur")
             .addAction(Notification.Action.Builder(null, "Arrêter", stop).build()).setOngoing(true).build()
         if (Build.VERSION.SDK_INT >= 29) startForeground(7, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK) else startForeground(7, n)
+        seul = intent?.getBooleanExtra(SEUL, false) == true
         if (fil == null) { actif = true; fil = Thread { garder() }.also { it.start() } }
         return START_NOT_STICKY
     }
 
-    private fun noter(l: String) {
-        synchronized(journal) { journal += SimpleDateFormat("HH:mm:ss", Locale.FRANCE).format(Date()) + "  " + l }
-    }
+    private fun noter(l: String) = ecrire(l)
 
     private fun garder() {
         val am = getSystemService(AudioManager::class.java)
         var piste: AudioTrack? = null
         try {
-            val w = TestAudio.montre(am)
-            if (w == null) { noter("❌ pas d'appareil Bluetooth à brancher"); return }
-            val pris = TestAudio.brancher(am, w)
-            noter("branchement de « ${w.productName} » : " + if (pris) "accepté" else "refusé")
-            piste = TestAudio.pisteAppel().also { it.play() }
+            if (!seul) {
+                val w = TestAudio.montre(am)
+                if (w == null) { noter("❌ pas d'appareil Bluetooth à brancher"); return }
+                val pris = TestAudio.brancher(am, w)
+                noter("branchement de « ${w.productName} » : " + if (pris) "accepté" else "refusé")
+                piste = TestAudio.pisteAppel().also { it.play() }
+            }
             val silence = ShortArray(TestAudio.HZ / 4)
             var avant = ""
             val fin = System.currentTimeMillis() + 6 * 60_000
             while (actif && System.currentTimeMillis() < fin && !Thread.currentThread().isInterrupted) {
-                piste.write(silence, 0, silence.size)  // 250 ms
+                if (piste != null) piste.write(silence, 0, silence.size) else Thread.sleep(250)  // 250 ms
                 val e = etat(am)
                 if (e != avant) { noter(e); avant = e }
             }
@@ -322,8 +419,8 @@ class GardeAudio : Service() {
         } catch (e: Exception) { noter("erreur : ${e.javaClass.simpleName} ${e.message}")
         } finally {
             try { piste?.stop(); piste?.release() } catch (e: Exception) { }
-            TestAudio.debrancher(am)
-            noter("fin : montre débranchée")
+            if (!seul) TestAudio.debrancher(am)
+            noter("fin de la surveillance")
             actif = false
             stopSelf()
         }
@@ -351,14 +448,65 @@ class GardeAudio : Service() {
                 else -> "usage ${it.audioAttributes.usage}"
             }
         }.eachCount().toSortedMap().map { "${it.key}×${it.value}" }.joinToString(", ")
-        return "$mode | son d'appel : $appel | $micros | sons : $sons"
+        val faux = AppelTest.courant?.let { " | faux appel : " + TestAudio.route(it.etatAudio) } ?: ""
+        return "$mode | son d'appel : $appel$faux | $micros | sons : $sons"
     }
 
     override fun onDestroy() { actif = false; fil?.interrupt(); super.onDestroy() }
 
     companion object {
         const val STOP = "fr.kiki.pokemontre.STOP_TEST_AUDIO"
+        const val SEUL = "seul"
         val journal = ArrayList<String>()
         @Volatile var actif = false
+
+        fun ecrire(l: String) {
+            synchronized(journal) { journal += SimpleDateFormat("HH:mm:ss", Locale.FRANCE).format(Date()) + "  " + l }
+        }
     }
+}
+
+/**
+ * Le « faux appel » de l'étape ④ : un appel que l'appli gère elle-même (personne n'est appelé, rien ne sort du
+ * téléphone). Pendant un appel, Android propose les appareils Bluetooth reliés pour les appels, la montre comprise,
+ * et sait y envoyer le son : c'est ce qu'on veut vérifier.
+ */
+class AppelTest : ConnectionService() {
+    override fun onCreateOutgoingConnection(connectionManagerPhoneAccount: PhoneAccountHandle?, request: ConnectionRequest?): Connection {
+        val c = AppelConn()
+        c.setConnectionProperties(Connection.PROPERTY_SELF_MANAGED)
+        c.setAddress(request?.address, TelecomManager.PRESENTATION_ALLOWED)
+        c.setCallerDisplayName("Test audio montre", TelecomManager.PRESENTATION_ALLOWED)
+        c.setAudioModeIsVoip(true)
+        c.setDialing()
+        Handler(Looper.getMainLooper()).postDelayed({ if (courant === c) c.setActive() }, 400)
+        courant = c
+        return c
+    }
+
+    override fun onCreateOutgoingConnectionFailed(connectionManagerPhoneAccount: PhoneAccountHandle?, request: ConnectionRequest?) {
+        GardeAudio.ecrire("❌ Android a refusé le faux appel")
+    }
+
+    companion object {
+        @Volatile var courant: AppelConn? = null
+
+        fun raccrocher() {
+            val c = courant ?: return
+            courant = null
+            try { c.setDisconnected(DisconnectCause(DisconnectCause.LOCAL)); c.destroy() } catch (e: Exception) { }
+        }
+    }
+}
+
+class AppelConn : Connection() {
+    @Volatile var etatAudio: CallAudioState? = null
+
+    @Deprecated("API Connection")
+    override fun onCallAudioStateChanged(etat: CallAudioState?) {
+        etatAudio = etat
+        GardeAudio.ecrire("faux appel : sortie " + TestAudio.route(etat))
+    }
+    override fun onDisconnect() { if (AppelTest.courant === this) AppelTest.raccrocher() }
+    override fun onAbort() { if (AppelTest.courant === this) AppelTest.raccrocher() }
 }
