@@ -131,10 +131,10 @@ function noterCircuit(P, niveau, biome, tourVrai) {
 /* le sol d'un circuit, point par point : jamais de valeur absurde, jamais de mur entre deux bouts de piste qui se font face (le cratère d'un
    massif est un creux voulu, à parois raides : il ne compte pas). Reçoit ce dont il a besoin du champ (moteur/champ.js) : il sert au contrôle
    sans dessin (controle.js) et au générateur, qui écarte un tirage dont le sol a une marche (solNiveau). */
-function scannerSol(hauteur, Q, G, ecart, MASSIF, haut = 0) {   // haut : le plus haut de la piste (une vraie route de col monte à 500 m et plus)
+function scannerSol(hauteur, Q, G, ecart, MASSIF, haut = 0, pasZ = 4) {   // haut : le plus haut de la piste (une vraie route de col monte à 500 m et plus) ; pasZ : l'écart entre deux lignes (une route de 20 km : 12 m, sinon le contrôle dure 30 s)
   const cratere = (x, z) => !!(MASSIF && MASSIF.cratere && Math.hypot(x - MASSIF.x, z - MASSIF.z) / MASSIF.r < .12);
   let points = 0, absurdes = 0, cassures = 0, pire = 0;
-  for (let z = G.za - 110; z < G.zb + 110; z += 4) {
+  for (let z = G.za - 110; z < G.zb + 110; z += pasZ) {
     let h0 = null, i0 = 0, e0 = 0, c0 = false;
     for (let x = G.xa - 110; x < G.xb + 110; x += 3) {
       const h = hauteur(x, z), i = Q.i, e = Q.e, c = cratere(x, z);

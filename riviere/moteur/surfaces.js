@@ -191,10 +191,10 @@ function courantEau() {
 }
 
 /* ---- le ruban de la piste, par tronçons de 40 m (toutes les eaux ensemble, chaque terre à part) ; la mer, un grand plan ---- */
-function construirePiste() {
-  const P = PISTE, rubans = [], EAUX_C = couleursEau(), FLOT = EFFETS.eau ? courantEau() : null, genre = i => { const nom = P.surfaces[P.SF[idx(i)]], S = SURFACES[nom]; return !S || S.liquide ? "eau" : nom + (P.CROIX[idx(i)] === 2 ? "+" : ""); };
+function fabriquePiste() {   // de quoi construire le ruban de la piste (le circuit entier : construirePiste ; un tronçon : troncons.js)
+  const P = PISTE, EAUX_C = couleursEau(), FLOT = EFFETS.eau ? courantEau() : null, genre = i => { const nom = P.surfaces[P.SF[idx(i)]], S = SURFACES[nom]; return !S || S.liquide ? "eau" : nom + (P.CROIX[idx(i)] === 2 ? "+" : ""); };
   const sorte = i => genre(i) + "/" + P.VO[idx(i)];   // dans une fourche, chaque voie a ses rubans (le sillage ne se dessine que sur la voie où l'on est)
-  const decouper = (s0, s1, nf) => { for (let c0 = s0; c0 < s1; c0 += 40) {
+  const decouper = (s0, s1, nf, rubans) => { for (let c0 = s0; c0 < s1; c0 += 40) {
     const fin = Math.min(c0 + 40, s1); let debut = c0;
     for (let i = c0; i <= fin; i++) {   // un ruban par suite de mètres de même genre (l'eau, quelle qu'elle soit ; ou une terre)
       if (i < fin && sorte(i) === sorte(debut)) continue;
@@ -202,8 +202,6 @@ function construirePiste() {
       debut = i;
     }
   } };
-  decouper(0, LONG, -1);
-  P.voies.forEach((v, nf) => surLaVoie(nf, () => decouper(v.a, v.b, nf)));   // la voie « force » de chaque fourche, entre les mêmes mètres
   const unRuban = (a0, a1) => {
     const pos = [], su = [], bord = [], ec = [], pente = [], voie = [], ind = [], flot = [], abri = [], liquide = genre(a0) === "eau", C = [[], [], [], [], [], []], vo = P.VO[idx(a0)];
     for (let i = a0; i <= a1; i++) {
@@ -219,10 +217,17 @@ function construirePiste() {
     g.setAttribute("aEc", new THREE.Float32BufferAttribute(ec, 2)); g.setAttribute("aPente", new THREE.Float32BufferAttribute(pente, 1)); g.setAttribute("aVoie", new THREE.Float32BufferAttribute(voie, 1)); g.setIndex(ind);
     if (flot.length) g.setAttribute("aFlot", new THREE.Float32BufferAttribute(flot, 3)); if (abri.length) g.setAttribute("aAbri", new THREE.Float32BufferAttribute(abri, 1));
     if (liquide) ["aC1", "aC2", "aCl", "aRe", "aEcu", "aLuit"].forEach((a, c) => g.setAttribute(a, new THREE.Float32BufferAttribute(C[c], c < 5 ? 3 : 1)));
-    const nom = P.surfaces[P.SF[idx(a0)]], m = new THREE.Mesh(g, liquide ? MAT_EAUX : genre(a0).endsWith("+") ? matDessus(nom) : SURFACES[nom].materiau); m.name = "piste"; scene.add(m);
+    const nom = P.surfaces[P.SF[idx(a0)]], m = new THREE.Mesh(g, liquide ? MAT_EAUX : genre(a0).endsWith("+") ? matDessus(nom) : SURFACES[nom].materiau); m.name = "piste";
     if (!SURFACES[nom]) console.warn("Surface inconnue : " + nom);
+    return m;
   };
-  for (const [a0, a1, nf] of rubans) { if (nf < 0) unRuban(a0, a1); else surLaVoie(nf, () => unRuban(a0, a1)); }
+  return {decouper, unRuban};
+}
+function construirePiste() {
+  const P = PISTE, rubans = [], K = fabriquePiste();
+  K.decouper(0, LONG, -1, rubans);
+  P.voies.forEach((v, nf) => surLaVoie(nf, () => K.decouper(v.a, v.b, nf, rubans)));   // la voie « force » de chaque fourche, entre les mêmes mètres
+  for (const [a0, a1, nf] of rubans) { if (nf < 0) scene.add(K.unRuban(a0, a1)); else surLaVoie(nf, () => scene.add(K.unRuban(a0, a1))); }
   if (DISC_PISTE === "terre") return;   // sur la terre : aucune mer
   const mer = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), MAT_MER); mer.rotation.x = -Math.PI / 2; mer.position.set(P.X[P.N >> 1], -.15, P.Z[P.N >> 1]); mer.name = "mer"; scene.add(mer);
 }

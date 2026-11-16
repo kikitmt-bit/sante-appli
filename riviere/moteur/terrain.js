@@ -3,6 +3,23 @@
 // Le monde est une île (ou des terres) : loin de la piste, le sol redescend dans la mer ou ondule en collines (champ.js).
 const RB = 12, STATIONS = [0, .02, .4, 1.2, 3, 6, 10, LARGE_RIVE];   // le ruban : ses points, en mètres depuis le bord de la piste
 
+/* une cellule de la grille du sol : sa hauteur, le mètre de piste le plus proche (GI), sa distance au bord (GE), son côté (GC), sa nature (GK) :
+   1 = le lit de la piste à ciel ouvert, 2 = le dessus d'un tunnel, 3 = les flancs d'un tunnel, 0 = le reste. Partagée avec les tronçons (troncons.js). */
+function celluleSol(x, z, k, HH, GI, GE, GC, GK) {
+  const P = PISTE, h = hSol(x, z), e = Q.e, pi = Q.i, cote = Q.d > 0 ? 1 : 0, tun = P.TUN[pi], culee = Q.bout === 2;
+  GI[k] = pi; GE[k] = e; GC[k] = cote;
+  const bec = culee && Q.av > -3 && Math.abs(Q.d) < P.W[pi] + .8;   // juste au bout d'un pont, dans le couloir de la piste : le sol passe sous le tablier (11/11 : deux coins d'herbe sur l'eau ; puis un trou sous le pont, d'où la culée)
+  if (bec) { HH[k] = Math.min(h, P.Y[pi] - 1); GK[k] = 0; }   // juste sous le tablier (la culée de pierre cache le reste : surfaces.js)
+  else if (e < .8 && !culee) { if (tun) { HH[k] = h; GK[k] = 2; } else { HH[k] = P.Y[pi] - 1.5; GK[k] = 1; } }
+  else if (tun || e >= RB || culee) { HH[k] = h; GK[k] = tun && e < RB ? 3 : 0; }
+  else {   // sous le ruban des rives : un peu plus bas, pour ne jamais dépasser
+    const f = 1 - lisse(RB - 5, RB, e);
+    HH[k] = h - .9 * f - Math.max(0, hRive(pi, cote, e) - hRive(pi, cote, Math.max(0, e - 3 * f)));
+  }
+}
+function sommetSol(F, x, z, h, hx, hz, gi, gc, gk, ge) {   // un sommet du sol : sa pente (hx, hz) donne sa normale, donc sa couleur (la paroi si c'est raide)
+  const N = nrm([-hx, 1, -hz]), c = couleurSol(gi, gc, gk === 2 ? 3 : Math.max(ge, 0), N[1], x, z); F.v(x, h, z, N[0], N[1], N[2], c, c[3]);
+}
 function construireTerrain() {
   const P = PISTE, C = BOUCLE ? 3 : 2.5, M = 185, T = 24; let xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9;
   for (let i = 0; i < P.M; i++) { xa = Math.min(xa, P.X[i]); xb = Math.max(xb, P.X[i]); za = Math.min(za, P.Z[i]); zb = Math.max(zb, P.Z[i]); }
@@ -16,25 +33,15 @@ function construireTerrain() {
     for (let i = 0; i < P.M && d > VU_LOIN + demi; i += 4) d = Math.min(d, Math.hypot(P.X[i] - cx, P.Z[i] - cz));
     LOINT[b * ntx + a] = d > VU_LOIN + demi + 4 ? 1 : 0;
   }
-  // 1 = le lit de la piste à ciel ouvert, 2 = le dessus d'un tunnel, 3 = les flancs d'un tunnel, 0 = le reste
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
     if (LOINT[Math.floor(j / T) * ntx + Math.floor(i / T)]) { const k = j * nx + i; HH[k] = -9; GE[k] = 999; continue; }   // jamais vu : sous la « mer », rien n'est dessiné
-    const x = x0 + i * C, z = z0 + j * C, k = j * nx + i, h = hSol(x, z), e = Q.e, pi = Q.i, cote = Q.d > 0 ? 1 : 0, tun = P.TUN[pi], culee = Q.bout === 2;
-    GI[k] = pi; GE[k] = e; GC[k] = cote;
-    const bec = culee && Q.av > -3 && Math.abs(Q.d) < P.W[pi] + .8;   // juste au bout d'un pont, dans le couloir de la piste : le sol passe sous le tablier (11/11 : deux coins d'herbe sur l'eau ; puis un trou sous le pont, d'où la culée)
-    if (bec) { HH[k] = Math.min(h, P.Y[pi] - 1); GK[k] = 0; }   // juste sous le tablier (la culée de pierre cache le reste : surfaces.js)
-    else if (e < .8 && !culee) { if (tun) { HH[k] = h; GK[k] = 2; } else { HH[k] = P.Y[pi] - 1.5; GK[k] = 1; } }
-    else if (tun || e >= RB || culee) { HH[k] = h; GK[k] = tun && e < RB ? 3 : 0; }
-    else {   // sous le ruban des rives : un peu plus bas, pour ne jamais dépasser
-      const f = 1 - lisse(RB - 5, RB, e);
-      HH[k] = h - .9 * f - Math.max(0, hRive(pi, cote, e) - hRive(pi, cote, Math.max(0, e - 3 * f)));
-    }
+    celluleSol(x0 + i * C, z0 + j * C, j * nx + i, HH, GI, GE, GC, GK);
   }
   for (let tj = 0; tj < nz - 1; tj += T) for (let ti = 0; ti < nx - 1; ti += T) {
     const F = new Forme();
     const som = (i, j) => {
-      const k = j * nx + i, x = x0 + i * C, z = z0 + j * C, hx = (HH[j * nx + Math.min(nx - 1, i + 1)] - HH[j * nx + Math.max(0, i - 1)]) / (2 * C), hz = (HH[Math.min(nz - 1, j + 1) * nx + i] - HH[Math.max(0, j - 1) * nx + i]) / (2 * C), N = nrm([-hx, 1, -hz]);
-      const c = couleurSol(GI[k], GC[k], GK[k] === 2 ? 3 : Math.max(GE[k], 0), N[1], x, z); F.v(x, HH[k], z, N[0], N[1], N[2], c, c[3]);
+      const k = j * nx + i, hx = (HH[j * nx + Math.min(nx - 1, i + 1)] - HH[j * nx + Math.max(0, i - 1)]) / (2 * C), hz = (HH[Math.min(nz - 1, j + 1) * nx + i] - HH[Math.max(0, j - 1) * nx + i]) / (2 * C);
+      sommetSol(F, x0 + i * C, z0 + j * C, HH[k], hx, hz, GI[k], GC[k], GK[k], GE[k]);
     };
     let loin = true, tresLoin = P.N > 3000;   // (16/11) une vraie route de plus de 3 km : au-delà de 160 m, des mailles quatre fois plus grandes (les circuits de 2 km ne changent pas)
     for (let j = tj; j <= Math.min(tj + T, nz - 1) && loin; j += 4) for (let i = ti; i <= Math.min(ti + T, nx - 1); i += 4) { if (GE[j * nx + i] < 160) tresLoin = false; if (GE[j * nx + i] < 75) { loin = false; break; } }
@@ -55,7 +62,8 @@ function construireTerrain() {
 /* le ruban des rives : du bord de la piste jusqu'à 13,5 m, mètre par mètre (bord net, parois droites).
    Tout près du bord, la hauteur est exacte ; plus loin, elle rejoint le champ (le vote). À l'intérieur d'un virage serré,
    le ruban s'arrête à sa largeur libre, à la hauteur du champ : les deux côtés d'une épingle se rejoignent sans se replier. */
-function construireRives() {
+let PRES_X = null;   // les mètres proches d'un carrefour (calculés une fois)
+function fabriqueRives() {   // de quoi construire les rives, d'un mètre à un autre (le circuit entier : construireRives ; un tronçon : troncons.js)
   const P = PISTE, nS = STATIONS.length, iMer = TYPES.indexOf("mer"), memo = [new Map(), new Map()];
   const coupe = (i, cote) => {
     let o = memo[cote].get(i); if (o) return o;
@@ -78,15 +86,12 @@ function construireRives() {
     }
     o = {pts, segs}; memo[cote].set(i, o); return o;
   };
-  const PRES_X = new Uint8Array(P.M); for (let i = 0; i < P.N; i++) if (P.CROIX[i]) for (let k = -25; k <= 25; k++) PRES_X[BOUCLE ? ((i + k) % P.N + P.N) % P.N : clamp(i + k, 0, P.N - 1)] = 1;   // près d'un carrefour
+  if (!PRES_X) { PRES_X = new Uint8Array(P.M); for (let i = 0; i < P.N; i++) if (P.CROIX[i]) for (let k = -25; k <= 25; k++) PRES_X[BOUCLE ? ((i + k) % P.N + P.N) % P.N : clamp(i + k, 0, P.N - 1)] = 1; }   // près d'un carrefour
   const surAutre = (V, i) => { const x = (V[0][0] + V[2][0]) / 2, z = (V[0][2] + V[2][2]) / 2; pres(x, z); return Q.e < .5 && Math.abs(ecart(sLigne(Q.i), i)) > 20; };   // ce bout de rive tomberait sur l'autre route
-  // la ligne, de s0 à s1 ; puis la voie « force » de chaque fourche, entre les deux mêmes mètres (idx et at la suivent : surLaVoie)
-  const ruban = (s0, s1) => { memo[0].clear(); memo[1].clear();
-   for (let c0 = s0; c0 < s1; c0 += 40) {
-    const F = new Forme();
+  const morceau = (F, i0, i1) => {   // les rives des deux côtés, du mètre i0 au mètre i1, ajoutées à la forme F
     for (const cote of [0, 1]) {
       const PW = cote ? P.PD : P.PG;
-      for (let i = c0; i < Math.min(c0 + 40, s1); i++) {
+      for (let i = i0; i < i1; i++) {
         const j = BOUCLE ? (i + 1) % P.N : i + 1, ii = idx(i), jj = idx(j);
         if (P.TUN[ii] && P.TUN[jj]) continue;
         if (P.INT[ii] === cote + 1 && LIBRE[cote][ii] < .1 && LIBRE[cote][jj] < .1) continue;   // une fourche : du côté de l'autre voie, pas de rive tant que les deux eaux se touchent
@@ -108,6 +113,15 @@ function construireRives() {
         }
       }
     }
+  };
+  return {morceau, oublier() { memo[0].clear(); memo[1].clear(); }};
+}
+function construireRives() {
+  const P = PISTE, K = fabriqueRives();
+  // la ligne, de s0 à s1 ; puis la voie « force » de chaque fourche, entre les deux mêmes mètres (idx et at la suivent : surLaVoie)
+  const ruban = (s0, s1) => { K.oublier();
+   for (let c0 = s0; c0 < s1; c0 += 40) {
+    const F = new Forme(); K.morceau(F, c0, Math.min(c0 + 40, s1));
     const m = F.maille(); if (m) { m.name = "rives"; scene.add(m); }
    }
   };

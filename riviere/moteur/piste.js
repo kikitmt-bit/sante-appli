@@ -302,6 +302,10 @@ const PISTE = (() => {
     X, Z, Y, H, HFIN: h, W, PG, PD, TUN, PONT, NET, SF, PC, PENTE, COULE, COURB, ALL, ALL0, VR, CAMH, CAMR, FA, FR, CH, SH, CROIX, pieces, surfaces, segments, fermeture};
 })();
 const LONG = BOUCLE ? PISTE.N : PISTE.N - 1;   // la longueur du niveau (un tour, pour une boucle)
+/* (16/11, étape 8, lot 3) le monde par tronçons : sur une longue route ouverte (plus de 6 km, ou "troncons": true dans le niveau), le sol, les rives,
+   la route et le décor ne sont construits qu'autour de soi, et effacés derrière (moteur/troncons.js). ?troncons=1 ou 0 dans l'adresse : pour comparer.
+   Jamais sur une boucle ni avec une fourche : ces circuits restent construits d'un bloc, comme toujours. */
+const TRONCONS = !BOUCLE && !PISTE.NF && PARAMS.get("troncons") !== "0" && (PARAMS.get("troncons") === "1" || NIVEAU.troncons === true || (NIVEAU.troncons !== false && PISTE.N > 6000));
 /* les voies prises : pour chaque fourche, 0 = la voie calme (la ligne), 1 = la voie « force ». idx(s) et at(s) suivent ce choix : c'est celui du joueur.
    Pour un autre que lui (le fantôme, un adversaire), ou pour construire le décor d'une voie : surVoie(choix, f), le temps d'un calcul. */
 const VOIES = {prise: new Uint8Array(PISTE.NF), calme: new Uint8Array(PISTE.NF)};
@@ -396,7 +400,14 @@ function verifier() {
     const o = (p, q, r) => (P.X[q] - P.X[p]) * (P.Z[r] - P.Z[p]) - (P.Z[q] - P.Z[p]) * (P.X[r] - P.X[p]);
     return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
   };
-  for (let i = 0; i + pas < N; i += pas) for (let j = i + 30; j < N; j += pas) {
+  // (16/11, lot 3) on ne compare un bout de piste qu'à ses voisins (une grille de 16 m), dans le même ordre qu'avant : le même résultat,
+  // sans les N²/8 comparaisons (55 millions pour une route de 21 km)
+  const GV = 16, grille = new Map(), case_ = k => Math.floor(P.X[k] / GV) + "," + Math.floor(P.Z[k] / GV);
+  for (let j = 0; j < N; j += pas) { const k = case_(j); if (!grille.has(k)) grille.set(k, []); grille.get(k).push(j); }
+  for (let i = 0; i + pas < N; i += pas) { const cx = Math.floor(P.X[i] / GV), cz = Math.floor(P.Z[i] / GV), voisins = [];
+   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) for (const j of grille.get((cx + a) + "," + (cz + b)) || []) if (j >= i + 30) voisins.push(j);
+   voisins.sort((a, b) => a - b);
+   for (const j of voisins) {
     if (BOUCLE && N - j + i < 30) continue;
     const j2 = BOUCLE ? (j + pas) % N : Math.min(N - 1, j + pas);
     if (j2 === j || !coupe(i, i + pas, j, j2)) continue;
@@ -407,6 +418,7 @@ function verifier() {
     croisements.push({s1: i, s2: j, ecart: +Math.abs(dy).toFixed(1), bon: !!bon, carrefour});
     if (!bon && DISC_PISTE === "terre") erreurs.push(Math.abs(dy) < .8 ? "Le carrefour des mètres " + i + " et " + j + " est trop rasant : les deux passages doivent se croiser franchement (plus de 25°)." : "La piste se croise aux mètres " + i + " et " + j + " à des hauteurs différentes (" + Math.abs(dy).toFixed(1) + " m) : à la même hauteur (un carrefour), ou un pont 4,5 m plus haut au moins.");
     else if (!bon) erreurs.push("La piste se croise au mètre " + i + " et au mètre " + j + " sans pont : il faut une pièce « pont » au-dessus, 4,5 m plus haut au moins (ici " + Math.abs(dy).toFixed(1) + " m).");
+   }
   }
   // les voies « force » des fourches : leurs virages, leurs pentes, et elles ne touchent le reste du circuit qu'à leurs deux bouts
   for (const v of P.voies) {

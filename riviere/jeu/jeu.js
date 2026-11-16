@@ -103,7 +103,7 @@ function boucle(now) {
     if (S.fondu) { S.fondu += dt * 1.4; if (S.fondu >= 1 && S.s > LONG / 2) { S.s = 6; M.y = null; CAM.y = null; } if (S.fondu >= 2) S.fondu = 0; $("voile").style.opacity = S.fondu ? (S.fondu < 1 ? S.fondu : 2 - S.fondu) : 0; }
   }
   const tunnel = dansTunnel(S.s);
-  animerMonture(T, da, S); cadrer(da, S, T); if (FILM.actif) filmCadrer(); ambianceMaj(da, S.s); lumieresProches(); animerPublic(T, S, da);
+  animerMonture(T, da, S); cadrer(da, S, T); if (FILM.actif) filmCadrer(); tronconsMaj(); ambianceMaj(da, S.s); lumieresProches(); animerPublic(T, S, da);
   if (!FILM.actif) { effortMaj(vraiDt); fourchesMaj(); animerFantome(T); animerRivaux(T, vraiDt); }
   rencontresMaj(T, da); animerGouttes(da); animerDecor(T); animerLointain(T);
   sonMaj(S.s, !!tunnel);
@@ -161,13 +161,15 @@ window.__vue = m => {
 };
 window.__piste = () => PISTE.pieces.map(p => [p.titre, Math.round(p.long0 || p.long), p.s1 - p.s0, +(+p.virage).toFixed(1), +(+p.monte || 0).toFixed(1)]);   // les pièces : longueur demandée, longueur réelle, virage, montée
 window.__verif = verifier;
-window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0, S.s); lumieresProches(); animerPublic(T, S, 0); effetsMaj(T, AMB.m, AMB.nuit); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
+window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); tronconsMaj(true); ambianceMaj(0, S.s); lumieresProches(); animerPublic(T, S, 0); effetsMaj(T, AMB.m, AMB.nuit); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
 
 /* ============ le départ : on construit le monde depuis les fichiers, puis on lance ============ */
 (async () => {
   const t0 = performance.now();
   try { await Promise.race([document.fonts.load('20px "Jersey 15"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
-  construireTerrain(); construireMassif(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites(); construireRencontres(); construireFourches(); construireOmbres();
+  if (TRONCONS) tronconsDemarrer();   // (16/11, lot 3) une longue route : seulement ce qui entoure le départ, le reste au fil de la route (moteur/troncons.js)
+  else { construireTerrain(); construireRives(); construirePiste(); construireDecor(); }
+  construireMassif(); construirePonts(); construireTunnels(); construireLointain(); construireAmbiance(); await construireSprites(); construireRencontres(); construireFourches(); construireOmbres();
   window.__pret = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
   const v = verifier(); if (!v.ok) console.warn("Niveau à revoir :\n" + v.erreurs.join("\n"));
   $("hTour").hidden = false; construireProfil(); await preparerRivaux(); $("lVit").textContent = MACHINE.affiche === "kmh" ? "VITESSE" : "ALLURE"; $("uVit").textContent = MACHINE.affiche === "kmh" ? "km/h" : "/500 m";

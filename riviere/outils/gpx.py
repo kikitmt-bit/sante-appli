@@ -1,7 +1,8 @@
 """Une vraie route dans La Rivière (étape 8 du plan, lot 1) : un fichier GPX devient un circuit normal du jeu (contenu/niveaux/).
     python riviere/outils/gpx.py ma-route.gpx --nom "Le col" --id col-essai                 -> le bilan (longueur, montée, pentes)
     python riviere/outils/gpx.py ma-route.gpx --nom "Le col" --id col-essai --ecrire         -> écrit contenu/niveaux/col-essai.json
-        --km 5          la longueur gardée (5 km au plus tant que le monde n'est pas construit par tronçons : lot 3)
+        --km 5          la longueur gardée (5 km par défaut, 60 au plus ; au-delà de 6 km le jeu construit le monde par tronçons,
+                        autour de soi : moteur/troncons.js)
         --depuis 6.5    où commence l'extrait (en km depuis le début du GPX) ; sans lui : les --km les plus durs (la plus forte montée)
         --large 6       la largeur de la route (m)
         --rayon 9       le plus petit rayon de virage gardé (m) : un virage plus serré est élargi, sans changer de combien la route tourne
@@ -21,7 +22,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent.parent
-KM_MAX = 5.0          # tant que le monde est construit d'un bloc (le lot 3 : les tronçons)
+KM_MAX = 5.0          # la longueur gardée si on ne dit rien (un monde de 5 km se construit encore d'un bloc)
+KM_LIMITE = 60.0      # au-delà de 6 km, le jeu construit le monde par tronçons (lot 3 de l'étape 8) : la longueur ne coûte plus rien
 PAS = 5               # mètres : les petits morceaux dont on fait les pièces
 R_TERRE = 6371000.0
 
@@ -178,8 +180,8 @@ def rives_de(pieces, cotes):
 
 def construire(pts, km=KM_MAX, depuis=None, large=6.0, rayon=9.0, lisse=6.0, lisse_alt=25.0, cotes_fn=None):
     """Le cœur de l'outil : les points du GPX -> la liste des pièces (et un bilan)."""
-    if km > KM_MAX + 1e-9:
-        raise ValueError(f"{km} km : au-delà de {KM_MAX:g} km, il faudra le monde construit par tronçons (lot 3 de l'étape 8).")
+    if km > KM_LIMITE + 1e-9:
+        raise ValueError(f"{km} km : {KM_LIMITE:g} km au plus.")
     if any(p[2] is None for p in pts):
         raise ValueError("Ce GPX n'a pas d'altitude sur tous ses points (balise <ele>) : impossible d'avoir les vraies pentes.")
     xy = projeter(pts)

@@ -165,16 +165,24 @@ class Fichiers(unittest.TestCase):
 class Moteur(unittest.TestCase):
     """Le moteur, lancé pour de vrai sur chaque niveau (sans dessin) : la piste se referme, le sol n'a ni trou ni cassure, le décor est posé."""
 
+    BILANS = {}   # (16/11) un niveau n'est construit qu'une fois pour tous les tests (le Ventoux entier prend dix secondes)
+
     def bilan(self, niveau, params=""):
         import page
+        if (niveau, params) in self.BILANS:
+            return json.loads(self.BILANS[niveau, params])
+        t = time.time()
         with tempfile.TemporaryDirectory() as d:
             f = Path(d) / "controle.js"
             f.write_text(page.controle(niveau, params), encoding="utf-8")
-            r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8", timeout=120)
+            r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8", timeout=240)
         self.assertEqual(r.returncode, 0, f"{niveau} : le moteur plante\n{r.stderr[-1500:]}")
         lignes = [l for l in r.stdout.splitlines() if l.startswith("BILAN ")]
         self.assertTrue(lignes, f"{niveau} : pas de bilan\n{r.stdout[-500:]}")
-        return json.loads(lignes[-1][6:])
+        b = json.loads(lignes[-1][6:])
+        b["secondes"] = round(time.time() - t, 1)
+        self.BILANS[niveau, params] = json.dumps(b)
+        return b
 
     def test_chaque_niveau(self):
         for nom in NIVEAUX:
@@ -213,7 +221,8 @@ class Moteur(unittest.TestCase):
             for c in n["criteres"]:
                 self.assertTrue(0 <= c["note"] <= 100 and c["phrase"], f"{nom} : {c}")
             self.assertTrue(0 <= n["note"] <= 100, nom)
-            self.assertGreater(len(n["sequences"]), 1, f"{nom} : un seul paysage ?")
+            if not lis("niveaux", nom + ".json").get("route"):   # (une vraie route peut traverser 20 km de forêt : son paysage est celui du vrai lieu)
+                self.assertGreater(len(n["sequences"]), 1, f"{nom} : un seul paysage ?")
             self.assertAlmostEqual(sum(s["t"] for s in n["sequences"]), n["duree"], delta=len(n["sequences"]) + 2, msg=f"{nom} : les séquences ne couvrent pas le tour")
 
     def test_fourches(self):
@@ -330,13 +339,45 @@ class Moteur(unittest.TestCase):
     def test_budgets(self):
         import page
         for nom in NIVEAUX:
-            t = time.time()
             b = self.bilan(nom)
             km = max(1, b["metres"] / 2000)   # (16/11) une vraie route de 5 km (outils/gpx.py) : le budget d'un circuit de 2 km par tranche de 2 km
-            self.assertLess(time.time() - t, self.BUDGET_SECONDES * km, f"{nom} : construction trop lente")
+            self.assertLess(b["secondes"], self.BUDGET_SECONDES * km, f"{nom} : construction trop lente")
             self.assertLess(b["triangles"], self.BUDGET_TRIANGLES * km, f"{nom} : trop de triangles ({b['triangles']})")
+            if b["troncons"]:   # une longue route, construite par tronçons : ce qui compte, c'est ce qu'on voit d'un coup (un kilomètre)
+                self.assertLess(b["troncons"]["fenetre"], self.BUDGET_TRIANGLES, f"{nom} : trop de triangles dans un kilomètre ({b['troncons']['fenetre']})")
         ko = len(page.page(niveau=NIVEAUX[0]).encode("utf-8")) // 1024
         self.assertLess(ko, self.BUDGET_PAGE_KO, f"la page pèse {ko} Ko")
+
+
+@unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")
+class Troncons(unittest.TestCase):
+    """Le monde par tronçons (étape 8 du plan, lot 3 : moteur/troncons.js) : une longue route n'est construite qu'autour de soi."""
+    BILANS, bilan = Moteur.BILANS, Moteur.bilan
+
+    def test_longue_route(self):
+        """Le Ventoux entier : par tronçons tout seul (plus de 6 km), le même décor quel que soit l'ordre, rien dans l'objet du voisin."""
+        b = self.bilan("ventoux")
+        self.assertGreater(b["metres"], 20000)
+        t = b["troncons"]
+        self.assertTrue(t, "une route de plus de 6 km est construite par tronçons")
+        self.assertGreater(t["faits"], 50)
+        self.assertTrue(t["ordre"], "un tronçon refait à part, dans un autre ordre, doit donner le même décor")
+        self.assertEqual(t["chevauchements"], 0, "deux tronçons voisins ont posé des objets l'un dans l'autre")
+        self.assertGreater(b["poses"], 3000)
+
+    def test_interrupteur(self):
+        """Une route courte reste d'un bloc, sauf si on le demande ; une boucle n'est jamais par tronçons."""
+        self.assertIsNone(self.bilan("col-ventoux")["troncons"])
+        t = self.bilan("col-ventoux", "?troncons=1")["troncons"]
+        self.assertTrue(t and t["ordre"] and t["chevauchements"] == 0)
+        self.assertIsNone(self.bilan("kanto-1km", "?troncons=1")["troncons"])
+        self.assertIsNone(self.bilan("fourche", "?troncons=1")["troncons"])
+
+    def test_meme_piste(self):
+        """Les tronçons ne changent ni la piste ni le sol : seulement la façon de les construire."""
+        a, b = self.bilan("col-ventoux"), self.bilan("col-ventoux", "?troncons=1")
+        for k in ("longueur", "tourVrai", "haut", "penteMax", "rayonMin", "absurdes", "cassures"):
+            self.assertEqual(a[k], b[k], k)
 
 
 class VraieRoute(unittest.TestCase):
@@ -374,8 +415,16 @@ class VraieRoute(unittest.TestCase):
         self.assertNotIn("45.0", texte); self.assertNotIn('"lat"', texte); self.assertNotIn('"lon"', texte)
         self.assertIs(n["allurePente"], False)
         self.assertTrue(any(o["o"] == "arche_arrivee" for p in pieces for o in p.get("objets", [])))
+
+    def test_longueur(self):
+        """Depuis les tronçons (lot 3), une route n'est plus limitée à 5 km : 60 au plus."""
+        sys.path.insert(0, str(R / "outils"))
+        import gpx
+        pts = gpx.lire_gpx(self.gpx(9000))
+        pieces, b = gpx.construire(pts, km=8, large=6, rayon=9)
+        self.assertEqual(b["long"], 8000)
         with self.assertRaises(ValueError):
-            gpx.construire(pts, km=6)
+            gpx.construire(pts, km=61)
 
 
 if __name__ == "__main__":

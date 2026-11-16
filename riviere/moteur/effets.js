@@ -32,10 +32,12 @@ const PORTEE_FS = EFFETS.ombres ? `uniform sampler2D tOmbre; uniform mat4 uOmbre
                   mix(step(texture2D(tOmbre, b + vec2(0., e)).x, d), step(texture2D(tOmbre, b + vec2(e, e)).x, d), f.x), f.y);
     return step(.5, s) * uOmbreP.x * (1. - smoothstep(uOmbreP.z, uOmbreP.w, z)); }` : "";
 
+const OMBRES_PORTENT = ["terrain", "rives", "decor", "foret", "ponts", "cratere"];
+function ombrePour(m) { if (!EFFETS.ombres) return; if (OMBRES_PORTENT.includes(m.name)) m.layers.enable(1); OMBRES.cle = ""; }   // une maille arrivée après coup (un tronçon : troncons.js) : elle porte son ombre, la carte est à refaire
 function construireOmbres() {   // une fois le monde construit : qui porte une ombre, et la carte
   if (!EFFETS.ombres) return;
-  const O = OMBRES, portent = ["terrain", "rives", "decor", "foret", "ponts", "cratere"];
-  scene.traverse(m => { if (m.isMesh && portent.includes(m.name)) m.layers.enable(1); });
+  const O = OMBRES;
+  scene.traverse(m => { if (m.isMesh && OMBRES_PORTENT.includes(m.name)) m.layers.enable(1); });
   O.cible = new THREE.WebGLRenderTarget(O.taille, O.taille, {minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, stencilBuffer: false});
   O.cible.depthTexture = new THREE.DepthTexture(O.taille, O.taille); O.cible.depthTexture.type = THREE.UnsignedIntType;
   O.cam = new THREE.OrthographicCamera(-O.demi, O.demi, O.demi, -O.demi, 1, 700); O.cam.layers.set(1);

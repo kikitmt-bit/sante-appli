@@ -108,17 +108,23 @@ async function changerNageur(num) {   // sur l'eau : le Pokémon choisi, à sa v
 //   {"type": "saut", "tous": 5, "haut": 2.2}                  il jaillit de l'eau de temps en temps (un Magicarpe)
 // Il se tourne tout seul dans le sens où il va (les 8 directions des sprites de Donjon Mystère).
 let nageur = null; const PUBLIC = [];
-async function construireSprites() {
-  if (!await changerNageur(nageurVoulu())) await changerNageur(NIVEAU.nageur || 7);
+async function ajouterPublic(sprites) {   // les Pokémon et les habitants d'une liste (le monde entier, ou un tronçon : troncons.js) ; rend ceux qui sont arrivés
+  const faits = [];
   // la taille des Pokémon suit leur vraie taille, adoucie (un Rattata de 30 cm reste visible, un Lokhlass de 2,5 m est énorme) ; un habitant fait 1,5 m
-  await Promise.all(MONDE.sprites.map(o => planche(o.cle)));
-  for (const o of MONDE.sprites) {
+  await Promise.all(sprites.map(o => planche(o.cle)));
+  for (const o of sprites) {
     const p = await planche(o.cle); if (!p) continue;
     const q = new Pantin(p, 0, o.taille, o.cle[0] === "h" ? 1.5 : p.m ? clamp(1.5 * Math.pow(p.m, .7), .55, 8) : 0);
     q.vole = o.vole; q.fixe = o.cle[0] === "h"; q.m.position.set(o.x, o.y, o.z); pres(o.x, o.z); q.s = sLigne(Q.i); q.v = o.v || null; q.y0 = o.y; q.x0 = o.x; q.z0 = o.z; q.ph = Math.random() * 9;
     if (o.bouge) { q.bouge = Object.assign({}, o.bouge); q.s0 = o.s; q.cote = o.cote; q.e = o.e; q.px = o.x; q.pz = o.z; }
-    PUBLIC.push(q);
+    PUBLIC.push(q); faits.push(q);
   }
+  return faits;
+}
+function retirerPublic(q) { const k = PUBLIC.indexOf(q); if (k >= 0) PUBLIC.splice(k, 1); retirerPantin(q); }
+async function construireSprites() {
+  if (!await changerNageur(nageurVoulu())) await changerNageur(NIVEAU.nageur || 7);
+  await ajouterPublic(MONDE.sprites);
 }
 function bouger(q, t, S) {   // où est-il maintenant, et vers où regarde-t-il
   if (q.v && !q.surSaVoie) { q.surSaVoie = true; try { return surVoie(q.v, () => bouger(q, t, S)); } finally { q.surSaVoie = false; } }   // dans une fourche : il vit sur sa voie, pas sur celle que tu prends

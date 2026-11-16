@@ -44,7 +44,7 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 | 5 | Circuit du jour | chaque matin le même circuit pour tous et son classement, fabriqué par GitHub sans crédits | l'étape 4 | 11.4 | faible | 1 | **faite le 15/11** (à essayer : le menu de la tablette demain matin) |
 | 6 | Ronflex et premiers lieux de Kanto | Ronflex bloque la route et se réveille quand on accélère | la brique « effort » (forcer plus que sa croisière) | 7.5, 7.6, 10.7 | faible | 1 à 2 par lot | **Ronflex et l'effort faits le 15/11** (lieux de Kanto : lot suivant) |
 | 7 | Embranchements à l'effort | une fourche : la voie spectaculaire si on force | les captures de référence de l'étape 0 | 5.1 | **élevé** (le cœur) | 3 à 4 | **faite le 15/11** (à essayer : « L'île aux rapides » au rameur, forcer à l'annonce) |
-| 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | **lots 1 et 2 faits le 16/11** (une vraie route de 5 km au plus, le home trainer sans appareil) ; lot 3 (tronçons, Fable) et lot 4 (décor d'OpenStreetMap) à faire |
+| 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | **lots 1, 2 et 3 faits le 16/11** (une vraie route, le home trainer sans appareil, le monde par tronçons : « Le Ventoux en entier », 21,6 km) ; lot 4 (décor d'OpenStreetMap, Opus) : lancé par Kiki dans une autre conversation, à réunir avec ce travail |
 | 9 | Forêts, vent, ombres, eau qui coule | un effet à la fois | aucune (les instances existent déjà dans three.js r128) | 4 | moyen | 3 à 5 | **faite le 15/11** (à essayer : la vitrine sur la tablette, Réglages → Ambiance → Les effets : Avec puis Sans ; le banc `?banc=1` dans les deux cas) |
 | 10 | Résumé de séance | 20 à 30 s rejouées à la fin | la trace gardée à l'étape 2 | 8.3 | moyen | 2 | **faite le 15/11** (à essayer : un essai « Auto » de 3-4 min, puis « ■ Fin ») |
 
@@ -126,6 +126,8 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
 - Étape 8 : sur la tablette, au vélo, « Le Ventoux, la forêt » : l'ouvrir (combien de secondes de chargement ?), un essai « Auto » de quelques minutes, puis le banc
   (`&banc=1`) ; dire si le col se sent (bornes, pente, arche). Puis, s'il en a un, le home trainer : le relier, une vraie séance, régler la dureté. Et s'il veut
   une autre route : un GPX (Strava, Komoot, ou un lien brouter.de), donné à Claude, jamais dans le dépôt.
+- Étape 8, lot 3 : sur la tablette, au vélo, « Le Ventoux en entier » : combien de secondes avant le menu ; quelques minutes en « Auto » : dire si ça
+  saccade par moments (surtout dans les lacets) et si quelque chose apparaît d'un coup au loin ; `&perf=1` puis `__troncons()` si Claude le demande.
 - Étape 9 : sur la tablette, « La Baie de Carmin » (la vitrine) une minute avec les effets, puis sans (Réglages → Ambiance → Les effets) ; dire, effet par
   effet (l'eau qui coule, le vent, les forêts au loin, les ombres), si c'est mieux ou si ça fait « amateur » : chacun se retire seul. Puis le banc
   (`&banc=1` dans l'adresse) avec et sans, et donner les deux chiffres à Claude.
@@ -159,7 +161,11 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   Mode d'emploi : `MOTEUR.md`, « Les effets du rendu ». Vérifier « sans effets = comme avant » : `test_effets`, `captures.py compare --niveau kanto-1km`.
 - **Vraies routes** (étape 8) : `outils/gpx.py` (GPX → niveau), `borne_km` et `arche_arrivee` dans `contenu/objets/kanto-routes.js`, `VU_LOIN` (outils.js)
   pour le sol des grandes routes (terrain.js) et le contrôle du sol (note.js) ; le home trainer dans `jeu/capteurs.js` (`brancher`, `perdu`, `penteTrainer`,
-  `fauxHomeTrainer`). Mode d'emploi : `MOTEUR.md`, « Une vraie route ». Lot 3 (tronçons) : construire 600 m devant, libérer 200 m derrière (audit, chantier 2.5).
+  `fauxHomeTrainer`). Mode d'emploi : `MOTEUR.md`, « Une vraie route ».
+- **Tronçons** (étape 8, lot 3) : `moteur/troncons.js` (`TR`, `trSol`, `trBande`, `trDecor`, `trVoir`, `tronconsMaj`, `tronconsDemarrer`) ; l'interrupteur `TRONCONS` à la fin
+  de la piste (piste.js) ; ce qu'il partage avec le monde d'un bloc : `poserDecorPas(Z)`, `zoneTroncon`, `kMonde` (decor.js), `fabriqueRives`, `celluleSol`, `sommetSol`
+  (terrain.js), `fabriquePiste` (surfaces.js), `ombrePour` (effets.js), `refaireHalos` (ambiance.js), `ajouterPublic` (sprites.js) ; le contrôle : `decorParTroncons` (controle.js).
+  Mode d'emploi : `MOTEUR.md`, « Les longues routes ». Le GPX du Ventoux n'est pas dans le dépôt (à redemander à brouter.de : Bédoin → sommet, profil vélo de route).
 - **Tests** : `.github/workflows/tests.yml` (« Tests des règles », à chaque envoi). Sur ce PC, node manque : 3 tests du moteur sont sautés.
   `gh` marche ici.
 
@@ -324,3 +330,27 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   et ~13 s de construction sans carte graphique (à mesurer sur la tablette ; le téléphone risque de peiner : c'est le lot 3) ; le décor des rives ne suit pas
   la vraie route (lot 4 : OpenStreetMap) ; la note d'un circuit ne convient pas à une vraie route (21/100) ; l'arrivée repart du début. **Pas encore
   essayé** : la tablette, un vrai home trainer, la page dans l'appli. Pas de ligne dans 🧪 (c'est dans La Rivière).
+- **Étape 8 — lot 3, le monde par tronçons (16/11/2026, Fable ; plan court accepté, lot 4 confié par Kiki à une autre conversation Opus).**
+  **Ce que Kiki verra** : « Le Ventoux en entier » (`ventoux`, depuis Bédoin : 21,6 km, +1 595 m, 7,4 %), au menu du vélo et du skieur de fond ; le jeu
+  s'ouvre en ~1 s, le monde se construit autour de soi et s'efface derrière. « Le Ventoux, la forêt » (5 km) reste tel quel, d'un bloc.
+  **Comment** : `moteur/troncons.js` (carrés de sol de 60 m, tronçons de 48 m pour les rives, la route et le décor ; voulus à moins de 470 m de la caméra,
+  effacés au-delà de 560 m ; constructions qui rendent la main toutes les 1 à 2 ms, un cinquième du temps de l'image ; ce qui manque à moins de 150 m est fait
+  d'un coup). Seulement pour un parcours ouvert sans fourche de plus de 6 km (`TRONCONS`, `"troncons"` dans le niveau, `?troncons=1|0`). Décor toujours le même
+  quel que soit l'ordre (hasard par tronçon ; les impairs attendent leurs voisins pairs). L'outil GPX accepte 60 km (`--km`, 5 par défaut).
+  **Dans le cœur, pour partager le code sans rien changer aux circuits existants** : `poserDecor` passe par `poserDecorPas(Z)` (une function* : sans Z, tout le
+  circuit, comme avant) ; `construireRives`, `construirePiste`, `construireTerrain` passent par `fabriqueRives`, `fabriquePiste`, `celluleSol` / `sommetSol` ;
+  `construireDecor` par `mailleEtiquette` / `mailleAnimee` ; `construireSprites` par `ajouterPublic`. **Au passage** : le contrôle des croisements (`verifier`)
+  ne compare plus un bout de piste qu'à ses voisins (55 millions de comparaisons pour 21 km, sinon) : même résultat, même ordre. (L'autre calcul en N² de l'audit,
+  les ponts qui enjambent, ne coûte rien sans pont : laissé tel quel.)
+  **Le filet** : signature de la piste, du sol et du décor **identique sur les 8 circuits existants** (avant / après, sans navigateur) ; `kanto-1km` : 10 captures
+  sur 10 identiques aux références (0,01 à 0,4 %) ; les 8 circuits comparés image par image avant / après : seulement du bruit (Pokémon animés, pixels isolés) ;
+  182 tests verts (4 de plus : `Troncons` × 3, `VraieRoute.test_longueur`) ; un niveau n'est plus construit qu'une fois pour tous les tests (`BILANS`).
+  **Mesuré** (Chrome sans carte graphique, ce PC) : le Ventoux entier prêt en ~1 s (2 s avec `?s=`, tout le disque d'un coup) ; le col de 5 km : 0,7 s par
+  tronçons contre 10,8 s d'un bloc ; en route à 43 et 61 km/h : rien en attente, jamais besoin de forcer, 4 à 7 ms au pire par image pour construire (à budget
+  de 3 ms), ~230 000 à 290 000 triangles et ~350 maillages en mémoire, mémoire stable (65 à 80 Mo). Essayés : l'arrivée au sommet et le retour au départ, le
+  film de fin (ses plans sautent ailleurs sur la route), `__aller`. **Limites** : pas de Ronflex sur une route par tronçons ; `?vue=haut` ne montre que les
+  alentours de sa caméra ; le décor d'une route par tronçons n'est pas, arbre pour arbre, celui de la même route d'un bloc (mêmes règles, autres tirages) ; le
+  sommet du Ventoux est boisé comme le bas (c'est le lot 4) ; la note d'un circuit ne dit rien d'une vraie route (8/100).
+  **Pas encore essayé** : la tablette, le téléphone, la fluidité réelle à 60 images/s (le Chrome sans fenêtre tourne à 6 images/s), un vrai home trainer.
+  **À réunir avec le lot 4** : il a travaillé sur `col-ventoux` ; `outils/gpx.py` a changé des deux côtés (ici : seulement la limite de longueur) ; une fois réuni,
+  rejouer l'outil sur le Ventoux entier (`--km 60 --id ventoux --nom "Le Ventoux en entier"`). Pas de ligne dans 🧪 (c'est dans La Rivière).

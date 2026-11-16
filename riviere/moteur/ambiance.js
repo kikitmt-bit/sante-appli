@@ -181,6 +181,8 @@ function construireAmbiance() {
   HALOS.m.frustumCulled = false; HALOS.m.name = "halos"; scene.add(HALOS.m);
 }
 
+function refaireHalos() { if (HALOS.m) { scene.remove(HALOS.m); HALOS.m.geometry.dispose(); HALOS.m.material.dispose(); HALOS.m = null; } construireAmbiance(); }   // les lumières ont changé (un tronçon est arrivé, ou parti : troncons.js)
+
 /* ---- chaque image : tout mélanger, puis régler le ciel, la brume, la teinte ---- */
 const mixc = (a, b, t, o) => { o[0] = lerp(a[0], b[0], t); o[1] = lerp(a[1], b[1], t); o[2] = lerp(a[2], b[2], t); return o; };
 function ambianceMaj(dt, s) {

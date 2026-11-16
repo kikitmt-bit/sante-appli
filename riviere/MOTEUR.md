@@ -209,15 +209,15 @@ et l'éditeur le dit. Options d'essai : `habiller: false`, `deplier: false`, `so
 circuits du jeu, du mieux au moins bien noté). Le circuit obtenu est le même que dans le navigateur avec les mêmes options.
 Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (voir « Vérifier sans Kiki »).
 
-## Une vraie route (16/11, étape 8 du plan, lots 1 et 2)
+## Une vraie route (16/11, étape 8 du plan, lots 1 à 3)
 
 **Un fichier GPX devient un circuit normal** (`outils/gpx.py`) : tracé et pentes à l'échelle 1:1, sur la terre (vélo, skieur de fond).
 `python riviere/outils/gpx.py route.gpx --id col-essai --nom "Le col" [--relief] --ecrire` (bilan sans `--ecrire`).
 - **Ce qui est gardé : la forme** (longueurs, virages, montées), jamais une coordonnée ; le GPX reste hors du dépôt (il peut trahir un domicile).
   `--relief` demande l'altitude de chaque côté de la route à api.opentopodata.org (les coordonnées partent chez ce service : seulement si on le
   veut) : talus du côté qui monte, ravin de l'autre, dès 7 m d'écart sur 70 m ; sinon des bois et des bas-côtés par blocs de ~400 m.
-- **Jamais raccourcie** : `--km 5` au plus (le monde est construit d'un bloc ; au-delà : le lot 3, les tronçons) ; sans `--depuis`, l'outil
-  prend les 5 km les plus durs. Le GPS tremble : tracé lissé (`--lisse` 6 m), altitude lissée (`--lisse-alt`, 25 m ; 35 pour un relief SRTM).
+- **Jamais raccourcie** : `--km 5` si on ne dit rien, 60 au plus (`--km 60` = tout le GPX) ; sans `--depuis`, l'outil prend les `--km` les
+  plus durs. Au-delà de 6 km, le jeu construit le monde par tronçons (plus bas) : la longueur ne coûte plus rien au chargement. Le GPS tremble : tracé lissé (`--lisse` 6 m), altitude lissée (`--lisse-alt`, 25 m ; 35 pour un relief SRTM).
   Un virage plus serré que `--rayon` (9 m) est étalé sur ses voisins : la route tourne d'autant, plus en douceur.
 - **Le niveau** : pièces de 5 à 120 m (tant que virage et pente restent réguliers), `"allurePente": false` (un mètre de route = un vrai mètre,
   côte ou pas : `TOUR_VRAI` = la vraie longueur ; au skieur de fond, la côte freine quand même le décor : `allureVue` lit alors `PENTE`),
@@ -231,6 +231,38 @@ Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (v
   (`scannerSol`) ne regarde que ce qu'on peut voir et accepte des hauteurs jusqu'au point haut de la piste + 200 m. Budgets des tests : ceux
   d'un circuit de 2 km, par tranche de 2 km. **Poids mesuré** (5 km) : ~1,25 million de triangles en tout (sol 515 000, décor 484 000),
   13 s de construction dans Chrome sans carte graphique (4,5 s pour kanto-1km) : à mesurer sur la tablette ; le téléphone risque de peiner.
+
+### Les longues routes : le monde par tronçons (`moteur/troncons.js`, 16/11, lot 3)
+
+Un circuit de 2 km est construit d'un bloc au chargement. Une route de 20 km ne peut pas l'être (une minute de calcul, des millions de
+triangles) : elle est construite **autour de soi**, et effacée derrière. La piste, elle, est toujours calculée en entier (elle est légère).
+- **Quand** : `TRONCONS` (piste.js) = un parcours ouvert, sans fourche, de plus de 6 km ; ou `"troncons": true` dans le niveau (`false` pour
+  l'interdire) ; ou `?troncons=1` / `?troncons=0` dans l'adresse, pour comparer. **Jamais une boucle ni un circuit à fourche** : ceux-là
+  restent d'un bloc, comme toujours (mêmes fonctions : `construireTerrain`, `construireRives`, `construirePiste`, `construireDecor`).
+- **Quoi** : trois sortes de tâches. « s » : un carré de sol de 60 m, sur un quadrillage fixe du monde (`trSol`, le même calcul que le
+  terrain d'un bloc : `celluleSol`, `sommetSol` de terrain.js) ; « b » : 48 m de piste, ses rives et son ruban (`fabriqueRives`,
+  `fabriquePiste`) ; « d » : le décor des mêmes 48 m (`poserDecorPas(Z)` de decor.js : les mêmes règles, limitées au tronçon `Z`).
+  Les ponts, les tunnels, le lointain restent construits d'un bloc.
+- **Où** : tout ce qui est à moins de 470 m de la caméra (la brume est pleine à 400 m : on ne voit rien arriver), effacé au-delà de 560 m.
+  Si la machine peine et que le jeu réduit la vue (`porter`), ces rayons suivent. `?rayon=700` : un autre rayon (pour une vue du ciel).
+- **Sans à-coup** : chaque construction est une `function*` qui rend la main toutes les 1 à 2 ms (`yield`) ; `tronconsMaj()` (appelée par
+  `boucle` après la caméra) n'y passe qu'un cinquième du temps de l'image (3 ms à 60 images/s, 12 ms au menu, davantage si quelque chose
+  manque là où l'on voit). Seul ce qui manque à moins de 150 m est fait d'un coup : un départ, l'arrivée qui ramène au début, un plan du
+  film, `__aller(s)`. `tronconsMaj(true)` finit tout (c'est ce que fait `__image()`).
+- **Toujours le même monde** : le sol vient du champ (une fonction du lieu) ; le décor d'un tronçon a son propre hasard (la graine du
+  niveau et son numéro : `zoneTroncon`). Pour que deux voisins ne posent rien l'un dans l'autre, les tronçons pairs se décorent seuls,
+  les impairs attendent leurs deux voisins et évitent ce qu'ils ont posé. Refait dans un autre ordre, un tronçon est identique (contrôlé).
+  Le décor d'une route par tronçons n'est donc pas, arbre pour arbre, celui de la même route construite d'un bloc : mêmes règles, autres tirages.
+- **Ce qui suit les tronçons** : les ombres portées (`ombrePour`), les forêts en masse (leur part du plafond d'arbres : celle d'un circuit de
+  2 km), les lueurs (`refaireHalos`), les Pokémon et les habitants (`ajouterPublic`, `retirerPublic`), les bornes et leurs textes.
+  **Pas encore** : les rencontres (Ronflex) sur une route par tronçons ; `?vue=haut` ne montre que ce qui est construit autour de sa caméra.
+- **Mesuré** (16/11, Chrome sans carte graphique, ce PC) : « Le Ventoux en entier » (21,6 km) est prêt en ~1 s (le reste du disque pendant le
+  menu, ~1,5 s de calcul en tout) ; « Le Ventoux, la forêt » (5 km) : 0,7 s par tronçons, 10,8 s d'un bloc. En route : 4 à 7 ms au pire par
+  image pour construire, ~230 000 triangles et ~350 maillages en mémoire, stables. `window.__troncons()` : tâches faites, en attente,
+  effacées, triangles, pire image, `retard` (le nombre de fois où il a fallu forcer).
+- **Le contrôle sans dessin** (`controle.js`, `decorParTroncons`) pose le décor comme le jeu, sur un kilomètre sur cinq : `troncons` dans le
+  bilan (`faits`, `fenetre` = les triangles du kilomètre le plus chargé, `ordre`, `chevauchements`). Tests : `Troncons` dans `tests/test_riviere.py`.
+- Exemple : `contenu/niveaux/ventoux.json` (« Le Ventoux en entier », depuis Bédoin : 21,6 km, +1 595 m, 7,4 % ; même tracé que la forêt).
 
 **Le home trainer** (`jeu/capteurs.js`) : `brancher(app)` s'abonne à tout ce que l'appareil sait dire (vrai ou faux) ; un appareil qui décroche
 est rebranché tout seul (`perdu` : 6 essais en ~40 s, « HOME TRAINER DÉCROCHÉ… », puis « RELIÉ ») ; les commandes passent l'une après l'autre
@@ -435,6 +467,7 @@ Le circuit du jour a une fourche deux jours sur cinq (`jour.options`, jamais dan
 | `?s=120&fige=1`, `__aller(s)`, `__image()` | se placer à un endroit, redessiner tout de suite (pour une capture) |
 | `?vue=haut`, `?vue=gauche`, `?vue=droite` | le plan vu du ciel, une rive de face |
 | `?perf=1` | taille de l'image, images par seconde, triangles |
+| `?troncons=1`, `?troncons=0`, `?rayon=700`, `__troncons()`, `tronconsMaj(true)` | un parcours ouvert construit par tronçons (ou d'un bloc), un autre rayon, l'état des tronçons, tout finir tout de suite |
 | `?banc=1` | le banc de mesure : un tour tout seul, puis le verdict de la machine |
 | `?surface=terre`, `?machine=elliptique`, `?machine=velo`, `?eco=1` | le circuit sur la terre, une autre machine, 30 images par seconde |
 | `?vitrine=1`, `?tenue=Peau,Casquette,Veste,Pantalon`, `?habits=casquette,sac,short` | à vélo : la caméra tourne autour du cycliste ; une autre tenue (noms de la carte du dresseur) ; des habits de la garde-robe |
@@ -460,6 +493,9 @@ avec des temps qui avancent de 16,7 ms.
 - Un circuit sans fourche reste identique au mètre et à l'image près : tout ce qui touche aux fourches est derrière `PISTE.NF`, `PISTE.INT`
   ou `PISTE.VO` (qui valent zéro sans fourche). Après une retouche du cœur : `python riviere/outils/captures.py compare` (les Pokémon, les particules et le cycliste à l'arrêt bougent d'une
   prise à l'autre : jusqu'à ~1 % de pixels isolés n'est pas un défaut ; un pan de décor qui change en est un).
+- **Les tronçons ne concernent que les longues routes ouvertes** (`TRONCONS`) : une boucle, un circuit à fourche, un circuit court restent
+  construits d'un bloc, par les mêmes fonctions qu'avant. Ce qui est partagé (`poserDecorPas`, `fabriqueRives`, `fabriquePiste`, `celluleSol`)
+  doit donner le même monde d'un bloc : signature de la piste, du sol et du décor inchangée sur les 8 circuits (16/11), images comparées.
 - **Les effets du rendu restent des options** (`EFFETS`) : tout ce qu'ils ajoutent est derrière `EFFETS.<nom>`, et `kanto-1km` n'en a aucun.
   Sans effets, le monde est celui d'avant au bit près (contrôlé : `test_effets` ; images : `captures.py compare --niveau kanto-1km`).
 - Une instruction par ligne quand c'est possible, et **jamais de code derrière un commentaire de fin de ligne** (contrôlé).
