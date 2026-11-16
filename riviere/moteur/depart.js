@@ -54,3 +54,20 @@ function relancer() {
   try { const f = window.frameElement; if (f && f.srcdoc) { const s = f.srcdoc; f.srcdoc = s; return; } } catch (e) {}
   location.reload();
 }
+
+/* ---- les effets du rendu (étape 9 du plan, 15/11) : l'eau qui coule, le vent, les forêts en masse, les ombres portées ----
+   Allumés partout, sauf là où quelqu'un dit non, dans cet ordre : la région ("effets": false, ou {"ombres": false}), le circuit (de même :
+   kanto-1km dit false, il reste identique à l'œil), le choix du menu gardé sur la machine (riviere_effets = "0"), et enfin l'adresse :
+   ?effets=0 (aucun), ?effets=1 (tous, même sur un circuit qui dit non : pour comparer), ?effets=eau,vent (seulement ceux-là). */
+const EFFETS_NOMS = ["eau", "vent", "foret", "ombres"];
+const EFFETS = (() => {
+  const o = {}, tous = v => { for (const k of EFFETS_NOMS) o[k] = v; };
+  const dire = v => { if (v === false || v === true) tous(v); else if (v && typeof v === "object") for (const k of EFFETS_NOMS) if (k in v) o[k] = !!v[k]; };
+  tous(true); dire(BIOME.effets); dire(NIVEAU.effets);
+  o.circuit = EFFETS_NOMS.some(k => o[k]);   // ce circuit en a-t-il ? (le menu le dit)
+  if (lireReglage("riviere_effets", "1") === "0") tous(false);
+  const a = ARGS.get("effets");
+  if (a === "0") tous(false); else if (a === "1") tous(true); else if (a) { const l = a.split(","); for (const k of EFFETS_NOMS) o[k] = l.includes(k); }
+  return o;
+})();
+const VENT_DIR = [.894, .447];   // d'où à où souffle le vent, dans le monde (le même que celui qui pousse les feuilles et la pluie : ambiance.js)

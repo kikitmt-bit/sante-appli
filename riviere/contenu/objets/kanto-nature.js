@@ -27,7 +27,7 @@ Object.assign(OBJETS, {
     for (let k = 0; k < n; k++) { const x = (R() - .5) * l, z = (R() - .5) * 2.6, t = .3 + R() * .32; F.rond(x, .05, z, t, t, PAL.nenuphar[k % 2], 7); if (k % 3 === 0) F.rond(x + .06, .08, z + .04, .12, .12, k % 2 ? PAL.fleurs.blanc : [1, .72, .82], 5); } },
   palmier(F, o, R) {  // un palmier : un tronc qui penche, de longues palmes qui retombent
     const t = PAL.tronc, p = PAL.palmes, H = 4.4 + R() * 1.6, penche = (R() - .5) * 1.8, n = 4; let x = 0, y = -.3;
-    F.ombre(penche * .5, 0, 2.2, 2);
+    F.ombre(penche * .5, 0, 2.2, 2); F.vent(.34, .5, H + .6);   // le tronc plie au vent, de plus en plus vers le haut, et les palmes avec lui (effets.js)
     for (let k = 0; k < n; k++) { const h = (H + .3) / n; F.cyl(x, y, 0, .3 - k * .035, .27 - k * .035, h + .06, 6, k % 2 ? t[0] : t[1]); y += h; x += penche * (k + 1) / 10; }
     for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2 + R() * .5, c = Math.cos(a), s = Math.sin(a), L = 2.5 + R() * .9, l = .5, col = p[k % 3], wx = -s * l, wz = c * l;
       const B = [x, y, 0], M = [x + c * L * .55, y + .6, s * L * .55], T = [x + c * L, y - .75, s * L];

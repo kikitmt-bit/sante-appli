@@ -156,7 +156,7 @@ function construireTunnels() {
   };
   for (const [ia, ib] of plages) unTunnel(ia, ib);
   P.voies.forEach((v, nf) => surLaVoie(nf, () => { let d = -1; for (let s = v.a; s <= v.b; s++) { const t = s < v.b && P.TUN[idx(s)]; if (t && d < 0) d = s; if (!t && d >= 0) { unTunnel(d, s - 1); d = -1; } } }));   // les grottes d'une voie « force »
-  const m = F.maille(); if (m) { m.name = "tunnels"; scene.add(m); }
+  const m = F.maille(MAT_ABRI); if (m) { m.name = "tunnels"; scene.add(m); }   // (à l'abri des ombres portées : une grotte garde sa lumière, effets.js)
   return plages;
 }
 const dansTunnel = s => PISTE.TUN[idx(s)] ? 1 : 0;

@@ -672,6 +672,12 @@
    "#FFC850"
   ]
  },
+ "forets": [
+  {"nom": "la forêt profonde : au-delà des arbres du bord, une masse d'arbres jusqu'au fond", "sur": ["foret"], "bande": [22, 165], "maille": 5.6},
+  {"nom": "des bois par taches, au loin derrière les prés, les plages et les villages", "sur": ["pre", "plage", "bourg", "marais", "quai", "ville", "dune"], "bande": [58, 165], "maille": 6.2, "bosquets": 0.5},
+  {"nom": "le plateau boisé, en haut des falaises", "sur": ["falaise"], "bande": [30, 165], "maille": 6, "bosquets": 0.4},
+  {"nom": "les bois derrière le lac", "sur": ["lac"], "bande": [96, 175], "maille": 6.2, "bosquets": 0.42}
+ ],
  "regles": [
   {
    "nom": "forêt",

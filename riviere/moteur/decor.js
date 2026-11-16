@@ -17,7 +17,7 @@ const K_MONDE = {
 };
 function poserDecor() {   // tout placer (aucun appel à three.js : se contrôle sans navigateur)
   const P = PISTE, R = hasard((NIVEAU.graine || 1) * 7919 + 1), formes = new Map(), reserves = [], pris = new Map(), poses = [];
-  const forme = s => { const k = Math.floor(idx(s) / 48); if (!formes.has(k)) formes.set(k, new Forme()); return formes.get(k); };
+  const forme = s => { const i = idx(s), k = EFFETS.ombres && P.TUN[i] ? "t" + Math.floor(i / 48) : Math.floor(i / 48); if (!formes.has(k)) formes.set(k, new Forme()); return formes.get(k); };   // (« t » : dans une grotte, à l'abri des ombres portées : effets.js)
   const libre = (x, z, r) => { const ci = Math.floor(x / 8), cj = Math.floor(z / 8); for (let i = ci - 1; i <= ci + 1; i++) for (let j = cj - 1; j <= cj + 1; j++) for (const o of pris.get(i + "," + j) || []) if (Math.hypot(o.x - x, o.z - z) < r + o.r) return false; return true; };
   const occuper = (x, z, r) => { const k = Math.floor(x / 8) + "," + Math.floor(z / 8); if (!pris.has(k)) pris.set(k, []); pris.get(k).push({x, z, r}); };
   for (let i = 0; i < P.M; i += 3) if (P.PONT[i]) occuper(P.X[i], P.Z[i], P.W[i] + 3);   // rien ne pousse à travers un pont
@@ -60,12 +60,32 @@ function poserDecor() {   // tout placer (aucun appel à three.js : se contrôle
         poser(nom, s, cote, e, Object.assign({r: (RAYON[nom] || 1) * (r.serre || 1)}, r.reglages, r.nums ? {num: r.nums[Math.floor(R() * r.nums.length)]} : null), ech); } } };
     semer(0, LONG);
     P.voies.forEach((v, nf) => surLaVoie(nf, () => semer(v.a, v.b))); }   // puis la voie « force » de chaque fourche
+  // 3) les forêts en masse (étape 9 du plan) : au-delà des arbres posés un à un, la région couvre ses rives boisées d'arbres réduits à leur
+  //    silhouette, sur une trame serrée. "forets" : [{sur, bande, maille, objet, bosquets}] ; bosquets (de 0 à 1) : seulement par taches, avec des clairières.
+  //    Son propre hasard, après tout le reste : le décor d'avant ne bouge pas d'un arbre. Rangées par carrés de 64 m (clés « f… »).
+  MONDE.masse = 0;
+  if (EFFETS.foret) { const RF = hasard((NIVEAU.graine || 1) * 4409 + 3), MAXI = BIOME.forets_max || 3200, choisis = [], carre = (x, z) => { const k = "f" + Math.floor(x / 64) + "," + Math.floor(z / 64); if (!formes.has(k)) formes.set(k, new Forme()); return formes.get(k); };
+    for (const r of BIOME.forets || []) { const sur = r.sur.map(t => TYPES.indexOf(t)), m = r.maille || 6, nom = r.objet || "arbre_masse", recette = OBJETS[nom], ray = RAYON[nom] || 1.7; if (!recette) { console.warn("Objet inconnu : " + nom); continue; }
+      const semer = (s0, s1) => { for (const cote of ["g", "d"]) { const sg = cote === "g" ? -1 : 1, PW = cote === "g" ? P.PG : P.PD;
+        for (let s = s0 + RF() * m; s < s1; s += m) { const i = idx(s); let w = 0; for (const t of sur) w += PW[i * NT + t]; if (w < .6 || P.PONT[i] || P.TUN[i]) continue;
+          for (let e0 = r.bande[0] + RF() * m; e0 < r.bande[1]; e0 += m) { const e = e0 + (RF() - .5) * m * .7, ss = s + (RF() - .5) * m * .7, lacet = RF() * 6.283, ech = lerp(.85, 1.3, RF());
+            const q = pose(ss, sg * (at(ss).w + e));
+            if (r.bosquets !== undefined && fbm(q.x / 42 + 11, q.z / 42 + 5) < r.bosquets) continue;
+            if (reserve(ss, cote, e)) continue;
+            pres(q.x, q.z); if (Math.abs(Q.e - e) > 2.5) continue;   // ce point est en fait plus près d'un autre bout de la piste : ce n'est pas notre rive
+            const y = hauteur(q.x, q.z); if (y - P.Y[Q.i] < (DISC_PISTE === "terre" ? -90 : .5) || !libre(q.x, q.z, ray)) continue;
+            choisis.push([recette, q.x, y, q.z, lacet, ech, e < (r.pres === undefined ? 62 : r.pres)]); occuper(q.x, q.z, ray); } } } };
+      semer(0, LONG);
+      P.voies.forEach((v, nf) => surLaVoie(nf, () => semer(v.a, v.b))); }
+    const garde = Math.min(1, MAXI / Math.max(1, choisis.length));   // trop d'arbres pour la machine : on éclaircit partout pareil, jamais une forêt entière en moins
+    for (const [recette, x, y, z, lacet, ech, pres] of choisis) { if (garde < 1 && RF() > garde) continue; recette(carre(x, z).poser(x, y, z, lacet, ech).matiere(2), {pres}, RF, K_MONDE); MONDE.masse++; } }
   MONDE.poses = poses;
   return formes;
 }
 function construireDecor() {
   const formes = poserDecor();
-  for (const F of formes.values()) { const m = F.maille(); if (m) { m.name = "decor"; scene.add(m); } }
+  MONDE.foret = [];   // les maillages de la forêt en masse : la qualité les cache si la machine peine (jeu.js)
+  for (const [k, F] of formes) { const abri = typeof k === "string" && k[0] === "t", foret = typeof k === "string" && k[0] === "f", m = F.maille(abri ? MAT_ABRI : MAT_MONDE); if (m) { m.name = abri ? "decor-abri" : foret ? "foret" : "decor"; if (foret) MONDE.foret.push(m); scene.add(m); } }
   // les étiquettes (le texte des panneaux) et les objets qui tournent
   for (const e of MONDE.etiquettes) { const c = toile(Math.round(e.l * 28), Math.round(e.h * 28), x => { x.fillStyle = "#" + PAL.planche.map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join(""); x.fillRect(0, 0, 999, 999); x.fillStyle = "#3A2A18"; x.textAlign = "center"; x.textBaseline = "middle";
       let px = Math.round(e.h * 28 * .8); x.font = px + 'px "Jersey 15", monospace'; while (x.measureText(e.texte).width > e.l * 28 - 6 && px > 6) { px--; x.font = px + 'px "Jersey 15", monospace'; } x.fillText(e.texte, e.l * 14, e.h * 14 + 1); });

@@ -41,11 +41,10 @@ const DETAIL = (() => { const N = 64, c = toile(N, N), x = c.getContext("2d"), i
    0 sol naturel (touffes, strates sur les parois) · 1 pavés · 2 uni (murs, toits, feuillages)
    3 fenêtre (éclairée la nuit, pas toutes) · 7 lampe (allumée la nuit) · 4 lumineux (cristal, lave : brille toujours)
    5 chute d'eau (l'écume dévale) · 6 eau calme (une mare : des reflets) */
-const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.DoubleSide,
-  uniforms: Object.assign({uDetail: {value: DETAIL}, uSoleil: {value: SOLEIL}, uLp: {value: [0, 1, 2, 3, 4, 5].map(() => new THREE.Vector4(0, -999, 0, 1))}, uLc: {value: [0, 1, 2, 3, 4, 5].map(() => new THREE.Vector3())}}, COMMUNS),
-  vertexShader: `attribute float mat; varying vec3 vC, vN, vW; varying float vM, vZ;
-    void main() { vC = color; vN = mat3(modelMatrix) * normal; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vM = mat; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`,
-  fragmentShader: `uniform sampler2D uDetail; uniform vec3 uSoleil, uBrume, uTeinte, uLueur; uniform float uB0, uB1, uSombre, uT, uNuit, uNeige; uniform vec4 uLp[6]; uniform vec3 uLc[6]; varying vec3 vC, vN, vW; varying float vM, vZ;
+/* (effets.js : le vent plie les feuillages dans le shader de sommets ; les ombres portées baissent la lumière, sauf à l'abri d'une grotte : MAT_ABRI) */
+const MONDE_U = Object.assign({uDetail: {value: DETAIL}, uSoleil: {value: SOLEIL}, uLp: {value: [0, 1, 2, 3, 4, 5].map(() => new THREE.Vector4(0, -999, 0, 1))}, uLc: {value: [0, 1, 2, 3, 4, 5].map(() => new THREE.Vector3())}}, COMMUNS, EFFETS.vent ? VENT_U : null, EFFETS.ombres ? PORTEE_U : null);
+const mondeFS = ombres => `${ombres ? PORTEE_FS : ""}
+    uniform sampler2D uDetail; uniform vec3 uSoleil, uBrume, uTeinte, uLueur; uniform float uB0, uB1, uSombre, uT, uNuit, uNeige; uniform vec4 uLp[6]; uniform vec3 uLc[6]; varying vec3 vC, vN, vW; varying float vM, vZ;
     float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
     vec3 eclaire(vec3 n) {   // les lumières proches (cristaux, lanternes, lampadaires la nuit) éclairent ce qui les entoure, en paliers
       vec3 l = vec3(0.); for (int i = 0; i < 6; i++) { vec3 d = uLp[i].xyz - vW; float r = length(d), a = 1. - r / uLp[i].w; if (a <= 0.) continue;
@@ -53,6 +52,7 @@ const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.Doub
       return l; }
     void main() { vec3 n = normalize(vN); float brume = smoothstep(uB0, uB1, vZ) * .94; vec3 c;
       float lum = .6 + .4 * (dot(n, uSoleil) * .5 + .5) + .04 * n.y; lum = floor(lum * 7. + .5) / 7.;   // la lumière en paliers
+      ${ombres ? "float omb = ombreEn(vW, n, vZ); lum = mix(lum, min(lum, .6), omb);   // à l'ombre : la lumière d'une face qui tourne le dos au soleil" : ""}
       if (vM > 6.5) { c = mix(vC * lum * uSombre * uTeinte, uLueur, uNuit); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * uNuit)), 1.); return; }
       if (vM > 3.5) {
         if (vM < 4.5) { c = vC * (.9 + .1 * sin(uT * 2.3 + vW.x * .7 + vW.z * .9)); gl_FragColor = vec4(mix(c, uBrume, brume * .5), 1.); return; }
@@ -71,9 +71,13 @@ const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.Doub
         else if (vM > .5) t = texture2D(uDetail, vW.xz / 6.).b;   // (1 : des pavés ; 1,3 : un mur maçonné, seulement les tunnels)
         else t = texture2D(uDetail, vW.xz / 6.).r;
         det = mix(1., .72 + .56 * t, 1. - smoothstep(20., 70., vZ)); }
-      c = vC * lum * det;
+      c = vC * lum * det;${ombres ? " c *= mix(vec3(1.), vec3(.93, .97, 1.07), omb);   // … et un peu de bleu du ciel" : ""}
       if (uNeige > 0. && n.y > .55 && h21(floor(vW.xz * 2.5)) < uNeige) c = vec3(.92, .95, 1.) * lum;   // la neige tient sur ce qui est à plat
-      gl_FragColor = vec4(mix(c * uSombre * uTeinte + vC * eclaire(n) * det, uBrume, brume), 1.); }`});
+      gl_FragColor = vec4(mix(c * uSombre * uTeinte + vC * eclaire(n) * det, uBrume, brume), 1.); }`;
+const MONDE_VS = `attribute float mat; varying vec3 vC, vN, vW; varying float vM, vZ; ${VENT_VS}
+    void main() { vC = color; vN = mat3(modelMatrix) * normal; vec4 w = modelMatrix * vec4(position, 1.); ${VENT_VS_MAIN} vW = w.xyz; vM = mat; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`;
+const MAT_MONDE = new THREE.ShaderMaterial({vertexColors: true, side: THREE.DoubleSide, uniforms: MONDE_U, vertexShader: MONDE_VS, fragmentShader: mondeFS(EFFETS.ombres)});
+const MAT_ABRI = EFFETS.ombres ? new THREE.ShaderMaterial({vertexColors: true, side: THREE.DoubleSide, uniforms: MONDE_U, vertexShader: MONDE_VS, fragmentShader: mondeFS(false)}) : MAT_MONDE;   // le même, sans ombres portées : l'intérieur des grottes
 /* les six lumières les plus proches de la caméra (allumées : toujours, ou la nuit), à chaque image */
 const LUM_PROCHES = [];
 function lumieresProches() {

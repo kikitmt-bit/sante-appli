@@ -33,7 +33,7 @@ const VISUEL = MACHINE_NOM === "elliptique" && (MACHINE.monture === "cycliste" |
 const CROISIERE_VRAIE = MACHINE.cadence * M_COUP / 60;   // tes vrais m/s à l'allure habituelle
 function kmhVus(v) { const r = v / CROISIERE_VRAIE; return Math.min(30, r <= 1 ? 15 * r : 15 + 20 * (r - 1)); }
 function allureVue(i, v) {   // combien de mètres de décor pour un vrai mètre, ici, à cette vitesse
-  const f = PISTE.ALL[i] / PISTE.ALL0[i], pente = (1 - f) / 3.5;   // la pente adoucie (piste.js en a tiré ALL)
+  const f = PISTE.ALL[i] / PISTE.ALL0[i], pente = NIVEAU.allurePente === false ? PISTE.PENTE[i] : (1 - f) / 3.5;   // la pente adoucie (piste.js en a tiré ALL ; une vraie route, à l'échelle 1:1, ne la met pas dans ALL)
   return kmhVus(Math.max(v, .05)) / 3.6 * clamp(1 - pente * 6, .38, 1.5) * (PISTE.ALL0[i] / ALLURE) / Math.max(v, .05);
 }
 if (VISUEL) { MACHINE.allure = 15 / 3.6 / (CROISIERE_VRAIE * ALLURE); MACHINE.tourVu = 15 / 3.6 / (MACHINE.cadence / 60); }   // un tour de circuit à l'allure habituelle ; un tour de jambes = tant de mètres vus (pédales, foulées)

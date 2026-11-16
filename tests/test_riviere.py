@@ -298,6 +298,28 @@ class Moteur(unittest.TestCase):
         self.assertEqual(terre["niveau"]["discipline"], "terre")
         self.assertTrue(self.controle_de(terre["niveau"])["ok"])
 
+    def test_effets(self):
+        """Étape 9 du plan (15/11) : l'eau qui coule, le vent, les forêts en masse et les ombres sont des options. Le circuit de Kiki
+        (kanto-1km) n'en a aucune ; ailleurs, les couper rend le monde d'avant, et les forêts s'ajoutent sans déplacer un seul objet posé."""
+        self.assertIs(lis("niveaux", "kanto-1km.json").get("effets"), False, "kanto-1km doit rester identique à l'œil : \"effets\": false")
+        k, k0 = self.bilan("kanto-1km"), self.bilan("kanto-1km", "effets=0")
+        self.assertEqual(k["effets"], [])
+        self.assertEqual((k["triangles"], k["poses"], k["masse"], k["objets"]), (k0["triangles"], k0["poses"], 0, k0["objets"]))
+        avec, sans, foret = self.bilan("vitrine"), self.bilan("vitrine", "effets=0"), self.bilan("vitrine", "effets=foret")
+        self.assertEqual(avec["effets"], ["eau", "vent", "foret", "ombres"])
+        self.assertEqual(sans["effets"], [])
+        self.assertEqual((avec["objets"], avec["poses"], avec["sprites"]), (sans["objets"], sans["poses"], sans["sprites"]), "les forêts ne doivent déplacer aucun objet posé")
+        self.assertEqual(sans["masse"], 0)
+        self.assertGreater(avec["masse"], 800, "la vitrine a des rives boisées : une forêt en masse y pousse")
+        self.assertLessEqual(avec["masse"], 3200, "le plafond d'arbres de la forêt en masse")
+        self.assertEqual(foret["masse"], avec["masse"], "mêmes options, même forêt")
+        self.assertGreater(avec["triangles"], sans["triangles"])
+        for nom in ("kanto", "kanto-routes"):   # chaque forêt en masse nomme des rives qui existent
+            b = region(nom)
+            for r in b.get("forets", []):
+                self.assertTrue(set(r["sur"]) <= set(b["rives"]), f"{nom} : forêt sur une rive inconnue ({r['sur']})")
+                self.assertLess(r["bande"][0], r["bande"][1])
+
     # Budgets (14/11/2026, mesurés sur ce PC : 0,7 à 1,8 s, 36 000 à 146 000 triangles, page de 1 265 Ko) : environ 1,5 fois l'état
     # actuel. Un dépassement n'est pas une panne, c'est un signal : la page ou la construction a grossi d'un coup (page ×4 et
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
@@ -310,10 +332,50 @@ class Moteur(unittest.TestCase):
         for nom in NIVEAUX:
             t = time.time()
             b = self.bilan(nom)
-            self.assertLess(time.time() - t, self.BUDGET_SECONDES, f"{nom} : construction trop lente")
-            self.assertLess(b["triangles"], self.BUDGET_TRIANGLES, f"{nom} : trop de triangles ({b['triangles']})")
+            km = max(1, b["metres"] / 2000)   # (16/11) une vraie route de 5 km (outils/gpx.py) : le budget d'un circuit de 2 km par tranche de 2 km
+            self.assertLess(time.time() - t, self.BUDGET_SECONDES * km, f"{nom} : construction trop lente")
+            self.assertLess(b["triangles"], self.BUDGET_TRIANGLES * km, f"{nom} : trop de triangles ({b['triangles']})")
         ko = len(page.page(niveau=NIVEAUX[0]).encode("utf-8")) // 1024
         self.assertLess(ko, self.BUDGET_PAGE_KO, f"la page pèse {ko} Ko")
+
+
+class VraieRoute(unittest.TestCase):
+    """L'outil des vraies routes (outils/gpx.py, étape 8 du plan) : la forme gardée à l'échelle 1:1, jamais une coordonnée."""
+
+    def gpx(self, n=1400):
+        # une route inventée : une ligne droite, une épingle très serrée, une montée de 8 %, autour d'un point quelconque
+        import math
+        pts, la, lo, alt = [], 45.0, 6.0, 800.0
+        for k in range(n):
+            if k < 400:
+                x, y = 0.0, k * 1.0
+            elif k < 430:
+                a = (k - 400) / 30 * math.pi
+                x, y = 4 - 4 * math.cos(a), 400 + 4 * math.sin(a)
+            else:
+                x, y = 8.0, 400 - (k - 430) * 1.0
+            pts.append(f'<trkpt lat="{la + y / 111195:.7f}" lon="{lo + x / (111195 * math.cos(math.radians(la))):.7f}"><ele>{alt + .08 * k:.2f}</ele></trkpt>')
+        return '<gpx><trk><trkseg>' + "".join(pts) + '</trkseg></trk></gpx>'
+
+    def test_forme(self):
+        sys.path.insert(0, str(R / "outils"))
+        import gpx
+        pts = gpx.lire_gpx(self.gpx())
+        pieces, b = gpx.construire(pts, km=1.2, large=6, rayon=9)
+        self.assertEqual(sum(p["long"] for p in pieces), b["long"])
+        self.assertAlmostEqual(sum(p["monte"] for p in pieces), b["denivele"], delta=1)
+        self.assertAlmostEqual(b["pente"], 8, delta=.6)
+        for p in pieces:   # l'épingle de 4 m de rayon est élargie : jamais plus serré que 9 m
+            self.assertLessEqual(abs(p["virage"]) / 57.2958 / p["long"], 1 / 9 + 1e-3)
+        self.assertAlmostEqual(sum(p["virage"] for p in pieces), 180, delta=8)   # vers le nord puis par l'est : un demi-tour à droite (+ = à droite, comme dans le jeu)
+        gpx.habiller(pieces, dict(b, large=6))
+        n = gpx.niveau(pieces, b, "route-test", "Essai")
+        texte = json.dumps(n)
+        self.assertNotIn("45.0", texte); self.assertNotIn('"lat"', texte); self.assertNotIn('"lon"', texte)
+        self.assertIs(n["allurePente"], False)
+        self.assertTrue(any(o["o"] == "arche_arrivee" for p in pieces for o in p.get("objets", [])))
+        with self.assertRaises(ValueError):
+            gpx.construire(pts, km=6)
 
 
 if __name__ == "__main__":

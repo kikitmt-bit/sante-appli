@@ -13,7 +13,6 @@ from pathlib import Path
 ICI = Path(__file__).resolve().parent
 RACINE = ICI.parent
 DOSSIER = ICI / "captures"
-PORT = 8791
 POINTS = 10
 LARG, HAUT = 960, 540
 sys.path.insert(0, str(RACINE))
@@ -44,9 +43,18 @@ def attendre_calme(pg, chemin, max_s=15):
         avant = im
 
 
+def port_libre():
+    """Un port que personne n'occupe (15/11 : le 8791, fixe jusque-là, était pris par un autre programme, et l'outil attendait pour rien)."""
+    import socket
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
 def prendre(dossier, noms):
     from playwright.sync_api import sync_playwright
     dossier.mkdir(parents=True, exist_ok=True)
+    PORT = port_libre()
     srv = subprocess.Popen([sys.executable, str(RACINE / "serveur.py"), str(PORT)], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         for _ in range(50):

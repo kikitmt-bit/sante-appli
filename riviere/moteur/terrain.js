@@ -8,8 +8,17 @@ function construireTerrain() {
   for (let i = 0; i < P.M; i++) { xa = Math.min(xa, P.X[i]); xb = Math.max(xb, P.X[i]); za = Math.min(za, P.Z[i]); zb = Math.max(zb, P.Z[i]); }
   const x0 = Math.floor((xa - M) / C) * C, z0 = Math.floor((za - M) / C) * C, nx = Math.ceil((xb + M - x0) / C) + 1, nz = Math.ceil((zb + M - z0) / C) + 1, n = nx * nz;
   const HH = new Float32Array(n), GI = new Int32Array(n), GE = new Float32Array(n), GC = new Uint8Array(n), GK = new Uint8Array(n);
+  // (16/11, étape 8 : une vraie route de 5 km tient dans un rectangle de 2 à 4 km de côté, presque vide) les carreaux de la grille à plus de
+  // VU_LOIN m de toute la piste ne sont jamais vus (la caméra ne voit pas plus loin) : ni vote ni triangle. Sur un circuit de 2 km, aucun ou presque.
+  const ntx = Math.ceil(nx / T), ntz = Math.ceil(nz / T), LOINT = new Uint8Array(ntx * ntz), demi = T * C * .71;
+  for (let b = 0; b < ntz; b++) for (let a = 0; a < ntx; a++) {
+    const cx = x0 + (a + .5) * T * C, cz = z0 + (b + .5) * T * C; let d = Infinity;
+    for (let i = 0; i < P.M && d > VU_LOIN + demi; i += 4) d = Math.min(d, Math.hypot(P.X[i] - cx, P.Z[i] - cz));
+    LOINT[b * ntx + a] = d > VU_LOIN + demi + 4 ? 1 : 0;
+  }
   // 1 = le lit de la piste à ciel ouvert, 2 = le dessus d'un tunnel, 3 = les flancs d'un tunnel, 0 = le reste
   for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+    if (LOINT[Math.floor(j / T) * ntx + Math.floor(i / T)]) { const k = j * nx + i; HH[k] = -9; GE[k] = 999; continue; }   // jamais vu : sous la « mer », rien n'est dessiné
     const x = x0 + i * C, z = z0 + j * C, k = j * nx + i, h = hSol(x, z), e = Q.e, pi = Q.i, cote = Q.d > 0 ? 1 : 0, tun = P.TUN[pi], culee = Q.bout === 2;
     GI[k] = pi; GE[k] = e; GC[k] = cote;
     const bec = culee && Q.av > -3 && Math.abs(Q.d) < P.W[pi] + .8;   // juste au bout d'un pont, dans le couloir de la piste : le sol passe sous le tablier (11/11 : deux coins d'herbe sur l'eau ; puis un trou sous le pont, d'où la culée)
@@ -27,9 +36,9 @@ function construireTerrain() {
       const k = j * nx + i, x = x0 + i * C, z = z0 + j * C, hx = (HH[j * nx + Math.min(nx - 1, i + 1)] - HH[j * nx + Math.max(0, i - 1)]) / (2 * C), hz = (HH[Math.min(nz - 1, j + 1) * nx + i] - HH[Math.max(0, j - 1) * nx + i]) / (2 * C), N = nrm([-hx, 1, -hz]);
       const c = couleurSol(GI[k], GC[k], GK[k] === 2 ? 3 : Math.max(GE[k], 0), N[1], x, z); F.v(x, HH[k], z, N[0], N[1], N[2], c, c[3]);
     };
-    let loin = true;
-    for (let j = tj; j <= Math.min(tj + T, nz - 1) && loin; j += 4) for (let i = ti; i <= Math.min(ti + T, nx - 1); i += 4) if (GE[j * nx + i] < 75) { loin = false; break; }
-    const pas = loin && tj + T <= nz - 1 && ti + T <= nx - 1 ? 2 : 1;   // loin de la piste, des mailles deux fois plus grandes : quatre fois moins de triangles
+    let loin = true, tresLoin = P.N > 3000;   // (16/11) une vraie route de plus de 3 km : au-delà de 160 m, des mailles quatre fois plus grandes (les circuits de 2 km ne changent pas)
+    for (let j = tj; j <= Math.min(tj + T, nz - 1) && loin; j += 4) for (let i = ti; i <= Math.min(ti + T, nx - 1); i += 4) { if (GE[j * nx + i] < 160) tresLoin = false; if (GE[j * nx + i] < 75) { loin = false; break; } }
+    const plein = tj + T <= nz - 1 && ti + T <= nx - 1, pas = tresLoin && plein ? 4 : loin && plein ? 2 : 1;   // loin de la piste, des mailles deux fois plus grandes : quatre fois moins de triangles
     for (let j = tj; j < Math.min(tj + T, nz - 1); j += pas) for (let i = ti; i < Math.min(ti + T, nx - 1); i += pas) {
       const a = j * nx + i, b = a + pas, c = a + pas * nx, d = c + pas;
       for (const [p, q, r] of [[a, c, b], [b, c, d]]) {

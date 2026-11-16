@@ -1,7 +1,7 @@
 /* ============ le kit d'objets : chacun est une petite recette de volumes, dans son repère (z = vers la rivière, x = dans le sens du courant, y = vers le haut) ============ */
 // Ajouter un objet au jeu = ajouter une recette ici, ou déposer un autre fichier dans ce dossier (Object.assign(OBJETS, {…})) : page.py les ramasse tous. Les niveaux, les régions et les lieux n'utilisent que des noms d'objets.
 // F : la Forme où dessiner (déjà placée et tournée) ; o : ses réglages (venus du fichier) ; R : le hasard du niveau ; K : le monde (étiquettes, sprites, objets animés).
-Object.assign(RAYON, {arbre: 2.3, arbre_loin: 3.1, buisson: 1, rocher: 1.2, roseaux: .5, maison: 6, labo: 11, centre: 8, boutique: 7, eolienne: 2, panneau: 1.6, barriere: .3, boite_lettres: .4, lampadaire: .4, pokemon: .8, habitant: .6, chemin: 0, tronc: 0, rondins: 0, ligne: 0});
+Object.assign(RAYON, {arbre_masse: 1.7, arbre: 2.3, arbre_loin: 3.1, buisson: 1, rocher: 1.2, roseaux: .5, maison: 6, labo: 11, centre: 8, boutique: 7, eolienne: 2, panneau: 1.6, barriere: .3, boite_lettres: .4, lampadaire: .4, pokemon: .8, habitant: .6, chemin: 0, tronc: 0, rondins: 0, ligne: 0});
 const BLANC = [1, 1, 1];
 Object.assign(EVENEMENTS, {tronc: "saut", rondins: "plongee"});   // ces objets font réagir ton Pokémon quand il arrive dessus
 /* les pièces communes aux bâtiments */
@@ -27,12 +27,15 @@ Object.assign(OBJETS, {
   arbre(F, o, R) {  // l'arbre de Kanto : trois étages bien ronds, du plus large au plus petit, vert clair, la pointe en haut
     const t = PAL.feuilles; F.ombre(0, 0, 2.5, 2.3);
     F.cyl(0, -.4, 0, .38, .32, 1.6, 5, PAL.tronc[0], PAL.tronc[1]);
-    F.dome(0, 2.05, 0, 2.35, 1.4, 2.35, t, 8); F.dome(0, 2.9, 0, 1.8, 1.55, 1.8, t, 7, true); F.dome(0, 4.05, 0, 1.2, 1.75, 1.2, t, 6, true); },
-  arbre_loin(F, o, R) { const t = PAL.feuilles; F.cyl(0, -.5, 0, .45, .35, 1.8, 4, PAL.tronc[0]); F.dome(0, 2.6, 0, 3.1, 1.9, 3.1, t, 6); F.dome(0, 3.9, 0, 2.2, 3.2, 2.2, t, 6, true); },
-  buisson(F, o, R) { const t = PAL.feuilles; F.ombre(.2, 0, 1.3, 1); F.boule(0, .45, 0, 1, .75, .9, t, 0); F.boule(.7, .35, .2, .65, .55, .6, t, 0); },
+    F.vent(.3, .9, 5.8).dome(0, 2.05, 0, 2.35, 1.4, 2.35, t, 8); F.dome(0, 2.9, 0, 1.8, 1.55, 1.8, t, 7, true); F.dome(0, 4.05, 0, 1.2, 1.75, 1.2, t, 6, true); F.vent(); },   // (le feuillage plie au vent, la pointe le plus : effets.js)
+  arbre_loin(F, o, R) { const t = PAL.feuilles; F.cyl(0, -.5, 0, .45, .35, 1.8, 4, PAL.tronc[0]); F.vent(.4, .8, 7.1).dome(0, 2.6, 0, 3.1, 1.9, 3.1, t, 6); F.dome(0, 3.9, 0, 2.2, 3.2, 2.2, t, 6, true); F.vent(); },
+  // la forêt en masse (decor.js, « forets » de la région) : un arbre réduit à sa silhouette, pour les milliers d'arbres du fond ; un ton plus sombre que les arbres du bord, qui s'en détachent ; o.pres : deux étages
+  arbre_masse(F, o, R) { const t = PAL.feuilles, k = .8 + R() * .2, tons = [fonce(t[0], k * .9), fonce(melange(t[0], t[1], .5), k), fonce(melange(t[1], t[2], .3), k)], r = 2.5 + R() * .9, h = 5.4 + R() * 2.4;
+    F.vent(.45, .5, h + 1).dome(0, .4, 0, r, o.pres ? h * .62 : h, r, tons, 5, true); if (o.pres) F.dome(0, .4 + h * .42, 0, r * .62, h * .58, r * .62, tons, 5, true); F.vent(); },
+  buisson(F, o, R) { const t = PAL.feuilles; F.ombre(.2, 0, 1.3, 1); F.vent(.07, 0, 1.2).boule(0, .45, 0, 1, .75, .9, t, 0); F.boule(.7, .35, .2, .65, .55, .6, t, 0); F.vent(); },
   rocher(F, o, R) { F.ombre(.2, 0, 1.4, 1.2); F.caillou(0, .25, 0, 1.1, .8, .95, PAL.pierre, R); if (R() < .5) F.caillou(.9, .1, .4, .5, .4, .5, PAL.pierre, R); },
   // (hautes herbes en pyramides et fleurs en cubes : retirées, Kiki, 11/11)
-  roseaux(F, o, R) { for (let k = 0; k < 4; k++) { const x = (R() - .5) * 1.4, z = (R() - .5) * .5, h = .55 + R() * .5; F.boite(x, -.4, z, .06, h + .4, .06, PAL.herbes[1]); if (k % 2) F.boite(x, h - .05, z, .11, .26, .11, PAL.tronc[1]); } },
+  roseaux(F, o, R) { F.vent(.2, -.1, 1.1); for (let k = 0; k < 4; k++) { const x = (R() - .5) * 1.4, z = (R() - .5) * .5, h = .55 + R() * .5; F.boite(x, -.4, z, .06, h + .4, .06, PAL.herbes[1]); if (k % 2) F.boite(x, h - .05, z, .11, .26, .11, PAL.tronc[1]); } },
   barriere(F, o) { const L = o.long || 6, n = Math.max(2, Math.round(L / 1.25) + 1), b = PAL.blanc;
     for (let k = 0; k < n; k++) F.boite(-L / 2 + L * k / (n - 1), -.3, 0, .16, 1.15, .16, b, {haut: BLANC});
     F.boite(0, .28, 0, L, .12, .08, b); F.boite(0, .6, 0, L, .12, .08, b); },

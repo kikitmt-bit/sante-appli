@@ -5,28 +5,46 @@
 const SURFACES = {};
 const PISTE_VS = `
   #ifndef MER
-  attribute vec2 aSU; attribute float aBord; attribute vec2 aEc; attribute float aPente, aVoie;
+  attribute vec2 aSU; attribute float aBord; attribute vec2 aEc; attribute float aPente, aVoie; ${EFFETS.eau ? "attribute vec3 aFlot;" : ""} ${EFFETS.ombres ? "attribute float aAbri;" : ""}
   #endif
   #ifdef PARSOMMET
   attribute vec3 aC1, aC2, aCl, aRe, aEcu; attribute float aLuit; varying vec3 vC1, vC2, vCl, vRe, vEcu; varying float vLuit;
   #endif
-  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
+  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc; ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${EFFETS.ombres ? "varying float vAbri;" : ""}
   void main() { vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vec4 mv = viewMatrix * w; vZ = -mv.z;
   #ifdef PARSOMMET
     vC1 = aC1; vC2 = aC2; vCl = aCl; vRe = aRe; vEcu = aEcu; vLuit = aLuit;
   #endif
   #ifdef MER
-    vSU = vec2(-9999., 0.); vBord = 99.; vEc = vec2(0.); vPente = 0.; vVoie = 0.;
+    vSU = vec2(-9999., 0.); vBord = 99.; vEc = vec2(0.); vPente = 0.; vVoie = 0.; ${EFFETS.eau ? "vFlot = vec3(0., 0., 1.);" : ""} ${EFFETS.ombres ? "vAbri = 0.;" : ""}
   #else
-    vSU = aSU; vBord = aBord; vEc = aEc; vPente = aPente; vVoie = aVoie;
+    vSU = aSU; vBord = aBord; vEc = aEc; vPente = aPente; vVoie = aVoie; ${EFFETS.eau ? "vFlot = aFlot;" : ""} ${EFFETS.ombres ? "vAbri = aAbri;" : ""}
   #endif
     gl_Position = projectionMatrix * mv; }`;
 
 /* ---- l'eau : deux bleus en taches, des reflets, l'écume des rives, le sillage, les ronds de chaque coup, l'écume des rapides et des chutes ---- */
 const EAU_U = Object.assign({uC1: {value: new THREE.Vector3(...hex(BIOME.eau.c1))}, uC2: {value: new THREE.Vector3(...hex(BIOME.eau.c2))}, uClair: {value: new THREE.Vector3(...hex(BIOME.eau.clair))},
   uReflet: {value: new THREE.Vector3(...hex(BIOME.eau.reflet))}, uEcume: {value: new THREE.Vector3(...hex(BIOME.eau.ecume))}, uNag: {value: new THREE.Vector4(-999, 0, 0, 0)}, uCorps: {value: new THREE.Vector4(.45, 0, 0, 0)},
-  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}, uVoie: {value: 0}}, COMMUNS);   // uVoie : la voie où l'on est, dans une fourche (PISTE.VO)
-const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit, uVoie; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag, uCorps; uniform vec3 uCoups[4]; uniform float uLong;
+  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}, uVoie: {value: 0}}, COMMUNS, EFFETS.ombres ? PORTEE_U : null);   // uVoie : la voie où l'on est, dans une fourche (PISTE.VO)
+/* (étape 9 du plan : l'eau coule. Chaque mètre de la piste connaît son courant : aFlot = sa vitesse le long de la piste, ses remous, son calme (courantEau).
+   Les reflets naissent, dérivent avec le courant le temps de leur courte vie, et s'éteignent : deux couches décalées d'une demi-vie, pour qu'il y en ait toujours
+   autant ; là où ça file (un passage étroit), des filets clairs ; en aval d'une chute ou de rapides, des flocons d'écume qui s'en vont. Une eau libre (un lac,
+   la mer) garde ses reflets d'avant, les mêmes que ceux du large. À l'ombre (effets.js), l'eau fonce et ne brille pas.) */
+const EAU_PR = EFFETS.ombres ? "proxR" : "prox";
+const EAU_REFLETS = `vec2 g = vec2(p.x / 1.5, p.y / .42); float rang = floor(g.y); g.x += h21(vec2(rang, 3.)) * 7. + uT * .22 * (mod(rang, 2.) - .5);
+    vec2 cel = floor(g), f = fract(g);
+    if (h21(cel + floor(uT * .9 + h21(cel) * 5.) * .013) > .9 && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, ${EAU_PR});`;
+const EAU_COURANT = `if (vFlot.z > .999 || h21(floor(p / 2.5)) < vFlot.z) { ${EAU_REFLETS} }
+    else { float cv = vFlot.x, av = abs(cv), bande = floor(vSU.x / 7.);
+      for (int j = 0; j < 2; j++) { float fj = float(j), tt = uT / 2.6 + h21(vec2(bande, 5.)) + fj * .5, ph = fract(tt), vie = floor(tt), poids = 1. - abs(2. * ph - 1.), sj = vSU.x - cv * 2.6 * (ph - .5);
+        vec2 g = vec2(vSU.y / 1.5, sj / .42); float rang = floor(g.y); g.x += h21(vec2(rang, 3. + fj)) * 7.;
+        vec2 cel = floor(g), f = fract(g);
+        if (h21(cel + vie * .137 + fj * 31.) < .115 * poids && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, ${EAU_PR});
+        if (av > 1.) { vec2 r = vec2(sj / 2.6, vSU.y / .3), k = floor(r); if (h21(k + vie * .31 + fj * 17.) < (av - 1.) * .07 * poids && fract(r.x) < .75 && fract(r.y) > .3) c = mix(c, CL, .6 * ${EAU_PR}); }
+        if (vFlot.y > .02) { vec2 r = vec2(sj / .3, vSU.y / .36), k = floor(r), fr = fract(r); float hf = h21(k + vie * .53 + fj * 7.);   // des flocons d'écume, petits, de tailles inégales
+          if (hf < vFlot.y * .16 * poids && fr.x > .15 && fr.y > .15 && fr.x < .6 + 6. * hf && fr.y < .55 + 6. * hf) c = mix(c, EC, .8 * prox); } } }`;
+const EAU_FS = `${PORTEE_FS} ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${EFFETS.ombres ? "varying float vAbri;" : ""}
+  uniform float uT, uB0, uB1, uSombre, uPluie, uLuit, uVoie; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag, uCorps; uniform vec3 uCoups[4]; uniform float uLong;
   varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
   #ifdef PARSOMMET
   varying vec3 vC1, vC2, vCl, vRe, vEcu; varying float vLuit;
@@ -43,9 +61,8 @@ const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit, uVoie; unifo
     vec2 q = floor(p * 4.) / 4.;
     float n = sin(q.x * .42 + uT * .35) + sin(q.y * .57 - uT * .5 + sin(q.x * .23) * 1.8) + sin((q.x + q.y) * .31 + uT * .2);
     vec3 c = mix(C1, C2, step(.35, n) * prox);
-    vec2 g = vec2(p.x / 1.5, p.y / .42); float rang = floor(g.y); g.x += h21(vec2(rang, 3.)) * 7. + uT * .22 * (mod(rang, 2.) - .5);
-    vec2 cel = floor(g), f = fract(g);
-    if (h21(cel + floor(uT * .9 + h21(cel) * 5.) * .013) > .9 && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, prox);
+    ${EFFETS.ombres ? "float omb = ombreEn(vW, vec3(0., 1., 0.), vZ) * (1. - vAbri), proxR = prox * (1. - .65 * omb);" : ""}
+    ${EFFETS.eau ? EAU_COURANT : EAU_REFLETS}
     float raide = abs(vPente), rap = smoothstep(.02, .11, raide);
     if (rap > 0.) { float sens = vPente < 0. ? 1. : -1.;   // l'eau qui dévale : des traits d'écume qui filent vers le bas de la pente
       vec2 r = vec2(vSU.x * .7 - sens * uT * 4.5, vSU.y * 1.7), k = floor(r);
@@ -75,6 +92,7 @@ const EAU_FS = `uniform float uT, uB0, uB1, uSombre, uPluie, uLuit, uVoie; unifo
     if (uPluie > 0. && prox > 0.) { vec2 cel = floor(p / 1.4); float ph = fract(uT * 1.5 + h21(cel) * 7.), tir = floor(uT * 1.5 + h21(cel) * 7.);   // la pluie : un petit rond dans chaque case, de temps en temps
       vec2 o = (cel + .5 + (vec2(h21(cel + tir), h21(cel - tir)) - .5) * .6) * 1.4;
       if (h21(cel * 1.3 + tir) < uPluie * .75 && abs(length(p - o) - ph * .5) < .07) c = mix(c, EC, .7 * (1. - ph) * prox); }
+    ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.76, .8, .88), omb);" : ""}
     c *= mix(uSombre * uTeinte, vec3(1.), LU);   // une eau qui luit (une source dans une grotte) ne s'assombrit pas
     gl_FragColor = vec4(mix(c, uBrume, smoothstep(uB0, uB1, vZ) * .94 * (1. - .5 * LU)), 1.); }`;
 const MAT_EAU = new THREE.ShaderMaterial({uniforms: EAU_U, vertexShader: PISTE_VS, fragmentShader: EAU_FS, side: THREE.DoubleSide});
@@ -92,7 +110,8 @@ for (const [nom, e] of Object.entries(BIOME.eaux || {})) {
 
 /* ---- la terre ferme : un chemin de terre ou une route (ligne au milieu, bordures rouges et blanches) ---- */
 const OMBRE_U = {uOmbre: {value: new THREE.Vector3(0, 0, 0)}};   // l'ombre de ta monture sur la terre : (force, hauteur au-dessus du sol, vélo ?) ; uNag donne où elle est
-const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie, uVoie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte, uOmbre; uniform vec4 uNag;
+const ROUTE_FS = `${PORTEE_FS} ${EFFETS.ombres ? "varying float vAbri;" : ""}
+  uniform float uT, uB0, uB1, uSombre, uMode, uPluie, uVoie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte, uOmbre; uniform vec4 uNag;
   varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   void main() { vec2 p = vW.xz; float prox = 1. - smoothstep(45., 150., vZ);
@@ -116,11 +135,12 @@ const ROUTE_FS = `uniform float uT, uB0, uB1, uSombre, uMode, uPluie, uVoie; uni
       float e = length(vec2((ds + .1) / ((uOmbre.z > .5 ? 1.05 : .55) * k), du / ((uOmbre.z > .5 ? .34 : .42) * k)));
       if (e < 1. && h21(floor(vW.xz * 9.)) > smoothstep(.55, 1., e) * .9) c *= 1. - .3 * uOmbre.x * k;
       if (uOmbre.z > .5 && uMode < .5 && ds < -.9 && ds > -16. && abs(du) < .05) c *= 1. - .16 * (1. + ds / 16.); }   // la trace du pneu, sur un chemin
+    ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ) * (1. - vAbri));   // les ombres portées (effets.js)" : ""}
     c *= 1. - .16 * uPluie;                                                                           // mouillée, elle fonce
     gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;
 function matRoute(c1, c2, bord, ligne, mode) {
   const v = h => ({value: new THREE.Vector3(...hex(h))});
-  return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}, uNag: EAU_U.uNag, uVoie: EAU_U.uVoie}, OMBRE_U, COMMUNS), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
+  return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}, uNag: EAU_U.uNag, uVoie: EAU_U.uVoie}, OMBRE_U, COMMUNS, EFFETS.ombres ? PORTEE_U : null), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
 }
 const TERRES = BIOME.terres || {};
 SURFACES.terre = {materiau: matRoute(...(TERRES.terre || ["#D9B886", "#CBA672", "#B48C5C", "#FFFFFF"]), 0), liquide: false, monture: "coureur", poussiere: (TERRES.terre || ["#D9B886"])[0]};
@@ -151,9 +171,28 @@ function couleursEau() {
   return T;
 }
 
+/* le courant (étape 9 du plan), mètre par mètre : la vitesse de l'eau le long de la piste (m/s ; + : dans le sens de la course), ses remous (de 0 à 1 :
+   l'écume qui s'en va en aval d'une chute ou de rapides) et son calme (1 : une eau libre, lac ou mer, sans courant).
+   L'eau descend la rivière avec toi, plus vite là où elle se resserre ; elle dévale les pentes ; autour d'une remontée (la Cascade), elle vient vers toi. */
+function courantEau() {
+  const P = PISTE, M = P.M, F = new Float32Array(M * 3), g = new Float32Array(M), neg = new Float32Array(M), ouv = new Float32Array(M);
+  // (une pente douce ne fait pas un torrent : comme l'écume des rapides, le courant ne s'emballe qu'au-delà de 2 % de pente)
+  for (let i = 0; i < M; i++) { g[i] = -Math.sign(P.COULE[i]) * lisse(.012, .1, Math.abs(P.COULE[i])); neg[i] = lisse(.01, .04, P.COULE[i]); ouv[i] = Math.max(lisse(-.2, -1, hRive(i, 0, 3)), lisse(-.2, -1, hRive(i, 1, 3))); }
+  const moy = (A, R, passes) => { for (let p = 0; p < passes; p++) { const O = new Float32Array(M); for (let i = 0; i < M; i++) { let t = 0; for (let k = -R; k <= R; k++) t += A[P.voisin(i, k)]; O[i] = t / (2 * R + 1); } A = O; } return A; };
+  const remonte = moy(neg, 40, 3), calme = moy(ouv, 12, 2); let v = new Float32Array(M);
+  for (let i = 0; i < M; i++) { const sens = clamp(1 - 28 * remonte[i], -1, 1), etroit = Math.pow(clamp(6 / Math.max(2, P.W[i]), .4, 2.4), .8); v[i] = (sens * .6 * etroit + g[i] * 3.4) * (1 - .9 * calme[i]); }
+  v = moy(v, 5, 2);
+  const r = new Float32Array(M), k = Math.exp(-1 / 22);   // les remous : nés là où l'eau dévale, emportés par le courant, effacés en une cinquantaine de mètres
+  for (let i = 0; i < M; i++) r[i] = lisse(.03, .12, Math.abs(P.COULE[i]));
+  for (let tour = 0; tour < 2; tour++) { for (let i = 0; i < M; i++) { const a = P.voisin(i, -1); if (a !== i && v[a] > 0) r[i] = Math.max(r[i], r[a] * k); }
+    for (let i = M - 1; i >= 0; i--) { const a = P.voisin(i, 1); if (a !== i && v[a] < 0) r[i] = Math.max(r[i], r[a] * k); } }
+  for (let i = 0; i < M; i++) { F[i * 3] = v[i]; F[i * 3 + 1] = r[i] * (1 - calme[i]); F[i * 3 + 2] = calme[i]; }
+  return F;
+}
+
 /* ---- le ruban de la piste, par tronçons de 40 m (toutes les eaux ensemble, chaque terre à part) ; la mer, un grand plan ---- */
 function construirePiste() {
-  const P = PISTE, rubans = [], EAUX_C = couleursEau(), genre = i => { const nom = P.surfaces[P.SF[idx(i)]], S = SURFACES[nom]; return !S || S.liquide ? "eau" : nom + (P.CROIX[idx(i)] === 2 ? "+" : ""); };
+  const P = PISTE, rubans = [], EAUX_C = couleursEau(), FLOT = EFFETS.eau ? courantEau() : null, genre = i => { const nom = P.surfaces[P.SF[idx(i)]], S = SURFACES[nom]; return !S || S.liquide ? "eau" : nom + (P.CROIX[idx(i)] === 2 ? "+" : ""); };
   const sorte = i => genre(i) + "/" + P.VO[idx(i)];   // dans une fourche, chaque voie a ses rubans (le sillage ne se dessine que sur la voie où l'on est)
   const decouper = (s0, s1, nf) => { for (let c0 = s0; c0 < s1; c0 += 40) {
     const fin = Math.min(c0 + 40, s1); let debut = c0;
@@ -166,18 +205,19 @@ function construirePiste() {
   decouper(0, LONG, -1);
   P.voies.forEach((v, nf) => surLaVoie(nf, () => decouper(v.a, v.b, nf)));   // la voie « force » de chaque fourche, entre les mêmes mètres
   const unRuban = (a0, a1) => {
-    const pos = [], su = [], bord = [], ec = [], pente = [], voie = [], ind = [], liquide = genre(a0) === "eau", C = [[], [], [], [], [], []], vo = P.VO[idx(a0)];
+    const pos = [], su = [], bord = [], ec = [], pente = [], voie = [], ind = [], flot = [], abri = [], liquide = genre(a0) === "eau", C = [[], [], [], [], [], []], vo = P.VO[idx(a0)];
     for (let i = a0; i <= a1; i++) {
       const o = idx(i) * 16;
       const a = at(i), w = a.w, rx = Math.cos(a.h), rz = Math.sin(a.h), ii = idx(i), pont = P.PONT[ii], colle = P.INT[ii] && LIBRE[P.INT[ii] - 1][ii] < .6;   // colle : dans une fourche, l'autre voie touche encore celle-ci (ni écume ni marque de ce côté)
       const eg = (pont || hRive(ii, 0, .02) > .02) && !(colle && P.INT[ii] === 1) ? 1 : 0, ed = (pont || hRive(ii, 1, .02) > .02) && !(colle && P.INT[ii] === 2) ? 1 : 0;
-      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] || (colle && !liquide) ? 99 : w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]); voie.push(vo);
+      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] || (colle && !liquide) ? 99 : w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]); voie.push(vo); if (FLOT && liquide) flot.push(FLOT[ii * 3], FLOT[ii * 3 + 1], FLOT[ii * 3 + 2]); if (EFFETS.ombres) abri.push(P.TUN[ii] ? 1 : 0);
         if (liquide) { for (let c = 0; c < 5; c++) C[c].push(EAUX_C[o + c * 3], EAUX_C[o + c * 3 + 1], EAUX_C[o + c * 3 + 2]); C[5].push(EAUX_C[o + 15]); } }
     }
     for (let i = 0; i < a1 - a0; i++) for (let j = 0; j < 6; j++) { const a = i * 7 + j, b = a + 7; ind.push(a, a + 1, b, a + 1, b + 1, b); }
     const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("aSU", new THREE.Float32BufferAttribute(su, 2)); g.setAttribute("aBord", new THREE.Float32BufferAttribute(bord, 1));
     g.setAttribute("aEc", new THREE.Float32BufferAttribute(ec, 2)); g.setAttribute("aPente", new THREE.Float32BufferAttribute(pente, 1)); g.setAttribute("aVoie", new THREE.Float32BufferAttribute(voie, 1)); g.setIndex(ind);
+    if (flot.length) g.setAttribute("aFlot", new THREE.Float32BufferAttribute(flot, 3)); if (abri.length) g.setAttribute("aAbri", new THREE.Float32BufferAttribute(abri, 1));
     if (liquide) ["aC1", "aC2", "aCl", "aRe", "aEcu", "aLuit"].forEach((a, c) => g.setAttribute(a, new THREE.Float32BufferAttribute(C[c], c < 5 ? 3 : 1)));
     const nom = P.surfaces[P.SF[idx(a0)]], m = new THREE.Mesh(g, liquide ? MAT_EAUX : genre(a0).endsWith("+") ? matDessus(nom) : SURFACES[nom].materiau); m.name = "piste"; scene.add(m);
     if (!SURFACES[nom]) console.warn("Surface inconnue : " + nom);

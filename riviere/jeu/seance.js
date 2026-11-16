@@ -75,13 +75,16 @@ function ouvrirMenu() {
     <h2><span class="num">3</span>Réglages</h2>
     <details class="pli"><summary>Ambiance : ${hChoix === "circuit" && mChoix === "circuit" ? "celle du circuit" : (hChoix === "circuit" ? "heure du circuit" : libelle(HEURES_MENU, hChoix)) + ", " + (mChoix === "circuit" ? "temps du circuit" : libelle(METEOS_MENU, mChoix))}</summary>
       <div class="fantomes"><small>L'HEURE</small>${boutons(HEURES_MENU, hChoix, "h")}</div>
-      <div class="fantomes"><small>LE TEMPS</small>${boutons(METEOS_MENU, mChoix, "m")}</div></details>
+      <div class="fantomes"><small>LE TEMPS</small>${boutons(METEOS_MENU, mChoix, "m")}</div>
+      <div class="fantomes"><small>LES EFFETS (l'eau qui coule, le vent dans les arbres, les forêts au loin, les ombres)</small>${EFFETS.circuit ? boutons([["1", "Avec"], ["0", "Sans"]], lireReglage("riviere_effets", "1") === "0" ? "0" : "1", "x") : `<p class="petit">Pas sur ce circuit : il reste tel qu'il a toujours été.</p>`}</div></details>
     <details class="pli"><summary>Adversaires et fantôme</summary>
       <div class="fantomes"><small>ADVERSAIRES (des Pokémon qui tiennent une allure réglée sur la tienne)</small>${boutons([["aucun", "Aucun"], ["tranquilles", "Tranquilles"], ["coriaces", "Coriaces"]], RIVAUX.choix, "r")}</div>
       <div class="fantomes"><small>TON FANTÔME</small>${boutons([["record", "Mon record"], ["seance", "Meilleur tour de la séance"], ["aucun", "Aucun"]], FANTOME.choix, "f")}<p class="petit" id="mFantome"></p></div></details>
     <details class="pli"${MACHINE_NOM === "velo" ? " open" : ""}><summary>Capteur Bluetooth et son</summary>
       <div class="fantomes"><small>CAPTEUR BLUETOOTH (home trainer, rameur ou elliptique connecté, ceinture cardio)</small>
         <button class="opt" id="mBT" ${BT_OK ? "" : "disabled"}>Relier un capteur</button><p class="petit" id="mBTetat">${BT_OK ? BT.etat || "Rien de relié." : "Ce navigateur ne parle pas Bluetooth (Chrome ou Edge le font)."}</p></div>
+      ${MACHINE_NOM === "velo" ? `<div class="fantomes"><small>DURETÉ DES PENTES (un home trainer pilotable durcit dans les côtes ; 100 % = la vraie pente, les descentes comptent à moitié)</small>${boutons([["0", "0 %"], ["0.25", "25 %"], ["0.5", "50 %"], ["0.75", "75 %"], ["1", "100 %"]], String(BT.difficulte), "dur")}
+        <button class="opt" id="mFaux">Essayer avec un faux home trainer</button><p class="petit">Le faux home trainer imite un vrai (il reçoit la pente et durcit) : pour voir que tout marche. Une séance faite avec lui ne compte jamais.</p></div>` : ""}
       <div class="fantomes"><small>SON</small><button class="opt${SON.actif ? " on" : ""}" id="mSon">${SON.actif ? "Bruitages" : "Coupé"}</button></div></details>
     <div class="depart">
       <p class="etat-montre" id="mMontre"></p>
@@ -109,8 +112,11 @@ function ouvrirMenu() {
   p.querySelectorAll("[data-monture]").forEach(b => b.onclick = () => { if (b.dataset.monture === (MACHINE.monture || "coureur")) return; ecrireReglage("riviere_monture_elliptique", b.dataset.monture); b.textContent = "Chargement…"; relancer(); });
   un("[data-h]", null, b => { ecrireReglage("riviere_heure", b.dataset.h); reglerAmbiance(b.dataset.h === "circuit" ? NIVEAU.heure || "jour" : b.dataset.h, null); });   // on voit le ciel changer derrière le menu
   un("[data-m]", null, b => { ecrireReglage("riviere_meteo", b.dataset.m); reglerAmbiance(null, b.dataset.m === "circuit" ? NIVEAU.meteo || "beau" : b.dataset.m); });
+  un("[data-x]", null, b => { if (b.dataset.x === (lireReglage("riviere_effets", "1") === "0" ? "0" : "1")) return; ecrireReglage("riviere_effets", b.dataset.x); b.textContent = "Chargement…"; relancer(); });   // les effets (étape 9 du plan) : le monde est refait avec ou sans
   un("[data-r]", null, b => choisirRivaux(b.dataset.r));
   un("[data-f]", null, b => { choisirFantome(b.dataset.f); majTexteFantome(); });
+  un("[data-dur]", null, b => { BT.difficulte = +b.dataset.dur; BT.pente = null; ecrireReglage("riviere_difficulte", BT.difficulte); });   // (16/11) la dureté des pentes du home trainer
+  const faux = p.querySelector("#mFaux"); if (faux) faux.onclick = async () => { const el = $("mBTetat"); await relierCapteur(true); if (el && el.isConnected) el.textContent = BT.etat; };
   p.querySelector("#mBT").onclick = async e => { const el = $("mBTetat"), t = setInterval(() => { if (el.isConnected) el.textContent = BT.etat; }, 300); await relierCapteur(); clearInterval(t); if (el.isConnected) el.textContent = BT.etat; };
   p.querySelector("#mSon").onclick = e => { const oui = sonBasculer(); e.target.classList.toggle("on", oui); e.target.textContent = oui ? "Bruitages" : "Coupé"; majSon(); };
   majTexteFantome(); majMenuMontre();

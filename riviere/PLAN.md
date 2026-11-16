@@ -44,8 +44,8 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 | 5 | Circuit du jour | chaque matin le même circuit pour tous et son classement, fabriqué par GitHub sans crédits | l'étape 4 | 11.4 | faible | 1 | **faite le 15/11** (à essayer : le menu de la tablette demain matin) |
 | 6 | Ronflex et premiers lieux de Kanto | Ronflex bloque la route et se réveille quand on accélère | la brique « effort » (forcer plus que sa croisière) | 7.5, 7.6, 10.7 | faible | 1 à 2 par lot | **Ronflex et l'effort faits le 15/11** (lieux de Kanto : lot suivant) |
 | 7 | Embranchements à l'effort | une fourche : la voie spectaculaire si on force | les captures de référence de l'étape 0 | 5.1 | **élevé** (le cœur) | 3 à 4 | **faite le 15/11** (à essayer : « L'île aux rapides » au rameur, forcer à l'annonce) |
-| 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | à faire (voir « En suspens ») |
-| 9 | Forêts, vent, ombres, eau qui coule | un effet à la fois | aucune (les instances existent déjà dans three.js r128) | 4 | moyen | 3 à 5 | à faire |
+| 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | **lots 1 et 2 faits le 16/11** (une vraie route de 5 km au plus, le home trainer sans appareil) ; lot 3 (tronçons, Fable) et lot 4 (décor d'OpenStreetMap) à faire |
+| 9 | Forêts, vent, ombres, eau qui coule | un effet à la fois | aucune (les instances existent déjà dans three.js r128) | 4 | moyen | 3 à 5 | **faite le 15/11** (à essayer : la vitrine sur la tablette, Réglages → Ambiance → Les effets : Avec puis Sans ; le banc `?banc=1` dans les deux cas) |
 | 10 | Résumé de séance | 20 à 30 s rejouées à la fin | la trace gardée à l'étape 2 | 8.3 | moyen | 2 | **faite le 15/11** (à essayer : un essai « Auto » de 3-4 min, puis « ■ Fin ») |
 
 Pourquoi cet ordre s'écarte un peu de celui de Kiki : le circuit du jour vient après le générateur noté (sans note, un circuit
@@ -123,7 +123,12 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
 - Étape 2 : ouvrir le jeu sur la tablette puis sur le téléphone, et voir le même record.
 - Étape 7 : au rameur, le circuit « L'île aux rapides » : forcer quand « FOURCHE ! » s'affiche (les rapides et la chute), puis un tour sans
   forcer (le bras tranquille) ; dire si la séparation est propre et si « 8 % plus vite pendant 5 s » est trop dur ou trop facile.
-- Étape 8 : le home trainer.
+- Étape 8 : sur la tablette, au vélo, « Le Ventoux, la forêt » : l'ouvrir (combien de secondes de chargement ?), un essai « Auto » de quelques minutes, puis le banc
+  (`&banc=1`) ; dire si le col se sent (bornes, pente, arche). Puis, s'il en a un, le home trainer : le relier, une vraie séance, régler la dureté. Et s'il veut
+  une autre route : un GPX (Strava, Komoot, ou un lien brouter.de), donné à Claude, jamais dans le dépôt.
+- Étape 9 : sur la tablette, « La Baie de Carmin » (la vitrine) une minute avec les effets, puis sans (Réglages → Ambiance → Les effets) ; dire, effet par
+  effet (l'eau qui coule, le vent, les forêts au loin, les ombres), si c'est mieux ou si ça fait « amateur » : chacun se retire seul. Puis le banc
+  (`&banc=1` dans l'adresse) avec et sans, et donner les deux chiffres à Claude.
 - Étape 10 : une séance d'essai (« Essayer sans montre », Auto, 3-4 min, sur le Huit ou « L'île aux rapides » en forçant à une annonce), « ■ Fin », regarder
   le film ; dire si c'est trop long ou trop court et quels plans plaisent ; puis une vraie séance.
 - Jamais essayés à ce jour : le téléphone, un vrai capteur Bluetooth, la page dans l'appli.
@@ -148,6 +153,13 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   Mode d'emploi : `MOTEUR.md`, « Une fourche ». Réglages : `effort` dans la fourche du niveau (`seuil`, `duree`), `DECIDE` et la zone dans fourches.js.
 - **Résumé de séance** (étape 10) : `jeu/film.js` (trajet `FILM.t/s/d/v`, moments `filmEvenement`, choix `filmChoisir`, plans `filmCadrer`) ;
   branché dans `boucle` de jeu.js (`filmNoter`, `filmAvance`) et au bouton « ■ Fin » de seance.js. Essai sans ramer : `__filmEssai(minutes)`.
+- **Effets du rendu** (étape 9) : l'interrupteur `EFFETS` dans `moteur/depart.js` ; le vent et les ombres dans `moteur/effets.js` (`VENT_VS`, `PORTEE_FS`,
+  `construireOmbres`, `effetsMaj`) et `Forme.vent` ; le courant dans `moteur/surfaces.js` (`courantEau`, `EAU_COURANT`) ; les forêts à la fin de `poserDecor`
+  (`"forets"` de la région, recette `arbre_masse`) ; les crans de qualité dans `regler` de jeu.js ; le réglage du menu dans seance.js (`data-x`).
+  Mode d'emploi : `MOTEUR.md`, « Les effets du rendu ». Vérifier « sans effets = comme avant » : `test_effets`, `captures.py compare --niveau kanto-1km`.
+- **Vraies routes** (étape 8) : `outils/gpx.py` (GPX → niveau), `borne_km` et `arche_arrivee` dans `contenu/objets/kanto-routes.js`, `VU_LOIN` (outils.js)
+  pour le sol des grandes routes (terrain.js) et le contrôle du sol (note.js) ; le home trainer dans `jeu/capteurs.js` (`brancher`, `perdu`, `penteTrainer`,
+  `fauxHomeTrainer`). Mode d'emploi : `MOTEUR.md`, « Une vraie route ». Lot 3 (tronçons) : construire 600 m devant, libérer 200 m derrière (audit, chantier 2.5).
 - **Tests** : `.github/workflows/tests.yml` (« Tests des règles », à chaque envoi). Sur ce PC, node manque : 3 tests du moteur sont sautés.
   `gh` marche ici.
 
@@ -272,3 +284,43 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   (fourche vue d'en haut sur les rapides), `terre-huit` à vélo ; Passer, Revoir, Reprendre ; 176 tests verts. **Pas encore vu** : la fluidité
   réelle (le panneau de Claude ne l'a pas montrée), la tablette, une vraie séance. Pas de ligne dans 🧪 (c'est dans La Rivière).
   **Envoyé sur GitHub le 15/11** (commit `0ed36ff`, avec l'étape 7 et la correction de `code_a_jour`) : tests verts.
+- **Étape 9 — Forêts, vent, ombres, eau qui coule (15/11/2026, Fable ; plan court accepté, les 4 lots faits d'affilée à la demande de Kiki).**
+  Quatre effets du rendu, **chacun une option** (`EFFETS` dans `moteur/depart.js`) : allumés partout, sauf sur `kanto-1km` (`"effets": false`),
+  au menu (Réglages → Ambiance → « Les effets » : Avec / Sans, gardé sur l'appareil) et dans l'adresse (`?effets=0`, `1`, `eau,vent,foret,ombres`).
+  **L'eau qui coule** : chaque mètre connaît son courant (`courantEau` : ~0,6 m/s dans le sens de la course, plus vite où la rivière se resserre et
+  dans les pentes de plus de 2 %, vers soi autour d'une remontée, nul sur un lac ou la mer) ; les reflets dérivent avec lui, des filets clairs là où
+  ça file, des flocons d'écume en aval d'une chute. **Le vent** : `F.vent(force, y0, y1)` dans les recettes (arbre, arbre lointain, buisson, roseaux,
+  palmier, forêt en masse) ; rafales qui traversent le monde, force selon le temps qu'il fait, par crans de 1/10 s. **Les forêts en masse** :
+  `"forets"` dans les deux régions ; au-delà des arbres posés un à un, une trame d'arbres réduits à leur silhouette jusqu'à 165 m du bord (forêt
+  profonde, bois par taches derrière les prés et les villages, plateau des falaises, fond du ravin) : 800 à 3 200 arbres, 15 000 à 48 000 triangles
+  de plus, 0,03 à 0,2 s de construction ; le décor posé un à un ne bouge pas d'un objet. **Les ombres portées** : une carte de profondeur du soleil
+  (2 048 points, 160 m autour de la caméra), deux tons, bord net, jusqu'à ~70 m ; elles suivent l'heure, s'effacent la nuit, par temps couvert, sous
+  la pluie ; terrain, rives, décor, forêt et ponts en portent, tout le monde solide, l'eau et les routes en reçoivent, **jamais l'intérieur des
+  grottes** ; la carte n'est refaite que 10 fois par seconde au plus. Si la machine peine : les ombres puis la forêt partent en premier (`regler`).
+  **Le filet** : sans effets, les 7 circuits sont ceux d'avant au bit près (piste, sol, tous les maillages du décor, comparés au commit `0ad90d7`) ;
+  `kanto-1km` : 10 captures sur 10 identiques aux références ; nouveau test `test_effets` (177 tests en tout, tous verts sur ce PC) ; budgets tenus (172 000
+  triangles de décor au plus, pour 220 000). Coût à l'affichage sur ce PC (vitrine, 1 024 × 768) : ~6 ms par image sans, ~7,5 ms avec (mesures
+  bruitées dans le panneau de Claude ; une carte d'ombres : ~3,6 ms, une image sur six). Captures de référence des six autres circuits refaites
+  (leur image a changé). **Au passage** : l'outil de captures choisit un port libre (le 8791, fixe, était pris par un autre programme : l'outil
+  attendait pour rien). Pas de ligne dans 🧪 (c'est dans La Rivière). **Limites connues** : les Pokémon et les habitants (des sprites) ne prennent
+  pas l'ombre ; ta monture garde son ombre dessinée ; changer le réglage « Les effets » refait le monde (rechargement) ; l'eau d'un lac garde ses
+  reflets d'avant ; le sens du courant est un choix de mise en scène (une boucle ne peut pas couler partout dans le même sens).
+  **Pas encore vu** : la fluidité réelle et le vent en mouvement (le panneau de Claude ne les montre pas), la tablette, une vraie séance.
+  **À essayer par Kiki** : la vitrine sur la tablette, une minute avec les effets puis sans ; dire, effet par effet, si c'est mieux ou « amateur »
+  (chacun se retire seul : `"effets": {"ombres": false}` dans la région) ; le banc (`&banc=1`) avec et sans, et donner les deux chiffres.
+- **Étape 8 — Route GPS et home trainer, lots 1 et 2 (16/11/2026, Opus ; plan court accepté tel quel).** **Lot 1, une vraie route** : `outils/gpx.py` change un
+  GPX en niveau normal de la terre, à l'échelle 1:1 (forme seulement, aucune coordonnée, GPX hors du dépôt), 5 km au plus, les plus durs par défaut ;
+  virages trop serrés élargis (9 m), tracé et altitude lissés, rives par le relief réel en option (`--relief`, opentopodata), bornes kilométriques de col,
+  arche « SOMMET », kilomètre le plus dur en segment, `allurePente: false` (5 000 m de route = 5 000 vrais mètres). Circuit : « Le Ventoux, la forêt »
+  (`col-ventoux`, les 5 km les plus durs depuis Bédoin, +488 m, 9,8 %, tracé OpenStreetMap par brouter.de). **Au passage, dans le cœur** (petit, nécessaire) :
+  le sol n'est plus calculé ni dessiné à plus de 440 m de la piste (`VU_LOIN`, il ne se voit jamais : sur une route de 5 km le rectangle autour fait
+  2,4 × 4,2 km) ; mailles lointaines plus grandes au-delà de 3 km de piste ; le contrôle du sol ne regardait que des hauteurs sous 200 m et tout le
+  rectangle (535 000 « hauteurs absurdes », 610 « marches » à 1,6 km de la route) : il ne regarde plus que ce qui se voit. Résultat : 0 marche, 0 hauteur
+  absurde. **Lot 2, le home trainer sans appareil** : branchement commun vrai / faux, rebranchement automatique, commandes en file, pente lissée sur 8 m
+  par crans de 0,1 % une fois par seconde au plus, descentes à moitié, réglage « Dureté des pentes » au menu du vélo, **faux home trainer** (menu ou
+  `?faux_trainer=220`), qui ne compte jamais. **Le filet** : 178 tests verts (1 de plus : `VraieRoute`) ; `kanto-1km` : 10 captures sur 10 identiques ;
+  la vitrine et `terre-volcan` diffèrent des références, mais autant avec l'ancien `terrain.js` : ces écarts existaient déjà dans la copie de travail (étape 9),
+  pas de ce lot. Essayé dans Chrome sans fenêtre : la route, les bornes, l'arche, le faux home trainer de bout en bout. **Limites** : 1,25 million de triangles
+  et ~13 s de construction sans carte graphique (à mesurer sur la tablette ; le téléphone risque de peiner : c'est le lot 3) ; le décor des rives ne suit pas
+  la vraie route (lot 4 : OpenStreetMap) ; la note d'un circuit ne convient pas à une vraie route (21/100) ; l'arrivée repart du début. **Pas encore
+  essayé** : la tablette, un vrai home trainer, la page dans l'appli. Pas de ligne dans 🧪 (c'est dans La Rivière).

@@ -15,7 +15,7 @@ function coup(force = .6, muet = false) {   // un geste de la machine ; muet : u
   S.elan = 1; S.coupT = T; sonCoup(force, M.liquide);
   if (M.liquide) { gerbe(S.s, force, M.d, M.y, GABARIT.hw); EAU_U.uCoups.value[S.nb % 4].set(S.s - .3, M.d, COMMUNS.uT.value); }
 }
-function vitesseCapteur(v) { S.v = v; S.capteur = true; if (S.mode === "vraie") S.capteurVu = true; }   // capteurVu : un vrai capteur a fait avancer cette séance (elle peut être gardée)   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
+function vitesseCapteur(v) { S.v = v; S.capteur = true; if (S.mode === "vraie" && !BT.faux) S.capteurVu = true; }   // (16/11) le faux home trainer ne compte jamais   // capteurVu : un vrai capteur a fait avancer cette séance (elle peut être gardée)   // pour un capteur de vitesse continue (home trainer), plus tard : v en vrais m/s
 const cadence = () => { if (BT.cadence !== null && performance.now() - BT.vu < 4000) return BT.cadence; const c = S.coupsT, n = c.length; if (MACHINE.monture === "cycliste" && MACHINE.physique && n < 2) return VELO.cadence || 0; if (n < 2 || S.t - c[n - 1] > 6) return 0; const k = Math.min(4, n - 1); return 60 / ((c[n - 1] - c[n - 1 - k]) / k); };   // (à vélo sans capteur de cadence : celle des pédales qu'on voit tourner)
 
 /* les tours d'un circuit : le chrono part au premier passage de la ligne ; le meilleur tour, par machine de sport, est gardé sur le serveur
@@ -53,24 +53,25 @@ function hud() {
 /* ---- la qualité qui s'adapte : si la machine peine, une image un peu moins fine puis une vue un peu moins longue, tour à tour.
    Si baisser ne change rien (l'écran est bridé, par exemple en économie d'énergie), on remet et on n'insiste pas ; quand tout va bien, on remonte. ---- */
 const IMAGES_MAX = PARAMS.has("eco") ? 30 : 60;   // jamais plus (un téléphone à 120 images/s chaufferait pour rien) ; ?eco=1 : 30
-const QUALITE = {crans: [], bas: 0, haut: 0, essai: null, gel: 0, bloque: 0};
+const QUALITE = {crans: [], bas: 0, haut: 0, essai: null, gel: 0, bloque: 0, vains: {}};   // vains : les effets qu'il n'a servi à rien de couper (on ne réessaie pas)
 function porter(b1) { VISION.b1 = b1; camera.far = b1 + 20; camera.updateProjectionMatrix(); POST.mat.uniforms.uF.value = camera.far; }   // voir moins loin (la brume se rapproche d'autant) : moins de décor à dessiner
-function cran(nom, sens) { if (nom === "finesse") { FINESSE.cran += sens; tailleEcran(); } else porter(VISION.b1 * (sens > 0 ? .82 : 1 / .82)); }
+function cran(nom, sens) { if (nom === "ombres") couperOmbres(sens > 0); else if (nom === "foret") { for (const m of MONDE.foret) m.visible = sens < 0; OMBRES.cle = ""; } else if (nom === "finesse") { FINESSE.cran += sens; tailleEcran(); } else porter(VISION.b1 * (sens > 0 ? .82 : 1 / .82)); }
 function regler(ips) {   // une fois par seconde
   const q = QUALITE;
   if (BANC || PARAMS.has("h") || VUE.mode !== "jeu" || document.visibilityState !== "visible" || T < 4) { q.bas = q.haut = 0; return; }
   if (q.essai) {
     if (--q.essai.attente > 0) return;
     const e = q.essai; q.essai = null;
-    if (e.sens > 0) { if (ips < e.avant * 1.12) { cran(e.nom, -1); q.crans.pop(); q.gel = 90; } }                // baisser n'a rien changé : on remet, et on n'essaie plus pendant 90 s
+    if (e.sens > 0) { if (ips < e.avant * 1.12) { cran(e.nom, -1); q.crans.pop(); if (e.nom === "ombres" || e.nom === "foret") { q.vains[e.nom] = 1; q.gel = 3; } else q.gel = 90; } }                // baisser n'a rien changé : on remet, et on n'essaie plus pendant 90 s
     else if (ips < IMAGES_MAX * .87) { cran(e.nom, 1); q.crans.push(e.nom); q.bloque = 180; }                    // remonter était trop : on redescend
     return;
   }
   if (q.gel > 0) q.gel--; if (q.bloque > 0) q.bloque--;
   q.bas = ips < IMAGES_MAX * .75 && ips > 8 ? q.bas + 1 : 0; q.haut = ips >= IMAGES_MAX * .95 ? q.haut + 1 : 0;
-  if (q.bas >= 2 && !q.gel && q.crans.length < 6) {
-    let nom = q.crans.length % 2 ? "vue" : "finesse";
-    if (nom === "vue" && VISION.b1 <= 220) nom = "finesse"; if (nom === "finesse" && HAUT <= 380) nom = VISION.b1 > 220 ? "vue" : null;
+  const effets = (OMBRES.cible ? ["ombres"] : []).concat((MONDE.foret || []).length ? ["foret"] : []), manque = effets.find(k => !q.crans.includes(k) && !q.vains[k]), autres = q.crans.filter(k => k !== "ombres" && k !== "foret").length;   // d'abord les effets (étape 9 du plan) : les ombres, puis la forêt en masse
+  if (q.bas >= 2 && !q.gel && (manque || autres < 6)) {
+    let nom = manque || (autres % 2 ? "vue" : "finesse");
+    if (!manque) { if (nom === "vue" && VISION.b1 <= 220) nom = "finesse"; if (nom === "finesse" && HAUT <= 380) nom = VISION.b1 > 220 ? "vue" : null; }
     q.bas = 0; if (!nom) return;
     cran(nom, 1); q.crans.push(nom); q.essai = {nom, sens: 1, avant: ips, attente: 3};
   } else if (q.haut >= 20 && q.crans.length && !q.bloque) { const nom = q.crans.pop(); cran(nom, -1); q.essai = {nom, sens: -1, attente: 3}; q.haut = 0; }
@@ -106,7 +107,7 @@ function boucle(now) {
   if (!FILM.actif) { effortMaj(vraiDt); fourchesMaj(); animerFantome(T); animerRivaux(T, vraiDt); }
   rencontresMaj(T, da); animerGouttes(da); animerDecor(T); animerLointain(T);
   sonMaj(S.s, !!tunnel);
-  dessiner(); if (!FILM.actif) hud();
+  effetsMaj(T, AMB.m, AMB.nuit); dessiner(); if (!FILM.actif) hud();
   if (BANC && !BANC.fini) bancImage(ecoule);
   FPS.n++; FPS.t += vraiDt;
   if (FPS.t >= 1) {
@@ -160,13 +161,13 @@ window.__vue = m => {
 };
 window.__piste = () => PISTE.pieces.map(p => [p.titre, Math.round(p.long0 || p.long), p.s1 - p.s0, +(+p.virage).toFixed(1), +(+p.monte || 0).toFixed(1)]);   // les pièces : longueur demandée, longueur réelle, virage, montée
 window.__verif = verifier;
-window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0, S.s); lumieresProches(); animerPublic(T, S, 0); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
+window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); ambianceMaj(0, S.s); lumieresProches(); animerPublic(T, S, 0); effetsMaj(T, AMB.m, AMB.nuit); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
 
 /* ============ le départ : on construit le monde depuis les fichiers, puis on lance ============ */
 (async () => {
   const t0 = performance.now();
   try { await Promise.race([document.fonts.load('20px "Jersey 15"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
-  construireTerrain(); construireMassif(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites(); construireRencontres(); construireFourches();
+  construireTerrain(); construireMassif(); construireRives(); construirePiste(); construirePonts(); construireTunnels(); construireDecor(); construireLointain(); construireAmbiance(); await construireSprites(); construireRencontres(); construireFourches(); construireOmbres();
   window.__pret = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
   const v = verifier(); if (!v.ok) console.warn("Niveau à revoir :\n" + v.erreurs.join("\n"));
   $("hTour").hidden = false; construireProfil(); await preparerRivaux(); $("lVit").textContent = MACHINE.affiche === "kmh" ? "VITESSE" : "ALLURE"; $("uVit").textContent = MACHINE.affiche === "kmh" ? "km/h" : "/500 m";

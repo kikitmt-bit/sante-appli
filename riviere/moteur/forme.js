@@ -10,12 +10,19 @@ const ICO = (() => {  // deux boules à facettes : 20 faces (au loin, les rocher
   return [{V, F}, {V: V2, F: F2}]; })();
 
 class Forme {
-  constructor() { this.p = []; this.n = []; this.c = []; this.m = []; this.md = 2; this.poser(0, 0, 0, 0, 1); }
+  constructor() { this.p = []; this.n = []; this.c = []; this.m = []; this.md = 2; this.w = null; this.poser(0, 0, 0, 0, 1); }
   matiere(m = 2) { this.md = m; return this; }   // la matière de ce qui suit (rendu.js : 2 uni, 3 fenêtre, 7 lampe, 4 lumineux, 5 chute d'eau, 6 eau calme) ; sans argument : retour à l'uni
-  poser(x, y, z, lacet = 0, ech = 1) { this.ox = x; this.oy = y; this.oz = z; this.lacet = lacet; this.cs = Math.cos(lacet); this.sn = Math.sin(lacet); this.k = ech; return this; }
+  poser(x, y, z, lacet = 0, ech = 1) { this.ox = x; this.oy = y; this.oz = z; this.lacet = lacet; this.cs = Math.cos(lacet); this.sn = Math.sin(lacet); this.k = ech; this.vk = 0; this.va = 0; return this; }
+  /* le vent (effets.js) : ce qui suit plie, de rien à la hauteur y0 jusqu'à « force » mètres à la hauteur y1 (dans le repère de l'objet) ; sans argument : ce qui suit ne bouge plus.
+     Chaque objet a sa phase : sa place le long du vent (les rafales traversent une forêt comme une vague) et un tirage. Éteint (EFFETS.vent) : ne fait rien. */
+  vent(force = 0, y0 = 0, y1 = 1) {
+    if (!EFFETS.vent) return this;
+    this.vk = force; this.vy0 = y0; this.vh = Math.max(.01, y1 - y0); this.va = 0;
+    if (force > 0) { this.vph = (this.ox * VENT_DIR[0] + this.oz * VENT_DIR[1]) * .07 + h2(Math.round(this.ox * 3.1), Math.round(this.oz * 3.7)) * 1.4; if (!this.w) this.w = new Array(this.p.length / 3 * 2).fill(0); }
+    return this; }
   monde(x, z) { return [this.ox + (x * this.cs + z * this.sn) * this.k, this.oz + (-x * this.sn + z * this.cs) * this.k]; }   // un point du plan de l'objet, dans le monde
-  v(x, y, z, nx, ny, nz, col, mat) { this.p.push(x, y, z); this.n.push(nx, ny, nz); this.c.push(col[0], col[1], col[2]); this.m.push(mat); }   // un sommet, dans le monde
-  l(P, N, col, mat) { const {cs, sn, k} = this; this.v(this.ox + (P[0] * cs + P[2] * sn) * k, this.oy + P[1] * k, this.oz + (-P[0] * sn + P[2] * cs) * k, N[0] * cs + N[2] * sn, N[1], -N[0] * sn + N[2] * cs, col, mat); }   // un sommet, dans le repère de l'objet
+  v(x, y, z, nx, ny, nz, col, mat) { this.p.push(x, y, z); this.n.push(nx, ny, nz); this.c.push(col[0], col[1], col[2]); this.m.push(mat); if (this.w) this.w.push(this.va, this.va ? this.vph : 0); }   // un sommet, dans le monde
+  l(P, N, col, mat) { const {cs, sn, k} = this; if (this.vk) this.va = this.vk * k * Math.pow(clamp((P[1] - this.vy0) / this.vh, 0, 1), 1.5); this.v(this.ox + (P[0] * cs + P[2] * sn) * k, this.oy + P[1] * k, this.oz + (-P[0] * sn + P[2] * cs) * k, N[0] * cs + N[2] * sn, N[1], -N[0] * sn + N[2] * cs, col, mat); }   // un sommet, dans le repère de l'objet
   tri(a, b, c, col, N, mat = this.md) { this.l(a, N, col, mat); this.l(b, N, col, mat); this.l(c, N, col, mat); }
   quad(a, b, c, d, col, N, mat = this.md) {
     if (mat === 3) mat = 3.02 + .4 * h2(Math.round((a[0] + c[0]) * 3.1 + this.ox * .7), Math.round((a[1] + c[1]) * 2.3 + (a[2] + c[2]) * 1.7 + this.oz * .7));   // une fenêtre : son propre tirage (allumée ou non la nuit, et à quelle heure), le même pour toute la vitre
@@ -84,18 +91,18 @@ class Forme {
     const P = i => { const a = i / n * Math.PI * 2, k = rayons ? rayons[i % n] : 1; return [x + Math.cos(a) * rx * k, y, z + Math.sin(a) * rz * k]; };
     for (let i = 0; i < n; i++) this.tri([x, y, z], P(i), P(i + 1), col, [0, 1, 0]); }
   tapis(x0, z0, x1, z1, col, k = .72, n = 6, mat = null) {  // une surface posée sur le sol, qui en suit le relief : une ombre, un chemin (k = assombrit le sol ; col = sa propre couleur ; mat : sa matière)
-    for (let j = 0; j < n; j++) { const P = [[x0, lerp(z0, z1, j / n)], [x1, lerp(z0, z1, j / n)], [x1, lerp(z0, z1, (j + 1) / n)], [x0, lerp(z0, z1, (j + 1) / n)]].map(([lx, lz]) => { const [X, Z] = this.monde(lx, lz); return [X, hauteur(X, Z) + .07, Z, col || fonce(couleurEn(X, Z), k)]; });
+    this.va = 0; for (let j = 0; j < n; j++) { const P = [[x0, lerp(z0, z1, j / n)], [x1, lerp(z0, z1, j / n)], [x1, lerp(z0, z1, (j + 1) / n)], [x0, lerp(z0, z1, (j + 1) / n)]].map(([lx, lz]) => { const [X, Z] = this.monde(lx, lz); return [X, hauteur(X, Z) + .07, Z, col || fonce(couleurEn(X, Z), k)]; });
       for (const [a, b, c] of [[0, 1, 2], [0, 2, 3]]) for (const i of [a, b, c]) this.v(P[i][0], P[i][1], P[i][2], 0, 1, 0, P[i][3], mat !== null ? mat : col ? 2 : 0); } }
   ombre(x, z, rx, rz) {  // une ombre ronde, sur le sol
-    const [cx, cz] = this.monde(x, z), c0 = fonce(couleurEn(cx, cz), .7), pts = []; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, [X, Z] = this.monde(x + Math.cos(a) * rx, z + Math.sin(a) * rz); pts.push([X, hauteur(X, Z) + .07, Z]); }
+    this.va = 0; const [cx, cz] = this.monde(x, z), c0 = fonce(couleurEn(cx, cz), .7), pts = []; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, [X, Z] = this.monde(x + Math.cos(a) * rx, z + Math.sin(a) * rz); pts.push([X, hauteur(X, Z) + .07, Z]); }
     const yc = hauteur(cx, cz) + .07; for (let i = 0; i < 8; i++) { const A = pts[i], B = pts[(i + 1) % 8]; this.v(cx, yc, cz, 0, 1, 0, c0, 0); this.v(A[0], A[1], A[2], 0, 1, 0, c0, 0); this.v(B[0], B[1], B[2], 0, 1, 0, c0, 0); } }
   maille(materiau = MAT_MONDE) { if (!this.p.length) return null; const g = new THREE.BufferGeometry();
-    g.setAttribute("position", new THREE.Float32BufferAttribute(this.p, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(this.n, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(this.c, 3)); g.setAttribute("mat", new THREE.Float32BufferAttribute(this.m, 1));
+    g.setAttribute("position", new THREE.Float32BufferAttribute(this.p, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(this.n, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(this.c, 3)); g.setAttribute("mat", new THREE.Float32BufferAttribute(this.m, 1)); if (this.w) g.setAttribute("aVent", new THREE.Float32BufferAttribute(this.w, 2));
     return new THREE.Mesh(g, materiau); }
 }
 /* chaque outil de dessin rend la Forme : on peut les enchaîner (F.matiere(3).plaque(…).matiere(2)) */
 for (const k of Object.getOwnPropertyNames(Forme.prototype)) {
-  if (["constructor", "monde", "maille", "v", "l", "tri", "quad", "poly"].includes(k)) continue;   // pas les outils de base, appelés des centaines de milliers de fois
+  if (["constructor", "monde", "maille", "v", "l", "tri", "quad", "poly", "vent"].includes(k)) continue;   // pas les outils de base, appelés des centaines de milliers de fois
   const f = Forme.prototype[k];
   Forme.prototype[k] = function (...a) { const r = f.apply(this, a); return r === undefined ? this : r; };
 }

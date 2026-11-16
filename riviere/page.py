@@ -16,7 +16,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent
-MOTEUR = ["depart", "outils", "piste", "champ", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
+MOTEUR = ["depart", "outils", "piste", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
 JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "film", "parcours", "note", "generateur", "editeur", "banc"]
 PURS = ["depart", "outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)

@@ -17,6 +17,11 @@
   "ravin": {"pour": "terre", "profil": [[0, 0.03], [0.8, 0.06], [1.6, 0.0], [3.5, -2.5], [10, -9], [30, -20], [110, -34]], "sols": [["terre", 1], ["herbe", 3], ["roche", 14], ["herbe_foret", 999]], "paroi": "roche", "bosses": 2.5},
   "cendres": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.5], [30, 3], [110, 12]], "sols": [["cendre", 3], ["basalte", 999]], "paroi": "basalte", "bosses": 2, "particules": "braises"}
  },
+ "forets": [
+  {"nom": "le sous-bois : une masse d'arbres jusqu'au fond", "sur": ["sous_bois"], "bande": [22, 165], "maille": 5.6},
+  {"nom": "des bois par taches, au loin derrière les champs et le village", "sur": ["bas_cote", "champ", "trottoir"], "bande": [58, 165], "maille": 6.2, "bosquets": 0.5},
+  {"nom": "la forêt au fond du ravin", "sur": ["ravin"], "bande": [28, 150], "maille": 6.4, "bosquets": 0.36}
+ ],
  "regles": [
   {"nom": "arbres le long de la route", "objets": {"arbre": 4, "buisson": 2}, "sur": ["bas_cote"], "bande": [5, 40], "pas": 6, "echelle": [0.9, 1.3]},
   {"nom": "buissons du bas-côté", "objets": {"buisson": 1}, "sur": ["bas_cote", "champ"], "bande": [1.5, 5], "pas": 11},

@@ -40,6 +40,7 @@ un seul nombre. Voir « Une fourche ».)
 | `forme.js` | les volumes simples (boîte, toit, boule…) dont sont faits les objets | non |
 | `decor.js` | pose les lieux puis les règles de la région (`poserDecor`) ; les registres `OBJETS`, `RAYON`, `EVENEMENTS` | pose : non |
 | `rendu.js` | la petite image nette agrandie, le contour, le ciel, la brume, les réglages partagés (`COMMUNS`) | oui |
+| `effets.js` | les effets du rendu (étape 9 du plan) : le vent dans les feuillages, les ombres portées ; voir « Les effets du rendu » | oui |
 | `terrain.js` | les maillages du sol : la grille, et le ruban précis des rives | oui |
 | `surfaces.js` | le ruban de la piste (eau, terre, goudron : `SURFACES`), la mer, les ponts | oui |
 | `tunnel.js` | les voûtes et les façades des grottes | oui |
@@ -208,6 +209,39 @@ et l'éditeur le dit. Options d'essai : `habiller: false`, `deplier: false`, `so
 circuits du jeu, du mieux au moins bien noté). Le circuit obtenu est le même que dans le navigateur avec les mêmes options.
 Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (voir « Vérifier sans Kiki »).
 
+## Une vraie route (16/11, étape 8 du plan, lots 1 et 2)
+
+**Un fichier GPX devient un circuit normal** (`outils/gpx.py`) : tracé et pentes à l'échelle 1:1, sur la terre (vélo, skieur de fond).
+`python riviere/outils/gpx.py route.gpx --id col-essai --nom "Le col" [--relief] --ecrire` (bilan sans `--ecrire`).
+- **Ce qui est gardé : la forme** (longueurs, virages, montées), jamais une coordonnée ; le GPX reste hors du dépôt (il peut trahir un domicile).
+  `--relief` demande l'altitude de chaque côté de la route à api.opentopodata.org (les coordonnées partent chez ce service : seulement si on le
+  veut) : talus du côté qui monte, ravin de l'autre, dès 7 m d'écart sur 70 m ; sinon des bois et des bas-côtés par blocs de ~400 m.
+- **Jamais raccourcie** : `--km 5` au plus (le monde est construit d'un bloc ; au-delà : le lot 3, les tronçons) ; sans `--depuis`, l'outil
+  prend les 5 km les plus durs. Le GPS tremble : tracé lissé (`--lisse` 6 m), altitude lissée (`--lisse-alt`, 25 m ; 35 pour un relief SRTM).
+  Un virage plus serré que `--rayon` (9 m) est étalé sur ses voisins : la route tourne d'autant, plus en douceur.
+- **Le niveau** : pièces de 5 à 120 m (tant que virage et pente restent réguliers), `"allurePente": false` (un mètre de route = un vrai mètre,
+  côte ou pas : `TOUR_VRAI` = la vraie longueur ; au skieur de fond, la côte freine quand même le décor : `allureVue` lit alors `PENTE`),
+  `"route"` (km, dénivelé, pente), la ligne au départ, une **borne à chaque kilomètre** (`borne_km` : « SOMMET 3 KM », la pente du kilomètre
+  qui vient, tête verte, jaune, rouge ou noire dès 10 %), le kilomètre le plus dur en segment, l'**arche d'arrivée** (`arche_arrivee`,
+  « SOMMET »). Un parcours ouvert : l'arrivée annonce le temps, puis on repart du début (comme avant).
+- Exemple : `contenu/niveaux/col-ventoux.json` (« Le Ventoux, la forêt » : 5 km, +488 m, 9,8 % de moyenne ; tracé © les contributeurs
+  d'OpenStreetMap, par brouter.de). Sa note est basse (21) : elle juge un circuit inventé (rythme, repères), pas une vraie route.
+- **Le moteur, pour les grandes routes** : les carreaux du sol à plus de `VU_LOIN` (440 m, outils.js) de toute la piste ne sont ni calculés ni
+  dessinés (terrain.js) ; au-delà de 3 km de piste, les carreaux à plus de 160 m ont des mailles quatre fois plus grandes. Le contrôle du sol
+  (`scannerSol`) ne regarde que ce qu'on peut voir et accepte des hauteurs jusqu'au point haut de la piste + 200 m. Budgets des tests : ceux
+  d'un circuit de 2 km, par tranche de 2 km. **Poids mesuré** (5 km) : ~1,25 million de triangles en tout (sol 515 000, décor 484 000),
+  13 s de construction dans Chrome sans carte graphique (4,5 s pour kanto-1km) : à mesurer sur la tablette ; le téléphone risque de peiner.
+
+**Le home trainer** (`jeu/capteurs.js`) : `brancher(app)` s'abonne à tout ce que l'appareil sait dire (vrai ou faux) ; un appareil qui décroche
+est rebranché tout seul (`perdu` : 6 essais en ~40 s, « HOME TRAINER DÉCROCHÉ… », puis « RELIÉ ») ; les commandes passent l'une après l'autre
+(`ecrireCtrl`). **La pente envoyée** (`penteTrainer`) : la moyenne des 8 mètres qui viennent × la **dureté des pentes** (menu vélo, Réglages →
+Capteur Bluetooth : 0, 25, 50, 75, 100 %, gardée `riviere_difficulte`, 50 % par défaut), descentes à moitié, entre −8 et +20 %, par crans de
+0,1 %, au plus une fois par seconde. La vitesse du jeu suit la vraie pente (la physique), seule la résistance dépend de la dureté.
+**Le faux home trainer** (`fauxHomeTrainer`, bouton du menu ou `?faux_trainer=220` = ses watts) : une mesure par seconde, il reçoit la pente,
+pousse plus fort en côte, `window.__faux` (commandes reçues, `couper()`, `refuse`). **Une séance faite avec lui ne compte jamais**
+(`vitesseCapteur` : `BT.faux`). Vérifié avec lui (16/11) : pente juste à 50 et 100 %, séance non gardable, rebranchement, abandon après 6 refus.
+**Jamais essayé avec un vrai home trainer.**
+
 ## Ajouter un objet
 
 Un fichier `.js` dans `contenu/objets/` (ou une recette de plus dans `kanto.js`) :
@@ -223,6 +257,8 @@ Object.assign(OBJETS, {
 
 Les couleurs viennent de la palette de la région (`PAL`), jamais écrites en dur : c'est ce qui permettra à Johto d'avoir ses arbres
 rouges avec les mêmes recettes. **Aucune image dans le décor.** Les règles de pose par densité sont dans la région (`regles`) ; `plat` dans une règle : la rive, à 3 m du bord, ne dépasse pas cette hauteur (les roseaux ne poussent jamais au pied d'une paroi). Refusés par Kiki (11/11) : les hautes herbes en pyramides, les fleurs en cubes.
+Un feuillage qui plie au vent : `F.vent(force, y0, y1)` avant ses formes (il ne bouge pas à la hauteur `y0`, de `force` mètres à la hauteur
+`y1`), `F.vent()` après ; voir « Les effets du rendu ».
 Un objet qui fait réagir la monture : `Object.assign(EVENEMENTS, {tronc: "saut"})` (`"saut"` ou `"plongee"`).
 
 ## Ajouter une région (un autre style)
@@ -231,7 +267,7 @@ Un objet qui fait réagir la monture : `Object.assign(EVENEMENTS, {tronc: "saut"
 qui change (couleurs, arbres, règles en plus ; `regles` à la place de celles du parent). Une ville moderne sans Pokémon : une région qui hérite,
 des rives `quai` et `ville`, des objets `immeuble`, `entrepot`, `lampadaire`, et ses propres recettes. Sinon, tout écrire :
 un fichier `contenu/biomes/<nom>.json` (couleurs du ciel, de l'eau, des sols ; `rives` : un profil de hauteurs par sorte de rive ;
-`palette` des objets ; `regles` de pose ; `terres` : les couleurs de la terre et du goudron), un `contenu/lieux/<nom>.json`, et les
+`palette` des objets ; `regles` de pose ; `forets` : les forêts en masse, voir « Les effets du rendu » ; `terres` : les couleurs de la terre et du goudron), un `contenu/lieux/<nom>.json`, et les
 objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisissent leur région : `"biome": "johto"`.
 
 ## Ajouter une surface, une monture, une machine
@@ -279,8 +315,8 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
   de ce type ; une séance de la montre recouverte à plus de 50 % est remplacée (cœur et calories gardés). Le menu montre la dernière séance de
   sa machine (`D.dernieres`). Ajouter une machine : une ligne dans chacun des deux `MACHINES`.
 - **Capteur Bluetooth** (`jeu/capteurs.js`, Chrome ou Edge) : home trainer, vélo, rameur ou elliptique connecté (FTMS), capteur de puissance,
-  de cadence, ceinture cardio. Un home trainer pilotable reçoit la pente du circuit (`BT.difficulte`, 50 %). **Écrit sans appareil** : la
-  lecture des trames se contrôle par `window.__trames()`, à essayer sur un vrai home trainer.
+  de cadence, ceinture cardio. Un home trainer pilotable reçoit la pente du circuit (voir « Une vraie route », le home trainer). **Écrit sans
+  appareil** : la lecture des trames se contrôle par `window.__trames()`, tout le chemin par le faux home trainer ; à essayer sur un vrai.
 
 ## Les ambiances (ambiance.js, 12/11)
 
@@ -288,6 +324,42 @@ Tout passe par `COMMUNS` (uTeinte, uNuit, uPluie, uNeige, uSombre, la brume) et 
 éclairs) : aucun matériau ne connaît l'heure. Les matières d'un sommet (`F.matiere(n)`) : 3 fenêtre (éclairée la nuit), 7 lampe, 4 lumineux
 (cristal, lave), 5 chute d'eau, 6 eau calme ; `K.lumiere(F, x, y, z, couleur, taille, toujours)` = un halo tramé, et les six lumières les plus proches éclairent vraiment ce qui les entoure (`lumieresProches`). Chaque vitre (matière 3) tire son sort : allumée entière ou éteinte, de plus en plus au crépuscule. Les étoiles sont fixes, d'éclat varié, leur nombre propre à chaque niveau (`"etoiles": 1.5` dans un niveau pour plus). Un repère lointain peut fumer : `K.panache({y, haut, large, vent, duree})`. Une région peut redéfinir `heures`,
 `ambiances`, `particules`. Essai : `window.__ambiance("nuit", "pluie")`, ou `?heure=nuit&meteo=orage`.
+
+## Les effets du rendu (15/11, étape 9 du plan)
+
+Quatre effets, **chacun une option** : `EFFETS.eau`, `.vent`, `.foret`, `.ombres` (`depart.js`). Allumés partout, sauf là où quelqu'un dit non,
+dans cet ordre : la région (`"effets": false`, ou `{"ombres": false}`), le circuit (de même : **`kanto-1km` dit `false`**, il reste identique
+à l'œil), le choix du menu (Réglages, Ambiance, « Les effets » : Avec / Sans, gardé sur l'appareil, `riviere_effets`), l'adresse (`?effets=0`,
+`?effets=1` : tous, même sur un circuit qui dit non, `?effets=eau,vent`). **Éteint, un effet n'ajoute pas une ligne aux shaders ni un triangle
+au monde** : le monde sans effets est celui d'avant, au bit près (vérifié le 15/11 sur les 7 circuits).
+
+- **L'eau qui coule** (`surfaces.js` : `courantEau`, `EAU_COURANT`). Chaque mètre de la piste connaît son courant (`aFlot` : vitesse le long
+  de la piste, remous, calme). L'eau descend la rivière avec toi (~0,6 m/s), plus vite là où elle se resserre ; elle dévale les pentes de plus
+  de 2 % ; autour d'une remontée (la Cascade), elle vient vers toi ; un lac ou la mer n'ont pas de courant. Les reflets naissent, dérivent
+  avec le courant et s'éteignent (deux couches décalées d'une demi-vie) ; là où ça file, des filets clairs ; en aval d'une chute ou de
+  rapides, des flocons d'écume qui s'en vont sur une cinquantaine de mètres. Rien à écrire dans un niveau.
+- **Le vent** (`effets.js`, `forme.js`). Une recette dit ce qui plie : `F.vent(force, y0, y1)`. Arbres, buissons, roseaux, palmiers et la
+  forêt en masse le font. Les rafales traversent le monde dans le sens du vent (`VENT_DIR`, le même que celui des feuilles et de la pluie) ;
+  leur force suit le temps qu'il fait (`uVf` : 0,8 par beau temps, 2 par grand vent ou orage). Le temps du vent avance par crans de 1/10 s :
+  le feuillage bouge comme un sprite animé.
+- **Les forêts en masse** (`decor.js`, après les règles). `"forets"` dans la région : `[{sur, bande, maille, bosquets, objet, pres}]`. Sur les
+  rives nommées, entre `bande[0]` et `bande[1]` mètres du bord, une trame de `maille` mètres d'arbres réduits à leur silhouette (`arbre_masse` :
+  15 triangles, 30 à moins de `pres` = 62 m) ; `bosquets` (de 0 à 1) : seulement par taches, avec des clairières. Elles ont leur propre hasard
+  et passent après tout le reste : **le décor posé un à un ne bouge pas d'un objet**. Plafond : `forets_max` arbres (3 200), éclairci partout
+  pareil s'il est dépassé. Rangées par carrés de 64 m (maillages « foret », `MONDE.foret`, `MONDE.masse`). Poids : 15 000 à 48 000 triangles
+  de plus par circuit, 0,03 à 0,2 s de construction.
+- **Les ombres portées** (`effets.js`). Le soleil « photographie » le monde autour de la caméra (carte de profondeur de 2 048 points pour
+  160 m de côté) ; `ombreEn(point, normale, distance)` dans les shaders dit si un point est caché du soleil. Deux tons, bord net, jusqu'à
+  ~70 m de la caméra. Portent une ombre : terrain, rives, décor, forêt, ponts. En reçoivent : tout le monde solide (`MAT_MONDE`), l'eau (qui
+  fonce et brille moins), les routes. **Les grottes n'en reçoivent pas** (`MAT_ABRI` pour les voûtes et le décor posé dans une grotte, `aAbri`
+  sur la piste) : elles gardent leur lumière. Elles suivent l'heure, s'effacent la nuit, sous un ciel couvert, la pluie, la brume. La carte
+  n'est refaite que si la caméra a avancé d'un cran de 10 m, si le soleil a tourné, ou quand le vent bouge les feuillages (10 fois par seconde
+  au plus). La monture garde son ombre dessinée (elle bouge à chaque image).
+
+Si la machine peine (`regler`, jeu.js), les effets partent en premier : les ombres, puis la forêt en masse, puis seulement la finesse et la
+vue ; ils reviennent quand tout va bien. Coût mesuré le 15/11 sur ce PC (image de 1 024 × 768, vitrine) : environ 6 ms par image sans,
+7,5 ms avec (mesures bruitées dans le panneau de Claude : le vrai verdict est `?banc=1` sur la tablette, avec puis sans).
+Essais : `?effets=0`, `?effets=ombres`, `?meteo=vent`, `?heure=soir` (ombres longues), `OMBRES.images` (cartes refaites), `MONDE.masse`.
 
 ## Le jeu
 
@@ -367,6 +439,7 @@ Le circuit du jour a une fourche deux jours sur cinq (`jour.options`, jamais dan
 | `?surface=terre`, `?machine=elliptique`, `?machine=velo`, `?eco=1` | le circuit sur la terre, une autre machine, 30 images par seconde |
 | `?vitrine=1`, `?tenue=Peau,Casquette,Veste,Pantalon`, `?habits=casquette,sac,short` | à vélo : la caméra tourne autour du cycliste ; une autre tenue (noms de la carte du dresseur) ; des habits de la garde-robe |
 | `?heure=nuit&meteo=pluie`, `__ambiance(h, m)` | une ambiance |
+| `?effets=0`, `?effets=1`, `?effets=eau,vent,foret,ombres` | les effets du rendu : aucun, tous (même sur un circuit qui dit non), seulement ceux-là |
 | `?voie=1`, `?voie=0` | dans une fourche : toujours la voie « force » (pour la regarder, avec `?s=` et `?fige=1`), toujours la calme ; sans rien : c'est l'effort qui choisit |
 | `?nageur=131`, `changerNageur(130)` | un autre Pokémon dans l'eau (ceux de `contenu/nageurs.json`), à sa vraie taille |
 | `__generer({km, relief, avec})`, `__trames()` | le générateur ; la lecture des trames Bluetooth |
@@ -387,5 +460,7 @@ avec des temps qui avancent de 16,7 ms.
 - Un circuit sans fourche reste identique au mètre et à l'image près : tout ce qui touche aux fourches est derrière `PISTE.NF`, `PISTE.INT`
   ou `PISTE.VO` (qui valent zéro sans fourche). Après une retouche du cœur : `python riviere/outils/captures.py compare` (les Pokémon, les particules et le cycliste à l'arrêt bougent d'une
   prise à l'autre : jusqu'à ~1 % de pixels isolés n'est pas un défaut ; un pan de décor qui change en est un).
+- **Les effets du rendu restent des options** (`EFFETS`) : tout ce qu'ils ajoutent est derrière `EFFETS.<nom>`, et `kanto-1km` n'en a aucun.
+  Sans effets, le monde est celui d'avant au bit près (contrôlé : `test_effets` ; images : `captures.py compare --niveau kanto-1km`).
 - Une instruction par ligne quand c'est possible, et **jamais de code derrière un commentaire de fin de ligne** (contrôlé).
 - Dépôt public : aucune donnée, aucun jeton. Les sprites sont lus en ligne (CC BY-NC), jamais copiés ici.
