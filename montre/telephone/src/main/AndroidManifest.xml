@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Test audio montre (TestAudio.kt) : brancher la montre comme micro et haut-parleur, le temps d'un essai -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <queries>
+        <package android:name="com.anthropic.claude" />
+    </queries>
+
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_lanceur"
@@ -16,6 +28,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Essai : la montre comme micro et haut-parleur du téléphone (icône à part « Test audio montre ») -->
+        <activity
+            android:name=".TestAudio"
+            android:exported="true"
+            android:label="Test audio montre"
+            android:taskAffinity="fr.kiki.pokemontre.testaudio">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service
+            android:name=".GardeAudio"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
 
         <!-- Lit les notifications du téléphone et envoie les messages à la montre -->
         <service
