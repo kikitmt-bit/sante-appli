@@ -19,11 +19,14 @@ android {
         applicationId = "fr.kiki.pokemontre"
         minSdk = 30
         targetSdk = 34
-        versionCode = 20
-        versionName = "20.0"
+        versionCode = 21
+        versionName = "21.0"
         buildConfigField("String", "SCRIPT_URL", "\"${secret.getProperty("SCRIPT_URL", "")}\"")
         buildConfigField("String", "JEU_CLE", "\"${secret.getProperty("JEU_CLE", "")}\"")
         buildConfigField("String", "APPLI_CLE", "\"${secret.getProperty("APPLI_CLE", "")}\"")
+        // « Claude direct » : le relais vocal du PC (montre/relais/relais.py)
+        buildConfigField("String", "RELAIS_ADR", "\"${secret.getProperty("RELAIS_ADR", "")}\"")
+        buildConfigField("String", "RELAIS_CLE", "\"${secret.getProperty("RELAIS_CLE", "")}\"")
     }
     buildFeatures { buildConfig = true }
     buildTypes {

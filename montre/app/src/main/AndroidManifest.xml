@@ -4,6 +4,8 @@
     <uses-feature android:name="android.hardware.type.watch" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Claude direct : rallumer le Wi-Fi si le PC n'est pas joignable par le téléphone -->
+    <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Claude : la montre suit la réponse écran éteint (SuiviClaude) -->
@@ -122,6 +124,20 @@
             <intent-filter>
                 <action android:name="android.intent.action.VOICE_COMMAND" />
                 <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- « Claude direct » (essai) : conversation à voix haute, par le relais du PC (Vocal.kt) -->
+        <activity
+            android:name=".VocalActivity"
+            android:exported="true"
+            android:icon="@drawable/ic_claude_lanceur"
+            android:label="Claude direct"
+            android:launchMode="singleTask"
+            android:taskAffinity="fr.kiki.pokemontre.vocal">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
