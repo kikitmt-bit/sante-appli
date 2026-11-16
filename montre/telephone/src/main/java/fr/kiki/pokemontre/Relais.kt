@@ -84,6 +84,11 @@ class Accueil : Activity() {
         setContentView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER; setPadding(m, m, m, m); setBackgroundColor(0xFF14110F.toInt())
             addView(etat); addView(bouton, LinearLayout.LayoutParams(-1, -2).apply { topMargin = m })
+            // Essai du 17/11 : la montre comme micro et haut-parleur du téléphone (aussi par l'icône « Test audio montre »)
+            addView(Button(context).apply {
+                text = "Test audio montre"
+                setOnClickListener { startActivity(Intent(context, TestAudio::class.java)) }
+            }, LinearLayout.LayoutParams(-1, -2).apply { topMargin = m })
         })
     }
 
