@@ -420,6 +420,21 @@ function verifier() {
     else if (!bon) erreurs.push("La piste se croise au mètre " + i + " et au mètre " + j + " sans pont : il faut une pièce « pont » au-dessus, 4,5 m plus haut au moins (ici " + Math.abs(dy).toFixed(1) + " m).");
    }
   }
+  // (17/11, Kiki : le circuit du jour du 16/11, deux routes superposées en biais sur 30 m, l'une 1 à 2 m au-dessus de l'autre, des trous dans
+  // la route) deux passages qui se RECOUVRENT sans que leurs lignes du milieu se coupent : le contrôle d'avant ne les voyait pas. Un recouvrement
+  // n'est permis qu'autour d'un vrai croisement (carrefour franc ou pont, ci-dessus) ou sous un pont / dans un tunnel 4,5 m plus bas.
+  let recouvre = null;
+  for (let i = 0; i < N && !recouvre; i += pas) { const cx = Math.floor(P.X[i] / GV), cz = Math.floor(P.Z[i] / GV);
+    for (let a = -1; a <= 1 && !recouvre; a++) for (let b = -1; b <= 1 && !recouvre; b++) for (const j of grille.get((cx + a) + "," + (cz + b)) || []) {
+      const ds = BOUCLE ? Math.min(j - i, N - j + i) : j - i, ww = P.W[i] + P.W[j];   // un autre passage, pas la même étendue d'eau (un lac large : deux points proches se touchent forcément)
+      if (j < i + 30 || ds < 30 + 2 * ww) continue;
+      if (Math.hypot(P.X[i] - P.X[j], P.Z[i] - P.Z[j]) >= ww - .5) continue;
+      if (Math.abs(P.Y[i] - P.Y[j]) >= 4.5 && (P.PONT[i] || P.PONT[j] || P.TUN[i] || P.TUN[j])) continue;
+      const dy = Math.abs(P.Y[i] - P.Y[j]);   // autour d'un carrefour, les deux routes doivent rester à plat l'une par rapport à l'autre (une qui monte, l'autre qui descend : des trous)
+      if (croisements.some(c => c.bon && Math.abs(c.s1 - i) < 40 && Math.abs(c.s2 - j) < 40 && (!c.carrefour || dy < .4))) continue;
+      recouvre = [i, j, dy]; break;
+    } }
+  if (recouvre) erreurs.push("Deux passages de la piste se recouvrent aux mètres " + recouvre[0] + " et " + recouvre[1] + " (" + recouvre[2].toFixed(1) + " m de haut entre eux) : écarter les deux routes, ou un vrai carrefour (à plat, à la même hauteur, plus de 25°), ou un pont 4,5 m plus haut.");
   // les voies « force » des fourches : leurs virages, leurs pentes, et elles ne touchent le reste du circuit qu'à leurs deux bouts
   for (const v of P.voies) {
     for (const p of P.pieces) { if (!p.voie || P.voies[p.voie - 1] !== v || !p.virage) continue;

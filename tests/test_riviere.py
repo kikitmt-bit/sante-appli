@@ -62,14 +62,15 @@ class Fichiers(unittest.TestCase):
 
     def test_cycliste_sprite(self):
         """La planche du dresseur à vélo en sprite (outils/atelier_velo.py) : 4 animations sous 7 angles, rangées comme la fiche le dit."""
-        c = _page.cycliste_sprite()
-        self.assertIsNotNone(c, "contenu/montures/cycliste.png ou .json manque : python riviere/outils/atelier_velo.py")
-        f = c["fiche"]
-        self.assertEqual({(g["etat"], g["deg"]) for g in f["rangs"]}, {(e, d) for e in ("assis", "danseuse", "ramasse", "arret") for d in (0, 12, 25, 45, 90, 135, 180)})
-        png = (C / "montures" / "cycliste.png").read_bytes()   # la taille de l'image, lue dans l'en-tête du PNG (sans bibliothèque : GitHub n'a pas Pillow)
-        self.assertEqual(png[:4], bytes([137, 80, 78, 71]))
-        self.assertEqual((int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")), (f["w"] * 8, f["h"] * len(f["rangs"])))
-        self.assertTrue(set(f["cles"]) >= {"peau", "cas", "ves", "pan"})
+        for nom in ("cycliste", "cycliste_seul"):   # le dresseur et son vélo ; le dresseur seul, pour le vélo 3D (atelier_velo.py --seul)
+            c = _page.cycliste_sprite(nom)
+            self.assertIsNotNone(c, f"contenu/montures/{nom}.png ou .json manque : python riviere/outils/atelier_velo.py")
+            f = c["fiche"]
+            self.assertEqual({(g["etat"], g["deg"]) for g in f["rangs"]}, {(e, d) for e in ("assis", "danseuse", "ramasse", "arret") for d in (0, 12, 25, 45, 90, 135, 180)})
+            png = (C / "montures" / f"{nom}.png").read_bytes()   # la taille de l'image, lue dans l'en-tête du PNG (sans bibliothèque : GitHub n'a pas Pillow)
+            self.assertEqual(png[:4], bytes([137, 80, 78, 71]))
+            self.assertEqual((int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")), (f["w"] * 8, f["h"] * len(f["rangs"])))
+            self.assertTrue(set(f["cles"]) >= {"peau", "cas", "ves", "pan"})
         js = (C / "montures" / "cycliste_sprite.js").read_text(encoding="utf-8")
         self.assertIn("MONTURES.cycliste3D = TROIS_D", js)  # le vélo 3D reste disponible (réglage « Ton cycliste »)
 

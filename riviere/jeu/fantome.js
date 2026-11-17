@@ -32,7 +32,7 @@ function animerFantome(t) {
     F.pantin = new Pantin(nageur.pl, 4, 1, nageur.h); F.pantin.enfonce = nageur.enfonce; const m = F.pantin.m.material; m.transparent = true; m.opacity = .7; m.depthWrite = false;   // à la même taille que toi
     m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.88, .94, 1.), .65);"); }; }
   if (VELO.g && VELO.g.visible && typeof copierCycliste === "function") {   // à vélo : le fantôme est une copie de ton vélo et de ton cycliste, son Pokémon dans le panier (cycliste.js)
-    copierCycliste(F.sG, F.pantin, t); if (F.pantin) F.pantin.m.visible = F.sG !== null; return; }
+    copierCycliste(F.sG, F.pantin, t); if (F.pantin) F.pantin.m.visible = F.sG !== null; if (typeof fantomeCyclisteSurVelo === "function") fantomeCyclisteSurVelo(F.sG); return; }
   if (!F.pantin) return;
   F.pantin.m.visible = F.sG !== null;
   if (F.sG === null) return;

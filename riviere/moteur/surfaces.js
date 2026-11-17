@@ -131,10 +131,9 @@ const ROUTE_FS = `${PORTEE_FS} ${EFFETS.ombres ? "varying float vAbri;" : ""}
     } else {
       if (marque && vBord < .5 + o) c = uBordC;                                                      // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
     }
-    if (uOmbre.x > 0. && (vVoie < .5 || abs(vVoie - uVoie) < .5)) { float ds = vSU.x - uNag.x, du = vSU.y - uNag.y, h = uOmbre.y, k = 1. / (1. + h * .35);   // l'ombre : une ellipse tramée, plus petite et plus pâle quand on saute
-      float e = length(vec2((ds + .1) / ((uOmbre.z > .5 ? 1.05 : .55) * k), du / ((uOmbre.z > .5 ? .34 : .42) * k)));
-      if (e < 1. && h21(floor(vW.xz * 9.)) > smoothstep(.55, 1., e) * .9) c *= 1. - .3 * uOmbre.x * k;
-      if (uOmbre.z > .5 && uMode < .5 && ds < -.9 && ds > -16. && abs(du) < .05) c *= 1. - .16 * (1. + ds / 16.); }   // la trace du pneu, sur un chemin
+    if (uOmbre.x > 0. && (vVoie < .5 || abs(vVoie - uVoie) < .5)) { float ds = vSU.x - uNag.x, du = vSU.y - uNag.y, h = uOmbre.y, k = 1. / (1. + h * .35);   // l'ombre : une ellipse simple, plus petite et plus pâle quand on saute
+      float e = length(vec2((ds + .1) / ((uOmbre.z > .5 ? .95 : .55) * k), du / ((uOmbre.z > .5 ? .26 : .42) * k)));   // (17/11, Kiki : l'ombre tramée et la trace du pneu, « complexe et moche ») : deux tons nets, rien d'autre
+      if (e < 1.) c *= 1. - (e < .62 ? .3 : .17) * uOmbre.x * k; }
     ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ) * (1. - vAbri));   // les ombres portées (effets.js)" : ""}
     c *= 1. - .16 * uPluie;                                                                           // mouillée, elle fonce
     gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;

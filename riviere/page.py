@@ -155,10 +155,10 @@ def trotteurs():
     return {"defaut": n.get("defaut"), "liste": [{**p, "taille": p.get("taille") or TAILLES.get(p["num"])} for p in n["liste"]]}
 
 
-def cycliste_sprite():
-    """La planche du dresseur à vélo en sprite (contenu/montures/cycliste.png et .json, dessinée par outils/atelier_velo.py : notre propre dessin).
-    None si elle manque : le jeu montre alors le vélo 3D."""
-    png, fiche = RACINE / "contenu" / "montures" / "cycliste.png", RACINE / "contenu" / "montures" / "cycliste.json"
+def cycliste_sprite(nom="cycliste"):
+    """La planche du dresseur à vélo en sprite (contenu/montures/cycliste.png et .json, dessinée par outils/atelier_velo.py : notre propre dessin) ;
+    nom="cycliste_seul" : le dresseur sans vélo, pour le vélo 3D. None si elle manque : le jeu montre alors le vélo 3D."""
+    png, fiche = RACINE / "contenu" / "montures" / f"{nom}.png", RACINE / "contenu" / "montures" / f"{nom}.json"
     if not png.exists() or not fiche.exists():
         return None
     return {"png": "data:image/png;base64," + base64.b64encode(png.read_bytes()).decode(), "fiche": json.loads(fiche.read_text(encoding="utf-8"))}
@@ -167,7 +167,7 @@ def cycliste_sprite():
 def donnees_js(donnees, niveaux, biomes, lieux, lot, servi, sprites=True):
     return (f"const D = {_js(donnees or {})}, NIVEAUX = {_js(niveaux)}, BIOMES = {_js(biomes)}, LIEUX_TOUS = {_js(lieux)}, LOT = {_js(lot)}, "
             f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})}, NAGEURS = {_js(nageurs())}, TROTTEURS = {_js(trotteurs())}, "
-            f"CYCLISTE_SPRITE = {_js(cycliste_sprite() if sprites else None)};")
+            f"CYCLISTE_SPRITE = {_js(cycliste_sprite() if sprites else None)}, CYCLISTE_SEUL = {_js(cycliste_sprite('cycliste_seul') if sprites else None)};")
 
 
 def source_piste():

@@ -125,6 +125,7 @@ function animerVelo(t, dt, S, p, y, N) {
   // ton dresseur sur la selle (cycliste.js : il pédale, tient le guidon, se met en danseuse…), ton Pokémon dans le panier
   const e = {c, v, roule, libre, balance, vibre};
   if (typeof animerCycliste !== "function") return;   // une page assemblée pendant une mise à jour de l'appli (12/11) : le vélo seul, plutôt qu'un plantage
+  if (typeof cyclisteSurVelo === "function" && cyclisteSurVelo(t, dt, S, e)) { animerPanier(t, dt, S, N, e); return; }   // (17/11) le vélo 3D avec ton dresseur en pixels (contenu/montures/cycliste_sprite.js)
   animerCycliste(t, dt, S, e); g.updateMatrixWorld(); animerPanier(t, dt, S, N, e);
 }
 function cacherVelo() { if (VELO.g) { VELO.g.visible = false; VELO.lampe.y = -999; } if (typeof cacherFantomeVelo === "function") cacherFantomeVelo(); if (typeof nageur !== "undefined" && nageur && nageur.m.rotation.z) { nageur.m.rotation.z = 0; nageur.m.scale.set(nageur.l, nageur.h, 1); } }

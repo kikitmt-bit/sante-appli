@@ -3,10 +3,11 @@
 Object.assign(RAYON, {glissiere: .2, poteau: .3, borne: .3, meule: 1.6, borne_km: .5, arche_arrivee: 0});
 Object.assign(OBJETS, {
   glissiere(F, o) {  // une glissière de sécurité au bord d'un ravin : 5 m de lisse en acier sur ses poteaux, un catadioptre
-    const L = o.long || 5, acier = hex("#B8BEC8"), sombre = hex("#7C828E");
-    for (let x = -L / 2 + .3; x < L / 2; x += 1.25) F.boite(x, -.4, -.12, .1, 1.1, .1, sombre);
-    F.boite(0, .38, 0, L, .32, .06, acier, {haut: fonce(acier, 1.1)}); F.boite(0, .5, -.04, L, .06, .06, fonce(acier, .82));
-    F.boite(0, .5, .05, .1, .1, .03, hex("#F0A030")); },
+    const L = o.long || 5, acier = hex("#B8BEC8"), sombre = hex("#7C828E");   // (17/11) chaque poteau sur le sol, la lisse suit la pente
+    for (let x = -L / 2 + .3; x < L / 2; x += 1.25) F.boite(x, solLocal(F, x, -.12) - .4, -.12, .1, 1.1, .1, sombre);
+    const xs = [-L / 2, -L / 4, 0, L / 4, L / 2], ys = xs.map(x => solLocal(F, x));
+    for (let k = 0; k + 1 < xs.length; k++) { lisseEnPente(F, xs[k], ys[k] + .38, xs[k + 1], ys[k + 1] + .38, 0, .32, .06, acier, fonce(acier, 1.1)); lisseEnPente(F, xs[k], ys[k] + .5, xs[k + 1], ys[k + 1] + .5, -.04, .06, .06, fonce(acier, .82)); }
+    F.boite(0, ys[2] + .5, .05, .1, .1, .03, hex("#F0A030")); },
   poteau(F, o, R) {  // un poteau télégraphique en bois, sa traverse et ses isolateurs
     const b = PAL.tronc, h = 6.6 + R() * .8;
     F.cyl(0, -.3, 0, .15, .11, h, 6, b[0], b[1]); F.boite(0, h - .9, 0, .14, .14, 1.7, b[0]);

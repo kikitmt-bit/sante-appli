@@ -54,7 +54,7 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   CAM.choc = Math.max(0, CAM.choc - (dt || 0) * 1.6);                          // une retombée : une petite secousse
   camera.position.set(c.x, CAM.y + CAM.saut - CAM.choc * Math.abs(Math.sin(T * 30)) * .25, c.z);
   cam_cv.set(d.x, CAM.ly + CAM.saut * .6, d.z);
-  const spr = !velo && typeof cycActif === "function" && cycActif(), vit = velo || spr ? vitrine(dt, S, spr ? CYC.m.position : null) : 0; camera.lookAt(cam_cv);   // (17/11) le cycliste en sprite : contenu/montures/cycliste_sprite.js
+  const spr = !velo && typeof cycActif === "function" && cycActif(), vit = velo || spr ? vitrine(dt, S, spr ? CYC_PL.velo.m.position : null) : 0; camera.lookAt(cam_cv);   // (17/11) le cycliste en sprite : contenu/montures/cycliste_sprite.js
   const roulis = clamp(-P.COURB[idx(S.s + 3)] * 1.5, -.11, .11) * (.35 + .65 * Math.min(1, S.vn));   // elle se penche dans le virage, d'autant plus qu'on va vite
   CAM.roulis += (roulis - CAM.roulis) * (net ? 1 : 1 - Math.exp(-dt / .35));
   camera.rotateZ(CAM.roulis * (1 - vit));

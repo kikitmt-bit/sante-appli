@@ -156,7 +156,7 @@ Kiki : un circuit de vélo n'est pas « la rivière sans l'eau ». Chaque circui
 La machine choisie au menu dit l'activité (rameur → eau ; vélo, elliptique → terre) : le menu ne propose que les circuits de cette activité, et chaque activité garde son circuit (`riviere_niveau_eau` / `riviere_niveau_terre`). Un circuit d'eau ne se change jamais en chemin (l'ancien `riviere_surface` et `?surface=` ne servent plus).
 
 Possibilités propres à la terre :
-- **un 8** (`"boucle": "huit"`) : la dernière pièce au virage `"auto"` annule les virages des autres ; la piste se croise **à niveau** (un carrefour : `CROIX` dans piste.js, aucun marquage dans le carrefour, le passage du dessus dessiné par-dessus, pas de rive ni de décor sur l'autre route). Le contrôleur accepte un croisement à la même hauteur (moins de 0,8 m d'écart) s'il est franc (plus de 25°) ; sinon un pont 4,5 m plus haut.
+- **un 8** (`"boucle": "huit"`) : la dernière pièce au virage `"auto"` annule les virages des autres ; la piste se croise **à niveau** (un carrefour : `CROIX` dans piste.js, aucun marquage dans le carrefour, le passage du dessus dessiné par-dessus, pas de rive ni de décor sur l'autre route). Le contrôleur accepte un croisement à la même hauteur (moins de 0,8 m d'écart) s'il est franc (plus de 25°) ; sinon un pont 4,5 m plus haut. **(17/11, Kiki)** Le carrefour doit aussi rester à plat (moins de 40 cm d'écart) sur toute la zone où les deux routes se recouvrent, et deux passages qui se recouvrent sans se croiser franchement sont refusés (`verifier`, « se recouvrent ») : le circuit du jour du 16/11 avait une grande descente posée en biais sur la montée du début, 1 à 2 m plus haut, avec des trous. Le générateur tire alors un autre circuit.
 - **une montagne au milieu d'une boucle** (`"massif": {"haut": 190, "rayon": 0.82, "cratere": true}`) : un volcan dont on fait le tour, cendre en haut, herbe au pied, un cratère qui rougeoie et fume (`MASSIF` dans champ.js, `construireMassif` dans terrain.js).
 - des pentes jusqu'à 10 % (le générateur en met jusqu'à 250 m de montée).
 
@@ -378,6 +378,15 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
     filtré) et la bascule s'efface vue de côté (× cosinus de l'angle de la caméra). Ombre et trace du pneu (`OMBRE_U`, comme le vélo 3D),
     poussière de la roue arrière (`trace` de la monture). Ton Pokémon (celui du circuit) court à côté, à sa vraie taille, un peu devant à ta
     gauche, saute de joie à chaque tour. Le fantôme : le même cycliste en transparence, 1,8 m à droite (`fantomeCyclisteSprite`).
+  - **Trois façons de voir ton cycliste** (17/11, Kiki) : menu « Ton cycliste » (`riviere_cycliste`, `?cycliste=sprite|mixte|3d`, `CYC.choisir`,
+    tout de suite) : **Tout en pixels** (par défaut), **Vélo 3D, dresseur en pixels** (`mixte` : le vélo 3D de velo.js avec son panier et
+    ton Pokémon dedans, et ton dresseur en pixels dessus : planche `cycliste_seul.png` + `.json`, `atelier_velo.py --seul`, le dresseur sans
+    vélo, calé sur le vélo 3D : son pédalier (-.02, .30), ses pédales à 13,5 cm, ses poignées, sa selle ; à l'arrêt il penche à droite
+    comme le vélo 3D et pose le pied droit), **Tout en 3D** (le dresseur à facettes). En `mixte`, velo.js appelle `cyclisteSurVelo` à la
+    place du dresseur à facettes : l'image du pédalier suit `VELO.pedale` (image = (pédale + π/2) / 45°), la bascule suit `VELO.incl`, et
+    l'image est avancée de 38 cm vers la caméra (`devant`) : devant le cadre et la selle, derrière le panier ; le fantôme : `fantomeCyclisteSurVelo`.
+  - **Les roues sur le sol** (17/11, Kiki : elles rentraient dans le sol) : vu d'un peu au-dessus, la roue la plus proche descend sous le
+    point d'appui ; chaque rangée de la planche connaît son plus bas pixel (`pl.bas`) et l'image est relevée d'autant (`leve`).
   - Accroches dans le cœur : `monture.js` appelle `mt.animer` avant de demander le Pokémon (le cycliste s'anime même sans lui) ;
     `camera.js` : la vitrine du menu tourne aussi autour du cycliste en sprite (`vitrine(dt, S, ancre)`), sans le décalage de côté du vélo
     3D ; `cacherVelo` cache aussi le sprite (redéfini dans cycliste_sprite.js). Records : les mêmes qu'en 3D (même machine, même vue).
@@ -397,6 +406,12 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
 - **Capteur Bluetooth** (`jeu/capteurs.js`, Chrome ou Edge) : home trainer, vélo, rameur ou elliptique connecté (FTMS), capteur de puissance,
   de cadence, ceinture cardio. Un home trainer pilotable reçoit la pente du circuit (voir « Une vraie route », le home trainer). **Écrit sans
   appareil** : la lecture des trames se contrôle par `window.__trames()`, tout le chemin par le faux home trainer ; à essayer sur un vrai.
+
+- **L'ombre de la monture** (`surfaces.js`, `OMBRE_U` ; 17/11, Kiki : l'ombre tramée et la trace du pneu, « complexe et moche ») : une ellipse
+  simple à deux tons nets (vélo : 0,95 × 0,26 m ; un Pokémon : 0,55 × 0,42 m), plus petite et plus pâle quand on saute ; plus de trace du pneu.
+- **Ce qui suit le sol** (`contenu/objets/kanto.js` : `solLocal`, `lisseEnPente` ; 17/11, Kiki : dans les côtes, les barrières s'enfonçaient
+  puis flottaient) : la barrière blanche et la glissière posent chaque poteau sur le sol à sa place et leurs lisses suivent la pente d'un
+  poteau à l'autre. Un nouvel objet long (clôture, muret) fait de même.
 
 ## Les ambiances (ambiance.js, 12/11)
 

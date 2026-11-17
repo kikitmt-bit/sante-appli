@@ -4,6 +4,12 @@
 Object.assign(RAYON, {arbre_masse: 1.7, arbre: 2.3, arbre_loin: 3.1, buisson: 1, rocher: 1.2, roseaux: .5, maison: 6, labo: 11, centre: 8, boutique: 7, eolienne: 2, panneau: 1.6, barriere: .3, boite_lettres: .4, lampadaire: .4, pokemon: .8, habitant: .6, chemin: 0, tronc: 0, rondins: 0, ligne: 0});
 const BLANC = [1, 1, 1];
 Object.assign(EVENEMENTS, {tronc: "saut", rondins: "plongee"});   // ces objets font réagir ton Pokémon quand il arrive dessus
+/* (17/11, Kiki : dans les côtes, les barrières s'enfonçaient dans le sol puis flottaient) ce qui suit le sol, poteau par poteau */
+function solLocal(F, x, z = 0) { const [wx, wz] = F.monde(x, z); return (hauteur(wx, wz) - F.oy) / F.k; }   // la hauteur du sol sous un point de l'objet (dans son repère)
+function lisseEnPente(F, x0, y0, x1, y1, z, h, e, col, haut) {   // une lisse de x0 à x1, sa base à y0 puis y1 (elle suit la pente) ; h de haut, e d'épaisseur
+  const c = z - e / 2, d = z + e / 2, A = (x, y, zz) => [x, y, zz];
+  F.quad(A(x0, y0, d), A(x1, y1, d), A(x1, y1 + h, d), A(x0, y0 + h, d), col, [0, 0, 1]); F.quad(A(x1, y1, c), A(x0, y0, c), A(x0, y0 + h, c), A(x1, y1 + h, c), col, [0, 0, -1]);
+  F.quad(A(x0, y0 + h, d), A(x1, y1 + h, d), A(x1, y1 + h, c), A(x0, y0 + h, c), haut || col, [0, 1, 0]); F.quad(A(x1, y1, d), A(x0, y0, d), A(x0, y0, c), A(x1, y1, c), col, [0, -1, 0]); }
 /* les pièces communes aux bâtiments */
 function fenetre(F, x, y, w, h, z, barres = 1) {  // un cadre blanc, une vitre bleue, des montants
   F.plaque(x - w / 2 - .12, y - .12, x + w / 2 + .12, y + h + .12, z + .03, BLANC); F.matiere(3).plaque(x - w / 2, y, x + w / 2, y + h, z + .06, PAL.vitre); F.matiere(2);
@@ -36,9 +42,10 @@ Object.assign(OBJETS, {
   rocher(F, o, R) { F.ombre(.2, 0, 1.4, 1.2); F.caillou(0, .25, 0, 1.1, .8, .95, PAL.pierre, R); if (R() < .5) F.caillou(.9, .1, .4, .5, .4, .5, PAL.pierre, R); },
   // (hautes herbes en pyramides et fleurs en cubes : retirées, Kiki, 11/11)
   roseaux(F, o, R) { F.vent(.2, -.1, 1.1); for (let k = 0; k < 4; k++) { const x = (R() - .5) * 1.4, z = (R() - .5) * .5, h = .55 + R() * .5; F.boite(x, -.4, z, .06, h + .4, .06, PAL.herbes[1]); if (k % 2) F.boite(x, h - .05, z, .11, .26, .11, PAL.tronc[1]); } },
-  barriere(F, o) { const L = o.long || 6, n = Math.max(2, Math.round(L / 1.25) + 1), b = PAL.blanc;
-    for (let k = 0; k < n; k++) F.boite(-L / 2 + L * k / (n - 1), -.3, 0, .16, 1.15, .16, b, {haut: BLANC});
-    F.boite(0, .28, 0, L, .12, .08, b); F.boite(0, .6, 0, L, .12, .08, b); },
+  barriere(F, o) { const L = o.long || 6, n = Math.max(2, Math.round(L / 1.25) + 1), b = PAL.blanc;   // chaque poteau sur le sol à sa place, les lisses suivent la pente (17/11)
+    const xs = Array.from({length: n}, (_, k) => -L / 2 + L * k / (n - 1)), ys = xs.map(x => solLocal(F, x));
+    for (let k = 0; k < n; k++) F.boite(xs[k], ys[k] - .3, 0, .16, 1.15, .16, b, {haut: BLANC});
+    for (let k = 0; k + 1 < n; k++) for (const hy of [.28, .6]) lisseEnPente(F, xs[k] - (k ? 0 : .04), ys[k] + hy, xs[k + 1] + (k + 2 < n ? 0 : .04), ys[k + 1] + hy, 0, .12, .08, b); },
   boite_lettres(F) { F.boite(0, -.3, 0, .12, 1.2, .12, PAL.pierre[0]); F.boite(0, .85, 0, .5, .36, .36, PAL.pierre[2], {haut: BLANC}); F.boite(.27, .95, 0, .06, .2, .12, PAL.fleurs.rouge); },
   lampadaire(F, o, R, K) {  // un réverbère : socle, fût à bagues, lanterne vitrée à quatre montants, chapeau pointu
     const c = PAL.cadre, c2 = fonce(c, 1.35);

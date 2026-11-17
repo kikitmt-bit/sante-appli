@@ -366,3 +366,7 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   de profil en jeu : le vélo penche dans les virages ; hanches ; plus de bande blanche), puis 7 angles pour le film de fin (`outils/atelier_velo.py`, dans le dépôt),
   branchée par défaut à vélo (`contenu/montures/cycliste_sprite.js`, le 3D au menu « Ton cycliste »). Tous les sprites (nageurs, trotteurs, fantômes) prennent
   l'image vue de la caméra quand elle n'est plus derrière (`contenu/montures/directions.js`). **Pas encore essayé** : la tablette, une vraie séance à vélo.
+- **Hors étapes — retours de Kiki du 17/11 (Opus).** Circuit du jour du 16/11 bugué (une descente posée en biais sur la montée, 1 à 2 m plus haut) :
+  `verifier()` refuse les passages qui se recouvrent sans carrefour franc et à plat ni pont ; 8 jours refabriqués, tous valables. Barrières et glissières qui
+  suivent la pente ; ombre du vélo simple ; roues du sprite sur le sol ; 3e choix « Vélo 3D, dresseur en pixels » (`atelier_velo.py --seul`). Pas de fichier du
+  17/11 dans le dépôt privé (la tâche de la nuit n'a pas tourné).

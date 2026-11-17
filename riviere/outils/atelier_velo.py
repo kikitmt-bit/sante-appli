@@ -1,7 +1,8 @@
 """L'atelier du cycliste en sprite (16-17/11, Kiki) : dessine la planche du dresseur à vélo de La Rivière, sous 7 angles (de dos, léger et serré
 virage pour le jeu, puis 45°, de côté, trois quarts avant, de face pour le film de fin ; l'autre côté = le miroir).
     python riviere/outils/atelier_velo.py                  -> riviere/contenu/montures/cycliste.png et cycliste.json (lus par page.py)
-    python riviere/outils/atelier_velo.py <dossier> [--vite] [--apercu]   (--vite : une image sur quatre ; --apercu : une grande image pour regarder)
+    python riviere/outils/atelier_velo.py --seul           -> cycliste_seul.png et .json : le dresseur sans vélo, calé sur le vélo 3D (le 3e choix du menu)
+    python riviere/outils/atelier_velo.py <dossier> [--vite] [--apercu] [--seul]   (--vite : une image sur quatre ; --apercu : une grande image pour regarder)
 C'est un squelette en 3D (vélo et dresseur articulés) dessiné pixel par pixel à la taille du sprite, jamais une grande image réduite.
 Chaque image est dessinée pixel par pixel à la taille du sprite (pas de réduction d'une grande image) : des volumes simples à trois tons,
 un trait sombre de la couleur de chaque matière autour des formes, des pièces fines (rayons, tubes) sans trait. Les couleurs de la planche
@@ -242,9 +243,18 @@ def tete(T, c, regard=0.0, leve=None):
     T.face([d(.16, .07, -.15), d(.31, .055, -.10), d(.31, .055, .10), d(.16, .07, .15)], "cas", 2, 2)
 
 
+# (17/11, Kiki : un 3e choix, le vélo 3D avec ce dresseur en pixels) --seul : le dresseur sans vélo, calé sur le vélo 3D (moteur/velo.js) :
+# son pédalier (-.02, .30), ses pédales à 13,5 cm du cadre, ses poignées (.35, .99, ±.26), le bassin sur sa selle (cycliste.js : ASSISE) ;
+# à l'arrêt, le vélo 3D penche à droite (+z, .12 rad) et sa pédale gauche remonte devant : le pied droit à terre.
+SEUL = {"v": False}
+GEO = {"pb": (0, .29), "pz": .13, "main": (.33, 1.03, .235), "assis": (0, 0), "arret_cote": -1}
+GEO_SEUL = {"pb": (-.02, .30), "pz": .135, "main": (.35, 1.02, .26), "assis": (-.045, .035), "arret_cote": 1}
+
+
 def cycliste(T, phi, c, etat):
     """Le dresseur : etat = assis, danseuse, ramasse ou arret. Ses pieds sont sur les pédales, ses mains sur le guidon."""
     B = lambda *a: rouler(v(*a), phi)
+    G = GEO_SEUL if SEUL["v"] else GEO
     sc, cc = math.sin(c), math.cos(c)
     if etat == "assis":
         bassin, epaules, crane, large = v(-.19, 1.0, .012 * sc), v(.10, 1.40, .012 * sc), v(.17, 1.66, 0), 0
@@ -253,13 +263,16 @@ def cycliste(T, phi, c, etat):
         bassin, epaules, crane, large = v(-.02, 1.10 + haut, -.06 * cc), v(.24, 1.46 + haut, -.035 * cc), v(.32, 1.71 + haut, -.02 * cc), 0
     elif etat == "ramasse":    # en descente : le dos à plat, les coudes pliés, pédales à plat
         bassin, epaules, crane, large = v(-.24, 1.02, 0), v(.13, 1.27, 0), v(.26, 1.47, 0), 1
-    else:                       # à l'arrêt : descendu de la selle, le pied gauche par terre
-        bassin, epaules, crane, large = v(-.10, .98, -.07), v(.07, 1.41, -.05), v(.12, 1.67, -.04), 0
+    else:                       # à l'arrêt : descendu de la selle, un pied par terre (le gauche ; sur le vélo 3D, le droit)
+        q = -G["arret_cote"]
+        bassin, epaules, crane, large = v(-.10, .98, -.07 * q), v(.07, 1.41, -.05 * q), v(.12, 1.67, -.04 * q), 0
+    if etat in ("assis", "ramasse"):   # assis sur la selle du vélo dessiné (ou du vélo 3D, un peu plus haute et plus en arrière)
+        d = v(G["assis"][0], G["assis"][1], 0); bassin, epaules, crane = bassin + d, epaules + d, crane + d
     # les jambes
     for s in (-1, 1):
-        a = c + (0 if s > 0 else math.pi); ped = B(.17 * math.cos(a), .29 + .17 * math.sin(a), s * .13)
+        a = c + (0 if s > 0 else math.pi); ped = B(G["pb"][0] + .17 * math.cos(a), G["pb"][1] + .17 * math.sin(a), s * G["pz"])
         hanche = bassin + v(0, -.03, s * .09)
-        if etat == "arret" and s < 0: cheville, pointe = v(.0, .09, -.33), v(.14, .045, -.36)       # le pied à terre
+        if etat == "arret" and s == G["arret_cote"]: cheville, pointe = v(.0, .09, .33 * s), v(.14, .045, .36 * s)       # le pied à terre
         else: cheville = ped + v(-.07, .085, 0); pointe = ped + v(.085, .035, 0)
         genou, cheville = deux_os(hanche, cheville, .43, .42, v(1, .25, s * (.28 if etat != "danseuse" else .12)))
         T.membre(hanche, genou, .09, .072, "pan", 30 + s)
@@ -272,7 +285,7 @@ def cycliste(T, phi, c, etat):
     T.membre(epaules + v(.0, .03, 0), crane + v(-.03, -.15, 0), .058, .058, "peau", 42)
     # les bras : la manche jusqu'au coude, l'avant-bras nu, la main sur la poignée
     for s in (-1, 1):
-        epaule = epaules + v(-.01, -.015, s * .185); main = B(.33, 1.03, s * .235)
+        epaule = epaules + v(-.01, -.015, s * .185); main = B(G["main"][0], G["main"][1], s * G["main"][2])
         coude, main = deux_os(epaule, main, .27, .26, v(-.6, -.8, s * .45) if large else v(-.3, -.6, s * 1.0))
         T.membre(epaule, coude, .062, .052, "ves", 43 + s)
         T.membre(coude, main, .046, .04, "peau", 45 + s)
@@ -287,8 +300,9 @@ def image(vue, etat, k, n=8):
     if etat == "assis": c, phi, tourne = -k * 2 * math.pi / n, 0, -k * math.pi / 8
     elif etat == "danseuse": c = -k * 2 * math.pi / n; phi, tourne = math.radians(7) * math.cos(c), -k * math.pi / 8
     elif etat == "ramasse": c, phi, tourne = 0, 0, -k * math.pi / 8
+    elif SEUL["v"]: c, phi, tourne = -math.pi / 2 - 1, .12, 0   # le vélo 3D à l'arrêt : il penche à droite, sa pédale gauche remonte devant (velo.js)
     else: c, phi, tourne = math.radians(-35), math.radians(-7), 0
-    velo(T, psi, phi, c, tourne)
+    if not SEUL["v"]: velo(T, psi, phi, c, tourne)
     cycliste(T, phi, c, etat)
     ancres = {"panier": T.proj(rouler(v(.60, .83, 0), phi)), "porte": T.proj(rouler(v(-.55, .70, 0), phi))}
     return T.finir(), {a: [round(p[0], 1), round(p[1], 1)] for a, p in ancres.items()}
@@ -301,6 +315,7 @@ if __name__ == "__main__":
     sortie = Path(args[0]) if args else Path(__file__).resolve().parent.parent / "contenu" / "montures"
     sortie.mkdir(parents=True, exist_ok=True)
     vite = "--vite" in sys.argv
+    SEUL["v"] = "--seul" in sys.argv; fichier = "cycliste_seul" if SEUL["v"] else "cycliste"   # --seul : le dresseur sans vélo, pour le vélo 3D
     rangs, lignes = [], []
     for etat, n in ETATS:
         for nom, deg in VUES:
@@ -312,8 +327,8 @@ if __name__ == "__main__":
     planche = np.zeros((H * len(lignes), W * 8, 4), np.uint8)
     for j, cases in enumerate(lignes):
         for i, im in enumerate(cases): planche[j * H:(j + 1) * H, i * W:(i + 1) * W] = im
-    Image.fromarray(planche).save(sortie / "cycliste.png", optimize=True)
-    (sortie / "cycliste.json").write_text(json.dumps({"w": W, "h": H, "px": PX, "cx": CX, "cy": CY, "rangs": rangs, "cles": {n: MAT[n] for n in ("peau", "cas", "ves", "pan", "cadre", "chev")}}, ensure_ascii=False), encoding="utf-8")
+    Image.fromarray(planche).save(sortie / f"{fichier}.png", optimize=True)
+    (sortie / f"{fichier}.json").write_text(json.dumps({"w": W, "h": H, "px": PX, "cx": CX, "cy": CY, "rangs": rangs, "cles": {n: MAT[n] for n in ("peau", "cas", "ves", "pan", "cadre", "chev")}}, ensure_ascii=False), encoding="utf-8")
     if "--apercu" in sys.argv:
         apercu = Image.new("RGBA", (W * 8, H * len(lignes)), (108, 191, 94, 255)); apercu.alpha_composite(Image.fromarray(planche))
         apercu.resize((W * 8 * 3, H * len(lignes) * 3), Image.NEAREST).save(sortie / "apercu.png")
