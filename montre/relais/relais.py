@@ -1,12 +1,16 @@
 """Relais vocal « Claude direct » : la montre parle à Claude en direct, par l'abonnement de Kiki (pas de clé API).
 
-Ce programme tourne sur le PC. Il garde Claude Code lancé (`claude -p` en flux continu, connecté une fois avec
-`claude auth login`, dossier .claude-montre du dossier personnel) : pas de démarrage à chaque question. La montre
-ouvre une connexion sur le Wi-Fi de la maison, envoie une ligne {"cle", "q", "nouveau"} et reçoit la réponse phrase
-par phrase ({"t": "…"} puis {"fin": true, "ms": {…}}), pour la lire à voix haute dès la première phrase.
+Ce programme garde Claude Code lancé (`claude -p` en flux continu, connecté une fois avec `claude auth login`) : pas
+de démarrage à chaque question. Il reçoit une ligne {"q", "nouveau"} et renvoie la réponse phrase par phrase
+({"t": "…"} puis {"fin": true, "ms": {…}}), pour que la montre la lise à voix haute dès la première phrase.
 Aucun outil n'est donné à Claude ici : il ne peut que répondre.
 
-Lancer :  python relais.py            (clé et port lus dans ../secret.properties : RELAIS_CLE, RELAIS_ADR)
+Sur le téléphone (choix de Kiki, 17/11/2026 : pas de PC) : dans Termux, Ubuntu de proot-distro, installé par
+installer-telephone.sh ; lancé par la commande `claude-montre` (= python3 relais.py --local : n'écoute que le
+téléphone lui-même, 127.0.0.1, sans clé). L'appli « Pokémon (montre) » du téléphone fait le pont avec la montre en
+Bluetooth (PontVocal).
+Sur un PC ou un serveur : python relais.py (clé et port dans ../secret.properties : RELAIS_CLE, RELAIS_ADR ; la ligne
+reçue doit alors porter "cle").
 Essayer : python relais.py --essai "Quelle est la capitale du Canada ?"
 """
 import datetime, glob, hmac, json, os, queue, re, socket, socketserver, subprocess, sys, tempfile, threading, time
@@ -24,6 +28,7 @@ SYSTEME = (
 JOURS = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"]
 CLE = ""
+LOCAL = False
 RELAIS = None
 
 
@@ -63,7 +68,9 @@ class Moteur:
     """Un Claude lancé, qui attend les messages (une conversation : il garde le fil)."""
 
     def __init__(self):
-        env = dict(os.environ, CLAUDE_CONFIG_DIR=CONFIG)
+        env = dict(os.environ)
+        if os.name == "nt":  # sur le PC, une connexion à part de celle de l'appli Claude
+            env["CLAUDE_CONFIG_DIR"] = CONFIG
         env.pop("ANTHROPIC_API_KEY", None)  # jamais de clé API : l'abonnement seulement
         self.p = subprocess.Popen(
             [claude_exe(), "-p", "--model", MODELE, "--verbose",
@@ -124,7 +131,7 @@ class Moteur:
                 if ev.get("is_error"):
                     r = str(ev.get("result", ""))
                     if "Not logged in" in r or "/login" in r:
-                        yield "erreur", "Claude n'est pas connecté sur le PC"
+                        yield "erreur", "Claude n'est pas connecté à ton compte"
                     elif "limit" in r.lower():
                         yield "erreur", "Limite de l'abonnement atteinte"
                     else:
@@ -224,7 +231,7 @@ class Poste(socketserver.StreamRequestHandler):
             d = json.loads(self.rfile.readline(20000).decode("utf-8"))
         except (ValueError, OSError):
             return
-        if not CLE or not hmac.compare_digest(str(d.get("cle", "")).encode(), CLE.encode()):
+        if not LOCAL and (not CLE or not hmac.compare_digest(str(d.get("cle", "")).encode(), CLE.encode())):
             journal("refusé (clé) depuis", self.client_address[0])
             return
         if d.get("nouveau"):
@@ -264,11 +271,12 @@ if __name__ == "__main__":
         RELAIS.actif.arreter()
         RELAIS.reserve.arreter()
         sys.exit(0)
-    if not CLE:
+    LOCAL = "--local" in sys.argv
+    if not LOCAL and not CLE:
         sys.exit("RELAIS_CLE manque dans montre/secret.properties")
-    journal("Relais vocal prêt, port", PORT, "| Claude :", claude_exe())
+    journal("Relais vocal prêt, port", PORT, "(téléphone seul)" if LOCAL else "", "| Claude :", claude_exe())
     try:
-        Serveur(("0.0.0.0", PORT), Poste).serve_forever()
+        Serveur(("127.0.0.1" if LOCAL else "0.0.0.0", PORT), Poste).serve_forever()
     except KeyboardInterrupt:
         pass
     finally:

@@ -32,20 +32,27 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
+import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.Wearable
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.net.InetSocketAddress
 import java.net.Socket
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.TimeUnit
 import org.json.JSONObject
 
 /**
  * « Claude direct » (essai) : une vraie conversation à voix haute avec Claude, sans attendre 30 s.
- * La montre écoute, envoie la phrase au relais du PC (montre/relais/relais.py : Claude Code resté lancé, sur
- * l'abonnement de Kiki), reçoit la réponse phrase par phrase et la lit dès la première phrase ; puis elle réécoute
+ * La montre écoute, envoie la phrase au téléphone en Bluetooth (appli « Pokémon (montre) », PontVocal), qui la donne
+ * au relais lancé dans Termux sur le téléphone (montre/relais/relais.py : Claude Code resté lancé, sur l'abonnement
+ * de Kiki, sans PC) ; elle reçoit la réponse phrase par phrase et la lit dès la première phrase ; puis elle réécoute
  * toute seule. Toucher l'écran : couper Claude et reparler (ou relancer l'écoute). Chaque ouverture = nouvelle
  * conversation ; pendant l'écran, Claude garde le fil.
  * En bas, les temps mesurés (fin de ta phrase → début de la voix), aussi dans le journal (étiquette « Vocal »).
@@ -84,6 +91,7 @@ class VocalActivity : Activity() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         construire()
         preparerVoix()
+        Wearable.getMessageClient(this).addListener(recepteur)
         Thread { try { echanger(JSONObject().put("nouveau", true)) { } } catch (e: Exception) { } }.start()  // réveille le relais
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED)
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), 2)
@@ -99,6 +107,7 @@ class VocalActivity : Activity() {
 
     override fun onDestroy() {
         tour++
+        try { Wearable.getMessageClient(this).removeListener(recepteur) } catch (e: Exception) { }
         reco?.destroy()
         voix?.stop(); voix?.shutdown()
         demandeWifi?.let { try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(it) } catch (e: Exception) { } }
@@ -235,7 +244,7 @@ class VocalActivity : Activity() {
                 if (!fini) main.post { if (moi == tour) erreur("Réponse coupée") }
             } catch (e: Exception) {
                 Log.w(TAG, "relais injoignable", e)
-                main.post { if (moi == tour) erreur("PC injoignable") }
+                main.post { if (moi == tour) erreur(if (PAR_TELEPHONE) "Téléphone injoignable" else "Relais injoignable") }
             }
         }.start()
     }
@@ -272,9 +281,54 @@ class VocalActivity : Activity() {
 
     private fun erreur(m: String) { voix?.stop(); texteVue.setTextColor(Color.WHITE); texteVue.text = "Touche pour réessayer"; montrer(Etat.PAUSE, m) }
 
-    /** Ouvre la connexion au relais, envoie la demande, donne chaque ligne reçue. D'abord par le réseau du moment (le
-     *  téléphone en Bluetooth) ; si le PC n'est pas joignable par là, par le Wi-Fi de la montre, rallumé pour l'occasion. */
     private fun echanger(demande: JSONObject, ligne: (JSONObject) -> Unit) {
+        if (PAR_TELEPHONE) parTelephone(demande, ligne) else parReseau(demande, ligne)
+    }
+
+    // Par le téléphone, en Bluetooth : la phrase part en message /vocal/q, les lignes de la réponse reviennent en
+    // /vocal/r avec l'id de la question et un numéro d'ordre (remises dans l'ordre ici, au cas où).
+    private val boites = ConcurrentHashMap<Int, LinkedBlockingQueue<JSONObject>>()
+    private val compteur = AtomicInteger((System.currentTimeMillis() % 100000).toInt())
+    @Volatile private var telephone: String? = null
+    private val recepteur = MessageClient.OnMessageReceivedListener { ev ->
+        if (ev.path == "/vocal/r") try {
+            val o = JSONObject(String(ev.data, Charsets.UTF_8))
+            boites[o.optInt("id")]?.put(o)
+        } catch (e: Exception) { }
+    }
+
+    private fun parTelephone(demande: JSONObject, ligne: (JSONObject) -> Unit) {
+        val id = compteur.incrementAndGet()
+        val boite = LinkedBlockingQueue<JSONObject>()
+        boites[id] = boite
+        try {
+            val tel = telephone ?: run {
+                val noeuds = Tasks.await(Wearable.getNodeClient(this).connectedNodes, 5, TimeUnit.SECONDS)
+                (noeuds.firstOrNull { it.isNearby } ?: noeuds.firstOrNull())?.id ?: throw java.io.IOException("téléphone non relié")
+            }
+            try {
+                Tasks.await(Wearable.getMessageClient(this).sendMessage(tel, "/vocal/q", demande.put("id", id).toString().toByteArray()), 8, TimeUnit.SECONDS)
+            } catch (e: Exception) { telephone = null; throw e }
+            telephone = tel
+            chemin = "téléphone"
+            val attente = HashMap<Int, JSONObject>()
+            var suivant = 0
+            while (true) {
+                val o = boite.poll(60, TimeUnit.SECONDS) ?: throw java.io.IOException("pas de réponse du téléphone")
+                attente[o.optInt("n")] = o
+                while (true) {
+                    val x = attente.remove(suivant) ?: break
+                    suivant++
+                    ligne(x)
+                    if (x.has("fin") || x.has("erreur") || x.has("ok")) return
+                }
+            }
+        } finally { boites.remove(id) }
+    }
+
+    /** Par le réseau (relais sur un PC ou un serveur, gardé pour plus tard) : d'abord par le réseau du moment ; si le
+     *  relais n'est pas joignable par là, par le Wi-Fi de la montre, rallumé pour l'occasion. */
+    private fun parReseau(demande: JSONObject, ligne: (JSONObject) -> Unit) {
         val adr = BuildConfig.RELAIS_ADR
         val hote = adr.substringBeforeLast(":"); val port = adr.substringAfterLast(":").toIntOrNull() ?: 8793
         demande.put("cle", BuildConfig.RELAIS_CLE)
@@ -369,6 +423,7 @@ class VocalActivity : Activity() {
 
     companion object {
         const val TAG = "Vocal"
+        const val PAR_TELEPHONE = true   // Claude tourne sur le téléphone (Termux) ; false = relais joint par le réseau
         val ORANGE = Color.rgb(217, 119, 87)
     }
 }
