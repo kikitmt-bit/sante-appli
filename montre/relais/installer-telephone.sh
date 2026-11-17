@@ -2,12 +2,20 @@
 # « Claude direct » sur le téléphone : installe, dans Termux, un petit Linux (Ubuntu de proot-distro), le Claude Code
 # officiel d'Anthropic dedans, et le relais vocal de la montre (relais.py). À lancer dans Termux (version F-Droid) :
 #     bash installer-telephone.sh
-# Ensuite : `claude-connexion` (une fois, pour se connecter à son compte Claude), puis `claude-montre` (lance le
-# relais ; laisser Termux ouvert en fond). Tout vient des sources officielles : paquets de Termux, Ubuntu, claude.ai.
+# Ensuite : `claude-connexion` (une fois, pour se connecter à son compte Claude), `claude-connexion-2` (facultatif :
+# le deuxième compte, pris quand le premier est à sa limite), puis `claude-montre` (lance le relais ; laisser Termux
+# ouvert en fond). Tout vient des sources officielles : paquets de Termux, Ubuntu, claude.ai.
 # Relancer ce script ne casse rien (il met à jour).
 set -e
 DEPOT=https://raw.githubusercontent.com/kikitmt-bit/sante-appli/main/montre/relais
 
+# Déjà installé (Ubuntu + Claude Code) : on ne refait que l'étape 4 (rapide)
+if proot-distro login ubuntu -- test -x /root/.local/bin/claude </dev/null 2>/dev/null; then
+    echo "Ubuntu et Claude Code déjà là : mise à jour des commandes seulement."
+    DEJA=1
+fi
+
+if [ -z "$DEJA" ]; then
 echo
 echo "== 1/4  Termux à jour (quelques minutes) =="
 pkg update -y -o Dpkg::Options::="--force-confold" </dev/null
@@ -35,6 +43,8 @@ proot-distro login ubuntu -- bash -c '
     claude --version
 ' </dev/null
 
+fi
+
 echo
 echo "== 4/4  Le relais de la montre =="
 mkdir -p "$HOME/montre"
@@ -49,6 +59,16 @@ echo
 exec proot-distro login ubuntu -- bash -c 'export PATH="$HOME/.local/bin:$PATH"; claude auth login --claudeai'
 EOF
 
+# Le deuxième compte (facultatif) : pris automatiquement quand le premier est à sa limite
+cat > "$PREFIX/bin/claude-connexion-2" <<'EOF'
+#!/data/data/com.termux/files/usr/bin/bash
+echo "Connexion du DEUXIÈME compte Claude (celui qui prend le relais quand le premier est à sa limite)."
+echo "Une adresse va s'afficher : ouvre-la dans le navigateur, connecte-toi avec l'AUTRE compte, colle le code ici."
+echo "Ensuite, relance claude-montre."
+echo
+exec proot-distro login ubuntu -- bash -c 'export PATH="$HOME/.local/bin:$PATH"; mkdir -p $HOME/.claude-2; CLAUDE_CONFIG_DIR=$HOME/.claude-2 claude auth login --claudeai'
+EOF
+
 # Lancer le relais (à laisser tourner) ; il reprend la dernière version du relais s'il y a du réseau
 cat > "$PREFIX/bin/claude-montre" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
@@ -61,11 +81,12 @@ EOF
 # Essai sans la montre : une question, la réponse et les temps
 cat > "$PREFIX/bin/claude-essai" <<'EOF'
 #!/data/data/com.termux/files/usr/bin/bash
-exec proot-distro login ubuntu --bind "$HOME/montre:/montre" -- bash -c 'export PATH="$HOME/.local/bin:$PATH"; exec python3 /montre/relais.py --local --essai "Quelle est la capitale du Canada ?" "Et combien d habitants ?"'
+exec proot-distro login ubuntu --bind "$HOME/montre:/montre" -- bash -c 'export PATH="$HOME/.local/bin:$PATH"; exec python3 /montre/relais.py --local --essai "Quelle est la capitale du Canada ?" "Pourquoi le ciel est bleu ?"'
 EOF
-chmod +x "$PREFIX/bin/claude-connexion" "$PREFIX/bin/claude-montre" "$PREFIX/bin/claude-essai"
+chmod +x "$PREFIX/bin/claude-connexion" "$PREFIX/bin/claude-connexion-2" "$PREFIX/bin/claude-montre" "$PREFIX/bin/claude-essai"
 
 echo
 echo "== Installé. =="
-echo "Maintenant, tape :   claude-connexion"
-echo "puis :               claude-montre"
+if [ -z "$DEJA" ]; then echo "Maintenant, tape :   claude-connexion"; fi
+echo "Deuxième compte :    claude-connexion-2   (facultatif)"
+echo "Puis :               claude-montre"

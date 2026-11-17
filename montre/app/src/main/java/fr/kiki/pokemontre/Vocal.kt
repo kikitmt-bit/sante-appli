@@ -81,6 +81,7 @@ class VocalActivity : Activity() {
     private var recu1 = 0L
     private var chemin = ""
     private var msClaude = 0
+    private var modele = ""              // modèle qui a répondu (Haiku, Sonnet, Opus) et compte, affichés en bas
 
     private var reco: SpeechRecognizer? = null
     private var surAppareil = true
@@ -228,7 +229,7 @@ class VocalActivity : Activity() {
     // ---------- L'échange avec le relais du PC ----------
     private fun envoyer(q: String) {
         val moi = ++tour
-        finDictee = SystemClock.elapsedRealtime(); debutVoix = 0; recu1 = 0; aLire = 0; toutRecu = false; msClaude = 0
+        finDictee = SystemClock.elapsedRealtime(); debutVoix = 0; recu1 = 0; aLire = 0; toutRecu = false; msClaude = 0; modele = ""
         enAttente.clear()
         montrer(Etat.REFLECHIT, "…")
         texteVue.text = q
@@ -274,12 +275,13 @@ class VocalActivity : Activity() {
 
     /** Les temps de l'échange, depuis la fin de ta phrase : début de la voix, texte reçu, et la part de Claude sur le PC. */
     private fun temps(ms: JSONObject? = null) {
-        if (ms != null) msClaude = ms.optInt("phrase", 0)
+        if (ms != null) { msClaude = ms.optInt("phrase", 0); modele = ms.optString("modele", "") + (if (ms.has("compte")) " · compte " + ms.optInt("compte") else "") }
         val s = { v: Long -> String.format(Locale.FRANCE, "%.1f s", v / 1000f) }
         val l = mutableListOf<String>()
         if (debutVoix > 0) l += "voix " + s(debutVoix - finDictee)
         if (recu1 > 0) l += "texte " + s(recu1 - finDictee)
         if (msClaude > 0) l += "Claude " + s(msClaude.toLong())
+        if (modele.isNotEmpty()) l += modele
         if (chemin.isNotEmpty()) l += chemin
         tempsVue.text = l.joinToString(" · ")
     }
