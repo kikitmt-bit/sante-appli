@@ -138,7 +138,7 @@ function pleinEcran(oui) {
 }
 function majPlein() { $("bPlein").textContent = enPlein() ? "✕ Plein écran" : "⛶ Plein écran"; $("bPlein").hidden = !(PLEIN.doc.fullscreenEnabled || PLEIN.doc.webkitFullscreenEnabled); }
 function pasEnPlein(oui) { PLEIN.non = oui; try { sessionStorage.setItem("riviere_plein_non", oui ? "1" : "0"); } catch (e) {} }
-for (const ev of ["pointerup", "click"]) addEventListener(ev, e => { if (!PLEIN.non && !enPlein() && e.target !== $("bPlein")) pleinEcran(true); }, true);
+for (const ev of ["pointerup", "click"]) addEventListener(ev, e => { if (!PLEIN.non && !enPlein() && !(e.target.closest && e.target.closest("#bPlein, .b-plein"))) pleinEcran(true); }, true);
 for (const ev of ["fullscreenchange", "webkitfullscreenchange"]) PLEIN.doc.addEventListener(ev, () => { if (!enPlein() && PLEIN.voulu) pasEnPlein(true); majPlein(); });
 $("bPlein").addEventListener("pointerdown", e => e.stopPropagation());
 $("bPlein").addEventListener("click", e => { e.stopPropagation(); const oui = !enPlein(); pasEnPlein(!oui); pleinEcran(oui); });

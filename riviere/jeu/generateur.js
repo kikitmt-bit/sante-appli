@@ -82,6 +82,8 @@ const MODULES = {
   champs_t: {nom: "Les champs", pour: "champs", act: "terre", pieces: (R, o) => [{nom: "Les champs", long: 130 + Math.round(R() * 50), virage: o.v, large: 8, g: "champ", d: R() < .5 ? "champ" : "bas_cote"}]},
   col_t: {nom: "Col de montagne", pour: "montagne", act: "terre", pieces: (R, o) => { const sg = Math.sign(o.v || -1), mont = sg < 0 ? "g" : "d";   // la montagne du côté où l'on tourne, le ravin de l'autre ; après l'épingle, ils changent de côté
     const cote = (m, a, b) => m === "g" ? {g: a, d: b} : {g: b, d: a};
+    if (o.ouvert) return [Object.assign({nom: "La montée du col", long: 160 + Math.round(R() * 40), virage: Math.round(o.v / 2), large: 7, monte: 11, segment: "Le col"}, cote(mont, "talus", "ravin")),   // de A à B : la montée sans épingle (elle ferait revenir la route sur elle-même)
+      Object.assign({long: 150 + Math.round(R() * 40), virage: Math.round(o.v / 2), large: 7, monte: 10, segment: "Le col"}, cote(mont === "g" ? "d" : "g", "talus", "ravin"))];
     return [Object.assign({nom: "La montée du col", long: 150 + Math.round(R() * 40), virage: Math.round(o.v / 2), large: 7, monte: 10, segment: "Le col"}, cote(mont, "talus", "ravin")),
       Object.assign({nom: "Le lacet", long: 52, virage: -sg * 160, large: 7, monte: 3.5, segment: "Le col"}, cote(mont, "talus", "ravin")),
       Object.assign({long: 140 + Math.round(R() * 40), virage: Math.round(o.v / 2), large: 7, monte: 9, segment: "Le col"}, cote(mont === "g" ? "d" : "g", "talus", "ravin"))]; }},
@@ -161,10 +163,12 @@ function deplierRetour(niveau, r) {
   for (const b of bouts) {
     if (!b.droit) { if (b.long >= 12) neufs.push(piece(b.long, +b.virage.toFixed(3))); continue; }
     const reste = b.long - 50, n = Math.max(1, Math.round(reste / 105));
-    if (reste >= 60) for (let k = 0; k < n; k++) neufs.push(piece(Math.round(reste / n), 0));
+    // (17/11, Kiki : « jamais d'énormes lignes droites, ça se voit que c'est fait parce que c'est pratique ») : la ligne droite du retour devient
+    // des S doux qui s'annulent (le cap revient au même) ; le petit raccord du bout rattrape l'écart de côté
+    if (reste >= 60) for (let k = 0; k < n; k++) neufs.push(piece(Math.round(reste / n), n > 1 ? (k % 2 ? -1 : 1) * (n % 2 && k === n - 1 ? 0 : 16) : 0));
     break;
   }
-  if (!neufs.some(q => q.virage === 0)) return r;
+  if (!neufs.some(q => Math.abs(q.virage) <= 16 && q.long >= 60)) return r;
   neufs[0].nom = modele.nom || "Le retour";
   const ancien = modele.nom; modele.nom = "Le dernier virage";
   P.splice(i0, 0, ...neufs);
@@ -173,17 +177,28 @@ function deplierRetour(niveau, r) {
   P.splice(i0, neufs.length); modele.nom = ancien;
   return r;
 }
+/* onduler (17/11) : un bout libre de plus de 140 m presque droit (moins de 12°) devient deux virages doux et opposés, de même cap à la sortie :
+   plus de longues lignes droites tirées à la règle (sauf « presque droit », et jamais les deux lignes du carrefour d'un 8) */
+function onduler(pieces, R, garder) {
+  for (let i = pieces.length - 1; i >= 0; i--) { const p = pieces[i];
+    if (!p.libre || garder(p) || typeof p.virage !== "number" || Math.abs(p.virage) >= 12 || p.long <= 140 || p.raccord) continue;
+    const a = Math.round(14 + R() * 10) * (R() < .5 ? -1 : 1), q = Object.assign({}, p, {long: Math.round(p.long / 2), virage: Math.round(p.virage / 2 + a)});
+    p.long -= q.long; p.virage = Math.round(p.virage / 2 - a); delete q.nom; delete q.objets; delete q.segment;
+    if (p.monte !== undefined && typeof p.monte === "number") { q.monte = Math.round(p.monte / 2 * 10) / 10; p.monte = Math.round((p.monte - q.monte) * 10) / 10; }
+    pieces.splice(i + 1, 0, q); }
+}
 const REGION_TERRE = b => BIOMES[b + "-routes"] ? b + "-routes" : Object.keys(BIOMES).find(k => /routes/.test(k)) || b;   // la région des routes qui va avec une région
 function genererCircuit(o) {
   const terre = o.activite === "terre", huit = terre && o.forme === "huit";
   if (huit) o = Object.assign({}, o, {boucle: true});
+  if (o.forme === "ouvert") o = Object.assign({}, o, {boucle: false});   // (la forme suffit : « De A à B » = pas une boucle)
   const biome0 = (o.biome || NIVEAU.biome).replace(/-routes$/, ""), biome = terre ? REGION_TERRE(biome0) : biome0, lieux = BIOMES[biome] && BIOMES[biome].lieux || biome0, sens = -1;
   const rives = Object.keys(region(biome).rives), a = n => rives.includes(n);
   // la recherche : au plus MAX tirages ; elle s'arrête quand VOULUS tirages tiennent debout, et garde le mieux noté (o.tirages, o.essais : pour chercher plus longtemps)
   const VOULUS = clamp(Math.round(+o.tirages || 8), 1, 200), MAX = clamp(Math.round(+o.essais || Math.max(60, VOULUS * 6)), 1, 1500);
   let bons = 0, essais = 0; const raisons = [], valables = [];
   for (let essai = 0; essai < MAX; essai++) { essais = essai + 1;
-    const graine = (o.graine || 1) * 1000 + essai, R = hasard(graine), cible = clamp(o.km || 1, .3, 6) * 1000, pieces = [];
+    const graine = (o.graine || 1) * 1000 + essai, R = hasard(graine), cible = clamp(o.km || 1, .3, 50) * 1000, pieces = [];
     // la liste des modules : ce qui est coché, complété par des lignes droites, des virages et des S ; mélangée
     const voulus = Object.keys(o.avec || {}).filter(k => o.avec[k]), liste = [];
     for (const k of voulus) { if (["fourche", "echangeur", "rondpoint"].includes(k) && huit) continue; const m = Object.keys(MODULES).filter(n => MODULES[n].pour === k && MODULES[n].act === (terre ? "terre" : "eau")); if (m.length) liste.push(m[Math.floor(R() * m.length)]); }
@@ -193,7 +208,8 @@ function genererCircuit(o) {
     if (terre && D >= 60 && !liste.includes("col_t")) liste.push("col_t");
     if (terre && D >= 60) liste.push("descente_t");
     const nb = Math.max(liste.length + 2, Math.round(cible / (o.virages === "tres" || o.virages === "sinueux" ? 85 : 105)));
-    while (liste.length < nb - 1) liste.push(BOUTS[Math.floor(R() * BOUTS.length)]);
+    const bouts = o.boucle === false ? BOUTS.filter(b => b !== "epingle" && b !== "lacet") : BOUTS;   // de A à B : pas d'épingle (elle ferait revenir la route sur elle-même)
+    while (liste.length < nb - 1) liste.push(bouts[Math.floor(R() * bouts.length)]);
     for (let i = liste.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [liste[i], liste[j]] = [liste[j], liste[i]]; }
     const iPort = liste.indexOf("port"), iVillage = liste.indexOf(terre ? "village_t" : "village");   // le départ : devant le port ou le village, sinon une ligne droite
     const depart = iPort >= 0 ? liste.splice(iPort, 1)[0] : iVillage >= 0 ? liste.splice(iVillage, 1)[0] : terre ? "route" : "droite";
@@ -208,20 +224,22 @@ function genererCircuit(o) {
     // ces virages-là s'annulent sur le tour : une boucle se referme toujours
     let sg = R() < .5 ? -1 : 1; const vagues = liste.map(() => { if (R() < SIN.change) sg = -sg; return sg * SIN.ampleur * (.55 + .7 * R()); }), moy = vagues.reduce((x, y) => x + y, 0) / vagues.length;
     const virageDe = k => { if (huit) { if (k === 0 || k === iCroix) return 0; const L = k < iCroix ? lobes[0] : lobes[1]; return clamp(Math.round((k < iCroix ? -270 : 270) * parts[k] / sommeLobe(L) + vagues[k] * .4), -170, 170); }
+      if (o.boucle === false) return clamp(Math.round(vagues[k] - cap * .55), Math.max(-120, -75 - cap), Math.min(120, 75 - cap));   // le cap reste à moins de 75° de celui du départ : la route avance toujours   // (17/11) de A à B : elle serpente mais revient toujours vers son cap ; une longue route ne repasse jamais sur elle-même
       return clamp(Math.round(total * parts[k] / somme + vagues[k] - moy), -170, 170); };
+    let cap = 0;   // de A à B : le cap où l'on en est (degrés, 0 = celui du départ)
     let decor = terre ? ["bas_cote", "bas_cote"] : ["pre", "pre"], haut = 0; const debutLobe2 = [];
     const DECORS = terre ? [["bas_cote", "bas_cote"], ["champ", "bas_cote"], ["bas_cote", "champ"], ["sous_bois", "bas_cote"], ["bas_cote", "sous_bois"]] : [["pre", "pre"], ["foret", "pre"], ["pre", "foret"], ["foret", "foret"], a("falaise") ? ["falaise", "pre"] : ["foret", "pre"]];
     liste.forEach((nom, k) => {
       if (R() < .35) decor = DECORS[Math.floor(R() * DECORS.length)];
       if (huit && k === iCroix + 1) debutLobe2.push(pieces.length);
-      const morceau = MODULES[nom].pieces(R, {v: virageDe(k), eau: 9 + Math.round(R() * 5), g: decor[0], d: decor[1], lieux, terre: !!o.terre, grotte: o.grotte});
+      const morceau = MODULES[nom].pieces(R, {v: virageDe(k), eau: 9 + Math.round(R() * 5), g: decor[0], d: decor[1], lieux, terre: !!o.terre, grotte: o.grotte, ouvert: o.boucle === false});
       if (huit && (k === 0 || k === iCroix)) for (const p of morceau) { p.virage = 0; p.long = Math.max(p.long, 150); delete p.monte; }   // les deux lignes droites du carrefour, à plat
       for (const p of morceau) { for (const q of [p].concat(p.calme || [], p.force || [])) for (const c of ["g", "d"]) if (!a(q[c])) q[c] = terre ? "bas_cote" : "pre"; if (p.surface === undefined) delete p.surface; haut += +p.monte || 0;
         if (BOUTS_LIBRES.includes(nom) && !(huit && (k === 0 || k === iCroix))) p.libre = true;
         if (BOUTS_LIBRES.includes(nom) && !p.nom && k && !BOUTS_LIBRES.includes(liste[k - 1]) && p === morceau[0]) p.nom = terre ? "La route" : "La rivière";   // (17/11) sinon il garde le nom du lieu d'avant (« Le rond-point » pendant des kilomètres)
-        pieces.push(p); }
+        pieces.push(p); if (typeof p.virage === "number") cap += p.virage; }
     });
-    if (huit) { pieces.push({nom: "Le retour au carrefour", long: 90, virage: "auto", large: 8, g: decor[0], d: decor[1]}); for (const p of pieces) if (p.monte !== undefined) delete p.monte; }
+    if (huit) { pieces.push({nom: "Le retour au carrefour", long: 90, virage: "auto", large: 8, g: decor[0], d: decor[1]}); for (const p of pieces) { if (p.monte !== undefined) delete p.monte; if (p.long < 40) { p.fixe = true; p.long = Math.max(p.long, 21); } } }   // (17/11) un 8 se referme en ajustant les longueurs : une pièce courte (les rampes d'un pont, 18 m) n'est jamais raccourcie sous 20 m
     // le dénivelé : ce que les bouts de relief n'ont pas apporté se répartit en montées et en descentes douces (7 % au plus) sur les bouts ordinaires
     // (sur la terre, 10 % au plus : le vélo monte bien plus que l'eau ; un 8 : chaque boucle monte puis redescend, le carrefour reste à plat)
     const pente = terre ? .1 : .07, plat = p => !p.fixe && !p.net && !p.pont && !p.tunnel && !p.lieux && (terre ? p.surface !== "paves" && p.g !== "trottoir" : !p.surface) && p.virage !== "auto" && p.long >= 40 && !["mer", "marais", "dune", "plage", "quai"].includes(p.d);
@@ -243,10 +261,12 @@ function genererCircuit(o) {
     if (o.heure && o.heure !== "jour") niveau.heure = o.heure;
     if (o.meteo && o.meteo !== "beau") niveau.meteo = o.meteo;
     // on l'essaie ; trop long ou trop court : on étire ses lignes droites et on réessaie une fois
+    const carrefour = p => huit && p.virage === 0 && p.long >= 150, droit = o.virages === "droit";
+    if (!droit) onduler(pieces, R, carrefour);
     let r = essayerNiveau(niveau);
     if (!r.erreur && r.verif.ok) {
       const k = cible / r.PISTE.N;
-      if (Math.abs(k - 1) > .08) { for (const p of pieces) if (!p.fixe && !p.net && !p.raccord && !p.pont && p.long > 30) p.long = Math.round(p.long * clamp(k, .6, 2.2)); r = essayerNiveau(niveau); }
+      if (Math.abs(k - 1) > .08) { for (const p of pieces) if (!p.fixe && !p.net && !p.raccord && !p.pont && p.long > 30) p.long = Math.round(p.long * clamp(k, .6, 2.2)); if (!droit) onduler(pieces, R, carrefour); r = essayerNiveau(niveau); }
     }
     if (!r.erreur && huit && !r.verif.croisements.some(c => c.carrefour)) r.verif.ok = false, r.verif.erreurs = ["pas de carrefour"];   // un 8 doit se croiser pour de bon
     if (r.erreur || !r.verif.ok || (o.boucle !== false && r.verif.fermeture >= 3)) { raisons.push(r.erreur || (r.verif.erreurs[0] || "boucle mal refermée").replace(/[0-9.,]+/g, "#")); continue; }
@@ -267,7 +287,7 @@ function genererCircuit(o) {
     if (c.sol.ok) { mieux = c; break; }
   }
   mieux = mieux || valables[0];
-  window.__raisons = raisons; if (mieux) { for (const p of mieux.niveau.pieces) { delete p.fixe; delete p.libre; if (p.fourche) for (const k of ["long", "virage", "eau", "large", "g", "d", "monte", "nom"]) delete p[k]; } return {niveau: mieux.niveau, long: mieux.long, retour: mieux.retour, note: mieux.note, sol: mieux.sol || null, essais, bons}; }
+  window.__raisons = raisons; if (mieux) { for (const p of mieux.niveau.pieces) { if (!huit) delete p.fixe; delete p.libre; if (p.fourche) for (const k of ["long", "virage", "eau", "large", "g", "d", "monte", "nom"]) delete p[k]; } return {niveau: mieux.niveau, long: mieux.long, retour: mieux.retour, note: mieux.note, sol: mieux.sol || null, essais, bons}; }
   window.__raisons = raisons;
   return {erreur: "Pas de circuit trouvé avec ces réglages : essaie « Un autre », moins de virages, ou une longueur plus courte."};
 }

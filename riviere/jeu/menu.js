@@ -182,7 +182,7 @@ function ouvrirMenu() {
   MENU.sur = 0; MENU.jet = 0;
   el.innerHTML = `<header class="m-tete"><div class="m-nom">Poké Swift</div>
       <nav class="m-machines"${choisie ? "" : " hidden"}>${MACHINES_MENU.map(([k, t, ic]) => `<button class="m-machine${choisie && k === MACHINE_NOM ? " on" : ""}" data-machine="${k}"><i>${ic}</i><b>${t}</b></button>`).join("")}</nav>
-      <button class="m-rond" id="mRegl" title="Réglages">⚙</button></header>
+      ${boutonPlein("m-rond")}<button class="m-rond" id="mRegl" title="Réglages">⚙</button></header>
     ${!choisie ? `<div class="m-accueil"><h1>Quelle machine aujourd'hui ?</h1><div class="m-grandes">${MACHINES_MENU.map(([k, t, ic, s]) => `<button class="m-machine grande" data-machine="${k}"><i>${ic}</i><b>${t}</b><small>${s}</small></button>`).join("")}</div>
       <p class="m-petit">Ses circuits apparaîtront ensuite. Tu pourras en changer à tout moment, en haut.</p></div>` : `
     <div class="m-corps">
@@ -335,6 +335,11 @@ function fermerFeuille() { const v = $("mVoile"); if (v) v.hidden = true; MENU.f
 function majTuiles() { const t = document.querySelector("#menu .m-tuiles"); if (!t) return; const n = document.createElement("div"); n.innerHTML = vignettes(); t.replaceWith(n.firstElementChild);
   document.querySelectorAll("#menu .m-tuile").forEach(b => b.onclick = () => ouvrirFeuille(b.dataset.f)); majVignettes(); }
 
+/* le plein écran, toujours à portée (17/11, Kiki : « un endroit un peu caché mais accessible tout le temps ») : un petit bouton à côté de ⚙ au menu,
+   et dans le haut de l'éditeur ; il passe en plein écran ou en sort (jeu.js : pleinEcran) */
+const boutonPlein = cls => (PLEIN.doc.fullscreenEnabled || PLEIN.doc.webkitFullscreenEnabled) ? `<button class="${cls} b-plein" title="Plein écran">${enPlein() ? "🗗" : "⛶"}</button>` : "";
+document.addEventListener("click", e => { const b = e.target.closest && e.target.closest(".b-plein"); if (!b) return; e.stopPropagation(); const oui = !enPlein(); pasEnPlein(!oui); pleinEcran(oui); }, true);
+for (const ev of ["fullscreenchange", "webkitfullscreenchange"]) PLEIN.doc.addEventListener(ev, () => document.querySelectorAll(".b-plein").forEach(b => b.textContent = enPlein() ? "🗗" : "⛶"));
 /* changer de circuit ou de machine : gardé pour les prochaines fois, et la page repart avec (le menu revient aussitôt) */
 function choisirCircuit(id) {
   if (FORCE) { try { sessionStorage.setItem("riviere_niveau_une_fois", id); } catch (e) {} } else ecrireReglage("riviere_niveau_" + disciplineDe(NIVEAUX[id] || CIRCUITS_PERSO[id]), id);

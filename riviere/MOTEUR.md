@@ -174,6 +174,16 @@ ce qu'on veut y voir en tuiles, un gros bouton ; « Le dessiner » : de zéro, s
 l'atelier (le plan en grand ; toucher le plan ou le profil choisit une pièce ; seulement l'essentiel de la pièce, « + Ajouter une pièce », le reste
 replié ; « ▶ Essayer » en grand en haut ; « Garder sans l'essayer » en petit en bas). L'activité est celle de la machine du menu. Ce qui suit
 décrit les possibilités, toutes encore là.
+**Générer, retours du 17/11 au soir (Kiki)** : la longueur au curseur, par crans (`PAS_KM` : 1 à 8 km pour une boucle ou un 8, jusqu'à 50 km de A à
+B, construits au fil de la route) ; l'effort suit la longueur (`effortDe` : complet jusqu'à 4 km, 3 tirages jusqu'à 8, au-delà 1 ou 2 tirages sans
+habiller les rives ni contrôler tout le sol : 2 min 15 sinon pour 20 km) ; **jamais d'échec sec** (`genererSouple`) : en cas d'échec, le 8 devient
+une boucle, un cran de virages en moins, puis les éléments les plus durs sont retirés un à un, et on dit ce qui a changé ; au-delà de 6 km de A à B,
+pas de fourche (elle empêche la construction par tronçons). Dans le générateur : la forme « ouvert » suffit (`boucle: false` déduit) ; **un 8 ne
+raccourcit jamais une pièce courte** (rampes d'un pont, 18 m : la fermeture du 8 les faisait passer sous 20 m, d'où « pas de circuit trouvé » ; elles
+sont `fixe`, et le restent dans le circuit gardé) ; **de A à B, le cap reste à moins de 75° de celui du départ** et sans épingle (le col monte sans
+lacet) : la route ne repasse jamais sur elle-même (20 et 50 km trouvés du premier tirage) ; **plus de longues lignes droites tirées à la règle**
+(`onduler` : un bout libre de plus de 140 m presque droit devient deux virages doux opposés ; le retour déplié fait des S doux) : la plus longue
+portion presque droite passe de 200-540 m à 0-150 m, notes égales.
 
 Au menu : Circuit → « Créer ou modifier un circuit » (`jeu/editeur.js`). Plan vu du ciel et profil redessinés à chaque retouche par le vrai
 code de la piste, contrôleur en direct, pièces à régler au curseur, modules tout faits à ajouter, objets à poser, repères lointains.

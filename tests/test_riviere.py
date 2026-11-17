@@ -365,7 +365,7 @@ class Moteur(unittest.TestCase):
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
     BUDGET_TRIANGLES = 220000
     BUDGET_SECONDES = 8
-    BUDGET_PAGE_KO = 1980   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville »)
+    BUDGET_PAGE_KO = 2010   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits)
 
     def test_budgets(self):
         import page
