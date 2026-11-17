@@ -1,6 +1,7 @@
 {
  "id": "fourche",
  "nom": "L'île aux rapides",
+ "cache": true,
  "biome": "kanto",
  "lieux": "kanto",
  "graine": 8,

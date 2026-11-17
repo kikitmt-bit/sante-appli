@@ -79,7 +79,7 @@ function* poserDecorPas(Z) {
   };
   for (const j of JONCTIONS()) if (ici(j.s)) poser(j.o, j.s, "c", 0, j); else if (Z) garder(j.o, j.s, "c", 0, j);   // (17/11) une route qui devient un chemin : un embranchement
   for (const pc of P.pieces) { if (Z && (pc.s1 < Z.a - 400 || pc.s0 > Z.b + 400)) continue; if (pc.voie) surLaVoie(pc.voie - 1, () => exact(pc)); else exact(pc); }   // (une pièce de la voie « force » d'une fourche : ses objets sont posés sur elle)
-  exacts = false; if (Z) yield;
+  exacts = false; yield;   // (17/11) sans tronçon aussi : poserDecor va jusqu'au bout d'un coup, construireDecor rend la main entre deux
   // 2) les règles de la région
   const reserve = (s, cote, e) => reserves.some(z => z.cote === cote && s > z.s0 && s < z.s1 && e < z.e && !(z.vo && P.VO[idx(s)] && z.vo !== P.VO[idx(s)]));   // (pas un lieu de l'autre voie d'une fourche)
   for (const r of BIOME.regles) { const sur = r.sur.map(t => TYPES.indexOf(t)), total = Object.values(r.objets).reduce((a, b) => a + b, 0);
@@ -87,7 +87,7 @@ function* poserDecorPas(Z) {
       let dernier = -1e9; const nom = Object.keys(r.objets)[0];
       for (const p of poses.filter(p => r.derriere.includes(p.nom) && p.e >= r.bande[0] && p.e <= r.bande[1] && p.cote !== "c").sort((a, b) => a.s - b.s)) { const i = p.v ? surVoie(p.v, () => idx(p.s)) : idx(p.s), PW = p.cote === "g" ? P.PG : P.PD; let w = 0; for (const t of sur) w += PW[i * NT + t];
         if (w < .6 || p.s - dernier < r.pas * (.6 + R() * .8)) continue; dernier = p.s; const cache = () => poserCache(nom, p.s + .55, p.cote, p.e + .9, Object.assign({r: .3}, r.reglages, r.nums ? {num: r.nums[Math.floor(R() * r.nums.length)]} : null)); if (p.v) surVoie(p.v, cache); else cache(); }
-      if (Z) yield;
+      yield;
       continue; }
     const semer = (s0, s1, cotes = ["g", "d"]) => { for (const cote of cotes) { const sg = cote === "g" ? -1 : 1, PW = cote === "g" ? P.PG : P.PD; let s = s0 + R() * r.pas;
       for (; s < s1; s += r.pas * (.5 + R())) { const i = idx(s); let w = 0; for (const t of sur) w += PW[i * NT + t]; if (w < .6 || P.PONT[i]) continue;
@@ -103,7 +103,7 @@ function* poserDecorPas(Z) {
     if (Z) { const fin = Math.min(Z.b, LONG), bout = r.pas < 6 ? 12 : 1e9;   // (une règle serrée, un sous-bois : 12 m à la fois ; les autres d'un trait, leurs objets gardent leur écart)
       for (const cote of ["g", "d"]) for (let c = Z.a; c < fin; c += bout) { semer(c, Math.min(c + bout, fin), [cote]); yield; } continue; }
     semer(0, LONG);
-    P.voies.forEach((v, nf) => surLaVoie(nf, () => semer(v.a, v.b))); }   // puis la voie « force » de chaque fourche
+    P.voies.forEach((v, nf) => surLaVoie(nf, () => semer(v.a, v.b))); yield; }   // puis la voie « force » de chaque fourche
   // 3) les forêts en masse (étape 9 du plan) : au-delà des arbres posés un à un, la région couvre ses rives boisées d'arbres réduits à leur
   //    silhouette, sur une trame serrée. "forets" : [{sur, bande, maille, objet, bosquets}] ; bosquets (de 0 à 1) : seulement par taches, avec des clairières.
   //    Son propre hasard, après tout le reste : le décor d'avant ne bouge pas d'un arbre. Rangées par carrés de 64 m (clés « f… »).
@@ -122,7 +122,7 @@ function* poserDecorPas(Z) {
             choisis.push([recette, q.x, y, q.z, lacet, ech, e < (r.pres === undefined ? 62 : r.pres)]); prendre(q.x, q.z, ray); } } } };
       if (Z) { const fin = Math.min(Z.b, LONG); for (const cote of ["g", "d"]) for (let c = Z.a; c < fin; c += 12) { semer(c, Math.min(c + 12, fin), [cote]); yield; } continue; }
       semer(0, LONG);
-      P.voies.forEach((v, nf) => surLaVoie(nf, () => semer(v.a, v.b))); }
+      P.voies.forEach((v, nf) => surLaVoie(nf, () => semer(v.a, v.b))); yield; }
     const garde = Math.min(1, MAXI / Math.max(1, choisis.length));   // trop d'arbres pour la machine : on éclaircit partout pareil, jamais une forêt entière en moins
     for (const [recette, x, y, z, lacet, ech, pres] of choisis) { if (garde < 1 && RF() > garde) continue; recette(carre(x, z).poser(x, y, z, lacet, ech).matiere(2), {pres}, RF, K); MD.masse++; if (Z && MD.masse % 12 === 0) yield; } }
   MD.poses = poses;
@@ -136,10 +136,12 @@ function mailleEtiquette(e) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(e.l, e.h), new THREE.MeshBasicMaterial({map: t})); m.position.set(e.x, e.y, e.z); m.rotation.y = e.lacet; return m;
 }
 function mailleAnimee(a) { a.maille = a.forme.maille(); a.maille.position.set(a.x, a.y, a.z); a.maille.rotation.order = "YXZ"; a.maille.rotation.y = a.lacet; return a.maille; }
-function construireDecor() {
-  const formes = poserDecor();
+async function construireDecor(cede) {   // cede (17/11) : rendre la main toutes les 40 ms entre deux règles et deux maillages (le menu reste vivant) ; le même décor
+  let tc = performance.now(); const souffle = async () => { if (cede && performance.now() - tc > 40) { await cede(); tc = performance.now(); } };
+  const g = poserDecorPas(); let r; do { r = g.next(); if (!r.done) await souffle(); } while (!r.done);
+  const formes = r.value;
   MONDE.foret = [];   // les maillages de la forêt en masse : la qualité les cache si la machine peine (jeu.js)
-  for (const [k, F] of formes) { const abri = typeof k === "string" && k[0] === "t", foret = typeof k === "string" && k[0] === "f", m = F.maille(abri ? MAT_ABRI : MAT_MONDE); if (m) { m.name = abri ? "decor-abri" : foret ? "foret" : "decor"; if (foret) MONDE.foret.push(m); scene.add(m); } }
+  for (const [k, F] of formes) { await souffle(); const abri = typeof k === "string" && k[0] === "t", foret = typeof k === "string" && k[0] === "f", m = F.maille(abri ? MAT_ABRI : MAT_MONDE); if (m) { m.name = abri ? "decor-abri" : foret ? "foret" : "decor"; if (foret) MONDE.foret.push(m); scene.add(m); } }
   // les étiquettes (le texte des panneaux) et les objets qui tournent
   for (const e of MONDE.etiquettes) scene.add(mailleEtiquette(e));
   for (const a of MONDE.animes) scene.add(mailleAnimee(a));

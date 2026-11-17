@@ -166,7 +166,7 @@ Possibilités propres à la terre :
 
 **Le dresseur à facettes, avec sa garde-robe** (`moteur/cycliste.js`, 14/11, Kiki : « on arrête le style pixel, le même style low poly que le vélo ; un personnage évolutif, auquel on pourra changer les vêtements, les accessoires » ; prime sur ce qui est dit plus haut de la casquette, du sac et de la tenue) : le rendu en pixels (`pixel.js`, le menu « En pixels / En volumes », `riviere_dresseur_rendu`, `?dresseur=`) est **retiré**. Le dresseur est fait de volumes à facettes (une couleur par facette, comme le vélo et les arbres : `fuseau` et `boule3` à plat par défaut, `anneaux` pour un tronc ou un membre qui s'affine, `meche` pour une pyramide à 4 pans). Il a du caractère : grands yeux en amande avec reflet, sourcils, joues roses, petit nez, sourire, frange en mèches et pointes rabattues vers l'arrière (on le voit surtout de dos), mains fermées sur les poignées avec le pouce. **Assis SUR la selle** : `ASSISE` = 1,035 (le dessus de la selle est à 0,955 ; avant, le bassin à 1,0 enfonçait les fesses dans la selle), aussi quand il se ramasse en descente. **La garde-robe** : `CORPS` = le corps nu, toujours le même ; `GARDE_ROBE` = emplacement → habit → ce qu'il dessine sur chaque membre (`torse`, `tete`, `dos`, `bras`, `avantBras`, `cuisse`, `tibia`, `pied`, `patin` ; mêmes repères que le corps) et ce qu'il `cache` du corps (sinon les facettes du corps passeraient au travers : `tronc`, `bassin`, `cuisse`, `tibia`, `pied` ; `dessus` = le haut des cheveux sous un chapeau). **Tenue de base** (`TENUE_BASE`) : cheveux `pointes`, haut `tshirt` (couleur de la veste, col, bords des manches et bande à la couleur d'accent), bas `pantalon` (ceinture, revers), chaussures `baskets` (couleur d'accent, semelle blanche, chaussette), poignets `bracelets` ; sans casquette ni sac. Déjà dans la garde-robe : `short`, `casquette` et `sac` (ceux de la première version). Couleur d'accent = la casquette de ta carte (blanc si elle est de la couleur du haut). Ajouter un habit = une entrée dans `GARDE_ROBE` ; le porter : `D.dresseur.habits` (une liste de noms, `sans-<emplacement>` pour l'enlever ; pas encore envoyé par l'appli) ou `?habits=casquette,sac,short` pour essayer. Le fantôme (copie du groupe) et les rollers suivent tout seuls.
 
-Exemples : `terre-volcan.json` (« Le tour du volcan ») et `terre-huit.json` (« Le Huit de Jadielle »).
+Exemples : `terre-ville.json` (« Céladopole, la ville et les bois ») et `col-ventoux.json` (« Le Ventoux, la forêt »). (`terre-volcan` et `terre-huit` ont été retirés le 17/11.)
 
 ## Créer un circuit sans écrire de fichier : l'éditeur et le générateur
 
@@ -560,7 +560,32 @@ Le circuit du jour a une fourche deux jours sur cinq (`jour.options`, jamais dan
   Réussi : il saute (`Hop`), marche jusqu'à la rive (`Walk`), saute de joie quand tu passes ; raté : « BOING ! », tu rebondis sur son ventre (l'événement
   `saut` de monture.js, retiré quand il est réveillé). Derrière toi, il se rendort à sa place (au tour suivant, tout recommence). Rien ne ralentit le
   joueur ; avec `?s=` ou `?fige=1`, rien n'est demandé. Générateur : case « Ronflex » (modules `ronflex`, `ronflex_t`). Dans les circuits : le Huit
-  (`essai`, avant la grotte) et `terre-huit` (rue du marché). Une nouvelle rencontre = une recette qui remplit `RENCONTRES` + sa logique dans rencontres.js.
+  (`essai`, avant la grotte ; `terre-huit`, retiré le 17/11, l'avait aussi). Une nouvelle rencontre = une recette qui remplit `RENCONTRES` + sa logique dans rencontres.js.
+
+## Le menu et le chargement (17/11, carte blanche de Kiki : « tout sur une page, ludique, sans chargement inutile »)
+- **Le menu s'ouvre tout de suite, sans le monde** (`jeu/menu.js`) : rien n'est dessiné derrière (`body.au-menu`, la boucle ne dessine pas tant que
+  `MENU.ouvert`). Le monde du circuit choisi se construit derrière, invisible (`jeu/jeu.js` : `batirMonde`, `CHANTIER` : `part` de 0 à 1, `pret`,
+  `etapes` = [part, ms] de chaque étape, `bloc` = le plus long moment sans rendre la main) ; le bouton « Commencer » se remplit au fur et à mesure,
+  la carte du circuit choisi a sa petite barre. Toucher « Commencer » avant la fin : ça part dès que c'est prêt (`CHANTIER.depart`). Ce qui touche
+  au monde (changer de Pokémon, d'adversaires, de cycliste) passe par `quandMonde(f)`. Les vues de contrôle (`?s=`, `?fige=1`, `?vue=`, `?banc=1`)
+  attendent le monde derrière l'écran de chargement, comme avant.
+- **Le terrain et le décor rendent la main toutes les 40 ms** (`construireTerrain(cede)`, `construireDecor(cede)` ; `poserDecorPas` cède aussi sans
+  tronçon, entre deux règles) : le menu ne se fige jamais longtemps. Le résultat est identique au bit près (seul le moment du calcul change ;
+  `poserDecor` va toujours jusqu'au bout d'un coup).
+- **Un seul écran** : en haut la machine et ⚙ (capteur Bluetooth, dureté des pentes, son) ; à gauche les circuits de la machine, chacun avec son tracé
+  vu du ciel (rivière en bleu, route en sable, tunnels en gris, damier de la ligne ou départ vert / arrivée rouge), sa distance, circuit ou parcours,
+  son dénivelé et ton record ; à droite le circuit choisi en grand (tracé, distance, forme, dénivelé, durée à ton allure, profil d'altitude, lieux
+  « au programme », record, classement du jour), trois vignettes qui ouvrent chacune une feuille (l'ambiance, ton compagnon, la course : fantôme et
+  adversaires), puis « Commencer » et « Essayer sans montre ». Au téléphone (et sur une tablette en portrait), les circuits défilent de côté.
+- **Les tracés des autres circuits** sortent du vrai code de la piste (`essayerNiveau`), sans construire leur monde (20 à 120 ms chacun), et sont
+  gardés sur la machine (`riviere_traces`, avec une signature des pièces : un circuit retouché est recalculé).
+- **L'ambiance en vignettes** : chaque heure et chaque temps est un petit ciel en pixels peint aux couleurs du jeu (`peindreCiel`, d'après `HEURES`
+  et `METEOS` d'ambiance.js) ; les effets du rendu (avec / sans) sont dans la même feuille.
+- Choisir un autre circuit ou une autre machine recharge la page avec lui (le menu revient aussitôt, le monde se reconstruit derrière).
+- **Les circuits du menu** (17/11, Kiki : un ou deux par sport) : eau = `kanto-1km` et `vitrine` ; terre = `terre-ville` et `col-ventoux` ; plus le
+  circuit du jour de chacun. `essai`, `fourche` et `ventoux` sont **cachés** (`"cache": true` : ils servent aux contrôles du moteur ; on les ouvre à
+  l'adresse, `&riviere=essai`) ; un circuit caché n'est jamais choisi par défaut. Les circuits faits à l'essai dans l'éditeur ont été effacés une fois
+  (`riviere_menu_v2`) ; ceux qu'on garde ensuite apparaissent au menu avec ✏️.
 
 ## Vérifier sans Kiki
 

@@ -1,6 +1,7 @@
 {
  "id": "ventoux",
  "nom": "Le Ventoux en entier",
+ "cache": true,
  "discipline": "terre",
  "biome": "kanto-routes",
  "lieux": "kanto",

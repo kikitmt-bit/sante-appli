@@ -42,7 +42,7 @@ const NIVEAU = (() => {
   const garde = unefois || (FORCE ? null : lireReglage("riviere_niveau_" + DISC_VOULUE, null) || (DISC_VOULUE === "eau" ? lireReglage("riviere_niveau", null) : null));
   const duJour = garde && /^jour-/.test(garde) && !NIVEAUX[garde] ? Object.values(NIVEAUX).find(x => x.jour && disciplineDe(x) === DISC_VOULUE) : null;   // le circuit du jour d'hier, choisi la veille : celui d'aujourd'hui
   let n = CIRCUITS_PERSO[garde] || NIVEAUX[garde] || duJour || NIVEAUX[NIVEAU_SERVI] || Object.values(NIVEAUX)[0];
-  if (!unefois && !FORCE && disciplineDe(n) !== DISC_VOULUE) {   // la machine d'une autre activité : un circuit de son activité
+  if (!unefois && !FORCE && (disciplineDe(n) !== DISC_VOULUE || n.cache)) {   // (17/11) un circuit caché (ceux qui servent aux essais du moteur) ne se choisit qu'à l'adresse   // la machine d'une autre activité : un circuit de son activité
     const bon = [NIVEAUX[NIVEAU_SERVI]].concat(Object.values(NIVEAUX), Object.values(CIRCUITS_PERSO)).find(x => x && !x.cache && disciplineDe(x) === DISC_VOULUE); if (bon) n = bon; }
   return Object.values(CIRCUITS_PERSO).includes(n) ? Object.assign({}, n, {perso: true}) : n;
 })();

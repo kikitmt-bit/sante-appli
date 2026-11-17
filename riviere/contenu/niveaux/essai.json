@@ -1,6 +1,7 @@
 {
  "id": "essai",
  "nom": "Le Huit de Bourg Palette",
+ "cache": true,
  "biome": "kanto",
  "lieux": "kanto",
  "graine": 5,

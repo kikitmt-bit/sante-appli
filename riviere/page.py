@@ -18,7 +18,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent
 MOTEUR = ["depart", "outils", "piste", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
-JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "film", "raretes", "parcours", "note", "generateur", "editeur", "banc"]
+JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "generateur", "editeur", "banc"]
 PURS = ["depart", "outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
@@ -228,7 +228,7 @@ def generateur(options):
     meilleur circuit sur une ligne « CIRCUIT {…} ». `options` : celles de genererCircuit (jeu/generateur.js) : km, virages, denivele, avec,
     graine, activite, forme, boucle, biome, tirages. Mêmes options, même circuit, sur toutes les machines (aucune limite de temps)."""
     niveaux, biomes, lieux = tout()
-    base = "terre-volcan" if options.get("activite") == "terre" else "kanto-1km"
+    base = "terre-ville" if options.get("activite") == "terre" else "kanto-1km"
     return (AVANT_NODE % '""' + donnees_js({"force": True}, niveaux, biomes, lieux, {}, base, sprites=False) + "\n"
             + "\n".join(_module("moteur", m) for m in ("depart", "outils", "piste")) + "\n" + source_piste() + "\n"
             + _module("jeu", "note") + "\n" + _module("jeu", "generateur")

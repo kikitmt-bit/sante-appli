@@ -20,7 +20,8 @@ function celluleSol(x, z, k, HH, GI, GE, GC, GK) {
 function sommetSol(F, x, z, h, hx, hz, gi, gc, gk, ge) {   // un sommet du sol : sa pente (hx, hz) donne sa normale, donc sa couleur (la paroi si c'est raide)
   const N = nrm([-hx, 1, -hz]), c = couleurSol(gi, gc, gk === 2 ? 3 : Math.max(ge, 0), N[1], x, z); F.v(x, h, z, N[0], N[1], N[2], c, c[3]);
 }
-function construireTerrain() {
+async function construireTerrain(cede) {   // cede (17/11) : rendre la main toutes les 40 ms (le menu reste vivant pendant que le monde se construit derrière) ; le résultat est le même
+  let tc = performance.now(); const souffle = async () => { if (cede && performance.now() - tc > 40) { await cede(); tc = performance.now(); } };
   const P = PISTE, C = BOUCLE ? 3 : 2.5, M = 185, T = 24; let xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9;
   for (let i = 0; i < P.M; i++) { xa = Math.min(xa, P.X[i]); xb = Math.max(xb, P.X[i]); za = Math.min(za, P.Z[i]); zb = Math.max(zb, P.Z[i]); }
   const x0 = Math.floor((xa - M) / C) * C, z0 = Math.floor((za - M) / C) * C, nx = Math.ceil((xb + M - x0) / C) + 1, nz = Math.ceil((zb + M - z0) / C) + 1, n = nx * nz;
@@ -33,11 +34,12 @@ function construireTerrain() {
     for (let i = 0; i < P.M && d > VU_LOIN + demi; i += 4) d = Math.min(d, Math.hypot(P.X[i] - cx, P.Z[i] - cz));
     LOINT[b * ntx + a] = d > VU_LOIN + demi + 4 ? 1 : 0;
   }
-  for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
+  for (let j = 0; j < nz; j++) { for (let i = 0; i < nx; i++) {
     if (LOINT[Math.floor(j / T) * ntx + Math.floor(i / T)]) { const k = j * nx + i; HH[k] = -9; GE[k] = 999; continue; }   // jamais vu : sous la « mer », rien n'est dessiné
     celluleSol(x0 + i * C, z0 + j * C, j * nx + i, HH, GI, GE, GC, GK);
-  }
+  } await souffle(); }
   for (let tj = 0; tj < nz - 1; tj += T) for (let ti = 0; ti < nx - 1; ti += T) {
+    await souffle();
     const F = new Forme();
     const som = (i, j) => {
       const k = j * nx + i, hx = (HH[j * nx + Math.min(nx - 1, i + 1)] - HH[j * nx + Math.max(0, i - 1)]) / (2 * C), hz = (HH[Math.min(nz - 1, j + 1) * nx + i] - HH[Math.max(0, j - 1) * nx + i]) / (2 * C);

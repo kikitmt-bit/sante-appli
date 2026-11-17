@@ -80,6 +80,7 @@ function regler(ips) {   // une fois par seconde
 let T = 0, dernier = performance.now(); const FPS = {n: 0, t: 0, v: 0};
 function boucle(now) {
   requestAnimationFrame(boucle);
+  if (MENU.ouvert && !FILM.actif && !(BANC && !BANC.fini)) { dernier = now; return; }   // (17/11) le menu cache tout : rien à dessiner derrière
   if (now - dernier < 1000 / IMAGES_MAX - 1.2) return;   // pas plus de 60 images par seconde
   const ecoule = (now - dernier) / 1000, vraiDt = clamp(ecoule, 0, 1), dt = Math.min(vraiDt, .05); dernier = now; if (!S.fige) T += dt; COMMUNS.uT.value = T;   // ?fige=1 fige aussi le temps des animations (les captures de référence en ont besoin)
   //   // le temps, la cadence et la distance suivent la vraie horloge, même si la machine rame (les animations, elles, sont bornées)
@@ -164,17 +165,37 @@ window.__verif = verifier;
 window.__image = () => { animerMonture(T, 0, S); cadrer(0, S, T); tronconsMaj(true); ambianceMaj(0, S.s); lumieresProches(); animerPublic(T, S, 0); effetsMaj(T, AMB.m, AMB.nuit); dessiner(); hud(); return Math.round(S.s); };   // redessiner tout de suite (pour une capture)
 
 /* ============ le départ : on construit le monde depuis les fichiers, puis on lance ============ */
-(async () => {
-  const t0 = performance.now();
-  try { await Promise.race([document.fonts.load('20px "Jersey 15"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
-  if (TRONCONS) tronconsDemarrer();   // (16/11, lot 3) une longue route : seulement ce qui entoure le départ, le reste au fil de la route (moteur/troncons.js)
-  else { construireTerrain(); construireRives(); construirePiste(); construireDecor(); }
-  construireMassif(); construirePonts(); construireTunnels(); construireLointain(); construireAmbiance(); await construireSprites(); construireRencontres(); construireFourches(); construireOmbres();
-  window.__pret = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
+// (17/11, Kiki : « on s'en fout de voir le circuit derrière le menu, ça fait un chargement inutile ») : le menu s'ouvre TOUT DE SUITE, sur un fond
+// tout simple, sans le monde ; le circuit choisi se construit derrière, invisible, par petites étapes (le menu reste vivant entre deux), et le
+// bouton « Commencer » se remplit au fur et à mesure (CHANTIER.part, de 0 à 1). Toucher « Commencer » avant la fin : ça part dès que c'est prêt.
+// Les vues de contrôle (?s=, ?fige, ?vue=, ?banc=1) attendent le monde derrière l'écran de chargement, comme avant.
+const CHANTIER = {pret: false, part: 0, ensuite: [], suivis: [], depart: null, ms: 0, etapes: []};   // etapes : [part, ms] de chaque étape (pour régler les parts)
+window.__chantier = CHANTIER;
+function quandMonde(f) { if (CHANTIER.pret) return f(); CHANTIER.ensuite.push(f); }   // ce qui touche au monde (changer de Pokémon, d'adversaires…) attend qu'il soit là
+const pause0 = () => new Promise(r => { CHANTIER.bloc = Math.max(CHANTIER.bloc || 0, performance.now() - (CHANTIER.repris || performance.now())); let fait = false; const ok = () => { if (!fait) { fait = true; CHANTIER.repris = performance.now(); r(); } }; requestAnimationFrame(() => setTimeout(ok, 0)); setTimeout(ok, 80); });   // laisser l'écran se redessiner (la barre avance)
+async function batirMonde() {
+  const vers = but => async () => { CHANTIER.part += (but - CHANTIER.part) * .1; for (const s of CHANTIER.suivis) s(CHANTIER.part); await pause0(); };   // pendant une longue étape, la barre avance doucement vers sa fin
+  const t0 = performance.now(), etape = async (f, part) => { const a = performance.now(); await f(); CHANTIER.etapes.push([part, Math.round(performance.now() - a)]); CHANTIER.part = part; for (const s of CHANTIER.suivis) s(part); await pause0(); };
+  // les parts : le temps que prend chaque étape (mesuré le 17/11 : le terrain la moitié, le décor un quart, sur la Baie de Carmin comme sur Céladopole)
+  if (TRONCONS) await etape(tronconsDemarrer, .45);   // (16/11, lot 3) une longue route : seulement ce qui entoure le départ, le reste au fil de la route (moteur/troncons.js)
+  else { await etape(() => construireTerrain(vers(.5)), .5); await etape(construireRives, .58); await etape(construirePiste, .6); await etape(() => construireDecor(vers(.88)), .88); }
+  await etape(() => { construireMassif(); construirePonts(); construireTunnels(); construireLointain(); construireAmbiance(); }, .91);
+  await etape(construireSprites, .98); await etape(() => { construireRencontres(); construireFourches(); construireOmbres(); }, .99);
+  window.__pret = CHANTIER.ms = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
   const v = verifier(); if (!v.ok) console.warn("Niveau à revoir :\n" + v.erreurs.join("\n"));
   $("hTour").hidden = false; construireProfil(); await preparerRivaux(); $("lVit").textContent = MACHINE.affiche === "kmh" ? "VITESSE" : "ALLURE"; $("uVit").textContent = MACHINE.affiche === "kmh" ? "km/h" : "/500 m";
-  majAuto(); majSon(); $("charge").hidden = true; requestAnimationFrame(boucle);
-  if (BANC) lancerBanc();
-  else if (PARAMS.has("s") || PARAMS.has("fige") || VUE.mode !== "jeu") commencer(PARAMS.get("auto") === "0" ? "vraie" : "essai");   // les vues de contrôle partent tout de suite
-  else ouvrirMenu();
-})().catch(e => { $("charge").textContent = "Erreur : " + e.message; console.error(e); });
+  majAuto(); majSon(); requestAnimationFrame(boucle);
+  CHANTIER.pret = true; CHANTIER.part = 1; for (const s of CHANTIER.suivis) s(1);
+  for (const f of CHANTIER.ensuite.splice(0)) { try { await f(); } catch (e) { console.error(e); } }
+  if (CHANTIER.depart) { const m = CHANTIER.depart; CHANTIER.depart = null; commencer(m); }   // « Commencer » touché pendant la construction
+}
+(async () => {
+  try { await Promise.race([document.fonts.load('20px "Jersey 15"'), new Promise(r => setTimeout(r, 1500))]); } catch (e) {}
+  if (BANC || PARAMS.has("s") || PARAMS.has("fige") || VUE.mode !== "jeu") {   // les vues de contrôle : le monde d'abord, puis tout de suite la course
+    await batirMonde(); $("charge").hidden = true;
+    if (BANC) lancerBanc(); else commencer(PARAMS.get("auto") === "0" ? "vraie" : "essai");
+    return;
+  }
+  $("charge").hidden = true; ouvrirMenu();   // le menu d'abord, le monde ensuite, derrière
+  await new Promise(r => setTimeout(r, 120)); await batirMonde();
+})().catch(e => { $("charge").hidden = false; $("charge").textContent = "Erreur : " + e.message; console.error(e); });
