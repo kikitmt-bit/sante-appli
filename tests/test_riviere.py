@@ -477,7 +477,7 @@ class VraieRoute(unittest.TestCase):
         pts = gpx.lire_gpx(self.gpx())
         pieces, b = gpx.construire(pts, km=1.2, large=6, rayon=9)
         bilan = osm.habiller(pieces, b["_x"], b["_y"], (pts[0][0], pts[0][1]), carte, 6)
-        self.assertEqual(bilan["objets"], {"maison": 1})
+        self.assertEqual(bilan["objets"].get("maison"), 1)
         o = next(o for p in pieces for o in p.get("objets", []))
         self.assertEqual(o["cote"], "g"); self.assertAlmostEqual(o["e"], 20 - 3, delta=1.5); self.assertAlmostEqual(o["tourne"], 30, delta=2)
         self.assertAlmostEqual(o["l"], 11, delta=.5); self.assertAlmostEqual(o["p"], 7, delta=.5)

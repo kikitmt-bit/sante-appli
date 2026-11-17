@@ -72,7 +72,10 @@ function poserCyclisteSprite(m, s, d, y, etat, image, incl) {   // tout en pixel
 function pedalerSprite(N, t, dt, S, p, sol, bond, k) {
   const pl = CYC_PL.velo; construirePlanche(pl); if (!pl.m) return;
   const i = idx(S.s), v = Math.max(0, S.vd || 0), pente = PISTE.PENTE[i], kv = PISTE.COURB[idx(S.s + 3)];
-  const roule = v > .25, libre = pente < -.035 && v > 5, debout = pente > .055 && roule && !S.enAir;
+  const roule = v > .25, libre = pente < -.035 && v > 5;
+  // (18/11, Kiki : toujours en danseuse dans le Ventoux) assis dans les côtes ; debout seulement dans les plus rudes (dès 10 %, jusqu'à ce que ça redescende sous 8,5 %)
+  CYC.danse = roule && !S.enAir && pente > (CYC.danse ? .085 : .10);
+  const debout = CYC.danse;
   const braquet = 1 + clamp(pente / .08, 0, 1) * .9;   // dans une côte, un petit braquet : les jambes tournent plus vite pour la même vitesse (comme velo.js)
   if (dt > 0 && roule && !libre) CYC.ph += v / ((typeof MACHINE !== "undefined" && MACHINE.tourVu) || TOUR_PEDALE) * braquet * dt;
   VELO.cadence = roule && !libre ? v / TOUR_PEDALE * braquet * 60 : 0;   // sans capteur de cadence, c'est elle qui s'affiche (jeu.js)
@@ -109,7 +112,7 @@ function cyclisteSurVelo(t, dt, S, e) {
   const image = etat === "assis" || etat === "danseuse" ? ((Math.round((e.c + Math.PI / 2) / (Math.PI / 4)) % 8) + 8) % 8 : 0;   // le même angle de pédalier que le vélo 3D
   CYC.etat = etat; CYC.image = image;
   const g = VELO.g; _cf.setFromMatrixColumn(g.matrixWorld, 0);   // l'avant du vélo, dans le monde
-  poserSur(pl, pl.m, g.position.x, g.position.y, g.position.z, _cf.x, _cf.z, etat, image, VELO.incl + e.balance * .09, {devant: .38, ech: ECH_VELO});
+  poserSur(pl, pl.m, g.position.x, g.position.y, g.position.z, _cf.x, _cf.z, etat, image, VELO.incl + e.balance * .09, {devant: .5, ech: ECH_VELO});   // (18/11, Kiki : la selle lui sortait des fesses) plus près de la caméra que l'arrière de la selle 3D (.37 m)
   return true;
 }
 /* le fantôme : tout en pixels, le même cycliste en transparence, 1,8 m à ta droite ; sur le vélo 3D, ton dresseur en pixels sur le vélo fantôme */
@@ -123,7 +126,7 @@ function fantomeCyclisteSurVelo(sG) {
   const G = typeof FANTOME_VELO !== "undefined" && FANTOME_VELO.g;
   if (CYC.mode !== "mixte" || sG === null || !G) { pl.fant.visible = false; return; }
   G.updateMatrixWorld(); _cf.setFromMatrixColumn(G.matrixWorld, 0);
-  poserSur(pl, pl.fant, G.position.x, G.position.y, G.position.z, _cf.x, _cf.z, CYC.etat === "arret" ? "assis" : CYC.etat, CYC.image, G.rotation.x, {devant: .38, ech: ECH_VELO});
+  poserSur(pl, pl.fant, G.position.x, G.position.y, G.position.z, _cf.x, _cf.z, CYC.etat === "arret" ? "assis" : CYC.etat, CYC.image, G.rotation.x, {devant: .5, ech: ECH_VELO});
 }
 const cycActif = () => !!(CYC_PL.velo.m && CYC_PL.velo.m.visible);
 function cacherCyclisteSprite() { for (const pl of [CYC_PL.velo, CYC_PL.seul]) { if (pl.m) pl.m.visible = false; if (pl.fant) pl.fant.visible = false; } }

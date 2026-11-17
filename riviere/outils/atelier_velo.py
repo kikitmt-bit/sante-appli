@@ -192,8 +192,10 @@ def velo(T, psi, phi, c, tourne, braque=0.0):
     T.membre(B(.37, .88, 0), B(.33, 1.0, 0), .018, .018, "jante", 16)                 # la potence
     T.membre(B(.33, 1.0, -.24), B(.33, 1.0, .24), .018, .018, "jante", 16)            # le guidon
     for s in (-1, 1): T.membre(B(.33, 1.0, s * .19), B(.33, 1.0, s * .26), .026, .026, "selle", 17)   # les poignées
-    T.membre(B(-.17, .78, 0), B(-.20, .88, 0), .018, .018, "jante", 18)               # la tige de selle
-    T.membre(B(-.34, .905, 0), B(-.10, .895, 0), .062, .035, "selle", 19)              # la selle
+    # (18/11, Kiki : « il est assis DANS la selle », elle lui sortait des fesses) la selle, plus basse et plus courte : tout entière sous le bassin,
+    # son dessus juste au bas des fesses (le bassin, rayon .098, a son centre à 1,0 m : son bas à .90)
+    T.membre(B(-.17, .78, 0), B(-.19, .835, 0), .018, .018, "jante", 18)              # la tige de selle
+    T.membre(B(-.28, .855, 0), B(-.07, .85, 0), .05, .03, "selle", 19)                 # la selle
     # le porte-bagages et le feu arrière
     for s in (-1, 1): T.trait(B(-.36, .70, s * .07), B(-.74, .68, s * .07), "jante", 1, 20, 2)
     for s in (-1, 1): T.trait(B(-.70, .68, s * .07), B(-.50, .31, s * .04), "jante", 2, 20)
@@ -248,7 +250,7 @@ def tete(T, c, regard=0.0, leve=None):
 # à l'arrêt, le vélo 3D penche à droite (+z, .12 rad) et sa pédale gauche remonte devant : le pied droit à terre.
 SEUL = {"v": False}
 GEO = {"pb": (0, .29), "pz": .13, "main": (.33, 1.03, .235), "assis": (0, 0), "arret_cote": -1}
-GEO_SEUL = {"pb": (-.02, .30), "pz": .135, "main": (.35, 1.02, .26), "assis": (-.045, .035), "arret_cote": 1}
+GEO_SEUL = {"pb": (-.02, .30), "pz": .135, "main": (.35, 1.02, .26), "assis": (-.045, .052), "arret_cote": 1}   # (18/11) le bas des fesses sur le dessus de la selle 3D (.955)
 
 
 def cycliste(T, phi, c, etat):

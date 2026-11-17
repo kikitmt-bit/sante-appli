@@ -379,6 +379,17 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   `col-ventoux` (comme essai, terre-huit, terre-volcan, vitrine) datent d'avant les bordures du 17/11 : à refaire (`captures.py ref`).
   **Pas encore essayé** : la tablette (fluidité dans Bédoin), une vraie séance. **À essayer par Kiki** : grimper le Ventoux entier au vélo, dire s'il reconnaît
   la montée (village, vignes, forêt, sommet pelé) ; et s'il le veut au menu (aujourd'hui caché).
+  **Retours de Kiki (18/11, « clairement vers ça qu'on doit arriver »), faits** : la maison sur la route au premier virage (35 maisons de Bédoin,
+  derrière la ligne de départ, s'entassaient au mètre 0 : `au_bout`) et aucun bâtiment sur la route (ses quatre coins, toit compris, à 1 m du bord, même
+  tourné : `dehors`, sinon écarté) ; plus d'herbe kaki d'un seul côté (la garrigue garde l'herbe de Kanto) ; plus de boîtes aux lettres au hasard : une
+  seulement devant une vraie maison proche ; les pommes qui flottaient à côté du feuillage rentrées dedans (`pommier`) ; les bornes kilométriques tournées
+  vers qui arrive (`"face": "arrivant"`), plus grandes, texte net (`K.etiquette(…, res)`, 80 pixels par mètre ; le reste inchangé à 28) ; le cycliste assis
+  SUR la selle (vélo en pixels : selle plus basse et plus courte, `atelier_velo.py` ; vélo 3D : le dresseur en pixels devant la selle, `devant: .5`,
+  et un peu plus haut) ; assis dans les côtes, en danseuse seulement dès 10 % (jusqu'à 8,5 %), dans les trois modes.
+  **Puis (18/11)** : les traits noirs sur l'herbe au loin (dans tous les circuits) : c'était le contour, déclenché par la petite marche entre le ruban des
+  rives et la grille du sol ; un saut de profondeur ne fait plus un contour que s'il est franc par rapport à la pente de la surface elle-même (`POST` de
+  rendu.js) ; les contours des arbres et des maisons restent ; kanto-1km : jusqu'à 4 % de pixels changés (des contours au pied du feuillage), identique à l'œil.
+  Les vignes refaites (`vignes` de kanto-reel.js) : terre ocre entre les rangs, ceps sur leur pied, touffes rondes, fil de fer, piquets.
 - **Hors étapes — trotteurs et vélo en sprite (16-17/11/2026, Fable).** Demande de Kiki, en deux lots. **Lot 1 fait** : rollers retirés ; au skieur de fond,
   ton Pokémon trottine de dos à sa vraie taille (`contenu/trotteurs.json`, `contenu/montures/trotteur.js` : une monture du contenu, trois lignes d'accroche dans le
   cœur), décor à 6,5 km/h, trot calé sur les tours de jambes, un record par discipline. Liste provisoire (Pikachu, Caninos, Ponyta) : Kiki choisit ses trois sur la

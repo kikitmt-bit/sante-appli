@@ -1,7 +1,7 @@
 /* ============ Kanto, les vraies routes (17/11, étape 8 du plan, lot 4) : ce que la carte OpenStreetMap voit le long d'une vraie route ============ */
 // La chapelle, la piscine, la tour-relais, les rangs de vigne. Posés par le niveau (outils/osm.py) à leur vraie place et à leur taille,
 // ou par les règles de la région kanto-reel (les vignes). Même repère que les autres objets : x le long de la route, z vers la route, y vers le haut.
-Object.assign(RAYON, {chapelle: 6, piscine: 0, tour_relais: 5, vignes: 7});
+Object.assign(RAYON, {chapelle: 6, piscine: 0, tour_relais: 5, vignes: 7.5});
 Object.assign(OBJETS, {
   chapelle(F, o) {  // une chapelle de Provence : murs de pierre blonde, toit de tuiles orangées, clocher-mur et sa cloche, porte en arc
     const l = o.l || 10, p = o.p || 6.5, h = 5.2, d = p / 2, pierre = hex("#ECDDBE"), joint = fonce(pierre, .86), toit = PAL.toits.orange;
@@ -41,12 +41,20 @@ Object.assign(OBJETS, {
     F.cyl(0, f, 0, 3.4, 3.4, 1.1, 10, gris, gris, gris);   // la plateforme des antennes
     for (let k = 0; k < 6; k++) { const y = f + 1.1 + k * (H - f - 1.1) / 6; F.cyl(0, y, 0, .55 - k * .06, .5 - k * .06, (H - f - 1.1) / 6, 6, k % 2 ? blanc : rouge, k % 2 ? blanc : rouge); }
     K.lumiere(F, 0, H + .3, 0, rouge, 2.2); },
-  vignes(F, o, R) {  // une parcelle de vigne : des rangs perpendiculaires à la route, des ceps bas et touffus, qui suivent le sol
-    const n = o.rangs || 5, L = o.long || 12, ecart = 2.3, piquet = PAL.tronc[1], pas = 1.6;
-    const vert = [hex("#5CA83C"), hex("#74BC48"), hex("#A6D86A")];
+  vignes(F, o, R) {  // (18/11, Kiki : « des buissons rectangulaires », les vignes sont le décor du Ventoux) une parcelle de vigne de Provence :
+    // la terre ocre nue entre les rangs, perpendiculaires à la route (on voit les allées défiler) ; chaque cep sur son pied tordu, sa touffe de
+    // feuilles en deux tons, le fil de fer qui les relie, un piquet au bout de chaque rang. Au loin (simple) : le rang en deux blocs, sur la même terre.
+    const n = o.rangs || 6, L = o.long || 14, ecart = 2.2, W = (n - 1) * ecart, piquet = PAL.tronc[1], cep = hex("#6A4A30"), fil = hex("#8A8478");
+    const vert = [hex("#4E9A36"), hex("#6CB244"), hex("#9ED066")], ocre = hex("#C9A26C");
+    const tons = [[vert[0], vert[1], vert[2]], [hex("#46902F"), hex("#62A83E"), hex("#94C85C")]];
+    F.tapis(-W / 2 - 1.1, -L / 2 - .9, W / 2 + 1.1, L / 2 + .9, ocre, .72, 4);
     for (let r = 0; r < n; r++) { const x = (r - (n - 1) / 2) * ecart;
-      if (o.simple) { for (const z of [-L / 4, L / 4]) F.boite(x, solLocal(F, x, z) + .1, z, .6, .75, L / 2 - .3, vert[r % 2], {haut: vert[2]}); continue; }   // au loin : un rang = deux blocs
-      for (let z = -L / 2 + pas / 2, k = 0; z < L / 2; z += pas, k++) { const y = solLocal(F, x, z), t = (r * 7 + k * 3) % 5;
-        F.boite(x, y + .1, z, .62 + (t % 2) * .1, .82 + t * .04, pas - .55, vert[t % 2], {haut: vert[2]}); }
-      for (const z of [-L / 2, L / 2]) F.boite(x, solLocal(F, x, z) - .2, z, .1, 1.35, .1, piquet); } },
+      if (o.simple) { for (const z of [-L * 3 / 8, -L / 8, L / 8, L * 3 / 8]) F.dome(x, solLocal(F, x, z) + .25, z, .32, .65, L / 8 + .1, tons[r % 2], 5, true); continue; }
+      const pas = 1.25;
+      for (let z = -L / 2 + pas / 2, k = 0; z < L / 2; z += pas, k++) { const y = solLocal(F, x, z), t = (r * 5 + k * 3) % 4;
+        F.boite(x + (t - 1.5) * .02, y - .1, z, .09, .5, .09, cep);   // le pied du cep
+        F.dome(x, y + .32, z, .3 + (t % 2) * .05, .55 + t * .05, .78, tons[(r + k) % 2], 6, true); }   // sa touffe de feuilles, ronde, qui touche la voisine
+      const y0 = solLocal(F, x, -L / 2), y1 = solLocal(F, x, L / 2);
+      for (const sx of [-1, 1]) F.quad([x + sx * .015, y0 + .9, -L / 2], [x + sx * .015, y1 + .9, L / 2], [x + sx * .015, y1 + .95, L / 2], [x + sx * .015, y0 + .95, -L / 2], fil, [sx, 0, 0]);   // le fil de fer, d'un piquet à l'autre (il suit la pente)
+      for (const [z, y] of [[-L / 2, y0], [L / 2, y1]]) F.boite(x, y - .2, z, .1, 1.25, .1, piquet); } },
 });

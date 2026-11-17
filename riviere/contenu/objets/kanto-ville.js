@@ -197,7 +197,7 @@ Object.assign(OBJETS, {
     const t = tons("pommier"), r = 2.2 + hv(F) * .4, rouge = hex("#D83830"); F.ombre(0, 0, 2.4, 2.2);
     F.cyl(0, -.3, 0, .34, .26, 1.6, 5, PAL.tronc[0], PAL.tronc[1]);
     F.vent(.2, .9, 4).dome(0, 1.7, 0, r, 2, r, t, 8);
-    for (let k = 0; k < 4; k++) { const a = k * 1.57 + hv(F, k) * .8, y = 1.5 + hv(F, k + 9) * 1.1, rr = Math.sqrt(Math.max(.1, 1 - Math.pow((y - 1.7) / 2, 2))) * r; F.boite(Math.cos(a) * rr, y, Math.sin(a) * rr, .3, .3, .3, rouge, {haut: melange(rouge, BLANC, .3)}); }
+    for (let k = 0; k < 4; k++) { const a = k * 1.57 + hv(F, k) * .8, y = 1.5 + hv(F, k + 9) * 1.1, rr = Math.sqrt(Math.max(.1, 1 - Math.pow((y - 1.7) / 2, 2))) * r * .9; F.boite(Math.cos(a) * rr, y, Math.sin(a) * rr, .26, .26, .26, rouge, {haut: melange(rouge, BLANC, .3)}); }   // (18/11, Kiki : les pommes « volaient » à côté du feuillage : elles en sortent à peine)
     F.vent(); },
   cerisier(F) {  // un cerisier en fleurs : tronc sombre, nuage rose
     const t = tons("cerisier"), r = 2.3 + hv(F) * .5, brun = hex("#5A3A2E"); F.ombre(0, 0, 2.5, 2.3);   // (17/11, Kiki : le carré rose dessous, « très moche » : l'herbe normale et son ombre, comme les autres arbres)

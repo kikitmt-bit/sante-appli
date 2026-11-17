@@ -264,9 +264,13 @@ Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (v
 - **La région** `kanto-reel` (hérite de kanto-routes) : les bords de la carte et leurs règles (`regles_plus` : rangs de vigne, cerisiers et pommiers,
   buissons de garrigue, cailloux du pierrier, Pokémon de chaque bord) ; aucune maison ni rue au hasard : les maisons sont celles de la carte.
   Les essences : plus de pins, pas de cerisier rose en forêt (`"cerisier": 0` : les listes héritées se complètent).
-- **Les recettes** (`contenu/objets/kanto-reel.js`) : `chapelle`, `piscine`, `tour_relais` (`mat: true` : une antenne seule), `vignes`
-  (`simple: true` au loin : deux blocs par rang).
+- **Les recettes** (`contenu/objets/kanto-reel.js`) : `chapelle`, `piscine`, `tour_relais` (`mat: true` : une antenne seule), `vignes` (une parcelle :
+  terre ocre, 6 rangs perpendiculaires à la route, ceps, touffes rondes, fil de fer, piquets ; `simple: true` au loin : quatre touffes par rang).
 - Le menu cite « © les contributeurs d'OpenStreetMap » pour tout circuit qui a `"route"` (`"osm": true` : tracé et décor).
+- Jamais rien au bout de la route (`au_bout` : ce qui est derrière le départ ou après l'arrivée), jamais un bâtiment sur la route (`dehors` : ses coins
+  à 1 m du bord, toit compris, sinon écarté de la route, 8 m au plus). Une boîte aux lettres seulement devant une vraie maison proche.
+- Les bornes de col (`borne_km`) : `"face": "arrivant"` (lisibles en arrivant), texte à 80 pixels par mètre (`K.etiquette(F, texte, x, y, z, l, h, res)`,
+  28 par défaut).
 - Exemple : `ventoux` (« Le Ventoux en entier », caché du menu). Comparer : `outils/captures.py compare --niveau ventoux`.
 
 ### Les longues routes : le monde par tronçons (`moteur/troncons.js`, 16/11, lot 3)

@@ -146,6 +146,11 @@ class Repere:
         ecart = (px - self.x[bi]) * math.cos(c) - (py - self.y[bi]) * math.sin(c)   # + = à droite
         return bi, ecart
 
+    def au_bout(self, s):
+        """Ce mètre est-il un bout de la route ? Une chose dont le point le plus proche est le tout premier ou le tout dernier mètre est en fait
+        AVANT le départ ou APRÈS l'arrivée (18/11 : 35 maisons de Bédoin, derrière la ligne, s'entassaient au mètre 0)."""
+        return s < 4 or s > self.n - 5
+
     def point(self, s, ecart):
         """Le point du monde à `ecart` m à droite (− : à gauche) du mètre s."""
         s = max(0, min(self.n - 1, int(round(s))))
@@ -336,6 +341,17 @@ def angle_route(ang_long, cap):
     return d, False
 
 
+def dehors(rep, cx, cy, L, W, ang, marge, sens):
+    """Les quatre coins d'un rectangle (centre, longueur L selon l'angle ang, largeur W) sont-ils tous du bon côté de la route, à `marge` m au moins
+    de son milieu ?"""
+    c, s = math.cos(ang), math.sin(ang)
+    for u, v in ((-L / 2, -W / 2), (L / 2, -W / 2), (L / 2, W / 2), (-L / 2, W / 2)):
+        q = rep.ou(cx + u * c - v * s, cy + u * s + v * c, 200)
+        if q and (q[1] * sens < marge):
+            return False
+    return True
+
+
 def batiments(C, rep, largeur, poses=None):
     """Chaque bâtiment réel proche de la route -> un objet du jeu à sa place, à sa taille, tourné comme lui.
     Les plus grands d'abord ; un bâtiment qui chevaucherait un autre déjà posé est laissé (les maisons collées d'un vieux centre)."""
@@ -351,7 +367,7 @@ def batiments(C, rep, largeur, poses=None):
             continue
         s, ecart = q
         e = abs(ecart) - w
-        if e < 2:
+        if e < 2 or rep.au_bout(s):
             continue
         cand.append((A, a, t, cx, cy, L, W, ang, s, ecart))
     cand.sort(key=lambda c: -c[0])
@@ -384,11 +400,22 @@ def batiments(C, rep, largeur, poses=None):
         l, p = o.get("l", 8.4), o.get("p", 6)
         tourne, _ = angle_route(ang, rep.cap[s])   # la façade vers la route : la longueur le long d'elle, tourné de ±45° au plus
         r = math.hypot(l, p) / 2
+        # (18/11, Kiki : une maison débordait sur la route dans le premier virage) jamais sur la route : ses quatre coins, toit et perron compris,
+        # restent à 1 m du bord au moins, même tournée, même dans un virage ; sinon on l'écarte de la route, mètre par mètre (8 m au plus)
+        sens = 1 if ecart > 0 else -1
+        for _ in range(9):
+            if dehors(rep, cx, cy, l + 1.6, p + 2, math.pi / 2 - rep.cap[s] + math.radians(tourne), w + 1, sens):
+                break
+            c = rep.cap[s]; cx += sens * math.cos(c); cy -= sens * math.sin(c)
+        else:
+            continue
         if any(math.hypot(cx - x, cy - y) < (r + rr) * .78 for x, y, rr in poses):
             continue
+        q = rep.ou(cx, cy, 200)
+        if not q or rep.au_bout(q[0]):
+            continue
+        s, ecart = q
         e = abs(ecart) - w
-        if e < p / 2 + 1.5:   # jamais sur la route (un virage élargi peut la rapprocher) : poussé dehors
-            e = p / 2 + 1.5
         poses.append((cx, cy, r))
         o.update({"s": s, "cote": "d" if ecart > 0 else "g", "e": round(e)})   # (au mètre et au degré près : le niveau reste léger)
         if abs(tourne) >= 3:
@@ -396,6 +423,10 @@ def batiments(C, rep, largeur, poses=None):
         if r * .85 > 6:   # la place qu'il prend, si elle dépasse celle d'une maison ordinaire (les règles ne posent rien dedans)
             o["r"] = round(r * .85)
         out.append(o)
+        # (18/11, Kiki : des boîtes aux lettres tous les 10 m, sans maison en face) une boîte aux lettres seulement devant une vraie maison proche,
+        # au bord de la route, s'il y a la place entre les deux
+        if o["o"] == "maison" and e < 25 and e - (p / 2 + 1) >= 2.5:
+            out.append({"o": "boite_lettres", "s": s, "cote": o["cote"], "e": 1})
     return out, poses
 
 
@@ -409,7 +440,7 @@ def petits(C, rep, largeur, poses, tours=False):
             return
         s, ecart = q
         e = abs(ecart) - w
-        if e < 1.5 or not libre(x, y, r):
+        if e < 1.5 or rep.au_bout(s) or not libre(x, y, r):
             return
         poses.append((x, y, r))
         o.update({"s": s, "cote": "d" if ecart > 0 else "g", "e": round(e)})

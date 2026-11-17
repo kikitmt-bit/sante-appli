@@ -239,7 +239,7 @@ def habiller(pieces, bilan):
     for k, pente in bilan["kms"]:
         reste = (n - k) / 1000
         if k > 0 and reste >= 0.5:
-            poser(k, {"o": "borne_km", "cote": "d", "e": 1.4, "texte": f"{reste:.0f} KM".replace(".0", ""), "pente": round(pente * 100)})
+            poser(k, {"o": "borne_km", "cote": "d", "e": 1.4, "face": "arrivant", "texte": f"{reste:.0f} KM".replace(".0", ""), "pente": round(pente * 100)})
     # le kilomètre le plus dur : un segment (les pièces qui le couvrent)
     t = 0
     for p in pieces:

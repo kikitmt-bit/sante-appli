@@ -22,8 +22,9 @@ Object.assign(OBJETS, {
   // (16/11, étape 8 du plan) les vraies routes de riviere/outils/gpx.py
   borne_km(F, o, R, K) {  // la borne d'un kilomètre de col, comme les vraies : « SOMMET 3 KM », la pente du kilomètre qui vient, tête à sa couleur
     const blanc = hex("#F2F2EA"), p = o.pente || 0, tete = hex(p >= 10 ? "#30302C" : p >= 8 ? "#D84838" : p >= 5 ? "#F0B830" : "#58A848");
-    F.boite(0, -.3, 0, .8, 1.55, .42, blanc, {haut: blanc}); F.boite(0, 1.25, 0, .86, .38, .48, tete, {haut: fonce(tete, 1.1)});
-    K.etiquette(F, "SOMMET " + (o.texte || ""), 0, .9, .22, .74, .28); K.etiquette(F, p + " %", 0, .42, .22, .54, .34); },
+    // (18/11, Kiki : illisible en passant) plus grande, le texte en trois lignes nettes ; le niveau la tourne vers qui arrive ("face": "arrivant")
+    F.boite(0, -.3, 0, .95, 1.75, .42, blanc, {haut: blanc}); F.boite(0, 1.45, 0, 1.01, .42, .48, tete, {haut: fonce(tete, 1.1)});
+    K.etiquette(F, "SOMMET", 0, 1.17, .22, .84, .2, 80); K.etiquette(F, o.texte || "", 0, .78, .22, .84, .36, 80); K.etiquette(F, p + " %", 0, .33, .22, .7, .34, 80); },
   arche_arrivee(F, o, R, K) {  // l'arche d'arrivée en haut d'un col : deux piliers, une banderole à damier, le mot « SOMMET »
     const d = (o.large || 6) / 2 + 1.1, noir = PAL.cadre, rouge = PAL.fleurs.rouge, c = .6, n = Math.round(d * 2 / c);
     for (const x of [-d, d]) { F.boite(x, -.6, 0, .7, 6.4, .7, BLANC, {haut: BLANC}); F.boite(x, 5.5, 0, .8, .4, .8, rouge); }

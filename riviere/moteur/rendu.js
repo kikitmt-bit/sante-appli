@@ -189,8 +189,12 @@ const POST = {scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1,
     fragmentShader: `uniform sampler2D tC, tD; uniform vec2 uPx; uniform float uN, uF; varying vec2 vUv;
       float lin(vec2 uv) { float z = texture2D(tD, uv).x * 2. - 1.; return 2. * uN * uF / (uF + uN - z * (uF - uN)); }
       void main() { vec3 c = texture2D(tC, vUv).rgb; float z = lin(vUv);
-        float m = max(max(lin(vUv + vec2(uPx.x, 0.)), lin(vUv - vec2(uPx.x, 0.))), max(lin(vUv + vec2(0., uPx.y)), lin(vUv - vec2(0., uPx.y))));
-        float bord = step(z * .1 + .3, m - z) * (1. - smoothstep(55., 120., z));
+        float a = lin(vUv + vec2(uPx.x, 0.)), b = lin(vUv - vec2(uPx.x, 0.)), u = lin(vUv + vec2(0., uPx.y)), d = lin(vUv - vec2(0., uPx.y));
+        // (18/11, Kiki : des traits noirs sur l'herbe au loin, qui s'effacent en approchant) un saut de profondeur ne fait un contour que s'il est
+        // franc par rapport à la pente de la surface elle-même : le sol vu de loin, rasant, change déjà vite d'un pixel à l'autre, et une petite
+        // marche entre deux morceaux du sol (le ruban des rives et la grille) n'est pas le bord d'une forme
+        float m = max(max(a - z - 6. * max(z - b, 0.), b - z - 6. * max(z - a, 0.)), max(u - z - 6. * max(z - d, 0.), d - z - 6. * max(z - u, 0.)));
+        float bord = step(z * .1 + .3, m) * (1. - smoothstep(55., 120., z));
         gl_FragColor = vec4(mix(c, c * .5, bord * .85), 1.); }`})};
 POST.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), POST.mat));
 function tailleEcran() {

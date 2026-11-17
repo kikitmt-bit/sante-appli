@@ -97,8 +97,10 @@ function animerVelo(t, dt, S, p, y, N) {
   if (!VELO.g) construireVelo();
   const g = VELO.g, i = idx(S.s), v = Math.max(0, S.vd || 0), k = PISTE.COURB[idx(S.s + 3)], pente = PISTE.PENTE[i], k1 = clamp(dt * 4, 0, 1), surf = surfaceEn(S.s);
   g.visible = true;
-  // pédaler ou non : roue libre dans une descente rapide, rien à l'arrêt ; en danseuse dans une côte raide
-  const roule = v > .25, libre = pente < -.035 && v > 5, debout = pente > .055 && roule && !S.enAir;
+  // pédaler ou non : roue libre dans une descente rapide, rien à l'arrêt ; en danseuse dans les côtes les plus rudes
+  const roule = v > .25, libre = pente < -.035 && v > 5;
+  VELO.danse = roule && !S.enAir && pente > (VELO.danse ? .085 : .10);   // (18/11, Kiki) assis dans les côtes, debout seulement dans les plus rudes (dès 10 %, jusqu'à 8,5 %)
+  const debout = VELO.danse;
   VELO.roue += v / (ROUE * ECH_VELO) * dt;
   const braquet = 1 + clamp(pente / .08, 0, 1) * .9;   // dans une côte, un petit braquet : les pédales tournent plus vite pour la même vitesse
   if (roule && !libre) VELO.pedale += v / ((typeof MACHINE !== "undefined" && MACHINE.tourVu) || TOUR_PEDALE) * braquet * Math.PI * 2 * dt;   // au marcheur elliptique : un tour de jambes de la machine = un tour de pédale

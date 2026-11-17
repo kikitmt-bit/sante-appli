@@ -13,7 +13,7 @@ const EMPRISE = {};
 const MONDE = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []};
 /* ce qu'une recette peut laisser dans le monde, en plus de ses volumes. Une fabrique : le monde entier a ses listes (MONDE), un tronçon a les siennes (troncons.js) */
 const kMonde = MONDE => ({
-  etiquette(F, texte, x, y, z, l, h) { const [X, Z] = F.monde(x, z); MONDE.etiquettes.push({texte, x: X, y: F.oy + y * F.k, z: Z, lacet: F.lacet, l: l * F.k, h: h * F.k}); },
+  etiquette(F, texte, x, y, z, l, h, res) { const [X, Z] = F.monde(x, z); MONDE.etiquettes.push({texte, x: X, y: F.oy + y * F.k, z: Z, lacet: F.lacet, l: l * F.k, h: h * F.k, res}); },   // res : pixels par mètre (28 si rien : une petite plaque qu'on veut lire de près en demande plus)
   anime(F, x, y, z, recette, vitesse) { const [X, Z] = F.monde(x, z), P = new Forme(); recette(P); MONDE.animes.push({forme: P, x: X, y: F.oy + y * F.k, z: Z, lacet: F.lacet, vitesse}); },
   sprite(F, cle, o) { MONDE.sprites.push({cle, x: F.ox, y: F.oy, z: F.oz, lacet: F.lacet, taille: o.taille || 1, vole: (o.haut || 0) > 1.5 && !o.pose, bouge: o.bouge || null, s: o._s, cote: o._cote, e: o._e, v: o._v}); },
   son(F, x, y, z, fort = .08, portee = 80) { const [X, Z] = F.monde(x, z); MONDE.sons.push({x: X, y: F.oy + y * F.k, z: Z, fort, portee}); },   // un bruit d'eau qui s'entend selon la distance (une cascade)
@@ -130,8 +130,8 @@ function* poserDecorPas(Z) {
 }
 /* le texte d'un panneau, d'une borne : une petite image posée sur l'objet */
 function mailleEtiquette(e) {
-  const c = toile(Math.round(e.l * 28), Math.round(e.h * 28), x => { x.fillStyle = "#" + PAL.planche.map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join(""); x.fillRect(0, 0, 999, 999); x.fillStyle = "#3A2A18"; x.textAlign = "center"; x.textBaseline = "middle";
-      let px = Math.round(e.h * 28 * .8); x.font = px + 'px "Jersey 15", monospace'; while (x.measureText(e.texte).width > e.l * 28 - 6 && px > 6) { px--; x.font = px + 'px "Jersey 15", monospace'; } x.fillText(e.texte, e.l * 14, e.h * 14 + 1); });
+  const k = e.res || 28, c = toile(Math.round(e.l * k), Math.round(e.h * k), x => { x.fillStyle = "#" + PAL.planche.map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join(""); x.fillRect(0, 0, 999, 999); x.fillStyle = "#3A2A18"; x.textAlign = "center"; x.textBaseline = "middle";
+      let px = Math.round(e.h * k * .8); x.font = px + 'px "Jersey 15", monospace'; while (x.measureText(e.texte).width > e.l * k - 6 && px > 6) { px--; x.font = px + 'px "Jersey 15", monospace'; } x.fillText(e.texte, e.l * k / 2, e.h * k / 2 + 1); });
   const t = new THREE.CanvasTexture(c); t.magFilter = THREE.NearestFilter; t.minFilter = THREE.LinearFilter; t.generateMipmaps = false;
   const m = new THREE.Mesh(new THREE.PlaneGeometry(e.l, e.h), new THREE.MeshBasicMaterial({map: t})); m.position.set(e.x, e.y, e.z); m.rotation.y = e.lacet; return m;
 }
