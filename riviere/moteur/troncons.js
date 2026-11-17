@@ -31,7 +31,7 @@ function trAjouter(t, m, nom) {   // une maille de plus dans le monde : elle app
 }
 function trEffacer(t) {
   t.mort = true; t.gen = null; TR.taches.delete(t.cle); if (t.etat === 2) TR.stats.effacees++;
-  for (const m of t.mailles) { scene.remove(m); m.geometry.dispose(); if (m.userData.aSoi) { m.material.map.dispose(); m.material.dispose(); } }
+  for (const m of t.mailles) { scene.remove(m); m.geometry.dispose(); for (const c of m.children) if (c.geometry) c.geometry.dispose(); if (m.userData.aSoi) { m.material.map.dispose(); m.material.dispose(); } }
   if (t.mailles.some(m => m.name === "foret")) MONDE.foret = MONDE.foret.filter(m => !t.mailles.includes(m));
   t.mailles = [];
   const M = t.monde; if (!M) return;

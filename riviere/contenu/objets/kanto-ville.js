@@ -14,18 +14,40 @@ const terresDe = nom => { const T = (BIOME.terres || {})[nom] || {goudron: ["#6E
 /* ---- dessiner à plat sur le sol (et par-dessus la piste là où l'on passe dessus) ---- */
 function solRoute(X, Z) { let y = hauteur(X, Z); pres(X, Z); if (Q.e < .6 && !Q.bout) y = Math.max(y, PISTE.Y[Q.i]); return y; }
 // une bande le long d'un axe (pts : [[x, z], …] dans le repère de l'objet), de d0 à d1 mètres de l'axe (+ : à gauche de l'axe) ; col2 : un ton sur deux, au hasard ;
-// sauf : rien là où la piste passe déjà (un rond-point autour duquel on tourne)
-function bandeSol(F, pts, d0, d1, col, dy = .05, col2 = null, sauf = false) {
-  F.va = 0; const L = [];
+// sauf : rien là où la piste passe déjà (un rond-point autour duquel on tourne) ; surf : peinte avec le matériau de cette surface de la piste
+// ("goudron", "paves" : le même grain que la route, Forme.sol ; 17/11, Kiki : les plaques grises unies du rond-point « complètement buggées »)
+function bandeSol(F, pts, d0, d1, col, dy = .05, col2 = null, sauf = false, surf = null) {
+  F.va = 0; const L = [], S = [0];
+  for (let k = 1; k < pts.length; k++) S.push(S[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
   for (let k = 0; k < pts.length; k++) {
     const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)]; let tx = b[0] - a[0], tz = b[1] - a[1]; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
     const ligne = []; for (const d of [d0, d1]) { const [X, Z] = F.monde(pts[k][0] - tz * d, pts[k][1] + tx * d); ligne.push([X, solRoute(X, Z) + dy, Z]); }
     L.push(ligne); }
   for (let k = 0; k + 1 < L.length; k++) {
     if (sauf) { const [X, Z] = F.monde((pts[k][0] + pts[k + 1][0]) / 2, (pts[k][1] + pts[k + 1][1]) / 2); pres(X, Z); if (Q.e < -.4 && !Q.bout) continue; }
-    const c = col2 && h2(k * 1.7 + Math.round(F.ox), d0 * 3.3 + Math.round(F.oz)) > .55 ? col2 : col, [A, B] = L[k], [C, D] = L[k + 1];
+    const [A, B] = L[k], [C, D] = L[k + 1];
+    if (surf) { for (const [p, sv, uv] of [[A, k, d0], [B, k, d1], [D, k + 1, d1], [A, k, d0], [D, k + 1, d1], [C, k + 1, d0]]) F.sol(surf, p[0], p[1], p[2], S[sv], uv); continue; }
+    const c = col2 && h2(k * 1.7 + Math.round(F.ox), d0 * 3.3 + Math.round(F.oz)) > .55 ? col2 : col;
     for (const p of [A, B, D, A, D, C]) F.v(p[0], p[1], p[2], 0, 1, 0, c, 2); }
   return L;
+}
+/* (17/11, Kiki : « le chemin n'a aucun fondu, c'est vraiment abrupt ») un chemin de terre peint sur le sol comme le bas-côté d'une route :
+   la terre du sol au milieu (sa matière, ses deux tons en taches), qui se fond dans ce qu'il y a autour (l'herbe, le bas-côté) sur fr mètres
+   de chaque côté, le bord irrégulier ; et sur les fin derniers mètres, il s'efface dans l'herbe. Aucune couleur unie, aucun trait. */
+function cheminFondu(F, pts, demi, fr = 2.2, fin = 12) {
+  F.va = 0; const T = SOLS.terre || SOLS[Object.keys(SOLS)[0]], D = [-(demi + fr), -(demi + fr * .5), -demi * .6, demi * .6, demi + fr * .5, demi + fr], L = [], S = [0];
+  for (let k = 1; k < pts.length; k++) S.push(S[k - 1] + Math.hypot(pts[k][0] - pts[k - 1][0], pts[k][1] - pts[k - 1][1]));
+  const lg = S[S.length - 1];
+  for (let k = 0; k < pts.length; k++) {
+    const a = pts[Math.max(0, k - 1)], b = pts[Math.min(pts.length - 1, k + 1)]; let tx = b[0] - a[0], tz = b[1] - a[1]; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
+    const bout = lisse(0, fin, lg - S[k]);   // 0 au bout du chemin, 1 avant ses fin derniers mètres
+    L.push(D.map((d, j) => { const [X, Z] = F.monde(pts[k][0] - tz * d, pts[k][1] + tx * d), y = solRoute(X, Z) + .06, g = couleurEn(X, Z);
+      const tord = (bruit(X / 3.2 + 5, Z / 3.2 - 2) - .5) * 1.6, w = j === 0 || j === D.length - 1 ? 0 : (1 - lisse(demi - .4, demi + fr, Math.abs(d) + tord)) * bout;
+      const t = T.c[(bruit(X / 5.5 + 9, Z / 5.5 + 2) > .56 ? 1 : 0) % T.c.length], hx = hauteur(X + 1.25, Z) - hauteur(X - 1.25, Z), hz = hauteur(X, Z + 1.25) - hauteur(X, Z - 1.25);
+      return [X, y, Z, nrm([-hx / 2.5, 1, -hz / 2.5]), [lerp(g[0], t[0], w), lerp(g[1], t[1], w), lerp(g[2], t[2], w)]]; })); }
+  for (let k = 0; k + 1 < L.length; k++) for (let j = 0; j + 1 < D.length; j++) {
+    const A = L[k][j], B = L[k][j + 1], C = L[k + 1][j], E = L[k + 1][j + 1];
+    for (const p of [A, B, E, A, E, C]) F.v(p[0], p[1], p[2], p[3][0], p[3][1], p[3][2], p[4], 0); }
 }
 // la face d'une bordure (un trottoir) à d mètres de l'axe : de dy0 à dy1 au-dessus du sol
 function faceSol(F, pts, d, dy0, dy1, col) {
@@ -50,7 +72,7 @@ function empriseRue(z0, dir, L, ville, chemin) { const o = []; for (let d = 0; d
 const ENSEIGNES = ["CAFÉ", "FLEURISTE", "CYCLES", "BAIES", "PÂTISSERIE", "LIBRAIRIE", "PRIMEUR", "BOULANGERIE", "OBJETS", "THÉ", "GLACES", "POKÉ-VÉLO"];
 function dessinerRue(F, o, R, K, z0, dir, L, ville, chemin) {
   const T = terresDe(chemin ? "terre" : "goudron"), demi = chemin ? 1.5 : RUE.demi, pts = axe(0, z0, 0, z0 + dir * L), blanc = T.ligne;
-  bandeSol(F, pts, -demi, demi, T.a, .05, T.b);
+  if (chemin) cheminFondu(F, axe(0, z0, 0, z0 + dir * L, 3), demi); else bandeSol(F, pts, -demi, demi, T.a, .05, T.b, false, "goudron");
   if (chemin) { const s = hv(F, 3) < .5 ? -1 : 1; for (let d = 8; d < L; d += 10) sousObjet(F, "buisson", s * (demi + 1.2), z0 + dir * d, 0, {}, R, K); return; }
   for (let d = 7; d < L - 2; d += 5) bandeSol(F, axe(0, z0 + dir * d, 0, z0 + dir * (d + 2.4), 1.2), -.07, .07, blanc, .07);   // la ligne du milieu
   bandeSol(F, axe(0, z0 + dir * 1.6, 0, z0 + dir * 2.1, .5), dir > 0 ? 0 : -demi + .2, dir > 0 ? demi - .2 : 0, blanc, .07);   // la ligne d'arrêt
@@ -82,7 +104,7 @@ Object.assign(OBJETS, {
   rond_point(F, o, R, K) {  // un rond-point, autour duquel la piste tourne (sur la piste, au milieu du virage ; "r" : le rayon de la piste) ; ses autres branches partent en rues
     if (!DECOR_NEUF) return; const w = o.eau / 2, r = o.r || 12, T = terresDe("goudron"), ri = r - w - .35, y0 = solLocal(F, 0, r), ville = o.ville !== false;
     const anneau = []; for (let k = 0; k <= 48; k++) { const t = k / 48 * Math.PI * 2; anneau.push([Math.sin(t) * r, r - Math.cos(t) * r]); }
-    bandeSol(F, anneau, -w, w, T.a, .05, null, true);
+    bandeSol(F, anneau, -w, w, T.a, .05, null, true, "goudron");
     for (let k = 0; k < 48; k += 2) bandeSol(F, anneau.slice(k, k + 2), w - .32, w - .17, T.ligne, .07, null, true);   // le bord intérieur, en pointillés
     F.cyl(0, y0 - .3, r, ri + .15, ri + .15, .55, 20, PAL.pierre[2], PAL.pierre[2]); F.rond(0, y0 + .26, r, ri, ri, PAL.herbes[1], 20);
     const t = hv(F, 1), haie = PAL.feuilles;
@@ -98,7 +120,7 @@ Object.assign(OBJETS, {
     const bons = []; let y0 = null;
     for (const p of pts) { const [X, Z] = F.monde(p[0], p[1]); pres(X, Z); const loin = Math.abs(ecart(sLigne(Q.i), o._s)) > 50; if (loin && Q.e < w + 3) break; const y = hauteur(X, Z); if (y0 === null) y0 = y; if (Math.abs(y - y0) > 7) break; bons.push(p); }
     if (bons.length < 3) return;
-    bandeSol(F, bons, -w, w, T.a, .05, T.b);
+    bandeSol(F, bons, -w, w, T.a, .05, T.b, false, pv ? "paves" : "goudron");
     if (!pv) { for (const s of [-1, 1]) bandeSol(F, bons.slice(2), s * (w - .34), s * (w - .19), T.ligne, .07); for (let k = 3; k + 1 < bons.length; k += 2) bandeSol(F, bons.slice(k, k + 2), -.07, .07, T.ligne, .07); }
     for (let k = 6; k < bons.length; k += 5) { const [x, z] = bons[k]; sousObjet(F, "poteau", x, z + (o.sens * o.vers > 0 ? -1 : 1) * (w + 1.8), 0, {}, R, K); }
     const cote = o.sens * o.vers > 0 ? -1 : 1;   // le poteau indicateur : du côté où part le chemin, face à qui arrive
@@ -177,8 +199,8 @@ Object.assign(OBJETS, {
     F.vent(.2, .9, 4).dome(0, 1.7, 0, r, 2, r, t, 8);
     for (let k = 0; k < 4; k++) { const a = k * 1.57 + hv(F, k) * .8, y = 1.5 + hv(F, k + 9) * 1.1, rr = Math.sqrt(Math.max(.1, 1 - Math.pow((y - 1.7) / 2, 2))) * r; F.boite(Math.cos(a) * rr, y, Math.sin(a) * rr, .3, .3, .3, rouge, {haut: melange(rouge, BLANC, .3)}); }
     F.vent(); },
-  cerisier(F) {  // un cerisier en fleurs : tronc sombre, nuage rose, quelques pétales au sol
-    const t = tons("cerisier"), r = 2.3 + hv(F) * .5, brun = hex("#5A3A2E"); F.tapis(-2.6, -2.6, 2.6, 2.6, hex("#F6C4D6"), 1, 2);
+  cerisier(F) {  // un cerisier en fleurs : tronc sombre, nuage rose
+    const t = tons("cerisier"), r = 2.3 + hv(F) * .5, brun = hex("#5A3A2E"); F.ombre(0, 0, 2.5, 2.3);   // (17/11, Kiki : le carré rose dessous, « très moche » : l'herbe normale et son ombre, comme les autres arbres)
     F.cyl(0, -.3, 0, .32, .22, 2, 5, brun, fonce(brun, 1.2)); F.boite(.4, 1.3, 0, .9, .14, .14, brun);
     F.vent(.25, 1, 5).dome(0, 2.4, 0, r, 1.6, r, t, 8); F.dome(.4, 3.1, .3, r * .72, 1.4, r * .72, t, 7, true); F.vent(); },
   pin(F) {  // un pin parasol : haut tronc nu, couronne large et plate

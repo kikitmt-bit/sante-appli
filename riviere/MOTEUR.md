@@ -45,7 +45,7 @@ un seul nombre. Voir « Une fourche ».)
 | `surfaces.js` | le ruban de la piste (eau, terre, goudron : `SURFACES`), la mer, les ponts | oui |
 | `tunnel.js` | les voûtes et les façades des grottes | oui |
 | `sprites.js` | les Pokémon et les habitants (sprites), les éclaboussures | oui |
-| `monture.js` | ton Pokémon : nage ou course selon la surface, corde dans les virages, vrais sauts (`MONTURES`) | oui |
+| `monture.js` | ton Pokémon : nage ou course selon la surface, corde dans les virages, sur la terre une vraie trajectoire de cycliste (`ligneRoute`), vrais sauts (`MONTURES`) | oui |
 | `camera.js` | suit la pente, se penche dans les virages, accompagne les sauts | oui |
 | `depart.js` | quel circuit, quelle région (héritage `"herite"`), les réglages gardés sur la machine, `relancer()` | non |
 | `ambiance.js` | l'heure, le temps qu'il fait, l'air du lieu, les particules, la pluie, les halos des lumières | oui |
@@ -301,6 +301,10 @@ Tout le dessin est dans `contenu/objets/kanto-ville.js` ; deux petites accroches
   Un niveau peut l'imposer : `"bordures": "vibreurs"` ou `"ligne"`. (Sur la terre, l'attribut `aEc.x` du ruban porte « vibreurs ici » : `VIB`.)
 - **La place d'un objet étendu** : `EMPRISE[nom] = o => [[x, z, r], …]` (son repère) ; rien d'autre n'est posé dans ces ronds, et une règle ne pose
   l'objet que si tous ses ronds sont libres. Les rues, carrefours, rond-points et routes qui continuent s'en servent.
+- **La trajectoire sur la terre** (`ligneRoute` de monture.js, 17/11, Kiki : « comme un vrai cycliste sur route fermée ») : calculée une fois, mètre
+  par mètre, en tirant la ligne vers le plus court par lissages de 24, 12, 6 puis 3 m : on élargit avant un virage, on coupe à la corde, on ressort large,
+  et on coupe un rond-point au lieu d'en faire tout l'extérieur ; sur le droit, elle flâne doucement d'un côté à l'autre. Marges : 0,9 m à droite,
+  1,7 m à gauche (ton Pokémon court à côté). Sur l'eau et sur l'autre voie d'une fourche : la corde d'avant (`trajectoire`).
 - **Les embranchements** (Kiki : « une autoroute ne devient pas d'un coup un chemin de terre ») : `"jonctions"` de la région (`{objet, routes, chemins}`,
   kanto-routes : goudron et pavés → terre). Là où la ligne passe d'une route à un chemin, la route **continue tout droit** puis tourne et s'en va
   (`route_suite` : lignes, poteaux, un poteau indicateur à deux flèches), et c'est le chemin qui part. Seulement si le chemin tourne d'au moins 18° dans
@@ -323,6 +327,12 @@ Tout le dessin est dans `contenu/objets/kanto-ville.js` ; deux petites accroches
   pluie), une volée de Roucool (4 km), un oiseau légendaire (Artikodin, Électhor ou Sulfura, 35 km), des étoiles filantes la nuit (1,2 km). Seulement en
   avançant, une à la fois, dans `CIEL.loin` (le ciel lointain), entre 3 et 8° au-dessus de l'horizon : plus haut, les compteurs les cachent.
   Essai : `?rare=avion` (montgolfiere, etoile, roucool, legendaire), `window.__rare("avion")`.
+- **Le goudron posé sur le sol** (17/11, Kiki : le rond-point « complètement buggé », des plaques grises unies) : la chaussée d'une rue, l'anneau d'un
+  rond-point, la route qui continue sont peints avec **le matériau de la piste** (`Forme.sol(nom, x, y, z, s, u)`, `bandeSol(…, surf)`) : le même grain
+  que la route, sans marque (`aBord` = 99), loin de l'ombre de ta monture ; jamais une couleur unie à côté du ruban.
+- **Un chemin de terre qui part** (`cheminFondu`, 17/11, Kiki : « aucun fondu, c'est abrupt ») : peint comme le bas-côté d'une route, la terre du sol
+  en deux tons au milieu, qui se fond dans ce qu'il y a autour sur ~2 m de chaque côté (bord irrégulier) et s'efface dans l'herbe sur ses 12 derniers mètres.
+- **Sous un arbre** : son ombre sur l'herbe, jamais un carré de couleur (le cerisier avait un carré rose : retiré).
 - Exemple : `contenu/niveaux/terre-ville.json` (« Céladopole, la ville et les bois » : rue, carrefour, deux rond-points, sous-bois, échangeur).
 
 ## Ajouter une région (un autre style)
@@ -560,7 +570,7 @@ Le circuit du jour a une fourche deux jours sur cinq (`jour.options`, jamais dan
 | `?pur=1&niveau=<nom>` (serveur d'essai) | le même bilan, dans la page : erreurs, croisements, décor posé, cassures du sol |
 | `window.__verif()` | le contrôleur du niveau chargé |
 | `?s=120&fige=1`, `__aller(s)`, `__image()` | se placer à un endroit, redessiner tout de suite (pour une capture) |
-| `?vue=haut`, `?vue=gauche`, `?vue=droite` | le plan vu du ciel, une rive de face |
+| `?vue=haut`, `?vue=gauche`, `?vue=droite`, `?vue=dessus&alt=60` | le plan vu du ciel, une rive de face, le ciel juste au-dessus de soi (un carrefour, un rond-point) |
 | `?perf=1` | taille de l'image, images par seconde, triangles |
 | `?troncons=1`, `?troncons=0`, `?rayon=700`, `__troncons()`, `tronconsMaj(true)` | un parcours ouvert construit par tronçons (ou d'un bloc), un autre rayon, l'état des tronçons, tout finir tout de suite |
 | `?banc=1` | le banc de mesure : un tour tout seul, puis le verdict de la machine |

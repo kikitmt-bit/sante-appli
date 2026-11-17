@@ -10,7 +10,27 @@ const PESANTEUR = 7;   // celle du jeu (m/s²) : un peu plus douce que la vraie,
 const M = {y: null, vy: 0, air: false, d: 0, sorti: 0, trace: 0, liquide: true, couleur: null};
 
 /* la corde : dans un virage, il se décale vers l'intérieur */
-function trajectoire(s) { const P = PISTE, i = idx(s + 4); return clamp(P.COURB[i] * 60, -1, 1) * P.W[i] * .42; }
+function trajectoire(s) {
+  const P = PISTE, L = !surface(s).liquide && ligneRoute(), i0 = Math.floor(s);
+  if (L && i0 >= 0 && i0 < P.N) { const a = idx(i0), b = idx(i0 + 1); if (a < P.N && b < P.N) return lerp(L[a], L[b], s - i0); }
+  const i = idx(s + 4); return clamp(P.COURB[i] * 60, -1, 1) * P.W[i] * .42; }
+/* (17/11, Kiki : « comme un vrai cycliste sur route fermée ») sur la terre, la ligne de ta monture, calculée une fois, mètre par mètre :
+   la plus coulée possible (on élargit avant un virage, on coupe à la corde, on ressort large : la ligne est tirée vers le plus court, par
+   lissages successifs de 24 m, 12 m, 6 m puis 3 m), sans jamais toucher le bord ; et sur le droit, elle flâne doucement d'un côté à l'autre
+   (pas la trajectoire parfaite). À gauche, 1,7 m de marge : ton Pokémon court à côté du vélo. Sur l'eau, et sur l'autre voie d'une fourche : la corde d'avant. */
+let LIGNE_ = null;
+function ligneRoute() {
+  if (LIGNE_) return LIGNE_;
+  const P = PISTE, N = P.N, d = new Float64Array(N), lo = new Float64Array(N), hi = new Float64Array(N), fl = new Float64Array(N), nx = new Float64Array(N), nz = new Float64Array(N);
+  const k = j => BOUCLE ? ((j % N) + N) % N : clamp(j, 0, N - 1);
+  for (let i = 0; i < N; i++) { nx[i] = Math.cos(P.H[i]); nz[i] = Math.sin(P.H[i]); lo[i] = -Math.max(0, P.W[i] - 1.7); hi[i] = Math.max(0, P.W[i] - .9);
+    fl[i] = clamp((bruit(i / 85 + 3.3, 7.1) - .5) * 2.4, -1, 1) * P.W[i] * .35; d[i] = clamp(fl[i], lo[i], hi[i]); }
+  for (const [pas, n] of [[24, 50], [12, 50], [6, 50], [3, 30]]) for (let it = 0; it < n; it++) for (let i = 0; i < N; i++) {
+    const a = k(i - pas), b = k(i + pas), px = (P.X[a] + nx[a] * d[a] + P.X[b] + nx[b] * d[b]) / 2, pz = (P.Z[a] + nz[a] * d[a] + P.Z[b] + nz[b] * d[b]) / 2;
+    const t = lerp((px - P.X[i]) * nx[i] + (pz - P.Z[i]) * nz[i], fl[i], .05); d[i] = clamp(lerp(d[i], t, .6), lo[i], hi[i]); }
+  for (let it = 0; it < 4; it++) { const c = Float64Array.from(d); for (let i = 0; i < N; i++) { let m = 0; for (let j = -5; j <= 5; j++) m += c[k(i + j)]; d[i] = clamp(m / 11, lo[i], hi[i]); } }   // aucune cassure là où elle frôle le bord
+  return (LIGNE_ = d);
+}
 function retomber(S, choc) {
   gerbe(S.s, clamp(choc / 5, .4, 1.4), M.d, M.y); sonPlouf(clamp(choc / 6, .35, 1), M.liquide); CAM.choc = Math.min(.5, choc * .07); VELO.choc = Math.min(1, choc * .25);
 }
@@ -19,7 +39,7 @@ function animerMonture(t, dt, S) {
   M.liquide = !!surf.liquide;
   const couleur = M.liquide ? "#F2FBFF" : surf.poussiere || "#D9B886";
   if (couleur !== M.couleur) { M.couleur = couleur; GOUTTES.m.material.color.set(couleur); }
-  M.d += (trajectoire(S.s) - M.d) * clamp(dt * 1.5, 0, 1);
+  M.d += (trajectoire(S.s) - M.d) * clamp(dt * (M.liquide ? 1.5 : 4), 0, 1);   // (sur la terre, la ligne est déjà coulée : il la suit de près)
   // le vrai saut : quand le sol se dérobe plus vite qu'il ne tombe, il s'envole, puis retombe
   if (M.y === null || S.fige || !(dt > 0)) { M.y = sol; M.vy = 0; M.air = false; }
   else if (M.air) {

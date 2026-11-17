@@ -29,6 +29,9 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
     const G = CASES, cx = (G.xa + G.xb) / 2, cz = (G.za + G.zb) / 2, h = Math.max(G.xb - G.xa, G.zb - G.za) * .75 + 260;
     camera.position.set(cx, h, cz + 1); camera.lookAt(cx, 0, cz); return;
   }
+  if (VUE.mode === "dessus") {   // (17/11) vu du ciel, juste au-dessus de soi (&alt= : la hauteur, 60 m) : pour vérifier un carrefour, un rond-point
+    const c = at(S.s), h = +(PARAMS.get("alt") || 60); camera.position.set(c.x, c.y + h, c.z + .01); camera.lookAt(c.x, c.y, c.z); return;
+  }
   if (VUE.mode === "gauche" || VUE.mode === "droite") {   // pour vérifier une rive, de face
     const sg = VUE.mode === "gauche" ? -1 : 1, c = pose(S.s, -sg * 3), d = pose(S.s, sg * 30);
     camera.position.set(c.x, c.y + 2.6, c.z); camera.lookAt(d.x, d.y + 3, d.z); return;

@@ -96,13 +96,21 @@ class Forme {
   ombre(x, z, rx, rz) {  // une ombre ronde, sur le sol
     this.va = 0; const [cx, cz] = this.monde(x, z), c0 = fonce(couleurEn(cx, cz), .7), pts = []; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, [X, Z] = this.monde(x + Math.cos(a) * rx, z + Math.sin(a) * rz); pts.push([X, hauteur(X, Z) + .07, Z]); }
     const yc = hauteur(cx, cz) + .07; for (let i = 0; i < 8; i++) { const A = pts[i], B = pts[(i + 1) % 8]; this.v(cx, yc, cz, 0, 1, 0, c0, 0); this.v(A[0], A[1], A[2], 0, 1, 0, c0, 0); this.v(B[0], B[1], B[2], 0, 1, 0, c0, 0); } }
-  maille(materiau = MAT_MONDE) { if (!this.p.length) return null; const g = new THREE.BufferGeometry();
+  /* (17/11, Kiki : le rond-point « complètement buggé », des plaques grises unies à côté du grain de la route) un sommet peint avec le matériau
+     d'une surface de la piste ("goudron", "paves", "terre" : surfaces.js) : le même grain que la route, sans aucune marque ; (s, u) : sa place
+     sur cette surface (le motif des pavés), loin de celle de la piste (l'ombre de ta monture ne s'y pose jamais) */
+  sol(nom, x, y, z, s = 0, u = 0) { const R = this.rt || (this.rt = {}), r = R[nom] || (R[nom] = {p: [], su: []}); r.p.push(x, y, z); r.su.push(s - 20000, u); }
+  maille(materiau = MAT_MONDE) { if (!this.p.length && !this.rt) return null; const g = new THREE.BufferGeometry();
     g.setAttribute("position", new THREE.Float32BufferAttribute(this.p, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(this.n, 3)); g.setAttribute("color", new THREE.Float32BufferAttribute(this.c, 3)); g.setAttribute("mat", new THREE.Float32BufferAttribute(this.m, 1)); if (this.w) g.setAttribute("aVent", new THREE.Float32BufferAttribute(this.w, 2));
-    return new THREE.Mesh(g, materiau); }
+    const m = new THREE.Mesh(g, materiau);
+    for (const [nom, r] of Object.entries(this.rt || {})) { const S = SURFACES[nom]; if (!S || !r.p.length) continue; const n = r.p.length / 3, h = new THREE.BufferGeometry();
+      h.setAttribute("position", new THREE.Float32BufferAttribute(r.p, 3)); h.setAttribute("aSU", new THREE.Float32BufferAttribute(r.su, 2)); h.setAttribute("aBord", new THREE.Float32BufferAttribute(new Float32Array(n).fill(99), 1));
+      const c = new THREE.Mesh(h, S.materiau); c.name = "sol-route"; m.add(c); }
+    return m; }
 }
 /* chaque outil de dessin rend la Forme : on peut les enchaîner (F.matiere(3).plaque(…).matiere(2)) */
 for (const k of Object.getOwnPropertyNames(Forme.prototype)) {
-  if (["constructor", "monde", "maille", "v", "l", "tri", "quad", "poly", "vent"].includes(k)) continue;   // pas les outils de base, appelés des centaines de milliers de fois
+  if (["constructor", "monde", "maille", "sol", "v", "l", "tri", "quad", "poly", "vent"].includes(k)) continue;   // pas les outils de base, appelés des centaines de milliers de fois
   const f = Forme.prototype[k];
   Forme.prototype[k] = function (...a) { const r = f.apply(this, a); return r === undefined ? this : r; };
 }
