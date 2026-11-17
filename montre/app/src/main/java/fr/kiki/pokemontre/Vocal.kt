@@ -75,6 +75,7 @@ class VocalActivity : Activity() {
     private var voixPrete = false
     private var aLire = 0                // phrases données à la voix, pas encore finies
     private var toutRecu = false
+    private val enAttente = ArrayList<String>()   // phrases arrivées avant que la voix soit prête
     private var finDictee = 0L
     private var debutVoix = 0L
     private var recu1 = 0L
@@ -109,7 +110,8 @@ class VocalActivity : Activity() {
         tour++
         try { Wearable.getMessageClient(this).removeListener(recepteur) } catch (e: Exception) { }
         reco?.destroy()
-        voix?.stop(); voix?.shutdown()
+        voix?.stop()   // la voix reste prête pour la prochaine ouverture (elle met plusieurs secondes à démarrer)
+        if (courante === this) courante = null
         demandeWifi?.let { try { getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(it) } catch (e: Exception) { } }
         super.onDestroy()
     }
@@ -163,7 +165,7 @@ class VocalActivity : Activity() {
 
     private fun touche() {
         when (etat) {
-            Etat.PARLE -> { tour++; voix?.stop(); ecouter() }      // couper Claude et reparler
+            Etat.PARLE -> { tour++; voix?.stop(); enAttente.clear(); ecouter() }      // couper Claude et reparler
             Etat.PAUSE -> ecouter()
             Etat.ECOUTE -> reco?.stopListening()
             Etat.REFLECHIT -> { }
@@ -227,6 +229,7 @@ class VocalActivity : Activity() {
     private fun envoyer(q: String) {
         val moi = ++tour
         finDictee = SystemClock.elapsedRealtime(); debutVoix = 0; recu1 = 0; aLire = 0; toutRecu = false; msClaude = 0
+        enAttente.clear()
         montrer(Etat.REFLECHIT, "…")
         texteVue.text = q
         texteVue.setTextColor(Color.GRAY)
@@ -257,14 +260,16 @@ class VocalActivity : Activity() {
         }
         texteVue.append((if (texteVue.text.isEmpty()) "" else " ") + t)
         defile.post { defile.fullScroll(ScrollView.FOCUS_DOWN) }
-        if (voixPrete) { aLire++; voix?.speak(t, TextToSpeech.QUEUE_ADD, null, "$tour") }
+        if (voixPrete) dire(t) else enAttente += t
     }
 
     private fun fin(ms: JSONObject?) {
         toutRecu = true
         Log.i(TAG, "relais ${ms} · 1re phrase reçue ${recu1 - finDictee} ms · $chemin")
         temps(ms)
-        if (!voixPrete) pause("Touche pour répondre") else if (aLire <= 0) ecouter()
+        if (voixPrete && aLire <= 0 && enAttente.isEmpty()) ecouter()
+        else if (voixEchec) pause("Touche pour répondre")   // pas de voix du tout : on lit à l'écran
+        // sinon : la voix lira les phrases dès qu'elle sera prête, puis on réécoutera
     }
 
     /** Les temps de l'échange, depuis la fin de ta phrase : début de la voix, texte reçu, et la part de Claude sur le PC. */
@@ -377,39 +382,78 @@ class VocalActivity : Activity() {
     }
 
     // ---------- La voix ----------
+    // La voix de synthèse de la montre met plusieurs secondes à démarrer (mesuré le 17/11 : plus que la réponse de
+    // Claude) : elle est créée une fois et gardée prête (VOIX), et les phrases arrivées avant elle attendent.
+    private var voixEchec = false
+
     private fun preparerVoix() {
-        voix = TextToSpeech(this) { statut ->
-            val v = voix
-            if (statut != TextToSpeech.SUCCESS || v == null) { Log.w(TAG, "pas de voix de synthèse sur la montre"); return@TextToSpeech }
-            val langue = v.setLanguage(Locale.FRANCE)
-            if (langue == TextToSpeech.LANG_MISSING_DATA || langue == TextToSpeech.LANG_NOT_SUPPORTED) {
-                Log.w(TAG, "voix française absente ($langue)"); return@TextToSpeech
-            }
-            v.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT)
-                .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-            v.setSpeechRate(1.08f)
-            v.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-                override fun onStart(id: String?) {
-                    if (id == "$tour" && debutVoix == 0L) {
-                        debutVoix = SystemClock.elapsedRealtime()
-                        Log.i(TAG, "voix ${debutVoix - finDictee} ms après la fin de la phrase")
-                        main.post { temps() }
-                    }
+        courante = this
+        val v = VOIX
+        if (v != null && VOIX_PRETE) { brancherVoix(v); return }
+        if (v != null) return   // en train de démarrer : brancherVoix sera appelé
+        VOIX = TextToSpeech(applicationContext) { statut ->
+            Handler(Looper.getMainLooper()).post {
+                val tts = VOIX
+                val ok = statut == TextToSpeech.SUCCESS && tts != null &&
+                    tts.setLanguage(Locale.FRANCE).let { it != TextToSpeech.LANG_MISSING_DATA && it != TextToSpeech.LANG_NOT_SUPPORTED }
+                if (!ok) {
+                    Log.w(TAG, "pas de voix française sur la montre ($statut)")
+                    try { tts?.shutdown() } catch (e: Exception) { }
+                    VOIX = null
+                    courante?.voixImpossible()
+                    return@post
                 }
-                override fun onDone(id: String?) { main.post { lu(id) } }
-                @Deprecated("API") override fun onError(id: String?) { main.post { lu(id) } }
-                override fun onStop(id: String?, interrupted: Boolean) {}
-            })
-            // Montre en silencieux : on met le son à un niveau audible, sinon on n'entend rien
-            try {
-                val am = getSystemService(AudioManager::class.java)
-                val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                if (am.getStreamVolume(AudioManager.STREAM_MUSIC) < max / 3) am.setStreamVolume(AudioManager.STREAM_MUSIC, max * 2 / 3, 0)
-            } catch (e: Exception) { }
-            voixPrete = true
-            Log.i(TAG, "voix prête : ${v.defaultEngine}")
+                tts!!.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                tts.setSpeechRate(1.08f)
+                // La voix française la plus rapide qui marche sans réseau (la voix par défaut met ~5 s par phrase sur la montre)
+                try {
+                    val fr = tts.voices.filter { it.locale.language == "fr" && !it.isNetworkConnectionRequired &&
+                        !it.features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) }
+                    fr.forEach { Log.i(TAG, "voix dispo : ${it.name} latence=${it.latency} qualité=${it.quality}") }
+                    fr.minWithOrNull(compareBy({ it.latency }, { -it.quality }))?.let { tts.voice = it; Log.i(TAG, "voix choisie : ${it.name}") }
+                } catch (e: Exception) { }
+                VOIX_PRETE = true
+                Log.i(TAG, "voix prête : ${tts.defaultEngine}")
+                courante?.brancherVoix(tts)
+            }
         }
     }
+
+    private fun voixImpossible() {
+        voixEchec = true
+        if (toutRecu && etat == Etat.PARLE) pause("Touche pour répondre")
+    }
+
+    /** La voix est prête : on écoute ses événements, et on lit ce qui attendait. */
+    private fun brancherVoix(v: TextToSpeech) {
+        voix = v
+        v.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+            override fun onStart(id: String?) {
+                if (id == "$tour" && debutVoix == 0L) {
+                    debutVoix = SystemClock.elapsedRealtime()
+                    Log.i(TAG, "voix ${debutVoix - finDictee} ms après la fin de la phrase")
+                    main.post { temps() }
+                }
+            }
+            override fun onDone(id: String?) { main.post { lu(id) } }
+            @Deprecated("API") override fun onError(id: String?) { main.post { lu(id) } }
+            override fun onStop(id: String?, interrupted: Boolean) {}
+        })
+        // Montre en silencieux : on met le son à un niveau audible, sinon on n'entend rien
+        try {
+            val am = getSystemService(AudioManager::class.java)
+            val max = am.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            if (am.getStreamVolume(AudioManager.STREAM_MUSIC) < max / 3) am.setStreamVolume(AudioManager.STREAM_MUSIC, max * 2 / 3, 0)
+        } catch (e: Exception) { }
+        voixPrete = true
+        if (etat == Etat.PARLE && enAttente.isNotEmpty()) {
+            val l = ArrayList(enAttente); enAttente.clear()
+            l.forEach { dire(it) }
+        }
+    }
+
+    private fun dire(t: String) { aLire++; voix?.speak(t, TextToSpeech.QUEUE_ADD, null, "$tour") }
 
     private fun lu(id: String?) {
         if (id != "$tour") return
@@ -423,6 +467,9 @@ class VocalActivity : Activity() {
 
     companion object {
         const val TAG = "Vocal"
+        private var VOIX: TextToSpeech? = null       // gardée d'une ouverture à l'autre
+        private var VOIX_PRETE = false
+        private var courante: VocalActivity? = null
         const val PAR_TELEPHONE = true   // Claude tourne sur le téléphone (Termux) ; false = relais joint par le réseau
         val ORANGE = Color.rgb(217, 119, 87)
     }
