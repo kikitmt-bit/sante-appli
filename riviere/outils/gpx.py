@@ -6,6 +6,7 @@
         --depuis 6.5    où commence l'extrait (en km depuis le début du GPX) ; sans lui : les --km les plus durs (la plus forte montée)
         --large 6       la largeur de la route (m)
         --rayon 9       le plus petit rayon de virage gardé (m) : un virage plus serré est élargi, sans changer de combien la route tourne
+        --osm carte.json  le décor d'après OpenStreetMap (bâtiments, forêts, vignes, roche…) : voir outils/osm.py
         --relief        demande l'altitude de chaque côté de la route à api.opentopodata.org (gratuit) : talus du côté qui monte, ravin du
                         côté qui descend. ATTENTION : les coordonnées de la route partent chez ce service ; sans --relief, rien ne sort du PC.
 Ce qui est gardé : la FORME de la route (virages, longueurs, pentes), à l'échelle 1:1. Jamais une coordonnée, ni le GPX (hors du dépôt,
@@ -218,7 +219,7 @@ def construire(pts, km=KM_MAX, depuis=None, large=6.0, rayon=9.0, lisse=6.0, lis
     # la pente de chaque kilomètre, et le plus dur
     kms = [(k, (a[min(k + 1000, n)] - a[k]) / (min(k + 1000, n) - k)) for k in range(0, n, 1000) if min(k + 1000, n) - k >= 300]
     plus_dur = max(range(0, max(1, n - 1000) + 1, 10), key=lambda k: a[min(k + 1000, n)] - a[k])
-    return out, {"long": n, "debut_km": round(i0 / 1000, 2), "montee": round(montee), "denivele": round(a[-1] - a[0]),
+    return out, {"_x": x, "_y": y, "long": n, "debut_km": round(i0 / 1000, 2), "montee": round(montee), "denivele": round(a[-1] - a[0]),
                  "pente": round((a[-1] - a[0]) / n * 100, 1), "pente_max": round(pente_max * 100, 1), "kms": kms, "plus_dur": plus_dur,
                  "rmin": rmin}
 
@@ -254,8 +255,8 @@ def habiller(pieces, bilan):
         t += p["long"]
 
 
-def niveau(pieces, bilan, ident, nom, graine=11, source=""):
-    return {"id": ident, "nom": nom, "discipline": "terre", "biome": "kanto-routes", "lieux": "kanto", "graine": graine, "nageur": 7,
+def niveau(pieces, bilan, ident, nom, graine=11, source="", biome="kanto-routes"):
+    return {"id": ident, "nom": nom, "discipline": "terre", "biome": biome, "lieux": "kanto", "graine": graine, "nageur": 7,
             "allure": 1, "allurePente": False, "surface": "goudron",   # à l'échelle 1:1 : un mètre de route = un vrai mètre, côte ou pas
             "route": {"km": round(bilan["long"] / 1000, 2), "denivele": bilan["denivele"], "pente": bilan["pente"], "source": source},
             "note": (f"Une vraie route (riviere/outils/gpx.py, étape 8 du plan) : {bilan['long'] / 1000:.1f} km à l'échelle 1:1, "
@@ -279,6 +280,8 @@ if __name__ == "__main__":
     ap.add_argument("--relief", action="store_true")
     ap.add_argument("--graine", type=int, default=11)
     ap.add_argument("--source", default="OpenStreetMap")
+    ap.add_argument("--osm", help="le décor d'après OpenStreetMap : la carte autour de la route, lue dans ce fichier (ou demandée puis "
+                    "gardée là) ; voir outils/osm.py. Fichier HORS du dépôt.")
     ap.add_argument("--ecrire", action="store_true")
     o = ap.parse_args()
     pts = lire_gpx(Path(o.gpx).read_text(encoding="utf-8"))
@@ -288,6 +291,11 @@ if __name__ == "__main__":
 
     pieces, b = construire(pts, o.km, o.depuis, o.large, o.rayon, o.lisse, o.lisse_alt, cotes_fn if o.relief else None)
     b["large"] = o.large
+    if o.osm:
+        import osm
+        bo = osm.habiller(pieces, b["_x"], b["_y"], (pts[0][0], pts[0][1]), osm.carte(o.osm, pts), o.large)
+        print("OpenStreetMap : " + ", ".join(f"{v} {k}" for k, v in sorted(bo["objets"].items(), key=lambda kv: -kv[1])))
+        print("Bords (km) : " + ", ".join(f"{k} {v}" for k, v in bo["bords"].items()))
     habiller(pieces, b)
     print(f"{len(pieces)} pièces, {b['long']} m (depuis le km {b['debut_km']} du GPX), {b['denivele']:+} m, {b['pente']} % de moyenne, "
           f"{b['pente_max']} % au plus sur une pièce ; virages élargis à {b['rmin']:g} m de rayon au moins")
@@ -295,7 +303,10 @@ if __name__ == "__main__":
     print("Rives : " + ", ".join(sorted({f"{p['g']}/{p['d']}" for p in pieces})))
     if o.ecrire:
         f = RACINE / "contenu" / "niveaux" / f"{o.id}.json"
-        n = niveau(pieces, b, o.id, o.nom, o.graine, o.source)
+        n = niveau(pieces, b, o.id, o.nom, o.graine, o.source, "kanto-reel" if o.osm else "kanto-routes")
+        if o.osm:
+            n["osm"] = True
+            n["note"] += " Décor d'après OpenStreetMap (outils/osm.py) : © les contributeurs d'OpenStreetMap, licence ODbL."
         texte = json.dumps(n, ensure_ascii=False, indent=1)
         # une pièce par ligne : le fichier se relit
         lignes = json.dumps({k: v for k, v in n.items() if k != "pieces"}, ensure_ascii=False, indent=1)[:-2]

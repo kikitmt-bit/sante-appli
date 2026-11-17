@@ -247,6 +247,28 @@ Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (v
   d'un circuit de 2 km, par tranche de 2 km. **Poids mesuré** (5 km) : ~1,25 million de triangles en tout (sol 515 000, décor 484 000),
   13 s de construction dans Chrome sans carte graphique (4,5 s pour kanto-1km) : à mesurer sur la tablette ; le téléphone risque de peiner.
 
+### Le décor d'après la carte (`outils/osm.py`, 17/11, lot 4)
+
+`python riviere/outils/gpx.py route.gpx --id col --nom "Le col" --km 60 --osm carte.json --ecrire` : la route, et son décor d'après OpenStreetMap.
+- **La carte** : si `carte.json` n'existe pas, l'outil demande à overpass-api.de (gratuit) le rectangle autour de la route et l'y garde. Ce fichier
+  contient des coordonnées : **toujours HORS du dépôt** (avec le GPX). Le niveau, lui, n'en a aucune.
+- **Repérer par rapport à la route** (`Repere`) : pour chaque chose, le mètre de la route le plus proche, le côté, l'écart au bord, et l'angle par rapport
+  à la route (`angle_route` : façade vers la route, ±45° au plus). Le tracé peut être lissé et un virage élargi : le décor suit.
+- **Les bords** (`bords`, `boucher`, `lisser_bords`) : tous les 10 m, de chaque côté, la sorte de terrain la plus présente à 10, 22 et 38 m (forêt,
+  garrigue, vignes, verger, pré, roche, village), et la forêt au loin (75 à 150 m) ; village = une zone habitée ou 4 bâtiments à moins de 40 m (jamais
+  sur la roche) ; un trou de la carte prend ce qu'on voyait avant (3 km au plus) ; jamais un bloc de moins de 150 m. Correspondance : `BORD`
+  (forêt → `sous_bois`, roche → `pierrier`…), « _bois » en plus si la forêt est derrière.
+- **Les objets, posés exactement par le niveau** : bâtiments (`batiments` : maison à sa taille, `varie` pour les couleurs ; entrepôt si grand et bas ;
+  immeuble dès 3 étages ; boutique ; chapelle pour une église ; les plus grands d'abord, jamais l'un dans l'autre, jamais sur la route), arbres isolés,
+  rangées d'arbres et haies, piscines, tours et antennes (avant les bâtiments). Au mètre et au degré près (le niveau reste léger).
+- **La région** `kanto-reel` (hérite de kanto-routes) : les bords de la carte et leurs règles (`regles_plus` : rangs de vigne, cerisiers et pommiers,
+  buissons de garrigue, cailloux du pierrier, Pokémon de chaque bord) ; aucune maison ni rue au hasard : les maisons sont celles de la carte.
+  Les essences : plus de pins, pas de cerisier rose en forêt (`"cerisier": 0` : les listes héritées se complètent).
+- **Les recettes** (`contenu/objets/kanto-reel.js`) : `chapelle`, `piscine`, `tour_relais` (`mat: true` : une antenne seule), `vignes`
+  (`simple: true` au loin : deux blocs par rang).
+- Le menu cite « © les contributeurs d'OpenStreetMap » pour tout circuit qui a `"route"` (`"osm": true` : tracé et décor).
+- Exemple : `ventoux` (« Le Ventoux en entier », caché du menu). Comparer : `outils/captures.py compare --niveau ventoux`.
+
 ### Les longues routes : le monde par tronçons (`moteur/troncons.js`, 16/11, lot 3)
 
 Un circuit de 2 km est construit d'un bloc au chargement. Une route de 20 km ne peut pas l'être (une minute de calcul, des millions de

@@ -1,0 +1,54 @@
+{
+ "nom": "Kanto, les vraies routes",
+ "herite": "kanto-routes",
+ "note": "(17/11, étape 8, lot 4) La région des vraies routes habillées d'après OpenStreetMap (outils/osm.py). Le niveau dit, pièce par pièce, ce que la carte voit au bord de la route (forêt, garrigue, vignes, vergers, prés, village, pierrier) et pose les bâtiments réels à leur place : les règles d'ici ne font que garnir autour. Les bords « _bois » : la même chose près de la route, et la forêt au loin. Jamais de maison ni de rue posée au hasard sur ces bords : les maisons sont celles de la carte.",
+ "sols": {
+  "herbe_seche": {"c": ["#B6C266", "#A8B45C"]},
+  "caillasse": {"c": ["#E2DED4", "#D4D0C6"]}
+ },
+ "especes": {"note": "les essences des vraies routes (Provence, montagne) : plus de pins, pas de cerisiers roses dans la forêt (les listes se complètent : 0 retire une essence de Kanto)", "bosquet": 60, "melange": 0.75, "liste": {"arbre": 7, "pin": 4, "roux": 1, "bouleau": 1, "cerisier": 0, "pommier": 0}},
+ "rives": {
+  "village": {"pour": "terre", "urbain": true, "profil": [[0, 0.16], [0.08, 0.17], [2.4, 0.19], [2.6, 0.2], [30, 0.4], [110, 3]], "sols": [["paves", 2.5], ["herbe", 999]], "paroi": "pierre_quai", "bosses": 0.2, "franc": true},
+  "vignes": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.15], [40, 0.7], [110, 3]], "sols": [["terre", 0.6], ["herbe", 999]], "paroi": "terre", "bosses": 0.6},
+  "vignes_bois": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.15], [40, 0.7], [110, 3]], "sols": [["terre", 0.6], ["herbe", 999]], "paroi": "terre", "bosses": 0.6},
+  "verger": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.15], [40, 0.6], [110, 3]], "sols": [["terre", 0.6], ["herbe", 999]], "paroi": "terre", "bosses": 0.5},
+  "verger_bois": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.15], [40, 0.6], [110, 3]], "sols": [["terre", 0.6], ["herbe", 999]], "paroi": "terre", "bosses": 0.5},
+  "pre": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.15], [40, 0.6], [110, 3]], "sols": [["terre", 0.6], ["herbe", 999]], "paroi": "terre", "bosses": 0.8},
+  "pre_bois": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [4, 0.15], [40, 0.6], [110, 3]], "sols": [["terre", 0.6], ["herbe", 999]], "paroi": "terre", "bosses": 0.8},
+  "garrigue": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [3, 0.2], [25, 1.2], [110, 5]], "sols": [["terre", 0.8], ["herbe_seche", 999]], "paroi": "terre", "bosses": 2},
+  "garrigue_bois": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [3, 0.2], [25, 1.2], [110, 5]], "sols": [["terre", 0.8], ["herbe_seche", 999]], "paroi": "terre", "bosses": 2},
+  "pierrier": {"pour": "terre", "profil": [[0, 0.03], [0.6, 0.06], [3, 0.25], [25, 1.6], [110, 7]], "sols": [["roche_claire", 1.2], ["caillasse", 999]], "paroi": "roche", "bosses": 2.6}
+ },
+ "forets": [
+  {"nom": "le sous-bois : une masse d'arbres jusqu'au fond", "sur": ["sous_bois"], "bande": [22, 165], "maille": 5.6},
+  {"nom": "la forêt au loin, derrière les vignes, les vergers, les prés, la garrigue (la carte l'y voit)", "sur": ["vignes_bois", "verger_bois", "pre_bois", "garrigue_bois"], "bande": [68, 165], "maille": 5.8},
+  {"nom": "des bois par taches, au loin derrière le village et les bas-côtés", "sur": ["bas_cote", "village"], "bande": [58, 165], "maille": 6.2, "bosquets": 0.45},
+  {"nom": "la forêt au fond du ravin", "sur": ["ravin"], "bande": [28, 150], "maille": 6.4, "bosquets": 0.36}
+ ],
+ "regles_plus": [
+  {"nom": "village : réverbères", "objets": {"lampadaire": 1}, "sur": ["village"], "bande": [0.6, 0.7], "pas": 20},
+  {"nom": "village : boîtes aux lettres", "objets": {"boite_lettres": 1}, "sur": ["village"], "bande": [2.2, 2.3], "pas": 30},
+  {"nom": "village : bancs", "objets": {"banc": 1}, "sur": ["village"], "bande": [1.9, 2], "pas": 70},
+  {"nom": "village : arbres des jardins", "objets": {"arbre": 2, "buisson": 2, "pin": 1}, "sur": ["village"], "bande": [6, 45], "pas": 9, "echelle": [0.9, 1.3]},
+  {"nom": "village : Pokémon", "objets": {"pokemon": 1}, "nums": [52, 58, 133, 35, 39, 25], "sur": ["village"], "bande": [1.2, 2], "pas": 55},
+  {"nom": "vignes : les rangs, au bord", "objets": {"vignes": 1}, "sur": ["vignes", "vignes_bois"], "bande": [8.5, 9], "pas": 13},
+  {"nom": "vignes : les rangs, au milieu", "objets": {"vignes": 1}, "reglages": {"simple": true}, "sur": ["vignes", "vignes_bois"], "bande": [24, 25], "pas": 13},
+  {"nom": "vignes : les rangs, plus loin", "objets": {"vignes": 1}, "reglages": {"simple": true}, "sur": ["vignes", "vignes_bois"], "bande": [39, 40], "pas": 13},
+  {"nom": "vignes : les rangs, au fond", "objets": {"vignes": 1}, "reglages": {"simple": true}, "sur": ["vignes"], "bande": [54, 55], "pas": 13},
+  {"nom": "vignes : un cabanon, un arbre", "objets": {"arbre": 3, "pin": 2, "cerisier": 1}, "sur": ["vignes", "vignes_bois"], "bande": [2, 50], "pas": 45},
+  {"nom": "vignes : Pokémon", "objets": {"pokemon": 1}, "nums": [43, 46, 16, 1], "sur": ["vignes", "vignes_bois"], "bande": [2, 4], "pas": 75},
+  {"nom": "vergers : cerisiers et pommiers en rangs", "objets": {"cerisier": 2, "pommier": 2}, "sur": ["verger", "verger_bois"], "bande": [4, 55], "pas": 5.5, "echelle": [0.8, 1.05]},
+  {"nom": "vergers : Pokémon", "objets": {"pokemon": 1}, "nums": [10, 25, 1, 13], "sur": ["verger", "verger_bois"], "bande": [2, 4], "pas": 80},
+  {"nom": "prés : buissons", "objets": {"buisson": 1}, "sur": ["pre", "pre_bois"], "bande": [1.5, 6], "pas": 13},
+  {"nom": "prés : arbres isolés", "objets": {"arbre": 2, "pin": 1}, "sur": ["pre", "pre_bois"], "bande": [12, 60], "pas": 22, "echelle": [1, 1.4]},
+  {"nom": "prés : bottes de foin", "objets": {"meule": 1}, "sur": ["pre", "pre_bois"], "bande": [10, 30], "pas": 70},
+  {"nom": "prés : Pokémon", "objets": {"pokemon": 1}, "nums": [128, 84, 77, 83, 19], "sur": ["pre", "pre_bois"], "bande": [4, 14], "pas": 65},
+  {"nom": "garrigue : buissons serrés", "objets": {"buisson": 4, "rocher": 1}, "sur": ["garrigue", "garrigue_bois"], "bande": [1.6, 40], "pas": 2.4, "echelle": [0.7, 1.2], "pente": 1},
+  {"nom": "garrigue : pins et chênes", "objets": {"pin": 2, "arbre": 2}, "sur": ["garrigue", "garrigue_bois"], "bande": [5, 60], "pas": 9, "echelle": [0.7, 1.1]},
+  {"nom": "garrigue : Pokémon", "objets": {"pokemon": 1}, "nums": [27, 19, 21, 29], "sur": ["garrigue", "garrigue_bois"], "bande": [2, 6], "pas": 70},
+  {"nom": "pierrier : cailloux", "objets": {"rocher": 1}, "sur": ["pierrier"], "bande": [1.2, 12], "pas": 3.2, "echelle": [0.35, 0.8], "pente": 2},
+  {"nom": "pierrier : blocs", "objets": {"rocher": 1}, "sur": ["pierrier"], "bande": [8, 80], "pas": 7, "echelle": [0.8, 1.8], "pente": 2},
+  {"nom": "pierrier : quelques touffes", "objets": {"buisson": 1}, "sur": ["pierrier"], "bande": [2, 30], "pas": 16, "echelle": [0.5, 0.8]},
+  {"nom": "pierrier : Pokémon", "objets": {"pokemon": 1}, "nums": [74, 104, 111, 66], "sur": ["pierrier"], "bande": [2, 7], "pas": 65, "pente": 2}
+ ]
+}

@@ -365,7 +365,8 @@ class Moteur(unittest.TestCase):
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
     BUDGET_TRIANGLES = 220000
     BUDGET_SECONDES = 8
-    BUDGET_PAGE_KO = 2010   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits)
+    BUDGET_PAGE_KO = 2050   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits ;
+                            #  +40 Ko la nuit : le décor OpenStreetMap du Ventoux entier, 480 objets réels, et la région kanto-reel)
 
     def test_budgets(self):
         import page
@@ -456,6 +457,34 @@ class VraieRoute(unittest.TestCase):
         self.assertEqual(b["long"], 8000)
         with self.assertRaises(ValueError):
             gpx.construire(pts, km=61)
+
+    def test_osm(self):
+        """(17/11, lot 4) Le décor d'après OpenStreetMap : une maison à gauche, tournée de 30° par rapport à la route, dans une forêt.
+        Repérés par rapport à la route (côté, écart, angle), jamais une coordonnée dans le niveau."""
+        import math
+        sys.path.insert(0, str(R / "outils"))
+        import gpx, osm
+        la, lo = 45.0, 6.0
+        deg = lambda x, y: {"lat": la + y / 111195, "lon": lo + x / (111195 * math.cos(math.radians(la)))}
+        def rect(cx, cy, L, W, ang):
+            c, s = math.cos(ang), math.sin(ang)
+            pts = [(cx + u * c - v * s, cy + u * s + v * c) for u, v in ((-L / 2, -W / 2), (L / 2, -W / 2), (L / 2, W / 2), (-L / 2, W / 2))]
+            return [deg(*p) for p in pts + pts[:1]]
+        foret = [deg(*p) for p in ((-5, -50), (-250, -50), (-250, 450), (-5, 450), (-5, -50))]
+        carte = {"elements": [
+            {"type": "way", "tags": {"building": "house"}, "geometry": rect(-20, 200, 11, 7, math.radians(90 + 30))},   # la route va vers le nord : à gauche = à l'ouest (à l'est, le retour est plus près)
+            {"type": "way", "tags": {"landuse": "forest"}, "geometry": foret}]}
+        pts = gpx.lire_gpx(self.gpx())
+        pieces, b = gpx.construire(pts, km=1.2, large=6, rayon=9)
+        bilan = osm.habiller(pieces, b["_x"], b["_y"], (pts[0][0], pts[0][1]), carte, 6)
+        self.assertEqual(bilan["objets"], {"maison": 1})
+        o = next(o for p in pieces for o in p.get("objets", []))
+        self.assertEqual(o["cote"], "g"); self.assertAlmostEqual(o["e"], 20 - 3, delta=1.5); self.assertAlmostEqual(o["tourne"], 30, delta=2)
+        self.assertAlmostEqual(o["l"], 11, delta=.5); self.assertAlmostEqual(o["p"], 7, delta=.5)
+        debut = pieces[0]
+        self.assertEqual(debut["g"], "sous_bois")   # la forêt, à gauche, tout le long de la ligne droite
+        texte = json.dumps(pieces)
+        self.assertNotIn("45.0", texte); self.assertNotIn('"lat"', texte); self.assertNotIn('"lon"', texte)
 
 
 if __name__ == "__main__":

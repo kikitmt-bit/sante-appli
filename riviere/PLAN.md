@@ -44,7 +44,7 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 | 5 | Circuit du jour | chaque matin le même circuit pour tous et son classement, fabriqué par GitHub sans crédits | l'étape 4 | 11.4 | faible | 1 | **faite le 15/11** (à essayer : le menu de la tablette demain matin) |
 | 6 | Ronflex et premiers lieux de Kanto | Ronflex bloque la route et se réveille quand on accélère | la brique « effort » (forcer plus que sa croisière) | 7.5, 7.6, 10.7 | faible | 1 à 2 par lot | **Ronflex et l'effort faits le 15/11** (lieux de Kanto : lot suivant) |
 | 7 | Embranchements à l'effort | une fourche : la voie spectaculaire si on force | les captures de référence de l'étape 0 | 5.1 | **élevé** (le cœur) | 3 à 4 | **faite le 15/11** (à essayer : « L'île aux rapides » au rameur, forcer à l'annonce) |
-| 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | **lots 1, 2 et 3 faits le 16/11** (une vraie route, le home trainer sans appareil, le monde par tronçons : « Le Ventoux en entier », 21,6 km) ; lot 4 (décor d'OpenStreetMap, Opus) : lancé par Kiki dans une autre conversation, à réunir avec ce travail |
+| 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | **lots 1, 2 et 3 faits le 16/11** (une vraie route, le home trainer sans appareil, le monde par tronçons : « Le Ventoux en entier », 21,6 km) ; **lot 4 fait le 17/11** (le décor d'après OpenStreetMap : Bédoin, les vignes, la forêt, le pierrier du sommet, sur « Le Ventoux en entier ») |
 | 9 | Forêts, vent, ombres, eau qui coule | un effet à la fois | aucune (les instances existent déjà dans three.js r128) | 4 | moyen | 3 à 5 | **faite le 15/11** (à essayer : la vitrine sur la tablette, Réglages → Ambiance → Les effets : Avec puis Sans ; le banc `?banc=1` dans les deux cas) |
 | 10 | Résumé de séance | 20 à 30 s rejouées à la fin | la trace gardée à l'étape 2 | 8.3 | moyen | 2 | **faite le 15/11** (à essayer : un essai « Auto » de 3-4 min, puis « ■ Fin ») |
 
@@ -362,6 +362,23 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   **Pas encore essayé** : la tablette, le téléphone, la fluidité réelle à 60 images/s (le Chrome sans fenêtre tourne à 6 images/s), un vrai home trainer.
   **À réunir avec le lot 4** : il a travaillé sur `col-ventoux` ; `outils/gpx.py` a changé des deux côtés (ici : seulement la limite de longueur) ; une fois réuni,
   rejouer l'outil sur le Ventoux entier (`--km 60 --id ventoux --nom "Le Ventoux en entier"`). Pas de ligne dans 🧪 (c'est dans La Rivière).
+- **Étape 8 — lot 4, le décor d'après OpenStreetMap (17/11/2026, Opus ; plan court accepté ; l'autre conversation à qui Kiki l'avait confié le 16/11
+  n'a rien laissé dans le dépôt : refait ici).** **Ce que Kiki verra** : « Le Ventoux en entier » (`ventoux`, toujours caché du menu : `&riviere=ventoux&force=1`)
+  habillé d'après la vraie carte : Bédoin au départ (266 maisons à leur place, leur taille et leur angle, l'église, les piscines), les vignes et les vergers,
+  la forêt jusqu'au Chalet Reynard, le pierrier blanc du sommet, l'émetteur et la chapelle Sainte-Croix en haut ; au menu, « Tracé et décor d'après
+  OpenStreetMap · © les contributeurs d'OpenStreetMap ». **Comment** : `outils/osm.py`, branché sur `gpx.py --osm carte.json` (la carte demandée une fois
+  à overpass-api.de puis gardée dans ce fichier, HORS du dépôt) ; chaque chose repérée par rapport à la route (mètre, côté, écart, angle), donc jamais une
+  coordonnée ; région `contenu/biomes/kanto-reel.json` (hérite de kanto-routes : bords village, vignes, verger, pré, garrigue, pierrier, et leurs doubles
+  « _bois » quand la carte voit la forêt au loin) ; recettes `contenu/objets/kanto-reel.js` (chapelle, piscine, tour-relais et antenne, rangs de vigne).
+  Mode d'emploi : `MOTEUR.md`, « Le décor d'après la carte ». **Le cœur n'est pas touché** (rien dans `moteur/`). **Le filet** : 185 tests verts (1 de plus :
+  `VraieRoute.test_osm`, côté, écart, angle, forêt, aucune coordonnée) ; `kanto-1km` : 10 captures sur 10 identiques ; le tracé du Ventoux identique au
+  mètre près (609 pièces, même GPX qu'au lot 3 : record et fantôme gardés) ; triangles d'un kilomètre sous le budget. Plafond de poids de la page passé de
+  2 010 à 2 050 Ko (+47 Ko : 480 objets réels et la région). **Limites** : la carte a des trous (km 3 à 5 et 12 à 16 du Ventoux : on garde ce qu'on
+  voyait avant, sur 3 km au plus) ; les maisons collées d'un vieux centre sont éclaircies (jamais deux objets l'un dans l'autre) ; pas de rues qui partent
+  (les routes de la carte ne sont pas encore lues) ; le décor au loin est choisi par blocs de 150 m, pas arbre par arbre. Les références de captures de
+  `col-ventoux` (comme essai, terre-huit, terre-volcan, vitrine) datent d'avant les bordures du 17/11 : à refaire (`captures.py ref`).
+  **Pas encore essayé** : la tablette (fluidité dans Bédoin), une vraie séance. **À essayer par Kiki** : grimper le Ventoux entier au vélo, dire s'il reconnaît
+  la montée (village, vignes, forêt, sommet pelé) ; et s'il le veut au menu (aujourd'hui caché).
 - **Hors étapes — trotteurs et vélo en sprite (16-17/11/2026, Fable).** Demande de Kiki, en deux lots. **Lot 1 fait** : rollers retirés ; au skieur de fond,
   ton Pokémon trottine de dos à sa vraie taille (`contenu/trotteurs.json`, `contenu/montures/trotteur.js` : une monture du contenu, trois lignes d'accroche dans le
   cœur), décor à 6,5 km/h, trot calé sur les tours de jambes, un record par discipline. Liste provisoire (Pikachu, Caninos, Ponyta) : Kiki choisit ses trois sur la
