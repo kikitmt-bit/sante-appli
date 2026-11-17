@@ -91,6 +91,7 @@ const NAGEUR = {num: 0, fiche: null};
 const ficheNageur = num => (NAGEURS.liste || []).find(f => f.num === +num) || null;
 const nageurVoulu = () => +PARAMS.get("nageur") || +lireReglage("riviere_nageur", 0) || NAGEURS.defaut || NIVEAU.nageur || 7;   // ?nageur=131, sinon le choix du menu, sinon Carapuce
 async function changerNageur(num) {   // sur l'eau : le Pokémon choisi, à sa vraie taille ; sur la terre : celui du circuit, comme avant
+  if (typeof trotteurActif === "function" && trotteurActif() && await changerTrotteur()) return true;   // au skieur de fond : le trotteur choisi (contenu/montures/trotteur.js)
   const eau = DISCIPLINE === "eau", n = eau ? +num || NIVEAU.nageur || 7 : NIVEAU.nageur || 7, pl = await planche(String(n).padStart(4, "0") + "/Walk"); if (!pl) return false;
   if (nageur) retirerPantin(nageur);
   const fiche = eau ? ficheNageur(n) || {num: n} : null;

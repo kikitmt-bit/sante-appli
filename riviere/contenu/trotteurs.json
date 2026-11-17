@@ -1,0 +1,9 @@
+{
+ "_": "Les Pokémon qui trottinent au skieur de fond (16/11, Kiki : un footing léger, vu de dos, en sprites de Donjon Mystère). Chacun garde sa VRAIE taille : celle du Pokédex (pokedex.TAILLES), ajoutée par page.py. « cycles » : combien de cycles de marche par tour de jambes de la machine (1 : foulées posées ; 2 : foulées vives, pour un petit). « foulee » : le petit rebond de chaque foulée (m, pour un Pokémon d'un mètre ; 0 : sa marche rebondit déjà toute seule). Liste provisoire : Kiki choisit ses trois sur la planche claude.ai/artifact/D6K5xVakUEcE9hDZkRRU9H.",
+ "defaut": 25,
+ "liste": [
+  {"num": 25, "nom": "Pikachu", "cycles": 2, "foulee": 0.05},
+  {"num": 58, "nom": "Caninos", "cycles": 2, "foulee": 0.05},
+  {"num": 77, "nom": "Ponyta", "cycles": 1, "foulee": 0.05}
+ ]
+}

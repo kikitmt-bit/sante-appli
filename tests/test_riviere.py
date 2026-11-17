@@ -43,6 +43,36 @@ class Fichiers(unittest.TestCase):
             self.assertTrue(0.3 <= p.get("part", 1) <= 1, p["nom"])
             self.assertIn(p.get("style", "brasse"), nages, p["nom"])
 
+    def test_trotteurs(self):
+        """Les Pokémon qui trottinent au skieur de fond : chacun a sa vraie taille, un rythme de foulée connu, et la monture du contenu existe."""
+        t = _page.trotteurs()
+        nums = [p["num"] for p in t["liste"]]
+        self.assertTrue(nums, "aucun trotteur")
+        self.assertEqual(len(nums), len(set(nums)), "un trotteur est cité deux fois")
+        self.assertIn(t["defaut"], nums)
+        self.assertFalse(set(nums) & {p["num"] for p in _page.nageurs()["liste"]}, "un Pokémon est à la fois nageur et trotteur")
+        for p in t["liste"]:
+            self.assertTrue(p.get("nom"), p)
+            self.assertTrue(p.get("taille") and 0.2 <= p["taille"] <= 9, f"{p['nom']} : pas de taille au Pokédex")
+            self.assertIn(p.get("cycles", 1), (1, 2), p["nom"])
+            self.assertTrue(0 <= p.get("foulee", 0.05) <= 0.15, p["nom"])
+        self.assertIn("MONTURES.trotteur = ", (C / "montures" / "trotteur.js").read_text(encoding="utf-8"))
+        for f in ("moteur/monture.js", "moteur/velo.js", "moteur/cycliste.js", "jeu/allure.js", "jeu/seance.js"):  # les rollers ont été retirés (16/11, Kiki)
+            self.assertNotIn("patin", (R / f).read_text(encoding="utf-8").replace("Pantin", ""), f)
+
+    def test_cycliste_sprite(self):
+        """La planche du dresseur à vélo en sprite (outils/atelier_velo.py) : 4 animations sous 7 angles, rangées comme la fiche le dit."""
+        c = _page.cycliste_sprite()
+        self.assertIsNotNone(c, "contenu/montures/cycliste.png ou .json manque : python riviere/outils/atelier_velo.py")
+        f = c["fiche"]
+        self.assertEqual({(g["etat"], g["deg"]) for g in f["rangs"]}, {(e, d) for e in ("assis", "danseuse", "ramasse", "arret") for d in (0, 12, 25, 45, 90, 135, 180)})
+        from PIL import Image
+        im = Image.open(C / "montures" / "cycliste.png")
+        self.assertEqual(im.size, (f["w"] * 8, f["h"] * len(f["rangs"])))
+        self.assertTrue(set(f["cles"]) >= {"peau", "cas", "ves", "pan"})
+        js = (C / "montures" / "cycliste_sprite.js").read_text(encoding="utf-8")
+        self.assertIn("MONTURES.cycliste3D = TROIS_D", js)  # le vélo 3D reste disponible (réglage « Ton cycliste »)
+
     def test_regions(self):
         for f in (C / "biomes").glob("*.json"):
             b = region(f.stem)

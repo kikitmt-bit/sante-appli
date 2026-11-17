@@ -328,11 +328,59 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
   Une machine `continu` reçoit une vitesse ; `physique` : des watts deviennent une vitesse (poids, pente, air) et le décor ne triche plus avec la pente.
 - **Le skieur de fond** (12/11, Kiki : son appareil du parc n'est pas un elliptique, les pieds restent à plat, mouvement de ski de fond) : la clé
   reste `elliptique` (sujet de la montre, records), seul le nom affiché change (`nom`, `montre` = le nom sur la montre). Au menu, « Ce que tu
-  vois » : **à vélo** (par défaut depuis le 14/11, Kiki : c'est avec le vélo qu'il s'en sert d'abord ; monture `cycliste`), **en rollers** (monture `patineur` : ton dresseur de cycliste.js sans le vélo, `animerPatineur`, poussées en V
-  synchronisées sur la cadence, ton Pokémon court à côté : `animerCompagnon`), ton Pokémon qui court (l'ancienne vue), ou à vélo.
-  **Vitesse vue** (`VISUEL`, `kmhVus`, `allureVue` dans allure.js) en rollers et à vélo : 15 km/h de décor à l'allure habituelle (55 tours/min),
-  20 à +25 %, 25 à +50 %, 30 au plus ; une vraie côte freine jusqu'à ~5-6 km/h (`1 - pente × 6`, au moins 0,38), une descente lance.
-  Les chiffres affichés restent les vrais. Records et fantômes à part par vue (`CLE_MACHINE`).
+  vois » : **ton Pokémon trottine** (par défaut depuis le 16/11, monture `trotteur`, voir ci-dessous) ou **à vélo** (monture `cycliste`) ;
+  `?monture=cycliste` pour essayer. Les rollers (12/11) ont été retirés le 16/11 (Kiki : « ridicule »), l'ancienne vue « il court » aussi :
+  qui les avait choisis voit le trot.
+  **Vitesse vue** (`VISUEL`, `VU`, `kmhVus`, `allureVue` dans allure.js) : le décor défile à l'allure de ce qu'on voit, pas à tes vrais mètres
+  par seconde. À vélo : 15 km/h à l'allure habituelle (55 tours/min), 20 à +25 %, 25 à +50 %, 30 au plus. Au trot : 6,5 km/h à l'allure
+  habituelle, 8 à +25 %, 10 au plus (Kiki : un footing léger, 6-7 km/h à l'œil, surtout pas une course). Une vraie côte freine (`1 - pente × 6`,
+  au moins 0,38), une descente lance (× 1,5 à vélo, × 1,25 au trot). Les chiffres affichés restent les vrais. **Un record par discipline**
+  (Kiki, 16/11 : un circuit peut servir à plusieurs disciplines, jamais un temps de trot comparé à un temps de vélo) : `CLE_MACHINE` =
+  `elliptique-trotteur` ou `elliptique-cycliste`, et les vrais mètres d'un tour (`TOUR_M`) diffèrent, donc la clé du circuit aussi.
+- **Les trotteurs** (16/11, Kiki : comme les nageurs du rameur, sur la terre) : `contenu/trotteurs.json` = les Pokémon terrestres qui
+  trottinent au skieur de fond, vus de dos, en sprites de Donjon Mystère : `num`, `nom`, `cycles` (cycles de marche par tour de jambes de la
+  machine : 1 = foulées posées, 2 = foulées vives, pour un petit), `foulee` (le petit rebond de chaque foulée, pour un Pokémon d'un mètre).
+  **La taille n'est pas dans la fiche : c'est celle du Pokédex** (`page.trotteurs()`). Ajouter un trotteur = une ligne (page.py met sa
+  planche de marche dans la page). Choix au menu du skieur de fond (« Ton Pokémon », `riviere_trotteur`, changé tout de suite :
+  `changerTrotteur`), `?trotteur=25` pour essayer. **Liste provisoire** (Pikachu, Caninos, Ponyta) : Kiki choisit ses trois sur la planche
+  claude.ai/artifact/D6K5xVakUEcE9hDZkRRU9H (8 candidats ; Évoli, Rattata et Tauros ont 7 images de marche, les trois proposés 4).
+  - `contenu/montures/trotteur.js` (une monture du CONTENU, pas du cœur) : `MONTURES.trotteur = {animer: trotter, trace: Infinity}`.
+    `trotter` : **le trot suit tes gestes** : un tour de jambes = `cycles` cycles de marche, recalés en douceur sur chaque geste reçu
+    (`TROT.corr`) ; sans geste, il ralentit puis finit sa foulée et se pose. Petit rebond, corps penché dans le virage, un peu de poussière à
+    chaque foulée (`poussiereTrot`), ombre à sa largeur (par la hauteur dite à `OMBRE_U` : surfaces.js n'est pas retouché). La taille vient du
+    corps sur la première image (`corpsTrotteur`) : la planche d'une marche qui bondit est plus haute que son Pokémon.
+  - Les accroches dans le cœur (trois lignes) : `monture.js` appelle `mt.animer` si la monture en a une (après avoir choisi la rangée du
+    virage) et lit `mt.trace` (les mètres entre deux poussières) ; `sprites.js` : `changerNageur` passe la main à `changerTrotteur` quand
+    `trotteurActif()`. La caméra s'adapte par `GABARIT.f`, comme pour un nageur ; le fantôme a sa taille.
+  - Sur l'eau (une pièce d'eau dans un circuit de terre), le trotteur redevient un Pokémon ordinaire : il n'a pas de fiche de nageur.
+- **Les sprites qui suivent la caméra** (17/11, Kiki : le film de fin montre ton personnage de face, de côté, d'en haut) :
+  `contenu/montures/directions.js`. Un sprite est une image plate : on choisit l'image d'après l'angle entre la direction où va le personnage
+  et celle d'où regarde la caméra (`angleVue` : 0 = de dos, positif = vers la droite de l'écran, ±π = de face ; `rangeeVue` = la rangée de
+  Donjon Mystère, 0 = face, 2 = droite, 4 = dos, 6 = gauche). `orienterPantin(N, s, d)` : tant que la caméra est derrière (moins de 30°, le
+  jeu), la règle d'avant, identique au pixel près (de dos, rangée 3 ou 5 dans un virage serré) ; sinon l'angle de la caméra. Appelée pour
+  ton Pokémon (nageur, coureur, trotteur : monture.js, trotteur.js) et pour son fantôme (fantome.js). Les sprites ont 8 angles : quand la
+  caméra tourne autour de toi, l'image change par crans de 45°, comme dans les jeux en sprites.
+- **Le cycliste en sprite** (17/11, Kiki : « une vraie planche de sprites dessinée avec soin » ; vue par défaut au vélo et au skieur de fond
+  « À vélo »). La planche : `contenu/montures/cycliste.png` + `cycliste.json`, notre propre dessin, faite par `outils/atelier_velo.py`
+  (`python riviere/outils/atelier_velo.py`, ~5 min ; `<dossier> --apercu` pour une grande image ; `--vite` : une image sur quatre). L'atelier
+  dessine un squelette 3D (vélo et dresseur articulés : pieds sur les pédales, mains au guidon) pixel par pixel à 30 pixels par mètre, trois
+  tons et un trait sombre par matière, sous 7 angles (0 = de dos, 12 et 25 = les virages du jeu, 45, 90 = de côté, 135, 180 = de face ;
+  l'autre côté = le miroir, jamais pour 0 et 180 : le carter est à droite) et 4 animations : il pédale (8 images), en danseuse (8),
+  roue libre ramassé (4 : les rayons tournent), pied à terre (1). La tête se relève vers la face (`LEVE` : de dos comme avant) pour que
+  la visière ne cache pas le visage. Couleurs-clés (`cles` de la fiche) repeintes aux couleurs de la carte du dresseur dans la page
+  (`cycTons`, les tables `TENUES` de cycliste.js ; le vélo prend la couleur de la casquette ; `?tenue=` pour essayer). `page.cycliste_sprite()`
+  glisse la planche dans la page (`CYCLISTE_SPRITE`, ~180 Ko ; pas dans le contrôle sans navigateur).
+  - `contenu/montures/cycliste_sprite.js` : `MONTURES.cycliste` = le sprite (`pedalerSprite`) ou le vélo 3D (`MONTURES.cycliste3D`), au
+    choix du menu (« Ton cycliste : En sprite / En 3D », `riviere_cycliste`, tout de suite, sans recharger : `CYC.choisir` ; `?cycliste=3d`).
+    `pedalerSprite` : les règles du vélo 3D (velo.js) : pédales au rythme de la machine (`MACHINE.tourVu`, petit braquet en côte),
+    `VELO.cadence` tenue à jour (jeu.js l'affiche sans capteur), danseuse au-delà de 5,5 % de montée, ramassé en roue libre dans une
+    descente rapide, pied à terre après 0,5 s d'arrêt et au menu ; il penche dans le virage comme un vrai vélo (`atan(v² × courbe / g) × 1,5`,
+    filtré) et la bascule s'efface vue de côté (× cosinus de l'angle de la caméra). Ombre et trace du pneu (`OMBRE_U`, comme le vélo 3D),
+    poussière de la roue arrière (`trace` de la monture). Ton Pokémon (celui du circuit) court à côté, à sa vraie taille, un peu devant à ta
+    gauche, saute de joie à chaque tour. Le fantôme : le même cycliste en transparence, 1,8 m à droite (`fantomeCyclisteSprite`).
+  - Accroches dans le cœur : `monture.js` appelle `mt.animer` avant de demander le Pokémon (le cycliste s'anime même sans lui) ;
+    `camera.js` : la vitrine du menu tourne aussi autour du cycliste en sprite (`vitrine(dt, S, ancre)`), sans le décalage de côté du vélo
+    3D ; `cacherVelo` cache aussi le sprite (redéfini dans cycliste_sprite.js). Records : les mêmes qu'en 3D (même machine, même vue).
 - **Plein écran** (jeu.js, `PLEIN`) : demandé au premier toucher (dans l'appli : la page de l'appli entière), petit bouton sous « Son » pour
   en sortir ou y revenir ; sorti une fois, il ne revient plus tout seul pendant la visite (`riviere_plein_non`, sessionStorage).
 - **Annuler une séance** : à la fin d'une vraie séance, « ✕ Annuler la séance » en haut (deux touchers) ; au menu, « Annuler la

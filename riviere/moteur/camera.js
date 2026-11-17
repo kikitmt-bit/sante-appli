@@ -8,11 +8,11 @@ const CAM = {y: null, ly: 0, roulis: 0, saut: 0, choc: 0, z1: null, z2: 0, g: nu
 /* la vitrine (12/11) : au menu, à vélo, la caméra tourne lentement autour de ton dresseur et de son Pokémon, de face puis de côté ;
    au départ, elle glisse derrière lui en 2 à 3 secondes (en tournant autour, jamais à travers). ?vitrine=1 : la garder pendant la course. */
 const VITRINE = {f: 1, a: 0, l: 0}, cam_cv = new THREE.Vector3(), cam_cb = new THREE.Vector3(), cam_cr = new THREE.Vector3();
-function vitrine(dt, S) {
+function vitrine(dt, S, ancre = null) {   // ancre : autour de qui tourner (le vélo 3D, sinon le cycliste en sprite)
   const voulue = (!S.mode && VUE.mode === "jeu" && !(typeof BANC !== "undefined" && BANC)) || PARAMS.has("vitrine") ? 1 : 0, V = VITRINE;
   V.f += (voulue - V.f) * (dt > 0 ? 1 - Math.exp(-dt / (voulue ? .5 : .85)) : 1); V.a += (dt || 0) * .16;
   const f = lisse(0, 1, V.f); if (f < .002) return 0;
-  const b = VELO.g.position, h = at(S.s).h, fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);   // l'avant et la droite du vélo
+  const b = ancre || VELO.g.position, h = at(S.s).h, fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);   // l'avant et la droite du vélo
   // la caméra normale, vue depuis le vélo : son angle autour de lui, sa distance, sa hauteur
   const ox = camera.position.x - b.x, oz = camera.position.z - b.z, bn = Math.atan2(ox * rx + oz * rz, ox * fx + oz * fz), Rn = Math.hypot(ox, oz), Hn = camera.position.y - b.y;
   V.l += ((!S.mode && innerWidth > 900 && innerWidth > innerHeight ? 1 : 0) - V.l) * (dt > 0 ? 1 - Math.exp(-dt / .85) : 1);   // au menu, sur une tablette : le cycliste en entier, à gauche du panneau
@@ -54,7 +54,7 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   CAM.choc = Math.max(0, CAM.choc - (dt || 0) * 1.6);                          // une retombée : une petite secousse
   camera.position.set(c.x, CAM.y + CAM.saut - CAM.choc * Math.abs(Math.sin(T * 30)) * .25, c.z);
   cam_cv.set(d.x, CAM.ly + CAM.saut * .6, d.z);
-  const vit = velo ? vitrine(dt, S) : 0; camera.lookAt(cam_cv);
+  const spr = !velo && typeof cycActif === "function" && cycActif(), vit = velo || spr ? vitrine(dt, S, spr ? CYC.m.position : null) : 0; camera.lookAt(cam_cv);   // (17/11) le cycliste en sprite : contenu/montures/cycliste_sprite.js
   const roulis = clamp(-P.COURB[idx(S.s + 3)] * 1.5, -.11, .11) * (.35 + .65 * Math.min(1, S.vn));   // elle se penche dans le virage, d'autant plus qu'on va vite
   CAM.roulis += (roulis - CAM.roulis) * (net ? 1 : 1 - Math.exp(-dt / .35));
   camera.rotateZ(CAM.roulis * (1 - vit));

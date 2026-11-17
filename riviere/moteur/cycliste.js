@@ -93,7 +93,7 @@ function meche(F, b, d, l, r, col) {
 const CY = {g: null, T: null, parts: {}, habits: null, arret: 1, lacet: 0, tangage: 0, sac: 0, sacV: 0, regard: 0, prochainRegard: 9, saut: 0, joie: 0, tour: 0, pk: new THREE.Vector3()};
 const LONGUEURS = {cuisse: .46, tibia: .45, bras: .29, avantBras: .28};
 const ASSISE = 1.035;   // la hauteur du bassin assis, dans le repère du vélo : le dessus de la selle est à .955 (velo.js), le bas des fesses 8 cm sous le bassin
-const MEMBRES = ["torse", "tete", "dos", "cuisse-1", "cuisse1", "tibia-1", "tibia1", "pied-1", "pied1", "patin-1", "patin1", "bras-1", "bras1", "avantBras-1", "avantBras1"];
+const MEMBRES = ["torse", "tete", "dos", "cuisse-1", "cuisse1", "tibia-1", "tibia1", "pied-1", "pied1", "bras-1", "bras1", "avantBras-1", "avantBras1"];
 
 /* ---- le corps : le même pour tous, sous les habits ----
    Repères : torse = l'origine au bassin, y le long du dos, z vers l'avant, x vers sa gauche ; tete = son centre, x vers l'avant, y en haut,
@@ -131,12 +131,6 @@ const CORPS = {
   cuisse(F, T, s, cache) { if (cache.has("cuisse")) return; boule3(F, 0, 0, 0, .085, .085, .085, T.peau, null, 7, 4); anneaux(F, [[0, .086, .086], [.25, .074, .076], [LONGUEURS.cuisse, .06, .062]], T.peau); },
   tibia(F, T, s, cache) { if (cache.has("tibia")) return; boule3(F, 0, 0, 0, .062, .062, .062, T.peau, null, 7, 4); anneaux(F, [[0, .058, .06], [.14, .056, .06], [LONGUEURS.tibia, .038, .04]], T.peau); },
   pied(F, T, s, cache) { if (cache.has("pied")) return; boule3(F, 0, .02, -.03, .045, .11, .04, T.peau, null, 6, 4); },
-  patin(F, T, s) {   // le roller (même repère que la chaussure) : une platine à la couleur d'accent, quatre roues, le frein au talon
-    F.boite(0, -.025, -.098, .05, .29, .022, T.accO);
-    for (const x of [-.032, .032]) F.boite(x, -.025, -.118, .012, .27, .03, T.acc);
-    for (const y of [-.135, -.06, .015, .09]) { boule3(F, 0, y, -.15, .022, .036, .036, hex("#F2C030"), null, 8, 4); boule3(F, 0, y, -.15, .026, .014, .014, T.sangle, null, 6, 3); }
-    F.boite(0, -.19, -.13, .045, .04, .05, T.noir);
-  },
 };
 
 /* ---- la garde-robe : chaque habit = un emplacement et ce qu'il dessine sur chaque membre (mêmes repères que le corps) ---- */
@@ -245,7 +239,6 @@ function construireCycliste() {
     membre(nom, F);
   }
   const tete = CY.parts.tete; tete.matrixAutoUpdate = true; tete.rotation.order = "YZX"; tete.scale.setScalar(1.14);   // une tête un peu grosse, comme dans les jeux
-  for (const s of [-1, 1]) CY.parts["patin" + s].visible = false;
 }
 
 /* ---- la pose, à chaque image (tout dans le repère du vélo : x vers l'avant, y en haut, z vers la droite) ---- */
@@ -268,7 +261,6 @@ function avantVers(x, y, z, out) { const a = VELO.avant.rotation.y, c = Math.cos
 const cy_P = V3(), cy_Y = V3(), cy_X = V3(), cy_Z = new THREE.Vector3(1, 0, 0), cy_H = V3(), cy_T = V3(), cy_fin = V3(), cy_pole = V3(), cy_sac = new THREE.Matrix4(), cy_m = new THREE.Matrix4();
 function animerCycliste(t, dt, S, e) {   // e : ce que velo.js sait (c pédalier, v vitesse, roule, libre, balance)
   if (!CY.g) construireCycliste();
-  for (const s of [-1, 1]) CY.parts["patin" + s].visible = false;
   const P = CY.parts, k = x => clamp(dt * x, 0, 1), L = LONGUEURS, c = e.c, deb = VELO.debout, grp = VELO.groupe || 0, air = M.sorti || 0, choc = VELO.choc;
   CY.arret += ((e.roule ? 0 : 1) - CY.arret) * k(2.2); const arr = lisse(0, 1, CY.arret), pedale = 1 - arr;
   // le bassin : sur la selle ; debout en danseuse ; reculé et bas quand il se ramasse ; glissé vers l'avant à l'arrêt
@@ -321,69 +313,6 @@ function animerCycliste(t, dt, S, e) {   // e : ce que velo.js sait (c pédalier
   }
 }
 
-/* ---- en rollers (12/11, Kiki : au skieur de fond, « ça fait comme du ski, du roller ») : la poussée du patineur, les pieds en V ----
-   Une jambe glisse sous le corps pendant que l'autre pousse vers l'arrière et l'extérieur, la pointe ouverte, puis revient en l'air ;
-   le poids passe sur la jambe qui glisse ; le bras opposé à la jambe qui pousse part devant ; bassin bas, dos penché. Un tour de jambes
-   de la machine = une poussée de chaque jambe (velo.js : VELO.pedale suit la cadence). En descente rapide, il se met en boule, pieds
-   parallèles ; à l'arrêt, il se redresse, les bras le long du corps. Mêmes membres que le cycliste, plus les rollers. */
-function animerPatineur(t, dt, S, e) {
-  if (!CY.g) construireCycliste();
-  const P = CY.parts, k = x => clamp(dt * x, 0, 1), L = LONGUEURS, c = e.c, air = M.sorti || 0, choc = VELO.choc, grp = VELO.groupe || 0;
-  for (const s of [-1, 1]) P["patin" + s].visible = true;
-  CY.arret += ((e.roule ? 0 : 1) - CY.arret) * k(2.2); const arr = lisse(0, 1, CY.arret), va = (1 - arr) * (1 - grp * .85);   // l'ampleur de la poussée
-  const sc = Math.sin(c);
-  // le bassin : bas quand il patine, plus bas en boule, debout à l'arrêt ; il passe au-dessus de la jambe qui glisse
-  cy_P.set(-.03, lerp(lerp(.86 + .018 * Math.cos(2 * c) * va, .74, grp), .99, arr), -.075 * sc * va);
-  cy_P.y += .05 * air - .07 * choc;
-  const th = lerp(lerp(.5, .9, grp), .1, arr) + .2 * choc, ro = -.09 * sc * va;
-  cy_Y.set(Math.sin(th), Math.cos(th) * Math.cos(ro), Math.cos(th) * Math.sin(ro));
-  orienter(P.torse, cy_P, cy_Y, cy_Z); cy_X.setFromMatrixColumn(P.torse.matrix, 0);
-  // le sac tressaute à chaque poussée
-  CY.sacV += (-CY.sac * 160 - CY.sacV * 9 + (choc > .05 ? -choc * 30 : 0)) * Math.min(dt, .05); CY.sac = clamp(CY.sac + CY.sacV * Math.min(dt, .05), -.12, .12);
-  cy_sac.makeTranslation(0, .42, -.12).multiply(cy_m.makeRotationX(CY.sac + .03 * Math.sin(2 * c) * va)).multiply(cy_m.makeTranslation(0, -.42, .12));
-  P.dos.matrix.copy(P.torse.matrix).multiply(cy_sac); P.dos.matrixWorldNeedsUpdate = true;
-  // la tête : droite, elle regarde loin devant (plus haut quand il est penché) et dans le virage
-  cy_H.copy(cy_P).addScaledVector(cy_Y, .47).addScaledVector(cy_p.copy(cy_Y).lerp(cy_q.set(0, 1, 0), .75).normalize(), .18);
-  const tete = P.tete; tete.position.copy(cy_H);
-  CY.lacet += (-VELO.braq * 1.4 - CY.lacet) * k(5); CY.tangage += (-.1 + (th - .5) * .55 - CY.tangage) * k(5);
-  tete.rotation.set(-VELO.incl * .55 + ro * .4, CY.lacet, CY.tangage);
-  // les jambes : la cheville au-dessus des roues (18 cm), la trajectoire de la poussée, la pointe qui s'ouvre
-  for (const s of [-1, 1]) {
-    const ps = s > 0 ? c : c + Math.PI, ouvre = Math.pow(Math.sin(ps / 2), 2) * va, leve = Math.max(0, -Math.sin(ps)) * va;
-    cy_T.set(.06 - .4 * ouvre, .185 + .09 * leve + .05 * air, s * (.1 + .26 * ouvre));
-    const a = s * .38 * ouvre;
-    cy_A.copy(cy_P).addScaledVector(cy_X, -s * .095).addScaledVector(cy_Y, -.02);   // la hanche
-    cy_pole.set(1, .1, s * .35).normalize();
-    deuxOs(P["cuisse" + s], P["tibia" + s], cy_A, cy_T, L.cuisse, L.tibia, cy_pole, cy_fin);
-    orienter(P["pied" + s], cy_fin, cy_q.set(Math.cos(a), 0, Math.sin(a)), cy_p.set(0, 1, 0));
-    P["patin" + s].matrix.copy(P["pied" + s].matrix); P["patin" + s].matrixWorldNeedsUpdate = true;
-  }
-  // les bras : le bras opposé à la jambe qui pousse part devant, l'autre derrière ; en boule, les mains dans le dos ; à l'arrêt, le long du corps
-  for (const s of [-1, 1]) {
-    cy_A.copy(cy_P).addScaledVector(cy_Y, .425).addScaledVector(cy_X, -s * .17);
-    const fa = -s * sc * va;
-    cy_T.copy(cy_A).add(cy_p.set(.06 + .34 * fa, -.44 + .14 * Math.max(0, fa), s * (.05 - .12 * Math.max(0, fa))));
-    cy_T.lerp(cy_p.copy(cy_P).add(cy_q.set(-.25, .12, s * .12)), grp * (1 - arr));
-    cy_T.lerp(cy_p.copy(cy_A).add(cy_q.set(.02, -.52, s * .05)), arr);
-    cy_pole.set(-1, -.3, s * .6).normalize();
-    deuxOs(P["bras" + s], P["avantBras" + s], cy_A, cy_T, L.bras, L.avantBras, cy_pole, cy_fin);
-  }
-}
-
-/* ---- ton Pokémon court à côté de toi (en rollers) : un peu devant, à ta gauche, à sa taille ---- */
-function animerCompagnon(t, dt, S, N, e) {
-  if (!N) return;
-  if (S.tour !== CY.tour) { if (S.tour > CY.tour) CY.joie = 2.6; CY.tour = S.tour; }
-  CY.joie = Math.max(0, CY.joie - dt);
-  cy_p.set(1.6, 0, -1.05); VELO.g.localToWorld(cy_p);
-  const h = Math.min(N.h, .95), f = h / N.h, court = e.roule, joie = CY.joie > 0 && court;
-  const kc = PISTE.COURB[idx(S.s + 2)];
-  N.rangee(CY.arret > .6 ? 0 : kc > .028 ? 3 : kc < -.028 ? 5 : 4);
-  N.image(court ? N.pl.image(t * (.9 + S.vn * 1.1)) : 0);
-  const saut = joie ? Math.abs(Math.sin(t * 8.5)) * .25 : court ? Math.abs(Math.sin(t * (5 + S.vn * 6))) * .06 : 0;
-  N.m.position.set(cy_p.x, cy_p.y + saut, cy_p.z); N.regarder(); N.m.rotation.z = 0; N.m.scale.set(N.l * f, h, 1);
-}
-
 /* ---- ton Pokémon, dans le panier ---- */
 function animerPanier(t, dt, S, N, e) {
   if (!N) return;
@@ -425,10 +354,7 @@ function copierCycliste(sG, pantin, t) {
   const p = pose(sG, 1.8), i = idx(sG), k = PISTE.COURB[idx(sG + 3)];
   G.g.position.set(p.x, p.y, p.z); G.g.rotation.set(clamp(k * 22, -.3, .3), Math.PI / 2 - at(sG).h, Math.atan(PISTE.PENTE[i]));
   G.g.updateMatrixWorld();
-  if (pantin && VELO.patins) {   // en rollers : son Pokémon court à côté de lui
-    cy_p.set(1.6, 0, -1.05); G.g.localToWorld(cy_p); pantin.m.position.copy(cy_p); pantin.regarder(); pantin.rangee(4); pantin.image(pantin.pl.image(t * 1.2));
-    const h = Math.min(pantin.h, .95); pantin.m.scale.set(pantin.l * h / pantin.h, h, 1);
-  } else if (pantin) {   // son Pokémon (le fantôme du tien), dans le panier du fantôme
+  if (pantin) {   // son Pokémon (le fantôme du tien), dans le panier du fantôme
     const a = G.avant.rotation.y, cs = Math.cos(a), sn = Math.sin(a); cy_p.set(.43 + .15 * cs, .805, -.15 * sn); G.g.localToWorld(cy_p);
     pantin.m.position.copy(cy_p); pantin.regarder(); pantin.rangee(4); pantin.image(0);
     const h = .4, l = Math.min(h * pantin.l / pantin.h, .44); pantin.m.scale.set(l, l * pantin.h / pantin.l, 1);

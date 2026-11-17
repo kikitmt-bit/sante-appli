@@ -27,6 +27,7 @@ function animerFantome(t) {
   if (PISTE.NF && !F.surSaVoie) { F.surSaVoie = true; try { return surVoie(voiesFantome(), () => animerFantome(t)); } finally { F.surSaVoie = false; } }   // dans une fourche, le fantôme reprend la voie qu'il avait prise
   if (S.tour > 0 && !S.pause) { const tau = S.t - S.tourT0; if (tau - F.derniere >= .1) { F.derniere = tau; F.trace.push(Math.round(tau * 10) / 10, Math.round(S.s * 10) / 10); } }
   F.sG = F.actuel && S.tour > 0 ? sFantome(F.actuel, S.t - S.tourT0) : null;
+  if (typeof cycActif === "function" && cycActif()) { fantomeCyclisteSprite(F.sG); if (F.pantin) F.pantin.m.visible = false; return; }   // à vélo, en sprite (cycliste_sprite.js)
   if (F.sG !== null && !F.pantin && nageur) {   // le même Pokémon, presque blanc avec une pointe de bleu, en transparence
     F.pantin = new Pantin(nageur.pl, 4, 1, nageur.h); F.pantin.enfonce = nageur.enfonce; const m = F.pantin.m.material; m.transparent = true; m.opacity = .7; m.depthWrite = false;   // à la même taille que toi
     m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace("#include <map_fragment>", "#include <map_fragment>\n diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.88, .94, 1.), .65);"); }; }
@@ -35,7 +36,7 @@ function animerFantome(t) {
   if (!F.pantin) return;
   F.pantin.m.visible = F.sG !== null;
   if (F.sG === null) return;
-  const a = pose(F.sG, 1.8 * Math.max(1, GABARIT.f)), N = F.pantin; N.image(N.pl.image(t * .55)); N.m.position.set(a.x, hauteurPantin(F.sG, N, t), a.z); N.regarder();
+  const a = pose(F.sG, 1.8 * Math.max(1, GABARIT.f)), N = F.pantin; N.image(N.pl.image(t * .55)); N.m.position.set(a.x, hauteurPantin(F.sG, N, t), a.z); if (typeof orienterPantin === "function") orienterPantin(N, F.sG, 1.8 * Math.max(1, GABARIT.f)); N.regarder();
 }
 function fantomeOublier() { if (FANTOME.pantin) { retirerPantin(FANTOME.pantin); FANTOME.pantin = null; } }   // tu changes de Pokémon : ton fantôme aussi (il sera refait au prochain tour)
 

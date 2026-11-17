@@ -354,3 +354,15 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   **Pas encore essayé** : la tablette, le téléphone, la fluidité réelle à 60 images/s (le Chrome sans fenêtre tourne à 6 images/s), un vrai home trainer.
   **À réunir avec le lot 4** : il a travaillé sur `col-ventoux` ; `outils/gpx.py` a changé des deux côtés (ici : seulement la limite de longueur) ; une fois réuni,
   rejouer l'outil sur le Ventoux entier (`--km 60 --id ventoux --nom "Le Ventoux en entier"`). Pas de ligne dans 🧪 (c'est dans La Rivière).
+- **Hors étapes — trotteurs et vélo en sprite (16-17/11/2026, Fable).** Demande de Kiki, en deux lots. **Lot 1 fait** : rollers retirés ; au skieur de fond,
+  ton Pokémon trottine de dos à sa vraie taille (`contenu/trotteurs.json`, `contenu/montures/trotteur.js` : une monture du contenu, trois lignes d'accroche dans le
+  cœur), décor à 6,5 km/h, trot calé sur les tours de jambes, un record par discipline. Liste provisoire (Pikachu, Caninos, Ponyta) : Kiki choisit ses trois sur la
+  planche claude.ai/artifact/D6K5xVakUEcE9hDZkRRU9H. **Lot 2 : la planche seulement** (claude.ai/artifact/Va67c6gZi7qyUhDToja6VT, atelier dans
+  `outils/planches/atelier/`, hors dépôt) : **rien à brancher avant l'accord de Kiki**. Contrôles : 183 tests ; kanto-1km, bourg-palette, fourche et les deux
+  Ventoux identiques aux références ; essai et terre-huit comparés au code d'avant : moins de 0,4 % d'écart (les Pokémon qui bougent). **À refaire** : les
+  références de `captures.py` pour essai, terre-huit, terre-volcan et vitrine (elles datent d'avant le 16/11). **Pas encore essayé** : la tablette, une vraie
+  séance au skieur de fond (le calage du trot sur les tours de la montre), la fluidité (le panneau de Claude tourne à 1 image/s).
+- **Hors étapes — le vélo en sprite et les sprites qui suivent la caméra (17/11/2026, Opus).** Planche du cycliste validée par Kiki après retouches (pas de vue
+  de profil en jeu : le vélo penche dans les virages ; hanches ; plus de bande blanche), puis 7 angles pour le film de fin (`outils/atelier_velo.py`, dans le dépôt),
+  branchée par défaut à vélo (`contenu/montures/cycliste_sprite.js`, le 3D au menu « Ton cycliste »). Tous les sprites (nageurs, trotteurs, fantômes) prennent
+  l'image vue de la caméra quand elle n'est plus derrière (`contenu/montures/directions.js`). **Pas encore essayé** : la tablette, une vraie séance à vélo.

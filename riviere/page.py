@@ -149,9 +149,25 @@ def nageurs():
     return {"defaut": n.get("defaut", 7), "liste": [{**p, "taille": p.get("taille") or TAILLES.get(p["num"])} for p in n["liste"]]}
 
 
-def donnees_js(donnees, niveaux, biomes, lieux, lot, servi):
+def trotteurs():
+    """Les Pokémon qui trottinent au skieur de fond (contenu/trotteurs.json), chacun avec sa vraie taille : celle du Pokédex."""
+    n = _lis("trotteurs.json")
+    return {"defaut": n.get("defaut"), "liste": [{**p, "taille": p.get("taille") or TAILLES.get(p["num"])} for p in n["liste"]]}
+
+
+def cycliste_sprite():
+    """La planche du dresseur à vélo en sprite (contenu/montures/cycliste.png et .json, dessinée par outils/atelier_velo.py : notre propre dessin).
+    None si elle manque : le jeu montre alors le vélo 3D."""
+    png, fiche = RACINE / "contenu" / "montures" / "cycliste.png", RACINE / "contenu" / "montures" / "cycliste.json"
+    if not png.exists() or not fiche.exists():
+        return None
+    return {"png": "data:image/png;base64," + base64.b64encode(png.read_bytes()).decode(), "fiche": json.loads(fiche.read_text(encoding="utf-8"))}
+
+
+def donnees_js(donnees, niveaux, biomes, lieux, lot, servi, sprites=True):
     return (f"const D = {_js(donnees or {})}, NIVEAUX = {_js(niveaux)}, BIOMES = {_js(biomes)}, LIEUX_TOUS = {_js(lieux)}, LOT = {_js(lot)}, "
-            f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})}, NAGEURS = {_js(nageurs())};")
+            f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})}, NAGEURS = {_js(nageurs())}, TROTTEURS = {_js(trotteurs())}, "
+            f"CYCLISTE_SPRITE = {_js(cycliste_sprite() if sprites else None)};")
 
 
 def source_piste():
@@ -170,7 +186,7 @@ def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
             niveaux[n["id"]] = n
     if niveau not in niveaux:
         niveau = "kanto-1km"
-    besoins = {(n.get("nageur", 7), "Walk") for n in niveaux.values()} | {(p["num"], "Walk") for p in nageurs()["liste"]}
+    besoins = {(n.get("nageur", 7), "Walk") for n in niveaux.values()} | {(p["num"], "Walk") for p in nageurs()["liste"]} | {(p["num"], "Walk") for p in trotteurs()["liste"]}
     for o in (niveaux, biomes, lieux):
         _pokemon(o, besoins)
     lot = {f"{n:04d}/{a}": p for n, a in sorted(b for b in besoins if b[0] != "h") if (p := planche(n, a, cache))}
@@ -203,7 +219,7 @@ def controle(niveau="kanto-1km", params="", circuit=None):
         niv.setdefault("id", niveau)
     apres = (RACINE / "controle.js").read_text(encoding="utf-8")
     sans = {k: v for k, v in biome.items() if k not in ("herite", "regles_plus")}
-    return (AVANT_NODE % json.dumps(params) + donnees_js({"force": True}, {niveau: niv}, {niv["biome"]: sans}, {niv.get("lieux") or biome.get("lieux") or niv["biome"]: lieux}, {}, niveau)
+    return (AVANT_NODE % json.dumps(params) + donnees_js({"force": True}, {niveau: niv}, {niv["biome"]: sans}, {niv.get("lieux") or biome.get("lieux") or niv["biome"]: lieux}, {}, niveau, sprites=False)
             + "\n" + "\n".join(_module("moteur", m) for m in PURS) + "\n" + recettes() + "\n" + _module("jeu", "note") + "\n" + apres)
 
 
@@ -213,7 +229,7 @@ def generateur(options):
     graine, activite, forme, boucle, biome, tirages. Mêmes options, même circuit, sur toutes les machines (aucune limite de temps)."""
     niveaux, biomes, lieux = tout()
     base = "terre-volcan" if options.get("activite") == "terre" else "kanto-1km"
-    return (AVANT_NODE % '""' + donnees_js({"force": True}, niveaux, biomes, lieux, {}, base) + "\n"
+    return (AVANT_NODE % '""' + donnees_js({"force": True}, niveaux, biomes, lieux, {}, base, sprites=False) + "\n"
             + "\n".join(_module("moteur", m) for m in ("depart", "outils", "piste")) + "\n" + source_piste() + "\n"
             + _module("jeu", "note") + "\n" + _module("jeu", "generateur")
             + "\nconsole.log('CIRCUIT ' + JSON.stringify(genererCircuit(" + _js(options) + ")));\n")
