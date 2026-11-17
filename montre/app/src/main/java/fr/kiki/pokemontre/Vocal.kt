@@ -100,7 +100,18 @@ class VocalActivity : Activity() {
         else if (!essai()) ecouter()
     }
 
-    override fun onNewIntent(intent: Intent) { super.onNewIntent(intent); if (!essai() && etat == Etat.PAUSE) ecouter() }
+    /** L'écran était resté ouvert (appui long à nouveau) : on reparle tout de suite, en coupant Claude s'il parlait ;
+     *  après 5 min sans échange, c'est une nouvelle conversation. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (SystemClock.elapsedRealtime() - finDictee > 5 * 60_000) nouveau = true
+        if (essai()) return
+        when (etat) {
+            Etat.REFLECHIT -> { }
+            Etat.ECOUTE -> { }
+            else -> { tour++; voix?.stop(); enAttente.clear(); ecouter() }
+        }
+    }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) ecouter()
