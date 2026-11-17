@@ -220,7 +220,7 @@ function edPanneau() {
 }
 
 /* ---- les gestes ---- */
-function edPiece() { return ED.n.pieces[ED.sel]; }
+function edPiece() { return ED.n ? ED.n.pieces[ED.sel] : null; }   // à l'accueil, pas encore de circuit (le curseur de longueur déclenchait l'erreur)
 function edRegler(cle, v) {   // un réglage change : cle = un champ de la pièce, ou « n:… » (le circuit), « g:… » (le générateur)
   const n = ED.n, p = edPiece(), num = x => Math.round(+x * 100) / 100;
   if (cle.startsWith("g:")) { const k = cle.slice(2), G = ED.gen; if (k === "km" || k === "denivele") G[k] = +v; else if (k === "forme") { G.forme = v; G.boucle = v !== "ouvert"; } else G[k] = v; return k === "activite"; }
