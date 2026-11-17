@@ -23,6 +23,7 @@ class App : Application() {
         WorkManager.getInstance(this).enqueueUniquePeriodicWork("recolte", ExistingPeriodicWorkPolicy.KEEP, travail)
         Direct.demarrer(this)  // pas et étages en direct (si la permission est donnée)
         DebogageWifi.inscrire(this)  // débogage via Wi-Fi rallumé avec le Wi-Fi (si le droit est donné)
+        VocalActivity.prechauffer(this)  // Claude direct : la voix prête avant même d'ouvrir l'écran (~20 s à froid)
     }
 }
 

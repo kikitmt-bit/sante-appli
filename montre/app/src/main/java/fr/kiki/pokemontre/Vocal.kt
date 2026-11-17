@@ -390,34 +390,7 @@ class VocalActivity : Activity() {
         courante = this
         val v = VOIX
         if (v != null && VOIX_PRETE) { brancherVoix(v); return }
-        if (v != null) return   // en train de démarrer : brancherVoix sera appelé
-        VOIX = TextToSpeech(applicationContext) { statut ->
-            Handler(Looper.getMainLooper()).post {
-                val tts = VOIX
-                val ok = statut == TextToSpeech.SUCCESS && tts != null &&
-                    tts.setLanguage(Locale.FRANCE).let { it != TextToSpeech.LANG_MISSING_DATA && it != TextToSpeech.LANG_NOT_SUPPORTED }
-                if (!ok) {
-                    Log.w(TAG, "pas de voix française sur la montre ($statut)")
-                    try { tts?.shutdown() } catch (e: Exception) { }
-                    VOIX = null
-                    courante?.voixImpossible()
-                    return@post
-                }
-                tts!!.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
-                tts.setSpeechRate(1.08f)
-                // La voix française la plus rapide qui marche sans réseau (la voix par défaut met ~5 s par phrase sur la montre)
-                try {
-                    val fr = tts.voices.filter { it.locale.language == "fr" && !it.isNetworkConnectionRequired &&
-                        !it.features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) }
-                    fr.forEach { Log.i(TAG, "voix dispo : ${it.name} latence=${it.latency} qualité=${it.quality}") }
-                    fr.minWithOrNull(compareBy({ it.latency }, { -it.quality }))?.let { tts.voice = it; Log.i(TAG, "voix choisie : ${it.name}") }
-                } catch (e: Exception) { }
-                VOIX_PRETE = true
-                Log.i(TAG, "voix prête : ${tts.defaultEngine}")
-                courante?.brancherVoix(tts)
-            }
-        }
+        prechauffer(applicationContext)   // déjà en route depuis le lancement de l'appli, en général
     }
 
     private fun voixImpossible() {
@@ -470,6 +443,46 @@ class VocalActivity : Activity() {
         private var VOIX: TextToSpeech? = null       // gardée d'une ouverture à l'autre
         private var VOIX_PRETE = false
         private var courante: VocalActivity? = null
+
+        /**
+         * Démarre la voix de synthèse et la réveille en silence (une phrase écrite dans un fichier, sans son) : à froid,
+         * elle met ~20 s avant de dire le premier mot (mesuré le 17/11). Appelé au lancement de l'appli (App) et à
+         * l'ouverture de l'écran ; la voix reste prête tant que l'appli vit.
+         */
+        fun prechauffer(ctx: Context) {
+            if (VOIX != null) return
+            val debut = SystemClock.elapsedRealtime()
+            VOIX = TextToSpeech(ctx.applicationContext) { statut ->
+                Handler(Looper.getMainLooper()).post {
+                    val tts = VOIX
+                    val ok = statut == TextToSpeech.SUCCESS && tts != null &&
+                        tts.setLanguage(Locale.FRANCE).let { it != TextToSpeech.LANG_MISSING_DATA && it != TextToSpeech.LANG_NOT_SUPPORTED }
+                    if (!ok) {
+                        Log.w(TAG, "pas de voix française sur la montre ($statut)")
+                        try { tts?.shutdown() } catch (e: Exception) { }
+                        VOIX = null
+                        courante?.voixImpossible()
+                        return@post
+                    }
+                    tts!!.setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT)
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build())
+                    tts.setSpeechRate(1.08f)
+                    try {
+                        val fr = tts.voices.filter { it.locale.language == "fr" && !it.isNetworkConnectionRequired &&
+                            !it.features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED) }
+                        fr.minWithOrNull(compareBy({ it.latency }, { -it.quality }))?.let { tts.voice = it; Log.i(TAG, "voix choisie : ${it.name}") }
+                    } catch (e: Exception) { }
+                    // Réveil en silence : charge le modèle de la voix sans rien faire entendre
+                    try {
+                        val f = File(ctx.cacheDir, "chauffe.wav")
+                        tts.synthesizeToFile("Bonjour, je suis prêt.", null, f, "chauffe")
+                    } catch (e: Exception) { }
+                    VOIX_PRETE = true
+                    Log.i(TAG, "voix prête en ${SystemClock.elapsedRealtime() - debut} ms : ${tts.defaultEngine}")
+                    courante?.brancherVoix(tts)
+                }
+            }
+        }
         const val PAR_TELEPHONE = true   // Claude tourne sur le téléphone (Termux) ; false = relais joint par le réseau
         val ORANGE = Color.rgb(217, 119, 87)
     }
