@@ -169,6 +169,11 @@ Possibilités propres à la terre :
 Exemples : `terre-ville.json` (« Céladopole, la ville et les bois ») et `col-ventoux.json` (« Le Ventoux, la forêt »). (`terre-volcan` et `terre-huit` ont été retirés le 17/11.)
 
 ## Créer un circuit sans écrire de fichier : l'éditeur et le générateur
+**L'écran de l'éditeur a été refait le 17/11 (Kiki : « une usine à gaz »)** : un accueil (« Générer » : longueur, virages, relief, forme en boutons,
+ce qu'on veut y voir en tuiles, un gros bouton ; « Le dessiner » : de zéro, son brouillon, ou la copie d'un circuit du jeu ; « Mes circuits »), puis
+l'atelier (le plan en grand ; toucher le plan ou le profil choisit une pièce ; seulement l'essentiel de la pièce, « + Ajouter une pièce », le reste
+replié ; « ▶ Essayer » en grand en haut ; « Garder sans l'essayer » en petit en bas). L'activité est celle de la machine du menu. Ce qui suit
+décrit les possibilités, toutes encore là.
 
 Au menu : Circuit → « Créer ou modifier un circuit » (`jeu/editeur.js`). Plan vu du ciel et profil redessinés à chaque retouche par le vrai
 code de la piste, contrôleur en direct, pièces à régler au curseur, modules tout faits à ajouter, objets à poser, repères lointains.
@@ -211,7 +216,7 @@ Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (v
 
 ## Une vraie route (16/11, étape 8 du plan, lots 1 à 3)
 
-**Un fichier GPX devient un circuit normal** (`outils/gpx.py`) : tracé et pentes à l'échelle 1:1, sur la terre (vélo, skieur de fond).
+**Un fichier GPX devient un circuit normal** (`outils/gpx.py`) : tracé et pentes à l'échelle 1:1, sur la terre (vélo, marcheur elliptique).
 `python riviere/outils/gpx.py route.gpx --id col-essai --nom "Le col" [--relief] --ecrire` (bilan sans `--ecrire`).
 - **Ce qui est gardé : la forme** (longueurs, virages, montées), jamais une coordonnée ; le GPX reste hors du dépôt (il peut trahir un domicile).
   `--relief` demande l'altitude de chaque côté de la route à api.opentopodata.org (les coordonnées partent chez ce service : seulement si on le
@@ -220,7 +225,7 @@ Pour **le voir** sans le parcourir : `python riviere/outils/planche.py <nom>` (v
   plus durs. Au-delà de 6 km, le jeu construit le monde par tronçons (plus bas) : la longueur ne coûte plus rien au chargement. Le GPS tremble : tracé lissé (`--lisse` 6 m), altitude lissée (`--lisse-alt`, 25 m ; 35 pour un relief SRTM).
   Un virage plus serré que `--rayon` (9 m) est étalé sur ses voisins : la route tourne d'autant, plus en douceur.
 - **Le niveau** : pièces de 5 à 120 m (tant que virage et pente restent réguliers), `"allurePente": false` (un mètre de route = un vrai mètre,
-  côte ou pas : `TOUR_VRAI` = la vraie longueur ; au skieur de fond, la côte freine quand même le décor : `allureVue` lit alors `PENTE`),
+  côte ou pas : `TOUR_VRAI` = la vraie longueur ; au marcheur elliptique, la côte freine quand même le décor : `allureVue` lit alors `PENTE`),
   `"route"` (km, dénivelé, pente), la ligne au départ, une **borne à chaque kilomètre** (`borne_km` : « SOMMET 3 KM », la pente du kilomètre
   qui vient, tête verte, jaune, rouge ou noire dès 10 %), le kilomètre le plus dur en segment, l'**arche d'arrivée** (`arche_arrivee`,
   « SOMMET »). Un parcours ouvert : l'arrivée annonce le temps, puis on repart du début (comme avant).
@@ -368,7 +373,7 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
   - Le fantôme a la taille et l'enfoncement du nageur (`fantomeOublier` quand on en change). Les adversaires : inchangés.
 - **Machine de sport** : `jeu/allure.js`, `MACHINES` (vrais mètres par geste, allure du décor, records à part). `?machine=elliptique`, `?machine=velo`.
   Une machine `continu` reçoit une vitesse ; `physique` : des watts deviennent une vitesse (poids, pente, air) et le décor ne triche plus avec la pente.
-- **Le skieur de fond** (12/11, Kiki : son appareil du parc n'est pas un elliptique, les pieds restent à plat, mouvement de ski de fond) : la clé
+- **Le marcheur elliptique** (12/11, Kiki : son appareil du parc n'est pas un elliptique, les pieds restent à plat, mouvement de ski de fond) : la clé
   reste `elliptique` (sujet de la montre, records), seul le nom affiché change (`nom`, `montre` = le nom sur la montre). Au menu, « Ce que tu
   vois » : **ton Pokémon trottine** (par défaut depuis le 16/11, monture `trotteur`, voir ci-dessous) ou **à vélo** (monture `cycliste`) ;
   `?monture=cycliste` pour essayer. Les rollers (12/11) ont été retirés le 16/11 (Kiki : « ridicule »), l'ancienne vue « il court » aussi :
@@ -380,10 +385,10 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
   (Kiki, 16/11 : un circuit peut servir à plusieurs disciplines, jamais un temps de trot comparé à un temps de vélo) : `CLE_MACHINE` =
   `elliptique-trotteur` ou `elliptique-cycliste`, et les vrais mètres d'un tour (`TOUR_M`) diffèrent, donc la clé du circuit aussi.
 - **Les trotteurs** (16/11, Kiki : comme les nageurs du rameur, sur la terre) : `contenu/trotteurs.json` = les Pokémon terrestres qui
-  trottinent au skieur de fond, vus de dos, en sprites de Donjon Mystère : `num`, `nom`, `cycles` (cycles de marche par tour de jambes de la
+  trottinent au marcheur elliptique, vus de dos, en sprites de Donjon Mystère : `num`, `nom`, `cycles` (cycles de marche par tour de jambes de la
   machine : 1 = foulées posées, 2 = foulées vives, pour un petit), `foulee` (le petit rebond de chaque foulée, pour un Pokémon d'un mètre).
   **La taille n'est pas dans la fiche : c'est celle du Pokédex** (`page.trotteurs()`). Ajouter un trotteur = une ligne (page.py met sa
-  planche de marche dans la page). Choix au menu du skieur de fond (« Ton Pokémon », `riviere_trotteur`, changé tout de suite :
+  planche de marche dans la page). Choix au menu du marcheur elliptique (« Ton Pokémon », `riviere_trotteur`, changé tout de suite :
   `changerTrotteur`), `?trotteur=25` pour essayer. **Liste provisoire** (Pikachu, Caninos, Ponyta) : Kiki choisit ses trois sur la planche
   claude.ai/artifact/D6K5xVakUEcE9hDZkRRU9H (8 candidats ; Évoli, Rattata et Tauros ont 7 images de marche, les trois proposés 4).
   - `contenu/montures/trotteur.js` (une monture du CONTENU, pas du cœur) : `MONTURES.trotteur = {animer: trotter, trace: Infinity}`.
@@ -402,7 +407,7 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
   jeu), la règle d'avant, identique au pixel près (de dos, rangée 3 ou 5 dans un virage serré) ; sinon l'angle de la caméra. Appelée pour
   ton Pokémon (nageur, coureur, trotteur : monture.js, trotteur.js) et pour son fantôme (fantome.js). Les sprites ont 8 angles : quand la
   caméra tourne autour de toi, l'image change par crans de 45°, comme dans les jeux en sprites.
-- **Le cycliste en sprite** (17/11, Kiki : « une vraie planche de sprites dessinée avec soin » ; vue par défaut au vélo et au skieur de fond
+- **Le cycliste en sprite** (17/11, Kiki : « une vraie planche de sprites dessinée avec soin » ; vue par défaut au vélo et au marcheur elliptique
   « À vélo »). La planche : `contenu/montures/cycliste.png` + `cycliste.json`, notre propre dessin, faite par `outils/atelier_velo.py`
   (`python riviere/outils/atelier_velo.py`, ~5 min ; `<dossier> --apercu` pour une grande image ; `--vite` : une image sur quatre). L'atelier
   dessine un squelette 3D (vélo et dresseur articulés : pieds sur les pédales, mains au guidon) pixel par pixel à 30 pixels par mètre, trois
@@ -441,8 +446,8 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
   les autres dans `data/machines/seances.json`. Côté machine (`MACHINES` d'allure.js) : `enregistre` (les trois), `saisie` (le pavé de fin :
   le rameur seul), `capteurRequis` (le vélo : gardé seulement si un vrai capteur Bluetooth a fait avancer la séance, `S.capteurVu`, posé par
   `vitesseCapteur` en vraie séance ; sinon la fin dit pourquoi rien n'est gardé). Distances : `saisi.distance` (lue sur le rameur), `capteur.distance`
-  (vélo) comptent ; `estime.distance` (skieur de fond, l'estimation vers le bas) s'affiche avec ≈ et ne compte jamais. Pour Poké Fit
-  (`seances_rameur.MACHINES`) : rameur = `ROWING_MACHINE`, skieur de fond = `ELLIPTICAL`, vélo = `BIKING_STATIONARY`, chacune avec les règles
+  (vélo) comptent ; `estime.distance` (marcheur elliptique, l'estimation vers le bas) s'affiche avec ≈ et ne compte jamais. Pour Poké Fit
+  (`seances_rameur.MACHINES`) : rameur = `ROWING_MACHINE`, marcheur elliptique = `ELLIPTICAL`, vélo = `BIKING_STATIONARY`, chacune avec les règles
   de ce type ; une séance de la montre recouverte à plus de 50 % est remplacée (cœur et calories gardés). Le menu montre la dernière séance de
   sa machine (`D.dernieres`). Ajouter une machine : une ligne dans chacun des deux `MACHINES`.
 - **Capteur Bluetooth** (`jeu/capteurs.js`, Chrome ou Edge) : home trainer, vélo, rameur ou elliptique connecté (FTMS), capteur de puissance,
@@ -580,7 +585,13 @@ Le circuit du jour a une fourche deux jours sur cinq (`jour.options`, jamais dan
 - **Les tracés des autres circuits** sortent du vrai code de la piste (`essayerNiveau`), sans construire leur monde (20 à 120 ms chacun), et sont
   gardés sur la machine (`riviere_traces`, avec une signature des pièces : un circuit retouché est recalculé).
 - **L'ambiance en vignettes** : chaque heure et chaque temps est un petit ciel en pixels peint aux couleurs du jeu (`peindreCiel`, d'après `HEURES`
-  et `METEOS` d'ambiance.js) ; les effets du rendu (avec / sans) sont dans la même feuille.
+  et `METEOS` d'ambiance.js), avec une ligne d'aide (« Celle du circuit · prévue : le soir », « Variable · change toutes les 3 min ») ; pas de grand
+  aperçu au-dessus (17/11, Kiki : il répétait la vignette touchée). Les effets du rendu (avec / sans, pour un très vieil ordinateur) sont dans ⚙.
+- **Retouches du 17/11 (soir, Kiki)** : le titre est **Poké Swift** (plusieurs sports) ; l'elliptique s'appelle **Marcheur elliptique** à l'écran
+  (clé `elliptique` inchangée) ; plus de « au programme » ; « Créer un circuit » est au niveau de « Commencer », même hauteur (grille `creer depart`).
+- **Un brouillon essayé** : « Essayer » de l'éditeur recharge la page avec le brouillon et part tout de suite en essai (`riviere_essai_go`) ; à la fin
+  de l'essai et au menu, « Ce circuit te plaît ? » : son nom, « 💾 Le garder » (`garderBrouillon` : rejoint tes circuits et devient le circuit
+  choisi ; un circuit déjà gardé qu'on retouchait est remplacé), « ✏️ Le retoucher » (retour à l'atelier).
 - Choisir un autre circuit ou une autre machine recharge la page avec lui (le menu revient aussitôt, le monde se reconstruit derrière).
 - **Les circuits du menu** (17/11, Kiki : un ou deux par sport) : eau = `kanto-1km` et `vitrine` ; terre = `terre-ville` et `col-ventoux` ; plus le
   circuit du jour de chacun. `essai`, `fourche` et `ventoux` sont **cachés** (`"cache": true` : ils servent aux contrôles du moteur ; on les ouvre à

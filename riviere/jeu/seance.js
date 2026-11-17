@@ -2,7 +2,7 @@
 // Une vraie séance : la montre rame, le chrono part au premier coup, chaque tour est chronométré ; « Fin » arrête tout, on entre ce qu'affiche
 // le rameur (distance, temps, calories : tout facultatif) et la séance part comme celles du téléphone : localStorage pkm_rameur, puis la page
 // de l'appli se recharge et l'envoie (app.py, envoyer_rameur → seances_rameur.ranger). L'essai (sans montre) n'enregistre jamais rien.
-// Toutes les machines (14/11, étape 1 du plan) : même séance, avec "machine" ; le skieur de fond sans saisie (pas d'écran : sa distance est
+// Toutes les machines (14/11, étape 1 du plan) : même séance, avec "machine" ; le marcheur elliptique sans saisie (pas d'écran : sa distance est
 // l'estimation vers le bas du jeu, gardée à part dans "estime", jamais comptée), le vélo seulement avec un vrai capteur ("capteur" : sa distance).
 const ATTENTE = "pkm_rameur", ENCOURS = "riviere_encours";
 const lireLS = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } };
@@ -23,7 +23,7 @@ function majBoutons() { $("bAuto").hidden = S.mode !== "essai"; $("bFin").hidden
    le meilleur tour de chaque joueur sur ce circuit et cette machine, pris dans les records du serveur (un record part avec la séance enregistrée) */
 function classementDuJour() {
   if (!NIVEAU.jour || !D.jour) return "";
-  const lignes = (((D.jour.classement || {})[DISCIPLINE] || {})[MACHINE_NOM] || []).slice(0, 10), pour = {rameur: "au rameur", elliptique: "au skieur de fond", velo: "à vélo"}[MACHINE_NOM] || "";
+  const lignes = (((D.jour.classement || {})[DISCIPLINE] || {})[MACHINE_NOM] || []).slice(0, 10), pour = {rameur: "au rameur", elliptique: "au marcheur elliptique", velo: "à vélo"}[MACHINE_NOM] || "";
   const esc2 = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   return `<div class="classement"><small>CLASSEMENT DU JOUR ${pour.toUpperCase()}</small>${lignes.length ? `<ol>${lignes.map(l => `<li${l.moi ? ' class="moi"' : ""}><span>${esc2(l.nom)}</span><b>${chrono(l.t)}</b></li>`).join("")}</ol>`
     : `<p class="petit">Personne n'a encore bouclé un tour aujourd'hui : le premier tour d'une séance enregistrée prend la tête.</p>`}
@@ -73,11 +73,12 @@ function resume(b) {
 }
 function finEssai() {
   const essai = S.mode === "essai";
-  const p = panneau(`<h1>${essai ? "Fin de l'essai" : "Fin de la séance"}</h1>${resume(bilanDe())}<p class="petit">${essai ? "Un essai n'est jamais enregistré." : MACHINE.capteurRequis ? "Aucun capteur Bluetooth n'a donné ta vitesse : sans lui, je ne sais pas ce que tu as vraiment fait, cette séance ne comptera nulle part." : "Les séances de cette machine ne sont pas encore enregistrées dans l'appli : celle-ci ne comptera nulle part."}</p>
-    <div class="choix"><button class="rouge" id="fMenu">▶ ${essai ? "Retour au menu" : "Terminer (rien n'est gardé)"}</button><button class="sec" id="fReprendre">Reprendre</button>${filmRevoirBouton()}</div>`);
+  const p = panneau(`<h1>${essai ? "Fin de l'essai" : "Fin de la séance"}</h1>${resume(bilanDe())}${NIVEAU.brouillon ? blocGarder("f") : ""}<p class="petit">${essai ? "Un essai n'est jamais enregistré." : MACHINE.capteurRequis ? "Aucun capteur Bluetooth n'a donné ta vitesse : sans lui, je ne sais pas ce que tu as vraiment fait, cette séance ne comptera nulle part." : "Les séances de cette machine ne sont pas encore enregistrées dans l'appli : celle-ci ne comptera nulle part."}</p>
+    <div class="choix"><button class="${NIVEAU.brouillon ? "sec" : "rouge"}" id="fMenu">${NIVEAU.brouillon ? "" : "▶ "}${essai ? "Retour au menu" : "Terminer (rien n'est gardé)"}</button><button class="sec" id="fReprendre">Reprendre</button>${filmRevoirBouton()}</div>`);
   if (p.querySelector("#fFilm")) p.querySelector("#fFilm").onclick = () => { fermerPanneau(); filmJouer(finEssai); };
   p.querySelector("#fMenu").onclick = () => { ecrireLS(ENCOURS, null); ouvrirMenu(); };
   p.querySelector("#fReprendre").onclick = reprendre;
+  if (NIVEAU.brouillon) relierGarder("f");
 }
 
 /* la fin d'une vraie séance : ce qu'affiche le rameur, au pavé numérique (la tablette n'a pas toujours de clavier) */

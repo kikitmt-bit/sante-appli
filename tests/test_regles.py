@@ -1029,7 +1029,7 @@ class TestMachines(unittest.TestCase):
     def test_skieur_de_fond_compte_comme_un_elliptique(self):
         r = seances_rameur.fusionner({}, None, {"seances": [self.SKI]})
         e = self.exos(r)[0]
-        self.assertEqual((e["exerciseType"], e["displayName"]), ("ELLIPTICAL", "Skieur de fond"))
+        self.assertEqual((e["exerciseType"], e["displayName"]), ("ELLIPTICAL", "Marcheur elliptique"))
         self.assertNotIn("distanceMillimeters", e["metricsSummary"])  # estimée : jamais comptée
         m = pokemon.mesures(self.VIDE, self.exos(r), self.JOUR)
         self.assertEqual(m["points"]["sport"], 20)  # 1 point par minute, comme toute séance de 10 min
@@ -1052,11 +1052,11 @@ class TestMachines(unittest.TestCase):
         r = seances_rameur.fusionner({str(self.JOUR): {"exercise": [montre]}}, None, {"seances": [self.SKI]})
         e = self.exos(r)
         self.assertEqual(len(e), 1)
-        self.assertEqual((e[0]["displayName"], e[0]["metricsSummary"]["averageHeartRateBeatsPerMinute"]), ("Skieur de fond", 128))  # son cœur est gardé
+        self.assertEqual((e[0]["displayName"], e[0]["metricsSummary"]["averageHeartRateBeatsPerMinute"]), ("Marcheur elliptique", 128))  # son cœur est gardé
 
     def test_rameur_et_machines_ensemble(self):
         r = seances_rameur.fusionner({}, {"seances": [{**TestRameur.S, "debut": "2026-11-21T07:00:00+01:00", "fin": "2026-11-21T07:20:00+01:00"}]}, {"seances": [self.SKI, self.VELO]})
-        self.assertEqual(sorted(e["displayName"] for e in self.exos(r)), ["Rameur", "Skieur de fond", "Vélo"])
+        self.assertEqual(sorted(e["displayName"] for e in self.exos(r)), ["Marcheur elliptique", "Rameur", "Vélo"])
 
     def test_ranger_met_chaque_machine_a_sa_place(self):
         depot = {}

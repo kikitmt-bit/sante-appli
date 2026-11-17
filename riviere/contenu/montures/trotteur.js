@@ -1,4 +1,4 @@
-/* ============ les trotteurs : au skieur de fond, ton Pokémon trottine devant toi (16/11, Kiki) ============ */
+/* ============ les trotteurs : au marcheur elliptique, ton Pokémon trottine devant toi (16/11, Kiki) ============ */
 // Un Pokémon terrestre en sprite de Donjon Mystère, vu de dos : un footing léger, pas une course. Même principe que les nageurs du rameur :
 // une petite fiche par Pokémon (contenu/trotteurs.json), sa VRAIE taille (celle du Pokédex, ajoutée par page.py), la caméra qui s'adapte
 // (GABARIT), le corps qui se tourne dans les virages (monture.js), le choix au menu gardé sur l'appareil (riviere_trotteur, ?trotteur=25).

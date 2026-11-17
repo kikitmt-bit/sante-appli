@@ -21,9 +21,9 @@ MIN_COUPS_APPRENTISSAGE = 20  # en dessous, le rapport distance / coups ne veut 
 # Le rameur reste dans FICHIER (son apprentissage, Carapuce, la mission Otaria, la carte de Santé ne lisent que lui) ; les autres vont dans AUTRES.
 # Pour Poké Fit, chacune devient la séance de la montre qui lui ressemble, avec ses règles à elle (aucune règle nouvelle) :
 # machine -> (type de séance Google, nom, ce qu'on compte). Distance : celle lue sur la machine (`saisi`) ou mesurée par un capteur Bluetooth
-# (`capteur`) compte ; celle que le jeu estime (`estime`, le skieur de fond n'a pas d'écran) s'affiche avec ≈ et ne compte jamais.
+# (`capteur`) compte ; celle que le jeu estime (`estime`, le marcheur elliptique n'a pas d'écran) s'affiche avec ≈ et ne compte jamais.
 AUTRES = "data/machines/seances.json"
-MACHINES = {"rameur": ("ROWING_MACHINE", "Rameur", "coups"), "elliptique": ("ELLIPTICAL", "Skieur de fond", "tours"), "velo": ("BIKING_STATIONARY", "Vélo", "tours")}
+MACHINES = {"rameur": ("ROWING_MACHINE", "Rameur", "coups"), "elliptique": ("ELLIPTICAL", "Marcheur elliptique", "tours"), "velo": ("BIKING_STATIONARY", "Vélo", "tours")}
 
 
 def machine_de(s):
@@ -87,7 +87,7 @@ def point_de(s, montre=None):
 
 
 def fusionner(resumes, fichier, autres=None):
-    """Les résumés des jours, avec les séances des machines en plus (fichier = le rameur, autres = skieur de fond et vélo). Une copie : les
+    """Les résumés des jours, avec les séances des machines en plus (fichier = le rameur, autres = marcheur elliptique et vélo). Une copie : les
     résumés lus restent gardés tels quels en mémoire."""
     seances = ((fichier or {}).get("seances") or []) + ((autres or {}).get("seances") or [])
     if not seances:

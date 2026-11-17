@@ -44,7 +44,7 @@ class Fichiers(unittest.TestCase):
             self.assertIn(p.get("style", "brasse"), nages, p["nom"])
 
     def test_trotteurs(self):
-        """Les Pokémon qui trottinent au skieur de fond : chacun a sa vraie taille, un rythme de foulée connu, et la monture du contenu existe."""
+        """Les Pokémon qui trottinent au marcheur elliptique : chacun a sa vraie taille, un rythme de foulée connu, et la monture du contenu existe."""
         t = _page.trotteurs()
         nums = [p["num"] for p in t["liste"]]
         self.assertTrue(nums, "aucun trotteur")

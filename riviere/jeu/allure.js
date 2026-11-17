@@ -6,7 +6,7 @@
 //   allure    le décor défile ce nombre de fois plus vite que les vrais mètres (une machine lente garde un décor vivant)
 //   cadence   gestes par minute de l'essai automatique ; v0, v1 : les vitesses « lente » et « rapide » (m/s), pour les effets
 //   affiche   "500" (temps aux 500 m) ou "kmh" ; enregistre : la séance est-elle gardée dans l'appli (14/11 : les trois machines)
-//   saisie    à la fin, on entre ce qu'affiche la machine (le rameur seul : le skieur de fond n'a pas d'écran, le home trainer donne tout)
+//   saisie    à la fin, on entre ce qu'affiche la machine (le rameur seul : le marcheur elliptique n'a pas d'écran, le home trainer donne tout)
 //   capteurRequis : gardée seulement si un vrai capteur Bluetooth a donné la vitesse (le vélo : jamais les 150 W de l'essai)
 // Records et fantômes sont séparés par machine. ?machine=elliptique choisit la machine (sinon : D.machine, sinon le rameur).
 const MACHINES = {
@@ -19,7 +19,7 @@ const MACHINES = {
   // poussent les poignées (12/11, Kiki : ce n'est pas un elliptique). La clé reste "elliptique" : c'est le sujet de la montre et la clé des records.
   // Ce qu'on y voit, au choix du menu (gardé sur la machine ; ?monture= pour essayer) : ton Pokémon qui trottine (16/11, par défaut :
   // contenu/montures/trotteur.js) ou ton dresseur à vélo. Les rollers et l'ancienne vue « il court » n'existent plus : qui les avait choisis voit le trot.
-  elliptique: {nom: "Skieur de fond", montre: "Elliptique", monture: (PARAMS.get("monture") || lireReglage("riviere_monture_elliptique", "trotteur")) === "cycliste" ? "cycliste" : "trotteur",
+  elliptique: {nom: "Marcheur elliptique", montre: "Elliptique", monture: (PARAMS.get("monture") || lireReglage("riviere_monture_elliptique", "trotteur")) === "cycliste" ? "cycliste" : "trotteur",
     geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: true},
 };
 const MACHINE_NOM = (() => { const m = MACHINES[MACHINE_MENU] ? MACHINE_MENU : MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";
@@ -27,7 +27,7 @@ const MACHINE_NOM = (() => { const m = MACHINES[MACHINE_MENU] ? MACHINE_MENU : M
   return m !== "rameur" ? m : MACHINES[lireReglage("riviere_machine_terre", null)] ? lireReglage("riviere_machine_terre", null) : "velo"; })();   // l'adresse, sinon le choix du menu, sinon l'appli
 const MACHINE = MACHINES[MACHINE_NOM];
 const M_COUP = MACHINE.metres, TAU = MACHINE.tau, LISSE = MACHINE.lisse;
-/* la vitesse VUE (12/11, Kiki) : au skieur de fond, le décor ne défile pas à tes vrais mètres par seconde mais à l'allure de ce que tu vois.
+/* la vitesse VUE (12/11, Kiki) : au marcheur elliptique, le décor ne défile pas à tes vrais mètres par seconde mais à l'allure de ce que tu vois.
    À vélo : 15 km/h à ton allure habituelle (MACHINE.cadence tours par minute), 20 quand tu accélères (+25 %), 25 à fond (+50 %), 30 au plus.
    Au trot (16/11, Kiki : un footing léger, 6-7 km/h à l'œil) : 6,5 km/h à ton allure habituelle, 8 à +25 %, 10 au plus.
    Une vraie côte freine, une descente lance. Les chiffres affichés restent les vrais (distance, km/h, cadence : ceux de tes jambes). */

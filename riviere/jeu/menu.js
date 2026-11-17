@@ -1,6 +1,6 @@
 /* ============ le menu (refait le 17/11, carte blanche de Kiki : « tout sur une page, pratique, ludique, sans chargement inutile ») ============ */
 // Un seul écran, sans défiler (PC et tablette en paysage ; le téléphone en portrait garde tout à portée de pouce) :
-//   en haut   la machine (rameur, skieur de fond, vélo) et ⚙ (capteur Bluetooth, son, effets) ;
+//   en haut   la machine (rameur, marcheur elliptique, vélo) et ⚙ (capteur Bluetooth, son, effets) ;
 //   à gauche  les circuits de cette machine, chacun avec son tracé, sa distance, boucle ou parcours, son dénivelé ;
 //   à droite  le circuit choisi en grand (tracé, profil, record, classement du jour), trois vignettes à toucher (l'ambiance, ton compagnon,
 //             adversaires et fantôme : chacune ouvre sa feuille), puis « Commencer », qui se remplit pendant que le circuit se construit.
@@ -12,7 +12,11 @@ const MENU = {ouvert: false, feuille: null, traces: {}, file: [], sur: 0, jet: 0
 const HEURES_MENU = [["circuit", "Du circuit"], ["reelle", "Heure réelle"], ["matin", "Matin"], ["jour", "Jour"], ["soir", "Soir"], ["nuit", "Nuit"], ["cycle", "Journée qui défile"]];
 const METEOS_MENU = [["circuit", "Du circuit"], ["beau", "Beau"], ["variable", "Variable"], ["nuages", "Nuages"], ["pluie", "Pluie"], ["orage", "Orage"], ["brume", "Brume"], ["neige", "Neige"]];
 const ACTIVITE = {rameur: "eau", elliptique: "terre", velo: "terre"};   // l'activité de chaque machine : ses circuits à elle (eau : rivières ; terre : routes et chemins)
-const MACHINES_MENU = [["rameur", "Rameur", "🚣", "Sur l'eau · la montre compte tes coups"], ["elliptique", "Skieur de fond", "⛷️", "L'appareil du parc · la montre compte tes tours"], ["velo", "Vélo", "🚲", "Sur la route · home trainer Bluetooth"]];
+const MACHINES_MENU = [["rameur", "Rameur", "🚣", "Sur l'eau · la montre compte tes coups"], ["elliptique", "Marcheur elliptique", "🚶", "L'appareil du parc · la montre compte tes tours"], ["velo", "Vélo", "🚲", "Sur la route · home trainer Bluetooth"]];
+const NOM_HEURE = {aube: "l'aube", matin: "le matin", jour: "en plein jour", soir: "le soir", crepuscule: "au crépuscule", nuit: "la nuit", reelle: "à l'heure réelle", cycle: "une journée qui défile"};
+const NOM_METEO = {beau: "beau temps", nuages: "nuageux", pluie: "pluie", orage: "orage", brume: "brume", neige: "neige", vent: "grand vent", variable: "variable"};
+const SOUS_HEURE = {circuit: () => "prévue : " + (NOM_HEURE[NIVEAU.heure || "jour"] || NIVEAU.heure + " h"), reelle: () => "celle qu'il est maintenant", cycle: () => "24 h en 12 minutes"};
+const SOUS_METEO = {circuit: () => "prévu : " + (NOM_METEO[NIVEAU.meteo || "beau"] || NIVEAU.meteo), variable: () => "change toutes les 3 min"};
 const escM = t => String(t === undefined || t === null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 const libelle = (liste, k) => (liste.find(x => x[0] === k) || liste[0])[1];
 const longueur = m => m < 1000 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",") + " km";
@@ -152,13 +156,8 @@ function blocApercu() {
     <h1>${NIVEAU.brouillon ? "✏️ " : NIVEAU.jour ? "☀️ " : ""}${escM(NIVEAU.nom || NIVEAU.id)}</h1>
     <div class="m-puces"><span><small>${BOUCLE ? "UN TOUR" : "DISTANCE"}</small>${longueur(TOUR_VRAI)}</span><span><small>FORME</small>${BOUCLE ? "Circuit" : "Parcours"}</span><span><small>DÉNIVELÉ</small>${T.dplus < 10 ? "Plat" : "+" + T.dplus + " m"}</span><span><small>À TON ALLURE</small>≈ ${Math.max(1, Math.round(duree / 60))} min</span></div>
     <canvas class="m-profil"></canvas>
-    ${etapesDuCircuit()}
     <p class="m-record">${r ? (BOUCLE ? "Ton record du tour : " : "Ton record : ") + "<b>" + chrono(r) + "</b>" : "Pas encore de record ici."}${NIVEAU.jour && typeof NIVEAU.note === "number" ? " · note " + NIVEAU.note + " / 100" : ""}</p>
-    ${classementDuJour()}</div></div>`;
-}
-function etapesDuCircuit() {   // les lieux qui ont un nom, dans l'ordre du tour (Le port, Le phare, La grotte…)
-  const vus = []; for (const p of PISTE.pieces || []) { const t = p.titre; if (t && !vus.includes(t)) vus.push(t); }
-  return vus.length > 1 ? `<div class="m-etapes"><small>AU PROGRAMME</small>${vus.slice(0, 14).map(t => `<span>${escM(t)}</span>`).join("")}${vus.length > 14 ? "<span>…</span>" : ""}</div>` : "";
+    ${NIVEAU.brouillon ? blocGarder("m") : classementDuJour()}</div></div>`;
 }
 function vignettes() {
   const h = PARAMS.get("heure") || lireReglage("riviere_heure", "circuit") || "circuit", m = PARAMS.get("meteo") || lireReglage("riviere_meteo", "circuit") || "circuit";
@@ -177,28 +176,28 @@ function ouvrirMenu() {
   if (lireReglage("riviere_menu_v2", null) === null) { ecrireReglage("riviere_menu_v2", 1); ecrireReglage("riviere_circuits", null); for (const k of Object.keys(CIRCUITS_PERSO)) delete CIRCUITS_PERSO[k]; }   // (17/11, Kiki) les circuits faits à l'essai sont effacés une fois
   const el = $("menu"), choisie = MACHINE_CHOISIE || !!lireReglage("riviere_machine", null);
   const enc = lireLS(ENCOURS, null), reprise = enc && aDuContenu(enc) && Date.now() - enc.maj < 12 * 3600e3 && (enc.machine || "rameur") === MACHINE_NOM && gardable(enc) ? enc : null;
-  if (enc && !reprise && (enc.machine || "rameur") === MACHINE_NOM) ecrireLS(ENCOURS, null);   // une séance qui ne s'enregistre pas (skieur de fond) ou trop vieille : rien à récupérer
+  if (enc && !reprise && (enc.machine || "rameur") === MACHINE_NOM) ecrireLS(ENCOURS, null);   // une séance qui ne s'enregistre pas (marcheur elliptique) ou trop vieille : rien à récupérer
   const attend = (lireLS(ATTENTE, []) || []).length, der = (D.dernieres || {})[MACHINE_NOM] || (MACHINE_NOM === "rameur" ? D.derniere : null), bonne = ACTIVITE[MACHINE_NOM] === DISCIPLINE;
   const liste = circuitsDuMenu();
   MENU.sur = 0; MENU.jet = 0;
-  el.innerHTML = `<header class="m-tete"><div class="m-nom">La Rivière</div>
+  el.innerHTML = `<header class="m-tete"><div class="m-nom">Poké Swift</div>
       <nav class="m-machines"${choisie ? "" : " hidden"}>${MACHINES_MENU.map(([k, t, ic]) => `<button class="m-machine${choisie && k === MACHINE_NOM ? " on" : ""}" data-machine="${k}"><i>${ic}</i><b>${t}</b></button>`).join("")}</nav>
       <button class="m-rond" id="mRegl" title="Réglages">⚙</button></header>
     ${!choisie ? `<div class="m-accueil"><h1>Quelle machine aujourd'hui ?</h1><div class="m-grandes">${MACHINES_MENU.map(([k, t, ic, s]) => `<button class="m-machine grande" data-machine="${k}"><i>${ic}</i><b>${t}</b><small>${s}</small></button>`).join("")}</div>
       <p class="m-petit">Ses circuits apparaîtront ensuite. Tu pourras en changer à tout moment, en haut.</p></div>` : `
     <div class="m-corps">
-      <section class="m-liste"><div class="m-titre2">Les circuits ${{rameur: "du rameur", elliptique: "du skieur de fond", velo: "du vélo"}[MACHINE_NOM]}</div>
-        ${NIVEAU.brouillon ? `<button class="m-carte on brouillon" id="mBrouillon"><span class="m-c-txt"><b>✏️ ${escM(NIVEAU.nom)}</b><small>Le brouillon de l'éditeur · retour à l'éditeur</small></span><i class="m-barre"><u></u></i></button>` : ""}
-        <div class="m-cartes">${liste.map(carteCircuit).join("")}</div>
-        <button class="m-creer" id="mEditeur">✏️ Créer, générer ou modifier un circuit</button></section>
-      <section class="m-droite">${blocApercu()}${vignettes()}
+      <section class="m-liste"><div class="m-titre2">Les circuits ${{rameur: "du rameur", elliptique: "du marcheur elliptique", velo: "du vélo"}[MACHINE_NOM]}</div>
+        ${NIVEAU.brouillon ? `<button class="m-carte on brouillon" id="mBrouillon"><span class="m-c-txt"><b>✏️ ${escM(NIVEAU.nom)}</b><small>Ton brouillon, en essai · le retoucher</small></span><i class="m-barre"><u></u></i></button>` : ""}
+        <div class="m-cartes">${liste.map(carteCircuit).join("")}</div></section>
+      <button class="m-creer" id="mEditeur"><b>✏️ Créer un circuit</b><small>le générer en deux touchers, ou le dessiner</small></button>
+      <section class="m-droite">${blocApercu()}${vignettes()}</section>
         <div class="m-depart">
           ${attend ? `<p class="m-alerte">Une séance attend d'être envoyée : recharge la page.</p>` : ""}
           ${reprise ? `<div class="m-reprise"><button class="m-go petit" id="mReprise">▶ Récupérer la séance interrompue (${fmt(reprise.t)})</button><button class="m-sec" id="mJeter">Annuler</button></div>` : ""}
           <div class="m-boutons"><button class="m-go" id="mGo" ${bonne ? "" : "disabled"}><span class="m-plein"></span><b>▶ Commencer</b><small id="mGoTxt"></small></button><button class="m-sec" id="mEssai" ${bonne ? "" : "disabled"}>Essayer<br>sans montre</button></div>
           <p class="etat-montre" id="mMontre"></p>
           ${der ? `<p class="m-petit">Dernière séance : ${der.quand}${der.distance ? " · " + metres(der.distance) + " m" : der.estime ? " · ≈ " + metres(der.estime) + " m" : ""}${der.tours ? " · " + der.tours + " tour" + (der.tours > 1 ? "s" : "") : ""}</p>` : ""}
-        </div></section></div>`}
+        </div></div>`}
     <div class="m-voile" id="mVoile" hidden><div class="m-feuille" id="mFeuille"></div></div>`;
   el.hidden = false;
   el.querySelectorAll("[data-machine]").forEach(b => b.onclick = () => { if (choisie && b.dataset.machine === MACHINE_NOM) return; b.classList.add("charge"); choisirMachine(b.dataset.machine); });
@@ -207,7 +206,7 @@ function ouvrirMenu() {
   for (const [id, n] of liste) { const T = traceDe(id, n); if (T) { dessinerTrace(el.querySelector(`[data-c="${CSS.escape(id)}"] canvas`), T, disciplineDe(n), false); infosCarte(id); } }
   calculerTraces(liste);
   el.querySelectorAll(".m-cartes [data-c]").forEach(b => b.onclick = () => { if (estCourant(b.dataset.c)) return; b.classList.add("charge"); b.querySelector(".m-c-info").textContent = "Je le prépare…"; choisirCircuit(b.dataset.c); });
-  if (NIVEAU.brouillon) $("mBrouillon").onclick = () => ouvrirEditeur();
+  if (NIVEAU.brouillon) $("mBrouillon").onclick = () => ouvrirEditeur(NIVEAU);
   $("mEditeur").onclick = () => { fermerMenu(); ouvrirEditeur(); };
   el.querySelectorAll(".m-tuile").forEach(b => b.onclick = () => ouvrirFeuille(b.dataset.f));
   $("mGo").onclick = e => { if (reprise && ++MENU.sur < 2) { e.currentTarget.querySelector("b").textContent = "La séance interrompue sera perdue : touche encore"; return; } ecrireLS(ENCOURS, null); commencer("vraie"); };
@@ -218,7 +217,29 @@ function ouvrirMenu() {
     if (g && T) dessinerTrace(g, T, DISCIPLINE, true); if (pr && T) { if (T.relief < 2) pr.hidden = true; else dessinerProfil(pr, T, DISCIPLINE); } majVignettes();
     const on = el.querySelector(".m-cartes .m-carte.on"), box = el.querySelector(".m-cartes");   // le circuit choisi, à l'écran (au téléphone, les circuits défilent de côté)
     if (on && box) { box.scrollLeft = Math.max(0, on.offsetLeft - box.offsetLeft - 8); if (box.scrollHeight > box.clientHeight) box.scrollTop = Math.max(0, on.offsetTop - box.offsetTop - 8); } })();
+  if (NIVEAU.brouillon) relierGarder("m");
   majMenuDepart(); majMenuMontre();
+  try { if (sessionStorage.getItem("riviere_essai_go")) { sessionStorage.removeItem("riviere_essai_go"); if (NIVEAU.brouillon && bonne) commencer("essai"); } } catch (e) {}   // « Essayer » de l'éditeur : on part tout de suite
+}
+/* un brouillon de l'éditeur qu'on vient d'essayer (17/11, Kiki : « ce qui doit être mis en valeur, c'est d'essayer ; une fois dans le circuit,
+   ce circuit vous a plu ? l'enregistrer ») : au menu et à la fin de l'essai, on le garde en un toucher, ou on retourne le retoucher */
+function blocGarder(px) {
+  return `<div class="m-garder"><b>Ce circuit te plaît ?</b><span><input type="text" id="${px}Nom" maxlength="40" value="${escM(NIVEAU.nom || "Mon circuit")}" aria-label="Son nom">
+    <button class="m-go petit" id="${px}Garder">💾 Le garder</button><button class="m-sec" id="${px}Retoucher">✏️ Le retoucher</button></span>
+    <small>Gardé, il rejoint tes circuits au menu (sur cet appareil).</small></div>`;
+}
+function relierGarder(px) {
+  const g = $(px + "Garder"), r = $(px + "Retoucher"); if (!g) return;
+  g.onclick = () => { g.textContent = "Je le range…"; garderBrouillon($(px + "Nom").value); };
+  r.onclick = () => ouvrirEditeur(NIVEAU);
+}
+function garderBrouillon(nom) {
+  const n = propre(NIVEAU); n.nom = String(nom || "").trim() || n.nom || "Mon circuit";
+  if (!(n.id && CIRCUITS_PERSO[n.id])) { const base = idDe(n.nom); let id = base, k = 2; while (CIRCUITS_PERSO[id]) id = base + "-" + k++; n.id = id; }   // un circuit déjà gardé (qu'on retouchait) est remplacé ; sinon un nom neuf
+  CIRCUITS_PERSO[n.id] = n;
+  if (!ecrireReglage("riviere_circuits", CIRCUITS_PERSO)) { alert("Impossible de garder le circuit sur cet appareil (plus de place ?)."); return; }
+  ecrireReglage(ED_CLE, n);   // l'éditeur repartira de lui (le retoucher le remplace)
+  choisirCircuit(n.id);
 }
 function fermerMenu() { MENU.ouvert = false; document.body.classList.remove("au-menu"); const el = $("menu"); el.hidden = true; el.innerHTML = ""; }
 function majVignettes() {
@@ -257,20 +278,17 @@ function ouvrirFeuille(quoi) {
   const v = $("mVoile"), f = $("mFeuille"); if (!v) return; MENU.feuille = quoi;
   const fermer = `<button class="m-rond m-fermer" id="mFermer">✕</button>`;
   if (quoi === "ambiance") {
-    const h = PARAMS.get("heure") || lireReglage("riviere_heure", "circuit") || "circuit", m = PARAMS.get("meteo") || lireReglage("riviere_meteo", "circuit") || "circuit", fx = lireReglage("riviere_effets", "1") === "0" ? "0" : "1";
-    f.innerHTML = `${fermer}<h2>L'ambiance</h2><canvas class="m-ciel grand"></canvas>
-      <div class="m-sous">L'heure</div><div class="m-cieux">${HEURES_MENU.map(([k, t]) => `<button class="m-vciel${h === k ? " on" : ""}" data-h="${k}"><canvas></canvas><b>${t}</b></button>`).join("")}</div>
-      <div class="m-sous">Le temps</div><div class="m-cieux">${METEOS_MENU.map(([k, t]) => `<button class="m-vciel${m === k ? " on" : ""}" data-m="${k}"><canvas></canvas><b>${t}</b></button>`).join("")}</div>
-      <div class="m-sous">Les effets <em>l'eau qui coule, le vent dans les arbres, les forêts au loin, les ombres</em></div>
-      ${EFFETS.circuit ? `<div class="m-opts">${choixBoutons([["1", "Avec"], ["0", "Sans", "pour une machine qui peine"]], fx, "x")}</div>` : `<p class="m-petit">Pas sur ce circuit : il reste tel qu'il a toujours été.</p>`}`;
+    const h = PARAMS.get("heure") || lireReglage("riviere_heure", "circuit") || "circuit", m = PARAMS.get("meteo") || lireReglage("riviere_meteo", "circuit") || "circuit";
+    const vignette = (attr, k, t, sous) => `<button class="m-vciel${(attr === "h" ? h : m) === k ? " on" : ""}" data-${attr}="${k}"><canvas></canvas><b>${t}</b>${sous ? `<small>${sous}</small>` : ""}</button>`;
+    f.innerHTML = `${fermer}<h2>L'ambiance</h2>
+      <div class="m-sous">L'heure</div><div class="m-cieux">${HEURES_MENU.map(([k, t]) => vignette("h", k, k === "circuit" ? "Celle du circuit" : t, SOUS_HEURE[k] ? SOUS_HEURE[k]() : "")).join("")}</div>
+      <div class="m-sous">Le temps</div><div class="m-cieux">${METEOS_MENU.map(([k, t]) => vignette("m", k, k === "circuit" ? "Celui du circuit" : t, SOUS_METEO[k] ? SOUS_METEO[k]() : "")).join("")}</div>`;
     const peindre = () => { const hh = lireReglage("riviere_heure", "circuit") || "circuit", mm = lireReglage("riviere_meteo", "circuit") || "circuit";
-      peindreCiel(f.querySelector(".m-ciel.grand"), hh, meteoVignette(mm));
       f.querySelectorAll("[data-h] canvas").forEach(c => peindreCiel(c, c.parentNode.dataset.h, meteoVignette(mm)));
       f.querySelectorAll("[data-m] canvas").forEach(c => peindreCiel(c, hh, meteoVignette(c.parentNode.dataset.m))); };
     peindre();
     f.querySelectorAll("[data-h]").forEach(b => b.onclick = () => { ecrireReglage("riviere_heure", b.dataset.h); f.querySelectorAll("[data-h]").forEach(x => x.classList.toggle("on", x === b)); reglerAmbiance(b.dataset.h === "circuit" ? NIVEAU.heure || "jour" : b.dataset.h, null); peindre(); majTuiles(); });
     f.querySelectorAll("[data-m]").forEach(b => b.onclick = () => { ecrireReglage("riviere_meteo", b.dataset.m); f.querySelectorAll("[data-m]").forEach(x => x.classList.toggle("on", x === b)); const mm = b.dataset.m === "circuit" ? NIVEAU.meteo || "beau" : b.dataset.m; reglerAmbiance(null, mm); if (METEOS[mm]) Object.assign(AMB.m, METEOS[mm]); peindre(); majTuiles(); });
-    f.querySelectorAll("[data-x]").forEach(b => b.onclick = () => { if (b.dataset.x === (lireReglage("riviere_effets", "1") === "0" ? "0" : "1")) return; ecrireReglage("riviere_effets", b.dataset.x); b.textContent = "Je refais le monde…"; relancer(); });
   } else if (quoi === "compagnon") {
     const ell = MACHINE_NOM === "elliptique", cyc = MACHINE.monture === "cycliste", eau = DISCIPLINE === "eau" && MACHINE_NOM === "rameur";
     const grille = (liste, choisi, attr) => `<div class="m-pokes">${liste.map(n => `<button class="m-poke${n.num === choisi ? " on" : ""}" data-${attr}="${n.num}"><canvas width="56" height="56"></canvas><b>${escM(n.nom)}</b><small>${metresNageur(n)}</small></button>`).join("")}</div>`;
@@ -301,7 +319,10 @@ function ouvrirFeuille(quoi) {
       <div class="m-opts"><button class="m-opt" id="mBT" ${BT_OK ? "" : "disabled"}>Relier un capteur</button>${velo ? `<button class="m-opt" id="mFaux">Faux home trainer<small>pour essayer : ne compte jamais</small></button>` : ""}</div>
       <p class="m-petit" id="mBTetat">${BT_OK ? escM(BT.etat || "Rien de relié.") : "Ce navigateur ne parle pas Bluetooth (Chrome ou Edge le font)."}</p>
       ${velo ? `<div class="m-sous">Dureté des pentes <em>100 % = la vraie pente ; les descentes comptent à moitié</em></div><div class="m-opts">${choixBoutons([["0", "0 %"], ["0.25", "25 %"], ["0.5", "50 %"], ["0.75", "75 %"], ["1", "100 %"]], String(BT.difficulte), "dur")}</div>` : ""}
-      <div class="m-sous">Le son <em>de petits bruitages, jamais de musique</em></div><div class="m-opts">${choixBoutons([["1", "Bruitages"], ["0", "Coupé"]], SON.actif ? "1" : "0", "son")}</div>`;
+      <div class="m-sous">Le son <em>de petits bruitages, jamais de musique</em></div><div class="m-opts">${choixBoutons([["1", "Bruitages"], ["0", "Coupé"]], SON.actif ? "1" : "0", "son")}</div>
+      <div class="m-sous">Les effets du décor <em>l'eau qui coule, le vent dans les arbres, les forêts au loin, les ombres</em></div>
+      <div class="m-opts">${choixBoutons([["1", "Avec"], ["0", "Sans", "seulement pour un très vieil ordinateur"]], lireReglage("riviere_effets", "1") === "0" ? "0" : "1", "x")}</div>`;
+    f.querySelectorAll("[data-x]").forEach(b => b.onclick = () => { if (b.dataset.x === (lireReglage("riviere_effets", "1") === "0" ? "0" : "1")) return; ecrireReglage("riviere_effets", b.dataset.x); b.textContent = "Je refais le monde…"; relancer(); });
     f.querySelectorAll("[data-son]").forEach(b => b.onclick = () => { if ((b.dataset.son === "1") !== SON.actif) sonBasculer(); f.querySelectorAll("[data-son]").forEach(x => x.classList.toggle("on", x === b)); majSon(); });
     f.querySelectorAll("[data-dur]").forEach(b => b.onclick = () => { BT.difficulte = +b.dataset.dur; BT.pente = null; ecrireReglage("riviere_difficulte", BT.difficulte); f.querySelectorAll("[data-dur]").forEach(x => x.classList.toggle("on", x === b)); });
     const faux = $("mFaux"); if (faux) faux.onclick = async () => { await relierCapteur(true); const el = $("mBTetat"); if (el) el.textContent = BT.etat; majMenuMontre(); };

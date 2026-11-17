@@ -101,7 +101,7 @@ function animerVelo(t, dt, S, p, y, N) {
   const roule = v > .25, libre = pente < -.035 && v > 5, debout = pente > .055 && roule && !S.enAir;
   VELO.roue += v / (ROUE * ECH_VELO) * dt;
   const braquet = 1 + clamp(pente / .08, 0, 1) * .9;   // dans une côte, un petit braquet : les pédales tournent plus vite pour la même vitesse
-  if (roule && !libre) VELO.pedale += v / ((typeof MACHINE !== "undefined" && MACHINE.tourVu) || TOUR_PEDALE) * braquet * Math.PI * 2 * dt;   // au skieur de fond : un tour de jambes de la machine = un tour de pédale
+  if (roule && !libre) VELO.pedale += v / ((typeof MACHINE !== "undefined" && MACHINE.tourVu) || TOUR_PEDALE) * braquet * Math.PI * 2 * dt;   // au marcheur elliptique : un tour de jambes de la machine = un tour de pédale
   else {   // en roue libre, les pédales se mettent à plat ; à l'arrêt, la pédale gauche remonte devant, prête à repartir (cycliste.js : le pied droit à terre)
     const c0 = VELO.pedale, cible = libre ? Math.round((c0 - Math.PI / 2) / Math.PI) * Math.PI + Math.PI / 2 : Math.round((c0 - 1) / (Math.PI * 2)) * Math.PI * 2 + 1;
     VELO.pedale += (cible - c0) * clamp(dt * 3, 0, 1);
