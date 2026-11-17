@@ -66,9 +66,11 @@ class Fichiers(unittest.TestCase):
         self.assertIsNotNone(c, "contenu/montures/cycliste.png ou .json manque : python riviere/outils/atelier_velo.py")
         f = c["fiche"]
         self.assertEqual({(g["etat"], g["deg"]) for g in f["rangs"]}, {(e, d) for e in ("assis", "danseuse", "ramasse", "arret") for d in (0, 12, 25, 45, 90, 135, 180)})
-        from PIL import Image
-        im = Image.open(C / "montures" / "cycliste.png")
-        self.assertEqual(im.size, (f["w"] * 8, f["h"] * len(f["rangs"])))
+        png = (C / "montures" / "cycliste.png").read_bytes()   # la taille de l'image, lue dans l'en-tête du PNG (sans bibliothèque : GitHub n'a pas Pillow)
+        self.assertEqual(png[:8], b"PNG
+
+")
+        self.assertEqual((int.from_bytes(png[16:20], "big"), int.from_bytes(png[20:24], "big")), (f["w"] * 8, f["h"] * len(f["rangs"])))
         self.assertTrue(set(f["cles"]) >= {"peau", "cas", "ves", "pan"})
         js = (C / "montures" / "cycliste_sprite.js").read_text(encoding="utf-8")
         self.assertIn("MONTURES.cycliste3D = TROIS_D", js)  # le vélo 3D reste disponible (réglage « Ton cycliste »)
