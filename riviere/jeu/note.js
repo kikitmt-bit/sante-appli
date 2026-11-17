@@ -21,7 +21,7 @@ const BOISE = {foret: .45, marais: .15, ville: .3};   // ce qui ferme la vue san
 const LUMIERE = {"sous-bois": .55, marais: .75, volcan: .65, sommet: 1, plage: 1};   // l'air du lieu : plus ou moins clair
 const POIDS_NOTE = {rythme: 30, variete: 20, contrastes: 10, reperes: 15, forts: 15, relief: 5, droites: 5};
 const RYTHME = {eau: 3.3, terre: 5.5, long: 45, change: .2, fort: .38, cote: {eau: 90, terre: 300}, droit: .0025, droite: 30};   // vitesses de référence (m/s : Kiki au rameur, un vélo à 20 km/h) ; un paysage « trop long » : plus de 45 s ; une côte « sans fin » : 90 s sur l'eau, 5 min à vélo (un col, c'est le but) ; « tout droit » : moins de 14° de virage aux 100 m, et une ligne droite « trop longue » : plus de 30 s
-const REPERES_OBJETS = ["phare", "cascade", "barrage", "centre", "boutique", "labo", "ilot", "eolienne", "entrepot", "mare", "bateau"];
+const REPERES_OBJETS = ["phare", "cascade", "barrage", "centre", "boutique", "labo", "ilot", "eolienne", "entrepot", "mare", "bateau", "rond_point", "carrefour"];
 const NOMS_NOTE = {rythme: "Rythme", variete: "Variété", contrastes: "Contrastes", reperes: "Repères", forts: "Moments forts", relief: "Relief", droites: "Lignes droites"};
 
 function noterCircuit(P, niveau, biome, tourVrai) {
@@ -87,10 +87,11 @@ function noterCircuit(P, niveau, biome, tourVrai) {
     for (const L of p.lieux || []) reperes.push({t: sec(0, p.s0 + (L.a || 0)), quoi: L.lieu});
     if ((p.large !== undefined ? p.large : p.eau) >= 24 || famille(p.g)[0] === "lac") reperes.push({t: milieu(p), quoi: "lac"});
     for (const o of p.objets || []) {
-      const t = sec(0, Math.min(p.s1, p.s0 + (o.a || 0)));
+      const t = sec(0, Math.round(Math.min(p.s1, p.s0 + (+o.a || 0))));   // (17/11 : un objet posé à 9,4 m donnait une note vide)
       if (REPERES_OBJETS.includes(o.o)) reperes.push({t, quoi: o.o});
       if (o.o === "tronc" || o.o === "rondins") forts.push({t, quoi: o.o === "tronc" ? "saut" : "plongée"});
       if (o.o === "cascade") forts.push({t, quoi: "cascade"});
+      if (o.o === "rond_point") forts.push({t, quoi: "rond-point"});
     }
     if (p.net && Math.abs(+p.monte || 0) >= 2) forts.push({t: milieu(p), quoi: p.monte > 0 ? "remontée" : "chute"});
     if ((p.allure || 1) >= 1.15) forts.push({t: milieu(p), quoi: "rapides"});

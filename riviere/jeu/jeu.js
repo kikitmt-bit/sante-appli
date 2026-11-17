@@ -105,7 +105,7 @@ function boucle(now) {
   const tunnel = dansTunnel(S.s);
   animerMonture(T, da, S); cadrer(da, S, T); if (FILM.actif) filmCadrer(); tronconsMaj(); ambianceMaj(da, S.s); lumieresProches(); animerPublic(T, S, da);
   if (!FILM.actif) { effortMaj(vraiDt); fourchesMaj(); animerFantome(T); animerRivaux(T, vraiDt); }
-  rencontresMaj(T, da); animerGouttes(da); animerDecor(T); animerLointain(T);
+  rencontresMaj(T, da); animerGouttes(da); animerDecor(T); animerLointain(T); raretesMaj(da, S);   // (17/11) un avion, une montgolfière… très rarement (raretes.js)
   sonMaj(S.s, !!tunnel);
   effetsMaj(T, AMB.m, AMB.nuit); dessiner(); if (!FILM.actif) hud();
   if (BANC && !BANC.fini) bancImage(ecoule);

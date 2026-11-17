@@ -1,0 +1,500 @@
+{
+ "id": "terre-ville",
+ "nom": "Céladopole, la ville et les bois",
+ "biome": "kanto-routes",
+ "lieux": "kanto",
+ "graine": 20,
+ "nageur": 7,
+ "allure": 1,
+ "elan": 60,
+ "pieces": [
+  {
+   "nom": "Rue de Lavanville",
+   "long": 85,
+   "virage": 2,
+   "objets": [
+    {
+     "o": "ligne",
+     "cote": "c",
+     "a": 0
+    },
+    {
+     "o": "panneau",
+     "cote": "d",
+     "a": 10,
+     "e": 2.6,
+     "texte": "LAVANVILLE",
+     "face": "arrivant",
+     "large": 3.6
+    },
+    {
+     "o": "carrefour",
+     "cote": "c",
+     "a": 57,
+     "cotes": "g"
+    }
+   ],
+   "large": 9,
+   "g": "trottoir",
+   "d": "trottoir"
+  },
+  {
+   "large": 9,
+   "g": "trottoir",
+   "d": "trottoir",
+   "nom": "Le rond-point",
+   "long": 22.8,
+   "virage": 45
+  },
+  {
+   "large": 9,
+   "g": "trottoir",
+   "d": "trottoir",
+   "long": 18.8,
+   "virage": -90,
+   "objets": [
+    {
+     "o": "rond_point",
+     "cote": "c",
+     "a": 9.4,
+     "r": 12,
+     "ville": true,
+     "branches": 2
+    }
+   ]
+  },
+  {
+   "large": 9,
+   "g": "trottoir",
+   "d": "trottoir",
+   "long": 22.8,
+   "virage": 45
+  },
+  {
+   "long": 69,
+   "virage": 5,
+   "objets": [
+    {
+     "o": "rue",
+     "cote": "d",
+     "a": 26,
+     "e": 0.4
+    }
+   ],
+   "large": 9,
+   "g": "trottoir",
+   "d": "trottoir"
+  },
+  {
+   "long": 77,
+   "virage": 28,
+   "large": 8,
+   "g": "champ",
+   "d": "bas_cote",
+   "nom": "La route"
+  },
+  {
+   "long": 64,
+   "virage": 33,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 90,
+   "virage": 30,
+   "large": 8,
+   "g": "champ",
+   "d": "bas_cote",
+   "monte": -5.7
+  },
+  {
+   "long": 69,
+   "virage": 7,
+   "large": 8,
+   "g": "champ",
+   "d": "bas_cote"
+  },
+  {
+   "long": 73,
+   "virage": -36,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 69,
+   "virage": -45,
+   "large": 8,
+   "g": "champ",
+   "d": "bas_cote"
+  },
+  {
+   "long": 46,
+   "virage": 52,
+   "large": 8,
+   "g": "champ",
+   "d": "bas_cote"
+  },
+  {
+   "long": 46,
+   "virage": -88,
+   "large": 8,
+   "g": "champ",
+   "d": "bas_cote"
+  },
+  {
+   "long": 59,
+   "virage": 22,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 46,
+   "virage": 49,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 46,
+   "virage": -100,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 85,
+   "virage": -54,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "monte": 5.7,
+   "nom": "La montée"
+  },
+  {
+   "long": 71,
+   "virage": 20,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 34,
+   "virage": 0,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "nom": "Le rond-point",
+   "long": 22.8,
+   "virage": 45
+  },
+  {
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "long": 18.8,
+   "virage": -90,
+   "objets": [
+    {
+     "o": "rond_point",
+     "cote": "c",
+     "a": 9.4,
+     "r": 12,
+     "ville": false,
+     "branches": 2
+    }
+   ]
+  },
+  {
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "long": 22.8,
+   "virage": 45
+  },
+  {
+   "nom": "La route",
+   "long": 34,
+   "virage": -49,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 81,
+   "virage": 29,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "nom": "La route"
+  },
+  {
+   "long": 46,
+   "virage": 53,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 46,
+   "virage": -107,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 68,
+   "virage": -50,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 108,
+   "virage": 41,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 67,
+   "virage": 17,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "bas_cote"
+  },
+  {
+   "long": 46,
+   "virage": 45,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 46,
+   "virage": -82,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "bas_cote"
+  },
+  {
+   "long": 46,
+   "virage": 40,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 46,
+   "virage": -5,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 68,
+   "virage": -46,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 87,
+   "virage": 37,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 69,
+   "virage": 15,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 85,
+   "virage": -42,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 73,
+   "virage": 16,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "bas_cote"
+  },
+  {
+   "long": 100,
+   "virage": -54,
+   "large": 8,
+   "g": "champ",
+   "d": "champ"
+  },
+  {
+   "long": 89,
+   "virage": -39,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "sous_bois"
+  },
+  {
+   "long": 62,
+   "virage": 22,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "bas_cote"
+  },
+  {
+   "long": 80,
+   "virage": 19,
+   "large": 8,
+   "g": "sous_bois",
+   "d": "bas_cote"
+  },
+  {
+   "nom": "L'échangeur",
+   "long": 64,
+   "virage": 0,
+   "segment": "L'échangeur",
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 123,
+   "virage": 270,
+   "monte": 9,
+   "segment": "L'échangeur",
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "long": 12,
+   "virage": 0,
+   "monte": 0.3,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "nom": "Le pont de l'échangeur",
+   "long": 28,
+   "virage": 0,
+   "pont": true,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "nom": "La descente",
+   "long": 116,
+   "virage": 0,
+   "monte": -9.3,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote"
+  },
+  {
+   "nom": "Le chemin du bois",
+   "long": 29,
+   "virage": 40,
+   "large": 5,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "ambiance": "sous-bois"
+  },
+  {
+   "nom": "Le sous-bois",
+   "long": 122,
+   "virage": 11,
+   "objets": [
+    {
+     "o": "mare",
+     "cote": "g",
+     "a": 50,
+     "e": 11
+    }
+   ],
+   "large": 5,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "ambiance": "sous-bois"
+  },
+  {
+   "nom": "La sortie du bois",
+   "long": 29,
+   "virage": -40,
+   "large": 5,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "ambiance": "sous-bois"
+  },
+  {
+   "nom": "Les champs",
+   "long": 116,
+   "virage": -40,
+   "large": 8,
+   "g": "champ",
+   "d": "champ"
+  },
+  {
+   "long": 54,
+   "virage": -90.975,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "large": 8,
+   "monte": "auto",
+   "nom": "Le retour"
+  },
+  {
+   "long": 96,
+   "virage": 0,
+   "g": "champ",
+   "d": "champ",
+   "large": 8,
+   "monte": "auto"
+  },
+  {
+   "long": 96,
+   "virage": 0,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "large": 8,
+   "monte": "auto"
+  },
+  {
+   "long": 96,
+   "virage": 0,
+   "g": "champ",
+   "d": "bas_cote",
+   "large": 8,
+   "monte": "auto"
+  },
+  {
+   "nom": "Le dernier virage",
+   "raccord": true,
+   "rayon": 34,
+   "large": 8,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "monte": "auto"
+  }
+ ],
+ "boucle": "gauche",
+ "discipline": "terre",
+ "surface": "goudron"
+}

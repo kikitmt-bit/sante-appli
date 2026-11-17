@@ -18,8 +18,10 @@
     {"o": "centre", "cote": "g", "a": 60, "e": 9}, {"o": "boutique", "cote": "d", "a": 95, "e": 9},
     {"o": "habitant", "nom": "nurse", "cote": "g", "a": 64, "e": 2.6}]},
   {"nom": "Les champs", "long": 170, "virage": -40, "large": 8, "g": "champ", "d": "bas_cote", "monte": 2},
-  {"nom": "Le sous-bois", "long": 180, "virage": -35, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": 8,
-   "objets": [{"o": "mare", "cote": "g", "a": 90, "e": 12}, {"o": "pokemon", "num": 60, "cote": "g", "a": 92, "e": 9.5}]},
+  {"nom": "Le chemin du bois", "long": 30, "virage": 40, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": 1.3},
+  {"nom": "Le sous-bois", "long": 120, "virage": -115, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": 5.4,
+   "objets": [{"o": "mare", "cote": "g", "a": 60, "e": 12}, {"o": "pokemon", "num": 60, "cote": "g", "a": 62, "e": 9.5}]},
+  {"long": 30, "virage": 40, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": 1.3},
   {"nom": "La montée", "long": 220, "virage": -55, "large": 7, "g": "talus", "d": "ravin", "monte": 18, "segment": "La montée du volcan",
    "objets": [{"o": "panneau", "cote": "d", "a": 10, "e": 1.8, "texte": "COL DES CENDRES 1 KM", "face": "arrivant", "large": 4.4}]},
   {"nom": "Le col des cendres", "long": 170, "virage": -60, "large": 7, "g": "cendres", "d": "ravin", "monte": 8, "segment": "La montée du volcan",
@@ -27,7 +29,9 @@
   {"nom": "Le belvédère", "long": 90, "virage": -20, "large": 8, "g": "cendres", "d": "ravin",
    "objets": [{"o": "panneau", "cote": "d", "a": 30, "e": 2.2, "texte": "BELVÉDÈRE", "face": "arrivant", "large": 3.4}, {"o": "pokemon", "num": 37, "cote": "g", "a": 50, "e": 4}]},
   {"nom": "La descente", "long": 240, "virage": -45, "large": 7, "g": "talus", "d": "ravin", "monte": -22, "segment": "La descente"},
-  {"nom": "Le bois", "long": 150, "virage": -10, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": -8},
+  {"nom": "Le bois", "long": 30, "virage": 40, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": -1.6},
+  {"long": 90, "virage": -90, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": -4.8},
+  {"long": 30, "virage": 40, "large": 5, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "monte": -1.6},
   {"nom": "Retour au village", "raccord": true, "rayon": 45, "large": 8, "g": "bas_cote", "d": "champ", "monte": "auto"}
  ]
 }

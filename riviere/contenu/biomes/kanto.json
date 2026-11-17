@@ -294,6 +294,7 @@
    "bosses": 7
   },
   "quai": {
+   "urbain": true,
    "profil": [
     [
      0,
@@ -327,6 +328,7 @@
    "franc": true
   },
   "ville": {
+   "urbain": true,
    "profil": [
     [
      0,
@@ -672,6 +674,7 @@
    "#FFC850"
   ]
  },
+ "especes": {"note": "(17/11) les essences d'arbres, par bosquets de 60 m (kanto-ville.js) ; le saule : au bord de l'eau seulement", "bosquet": 60, "melange": 0.75, "liste": {"arbre": 9, "bouleau": 1.5, "pommier": 1, "cerisier": 1, "pin": 1, "roux": 1, "saule": 3}},
  "forets": [
   {"nom": "la forêt profonde : au-delà des arbres du bord, une masse d'arbres jusqu'au fond", "sur": ["foret"], "bande": [22, 165], "maille": 5.6},
   {"nom": "des bois par taches, au loin derrière les prés, les plages et les villages", "sur": ["pre", "plage", "bourg", "marais", "quai", "ville", "dune"], "bande": [58, 165], "maille": 6.2, "bosquets": 0.5},

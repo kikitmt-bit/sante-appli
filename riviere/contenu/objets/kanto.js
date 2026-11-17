@@ -31,12 +31,13 @@ function batimentPokemon(F, l, p, teinte) {  // le Centre Pokémon et la Boutiqu
 }
 Object.assign(OBJETS, {
   arbre(F, o, R) {  // l'arbre de Kanto : trois étages bien ronds, du plus large au plus petit, vert clair, la pointe en haut
+    const esp = especeArbre(F, o); if (esp) return OBJETS[esp](F, o, R);   // (17/11) par bosquets, une autre essence (kanto-ville.js)
     const t = PAL.feuilles; F.ombre(0, 0, 2.5, 2.3);
     F.cyl(0, -.4, 0, .38, .32, 1.6, 5, PAL.tronc[0], PAL.tronc[1]);
     F.vent(.3, .9, 5.8).dome(0, 2.05, 0, 2.35, 1.4, 2.35, t, 8); F.dome(0, 2.9, 0, 1.8, 1.55, 1.8, t, 7, true); F.dome(0, 4.05, 0, 1.2, 1.75, 1.2, t, 6, true); F.vent(); },   // (le feuillage plie au vent, la pointe le plus : effets.js)
   arbre_loin(F, o, R) { const t = PAL.feuilles; F.cyl(0, -.5, 0, .45, .35, 1.8, 4, PAL.tronc[0]); F.vent(.4, .8, 7.1).dome(0, 2.6, 0, 3.1, 1.9, 3.1, t, 6); F.dome(0, 3.9, 0, 2.2, 3.2, 2.2, t, 6, true); F.vent(); },
   // la forêt en masse (decor.js, « forets » de la région) : un arbre réduit à sa silhouette, pour les milliers d'arbres du fond ; un ton plus sombre que les arbres du bord, qui s'en détachent ; o.pres : deux étages
-  arbre_masse(F, o, R) { const t = PAL.feuilles, k = .8 + R() * .2, tons = [fonce(t[0], k * .9), fonce(melange(t[0], t[1], .5), k), fonce(melange(t[1], t[2], .3), k)], r = 2.5 + R() * .9, h = 5.4 + R() * 2.4;
+  arbre_masse(F, o, R) { const t = tonsMasse(F) || PAL.feuilles, k = .8 + R() * .2, tons = [fonce(t[0], k * .9), fonce(melange(t[0], t[1], .5), k), fonce(melange(t[1], t[2], .3), k)], r = 2.5 + R() * .9, h = 5.4 + R() * 2.4;
     F.vent(.45, .5, h + 1).dome(0, .4, 0, r, o.pres ? h * .62 : h, r, tons, 5, true); if (o.pres) F.dome(0, .4 + h * .42, 0, r * .62, h * .58, r * .62, tons, 5, true); F.vent(); },
   buisson(F, o, R) { const t = PAL.feuilles; F.ombre(.2, 0, 1.3, 1); F.vent(.07, 0, 1.2).boule(0, .45, 0, 1, .75, .9, t, 0); F.boule(.7, .35, .2, .65, .55, .6, t, 0); F.vent(); },
   rocher(F, o, R) { F.ombre(.2, 0, 1.4, 1.2); F.caillou(0, .25, 0, 1.1, .8, .95, PAL.pierre, R); if (R() < .5) F.caillou(.9, .1, .4, .5, .4, .5, PAL.pierre, R); },
@@ -59,6 +60,7 @@ Object.assign(OBJETS, {
     K.etiquette(F, o.texte || "", 0, .75 + H / 2, .14, L - .3, H - .2); },
   chemin(F, o) { F.tapis(-(o.large || 1.6) / 2, 0, (o.large || 1.6) / 2, o.long || 6, PAL.chemin, 1, Math.ceil((o.long || 6) / 2)); },
   maison(F, o) {  // la maison de Kanto : large, à étage, murs clairs à lames, grandes fenêtres bleues, grand toit de couleur franche qui déborde
+    if (o.varie && DECOR_NEUF) o = Object.assign(varieMaison(F), o);   // (17/11) couleurs, étage et taille selon sa place
     const l = o.l || 8.4, p = o.p || 6.2, h = o.etage === false ? 3 : 5.2, mur = PAL.murs[o.mur || "creme"], toit = PAL.toits[o.toit || "rouge"], d = p / 2;
     F.tapis(-l / 2 - .8, -d - .8, l / 2 + .8, d + 1, null, .74, 3);
     F.boite(0, -1.2, 0, l + .2, 1.55, p + .2, PAL.pierre[1]); F.boite(0, .35, 0, l, h - .35, p, mur);

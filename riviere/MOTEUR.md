@@ -293,6 +293,38 @@ Un feuillage qui plie au vent : `F.vent(force, y0, y1)` avant ses formes (il ne 
 `y1`), `F.vent()` après ; voir « Les effets du rendu ».
 Un objet qui fait réagir la monture : `Object.assign(EVENEMENTS, {tronc: "saut"})` (`"saut"` ou `"plongee"`).
 
+## La ville, les embranchements, la variété, les raretés (17/11, carte blanche de Kiki : « énormément de diversité »)
+
+Tout le dessin est dans `contenu/objets/kanto-ville.js` ; deux petites accroches dans le cœur (`decor.js` : `EMPRISE`, `JONCTIONS` ; `surfaces.js` : `BORDURES`, `VIB`).
+- **Les bords d'une route** : les bordures rouges et blanches seulement sur un circuit **en boucle et tout en goudron** (Kiki), et jamais le long d'une rive
+  `"urbain": true` (trottoir, quai, ville) ; sinon la ligne blanche de rive d'une route ordinaire ; pas de ligne du milieu sur une route de moins de 5,2 m.
+  Un niveau peut l'imposer : `"bordures": "vibreurs"` ou `"ligne"`. (Sur la terre, l'attribut `aEc.x` du ruban porte « vibreurs ici » : `VIB`.)
+- **La place d'un objet étendu** : `EMPRISE[nom] = o => [[x, z, r], …]` (son repère) ; rien d'autre n'est posé dans ces ronds, et une règle ne pose
+  l'objet que si tous ses ronds sont libres. Les rues, carrefours, rond-points et routes qui continuent s'en servent.
+- **Les embranchements** (Kiki : « une autoroute ne devient pas d'un coup un chemin de terre ») : `"jonctions"` de la région (`{objet, routes, chemins}`,
+  kanto-routes : goudron et pavés → terre). Là où la ligne passe d'une route à un chemin, la route **continue tout droit** puis tourne et s'en va
+  (`route_suite` : lignes, poteaux, un poteau indicateur à deux flèches), et c'est le chemin qui part. Seulement si le chemin tourne d'au moins 18° dans
+  ses 40 premiers mètres (sinon les deux se recouvriraient) : **dessiner un chemin de terre qui part en tournant** (le générateur le fait : `sousbois_t`).
+- **La ville** : `rue` (une rue qui part de la route entre les maisons : chaussée, trottoirs, passage piéton, ligne d'arrêt, maisons et boutiques tournées
+  vers elle, réverbères, voitures garées, une façade qui la ferme au bout ; `"ville": false` : une route de campagne bordée d'arbres ; `"chemin": true` :
+  un chemin de terre), `carrefour` (`"cote": "c"` : une rue de chaque côté, `"cotes": "g"|"d"`, passages piétons sur la route, feux), `rond_point`
+  (posé au milieu du virage d'un rond-point : anneau, île à haie et fontaine, Poké Ball de pierre, arbre ou cerisier, la branche d'en face et souvent
+  celle de droite ; `r` : le rayon de la piste). Un rond-point se dessine en trois pièces (`rondPoint` du générateur : +45°, −90° de rayon 12 m, +45°, rayons
+  liés pour que l'île soit sur l'axe). Objets : `magasin` (vitrine, store rayé, enseigne), `arret_bus`, `banc`, `voiture`, `feu`, `fontaine`, `poteau_indicateur`.
+  Règles de kanto-routes : des rues tous les ~46 m sur les trottoirs, un chemin ou une petite route qui part dans la campagne, fermes, arrêts de bus.
+- **Jamais deux maisons pareilles** : `"varie": true` (maison, immeuble) : couleurs, étage, taille tirés de leur place (`hv`), sans toucher au hasard du niveau.
+- **Les essences d'arbres** : `"especes"` de la région (`{bosquet, melange, liste}`) ; par cases de 60 m une essence domine (bouleau, pommier, cerisier en
+  fleurs, pin parasol, arbre roux, saule au bord de l'eau), les trois quarts des arbres de la case la prennent ; la forêt du fond prend leurs couleurs.
+  Aucun tirage dans le hasard du niveau : le reste du décor ne bouge pas. `"decor": "classique"` dans un niveau : rien de tout ça (kanto-1km, identique).
+- **Les ports** du générateur sont tirés au hasard (bateaux, voiliers, pontons, entrepôts, immeubles, boutiques, phare ou non, Pokémon) : plus jamais le même.
+- **L'échangeur** (`echangeur_t`, case « un échangeur ») : la route fait une boucle de 270° en montant de 7 à 9 m et repasse au-dessus d'elle-même sur un
+  pont (la verticalité ; même principe pour un circuit à la main : boucle, pont, croisement à 4,5 m au moins).
+- **Les raretés du ciel** (`jeu/raretes.js`) : un avion de ligne et ses traînées (~1 fois tous les 10 vrais km), une montgolfière (16 km, de jour, sans
+  pluie), une volée de Roucool (4 km), un oiseau légendaire (Artikodin, Électhor ou Sulfura, 35 km), des étoiles filantes la nuit (1,2 km). Seulement en
+  avançant, une à la fois, dans `CIEL.loin` (le ciel lointain), entre 3 et 8° au-dessus de l'horizon : plus haut, les compteurs les cachent.
+  Essai : `?rare=avion` (montgolfiere, etoile, roucool, legendaire), `window.__rare("avion")`.
+- Exemple : `contenu/niveaux/terre-ville.json` (« Céladopole, la ville et les bois » : rue, carrefour, deux rond-points, sous-bois, échangeur).
+
 ## Ajouter une région (un autre style)
 
 **Le plus court : hériter.** `{"nom": "Johto", "herite": "kanto", "palette": {"feuilles": [...]}, "regles_plus": [...]}` : elle ne redit que ce

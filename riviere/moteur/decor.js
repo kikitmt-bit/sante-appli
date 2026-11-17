@@ -7,6 +7,9 @@ const PAL = couleurs(BIOME.palette);
 // les registres : les recettes ; la place que prend chaque objet (m) ; les objets qui font réagir la monture ("saut", "plongee") ;
 // les grands repères au loin (contenu/lointains, dessinés par rendu.js). Tous ici : decor.js est un module pur, que le contrôle sans dessin charge.
 const OBJETS = {}, RAYON = {}, EVENEMENTS = {}, LOINTAINS = {};
+/* (17/11) la place d'un objet étendu (une rue qui part, un rond-point) : EMPRISE[nom] = o => [[x, z, r], …] dans le repère de l'objet ;
+   rien d'autre ne sera posé dans ces ronds (une règle ne pose un tel objet que si tous ses ronds sont libres) */
+const EMPRISE = {};
 const MONDE = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []};
 /* ce qu'une recette peut laisser dans le monde, en plus de ses volumes. Une fabrique : le monde entier a ses listes (MONDE), un tronçon a les siennes (troncons.js) */
 const kMonde = MONDE => ({
@@ -26,6 +29,23 @@ function zoneTroncon(k, voisins) {   // le tronçon numéro k : ses mètres, son
   const n = Math.ceil(LONG / TRONCON_M), g = NIVEAU.graine || 1, M = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: [], masse: 0};
   return {k, a: k * TRONCON_M, b: Math.min((k + 1) * TRONCON_M, LONG), premier: k === 0, dernier: k === n - 1, R: hasard(g * 7919 + 1 + k * 104729), RF: hasard(g * 4409 + 3 + k * 15485863), monde: M, K: kMonde(M), occ: [], voisins: voisins || []};
 }
+/* l'orientation d'un objet posé : de face pour qui passe ; « arrivant » : tourné vers celui qui arrive (un panneau) ; « tourne » : en plus, en degrés */
+function lacetDe(a, sg, o) { let l = Math.atan2(-sg * Math.cos(a.h), -sg * Math.sin(a.h)); if (o.face === "arrivant") l += sg * 62 * Math.PI / 180; if (o.tourne) l += o.tourne * Math.PI / 180; return l; }
+function emprise(nom, o, q, lacet, ech) { const cs = Math.cos(lacet), sn = Math.sin(lacet); return EMPRISE[nom](o).map(([x, z, r]) => [q.x + (x * cs + z * sn) * ech, q.z + (-x * sn + z * cs) * ech, r * ech]); }
+/* (17/11, Kiki : « une autoroute ne devient pas d'un coup un chemin de terre ») là où la ligne passe d'une route (goudron, pavés) à un chemin (terre),
+   la route continue tout droit et c'est le chemin qui s'en va : la région dit quel objet la dessine ("jonctions" : {objet, routes, chemins}).
+   Seulement si le chemin tourne vraiment (18° au moins dans ses 40 premiers mètres) : sinon les deux se recouvriraient. */
+let JONCTIONS_ = null;   // (calculées au premier décor : les recettes du contenu sont chargées après ce fichier)
+const JONCTIONS = () => JONCTIONS_ || (JONCTIONS_ = (() => {
+  const J = BIOME.jonctions, P = PISTE, o = []; if (!J || DISC_PISTE !== "terre" || !OBJETS[J.objet]) return o;
+  const classe = i => { const n = P.surfaces[P.SF[i]]; return (J.routes || []).includes(n) ? "r" : (J.chemins || []).includes(n) ? "c" : null; };
+  const H = i => P.H[BOUCLE ? ((i % P.N) + P.N) % P.N : clamp(i, 0, P.N - 1)], tour = (a, b) => { let d = H(a) - H(b); while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+  for (let i = BOUCLE ? 0 : 1; i < P.N; i++) { const j = BOUCLE ? (i + P.N - 1) % P.N : i - 1, a = classe(j), b = classe(i);
+    if (!a || !b || a === b || P.FK && P.FK[i] || P.PONT[i] || P.TUN[i]) continue;
+    const sens = a === "r" ? 1 : -1, dh = sens > 0 ? tour(i + 40, i - 2) : tour(i + 2, i - 40); if (Math.abs(dh) < .31) continue;
+    const route = sens > 0 ? j : i, h0 = H(sens > 0 ? i - 3 : i + 3);
+    o.push(Object.assign({o: J.objet, s: i, sens, tourne: (h0 - at(i).h) * 180 / Math.PI, surface: P.surfaces[P.SF[route]], large: P.W[route] * 2, vers: dh > 0 ? 1 : -1}, J.reglages)); }
+  return o; })());
 function poserDecor(Z) { const g = poserDecorPas(Z); let r; do r = g.next(); while (!r.done); return r.value; }
 function* poserDecorPas(Z) {
   const P = PISTE, MD = Z ? Z.monde : MONDE, K = Z ? Z.K : K_MONDE, R = Z ? Z.R : hasard((NIVEAU.graine || 1) * 7919 + 1), formes = new Map(), reserves = [], pris = new Map(), poses = [];
@@ -45,11 +65,9 @@ function* poserDecorPas(Z) {
     const recette = OBJETS[nom]; if (!recette) { console.warn("Objet inconnu : " + nom); return; }
     const a = at(s), sg = cote === "g" ? -1 : 1, q = cote === "c" || cote === "portail" ? pose(s, e || 0) : pose(s, sg * (a.w + e));
     const y = (cote === "c" || o.flotte ? a.y : cote === "portail" ? a.y + hRive(idx(s), 0, 2) + .5 : hauteur(q.x, q.z)) + (o.haut || 0);   // flotte : sur l'eau, contre la rive (un bateau, un ponton ; e négatif)   // « portail » : perché au-dessus de l'entrée d'une grotte ; haut : sur un toit, en l'air
-    let lacet = Math.atan2(-sg * Math.cos(a.h), -sg * Math.sin(a.h));   // de face pour qui est sur l'eau
-    if (o.face === "arrivant") lacet += sg * 62 * Math.PI / 180;        // tourné vers celui qui arrive (un panneau)
-    if (o.tourne) lacet += o.tourne * Math.PI / 180;
-    recette(forme(s).poser(q.x, y, q.z, lacet, ech).matiere(2), Object.assign({eau: a.w * 2, _s: s, _cote: cote, _e: e || 0, _v: P.NF ? VOIES.prise.slice() : null, _vo: P.VO[idx(s)]}, o), R, K); if (EVENEMENTS[nom]) MD.evenements.push({s: BOUCLE ? sLigne(idx(s)) : s, type: EVENEMENTS[nom], vo: P.VO[idx(s)]});   // un tronc, des rondins : ton Pokémon saute ou plonge
-    prendre(q.x, q.z, (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech); poses.push({nom, s, cote, e, v: P.NF ? VOIES.prise.slice() : null});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
+    const lacet = lacetDe(a, sg, o), oo = Object.assign({eau: a.w * 2, _s: s, _cote: cote, _e: e || 0, _v: P.NF ? VOIES.prise.slice() : null, _vo: P.VO[idx(s)]}, o);
+    recette(forme(s).poser(q.x, y, q.z, lacet, ech).matiere(2), oo, R, K); if (EVENEMENTS[nom]) MD.evenements.push({s: BOUCLE ? sLigne(idx(s)) : s, type: EVENEMENTS[nom], vo: P.VO[idx(s)]});   // un tronc, des rondins : ton Pokémon saute ou plonge
+    prendre(q.x, q.z, (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech); if (EMPRISE[nom]) for (const [X, Z2, r] of emprise(nom, oo, q, lacet, ech)) prendre(X, Z2, r); poses.push({nom, s, cote, e, v: P.NF ? VOIES.prise.slice() : null});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
   }
   const poserCache = (...args) => { exacts = true; try { poser(...args); } finally { exacts = false; } };   // (collé à son arbre, exprès : lui non plus ne regarde pas la place)
   // 1) les lieux et les objets que le niveau pose exactement
@@ -59,6 +77,7 @@ function* poserDecorPas(Z) {
       for (const o of lieu.objets) { if (ici(s0 + o.a)) poser(o.o, s0 + o.a, L.cote, o.e, o); else garder(o.o, s0 + o.a, L.cote, o.e, o); } }
     for (const o of pc.objets || []) if (!o.surface || o.surface === pc.surface) { const s = o.cote === "portail" ? (o.sortie ? pc.s1 - MARGE - 1.2 : pc.s0 + MARGE + 1.2) : pc.s0 + o.a; if (ici(s)) poser(o.o, s, o.cote, o.e, o); else garder(o.o, s, o.cote, o.e, o); }
   };
+  for (const j of JONCTIONS()) if (ici(j.s)) poser(j.o, j.s, "c", 0, j); else if (Z) garder(j.o, j.s, "c", 0, j);   // (17/11) une route qui devient un chemin : un embranchement
   for (const pc of P.pieces) { if (Z && (pc.s1 < Z.a - 400 || pc.s0 > Z.b + 400)) continue; if (pc.voie) surLaVoie(pc.voie - 1, () => exact(pc)); else exact(pc); }   // (une pièce de la voie « force » d'une fourche : ses objets sont posés sur elle)
   exacts = false; if (Z) yield;
   // 2) les règles de la région
@@ -79,6 +98,7 @@ function* poserDecorPas(Z) {
         if (r.plat !== undefined) { const q3 = pose(s, sg * (at(s).w + 3)); if (hauteur(q3.x, q3.z) - P.Y[Q.i] > r.plat) continue; }   // plat : la rive, à 3 m du bord, ne monte pas plus haut (des roseaux jamais au pied d'une paroi)
         const pente = Math.max(Math.abs(hauteur(q.x + 1.5, q.z) - hauteur(q.x - 1.5, q.z)), Math.abs(hauteur(q.x, q.z + 1.5) - hauteur(q.x, q.z - 1.5))) / 3; if (pente > (r.pente || .45)) continue;
         const rayon = (RAYON[nom] || 1) * ech * (r.serre || 1); if (!libre(q.x, q.z, rayon)) continue;
+        if (EMPRISE[nom]) { const a2 = at(s), oo = Object.assign({eau: a2.w * 2}, r.reglages); if (emprise(nom, oo, q, lacetDe(a2, sg, oo), ech).some(([X, Z2, rr]) => !libre(X, Z2, rr))) continue; }
         poser(nom, s, cote, e, Object.assign({r: (RAYON[nom] || 1) * (r.serre || 1)}, r.reglages, r.nums ? {num: r.nums[Math.floor(R() * r.nums.length)]} : null), ech); } } };
     if (Z) { const fin = Math.min(Z.b, LONG), bout = r.pas < 6 ? 12 : 1e9;   // (une règle serrée, un sous-bois : 12 m à la fois ; les autres d'un trait, leurs objets gardent leur écart)
       for (const cote of ["g", "d"]) for (let c = Z.a; c < fin; c += bout) { semer(c, Math.min(c + bout, fin), [cote]); yield; } continue; }

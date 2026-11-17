@@ -18,7 +18,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent
 MOTEUR = ["depart", "outils", "piste", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "tunnel", "decor", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
-JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "film", "parcours", "note", "generateur", "editeur", "banc"]
+JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "fantome", "rivaux", "film", "raretes", "parcours", "note", "generateur", "editeur", "banc"]
 PURS = ["depart", "outils", "piste", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu

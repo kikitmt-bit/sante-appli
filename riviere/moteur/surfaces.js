@@ -126,8 +126,9 @@ const ROUTE_FS = `${PORTEE_FS} ${EFFETS.ombres ? "varying float vAbri;" : ""}
       c = mix(uC1, uC2, step(.5, hp)) * (.93 + .1 * hp); if (f.x < .1 || f.y < .13) c = uBordC;
       if (marque && vBord < .3) c = uLigne;
     } else if (uMode > .5) {
-      if (marque && vBord < .7) c = mix(uLigne, vec3(.84, .22, .2), step(.5, fract(vSU.x / 3.)));   // les bordures
-      else if (marque && abs(vSU.y) < .1 && fract(vSU.x / 5.) < .5) c = uLigne;                       // la ligne du milieu
+      if (vEc.x > .5) { if (marque && vBord < .7) c = mix(uLigne, vec3(.84, .22, .2), step(.5, fract(vSU.x / 3.))); }   // les bordures rouges et blanches : un circuit en boucle tout en goudron (17/11, Kiki), jamais le long d'un trottoir (vEc.x : VIB)
+      else if (marque && vBord > .18 && vBord < .34) c = uLigne;                                       // sinon une route ordinaire : la ligne blanche de rive
+      if (marque && vBord > .7 && abs(vSU.y) < .1 && fract(vSU.x / 5.) < .5 && vBord + abs(vSU.y) > 2.6) c = uLigne;   // la ligne du milieu (pas sur une petite route)
     } else {
       if (marque && vBord < .5 + o) c = uBordC;                                                      // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
     }
@@ -137,6 +138,13 @@ const ROUTE_FS = `${PORTEE_FS} ${EFFETS.ombres ? "varying float vAbri;" : ""}
     ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ) * (1. - vAbri));   // les ombres portées (effets.js)" : ""}
     c *= 1. - .16 * uPluie;                                                                           // mouillée, elle fonce
     gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;
+/* les bords d'une route (17/11, Kiki : « les bandes rouges et blanches, pas systématiquement ») : "vibreurs" sur un circuit en boucle tout en goudron,
+   sinon "ligne" (la ligne blanche de rive d'une route ordinaire) ; un niveau peut le dire lui-même : "bordures": "vibreurs" | "ligne" */
+const BORDURES = NIVEAU.bordures || (BOUCLE && PISTE.surfaces.length && PISTE.surfaces.every(n => n === "goudron") ? "vibreurs" : "ligne");
+const VIB = (() => { const P = PISTE, V = new Uint8Array(P.M), urb = TYPES.map((t, k) => RIVES[k].urbain ? 1 : 0);   // mètre par mètre : des vibreurs ici ? (jamais le long d'une rive « urbaine » : une rue, un quai)
+  if (BORDURES !== "vibreurs") return V;
+  for (let i = 0; i < P.M; i++) { let u = 0; for (let t = 0; t < NT; t++) if (urb[t]) u += P.PG[i * NT + t] + P.PD[i * NT + t]; V[i] = u > .3 ? 0 : 1; }
+  return V; })();
 function matRoute(c1, c2, bord, ligne, mode) {
   const v = h => ({value: new THREE.Vector3(...hex(h))});
   return new THREE.ShaderMaterial({uniforms: Object.assign({uC1: v(c1), uC2: v(c2), uBordC: v(bord), uLigne: v(ligne), uMode: {value: mode}, uNag: EAU_U.uNag, uVoie: EAU_U.uVoie}, OMBRE_U, COMMUNS, EFFETS.ombres ? PORTEE_U : null), vertexShader: PISTE_VS, fragmentShader: ROUTE_FS, side: THREE.DoubleSide});
@@ -207,7 +215,7 @@ function fabriquePiste() {   // de quoi construire le ruban de la piste (le circ
       const o = idx(i) * 16;
       const a = at(i), w = a.w, rx = Math.cos(a.h), rz = Math.sin(a.h), ii = idx(i), pont = P.PONT[ii], colle = P.INT[ii] && LIBRE[P.INT[ii] - 1][ii] < .6;   // colle : dans une fourche, l'autre voie touche encore celle-ci (ni écume ni marque de ce côté)
       const eg = (pont || hRive(ii, 0, .02) > .02) && !(colle && P.INT[ii] === 1) ? 1 : 0, ed = (pont || hRive(ii, 1, .02) > .02) && !(colle && P.INT[ii] === 2) ? 1 : 0;
-      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] || (colle && !liquide) ? 99 : w - Math.abs(u)); ec.push(eg, ed); pente.push(P.COULE[ii]); voie.push(vo); if (FLOT && liquide) flot.push(FLOT[ii * 3], FLOT[ii * 3 + 1], FLOT[ii * 3 + 2]); if (EFFETS.ombres) abri.push(P.TUN[ii] ? 1 : 0);
+      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] || (colle && !liquide) ? 99 : w - Math.abs(u)); if (liquide) ec.push(eg, ed); else ec.push(VIB[ii], 0); pente.push(P.COULE[ii]); voie.push(vo); if (FLOT && liquide) flot.push(FLOT[ii * 3], FLOT[ii * 3 + 1], FLOT[ii * 3 + 2]); if (EFFETS.ombres) abri.push(P.TUN[ii] ? 1 : 0);
         if (liquide) { for (let c = 0; c < 5; c++) C[c].push(EAUX_C[o + c * 3], EAUX_C[o + c * 3 + 1], EAUX_C[o + c * 3 + 2]); C[5].push(EAUX_C[o + 15]); } }
     }
     for (let i = 0; i < a1 - a0; i++) for (let j = 0; j < 6; j++) { const a = i * 7 + j, b = a + 7; ind.push(a, a + 1, b, a + 1, b + 1, b); }

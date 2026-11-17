@@ -330,6 +330,14 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   et ~13 s de construction sans carte graphique (à mesurer sur la tablette ; le téléphone risque de peiner : c'est le lot 3) ; le décor des rives ne suit pas
   la vraie route (lot 4 : OpenStreetMap) ; la note d'un circuit ne convient pas à une vraie route (21/100) ; l'arrivée repart du début. **Pas encore
   essayé** : la tablette, un vrai home trainer, la page dans l'appli. Pas de ligne dans 🧪 (c'est dans La Rivière).
+- **Hors plan — la diversité du décor (17/11/2026, Opus ; carte blanche de Kiki, sans plan court).** Bordures rouges et blanches seulement sur une boucle tout en
+  goudron ; embranchements route → chemin (la route continue) ; la ville (rues, carrefours, rond-points, boutiques, voitures, feux, maisons toutes
+  différentes) ; essences d'arbres par bosquets ; ports tirés au hasard ; échangeur qui repasse au-dessus de sa route ; raretés du ciel (avion, montgolfière,
+  Roucool, oiseau légendaire, étoiles filantes). Mode d'emploi : `MOTEUR.md`, « La ville, les embranchements, la variété, les raretés ». Le cœur touché à
+  deux endroits (`EMPRISE`/`JONCTIONS` de decor.js, `BORDURES` de surfaces.js). kanto-1km identique (captures). Le tour du volcan : ses deux chemins de terre
+  partent maintenant en tournant (tracé un peu changé, records de ce circuit à zéro). Plafond de poids de la page passé de 1 900 à 1 980 Ko.
+  **À essayer par Kiki** : « Céladopole, la ville et les bois » au vélo ; `?rare=avion` ; le circuit du jour sur la terre (rond-point et échangeur au tirage).
+  **Pas encore** : un vrai grand huit (plusieurs étages qui s'entrecroisent : possible à la main, pas au générateur), les lieux de Kanto, la vitrine (port fait main).
 - **Étape 8 — lot 3, le monde par tronçons (16/11/2026, Fable ; plan court accepté, lot 4 confié par Kiki à une autre conversation Opus).**
   **Ce que Kiki verra** : « Le Ventoux en entier » (`ventoux`, depuis Bédoin : 21,6 km, +1 595 m, 7,4 %), au menu du vélo et du skieur de fond ; le jeu
   s'ouvre en ~1 s, le monde se construit autour de soi et s'efface derrière. « Le Ventoux, la forêt » (5 km) reste tel quel, d'un bloc.

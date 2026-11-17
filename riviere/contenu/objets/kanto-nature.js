@@ -154,7 +154,7 @@ Object.assign(OBJETS, {
     F.boite(-.1, 3.65, 0, 2.3, .14, z0 * 2 - 3.2, sombre);
     for (const sg of [-1, 1]) F.boite(1.2, -chute - .2, sg * (W + .15), 1.6, chute + .4, .5, sombre); },   // les bajoyers, le long de la chute
   immeuble(F, o, R) {  // un immeuble de ville (Céladopole, Safrania) : ses fenêtres s'allument la nuit
-    const l = o.l || 9, p = o.p || 8, et = o.etages || 4 + Math.floor(R() * 4), h = et * 2.9 + 1, d = p / 2, mur = PAL.murs[o.mur || ["gris", "creme", "blanc", "pierre"][Math.floor(R() * 4)]], n = Math.max(2, Math.floor(l / 2.3)), m = Math.max(2, Math.floor(p / 2.3));
+    const vr = o.varie && DECOR_NEUF, l = o.l || 9, p = o.p || 8, et = o.etages || (vr ? 3 + Math.floor(hv(F, 21) * 4) : 4 + Math.floor(R() * 4)), h = et * 2.9 + 1, d = p / 2, mur = PAL.murs[o.mur || ["gris", "creme", "blanc", "pierre"][Math.floor((vr ? hv(F, 22) : R()) * 4)]], n = Math.max(2, Math.floor(l / 2.3)), m = Math.max(2, Math.floor(p / 2.3));
     F.tapis(-l / 2 - .8, -d - .8, l / 2 + .8, d + 1, null, .74, 3);
     F.boite(0, -1.2, 0, l + .2, 1.6, p + .2, PAL.pierre[1]); F.boite(0, .4, 0, l, h - .4, p, mur);
     for (let e = 0; e < et; e++) { const y = 1.2 + e * 2.9;

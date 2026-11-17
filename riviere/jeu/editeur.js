@@ -140,7 +140,7 @@ function edPanneau() {
         <div class="ed-obj"><select id="edLoin">${loin.map(k => `<option>${k}</option>`).join("")}</select><button data-act="loin">+ Ajouter</button></div><small>cap en degrés : 0 = droit devant au départ, 90 = à droite, 180 = derrière</small></div></div>`;
   } else if (ED.onglet === "generer") {
     const G = ED.gen, terre = G.activite === "terre", cases = terre
-      ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la route"], ["fourche", "une fourche (un chemin à bosses, si on force)"]]
+      ? [["village", "un village"], ["foret", "un sous-bois"], ["champs", "des champs"], ["montagne", "un col de montagne"], ["volcan", "un volcan"], ["tunnel", "un tunnel"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la route"], ["fourche", "une fourche (un chemin à bosses, si on force)"], ["rondpoint", "un rond-point"], ["echangeur", "un échangeur (on repasse au-dessus de sa route)"]]
       : [["port", "un port"], ["village", "un village"], ["lac", "un lac"], ["foret", "un sous-bois"], ["marais", "un marais"], ["plage", "une plage"], ["cascade", "une cascade"], ["grotte", "une grotte"], ["pont", "un pont sur un ravin"], ["ronflex", "Ronflex sur la rivière"], ["fourche", "une fourche (des rapides, si on force)"]];
     h += `<div class="ed-form"><p class="ed-note">Choisis l'activité, coche ce que tu veux y trouver, puis « Générer ». Le circuit obtenu se retouche pièce par pièce.</p>`
       + choix("Activité", "g:activite", G.activite || "eau", [["eau", "rameur : une rivière"], ["terre", "vélo, skieur de fond : routes et chemins"]])

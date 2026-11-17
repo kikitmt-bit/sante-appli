@@ -46,7 +46,7 @@ def options(jour, activite, essai=0):
     jour = str(jour)
     graine = int(jour.replace("-", "")) % 100000 * 10 + essai
     if activite == "terre":
-        avec = _quelques(jour, "terre", ["village", "foret", "champs", "montagne", "tunnel", "pont", "volcan"], 2 + int(_des(jour, "nb-t") * 2))
+        avec = _quelques(jour, "terre", ["village", "foret", "champs", "montagne", "tunnel", "pont", "volcan", "rondpoint", "echangeur"], 2 + int(_des(jour, "nb-t") * 2))
         o = {"activite": "terre", "km": round(3.2 + _des(jour, "km-t") * .8, 1), "virages": _un(jour, "vir-t", ["quelques", "sinueux", "quelques", "tres"]),
              "denivele": _un(jour, "den-t", [20, 35, 50, 70]), "forme": _un(jour, "forme", ["boucle", "boucle", "boucle", "huit"])}
     else:

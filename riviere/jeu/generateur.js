@@ -27,6 +27,10 @@ function solNiveau(niveau) {
 
 /* les modules : des bouts de circuit tout faits. v = le virage qui lui est demandé (degrés), o = les réglages du tirage (rives du moment…).
    act : l'activité du module ("eau" : le rameur, sur une rivière ; "terre" : vélo et elliptique, routes et chemins). Deux mondes à part (Kiki, 12/11). */
+/* (17/11) un rond-point qu'on traverse tout droit : on entre en tournant à droite, on fait un quart de tour à gauche autour de l'île, on ressort à droite.
+   Les rayons sont liés (r1 = r / (√2 − 1)) pour que l'île soit pile sur l'axe de la route ; l'objet rond_point dessine l'anneau, l'île et les autres branches. */
+function rondPoint(b, R, r = 12) { const r1 = r / (Math.SQRT2 - 1), L1 = Math.round(r1 * Math.PI / 4 * 10) / 10, L2 = Math.round(r * Math.PI / 2 * 10) / 10;
+  return [Object.assign({}, b, {nom: "Le rond-point", long: L1, virage: 45, fixe: true}), Object.assign({}, b, {long: L2, virage: -90, fixe: true, objets: [{o: "rond_point", cote: "c", a: L2 / 2, r, ville: b.g === "trottoir", branches: R() < .5 ? 1 : 2}]}), Object.assign({}, b, {long: L1, virage: 45, fixe: true})]; }
 const MODULES = {
   droite: {nom: "Ligne droite", act: "eau", pieces: (R, o) => [{long: 70 + Math.round(R() * 50), virage: Math.round((R() - .5) * 16), eau: o.eau, g: o.g, d: o.d}]},
   virage: {nom: "Virage", act: "eau", pieces: (R, o) => [{long: 70 + Math.round(R() * 40), virage: o.v, eau: o.eau, g: o.g, d: o.d}]},
@@ -48,11 +52,15 @@ const MODULES = {
   pont: {nom: "Pont sur un ravin", act: "eau", pour: "pont", pieces: (R, o) => [{nom: "Le pont", long: 18, virage: 0, eau: 9, g: "pre", d: "pre"}, {long: 70 + Math.round(R() * 20), virage: clamp(o.v, -25, 25), eau: 9, g: "pre", d: "pre", pont: ["arches", "bois", true][Math.floor(R() * 3)], ravin: 8 + Math.round(R() * 4), segment: "Sprint du pont", camera: {haut: .5}}, {long: 18, virage: 0, eau: 9, g: "pre", d: "pre"}]},
   village: {nom: "Village", act: "eau", pour: "village", pieces: (R, o) => { const lieux = Object.keys(LIEUX_TOUS[o.lieux] || {}).filter(k => k !== "note"), lieu = lieux[Math.floor(R() * lieux.length)]; if (!lieu) return MODULES.droite.pieces(R, o);
     const L = LIEUX_TOUS[o.lieux][lieu].long; return [{nom: lieu.replace(/-/g, " ").replace(/^./, c => c.toUpperCase()), long: L + 40, virage: clamp(o.v, -20, 20), eau: 13, g: "bourg", d: "pre", lieux: [{lieu, cote: "g", a: 20}], fixe: true}]; }},
-  port: {nom: "Port", act: "eau", pour: "port", act: "eau", pieces: (R, o) => [{nom: "Le port", long: 130, virage: clamp(o.v, -15, 15), eau: 17, g: "quai", d: "pre", fixe: true, objets: [
-    {o: "lampadaire", cote: "g", a: 14, e: 1.6}, {o: "lampadaire", cote: "g", a: 54, e: 1.6}, {o: "lampadaire", cote: "g", a: 94, e: 1.6},
-    {o: "bateau", cote: "g", a: 26, e: -1.6, flotte: true}, {o: "bateau", cote: "g", a: 42, e: -1.6, flotte: true, voile: true}, {o: "ponton", cote: "g", a: 62, e: -3.6, flotte: true, tourne: 90, long: 7}, {o: "bateau", cote: "g", a: 74, e: -1.7, flotte: true},
-    {o: "caisses", cote: "g", a: 34, e: 4}, {o: "entrepot", cote: "g", a: 30, e: 15}, {o: "immeuble", cote: "g", a: 60, e: 17}, {o: "immeuble", cote: "g", a: 86, e: 18}, {o: "immeuble", cote: "g", a: 110, e: 17},
-    {o: "phare", cote: "g", a: 122, e: 7}, {o: "pokemon", num: 129, cote: "c", a: 90, e: 5.5, bouge: {type: "saut", tous: 5, haut: 2.3}}]}]},
+  port: {nom: "Port", act: "eau", pour: "port", pieces: (R, o) => {   // (17/11, Kiki : « le même port qu'au tout début, mêmes bateaux ») : chaque port tiré au hasard
+    const L = 110 + Math.round(R() * 50), ob = [], g = (nom, a, e, plus) => ob.push(Object.assign({o: nom, cote: "g", a: Math.round(a), e}, plus));
+    for (let a = 12 + R() * 6; a < L - 8; a += 32 + R() * 14) g("lampadaire", a, 1.6);
+    for (let a = 18 + R() * 10; a < L - 24; a += 12 + R() * 13) { const t = R(); if (t < .18) g("ponton", a, -3.6, {flotte: true, tourne: 90, long: 5 + Math.round(R() * 4)}); else g("bateau", a, -1.55 - R() * .3, {flotte: true, voile: t > .62}); }
+    for (let a = 20 + R() * 12; a < L - 14; a += 22 + R() * 16) { const t = R(); if (t < .3) g("entrepot", a, 14 + Math.round(R() * 3)); else if (t < .85) g("immeuble", a, 16 + Math.round(R() * 4)); else g("magasin", a, 9, {varie: true}); }
+    for (let k = 1 + Math.floor(R() * 3); k > 0; k--) g("caisses", 20 + R() * (L - 40), 3.4 + R() * 1.4);
+    if (R() < .6) g("phare", L - 8, 7);
+    ob.push({o: "pokemon", num: [129, 72, 98, 118][Math.floor(R() * 4)], cote: "c", a: Math.round(30 + R() * (L - 60)), e: 5.5, bouge: {type: "saut", tous: 5, haut: 2.3}});
+    return [{nom: ["Le port", "Le vieux port", "La marina", "Le port de pêche"][Math.floor(R() * 4)], long: L, virage: clamp(o.v, -15, 15), eau: 15 + Math.round(R() * 4), g: "quai", d: "pre", fixe: true, objets: ob}]; }},
   ronflex: {nom: "Ronflex sur la rivière", act: "eau", pour: "ronflex", pieces: (R, o) => [{nom: "La sieste de Ronflex", long: 110 + Math.round(R() * 30), virage: clamp(o.v, -20, 20), eau: 12, g: o.g, d: o.d,
     objets: [{o: "ronflex", cote: "c", a: 80, haut: -.35}]}]},   // étape 6 : forcer pour le réveiller (jeu/rencontres.js)
   // ---- la terre : routes, rues, chemins (des rives posées au niveau de la route : kanto-routes) ----
@@ -60,10 +68,17 @@ const MODULES = {
   virage_t: {nom: "Virage", act: "terre", pieces: (R, o) => [{long: 70 + Math.round(R() * 40), virage: o.v, large: 8, g: o.g, d: o.d}]},
   s_t: {nom: "Un S", act: "terre", pieces: (R, o) => { const a = 35 + Math.round(R() * 25); return [{long: 55, virage: a, large: 8, g: o.g, d: o.d}, {long: 55, virage: -a + o.v, large: 8, g: o.g, d: o.d}]; }},
   lacet: {nom: "Épingle", act: "terre", pieces: (R, o) => [{nom: "L'épingle", long: 46, virage: Math.sign(o.v || -1) * 160, large: 7, g: o.g, d: o.d}]},
-  village_t: {nom: "Rue de village", pour: "village", act: "terre", pieces: (R, o) => { const nom = ["Bourg Palette", "Jadielle", "Argenta", "Lavanville", "Carmin sur Mer", "Parmanie"][Math.floor(R() * 6)];
-    return [{nom: (/^[AEIOUÉ]/.test(nom) ? "Rue d'" : "Rue de ") + nom, long: 140 + Math.round(R() * 40), virage: clamp(o.v, -25, 25), large: 9, g: "trottoir", d: "trottoir", surface: "paves", objets: [{o: "panneau", cote: "d", a: 10, e: 2.6, texte: nom.toUpperCase(), face: "arrivant", large: 3.6}].concat(R() < .6 ? [{o: "centre", cote: R() < .5 ? "g" : "d", a: 70, e: 9}] : [])}]; }},
-  sousbois_t: {nom: "Sous-bois", pour: "foret", act: "terre", pieces: (R, o) => [{nom: "Le sous-bois", long: 120 + Math.round(R() * 60), virage: o.v, large: 5, g: "sous_bois", d: "sous_bois", surface: "terre", ambiance: "sous-bois",
-    objets: R() < .6 ? [{o: "mare", cote: R() < .5 ? "g" : "d", a: 50, e: 11}] : []}]},
+  village_t: {nom: "Rue de village", pour: "village", act: "terre", pieces: (R, o) => {   // (17/11, Kiki : « ressentir la ville ») un carrefour, souvent un rond-point en ville, une rue qui part
+    const nom = ["Bourg Palette", "Jadielle", "Argenta", "Lavanville", "Carmin sur Mer", "Parmanie"][Math.floor(R() * 6)], ville = R() < .5, b = {large: 9, g: "trottoir", d: "trottoir"}, cote = R() < .5 ? "g" : "d";
+    if (!ville) b.surface = "paves";
+    const A = Object.assign({nom: (/^[AEIOUÉ]/.test(nom) ? "Rue d'" : "Rue de ") + nom, long: 84 + Math.round(R() * 26), virage: clamp(Math.round(o.v / 3), -12, 12),
+      objets: [{o: "panneau", cote: "d", a: 10, e: 2.6, texte: nom.toUpperCase(), face: "arrivant", large: 3.6}, {o: "carrefour", cote: "c", a: 52 + Math.round(R() * 10), cotes: ["gd", "gd", "g", "d"][Math.floor(R() * 4)]}].concat(R() < .6 ? [{o: "centre", cote, a: 22, e: 9}] : [])}, b);
+    const fin = Object.assign({long: 70 + Math.round(R() * 30), virage: clamp(Math.round(o.v * 2 / 3), -20, 20), objets: [{o: "rue", cote: cote === "g" ? "d" : "g", a: 26, e: .4}]}, b);
+    return [A].concat(ville && R() < .7 ? rondPoint(b, R) : [], [fin]); }},
+  sousbois_t: {nom: "Sous-bois", pour: "foret", act: "terre", pieces: (R, o) => {   // (17/11, Kiki) on quitte la route pour le chemin en tournant : la route continue tout droit (JONCTIONS de decor.js)
+    const c = R() < .5 ? -1 : 1, b = {large: 5, g: "sous_bois", d: "sous_bois", surface: "terre", ambiance: "sous-bois"};
+    return [Object.assign({nom: "Le chemin du bois", long: 34, virage: c * 40}, b), Object.assign({nom: "Le sous-bois", long: 100 + Math.round(R() * 50), virage: o.v, objets: R() < .6 ? [{o: "mare", cote: R() < .5 ? "g" : "d", a: 50, e: 11}] : []}, b),
+      Object.assign({nom: "La sortie du bois", long: 34, virage: -c * 40}, b)]; }},
   champs_t: {nom: "Les champs", pour: "champs", act: "terre", pieces: (R, o) => [{nom: "Les champs", long: 130 + Math.round(R() * 50), virage: o.v, large: 8, g: "champ", d: R() < .5 ? "champ" : "bas_cote"}]},
   col_t: {nom: "Col de montagne", pour: "montagne", act: "terre", pieces: (R, o) => { const sg = Math.sign(o.v || -1), mont = sg < 0 ? "g" : "d";   // la montagne du côté où l'on tourne, le ravin de l'autre ; après l'épingle, ils changent de côté
     const cote = (m, a, b) => m === "g" ? {g: a, d: b} : {g: b, d: a};
@@ -73,6 +88,11 @@ const MODULES = {
   descente_t: {nom: "Descente", pour: "montagne", act: "terre", pieces: (R, o) => [{nom: "La descente", long: 180 + Math.round(R() * 60), virage: o.v, large: 7, g: o.v < 0 ? "talus" : "ravin", d: o.v < 0 ? "ravin" : "talus", monte: -14}]},
   tunnel_t: {nom: "Tunnel", pour: "tunnel", act: "terre", pieces: (R, o) => [{nom: "Le tunnel", long: 110 + Math.round(R() * 20), virage: clamp(o.v, -50, 50), large: 7, g: "montagne", d: "montagne", tunnel: true, fixe: true}]},
   pont_t: {nom: "Pont sur un ravin", pour: "pont", act: "terre", pieces: (R, o) => [{nom: "Le pont", long: 18, virage: 0, large: 8, g: "bas_cote", d: "bas_cote"}, {long: 70 + Math.round(R() * 20), virage: clamp(o.v, -25, 25), large: 8, g: "bas_cote", d: "bas_cote", pont: ["arches", "bois", true][Math.floor(R() * 3)], ravin: 9 + Math.round(R() * 4), segment: "Le pont"}, {long: 18, virage: 0, large: 8, g: "bas_cote", d: "bas_cote"}]},
+  rondpoint_t: {nom: "Rond-point", pour: "rondpoint", act: "terre", pieces: (R, o) => { const b = {large: 8, g: o.g, d: o.d}; return [Object.assign({long: 40, virage: 0}, b), ...rondPoint(b, R), Object.assign({nom: "La route", long: 40, virage: o.v}, b)]; }},
+  echangeur_t: {nom: "Échangeur", pour: "echangeur", act: "terre", pieces: (R, o) => {   // (17/11, Kiki : « de la verticalité ») une boucle qui monte et repasse au-dessus de sa propre route, sur un pont
+    const c = R() < .5 ? -1 : 1, r = 26, b = {large: 8, g: "bas_cote", d: "bas_cote", fixe: true}, h = 7 + Math.round(R() * 2);
+    return [Object.assign({nom: "L'échangeur", long: 64, virage: 0, segment: "L'échangeur"}, b), Object.assign({long: Math.round(1.5 * Math.PI * r), virage: c * 270, monte: h, segment: "L'échangeur"}, b),
+      Object.assign({long: 12, virage: 0, monte: .3}, b), Object.assign({nom: "Le pont de l'échangeur", long: 28, virage: 0, pont: R() < .5 ? true : "arches"}, b), Object.assign({nom: "La descente", long: Math.round((h + .3) / .08), virage: 0, monte: -h - .3}, b)]; }},
   ronflex_t: {nom: "Ronflex sur la route", pour: "ronflex", act: "terre", pieces: (R, o) => [{nom: "La sieste de Ronflex", long: 120 + Math.round(R() * 30), virage: clamp(o.v, -20, 20), large: 8, g: o.g, d: o.d,
     objets: [{o: "ronflex", cote: "c", a: 85}]}]},
   fourche: {nom: "Fourche autour d'une île", act: "eau", pour: "fourche", pieces: (R, o) => {   // (étape 7 du plan) la rivière se sépare : le bras tranquille, ou les rapides et leur chute si on force ; mêmes longueurs, virages inverses
@@ -98,8 +118,8 @@ const MODULES = {
    (relief : l'ancien réglage, toujours compris : plat = 0 m, vallonné = 15 m, montagneux = 40 m) */
 const SINUEUX = {   // par réglage : les bouts ajoutés pour faire la longueur (sur l'eau, sur la terre), l'ampleur des virages (degrés), la chance qu'un virage reparte de l'autre côté
   droit: {bouts: ["droite", "droite", "virage", "foret"], terre: ["route", "route", "virage_t", "champs_t"], ampleur: 10, change: .5},
-  quelques: {bouts: ["virage", "virage", "s", "droite", "foret"], terre: ["virage_t", "virage_t", "s_t", "route", "sousbois_t"], ampleur: 40, change: .65},
-  sinueux: {bouts: ["virage", "s", "s", "virage", "foret"], terre: ["virage_t", "s_t", "s_t", "virage_t", "sousbois_t"], ampleur: 75, change: .8},
+  quelques: {bouts: ["virage", "virage", "s", "droite", "foret"], terre: ["virage_t", "virage_t", "s_t", "route", "virage_t"], ampleur: 40, change: .65},
+  sinueux: {bouts: ["virage", "s", "s", "virage", "foret"], terre: ["virage_t", "s_t", "s_t", "virage_t", "route"], ampleur: 75, change: .8},
   tres: {bouts: ["s", "s", "virage", "epingle", "s", "virage"], terre: ["s_t", "s_t", "virage_t", "lacet", "s_t", "virage_t"], ampleur: 110, change: .85}};
 /* les habits des rives d'un bout ordinaire (ligne droite, virage, S, épingle, et le retour) : [gauche, droite] */
 const HABITS = {eau: [["pre", "pre"], ["foret", "pre"], ["pre", "foret"], ["foret", "foret"], ["falaise", "pre"], ["falaise", "foret"], ["falaise", "falaise"], ["dune", "pre"], ["plage", "foret"]],
@@ -166,7 +186,7 @@ function genererCircuit(o) {
     const graine = (o.graine || 1) * 1000 + essai, R = hasard(graine), cible = clamp(o.km || 1, .3, 6) * 1000, pieces = [];
     // la liste des modules : ce qui est coché, complété par des lignes droites, des virages et des S ; mélangée
     const voulus = Object.keys(o.avec || {}).filter(k => o.avec[k]), liste = [];
-    for (const k of voulus) { if (k === "fourche" && huit) continue; const m = Object.keys(MODULES).filter(n => MODULES[n].pour === k && MODULES[n].act === (terre ? "terre" : "eau")); if (m.length) liste.push(m[Math.floor(R() * m.length)]); }
+    for (const k of voulus) { if (["fourche", "echangeur", "rondpoint"].includes(k) && huit) continue; const m = Object.keys(MODULES).filter(n => MODULES[n].pour === k && MODULES[n].act === (terre ? "terre" : "eau")); if (m.length) liste.push(m[Math.floor(R() * m.length)]); }
     const D = clamp(o.denivele !== undefined ? +o.denivele : {plat: 0, vallonne: 15, montagne: 40}[o.relief] ?? 15, 0, terre ? 250 : 80), SIN = SINUEUX[o.virages] || SINUEUX.quelques, BOUTS = terre ? SIN.terre : SIN.bouts;
     if (!terre && D >= 20) liste.push("rapides");
     if (!terre && D >= 35) liste.push("chute", "saut");
@@ -198,6 +218,7 @@ function genererCircuit(o) {
       if (huit && (k === 0 || k === iCroix)) for (const p of morceau) { p.virage = 0; p.long = Math.max(p.long, 150); delete p.monte; }   // les deux lignes droites du carrefour, à plat
       for (const p of morceau) { for (const q of [p].concat(p.calme || [], p.force || [])) for (const c of ["g", "d"]) if (!a(q[c])) q[c] = terre ? "bas_cote" : "pre"; if (p.surface === undefined) delete p.surface; haut += +p.monte || 0;
         if (BOUTS_LIBRES.includes(nom) && !(huit && (k === 0 || k === iCroix))) p.libre = true;
+        if (BOUTS_LIBRES.includes(nom) && !p.nom && k && !BOUTS_LIBRES.includes(liste[k - 1]) && p === morceau[0]) p.nom = terre ? "La route" : "La rivière";   // (17/11) sinon il garde le nom du lieu d'avant (« Le rond-point » pendant des kilomètres)
         pieces.push(p); }
     });
     if (huit) { pieces.push({nom: "Le retour au carrefour", long: 90, virage: "auto", large: 8, g: decor[0], d: decor[1]}); for (const p of pieces) if (p.monte !== undefined) delete p.monte; }
