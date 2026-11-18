@@ -39,7 +39,7 @@ function passerLaLigne() {
 function hud() {
   $("vTemps").textContent = fmt(S.t); $("vCad").textContent = Math.round(cadence());
   $("vVit").textContent = MACHINE.affiche === "kmh" ? (S.vL * 3.6).toFixed(1) : S.vL > .6 ? fmt(500 / S.vL) : "-:--";
-  $("vDist").textContent = Math.round(S.dist); $("vCoeur").textContent = MONTRE.h && performance.now() - MONTRE.vu < 15000 ? MONTRE.h : "--"; majCarte();
+  $("vDist").textContent = Math.round(S.dist); if (MACHINE.pas) $("vPas").textContent = S.nb * MACHINE.pas; $("vCoeur").textContent = MONTRE.h && performance.now() - MONTRE.vu < 15000 ? MONTRE.h : "--"; majCarte();
   const titre = pieceEn(S.s).titre; if ($("vLieu").textContent !== titre) $("vLieu").textContent = titre;
   const watts = BT.appareil && BT.puissance !== null && performance.now() - BT.vu < 4000 ? BT.puissance : MACHINE.physique && S.auto && S.mode === "essai" ? 150 : null;
   if (($("hWatts").hidden = watts === null) === false) $("vWatts").textContent = Math.round(watts);

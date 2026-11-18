@@ -28,7 +28,8 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 @keyframes annonce { 0% { opacity: 0; transform: translateX(-50%) scale(.7); } 12% { opacity: 1; transform: translateX(-50%) scale(1.06); } 20% { transform: translateX(-50%) scale(1); } 80% { opacity: 1; } 100% { opacity: 0; } }
 #carte { position: fixed; left: max(1.5vw, env(safe-area-inset-left, 0px)); bottom: calc(2vh + env(safe-area-inset-bottom, 0px)); width: min(30vh, 24vw); height: min(30vh, 24vw); pointer-events: none; image-rendering: pixelated; }
 #hLieu { left: max(2.2vw, env(safe-area-inset-left, 0px)); bottom: calc(2vh + env(safe-area-inset-bottom, 0px) + min(30vh, 24vw)); font-size: min(4.4vh, 3.6vw); }
-#hDist .coeur { display: block; margin-top: .12em; }
+#hDist .coeur, #hDist .pas { display: block; margin-top: .12em; }
+#hDist .pas[hidden] { display: none; }   /* (18/11) les pas : au marcheur elliptique seulement, 2 par aller-retour */
 #vCoeur { color: #FF8A8A; }
 #panneau .fantomes { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 #panneau .fantomes small { flex-basis: 100%; font-size: 15px; color: #686850; letter-spacing: .05em; }
@@ -347,7 +348,7 @@ body.au-menu .hud, body.au-menu #carte, body.au-menu #profil, body.au-menu #bSon
 <canvas id="c"></canvas>
 <div class="hud" id="hTemps"><small>TEMPS</small><span id="vTemps">0:00</span></div>
 <div class="hud" id="hMilieu"><div><small>CADENCE</small><span class="fixe" id="vCad">0</span><span class="unite">/min</span></div><div><small id="lVit">ALLURE</small><span class="fixe" id="vVit" style="min-width:2.1em">-:--</span><span class="unite" id="uVit">/500 m</span></div><div id="hWatts" hidden><small>PUISSANCE</small><span class="fixe" id="vWatts">0</span><span class="unite">W</span></div></div>
-<div class="hud" id="hDist"><small>DISTANCE</small><span class="fixe" id="vDist" style="min-width:2.2em">0</span><span class="unite">m</span><span class="coeur"><small>CŒUR</small><span class="fixe" id="vCoeur">--</span><span class="unite">♥</span></span></div>
+<div class="hud" id="hDist"><small>DISTANCE</small><span class="fixe" id="vDist" style="min-width:2.2em">0</span><span class="unite">m</span><span class="pas" id="hPas" hidden><small>PAS</small><span class="fixe" id="vPas" style="min-width:2.2em">0</span></span><span class="coeur"><small>CŒUR</small><span class="fixe" id="vCoeur">--</span><span class="unite">♥</span></span></div>
 <div class="hud" id="hTour" hidden><div id="vTour"></div><div id="vTours"></div><div id="vSeg"></div></div>
 <canvas id="profil" hidden></canvas>
 <div class="hud" id="hPente" hidden></div>

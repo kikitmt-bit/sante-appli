@@ -24,19 +24,21 @@ const MACHINES = {
   // Ce qu'on y voit, au choix du menu (gardé sur la machine ; ?monture= pour essayer) : ton Pokémon qui trottine (16/11, par défaut :
   // contenu/montures/trotteur.js) ou ton dresseur à vélo. Les rollers et l'ancienne vue « il court » n'existent plus : qui les avait choisis voit le trot.
   elliptique: {nom: "Marcheur elliptique", montre: "Marcheur elliptique", monture: (PARAMS.get("monture") || lireReglage("riviere_monture_elliptique", "trotteur")) === "cycliste" ? "cycliste" : "trotteur",
-    geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), ampli: {ref: 61, min: .15, max: 1.3}, tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: true},
+    geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), ampli: {ref: 61, min: .15, max: 1.3}, pas: 2, tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: true},
 };
 const MACHINE_NOM = (() => { const m = MACHINES[MACHINE_MENU] ? MACHINE_MENU : MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";
   if (DISCIPLINE === "eau") return "rameur";   // un circuit sur l'eau se rame ; un circuit sur la terre se fait à vélo ou à l'elliptique
   return m !== "rameur" ? m : MACHINES[lireReglage("riviere_machine_terre", null)] ? lireReglage("riviere_machine_terre", null) : "velo"; })();   // l'adresse, sinon le choix du menu, sinon l'appli
 const MACHINE = MACHINES[MACHINE_NOM];
+if (MACHINE.pas && typeof document !== "undefined" && $("hPas")) $("hPas").hidden = false;   // (18/11) un aller-retour = 2 pas : séance du 18/11, 3 804 pas comptés ainsi pour 3 822 à la montre
 const M_COUP = MACHINE.metres, TAU = MACHINE.tau, LISSE = MACHINE.lisse;
 /* la vitesse VUE (12/11, Kiki) : au marcheur elliptique, le décor ne défile pas à tes vrais mètres par seconde mais à l'allure de ce que tu vois.
-   À vélo : 15 km/h à ton allure habituelle (MACHINE.cadence tours par minute), 20 quand tu accélères (+25 %), 25 à fond (+50 %), 30 au plus.
-   Au trot (16/11, Kiki : un footing léger, 6-7 km/h à l'œil) : 6,5 km/h à ton allure habituelle, 8 à +25 %, 10 au plus.
+   (18/11, Kiki : entre 4,2 et 4,3 km/h, on ne voyait aucune différence) au-dessus de l'allure habituelle, le décor amplifie l'écart :
+   à vélo, 15 km/h à ton allure habituelle (MACHINE.cadence tours par minute), 19 à +10 %, 25 à +25 %, 32 au plus.
+   Au trot (16/11, Kiki : un footing léger, 6-7 km/h à l'œil) : 6,5 km/h à ton allure habituelle, 9 à +10 % (de grands gestes appuyés), 12 au plus.
    Une vraie côte freine, une descente lance. Les chiffres affichés restent les vrais (distance, km/h, cadence : ceux de tes jambes). */
 const VISUEL = MACHINE_NOM === "elliptique";
-const VU = MACHINE.monture === "trotteur" ? {base: 6.5, plus: 7, max: 10, descente: 1.1, cote: 1.6, min: .82} : {base: 15, plus: 20, max: 30, descente: 1.5, cote: 6, min: .38};   // cote, min : ce qu'une côte enlève (18/11, Kiki : au trot, presque rien ; à 10 % : −16 %)
+const VU = MACHINE.monture === "trotteur" ? {base: 6.5, plus: 25, max: 12, descente: 1.1, cote: 1.6, min: .82} : {base: 15, plus: 40, max: 32, descente: 1.5, cote: 6, min: .38};   // cote, min : ce qu'une côte enlève (18/11, Kiki : au trot, presque rien ; à 10 % : −16 %)
 const CROISIERE_VRAIE = MACHINE.cadence * M_COUP / 60;   // tes vrais m/s à l'allure habituelle
 function kmhVus(v) { const r = v / CROISIERE_VRAIE; return Math.min(VU.max, r <= 1 ? VU.base * r : VU.base + VU.plus * (r - 1)); }
 function allureVue(i, v) {   // combien de mètres de décor pour un vrai mètre, ici, à cette vitesse
