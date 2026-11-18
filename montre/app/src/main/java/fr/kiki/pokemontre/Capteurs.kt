@@ -89,7 +89,7 @@ class CapteursActivity : Activity() {
 
     private fun maj() {
         val e = Enregistreur.enCours
-        machine.text = if (choix == "rameur") "Rameur ⇄" else "Elliptique ⇄"
+        machine.text = if (choix == "rameur") "Rameur ⇄" else "Marcheur\nelliptique ⇄"
         machine.setBackgroundColor(0xFF22315A.toInt()); machine.setTextColor(Color.WHITE)
         machine.alpha = if (e) 0.5f else 1f
         bouton.text = if (e) "■ Arrêter" else "● Enregistrer"
@@ -123,7 +123,7 @@ class Enregistreur : Service(), SensorEventListener {
         nm.createNotificationChannel(NotificationChannel("capteurs", "Enregistrement des capteurs", NotificationManager.IMPORTANCE_LOW))
         val tap = PendingIntent.getActivity(this, 11, Intent(this, CapteursActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val n = Notification.Builder(this, "capteurs").setSmallIcon(R.drawable.ic_ball).setContentTitle("Capteurs")
-            .setContentText((if (machine == "rameur") "Rameur" else "Elliptique") + " : relié au jeu").setOngoing(true).setContentIntent(tap).build()
+            .setContentText((if (machine == "rameur") "Rameur" else "Marcheur elliptique") + " : relié au jeu").setOngoing(true).setContentIntent(tap).build()
         if (android.os.Build.VERSION.SDK_INT >= 34) startForeground(12, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH)
         else startForeground(12, n)
         verrou = getSystemService(PowerManager::class.java)

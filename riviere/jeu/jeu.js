@@ -1,16 +1,16 @@
 /* ============ le jeu : la vitesse vient des gestes de la machine ; le moteur dessine, le jeu compte ============ */
 // Les chiffres sont vrais (distance, temps, allure, cadence : ceux de la machine) ; seul le décor triche : il défile plus ou moins
 // vite selon le niveau, la pièce, la pente et la machine (piste.js : ALL ; allure.js : MACHINE.allure).
-// Chaque geste fait avancer d'exactement M_COUP vrais mètres (l'élan s'épuise, mais sa somme vaut M_COUP) ; sa force ne change que l'éclaboussure.
+// Chaque geste fait avancer d'exactement M_COUP vrais mètres (× son amplitude au marcheur elliptique : montre.js) (l'élan s'épuise, mais sa somme vaut M_COUP) ; sa force ne change que l'éclaboussure.
 const ELAN = BOUCLE ? (NIVEAU.elan === undefined ? 120 : NIVEAU.elan) : 0;   // sur un circuit, on part avant la ligne (mètres de décor) : le chrono démarre lancé
 const S = {s: PARAMS.has("s") ? +PARAMS.get("s") : BOUCLE ? LONG - ELAN : 6, v: 0, vL: 0, vn: 0, vd: 0, t: 0, dist: 0, nb: 0, coupsT: [], auto: false, prochain: .6, elan: 0, fondu: 0, fige: PARAMS.has("fige"),
   tour: 0, tourT0: 0, tours: [], enAir: false, v1: 0, v2: 0,
   mode: null, lance: false, pause: false, debutMur: 0, t0: 0, pauseTot: 0, pauseDebut: 0};   // mode : null = le menu, "vraie" = une vraie séance (la montre), "essai" = sans montre
 function demarrerChrono() { if (S.lance) return; S.lance = true; S.debutMur = Date.now(); S.t0 = performance.now(); S.pauseTot = 0; S.t = 0; majBoutons(); if (!BOUCLE) rivauxDepart(); }
-function coup(force = .6, muet = false) {   // un geste de la machine ; muet : un geste rattrapé (il compte, sans éclaboussure)
+function coup(force = .6, muet = false, fois = 1) {   // un geste de la machine ; muet : un geste rattrapé (il compte, sans éclaboussure) ; fois : ses mètres selon son amplitude (montre.js)
   if (!S.mode || S.pause) return;
   demarrerChrono();   // le chrono de la séance part au premier geste, comme sur l'écran du rameur
-  S.v += M_COUP / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
+  S.v += M_COUP * fois / TAU; S.mG = (S.mG || 0) + M_COUP * fois; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
   // les gestes minute par minute (pauses retirées) : dans Poké Fit, une minute de rameur à 20 coups ou plus = une minute de sport (seances_rameur.minutes_sport)
   if (S.mode === "vraie") { S.cad = S.cad || []; const m = Math.floor(S.t / 60); while (S.cad.length <= m) S.cad.push(0); S.cad[m]++; }
   if (muet) return;

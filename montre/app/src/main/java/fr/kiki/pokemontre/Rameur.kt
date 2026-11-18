@@ -20,7 +20,7 @@ import kotlin.math.sqrt
  * Envoi : chaque coup part sur deux relais publics (MQTT par TLS, HiveMQ et EMQX ; le jeu écoute les deux et ne garde
  * chaque coup qu'une fois). Le sujet = le même nom que l'ancien lien téléphone → tablette (`seances_rameur.lien`) :
  * impossible à deviner sans la clé, il ne dit rien de Kiki. Les messages ne contiennent que le numéro du coup, sa force
- * relative et le cœur.
+ * relative, son amplitude (cm, depuis la v28) et le cœur.
  */
 class Detecteur(private val ecart: Double = 1.2, private val k: Double = 0.8, private val tau: Double = 15.0,
                 private val minimum: Double = 2.0, private val sos: Array<DoubleArray> = SOS_RAMEUR) {
@@ -42,6 +42,12 @@ class Detecteur(private val ecart: Double = 1.2, private val k: Double = 0.8, pr
     private var e2 = 0.0; private var arme = false; private var monte = false
     private var prec = 0.0; private var tPrec = 0.0; private var dernier = -1e9; private var n = 0
     var force = 0.0; private set
+    /** (18/11) l'amplitude du dernier geste en cm : le chemin aller-retour de la main le long de l'axe du geste (accélération filtrée intégrée
+     *  deux fois, avec une fuite à 0,25 Hz pour ne jamais dériver ; max - min entre deux gestes). Réglé sur la séance du 18/11 au marcheur
+     *  elliptique : ~61 cm à son rythme normal, 67-70 cm en grands gestes, 7-8 cm en tout petits gestes rapides. 0 = inconnue. */
+    var ampli = 0.0; private set
+    private val vit = DoubleArray(3); private val pos = DoubleArray(3); private var tMes = -1.0
+    private var haut = -1e9; private var bas = 1e9
 
     /** Une mesure de l'accéléromètre (t en secondes). Rend true si elle termine un coup (sa force relative est dans `force`). */
     fun mesure(t: Double, ax: Float, ay: Float, az: Float): Boolean {
@@ -50,6 +56,9 @@ class Detecteur(private val ecart: Double = 1.2, private val k: Double = 0.8, pr
             val y = s[0] * x[a] + z[i][0][a]
             z[i][0][a] = s[1] * x[a] - s[3] * y + z[i][1][a]; z[i][1][a] = s[2] * x[a] - s[4] * y; x[a] = y } }
         n++
+        val dt = if (tMes < 0) 0.02 else (t - tMes).coerceIn(0.0, 0.1); tMes = t
+        val fuite = kotlin.math.exp(-2 * Math.PI * 0.25 * dt)
+        for (a in 0..2) { vit[a] = vit[a] * fuite + x[a] * dt; pos[a] = pos[a] * fuite + vit[a] * dt }
         val al = 0.02 / tau
         for (i in 0..2) for (j in 0..2) c[i][j] = (1 - al) * c[i][j] + al * x[i] * x[j]
         val w = DoubleArray(3) { i -> c[i][0] * v[0] + c[i][1] * v[1] + c[i][2] * v[2] }
@@ -57,13 +66,17 @@ class Detecteur(private val ecart: Double = 1.2, private val k: Double = 0.8, pr
         val p = x[0] * v[0] + x[1] * v[1] + x[2] * v[2]
         e2 = (1 - al) * e2 + al * p * p
         val r = sqrt(e2); val seuil = k * r
+        val q = pos[0] * v[0] + pos[1] * v[1] + pos[2] * v[2]; if (q > haut) haut = q; if (q < bas) bas = q
         var coup = false
         if (n > 250) {   // 5 s pour que le filtre et l'axe se posent
             if (p < -seuil * 0.5) arme = true
             if (p > prec) monte = true
             else if (monte) {   // on vient de passer un sommet
                 monte = false
-                if (arme && prec > seuil && prec > minimum && tPrec - dernier >= ecart) { coup = true; force = prec / r; dernier = tPrec; arme = false }
+                if (arme && prec > seuil && prec > minimum && tPrec - dernier >= ecart) {
+                    coup = true; force = prec / r
+                    ampli = if (tPrec - dernier < 3.0) (haut - bas) * 100 else 0.0   // après une pause, le premier geste n'a pas de mesure sûre
+                    dernier = tPrec; arme = false; haut = -1e9; bas = 1e9 }
             }
         }
         prec = p; tPrec = t
@@ -138,7 +151,7 @@ class LienJeu(private val machine: String) {
     fun mesure(t: Long, ax: Float, ay: Float, az: Float) {
         if (detecteur.mesure(t / 1000.0, ax, ay, az)) {
             coups++
-            envoyer("""{"k":"$geste","m":"$machine","n":$coups,"f":${"%.2f".format(java.util.Locale.US, detecteur.force)},"h":$coeur,"t":$t}""")
+            envoyer("""{"k":"$geste","m":"$machine","n":$coups,"f":${"%.2f".format(java.util.Locale.US, detecteur.force)},"a":${"%.1f".format(java.util.Locale.US, detecteur.ampli)},"h":$coeur,"t":$t}""")
         }
     }
 

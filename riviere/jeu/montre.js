@@ -1,7 +1,7 @@
 /* ============ la montre : chaque geste reconnu au poignet (un coup de rame, un tour d'elliptique) arrive ici, en direct ============ */
 // La montre (appli « Capteurs », Rameur, ● Enregistrer) envoie ses coups sur deux relais publics (MQTT) ; la page écoute les deux par WebSocket
 // et ne garde chaque coup qu'une fois (numéro du coup). Le sujet = D.lien (le même nom que l'ancien lien téléphone → tablette). Sans lien : rien.
-const MONTRE = {n: 0, vu: 0, h: 0, coups: 0, rattrapes: 0, suivi: false, sujet: (PARAMS.get("lien") || D.lien) ? "pokefit/" + MACHINE_NOM + "/" + (PARAMS.get("lien") || D.lien) : null};
+const MONTRE = {fa: [], n: 0, vu: 0, h: 0, coups: 0, rattrapes: 0, suivi: false, sujet: (PARAMS.get("lien") || D.lien) ? "pokefit/" + MACHINE_NOM + "/" + (PARAMS.get("lien") || D.lien) : null};
 const RELAIS = ["wss://broker.hivemq.com:8884/mqtt", "wss://broker.emqx.io:8084/mqtt"];
 
 /* un client MQTT 3.1.1 minimal : se connecter, s'abonner, recevoir ; il se reconnecte tout seul */
@@ -39,8 +39,16 @@ function ecouterRelais(url) {
 function rattraper(n) {
   const manque = n - MONTRE.n; MONTRE.n = n;
   if (!MONTRE.suivi || manque < 1 || manque > 12) return 0;   // au premier contact, ou après un trop grand trou : on repart de ce numéro, sans rien inventer
-  MONTRE.coups += manque; MONTRE.rattrapes += manque; for (let k = 0; k < manque; k++) coup(.5, true);
+  MONTRE.coups += manque; MONTRE.rattrapes += manque; for (let k = 0; k < manque; k++) coup(.5, true, facteurAmpli());
   return manque;
+}
+/* (18/11) l'amplitude du geste (cm, montre v28) → combien de fois les mètres habituels d'un geste. Médiane des 3 derniers : un geste mal
+   mesuré ne fait pas sauter la vitesse. */
+function facteurAmpli(a) {
+  const A = MACHINE.ampli; if (!A) return 1;
+  if (a > 0) { MONTRE.fa.push(clamp(a / A.ref, A.min, A.max)); if (MONTRE.fa.length > 3) MONTRE.fa.shift(); }
+  if (!MONTRE.fa.length) return 1;
+  const t = MONTRE.fa.slice().sort((x, y) => x - y); return t[(t.length - 1) >> 1];
 }
 function recu(m) {
   if (!m) return;   // jamais de tri à l'heure : les relais ne gardent rien, et l'horloge du PC de Kiki avait 14 s d'avance le 11/11
@@ -56,7 +64,7 @@ function recu(m) {
   if (n > MONTRE.n + 1) rattraper(n - 1);
   MONTRE.n = n; MONTRE.suivi = true; MONTRE.coups++;
   S.auto = false; majAuto();
-  coup(clamp(.6 + ((+m.f || 1.9) - 1.9) * .8, .3, 1));   // la force relative du geste (vers 1,9 d'habitude), lue au poignet : elle compte peu
+  coup(clamp(.6 + ((+m.f || 1.9) - 1.9) * .8, .3, 1), false, facteurAmpli(+m.a || 0));   // la force relative du geste (vers 1,9 d'habitude), lue au poignet : elle compte peu
 }
 
 /* l'état à l'écran : la montre est-elle là ? */

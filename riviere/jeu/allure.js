@@ -8,6 +8,10 @@
 //   affiche   "500" (temps aux 500 m) ou "kmh" ; enregistre : la séance est-elle gardée dans l'appli (14/11 : les trois machines)
 //   saisie    à la fin, on entre ce qu'affiche la machine (le rameur seul : le marcheur elliptique n'a pas d'écran, le home trainer donne tout)
 //   capteurRequis : gardée seulement si un vrai capteur Bluetooth a donné la vitesse (le vélo : jamais les 150 W de l'essai)
+//   ampli     (18/11, Kiki) les mètres d'un geste suivent son amplitude, mesurée au poignet par la montre (v28, champ « a » en cm) :
+//             metres × (amplitude ÷ ref), entre min et max fois. Au marcheur elliptique, des petits gestes rapides ne font plus
+//             filer, de grands gestes appuyés rapportent un peu plus (séance du 18/11 : ~61 cm normal, 67-70 grand, 7-8 tout petit).
+//             Sans mesure (ancienne montre, essai, geste après une pause) : × 1.
 // Records et fantômes sont séparés par machine. ?machine=elliptique choisit la machine (sinon : D.machine, sinon le rameur).
 const MACHINES = {
   rameur: {nom: "Rameur", geste: "coup", gestes: "COUPS", metres: clamp(+D.m_coup || 9, 4, 16), tau: 3.5, lisse: .8, allure: 1, cadence: 24, v0: 1, v1: 4.2, affiche: "500", enregistre: true, saisie: true},
@@ -19,8 +23,8 @@ const MACHINES = {
   // poussent les poignées (12/11, Kiki : ce n'est pas un elliptique). La clé reste "elliptique" : c'est le sujet de la montre et la clé des records.
   // Ce qu'on y voit, au choix du menu (gardé sur la machine ; ?monture= pour essayer) : ton Pokémon qui trottine (16/11, par défaut :
   // contenu/montures/trotteur.js) ou ton dresseur à vélo. Les rollers et l'ancienne vue « il court » n'existent plus : qui les avait choisis voit le trot.
-  elliptique: {nom: "Marcheur elliptique", montre: "Elliptique", monture: (PARAMS.get("monture") || lireReglage("riviere_monture_elliptique", "trotteur")) === "cycliste" ? "cycliste" : "trotteur",
-    geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: true},
+  elliptique: {nom: "Marcheur elliptique", montre: "Marcheur elliptique", monture: (PARAMS.get("monture") || lireReglage("riviere_monture_elliptique", "trotteur")) === "cycliste" ? "cycliste" : "trotteur",
+    geste: "tour", gestes: "TOURS", metres: clamp(+D.m_tour || 1.3, .5, 3), ampli: {ref: 61, min: .15, max: 1.3}, tau: 1.2, lisse: .7, allure: 3, cadence: 55, v0: .3, v1: 1.7, affiche: "kmh", enregistre: true},
 };
 const MACHINE_NOM = (() => { const m = MACHINES[MACHINE_MENU] ? MACHINE_MENU : MACHINES[PARAMS.get("machine")] ? PARAMS.get("machine") : MACHINES[lireReglage("riviere_machine", null)] ? lireReglage("riviere_machine", null) : MACHINES[D.machine] ? D.machine : "rameur";
   if (DISCIPLINE === "eau") return "rameur";   // un circuit sur l'eau se rame ; un circuit sur la terre se fait à vélo ou à l'elliptique
