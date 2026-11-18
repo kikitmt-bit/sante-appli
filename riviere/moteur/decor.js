@@ -91,7 +91,7 @@ function* poserDecorPas(Z) {
       continue; }
     const semer = (s0, s1, cotes = ["g", "d"]) => { for (const cote of cotes) { const sg = cote === "g" ? -1 : 1, PW = cote === "g" ? P.PG : P.PD; let s = s0 + R() * r.pas;
       for (; s < s1; s += r.pas * (.5 + R())) { const i = idx(s); let w = 0; for (const t of sur) w += PW[i * NT + t]; if (w < .6 || P.PONT[i]) continue;
-        const e = lerp(r.bande[0], r.bande[1], R()), ech = r.echelle ? lerp(r.echelle[0], r.echelle[1], R()) : 1; let nom = Object.keys(r.objets)[0], t = R() * total; for (const [k, v] of Object.entries(r.objets)) { if ((t -= v) <= 0) { nom = k; break; } }
+        const e = lerp(r.bande[0], r.bande[1], R()) + (RECUL ? RECUL[cote === "g" ? 0 : 1][i] : 0), ech = r.echelle ? lerp(r.echelle[0], r.echelle[1], R()) : 1; let nom = Object.keys(r.objets)[0], t = R() * total; for (const [k, v] of Object.entries(r.objets)) { if ((t -= v) <= 0) { nom = k; break; } }
         if (reserve(s, cote, e) || (r.sauf || []).includes(pieceEn(s).titre)) continue;
         const q = pose(s, sg * (at(s).w + e)); pres(q.x, q.z); if (Math.abs(Q.e - e) > 1.5) continue;   // dans un virage serré, ce point est en fait plus près d'un autre bout de rivière
         const y = hauteur(q.x, q.z); if (Q.e < .3 || y - P.Y[Q.i] < (DISC_PISTE === "terre" ? -90 : .15)) continue;   // jamais sur une route ; sur l'eau, jamais au ras de l'eau
@@ -113,7 +113,8 @@ function* poserDecorPas(Z) {
     for (const r of BIOME.forets || []) { const sur = r.sur.map(t => TYPES.indexOf(t)), m = r.maille || 6, nom = r.objet || "arbre_masse", recette = OBJETS[nom], ray = RAYON[nom] || 1.7; if (!recette) { console.warn("Objet inconnu : " + nom); continue; }
       const semer = (s0, s1, cotes = ["g", "d"]) => { for (const cote of cotes) { const sg = cote === "g" ? -1 : 1, PW = cote === "g" ? P.PG : P.PD;
         for (let s = s0 + RF() * m; s < s1; s += m) { const i = idx(s); let w = 0; for (const t of sur) w += PW[i * NT + t]; if (w < .6 || P.PONT[i] || P.TUN[i]) continue;
-          for (let e0 = r.bande[0] + RF() * m; e0 < r.bande[1]; e0 += m) { const e = e0 + (RF() - .5) * m * .7, ss = s + (RF() - .5) * m * .7, lacet = RF() * 6.283, ech = lerp(.85, 1.3, RF());
+          const rc = RECUL ? RECUL[cote === "g" ? 0 : 1][i] : 0;   // (un grand lac : les bandes se comptent depuis la vraie berge)
+          for (let e0 = r.bande[0] + rc + RF() * m; e0 < r.bande[1] + rc; e0 += m) { const e = e0 + (RF() - .5) * m * .7, ss = s + (RF() - .5) * m * .7, lacet = RF() * 6.283, ech = lerp(.85, 1.3, RF());
             const q = pose(ss, sg * (at(ss).w + e));
             if (r.bosquets !== undefined && fbm(q.x / 42 + 11, q.z / 42 + 5) < r.bosquets) continue;
             if (reserve(ss, cote, e)) continue;

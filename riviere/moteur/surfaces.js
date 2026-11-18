@@ -236,7 +236,7 @@ function construirePiste() {
   P.voies.forEach((v, nf) => surLaVoie(nf, () => K.decouper(v.a, v.b, nf, rubans)));   // la voie « force » de chaque fourche, entre les mêmes mètres
   for (const [a0, a1, nf] of rubans) { if (nf < 0) scene.add(K.unRuban(a0, a1)); else surLaVoie(nf, () => scene.add(K.unRuban(a0, a1))); }
   if (DISC_PISTE === "terre") return;   // sur la terre : aucune mer
-  const mer = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), MAT_MER); mer.rotation.x = -Math.PI / 2; mer.position.set(P.X[P.N >> 1], -.15, P.Z[P.N >> 1]); mer.name = "mer"; scene.add(mer);
+  const mer = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), MAT_MER); mer.rotation.x = -Math.PI / 2; mer.position.set(P.X[P.N >> 1], RECUL ? -.035 : -.15, P.Z[P.N >> 1]); mer.name = "mer"; scene.add(mer);
 }
 
 /* ---- les ponts : sous chaque suite de mètres « pont », un tablier de pierre, deux parapets, des piles jusqu'au sol ---- */

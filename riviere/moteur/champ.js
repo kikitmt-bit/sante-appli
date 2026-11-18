@@ -20,13 +20,24 @@ function profil(pts, e) {
   for (let k = 1; k < pts.length; k++) if (e < pts[k][0]) return lerp(pts[k - 1][1], pts[k][1], (e - pts[k - 1][0]) / (pts[k][0] - pts[k - 1][0]));
   return pts[pts.length - 1][1];
 }
+/* (18/11, Kiki : le lac d'Allier à Vichy) un grand plan d'eau : "rivage" dans le niveau = mètre par mètre (tous les « pas » m), de chaque côté,
+   la largeur d'eau libre entre le bord de la piste et la vraie berge ({"pas": 10, "g": [...], "d": [...]}, en mètres). La rive (son profil, ses
+   sols) commence là, et devant elle c'est le fond du lac. Sans "rivage" dans le niveau : rien ne change (RECUL vaut null). */
+const RIVAGE = NIVEAU.rivage || null, FOND_LAC = -1.6;
+const RECUL = RIVAGE ? [RIVAGE.g, RIVAGE.d].map(L => { const P = PISTE, o = new Float32Array(P.M), pas = RIVAGE.pas || 10;
+  for (let i = 0; i < P.M; i++) { const u = sLigne(i) / pas, k = Math.min(L.length - 2, Math.max(0, Math.floor(u))); o[i] = Math.max(0, lerp(L[k], L[k + 1], clamp(u - k, 0, 1))); }
+  return o; }) : null;
 function hRive(i, cote, e) {  // la hauteur de la rive au-dessus de la piste, à e mètres du bord, au mètre i, du côté donné (0 = gauche) : le calcul exact
+  if (RECUL) { const r = RECUL[cote][i]; if (r > 0) { if (e < r - 4) return FOND_LAC; const h0 = hRiveProfil(i, cote, Math.max(0, e - r)); return e < r ? lerp(FOND_LAC, h0, (e - r + 4) / 4) : h0; } }
+  return hRiveProfil(i, cote, e);
+}
+function hRiveProfil(i, cote, e) {
   const P = cote ? PISTE.PD : PISTE.PG; let h = 0;
   for (let t = 0; t < NT; t++) { const w = P[i * NT + t]; if (w) h += w * profil(RIVES[t].profil, e); }
   return h;
 }
 /* les mêmes profils, rangés d'avance pour chaque mètre de piste (le vote en lit des dizaines par point du monde) */
-const NE = 40, E_MAX = 200;
+const NE = RIVAGE ? 110 : 40, E_MAX = RIVAGE ? 320 : 200;   // (un grand lac : la berge d'en face est loin, plus de points pour la dessiner nette)
 const REL = [0, 1].map(() => new Float32Array(PISTE.M * NE)), AMP = [0, 1].map(() => new Float32Array(PISTE.M));   // (M : tous les mètres, ceux des voies « force » des fourches compris)
 for (let cote = 0; cote < 2; cote++) {
   const PW = cote ? PISTE.PD : PISTE.PG;
@@ -117,7 +128,10 @@ function finir(x, z) {  // après le vote : les bosses, puis les ravins, puis le
   const e = Q.e; let h = V.h;
   if (RAVINS.length) h -= creuser(x, z);
   if (V.a) h += V.a * lisse(4, 34, e) * (fbm(x / 46 + 3, z / 46 + 7) - .42) * 2;
-  if (e > 100) {
+  if (e > 100 && RECUL) {   // un grand lac : au loin, l'eau si l'on est encore sur le lac (devant la berge d'en face), sinon la ville, presque plate
+    const lac = e < RECUL[Q.d > 0 ? 1 : 0][Q.i] - 6;
+    h = lac ? Math.min(h, FOND_LAC) : lerp(h, V.y + 2 + 1.5 * (fbm(x / 90 + 1, z / 90 + 4) - .4), lisse(110, 220, e));
+  } else if (e > 100) {
     if ((BOUCLE && dedans(x, z)) || !ILE) h = lerp(h, V.y + 5 + 5 * (fbm(x / 70 + 1, z / 70 + 4) - .4), lisse(100, 190, e));
     else h = lerp(h, -3, lisse(120, 170, e));
   }
@@ -148,7 +162,7 @@ const LIBRE = [0, 1].map(cote => {
 
 const COUL = [0, 0, 0, 0];
 function couleurSol(i, cote, e, ny, x, z) {  // la couleur du sol : celle de la rive (sable puis herbe…), la paroi si ça monte raide, en taches de deux tons
-  const P = cote ? PISTE.PD : PISTE.PG, raide = 1 - lisse(.6, .8, ny), tache = bruit(x / 5.5 + 9, z / 5.5 + 2) > .56 ? 1 : 0, ee = e + (bruit(x / 6, z / 6) - .5) * 4; let r = 0, g = 0, b = 0, m = 0;
+  const P = cote ? PISTE.PD : PISTE.PG, raide = 1 - lisse(.6, .8, ny), tache = bruit(x / 5.5 + 9, z / 5.5 + 2) > .56 ? 1 : 0, ee = e - (RECUL ? RECUL[cote][i] : 0) + (bruit(x / 6, z / 6) - .5) * (RECUL ? 1 : 4); let r = 0, g = 0, b = 0, m = 0;   // (un grand lac : les bandes de sol se comptent depuis la vraie berge, nettes : l'allée le long de l'eau)
   for (let t = 0; t < NT; t++) {
     const w = P[i * NT + t]; if (!w) continue;
     const R = RIVES[t]; let nom = R.sols[R.sols.length - 1][0]; for (const [n, jusqu] of R.sols) if (ee < jusqu) { nom = n; break; }

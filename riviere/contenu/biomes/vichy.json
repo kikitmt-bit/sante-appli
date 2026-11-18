@@ -1,0 +1,34 @@
+{
+ "nom": "Vichy, le lac d'Allier",
+ "herite": "kanto",
+ "note": "(18/11, Kiki) Le lac d'Allier à Vichy, d'après OpenStreetMap (outils/plan_eau.py). Un grand plan d'eau : le niveau dit, mètre par mètre, où est la vraie berge de chaque côté (\"rivage\"), et les rives d'ici commencent là. Rive « promenade » : le perré de pierre, l'allée des promeneurs et des cyclistes le long de l'eau, les grands arbres, les pelouses des parcs (côté Vichy). Rive « berge » : une berge d'herbe, des saules au bord de l'eau, l'allée un peu en retrait (côté Bellerive). Rive « plage_lac » : la plage des Célestins. Premier jet : à refaire d'après les photos de Kiki.",
+ "eau": {"c1": "#3C8CD8", "c2": "#3278C8", "clair": "#68B4EE", "reflet": "#B0DCFF", "ecume": "#F2FAFF"},
+ "sols": {
+  "allee": {"c": ["#E6DCC4", "#DCD2BA"], "mat": 1},
+  "gazon": {"c": ["#7CCC58", "#70C04E"]}
+ },
+ "rives": {
+  "promenade": {"profil": [[0, -0.5], [1.4, 1.3], [2.2, 1.6], [12, 1.75], [60, 2.1], [200, 2.8]], "sols": [["pierre_quai", 2.3], ["allee", 8.5], ["gazon", 999]], "paroi": "pierre_quai", "bosses": 0.25},
+  "berge": {"profil": [[0, -0.4], [2, 0.35], [6, 1.1], [11, 1.45], [50, 2], [200, 2.8]], "sols": [["sable", 1.5], ["gazon", 9], ["allee", 13], ["gazon", 999]], "paroi": "terre", "bosses": 0.6},
+  "berge_ile": {"profil": [[0, -0.4], [2.5, 0.4], [8, 1.2], [30, 1.8], [200, 2.4]], "sols": [["sable", 2.5], ["herbe_foret", 999]], "paroi": "terre", "bosses": 1.2},
+  "plage_lac": {"profil": [[0, -0.3], [5, 0.2], [16, 0.8], [24, 1.5], [60, 2.1], [200, 2.8]], "sols": [["sable", 24], ["allee", 29], ["gazon", 999]], "paroi": "sable", "bosses": 0.3}
+ },
+ "especes": {"note": "les arbres des parcs de Vichy : de grands arbres ronds (platanes, marronniers) ; des saules au bord de l'eau", "bosquet": 60, "melange": 0.6, "liste": {"arbre": 10, "saule": 2, "bouleau": 1, "roux": 1, "cerisier": 0, "pin": 0.5, "pommier": 0}},
+ "regles": [
+  {"nom": "les grands arbres de la promenade, en alignement le long de l'allée", "objets": {"arbre": 1}, "sur": ["promenade"], "bande": [9.6, 10.4], "pas": 11, "echelle": [1.35, 1.7]},
+  {"nom": "les réverbères de l'allée", "objets": {"lampadaire": 1}, "sur": ["promenade", "plage_lac"], "bande": [8.6, 8.8], "pas": 30},
+  {"nom": "les bancs face au lac", "objets": {"banc": 1}, "sur": ["promenade"], "bande": [7.6, 7.8], "pas": 38},
+  {"nom": "les arbres des pelouses, derrière l'allée", "objets": {"arbre": 4, "buisson": 1}, "sur": ["promenade", "plage_lac"], "bande": [16, 70], "pas": 6.5, "echelle": [1.1, 1.6]},
+  {"nom": "les saules au bord de l'eau", "objets": {"saule": 1}, "sur": ["berge"], "bande": [2.5, 5], "pas": 24, "echelle": [1, 1.3]},
+  {"nom": "les arbres de la berge, derrière l'allée", "objets": {"arbre": 4, "buisson": 2}, "sur": ["berge"], "bande": [15, 70], "pas": 5.5, "echelle": [1, 1.5]},
+  {"nom": "les bancs de l'allée de la berge", "objets": {"banc": 1}, "sur": ["berge"], "bande": [9.4, 9.6], "pas": 50},
+  {"nom": "les arbres de l'île", "objets": {"saule": 2, "arbre": 2, "buisson": 3}, "sur": ["berge_ile"], "bande": [3, 30], "pas": 4},
+  {"nom": "les parasols de la plage", "objets": {"parasol": 1}, "sur": ["plage_lac"], "bande": [6, 20], "pas": 3.5},
+  {"nom": "les Pokémon de la plage (peu : on est content d'en voir un)", "objets": {"pokemon": 1}, "sur": ["plage_lac"], "bande": [2, 9], "pas": 40, "nums": [54, 79, 118, 7, 60]},
+  {"nom": "les Pokémon de la berge", "objets": {"pokemon": 1}, "sur": ["berge", "berge_ile"], "bande": [1.5, 6], "pas": 260, "nums": [54, 60, 79, 98, 129]},
+  {"nom": "les bois au loin", "objets": {"arbre_loin": 3}, "sur": ["promenade", "berge", "plage_lac"], "bande": [70, 130], "pas": 4.5}
+ ],
+ "forets": [
+  {"nom": "les arbres des parcs et des quartiers, au loin, par taches", "sur": ["promenade", "berge", "plage_lac"], "bande": [60, 165], "maille": 6.4, "bosquets": 0.45}
+ ]
+}

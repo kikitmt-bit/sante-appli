@@ -315,6 +315,34 @@ pousse plus fort en côte, `window.__faux` (commandes reçues, `couper()`, `refu
 (`vitesseCapteur` : `BT.faux`). Vérifié avec lui (16/11) : pente juste à 50 et 100 %, séance non gardable, rebranchement, abandon après 6 refus.
 **Jamais essayé avec un vrai home trainer.**
 
+## Un vrai plan d'eau : le lac d'Allier à Vichy (18/11, Kiki)
+
+Kiki fait du vrai kayak et du paddle sur le lac d'Allier : il veut ramer chez lui sur le même parcours, **le plus fidèle possible**.
+`python riviere/outils/plan_eau.py TRACE.json CARTE.json --id vichy-lac --nom "Le lac d'Allier, Vichy" --ecrire`
+- **Le tracé** (`TRACE.json` : origine + un point par mètre, en mètres) et **la carte** (`CARTE.json`, la réponse d'Overpass) restent HORS du dépôt
+  (`riviere/outils/cartes/`, ignoré par git, avec les scripts qui ont tracé le parcours : `vichy-trace/`). Le niveau n'a aucune coordonnée.
+- **Le parcours de Kiki** (sa carte annotée du 18/11) : départ du petit ponton de la rive de Bellerive, juste en amont du pont ; on longe cette rive
+  à ~25 m de la berge jusqu'au coude ; le tour de la petite île (la 2e du coude, dans le sens des aiguilles d'une montre) ; retour par le petit chenal
+  entre la grande île et la rive est, puis la rive de Vichy (le club d'aviron et son grand ponton, la plage des Célestins) ; **arrivée sous le pont
+  Jacques Chirac**. 4,0 km, parcours ouvert. La Rotonde est en aval du pont : hors du parcours.
+- **Le moteur et les grands lacs** : `"rivage": {"pas": 10, "g": [...], "d": [...]}` dans le niveau = tous les 10 m, de chaque côté, la largeur d'eau
+  libre entre le bord de la piste et la vraie berge (jusqu'à 300 m : la berge d'en face, une île). `champ.js` (`RECUL`, `hRive`) : la rive (son
+  profil, ses sols) commence là, devant c'est le fond du lac (`FOND_LAC`) ; au loin, l'eau tant qu'on est sur le lac, sinon la ville presque plate ;
+  plus de points pour les profils (`NE`, `E_MAX`). `decor.js` : les bandes des règles se comptent depuis la vraie berge (les objets posés par le
+  niveau gardent leur écart vrai, depuis la piste). `surfaces.js` : l'eau du large à 3,5 cm sous la piste (sinon un trait sombre le long du couloir).
+  `piste.js` : sur un grand lac, la piste peut recroiser son propre passage (le tour d'une île) : un croisement sur la même eau est accepté.
+  **Sans `"rivage"`, rien ne change** (tout est derrière `RECUL`, qui vaut `null`).
+- **La région** `vichy` (hérite de Kanto) : rives `promenade` (perré de pierre, l'allée des promeneurs et des cyclistes, grands arbres en
+  alignement, réverbères, bancs, pelouses), `berge` (herbe, saules au bord de l'eau, l'allée en retrait), `berge_ile`, `plage_lac` (sable,
+  parasols). L'outil choisit : une île, une plage (trouvées sur la carte), sinon la rive droite (`--rive-droite`, Vichy : promenade) ou la rive
+  gauche (`--rive-gauche`, Bellerive : berge) au sens de l'eau qui coule.
+- **Les repères** (`contenu/objets/vichy.js`, premier jet en volumes simples, à refaire d'après les photos de Kiki) : `pont_route` (le grand
+  pont : tablier, trottoirs, garde-corps, réverbères, piles hors du couloir ; `debut`, `fin` le long de son axe depuis le point où l'on passe
+  dessous), `club_aviron` (hangar à bateaux, étage vitré, bandeau bleu, mât), `ponton_aviron` (le grand ponton flottant et ses skiffs),
+  `skiffs`, `parasol`, `transat`. Les pontons de la carte flottent toujours devant la berge (la carte les pose souvent à cheval).
+- **Contrôles** : `?pur=1&niveau=vichy-lac` (aucune erreur ; un croisement accepté au tour de l'île) ; le tracé du moteur s'écarte du vrai de
+  2,7 m au plus (l'outil le dit).
+
 ## Ajouter un objet
 
 Un fichier `.js` dans `contenu/objets/` (ou une recette de plus dans `kanto.js`) :

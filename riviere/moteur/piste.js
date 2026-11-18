@@ -413,7 +413,8 @@ function verifier() {
     if (j2 === j || !coupe(i, i + pas, j, j2)) continue;
     if (croisements.some(c => Math.abs(c.s1 - i) < 12 && Math.abs(c.s2 - j) < 12)) continue;
     const dy = P.Y[j] - P.Y[i], dessus = dy > 0 ? j : i, dessous = dy > 0 ? i : j, angle = Math.abs(Math.sin(P.H[i] - P.H[j]));
-    const carrefour = DISC_PISTE === "terre" && Math.abs(dy) < .8 && angle > .42 && !P.PONT[i] && !P.PONT[j];   // sur la terre : un carrefour à niveau, s'il n'est pas trop rasant
+    const lac = !!NIVEAU.rivage && DISC_PISTE !== "terre" && Math.abs(dy) < .3 && !P.PONT[i] && !P.PONT[j] && !P.TUN[i] && !P.TUN[j];   // (18/11) sur un grand lac ("rivage") : on recroise son sillage sur la même eau (le tour d'une île)
+    const carrefour = lac || DISC_PISTE === "terre" && Math.abs(dy) < .8 && angle > .42 && !P.PONT[i] && !P.PONT[j];   // sur la terre : un carrefour à niveau, s'il n'est pas trop rasant
     const bon = carrefour || (P.PONT[dessus] || P.TUN[dessous]) && Math.abs(dy) >= 4.5;
     croisements.push({s1: i, s2: j, ecart: +Math.abs(dy).toFixed(1), bon: !!bon, carrefour});
     if (!bon && DISC_PISTE === "terre") erreurs.push(Math.abs(dy) < .8 ? "Le carrefour des mètres " + i + " et " + j + " est trop rasant : les deux passages doivent se croiser franchement (plus de 25°)." : "La piste se croise aux mètres " + i + " et " + j + " à des hauteurs différentes (" + Math.abs(dy).toFixed(1) + " m) : à la même hauteur (un carrefour), ou un pont 4,5 m plus haut au moins.");
