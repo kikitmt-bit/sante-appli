@@ -158,13 +158,16 @@ Object.assign(OBJETS, {
     F.matiere(3); F.quad([-1.4, .3, -.55], [1.4, .3, -.55], [1.4, 2.3, -.55], [-1.4, 2.3, -.55], v, [0, 0, 1]); F.matiere(2);
     F.boite(0, .45, -.25, 2.4, .08, .4, PAL.bois_clair); F.boite(0, -.2, -.25, 2.2, .65, .08, c);
     F.cyl(2, -.2, .3, .05, .05, 2.6, 6, c); F.disque(2, 2.45, .36, .32, .32, hex("#3C7CD8")); F.disque(2, 2.45, .38, .2, .2, BLANC); },
-  banc(F) { const b = PAL.bois_clair; F.boite(0, .4, 0, 1.7, .08, .45, b); F.boite(0, .5, -.24, 1.7, .4, .06, b); for (const x of [-.7, .7]) F.boite(x, -.2, 0, .08, .62, .45, PAL.cadre); },
-  voiture(F) {  // une petite voiture garée, ronde et colorée (le long de x)
-    const col = hex(["#D84838", "#3C7CD8", "#F0C030", "#F2F0E6", "#3CA058", "#E07898"][Math.floor(hv(F) * 6)]), sombre = hex("#2A2E38"), vitre = PAL.vitre_claire;
-    F.boite(0, .25, 0, 3.6, .6, 1.66, col, {haut: melange(col, BLANC, .12)}); F.biseau(-.15, .85, 0, 2.1, 1.5, .55, .32, col, melange(col, BLANC, .2));
-    F.matiere(3); F.quad([.9, .88, .72], [-1.15, .88, .72], [-1, 1.33, .5], [.62, 1.33, .5], vitre, [0, .3, 1]); F.quad([-1.15, .88, -.72], [.9, .88, -.72], [.62, 1.33, -.5], [-1, 1.33, -.5], vitre, [0, .3, -1]); F.matiere(2);
-    for (const x of [-1.15, 1.15]) for (const z of [-.8, .8]) F.boite(x, 0, z, .62, .55, .2, sombre);
-    F.matiere(7).plaque(1.8, .55, 1.81, .75, .5, PAL.lumiere).matiere(2); F.boite(1.8, .5, .52, .04, .2, .3, PAL.lumiere); F.boite(1.8, .5, -.52, .04, .2, .3, PAL.lumiere); F.boite(-1.81, .55, 0, .04, .16, 1.3, hex("#B83028")); },
+  banc(F) { const b = PAL.bois_clair;
+    if (!DECOR_NEUF) { F.boite(0, .4, 0, 1.7, .08, .45, b); F.boite(0, .5, -.24, 1.7, .4, .06, b); for (const x of [-.7, .7]) F.boite(x, -.2, 0, .08, .62, .45, PAL.cadre); return; }
+    // (18/11) un banc de parc : des lattes de bois (l'assise, le dossier penché), deux pieds de fonte vert sombre, les accoudoirs
+    const fonte = hex("#2F4A3C"), b2 = fonce(b, .86);
+    for (let k = 0; k < 3; k++) F.boite(0, .42, .12 - k * .15, 1.8, .05, .11, k % 2 ? b2 : b, {haut: k % 2 ? b : melange(b, BLANC, .12)});
+    for (let k = 0; k < 3; k++) { const y = .58 + k * .16, z = -.28 - k * .04; F.quad([-.9, y, z], [.9, y, z], [.9, y + .1, z - .03], [-.9, y + .1, z - .03], k % 2 ? b2 : b, [0, .3, 1]); F.quad([.9, y, z - .04], [-.9, y, z - .04], [-.9, y + .1, z - .07], [.9, y + .1, z - .07], b2, [0, -.3, -1]); }
+    for (const x of [-.78, .78]) { F.boite(x, -.15, .18, .07, .6, .07, fonte); F.boite(x, -.15, -.24, .07, 1.2, .07, fonte); F.boite(x, .36, -.03, .07, .06, .48, fonte); F.boite(x, .62, -.02, .08, .05, .44, fonte, {haut: b}); F.boite(x, .45, .18, .07, .2, .06, fonte); } },
+  voiture(F, o = {}, R, K) {  // une voiture du garage de Kanto (le long de x, l'avant en +x) : voir dessinerVoiture, plus bas
+    const t = hv(F, 1), modele = o.modele || (t < .3 ? "citadine" : t < .58 ? "berline" : t < .75 ? "break" : t < .88 ? "camionnette" : "sport");
+    F.ombre(0, 0, 2.3, 1.1); dessinerVoiture(F, modele, Math.floor(hv(F) * 97), K); },
   feu(F) {  // un feu tricolore
     const c = PAL.cadre; F.cyl(0, -.2, 0, .08, .07, 3, 6, c); F.boite(0, 2.3, .1, .42, 1.15, .3, fonce(c, .8));
     F.matiere(7); [["#E84030", 2.97], ["#F0B030", 2.65], ["#48C058", 2.33]].forEach(([h, y], k) => F.disque(0, y + .07, .26, .13, .13, k === Math.floor(hv(F) * 3) ? hex(h) : fonce(hex(h), .35))); F.matiere(2); },
@@ -218,3 +221,76 @@ Object.assign(OBJETS, {
 /* la maison et l'immeuble varient selon leur place ("varie": true) : couleurs, étage, taille ; jamais deux rues pareilles */
 function varieMaison(F) { const m = Object.keys(PAL.murs), t = Object.keys(PAL.toits).filter(k => k !== "paille"), p = Object.keys(PAL.portes);
   return {mur: m[Math.floor(hv(F, 11) * m.length)], toit: t[Math.floor(hv(F, 12) * t.length)], porte: p[Math.floor(hv(F, 13) * p.length)], etage: hv(F, 14) > .3, l: 7.4 + hv(F, 15) * 2, p: 5.8 + hv(F, 16) * 1}; }
+
+/* ---- le garage (18/11, 2e version, Kiki : « 4 roues carrées, c'est très très moche ») : cinq modèles dessinés par leur profil de côté
+   (le bas de caisse, puis l'habitacle plus étroit), de vraies roues rondes dans leurs passages, pare-chocs, phares, feux, poignées,
+   rétroviseurs, plaques. Repère : x le long (l'avant en +x), z en travers, y vers le haut, le sol à 0. Le modèle et la couleur viennent
+   de la place de la voiture (hv) : jamais du hasard du niveau. Une voiture qui roule (contenu/objets/kanto-footing.js) est dessinée ici aussi. ---- */
+const GARAGE = {
+  // corps : le profil du bas de caisse (convexe, dans le sens trigonométrique) ; cab : celui de l'habitacle ; z, zc : leurs demi-largeurs ; roues : [x, rayon]
+  citadine: {corps: [[-1.72, .3], [1.72, .3], [1.8, .5], [1.66, .82], [.82, .9], [-1.64, .92], [-1.78, .58]], cab: [[.78, .88], [-1.62, .9], [-1.52, 1.47], [.02, 1.5]], z: .82, zc: .7, roues: [[1.12, .31], [-1.12, .31]]},
+  berline: {corps: [[-2.12, .3], [2.12, .3], [2.2, .5], [2.06, .78], [1.05, .86], [-2.02, .88], [-2.18, .56]], cab: [[1, .84], [-1.32, .86], [-.95, 1.4], [.28, 1.42]], z: .86, zc: .72, roues: [[1.4, .33], [-1.38, .33]]},
+  break: {corps: [[-2.16, .3], [2.14, .3], [2.22, .5], [2.07, .78], [1.05, .86], [-2.12, .88], [-2.22, .56]], cab: [[1, .84], [-2.04, .86], [-1.98, 1.44], [.24, 1.46]], z: .86, zc: .74, roues: [[1.42, .33], [-1.42, .33]], barres: true},
+  camionnette: {corps: [[-2.3, .32], [2.3, .32], [2.38, .56], [2.25, .98], [-2.3, .98], [-2.35, .58]], cab: [[2.22, .96], [-2.28, .96], [-2.26, 2.12], [1.42, 2.12], [1.98, 1.5]], z: .92, zc: .9, roues: [[1.58, .35], [-1.58, .35]], van: true},
+  sport: {corps: [[-2.06, .26], [2.06, .26], [2.18, .4], [2.05, .62], [.9, .7], [-1.96, .74], [-2.1, .5]], cab: [[.62, .68], [-1.22, .72], [-.78, 1.12], [-.08, 1.14]], z: .88, zc: .7, roues: [[1.36, .33], [-1.32, .34]], aileron: true},
+};
+const TEINTES_AUTO = ["#D8504A", "#4A7FD0", "#F2C744", "#EDEBE3", "#4FA36B", "#E98AA8", "#5C6470", "#9ACBE0", "#E8873A", "#8A64B8", "#C8CCD2", "#2F4A7A"];
+const aireAuto = pts => pts.reduce((t, p, i) => { const q = pts[(i + 1) % pts.length]; return t + p[0] * q[1] - q[0] * p[1]; }, 0);
+function prismeAuto(F, pts, z, col, haut) {   // un profil (x, y) extrudé de -z à +z ; les faces qui regardent le ciel prennent « haut », le dessous est sombre
+  if (aireAuto(pts) < 0) pts = pts.slice().reverse();   // (dans n'importe quel sens : les normales regardent toujours dehors)
+  F.poly(pts.map(([x, y]) => [x, y, z]), col, [0, 0, 1]); F.poly(pts.map(([x, y]) => [x, y, -z]), col, [0, 0, -1]);
+  for (let i = 0; i < pts.length; i++) { const A = pts[i], B = pts[(i + 1) % pts.length], dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy) || 1, n = [dy / l, -dx / l, 0];
+    F.quad([A[0], A[1], z], [B[0], B[1], z], [B[0], B[1], -z], [A[0], A[1], -z], n[1] > .55 ? haut : n[1] < -.5 ? fonce(col, .55) : col, n); }
+}
+const retrecir = (pts, k, dy = 0) => { const cx = pts.reduce((t, p) => t + p[0], 0) / pts.length, cy = pts.reduce((t, p) => t + p[1], 0) / pts.length; return pts.map(([x, y]) => [cx + (x - cx) * k, cy + (y - cy) * k + dy]); };
+function roueAuto(F, x, r, z, w) {   // une roue : le pneu à dix faces, la jante claire, le moyeu
+  const pneu = hex("#25272C"), jante = hex("#B9BEC6"), n = 10, s = Math.sign(z), z1 = z + s * w / 2, z0 = z - s * w / 2, pt = (a, rr, zz) => [x + Math.cos(a) * rr, r + Math.sin(a) * rr, zz];
+  for (let k = 0; k < n; k++) { const a0 = k / n * Math.PI * 2, a1 = (k + 1) / n * Math.PI * 2; F.quad(pt(a0, r, z0), pt(a1, r, z0), pt(a1, r, z1), pt(a0, r, z1), pneu, [Math.cos((a0 + a1) / 2), Math.sin((a0 + a1) / 2), 0]); }
+  const disque = (rr, zz, col) => F.poly(Array.from({length: n}, (_, k) => pt(k / n * Math.PI * 2, rr, zz)), col, [0, 0, s]);
+  disque(r, z1, pneu); disque(r * .62, z1 + s * .005, jante); disque(r * .22, z1 + s * .01, fonce(jante, .7));
+}
+function dessinerVoiture(F, modele, k, K) {
+  const G = GARAGE[modele] || GARAGE.berline, col = hex(G.van ? (k % 3 ? "#F2F0EA" : "#4A7FD0") : TEINTES_AUTO[k % TEINTES_AUTO.length]), clair = melange(col, BLANC, .22), sombre = hex("#2E3138");
+  const vitre = hex("#3E5A78"), reflet = hex("#8EB8D8"), chrome = hex("#C9CDD3"), z = G.z, zc = G.zc, c = G.cab, xs = G.corps.map(p => p[0]), xa = Math.min(...xs), xb = Math.max(...xs);
+  const toit = !G.van && !G.aileron && k % 4 === 1 ? hex("#F4F2EC") : clair;   // une sur quatre : le toit blanc
+  prismeAuto(F, G.corps, z, col, clair);                                                              // le bas de caisse
+  prismeAuto(F, c, zc, col, toit);                                                                     // l'habitacle, plus étroit
+  // les vitres de côté (un montant au milieu, un reflet), posées sur l'habitacle
+  const bas = Math.max(c[0][1], c[1][1]) + .07;
+  for (const sz of [1, -1]) { const zz = sz * (zc + .006);
+    if (G.van) { F.poly([[2.08, 1.08], [1.55, 1.08], [1.45, 1.95], [1.82, 1.95], [2.02, 1.5]].map(([x, y]) => [x, y, zz]), vitre, [0, 0, sz]); continue; }
+    const v = retrecir(c, .84, .02).map(([x, y]) => [x, Math.max(y, bas)]), x0 = Math.min(...v.map(p => p[0])), x1 = Math.max(...v.map(p => p[0])), xm = (x0 + x1) / 2 - .05;
+    F.poly(v.map(([x, y]) => [x, y, zz]), vitre, [0, 0, sz]);
+    F.quad([xm - .05, bas, zz + sz * .004], [xm + .05, bas, zz + sz * .004], [xm + .05, c[3][1], zz + sz * .004], [xm - .05, c[3][1], zz + sz * .004], col, [0, 0, sz]);
+    F.quad([x1 - .4, bas + .04, zz + sz * .006], [x1 - .28, bas + .04, zz + sz * .006], [x1 - .48, bas + .3, zz + sz * .006], [x1 - .6, bas + .3, zz + sz * .006], reflet, [0, 0, sz]); }
+  // le pare-brise et la lunette arrière : posés sur les faces penchées de l'habitacle
+  const cx = c.reduce((t, p) => t + p[0], 0) / c.length, cy = c.reduce((t, p) => t + p[1], 0) / c.length;
+  const face = (A, B, k0, k1) => { const dx = B[0] - A[0], dy = B[1] - A[1], l = Math.hypot(dx, dy), o = (dy * ((A[0] + B[0]) / 2 - cx) - dx * ((A[1] + B[1]) / 2 - cy)) < 0 ? -1 : 1, n = [o * dy / l, -o * dx / l, 0], P = (t, zz) => [lerp(A[0], B[0], t) + n[0] * .01, lerp(A[1], B[1], t) + n[1] * .01, zz];
+    F.quad(P(k0, -zc * .86), P(k1, -zc * .86), P(k1, zc * .86), P(k0, zc * .86), vitre, n); };
+  face(c[c.length - 1], c[0], .1, .9);                                                                 // le pare-brise
+  face(c[1], c[2], G.van ? .55 : .12, .88);                                                            // la lunette arrière (une camionnette : petite, en haut des portes)
+  // les roues dans leurs passages (un arc sombre sur la caisse)
+  for (const [x, r] of G.roues) for (const sz of [1, -1]) {
+    F.poly(Array.from({length: 7}, (_, j) => { const a = j / 6 * Math.PI; return [x + Math.cos(a) * (r + .1), r + Math.sin(a) * (r + .1), sz * (z + .004)]; }), sombre, [0, 0, sz]);
+    roueAuto(F, x, r, sz * (z - .08), .24); }
+  // pare-chocs et plaques, phares (ils s'allument la nuit), calandre, feux rouges
+  for (const [x, sx] of [[xb, 1], [xa, -1]]) { F.boite(x - sx * .05, .3, 0, .2, .2, 2 * z + .06, hex("#4A4D55"), {haut: hex("#5C6068")});
+    F.boite(x + sx * .06, .34, 0, .02, .12, .5, sx > 0 ? BLANC : hex("#F4D648")); }
+  const xf = Math.max(...G.corps.filter(p => p[1] > .45).map(p => p[0])), xr = Math.min(...G.corps.filter(p => p[1] > .45).map(p => p[0]));
+  F.matiere(7); for (const sz of [1, -1]) F.boite(xf - .03, .58, sz * (z - .24), .07, .14, .3, PAL.lumiere); F.matiere(2);
+  F.boite(xf - .02, .5, 0, .05, .2, z * .9, sombre);
+  for (const sz of [1, -1]) F.boite(xr + .02, .6, sz * (z - .2), .06, .16, .3, hex("#C8382E"));
+  // la ligne des portes, les poignées, les rétroviseurs
+  const portes = G.van ? [1.45, -.2] : modele === "citadine" || modele === "sport" ? [-.2] : [.05, -.85], poignees = G.van ? [1.05] : modele === "citadine" || modele === "sport" ? [-.55] : [-.3, -1.2];
+  for (const sz of [1, -1]) { const zz = sz * (z + .006), y1 = Math.max(c[0][1], c[1][1]) - .02;
+    for (const xd of portes) F.quad([xd, .44, zz], [xd + .03, .44, zz], [xd + .03, y1, zz], [xd, y1, zz], fonce(col, .72), [0, 0, sz]);
+    for (const xd of poignees) F.boite(xd, .72, sz * (z + .01), .2, .05, .03, chrome);
+    F.boite(c[0][0] - .12, c[0][1] + .06, sz * (zc + .1), .12, .1, .16, col); }
+  if (G.barres) for (const sz of [1, -1]) F.boite((c[2][0] + c[3][0]) / 2, c[3][1], sz * (zc - .1), c[3][0] - c[2][0], .06, .05, sombre);
+  if (G.aileron) { F.boite(xa + .2, .74, 0, .28, .05, 2 * z - .1, sombre); for (const sz of [1, -1]) F.boite(xa + .22, .62, sz * (z - .2), .06, .14, .05, sombre); }
+  if (G.van) {   // la camionnette du Poké Mart : sa bande et son nom, des deux côtés
+    const bande = hex(k % 3 ? "#4A7FD0" : "#F2F0EA");
+    for (const sz of [1, -1]) F.quad([-2.2, 1.32, sz * (zc + .006)], [1.25, 1.32, sz * (zc + .006)], [1.25, 1.48, sz * (zc + .006)], [-2.2, 1.48, sz * (zc + .006)], bande, [0, 0, sz]);
+    if (K) { K.etiquette(F, "POKÉ MART", -.5, 1.78, zc + .012, 2, .3, 48);
+      const sv = [F.ox, F.oy, F.oz, F.lacet, F.k]; F.poser(F.ox, F.oy, F.oz, F.lacet + Math.PI, F.k); K.etiquette(F, "POKÉ MART", .5, 1.78, zc + .012, 2, .3, 48); F.poser(...sv); } }
+}

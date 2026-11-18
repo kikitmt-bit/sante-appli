@@ -437,6 +437,18 @@ d'une rue**, traverse une **place**, prend une **ruelle**, monte un **escalier**
   40 % plus près, plus basse, juste dans son axe (avant, au milieu de la piste : sur un trottoir, il était petit et décalé ; Kiki :
   « il est vraiment petit à l'écran »). Il court au milieu de sa piste, 55 cm de marge de chaque côté (`ligneRoute` : la marge de 1,7 m
   à gauche n'est que pour le vélo).
+- **Le garage** (18/11, après le 1er essai de Kiki : « 4 roues carrées, c'est très très moche ») : `voiture` (kanto-ville.js, `dessinerVoiture`,
+  `GARAGE`) a cinq modèles dessinés par leur profil de côté : citadine, berline, break (barres de toit), camionnette du Poké Mart (son nom
+  des deux côtés), coupé sport (aileron) ; bas de caisse puis habitacle plus étroit, vitres et montants, pare-brise, roues rondes dans leurs
+  passages, pare-chocs, plaques, phares (allumés la nuit), feux, poignées, rétroviseurs, un toit blanc une fois sur quatre. Modèle et couleur
+  tirés de sa place (`hv`) ; `"modele": "sport"` pour l'imposer. Garées : le long de chaque bordure, dans le sens de la circulation
+  (`"tourne": 180` en face), moins nombreuses. **Une voiture qui roule** : `voiture_roule` (`"cote": "g", "e": 0` au début d'une rue,
+  `long` : ses mètres) passe au milieu de la chaussée à 30 km/h, dans un sens ou dans l'autre, deux fois sur cinq par cycle de 70 s, chaque
+  rue à son rythme, un autre modèle à chaque passage. Le moteur a pour ça une petite prise : `VIVANTS` (decor.js), des fonctions appelées
+  à chaque image avec le temps des animations.
+- **Travaillés le même jour** (décor neuf seulement ; `"decor": "classique"`, kanto-1km, garde ceux d'avant) : l'immeuble (`immeubleNeuf` :
+  rez-de-chaussée et entrée vitrée sous un auvent, fenêtres à cadre et appui, balcons, chaînes d'angle, bandeaux, corniche, parapet),
+  le banc (lattes, dossier penché, pieds de fonte), la boîte aux lettres (toit rond, fente, drapeau).
 - **Les ombres sur les murs** (rendu.js, tous les circuits) : seules les faces tournées vers le ciel reçoivent les ombres portées. Un mur,
   vu par le soleil de biais, se faisait des dents de scie sous son toit (Kiki : « le haut des maisons, l'ombre, c'est dégueulasse »).
 - **Étroit** : un trottoir fait 2,6 m, un passage 2,2 m, un sentier 2,2 m. Les tests acceptent 2 m pour un circuit `"machines": ["elliptique"]`.

@@ -47,7 +47,16 @@ Object.assign(OBJETS, {
     const xs = Array.from({length: n}, (_, k) => -L / 2 + L * k / (n - 1)), ys = xs.map(x => solLocal(F, x));
     for (let k = 0; k < n; k++) F.boite(xs[k], ys[k] - .3, 0, .16, 1.15, .16, b, {haut: BLANC});
     for (let k = 0; k + 1 < n; k++) for (const hy of [.28, .6]) lisseEnPente(F, xs[k] - (k ? 0 : .04), ys[k] + hy, xs[k + 1] + (k + 2 < n ? 0 : .04), ys[k + 1] + hy, 0, .12, .08, b); },
-  boite_lettres(F) { F.boite(0, -.3, 0, .12, 1.2, .12, PAL.pierre[0]); F.boite(0, .85, 0, .5, .36, .36, PAL.pierre[2], {haut: BLANC}); F.boite(.27, .95, 0, .06, .2, .12, PAL.fleurs.rouge); },
+  boite_lettres(F) {
+    if (typeof DECOR_NEUF !== "undefined" && !DECOR_NEUF) { F.boite(0, -.3, 0, .12, 1.2, .12, PAL.pierre[0]); F.boite(0, .85, 0, .5, .36, .36, PAL.pierre[2], {haut: BLANC}); F.boite(.27, .95, 0, .06, .2, .12, PAL.fleurs.rouge); return; }
+    // (18/11) une boîte aux lettres de Kanto : un poteau de bois, une boîte au toit rond, sa fente, son petit drapeau rouge levé
+    const bois = PAL.tronc[1], c = [hex("#E8483C"), hex("#4A7FD0"), hex("#F6F6F2"), hex("#4FA36B")][Math.floor(h2(Math.round(F.ox * 3.1), Math.round(F.oz * 2.3)) * 4)], c2 = melange(c, BLANC, .25);
+    F.boite(0, -.3, 0, .11, 1.15, .11, bois); F.boite(0, .8, 0, .3, .05, .2, fonce(bois, .8)); F.boite(0, .85, 0, .52, .2, .34, c, {haut: c2});
+    for (let k = 0; k < 6; k++) { const a0 = k / 6 * Math.PI, a1 = (k + 1) / 6 * Math.PI, y0 = 1.05 + Math.sin(a0) * .17, y1 = 1.05 + Math.sin(a1) * .17, z0 = Math.cos(a0) * .17, z1 = Math.cos(a1) * .17;
+      F.quad([-.26, y0, z0], [.26, y0, z0], [.26, y1, z1], [-.26, y1, z1], k > 1 && k < 4 ? c2 : c, [0, Math.sin((a0 + a1) / 2), Math.cos((a0 + a1) / 2)]);
+      for (const sx of [-1, 1]) F.tri([sx * .26, 1.05, 0], [sx * .26, y0, z0], [sx * .26, y1, z1], c, [sx, 0, 0]); }
+    F.plaque(-.15, .98, .15, 1.02, .175, fonce(c, .5));                                                    // la fente
+    F.boite(.29, .9, -.08, .03, .38, .03, PAL.cadre); F.boite(.3, 1.18, -.01, .02, .12, .16, hex("#E8483C")); },
   lampadaire(F, o, R, K) {  // un réverbère : socle, fût à bagues, lanterne vitrée à quatre montants, chapeau pointu
     const c = PAL.cadre, c2 = fonce(c, 1.35);
     F.cyl(0, -.3, 0, .24, .2, .45, 8, c); F.cyl(0, .15, 0, .1, .07, 2.9, 6, c); for (const y of [.25, 1.3, 2.75]) F.cyl(0, y, 0, .13, .13, .1, 6, c2);

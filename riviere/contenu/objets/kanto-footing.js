@@ -2,7 +2,7 @@
 // Ce qui manquait pour une vraie sortie à pied : des haies et des murets tout près du trottoir (on sent qu'on avance), la rue qui continue
 // tout droit quand on la quitte pour un passage, l'entrée d'un parc, un kiosque, une terrasse de café, des massifs.
 // Même repère que les autres objets : x le long de la piste, z vers la piste, y vers le haut. Aucun tirage dans le hasard du niveau (hv : la place).
-Object.assign(RAYON, {haie: .5, muret: .4, rue_continue: 0, portail_parc: 0, kiosque: 4.2, terrasse: 1.8, massif: 1.2, poubelle: .3});
+Object.assign(RAYON, {voiture_roule: 0, haie: .5, muret: .4, rue_continue: 0, portail_parc: 0, kiosque: 4.2, terrasse: 1.8, massif: 1.2, poubelle: .3});
 
 const FOOT = {haie: [hex("#3E8E46"), hex("#4FA352"), hex("#69BC5E")], terre: hex("#8C6A44")};
 /* une haie taillée, le long de la piste (long : sa longueur) : un pied plus sombre, un dessus clair, quelques bosses pour casser le trait */
@@ -47,6 +47,22 @@ Object.assign(OBJETS, {
     if (o.texte) { F.boite(0, 2.72, 0, Math.min(2 * w - .5, 3.3), .5, .08, hex("#2E3640")); K.etiquette(F, o.texte, 0, 2.97, .05, Math.min(2 * w - .7, 3.1), .4, 48); }
     haieFoot(F, w + .4, w + 6, 0, 1.15, .8, 3); haieFoot(F, -w - 6, -w - .4, 0, 1.15, .8, 5);
     F.poser(...sv); },
+  /* (18/11, Kiki : « une qui roule très rarement, ça donne de la vie ») une voiture qui passe de temps en temps sur la chaussée de la rue,
+     dans un sens ou dans l'autre, à 30 km/h, au milieu (les voitures garées restent le long des bordures). Posée "cote": "g", "e": 0 au début
+     de la rue ; long : les mètres de rue qu'elle parcourt. Deux fois sur cinq par cycle de 70 s : on n'en croise pas à chaque rue. */
+  voiture_roule(F, o) {
+    if (typeof THREE === "undefined" || typeof scene === "undefined" || o._e === 99) return;   // (le contrôle sans dessin ; un objet posé à blanc)
+    const s0 = o._s, L = o.long || 150, per = o.periode || 70, k0 = Math.floor(hv(F, 5) * 97), v = 8.4, modeles = ["citadine", "berline", "break", "camionnette", "sport"];
+    let m = null, vu = -1;
+    VIVANTS.push(t => {
+      const tl = t + s0 * 1.7, cycle = Math.floor(tl / per), tt = tl - cycle * per, hz = h2(cycle * 7.3 + s0 * .37, 3.1);   // (chaque rue a son propre rythme)
+      if (hz > .4 || tt > L / v) { if (m) m.visible = false; return; }
+      if (vu !== cycle) { vu = cycle; if (m) { scene.remove(m); m.geometry.dispose(); }   // à chaque passage, une autre voiture
+        const G = new Forme(); dessinerVoiture(G, modeles[(k0 + cycle) % 5], k0 + cycle * 5, null); m = G.maille(); m.name = "voiture-roule"; scene.add(m); }
+      const sens = hz < .2 ? 1 : -1, d = tt * v, s1 = sens > 0 ? s0 + d : s0 + L - d, s = BOUCLE ? ((s1 % LONG) + LONG) % LONG : s1, A = at(s), p = pose(s, -(A.w + (sens > 0 ? 2.95 : 4.25)));
+      m.position.set(p.x, A.y - .1, p.z); m.rotation.y = Math.PI / 2 - A.h + (sens > 0 ? 0 : Math.PI); m.visible = true;
+    });
+  },
   /* la rue continue tout droit quand on la quitte (un passage entre deux maisons, l'entrée d'un parc) ; sens -1 : elle venait de là (on y entre).
      Posée côté de la rue ("cote": "g", "e": 0), au mètre où la bande de la rive s'arrête : la même coupe que la bande (surfaces.js, BANDE_RUE). */
   rue_continue(F, o, R, K) {

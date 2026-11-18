@@ -155,6 +155,7 @@ Object.assign(OBJETS, {
     for (const sg of [-1, 1]) F.boite(1.2, -chute - .2, sg * (W + .15), 1.6, chute + .4, .5, sombre); },   // les bajoyers, le long de la chute
   immeuble(F, o, R) {  // un immeuble de ville (Céladopole, Safrania) : ses fenêtres s'allument la nuit
     const vr = o.varie && DECOR_NEUF, l = o.l || 9, p = o.p || 8, et = o.etages || (vr ? 3 + Math.floor(hv(F, 21) * 4) : 4 + Math.floor(R() * 4)), h = et * 2.9 + 1, d = p / 2, mur = PAL.murs[o.mur || ["gris", "creme", "blanc", "pierre"][Math.floor((vr ? hv(F, 22) : R()) * 4)]], n = Math.max(2, Math.floor(l / 2.3)), m = Math.max(2, Math.floor(p / 2.3));
+    if (DECOR_NEUF) { immeubleNeuf(F, o, l, p, et, h, d, mur, n, m); return; }   // (18/11, Kiki : « tout doit être un peu travaillé ») plus bas ; "decor": "classique" garde celui d'avant
     F.tapis(-l / 2 - .8, -d - .8, l / 2 + .8, d + 1, null, .74, 3);
     F.boite(0, -1.2, 0, l + .2, 1.6, p + .2, PAL.pierre[1]); F.boite(0, .4, 0, l, h - .4, p, mur);
     for (let e = 0; e < et; e++) { const y = 1.2 + e * 2.9;
@@ -171,3 +172,34 @@ Object.assign(OBJETS, {
     for (let k = 0; k < n; k++) F.pointe((R() - .5) * .8, -.2, (R() - .5) * .8, (R() - .5) * .7, 1, (R() - .5) * .7, .2 + R() * .2, 1 + R() * 1.6, 5, fonce(col, .72), melange(col, [1, 1, 1], .45));
     F.matiere(2); K.lumiere(F, 0, 1, 0, col, 5, true); },
 });
+
+/* (18/11, 2e version) l'immeuble de ville, travaillé : un rez-de-chaussée plus sombre et son entrée vitrée sous un auvent, des fenêtres à
+   cadre blanc et à appui, des balcons à garde-corps sur un immeuble sur deux, des chaînes d'angle, des bandeaux, une corniche, un toit à
+   parapet et sa cage d'escalier. Tirages : sa place (hv), jamais le hasard du niveau (les R() de la recette d'avant restent les mêmes). */
+function immeubleNeuf(F, o, l, p, et, h, d, mur, n, m) {
+  const sombre = fonce(mur, .84), angle = melange(mur, BLANC, .45), cadre = PAL.cadre, tAuvent = [hex("#D8504A"), hex("#4A7FD0"), hex("#4FA36B"), hex("#E8873A")][Math.floor(hv(F, 24) * 4)], balcons = hv(F, 23) > .5;
+  F.tapis(-l / 2 - .8, -d - .8, l / 2 + .8, d + 1, null, .74, 3);
+  F.boite(0, -1.2, 0, l + .2, 1.6, p + .2, PAL.pierre[1]); F.boite(0, .4, 0, l, h - .4, p, mur);
+  F.boite(0, .4, 0, l + .06, 2.95, p + .06, sombre);                                                   // le rez-de-chaussée
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) F.boite(sx * (l / 2 - .2), 3.35, sz * (d - .2), .5, h - 3.35, .5, angle);   // les chaînes d'angle
+  const fen = (x, y, z, w, hh, cote) => {   // une fenêtre : cadre blanc, vitre (allumée la nuit), appui ; cote : 0 la façade (z), ±1 un côté (x)
+    if (!cote) { F.plaque(x - w / 2 - .1, y - .1, x + w / 2 + .1, y + hh + .1, z + .03, BLANC); F.matiere(3).plaque(x - w / 2, y, x + w / 2, y + hh, z + .06, PAL.vitre).matiere(2);
+      F.plaque(x - .04, y, x + .04, y + hh, z + .08, BLANC); F.boite(x, y - .16, z + .1, w + .35, .08, .2, PAL.pierre[2]); return; }
+    const X = cote * (l / 2); F.plaqueX(z - w / 2 - .1, y - .1, z + w / 2 + .1, y + hh + .1, X + cote * .03, BLANC); F.matiere(3).plaqueX(z - w / 2, y, z + w / 2, y + hh, X + cote * .06, PAL.vitre).matiere(2);
+    F.boite(X + cote * .1, y - .16, z, .2, .08, w + .35, PAL.pierre[2]); };
+  for (let e = 1; e < et; e++) { const y = 1.2 + e * 2.9;
+    F.boite(0, y - .4, 0, l + .14, .14, p + .14, fonce(mur, .9));                                         // le bandeau entre deux étages
+    for (let k = 0; k < n; k++) { const x = -l / 2 + l * (k + .5) / n; fen(x, y, d, 1.15, 1.5, 0);
+      if (balcons && k % 2 === 0) { F.boite(x, y - .5, d + .45, 1.9, .12, .9, PAL.pierre[2]); F.plaque(x - .95, y - .38, x + .95, y + .45, d + .9, cadre); F.plaque(x - .88, y - .3, x + .88, y + .37, d + .91, melange(cadre, mur, .55)); } }
+    for (let k = 0; k < m; k++) { const z = -d + p * (k + .5) / m; for (const sx of [-1, 1]) fen(0, y, z, 1.1, 1.5, sx); } }
+  // l'entrée, au milieu : une double porte vitrée sous un auvent ; de part et d'autre, de grandes fenêtres
+  const xp = -l / 2 + l * (Math.floor(n / 2) + .5) / n;
+  F.plaque(xp - .95, .4, xp + .95, 2.75, d + .05, BLANC); F.matiere(3).plaque(xp - .8, .4, xp + .8, 2.6, d + .08, PAL.vitre_claire).matiere(2); F.plaque(xp - .04, .4, xp + .04, 2.6, d + .1, BLANC);
+  F.boite(xp, 2.85, d + .6, 2.6, .14, 1.2, tAuvent, {haut: melange(tAuvent, BLANC, .2)}); F.boite(xp, .3, d + .55, 2.2, .14, 1.1, PAL.pierre[2]);
+  for (let k = 0; k < n; k++) { const x = -l / 2 + l * (k + .5) / n; if (k !== Math.floor(n / 2)) fen(x, 1.05, d, 1.3, 1.45, 0); }
+  // la corniche, le parapet, la cage d'escalier
+  F.boite(0, h, 0, l + .5, .3, p + .5, fonce(mur, .8), {haut: PAL.pierre[1]});
+  for (const sz of [-1, 1]) F.boite(0, h + .3, sz * (p / 2 + .1), l + .4, .45, .2, mur, {haut: PAL.pierre[2]});
+  for (const sx of [-1, 1]) F.boite(sx * (l / 2 + .1), h + .3, 0, .2, .45, p + .4, mur, {haut: PAL.pierre[2]});
+  F.boite(l * .2, h + .3, -p * .15, 1.8, 1.4, 1.8, PAL.pierre[1], {haut: PAL.pierre[2]});
+}

@@ -168,4 +168,7 @@ async function construireDecor(cede) {   // cede (17/11) : rendre la main toutes
   for (const e of MONDE.etiquettes) scene.add(mailleEtiquette(e));
   for (const a of MONDE.animes) scene.add(mailleAnimee(a));
 }
-function animerDecor(t) { for (const a of MONDE.animes) a.maille.rotation.z = t * a.vitesse; }
+/* (18/11) ce qui vit à chaque image, au-delà de ce qui tourne : une recette du contenu y range une fonction (t : le temps des animations, en s) ;
+   la première fois, elle peut construire ses maillages (une voiture qui passe dans la rue : contenu/objets/kanto-footing.js) */
+const VIVANTS = [];
+function animerDecor(t) { for (const a of MONDE.animes) a.maille.rotation.z = t * a.vitesse; for (const f of VIVANTS) f(t); }
