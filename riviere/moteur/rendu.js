@@ -72,7 +72,8 @@ const mondeFS = ombres => `${ombres ? PORTEE_FS : ""}
       return l; }
     void main() { vec3 n = normalize(vN); float brume = smoothstep(uB0, uB1, vZ) * .94; vec3 c;
       float lum = .6 + .4 * (dot(n, uSoleil) * .5 + .5) + .04 * n.y;${REEL.lumiere ? "" : " lum = floor(lum * 7. + .5) / 7.;"}   // la lumière en paliers (rendu plus réaliste : douce)
-      ${ombres ? "float omb = ombreEn(vW, n, vZ); lum = mix(lum, min(lum, .6), omb);   // à l'ombre : la lumière d'une face qui tourne le dos au soleil" : ""}
+      ${ombres ? "float omb = ombreEn(vW, n, vZ); lum = mix(lum, min(lum, .6), omb);   // à l'ombre : la lumière d'une face qui tourne le dos au soleil" : ""}${REEL.lumiere ? `
+      if (vM > 1.5) lum = floor((.8 + (lum - .8) * 1.2) * 7. + .5) / 7.;   // (rendu plus réaliste, 18/11, Kiki : les arbres devenaient des boules fades) les objets gardent leurs paliers, un peu plus marqués : des faces nettes` : ""}
       if (vM > 6.5) { c = mix(vC * lum * uSombre * uTeinte, uLueur, uNuit); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * uNuit)), 1.); return; }
       if (vM > 3.5) {
         if (vM < 4.5) { c = vC * (.9 + .1 * sin(uT * 2.3 + vW.x * .7 + vW.z * .9)); gl_FragColor = vec4(mix(c, uBrume, brume * .5), 1.); return; }
@@ -91,7 +92,8 @@ const mondeFS = ombres => `${ombres ? PORTEE_FS : ""}
         else if (vM > .5) t = texture2D(uDetail, vW.xz / 6.).b;   // (1 : des pavés ; 1,3 : un mur maçonné, seulement les tunnels)
         else t = texture2D(uDetail, vW.xz / 6.).r;
         det = mix(1., .72 + .56 * t, 1. - smoothstep(20., 70., vZ)); }
-      ${REEL.lumiere ? `c = vC${REEL.matieres ? " * mt" : ""} * lumiere(n, ${ombres ? "omb" : "0."}) * det;   // (rendu plus réaliste) le ciel bleuté et le soleil chaud ; l'ombre y est déjà`
+      ${REEL.lumiere ? `if (vM < 1.5) c = vC${REEL.matieres ? " * mt" : ""} * lumiere(n, ${ombres ? "omb" : "0."}) * det;   // (rendu plus réaliste) le sol : le ciel bleuté et le soleil chaud, en douceur ; l'ombre y est déjà
+      else c = vC * lum * mix(vec3(.9, .95, 1.07), vec3(1.03, 1., .93), clamp((lum - .6) / .4, 0., 1.)) * det;   // les objets : leurs paliers, bleutés côté ombre, chauds côté soleil`
         : `c = vC${REEL.matieres ? " * mt" : ""} * lum * det;${ombres ? " c *= mix(vec3(1.), vec3(.93, .97, 1.07), omb);   // … et un peu de bleu du ciel" : ""}`}
       if (uNeige > 0. && n.y > .55 && h21(floor(vW.xz * 2.5)) < uNeige) c = vec3(.92, .95, 1.) * lum;   // la neige tient sur ce qui est à plat
       gl_FragColor = vec4(mix(c * uSombre * uTeinte + vC * eclaire(n) * det, uBrume, brume), 1.); }`;

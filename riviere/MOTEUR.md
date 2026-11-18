@@ -576,8 +576,11 @@ shaders se font au départ). Adresse, qui passe devant : `?reel=1` (tous), `?ree
 circuits, `kanto-1km` compris (c'est Kiki qui choisit). **Éteints, ils n'ajoutent rien aux shaders** : le monde est celui d'avant (contrôlé le
 18/11 sur kanto-1km, vichy-lac, terre-ville, col-ventoux et vitrine : mêmes shaders, commentaires à part).
 
-- **La lumière** (`LUMIERE_GLSL` de rendu.js : `lumiere(normale, ombre)`). Plus de paliers : une lumière douce, un ciel bleuté qui éclaire
-  d'en haut (les faces à l'ombre bleuissent) et un soleil chaud. Une face à plat au soleil reçoit la même lumière qu'avant (~1) : la route,
+- **La lumière** (`LUMIERE_GLSL` de rendu.js : `lumiere(normale, ombre)`). **Sur le sol** (matières 0 et 1) : plus de paliers, une lumière
+  douce, un ciel bleuté qui éclaire d'en haut (les faces à l'ombre bleuissent) et un soleil chaud. **Sur les objets** (matière 2 et plus :
+  arbres, buissons, maisons, toits) : leurs paliers restent, un peu plus marqués (×1,2 autour de 0,8), bleutés côté ombre et chauds côté
+  soleil (18/11, Kiki : en lumière douce, les arbres devenaient « une boule un peu en 3D avec une ombre », fades ; leurs faces nettes sont
+  leur charme). Une face à plat au soleil reçoit la même lumière qu'avant (~1) : la route,
   qui n'a pas d'éclairage, ne jure pas avec l'herbe. Les ombres portées ont un bord flou (`ombreEn` de effets.js : les quatre lectures trois
   points de carte plus loin, ~23 cm). Le ciel : dégradé sans bandes, un halo large autour du soleil. La petite image finale (`POST`) : contour
   plus léger, couleurs un peu plus riches et contrastées, bords de l'image un peu plus sombres. Les pixels restent : c'est le « mi-pixel ».
