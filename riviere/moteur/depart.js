@@ -70,4 +70,18 @@ const EFFETS = (() => {
   if (a === "0") tous(false); else if (a === "1") tous(true); else if (a) { const l = a.split(","); for (const k of EFFETS_NOMS) o[k] = l.includes(k); }
   return o;
 })();
+/* ---- le rendu plus réaliste (18/11, Kiki : « mi-pixel, mi un peu plus réaliste », à essayer) : trois interrupteurs, éteints par défaut ----
+   lumiere : une lumière douce (plus de paliers), un ciel bleu frais à l'ombre et un soleil chaud, des ombres au bord flou, un ciel sans bandes et
+   un halo autour du soleil, des couleurs un peu plus riches ; reflets : l'eau reflète le ciel (plus au loin, moins à ses pieds), le soleil y
+   scintille, les rives la foncent ; matieres : l'herbe, la terre et la roche ont du grain et des taches de couleur, de près comme au loin.
+   Gardés sur la machine (riviere_reel = "lumiere,reflets,matieres") ; l'adresse passe devant : ?reel=1 (tous), ?reel=0, ?reel=lumiere,reflets.
+   Éteints, ils n'ajoutent pas une ligne aux shaders : le monde est celui d'avant, au bit près, sur tous les circuits (kanto-1km compris). */
+const REEL_NOMS = ["lumiere", "reflets", "matieres"];
+const REEL = (() => {
+  const o = {}, liste = l => { for (const k of REEL_NOMS) o[k] = l.includes(k); };
+  const g = lireReglage("riviere_reel", ""); liste(typeof g === "string" ? g.split(",") : []);
+  const a = ARGS.get("reel");
+  if (a === "0") liste([]); else if (a === "1") liste(REEL_NOMS); else if (a) liste(a.split(","));
+  return o;
+})();
 const VENT_DIR = [.894, .447];   // d'où à où souffle le vent, dans le monde (le même que celui qui pousse les feuilles et la pluie : ambiance.js)

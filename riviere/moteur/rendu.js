@@ -37,6 +37,26 @@ const DETAIL = (() => { const N = 64, c = toile(N, N), x = c.getContext("2d"), i
     d[k] = r * 255; d[k + 1] = g * 255; d[k + 2] = b * 255; d[k + 3] = 255; }
   x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.magFilter = THREE.NearestFilter; t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; return t; })();
 
+/* ---- le rendu plus réaliste (REEL de depart.js, 18/11) : deux bouts de shader partagés, vides quand l'interrupteur est éteint ----
+   BRUIT_GLSL : un bruit doux (des taches) ; LUMIERE_GLSL : la lumière douce, le ciel bleu d'en haut et le soleil chaud (lumiere(normale, ombre)).
+   Une face à plat au soleil reçoit la même lumière qu'avant (~1) : la route, qui n'a pas d'éclairage, ne jure pas avec l'herbe d'à côté. */
+const BRUIT_GLSL = REEL.matieres || REEL.reflets ? `float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+      return mix(mix(h21(i), h21(i + vec2(1., 0.)), f.x), mix(h21(i + vec2(0., 1.)), h21(i + vec2(1., 1.)), f.x), f.y); }` : "";
+const LUMIERE_GLSL = REEL.lumiere ? `vec3 lumiere(vec3 n, float omb) { float dif = max(dot(n, uSoleil), 0.);
+      vec3 ciel = mix(vec3(.86, .88, .93), vec3(.94, .98, 1.07), n.y * .5 + .5);   // le ciel éclaire d'en haut, bleuté ; le sol renvoie un peu de lumière d'en bas
+      return ciel * (.6 + .08 * n.y) + vec3(1.07, 1., .88) * (.42 * dif * (1. - omb)); }` : "";
+
+// les matières : des taches de couleur et du grain sur les sols naturels (l'herbe, la terre, le sable : du plus frais au plus sec, de loin comme
+// de près), sur les parois (la roche par bancs) et les pavés (usés par endroits) ; le grain se pose par carrés de 17 cm (mi-pixel)
+const MATIERES_GLSL = `
+      vec3 mt = vec3(1.);   // (rendu plus réaliste) la couleur de la matière, par-dessus celle du sommet
+      if (vM < 1.5) { float pres = 1. - smoothstep(14., 60., vZ);
+        if (n.y >= .6) { vec2 w = vW.xz; float m1 = vn(w / 26. + 3.7), m2 = vn(w / 8.3 + 9.1), m3 = vn(w / 2.6 - 5.3), gr = h21(floor(w * 6.));
+          if (vM < .5) mt = mix(vec3(.88, 1.03, 1.), vec3(1.12, 1.03, .76), smoothstep(.3, .78, m1)) * (.9 + .2 * m2) * (1. + (.16 * m3 - .08 + .14 * gr - .07) * pres);
+          else mt = vec3((.95 + .1 * m2) * (1. + (.12 * gr - .06) * pres)); }
+        else { float lat = abs(n.x) > abs(n.z) ? vW.z : vW.x, r1 = vn(vec2(lat / 5.5, vW.y / 1.6)), r2 = vn(floor(vec2(lat, vW.y) * 6.) / 6. * vec2(1.3, 3.1));
+          mt = mix(vec3(.9, .92, .98), vec3(1.08, 1.02, .9), r1) * (1. + (.2 * r2 - .1) * pres); } }`;
+
 /* Le matériau de tout ce qui est solide. La matière de chaque sommet (attribut mat) choisit le rendu :
    0 sol naturel (touffes, strates sur les parois) · 1 pavés · 2 uni (murs, toits, feuillages)
    3 fenêtre (éclairée la nuit, pas toutes) · 7 lampe (allumée la nuit) · 4 lumineux (cristal, lave : brille toujours)
@@ -45,13 +65,13 @@ const DETAIL = (() => { const N = 64, c = toile(N, N), x = c.getContext("2d"), i
 const MONDE_U = Object.assign({uDetail: {value: DETAIL}, uSoleil: {value: SOLEIL}, uLp: {value: [0, 1, 2, 3, 4, 5].map(() => new THREE.Vector4(0, -999, 0, 1))}, uLc: {value: [0, 1, 2, 3, 4, 5].map(() => new THREE.Vector3())}}, COMMUNS, EFFETS.vent ? VENT_U : null, EFFETS.ombres ? PORTEE_U : null);
 const mondeFS = ombres => `${ombres ? PORTEE_FS : ""}
     uniform sampler2D uDetail; uniform vec3 uSoleil, uBrume, uTeinte, uLueur; uniform float uB0, uB1, uSombre, uT, uNuit, uNeige; uniform vec4 uLp[6]; uniform vec3 uLc[6]; varying vec3 vC, vN, vW; varying float vM, vZ;
-    float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+    float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }${BRUIT_GLSL}${LUMIERE_GLSL}
     vec3 eclaire(vec3 n) {   // les lumières proches (cristaux, lanternes, lampadaires la nuit) éclairent ce qui les entoure, en paliers
       vec3 l = vec3(0.); for (int i = 0; i < 6; i++) { vec3 d = uLp[i].xyz - vW; float r = length(d), a = 1. - r / uLp[i].w; if (a <= 0.) continue;
         a = a * a * (.4 + .6 * max(dot(n, d / max(r, .001)), 0.)); l += uLc[i] * floor(a * 6. + .5) / 6.; }
       return l; }
     void main() { vec3 n = normalize(vN); float brume = smoothstep(uB0, uB1, vZ) * .94; vec3 c;
-      float lum = .6 + .4 * (dot(n, uSoleil) * .5 + .5) + .04 * n.y; lum = floor(lum * 7. + .5) / 7.;   // la lumière en paliers
+      float lum = .6 + .4 * (dot(n, uSoleil) * .5 + .5) + .04 * n.y;${REEL.lumiere ? "" : " lum = floor(lum * 7. + .5) / 7.;"}   // la lumière en paliers (rendu plus réaliste : douce)
       ${ombres ? "float omb = ombreEn(vW, n, vZ); lum = mix(lum, min(lum, .6), omb);   // à l'ombre : la lumière d'une face qui tourne le dos au soleil" : ""}
       if (vM > 6.5) { c = mix(vC * lum * uSombre * uTeinte, uLueur, uNuit); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * uNuit)), 1.); return; }
       if (vM > 3.5) {
@@ -64,14 +84,15 @@ const mondeFS = ombres => `${ombres ? PORTEE_FS : ""}
         gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, brume), 1.); return; }
       if (vM > 2.5) { float t = clamp((vM - 3.) / .42, 0., 1.), allume = step(t, uNuit * .64) * (.82 + .18 * fract(t * 7.3));   // chaque vitre entière : allumée ou non (deux sur trois au cœur de la nuit, de plus en plus au crépuscule)
         c = mix(vC * lum * uSombre * uTeinte, uLueur, allume); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * allume)), 1.); return; }
-      float det = 1.;
+      float det = 1.;${REEL.matieres ? MATIERES_GLSL : ""}
       if (vM < 1.5) { float t;
         if (n.y < .6 && vM > 1.2) t = texture2D(uDetail, vec2(abs(n.x) > abs(n.z) ? vW.z : vW.x, vW.y) / 3.).b;   // un mur maçonné (un tunnel) : des pierres
         else if (n.y < .6) t = texture2D(uDetail, vec2(abs(n.x) > abs(n.z) ? vW.z : vW.x, vW.y) / 6.).g;
         else if (vM > .5) t = texture2D(uDetail, vW.xz / 6.).b;   // (1 : des pavés ; 1,3 : un mur maçonné, seulement les tunnels)
         else t = texture2D(uDetail, vW.xz / 6.).r;
         det = mix(1., .72 + .56 * t, 1. - smoothstep(20., 70., vZ)); }
-      c = vC * lum * det;${ombres ? " c *= mix(vec3(1.), vec3(.93, .97, 1.07), omb);   // … et un peu de bleu du ciel" : ""}
+      ${REEL.lumiere ? `c = vC${REEL.matieres ? " * mt" : ""} * lumiere(n, ${ombres ? "omb" : "0."}) * det;   // (rendu plus réaliste) le ciel bleuté et le soleil chaud ; l'ombre y est déjà`
+        : `c = vC${REEL.matieres ? " * mt" : ""} * lum * det;${ombres ? " c *= mix(vec3(1.), vec3(.93, .97, 1.07), omb);   // … et un peu de bleu du ciel" : ""}`}
       if (uNeige > 0. && n.y > .55 && h21(floor(vW.xz * 2.5)) < uNeige) c = vec3(.92, .95, 1.) * lum;   // la neige tient sur ce qui est à plat
       gl_FragColor = vec4(mix(c * uSombre * uTeinte + vC * eclaire(n) * det, uBrume, brume), 1.); }`;
 const MONDE_VS = `attribute float mat; varying vec3 vC, vN, vW; varying float vM, vZ; ${VENT_VS}
@@ -111,7 +132,7 @@ const CIEL = (() => { const W = 2048, H = 512, HOR = Math.round(H * .952), T2 = 
     fragmentShader: `uniform sampler2D tP, tN; uniform vec3 uHaut, uBas, uLoin, uNuage, uGris, uSol, uSolC, uLune; uniform float uCouvert, uEtoiles, uDefile, uEclair, uT, uHor, uGraine, uDens; varying vec2 vUv; varying vec3 vP;
       float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
       void main() { float e = (vUv.y - uHor) / (1. - uHor); vec3 dir = normalize(vP), c = uBas;
-        if (e > 0.) { float u = pow(clamp(e / .8, 0., 1.), .7); c = mix(uBas, uHaut, floor(u * 12. + .5) / 12.); }   // le dégradé, en bandes
+        if (e > 0.) { float u = pow(clamp(e / .8, 0., 1.), .7); c = mix(uBas, uHaut, ${REEL.lumiere ? "u" : "floor(u * 12. + .5) / 12."}); }   // le dégradé, en bandes (rendu plus réaliste : fondu)
         c = mix(c, uGris, uCouvert * .82);
         if (e > .02) {
           if (uEtoiles > 0.) { float vis = uEtoiles * (1. - uCouvert) * smoothstep(.02, .12, e);   // des étoiles fixes, comme de vraies étoiles : chacune son éclat, aucune ne clignote
@@ -122,7 +143,8 @@ const CIEL = (() => { const W = 2048, H = 512, HOR = Math.round(H * .952), T2 = 
             else if (h21((g + vec2(1., 0.)) * .71 + uGraine + 11.) > .99935 || h21((g - vec2(1., 0.)) * .71 + uGraine + 11.) > .99935 || h21((g + vec2(0., 1.)) * .71 + uGraine + 11.) > .99935 || h21((g - vec2(0., 1.)) * .71 + uGraine + 11.) > .99935) gros = .4;
             c = mix(c, vec3(1., .99, .94), vis * gros); }
           float ds = dot(dir, uSol), k = 1. - uCouvert * .9;
-          if (ds > .9989) c = mix(c, uSolC, k); else if (ds > .9955) c = mix(c, uSolC, .32 * k); else if (ds > .986) c = mix(c, uSolC, .13 * k);
+          if (ds > .9989) c = mix(c, uSolC, k); else if (ds > .9955) c = mix(c, uSolC, .32 * k); else if (ds > .986) c = mix(c, uSolC, .13 * k);${REEL.lumiere ? `
+          c += uSolC * (pow(max(ds, 0.), 60.) * .2 + pow(max(ds, 0.), 5.) * .07) * k;   // (rendu plus réaliste) le halo du soleil, large et doux` : ""}
           float dl = dot(dir, uLune); if (dl > .9992 && dot(dir, normalize(uLune + vec3(.03, .012, .02))) < .9994) c = mix(c, vec3(.96, .97, .88), k); }
         vec4 n1 = texture2D(tN, vec2(vUv.x + uT * uDefile, vUv.y)), n2 = texture2D(tN, vec2(vUv.x * 2. + uT * uDefile * 1.6 + .37, vUv.y * 1.35 - .28));
         c = mix(c, n2.rgb * uNuage * .9, n2.a * smoothstep(.25, .8, uCouvert));
@@ -195,7 +217,10 @@ const POST = {scene: new THREE.Scene(), cam: new THREE.OrthographicCamera(-1, 1,
         // marche entre deux morceaux du sol (le ruban des rives et la grille) n'est pas le bord d'une forme
         float m = max(max(a - z - 6. * max(z - b, 0.), b - z - 6. * max(z - a, 0.)), max(u - z - 6. * max(z - d, 0.), d - z - 6. * max(z - u, 0.)));
         float bord = step(z * .1 + .3, m) * (1. - smoothstep(55., 120., z));
-        gl_FragColor = vec4(mix(c, c * .5, bord * .85), 1.); }`})};
+        ${REEL.lumiere ? `c = clamp(mix(c, c * .55, bord * .6), 0., 1.);   // (rendu plus réaliste) un contour plus léger, des couleurs un peu plus riches et contrastées, le bord de l'image un peu plus sombre
+        c = mix(vec3(dot(c, vec3(.299, .587, .114))), c, 1.1); c = clamp(c, 0., 1.); c = mix(c, c * c * (3. - 2. * c), .25);
+        c *= 1. - .2 * smoothstep(.42, .78, length((vUv - .5) * vec2(1.25, 1.)));
+        gl_FragColor = vec4(c, 1.); }` : "gl_FragColor = vec4(mix(c, c * .5, bord * .85), 1.); }"}`})};
 POST.scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), POST.mat));
 function tailleEcran() {
   const [W, H, asp] = tailleImage(); HAUT = H; PANACHE_U.uHpx.value = H;

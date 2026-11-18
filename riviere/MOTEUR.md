@@ -567,6 +567,33 @@ vue ; ils reviennent quand tout va bien. Coût mesuré le 15/11 sur ce PC (image
 7,5 ms avec (mesures bruitées dans le panneau de Claude : le vrai verdict est `?banc=1` sur la tablette, avec puis sans).
 Essais : `?effets=0`, `?effets=ombres`, `?meteo=vent`, `?heure=soir` (ombres longues), `OMBRES.images` (cartes refaites), `MONDE.masse`.
 
+## Le rendu plus réaliste (18/11, Kiki : « mi-pixel, mi un peu plus réaliste », à essayer)
+
+Trois interrupteurs, **éteints par défaut**, chacun à part : `REEL.lumiere`, `REEL.reflets`, `REEL.matieres` (`depart.js`). Le décor reste celui
+de Kanto (mêmes objets, mêmes Pokémon) ; seule la façon de le peindre change. Menu : ⚙ Réglages → « Un rendu plus réaliste », pour chacun
+« Comme avant » / « Plus réaliste » (gardé sur l'appareil : `riviere_reel` = `"lumiere,reflets,matieres"` ; changer recharge la page, les
+shaders se font au départ). Adresse, qui passe devant : `?reel=1` (tous), `?reel=0`, `?reel=lumiere,reflets`. Ils valent pour tous les
+circuits, `kanto-1km` compris (c'est Kiki qui choisit). **Éteints, ils n'ajoutent rien aux shaders** : le monde est celui d'avant (contrôlé le
+18/11 sur kanto-1km, vichy-lac, terre-ville, col-ventoux et vitrine : mêmes shaders, commentaires à part).
+
+- **La lumière** (`LUMIERE_GLSL` de rendu.js : `lumiere(normale, ombre)`). Plus de paliers : une lumière douce, un ciel bleuté qui éclaire
+  d'en haut (les faces à l'ombre bleuissent) et un soleil chaud. Une face à plat au soleil reçoit la même lumière qu'avant (~1) : la route,
+  qui n'a pas d'éclairage, ne jure pas avec l'herbe. Les ombres portées ont un bord flou (`ombreEn` de effets.js : les quatre lectures trois
+  points de carte plus loin, ~23 cm). Le ciel : dégradé sans bandes, un halo large autour du soleil. La petite image finale (`POST`) : contour
+  plus léger, couleurs un peu plus riches et contrastées, bords de l'image un peu plus sombres. Les pixels restent : c'est le « mi-pixel ».
+- **L'eau** (`EAU_REEL`, `EAU_SOLEIL` de surfaces.js). Elle reflète le ciel (les couleurs du ciel de l'heure : `CIEL.U`), de plus en plus quand
+  on la regarde de loin (Fresnel) ; des vaguelettes la rident (une normale qui ondule : sinus et bruit doux, jamais par carrés, qui faisaient
+  des traînées en éventail vus de près) ; le soleil y scintille (pas la nuit, pas par temps couvert) ; le long d'une vraie berge (écume de
+  rive) elle fonce, comme le reflet des rives ; sous une voûte, ni ciel ni soleil (`aAbri`, posé aussi quand seul cet interrupteur est allumé :
+  `ABRI_PISTE`). L'écume, le sillage, les ronds et les reflets d'avant se posent par-dessus.
+- **Les matières** (`MATIERES_GLSL` de rendu.js, `BRUIT_GLSL` : un bruit doux). Sur les sols naturels (matière 0) : des taches du plus frais
+  au plus sec (jusqu'au loin : plus d'herbe uniforme), des touffes et un grain par carrés de 17 cm de près ; les parois : la roche par bancs ;
+  les pavés : usés par endroits ; les routes et chemins (`ROUTE_FS`) : des taches et du grain. Aucune image : tout est calculé.
+
+Coût mesuré le 18/11 sur ce PC (Adreno, image de 1 280 × 800, médiane de trois endroits) : vichy-lac 8,3 → 10,3 ms, kanto-1km 7,4 → 7,8 ms,
+col-ventoux 8,1 → 9,0 ms avec les trois (chacun seul : à peine mesurable, mesures bruitées). Si la machine peine, `regler` (jeu.js) coupe
+d'abord les ombres et la forêt, comme avant ; ces trois-là ne se coupent pas tout seuls.
+
 ## Le jeu
 
 Adversaires (`jeu/rivaux.js`, menu) : trois Pokémon de la région (`rivaux`) à allure fixe, réglée sur ton record ; classement sous le tour.

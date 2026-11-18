@@ -23,7 +23,7 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 - Le circuit `kanto-1km`, identique à l'œil. Tout nouvel effet de rendu est une option par région ou par niveau, éteinte sur lui.
 - Les vrais chiffres (distance, temps, allure, cadence, watts) ne trichent jamais ; seul le décor défile plus ou moins vite.
   Une machine sans écran (le skieur de fond) : toujours une estimation vers le bas.
-- Aucune image dans le décor : tout par le code, dans le style actuel (volumes à facettes, couleurs unies, lumière en paliers, contour).
+- Aucune image dans le décor : tout par le code, dans le style actuel (volumes à facettes, couleurs unies, lumière en paliers, contour). (18/11 : Kiki peut allumer « Un rendu plus réaliste » dans ⚙ : lumière douce, eau qui reflète, matières à grain ; toujours sans image, et éteint par défaut.)
   Seuls les Pokémon et les habitants sont des sprites.
 - Jamais de musique ; le son reste très doux.
 - Les règles de Poké Fit (points, balls, missions) : on n'y touche pas, et une séance ne compte jamais deux fois (montre + machine).
@@ -47,6 +47,7 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 | 8 | Route GPS et home trainer | un vrai col, habillé en Kanto, qui durcit dans les côtes | monde construit par tronçons, seulement au-delà de ~5 km | 5.9, 10.6, 2.5 | élevé | 3 à 4 | **lots 1, 2 et 3 faits le 16/11** (une vraie route, le home trainer sans appareil, le monde par tronçons : « Le Ventoux en entier », 21,6 km) ; **lot 4 fait le 17/11** (le décor d'après OpenStreetMap : Bédoin, les vignes, la forêt, le pierrier du sommet, sur « Le Ventoux en entier ») |
 | 9 | Forêts, vent, ombres, eau qui coule | un effet à la fois | aucune (les instances existent déjà dans three.js r128) | 4 | moyen | 3 à 5 | **faite le 15/11** (à essayer : la vitrine sur la tablette, Réglages → Ambiance → Les effets : Avec puis Sans ; le banc `?banc=1` dans les deux cas) |
 | 10 | Résumé de séance | 20 à 30 s rejouées à la fin | la trace gardée à l'étape 2 | 8.3 | moyen | 2 | **faite le 15/11** (à essayer : un essai « Auto » de 3-4 min, puis « ■ Fin ») |
+| 11 | Thèmes : un rendu plus réaliste | le choix entre le thème Pokémon actuel et un thème plus immersif ; d'abord le style « entre les deux » : lumière, eau, matières plus réalistes sur le décor de Kanto | éteint = monde d'avant (shaders identiques) | — | moyen | par lot | **lot 1 fait le 18/11** (trois interrupteurs dans ⚙ : la lumière, l'eau, les matières ; à essayer sur la tablette, Vichy et kanto-1km) ; plus tard : vrais arbres et maisons, puis l'avatar du thème réaliste (pas un sprite Pokémon : à décider avec Kiki) |
 
 Pourquoi cet ordre s'écarte un peu de celui de Kiki : le circuit du jour vient après le générateur noté (sans note, un circuit
 quelconque chaque jour) ; Ronflex vient avant les embranchements (même brique « effort », bien moins risqué pour la mettre au point).

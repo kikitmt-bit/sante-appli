@@ -27,10 +27,11 @@ const PORTEE_FS = EFFETS.ombres ? `uniform sampler2D tOmbre; uniform mat4 uOmbre
     if (uOmbreP.x <= 0. || z > uOmbreP.w) return 0.;
     vec4 q = uOmbreM * vec4(w + n * .16 + uOmbreL * .1, 1.);   // on regarde un peu au-dessus de la surface : elle ne se fait pas d'ombre à elle-même
     if (q.x < .002 || q.x > .998 || q.y < .002 || q.y > .998 || q.z > 1.) return 0.;
-    vec2 t = q.xy / uOmbreP.y - .5, f = fract(t), b = (floor(t) + .5) * uOmbreP.y; float d = q.z - .0004, e = uOmbreP.y;
+    ${REEL.lumiere ? "float e = uOmbreP.y * 3.; vec2 t = q.xy / e - .5, f = fract(t), b = (floor(t) + .5) * e; float d = q.z - .0004;   // (rendu plus réaliste) un bord flou : les quatre lectures, trois points de carte plus loin (~23 cm)"
+      : "vec2 t = q.xy / uOmbreP.y - .5, f = fract(t), b = (floor(t) + .5) * uOmbreP.y; float d = q.z - .0004, e = uOmbreP.y;"}
     float s = mix(mix(step(texture2D(tOmbre, b).x, d), step(texture2D(tOmbre, b + vec2(e, 0.)).x, d), f.x),
                   mix(step(texture2D(tOmbre, b + vec2(0., e)).x, d), step(texture2D(tOmbre, b + vec2(e, e)).x, d), f.x), f.y);
-    return step(.5, s) * uOmbreP.x * (1. - smoothstep(uOmbreP.z, uOmbreP.w, z)); }` : "";
+    return ${REEL.lumiere ? "s" : "step(.5, s)"} * uOmbreP.x * (1. - smoothstep(uOmbreP.z, uOmbreP.w, z)); }` : "";
 
 const OMBRES_PORTENT = ["terrain", "rives", "decor", "foret", "ponts", "cratere"];
 function ombrePour(m) { if (!EFFETS.ombres) return; if (OMBRES_PORTENT.includes(m.name)) m.layers.enable(1); OMBRES.cle = ""; }   // une maille arrivée après coup (un tronçon : troncons.js) : elle porte son ombre, la carte est à refaire

@@ -3,29 +3,31 @@
 // et sa pente. Chaque surface a son matériau (contenu/surfaces) ; une pièce du niveau choisit la sienne ("surface": "terre").
 // Ajouter une surface = ajouter une entrée à SURFACES : {materiau, liquide, monture, poussiere, bruit}.
 const SURFACES = {};
+const ABRI_PISTE = EFFETS.ombres || REEL.reflets;   // la piste sait si elle est sous une voûte (aAbri) : pas d'ombre portée, pas de ciel reflété
 const PISTE_VS = `
   #ifndef MER
-  attribute vec2 aSU; attribute float aBord; attribute vec2 aEc; attribute float aPente, aVoie; ${EFFETS.eau ? "attribute vec3 aFlot;" : ""} ${EFFETS.ombres ? "attribute float aAbri;" : ""}
+  attribute vec2 aSU; attribute float aBord; attribute vec2 aEc; attribute float aPente, aVoie; ${EFFETS.eau ? "attribute vec3 aFlot;" : ""} ${ABRI_PISTE ? "attribute float aAbri;" : ""}
   #endif
   #ifdef PARSOMMET
   attribute vec3 aC1, aC2, aCl, aRe, aEcu; attribute float aLuit; varying vec3 vC1, vC2, vCl, vRe, vEcu; varying float vLuit;
   #endif
-  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc; ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${EFFETS.ombres ? "varying float vAbri;" : ""}
+  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc; ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${ABRI_PISTE ? "varying float vAbri;" : ""}
   void main() { vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vec4 mv = viewMatrix * w; vZ = -mv.z;
   #ifdef PARSOMMET
     vC1 = aC1; vC2 = aC2; vCl = aCl; vRe = aRe; vEcu = aEcu; vLuit = aLuit;
   #endif
   #ifdef MER
-    vSU = vec2(-9999., 0.); vBord = 99.; vEc = vec2(0.); vPente = 0.; vVoie = 0.; ${EFFETS.eau ? "vFlot = vec3(0., 0., 1.);" : ""} ${EFFETS.ombres ? "vAbri = 0.;" : ""}
+    vSU = vec2(-9999., 0.); vBord = 99.; vEc = vec2(0.); vPente = 0.; vVoie = 0.; ${EFFETS.eau ? "vFlot = vec3(0., 0., 1.);" : ""} ${ABRI_PISTE ? "vAbri = 0.;" : ""}
   #else
-    vSU = aSU; vBord = aBord; vEc = aEc; vPente = aPente; vVoie = aVoie; ${EFFETS.eau ? "vFlot = aFlot;" : ""} ${EFFETS.ombres ? "vAbri = aAbri;" : ""}
+    vSU = aSU; vBord = aBord; vEc = aEc; vPente = aPente; vVoie = aVoie; ${EFFETS.eau ? "vFlot = aFlot;" : ""} ${ABRI_PISTE ? "vAbri = aAbri;" : ""}
   #endif
     gl_Position = projectionMatrix * mv; }`;
 
 /* ---- l'eau : deux bleus en taches, des reflets, l'écume des rives, le sillage, les ronds de chaque coup, l'écume des rapides et des chutes ---- */
 const EAU_U = Object.assign({uC1: {value: new THREE.Vector3(...hex(BIOME.eau.c1))}, uC2: {value: new THREE.Vector3(...hex(BIOME.eau.c2))}, uClair: {value: new THREE.Vector3(...hex(BIOME.eau.clair))},
   uReflet: {value: new THREE.Vector3(...hex(BIOME.eau.reflet))}, uEcume: {value: new THREE.Vector3(...hex(BIOME.eau.ecume))}, uNag: {value: new THREE.Vector4(-999, 0, 0, 0)}, uCorps: {value: new THREE.Vector4(.45, 0, 0, 0)},
-  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}, uVoie: {value: 0}}, COMMUNS, EFFETS.ombres ? PORTEE_U : null);   // uVoie : la voie où l'on est, dans une fourche (PISTE.VO)
+  uCoups: {value: [0, 1, 2, 3].map(() => new THREE.Vector3(-999, 0, -99))}, uLong: {value: BOUCLE ? LONG : 0}, uLuit: {value: 0}, uVoie: {value: 0}}, COMMUNS, EFFETS.ombres ? PORTEE_U : null,
+  REEL.reflets ? {uCielH: CIEL.U.uHaut, uCielB: CIEL.U.uBas, uCielG: CIEL.U.uGris, uCouvert: CIEL.U.uCouvert, uSolC: CIEL.U.uSolC, uSoleil: {value: SOLEIL}} : null);   // uVoie : la voie où l'on est, dans une fourche (PISTE.VO)
 /* (étape 9 du plan : l'eau coule. Chaque mètre de la piste connaît son courant : aFlot = sa vitesse le long de la piste, ses remous, son calme (courantEau).
    Les reflets naissent, dérivent avec le courant le temps de leur courte vie, et s'éteignent : deux couches décalées d'une demi-vie, pour qu'il y en ait toujours
    autant ; là où ça file (un passage étroit), des filets clairs ; en aval d'une chute ou de rapides, des flocons d'écume qui s'en vont. Une eau libre (un lac,
@@ -43,13 +45,28 @@ const EAU_COURANT = `if (vFlot.z > .999 || h21(floor(p / 2.5)) < vFlot.z) { ${EA
         if (av > 1.) { vec2 r = vec2(sj / 2.6, vSU.y / .3), k = floor(r); if (h21(k + vie * .31 + fj * 17.) < (av - 1.) * .07 * poids && fract(r.x) < .75 && fract(r.y) > .3) c = mix(c, CL, .6 * ${EAU_PR}); }
         if (vFlot.y > .02) { vec2 r = vec2(sj / .3, vSU.y / .36), k = floor(r), fr = fract(r); float hf = h21(k + vie * .53 + fj * 7.);   // des flocons d'écume, petits, de tailles inégales
           if (hf < vFlot.y * .16 * poids && fr.x > .15 && fr.y > .15 && fr.x < .6 + 6. * hf && fr.y < .55 + 6. * hf) c = mix(c, EC, .8 * prox); } } }`;
-const EAU_FS = `${PORTEE_FS} ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${EFFETS.ombres ? "varying float vAbri;" : ""}
+/* (rendu plus réaliste, REEL.reflets, 18/11) : l'eau reflète le ciel, de plus en plus quand on la regarde de loin (Fresnel), des vaguelettes la
+   rident (une normale qui ondule ; des carrés de 25 cm faisaient des traînées en éventail vus de près), le soleil y scintille, et le long des rives elle fonce (le reflet des berges).
+   Sous une voûte (vAbri) ni ciel ni soleil. Le reste (reflets, écume, sillage, ronds) se pose par-dessus, comme avant. */
+const EAU_REEL = `
+    vec3 V = normalize(cameraPosition - vW);
+    vec2 dn = vec2(sin(p.x * 1.7 + uT * 1.3) + sin(p.y * 2.3 - uT * 1.1 + p.x * .6), sin(p.y * 1.9 + uT * 1.5) + sin(p.x * 2.9 + p.y * .8 - uT * .9)) * .03
+            + (vec2(vn(p * .7 + uT * .4), vn(p * .7 - uT * .35 + 7.)) - .5) * .1 + (vec2(vn(p * 2.3 - uT * .8 + 3.), vn(p * 2.3 + uT * .7 + 11.)) - .5) * .05;
+    vec3 Nw = normalize(vec3(dn.x, 1., dn.y)), Rw = reflect(-V, Nw); float dehors = 1. - vAbri;
+    float fres = (.06 + .94 * pow(1. - max(dot(V, Nw), 0.), 5.)) * dehors;
+    vec3 cielR = mix(mix(uCielB, uCielH, smoothstep(0., .45, Rw.y)), uCielG, uCouvert * .8);
+    c = mix(c, cielR, clamp(fres, 0., .62));
+    if ((vSU.y < 0. ? vEc.x : vEc.y) > .5) c *= mix(.74, 1., smoothstep(.5, 8., vBord));   // seulement le long d'une vraie berge (pas au bord de la piste sur un lac)`;
+const EAU_SOLEIL = `{ float sp = pow(max(dot(Rw, uSoleil), 0.), 220.) * dehors * (1. - uCouvert) * (1. - uNuit) * prox;   // le soleil qui scintille : des points vifs
+      if (sp > .3) c = mix(c, uSolC * 1.15, .85); else c += uSolC * sp * .5; }
+    `;
+const EAU_FS = `${PORTEE_FS} ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${ABRI_PISTE ? "varying float vAbri;" : ""}${REEL.reflets ? " uniform vec3 uCielH, uCielB, uCielG, uSoleil, uSolC; uniform float uCouvert, uNuit;" : ""}
   uniform float uT, uB0, uB1, uSombre, uPluie, uLuit, uVoie; uniform vec3 uC1, uC2, uClair, uReflet, uEcume, uBrume, uTeinte; uniform vec4 uNag, uCorps; uniform vec3 uCoups[4]; uniform float uLong;
   varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
   #ifdef PARSOMMET
   varying vec3 vC1, vC2, vCl, vRe, vEcu; varying float vLuit;
   #endif
-  float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }${BRUIT_GLSL}
   float lelong(float a, float b) { float d = a - b; return uLong > 0. ? mod(d + uLong * .5, uLong) - uLong * .5 : d; }   // de b à a le long de la piste (une boucle se referme)
   void main() {
   #ifdef PARSOMMET
@@ -60,10 +77,10 @@ const EAU_FS = `${PORTEE_FS} ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${EFFETS
     vec2 p = vW.xz; float prox = 1. - smoothstep(45., 150., vZ);
     vec2 q = floor(p * 4.) / 4.;
     float n = sin(q.x * .42 + uT * .35) + sin(q.y * .57 - uT * .5 + sin(q.x * .23) * 1.8) + sin((q.x + q.y) * .31 + uT * .2);
-    vec3 c = mix(C1, C2, step(.35, n) * prox);
+    vec3 c = mix(C1, C2, step(.35, n) * prox);${REEL.reflets ? EAU_REEL : ""}
     ${EFFETS.ombres ? "float omb = ombreEn(vW, vec3(0., 1., 0.), vZ) * (1. - vAbri), proxR = prox * (1. - .65 * omb);" : ""}
     ${EFFETS.eau ? EAU_COURANT : EAU_REFLETS}
-    float raide = abs(vPente), rap = smoothstep(.02, .11, raide);
+    ${REEL.reflets ? EAU_SOLEIL : ""}float raide = abs(vPente), rap = smoothstep(.02, .11, raide);
     if (rap > 0.) { float sens = vPente < 0. ? 1. : -1.;   // l'eau qui dévale : des traits d'écume qui filent vers le bas de la pente
       vec2 r = vec2(vSU.x * .7 - sens * uT * 4.5, vSU.y * 1.7), k = floor(r);
       if (h21(k) < rap * .5 && fract(r.x) < .72 && fract(r.y) > .18) c = mix(c, EC, .85);
@@ -110,15 +127,16 @@ for (const [nom, e] of Object.entries(BIOME.eaux || {})) {
 
 /* ---- la terre ferme : un chemin de terre ou une route (ligne au milieu, bordures rouges et blanches) ---- */
 const OMBRE_U = {uOmbre: {value: new THREE.Vector3(0, 0, 0)}};   // l'ombre de ta monture sur la terre : (force, hauteur au-dessus du sol, vélo ?) ; uNag donne où elle est
-const ROUTE_FS = `${PORTEE_FS} ${EFFETS.ombres ? "varying float vAbri;" : ""}
+const ROUTE_FS = `${PORTEE_FS} ${ABRI_PISTE ? "varying float vAbri;" : ""}
   uniform float uT, uB0, uB1, uSombre, uMode, uPluie, uVoie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte, uOmbre; uniform vec4 uNag;
   varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
-  float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }${BRUIT_GLSL}
   void main() { vec2 p = vW.xz; float prox = 1. - smoothstep(45., 150., vZ);
     vec2 q = floor(p * 3.) / 3.;
     float n = sin(q.x * .9 + sin(q.y * .7) * 2.) * sin(q.y * 1.1 + q.x * .3);
     vec3 c = mix(uC1, uC2, step(.25, n) * prox);
-    if (h21(floor(p * 3.)) > .94) c = mix(c, uC2 * .8, prox);                                       // des graviers
+    if (h21(floor(p * 3.)) > .94) c = mix(c, uC2 * .8, prox);                                       // des graviers${REEL.matieres ? `
+    c *= (.9 + .2 * vn(p / 9. + 2.3)) * (1. + (.14 * h21(floor(p * 8.)) - .07) * prox);              // (rendu plus réaliste) des taches et du grain` : ""}
     float o = sin(vSU.x * .9) * .12;
     bool marque = vBord < 50.;                                                                       // (dans un carrefour : aucune marque)
     if (uMode > 1.5) {                                                                               // des pavés, une bordure de pierre
@@ -215,7 +233,7 @@ function fabriquePiste() {   // de quoi construire le ruban de la piste (le circ
       const o = idx(i) * 16;
       const a = at(i), w = a.w, rx = Math.cos(a.h), rz = Math.sin(a.h), ii = idx(i), pont = P.PONT[ii], colle = P.INT[ii] && LIBRE[P.INT[ii] - 1][ii] < .6;   // colle : dans une fourche, l'autre voie touche encore celle-ci (ni écume ni marque de ce côté)
       const eg = (pont || hRive(ii, 0, .02) > .02) && !(colle && P.INT[ii] === 1) ? 1 : 0, ed = (pont || hRive(ii, 1, .02) > .02) && !(colle && P.INT[ii] === 2) ? 1 : 0;
-      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] || (colle && !liquide) ? 99 : w - Math.abs(u)); if (liquide) ec.push(eg, ed); else ec.push(VIB[ii], 0); pente.push(P.COULE[ii]); voie.push(vo); if (FLOT && liquide) flot.push(FLOT[ii * 3], FLOT[ii * 3 + 1], FLOT[ii * 3 + 2]); if (EFFETS.ombres) abri.push(P.TUN[ii] ? 1 : 0);
+      for (const u of [-(w + .6), -w, -w / 2, 0, w / 2, w, w + .6]) { pos.push(a.x + rx * u, a.y, a.z + rz * u); su.push(i, u); bord.push(P.CROIX[ii] || (colle && !liquide) ? 99 : w - Math.abs(u)); if (liquide) ec.push(eg, ed); else ec.push(VIB[ii], 0); pente.push(P.COULE[ii]); voie.push(vo); if (FLOT && liquide) flot.push(FLOT[ii * 3], FLOT[ii * 3 + 1], FLOT[ii * 3 + 2]); if (ABRI_PISTE) abri.push(P.TUN[ii] ? 1 : 0);
         if (liquide) { for (let c = 0; c < 5; c++) C[c].push(EAUX_C[o + c * 3], EAUX_C[o + c * 3 + 1], EAUX_C[o + c * 3 + 2]); C[5].push(EAUX_C[o + 15]); } }
     }
     for (let i = 0; i < a1 - a0; i++) for (let j = 0; j < 6; j++) { const a = i * 7 + j, b = a + 7; ind.push(a, a + 1, b, a + 1, b + 1, b); }

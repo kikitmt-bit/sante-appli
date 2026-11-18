@@ -322,8 +322,12 @@ function ouvrirFeuille(quoi) {
       ${velo ? `<div class="m-sous">Dureté des pentes <em>100 % = la vraie pente ; les descentes comptent à moitié</em></div><div class="m-opts">${choixBoutons([["0", "0 %"], ["0.25", "25 %"], ["0.5", "50 %"], ["0.75", "75 %"], ["1", "100 %"]], String(BT.difficulte), "dur")}</div>` : ""}
       <div class="m-sous">Le son <em>de petits bruitages, jamais de musique</em></div><div class="m-opts">${choixBoutons([["1", "Bruitages"], ["0", "Coupé"]], SON.actif ? "1" : "0", "son")}</div>
       <div class="m-sous">Les effets du décor <em>l'eau qui coule, le vent dans les arbres, les forêts au loin, les ombres</em></div>
-      <div class="m-opts">${choixBoutons([["1", "Avec"], ["0", "Sans", "seulement pour un très vieil ordinateur"]], lireReglage("riviere_effets", "1") === "0" ? "0" : "1", "x")}</div>`;
+      <div class="m-opts">${choixBoutons([["1", "Avec"], ["0", "Sans", "seulement pour un très vieil ordinateur"]], lireReglage("riviere_effets", "1") === "0" ? "0" : "1", "x")}</div>
+      <div class="m-sous">Un rendu plus réaliste <em>à essayer, chacun à part : le décor reste celui de Kanto</em></div>
+      ${REEL_CHOIX.map(([k, nom, quoi]) => `<div class="m-sous m-reel">${nom} <em>${quoi}</em></div><div class="m-opts">${choixBoutons([["0", "Comme avant"], ["1", "Plus réaliste"]], REEL[k] ? "1" : "0", "reel-" + k)}</div>`).join("")}`;
     f.querySelectorAll("[data-x]").forEach(b => b.onclick = () => { if (b.dataset.x === (lireReglage("riviere_effets", "1") === "0" ? "0" : "1")) return; ecrireReglage("riviere_effets", b.dataset.x); b.textContent = "Je refais le monde…"; relancer(); });
+    for (const [k] of REEL_CHOIX) f.querySelectorAll(`[data-reel-${k}]`).forEach(b => b.onclick = () => { const oui = b.getAttribute("data-reel-" + k) === "1"; if (oui === REEL[k]) return;
+      const l = REEL_NOMS.filter(n => n === k ? oui : REEL[n]); ecrireReglage("riviere_reel", l.join(",")); b.textContent = "Je refais le monde…"; relancer(); });
     f.querySelectorAll("[data-son]").forEach(b => b.onclick = () => { if ((b.dataset.son === "1") !== SON.actif) sonBasculer(); f.querySelectorAll("[data-son]").forEach(x => x.classList.toggle("on", x === b)); majSon(); });
     f.querySelectorAll("[data-dur]").forEach(b => b.onclick = () => { BT.difficulte = +b.dataset.dur; BT.pente = null; ecrireReglage("riviere_difficulte", BT.difficulte); f.querySelectorAll("[data-dur]").forEach(x => x.classList.toggle("on", x === b)); });
     const faux = $("mFaux"); if (faux) faux.onclick = async () => { await relierCapteur(true); const el = $("mBTetat"); if (el) el.textContent = BT.etat; majMenuMontre(); };
@@ -332,6 +336,8 @@ function ouvrirFeuille(quoi) {
   v.hidden = false;
   $("mFermer").onclick = fermerFeuille; v.onclick = e => { if (e.target === v) fermerFeuille(); };
 }
+/* le rendu plus réaliste (REEL de depart.js, 18/11) : trois interrupteurs, chacun à part ; changer recharge la page (les shaders se font au départ) */
+const REEL_CHOIX = [["lumiere", "La lumière", "douce, un ciel sans bandes, des ombres au bord flou"], ["reflets", "L'eau", "elle reflète le ciel, le soleil y scintille"], ["matieres", "Les matières", "l'herbe, la terre et la roche ont du grain"]];
 function fermerFeuille() { const v = $("mVoile"); if (v) v.hidden = true; MENU.feuille = null; }
 function majTuiles() { const t = document.querySelector("#menu .m-tuiles"); if (!t) return; const n = document.createElement("div"); n.innerHTML = vignettes(); t.replaceWith(n.firstElementChild);
   document.querySelectorAll("#menu .m-tuile").forEach(b => b.onclick = () => ouvrirFeuille(b.dataset.f)); majVignettes(); }
