@@ -77,7 +77,7 @@ function regler(ips) {   // une fois par seconde
   } else if (q.haut >= 20 && q.crans.length && !q.bloque) { const nom = q.crans.pop(); cran(nom, -1); q.essai = {nom, sens: -1, attente: 3}; q.haut = 0; }
 }
 
-let T = 0, dernier = performance.now(); const FPS = {n: 0, t: 0, v: 0};
+let T = 0, dernier = performance.now(); const FPS = {n: 0, t: 0, v: 0, pire: 0};
 function boucle(now) {
   requestAnimationFrame(boucle);
   if (MENU.ouvert && !FILM.actif && !(BANC && !BANC.fini)) { dernier = now; return; }   // (17/11) le menu cache tout : rien à dessiner derrière
@@ -110,11 +110,15 @@ function boucle(now) {
   sonMaj(S.s, !!tunnel);
   effetsMaj(T, AMB.m, AMB.nuit); dessiner(); if (!FILM.actif) hud();
   if (BANC && !BANC.fini) bancImage(ecoule);
-  FPS.n++; FPS.t += vraiDt;
+  FPS.n++; FPS.t += vraiDt; if (ecoule < .5) FPS.pire = Math.max(FPS.pire, ecoule * 1000);   // (la page cachée puis revenue ne compte pas comme un à-coup)
   if (FPS.t >= 1) {
-    FPS.v = Math.round(FPS.n / FPS.t); FPS.n = 0; FPS.t = 0; regler(FPS.v);
+    FPS.v = Math.round(FPS.n / FPS.t); const pire = Math.round(FPS.pire); FPS.n = 0; FPS.t = 0; FPS.pire = 0; regler(FPS.v);
     const [w, h] = tailleImage(); if (w !== canvas.width || h !== canvas.height) tailleEcran();
-    if (PARAMS.has("perf")) $("vFps").textContent = canvas.width + " × " + HAUT + " · " + FPS.v + " i/s · " + renderer.info.render.triangles + " triangles · " + renderer.info.render.calls + " objets";
+    /* (18/11, Kiki) les images par seconde toujours à l'écran en jeu, pour voir si les 60 tiennent : vert = 58 et plus sans à-coup,
+       orange = un peu en dessous ou une image qui a traîné (plus de 25 ms), rouge = sous 45 ; « pire » = l'image la plus lente de la seconde */
+    const v = $("vFps"), cible = IMAGES_MAX;
+    v.className = "hud " + (FPS.v >= cible - 2 && pire <= 25 ? "ok" : FPS.v >= cible * .75 ? "moyen" : "mal");
+    v.innerHTML = FPS.v + " <small>i/s · pire " + pire + " ms</small>" + (PARAMS.has("perf") ? "<small><br>" + canvas.width + " × " + HAUT + " · " + renderer.info.render.triangles + " triangles · " + renderer.info.render.calls + " objets</small>" : "");
   }
 }
 

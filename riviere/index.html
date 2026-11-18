@@ -41,7 +41,9 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #panneau details.pli summary::before { content: "▶ "; font-size: .7em; }
 #panneau details.pli[open] summary::before { content: "▼ "; }
 #panneau details.pli summary::-webkit-details-marker { display: none; }
-#vFps { left: 50%; bottom: 1vh; transform: translateX(-50%); font-size: 18px; }
+#vFps { right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(22vh, 17vw) + min(3.2vh, 2.6vw) * 2.2 + min(2.6vh, 2.1vw) * 2.4); font-size: min(3.6vh, 2.9vw); text-align: right; white-space: nowrap; -webkit-text-stroke-width: .12em; }
+#vFps small { display: inline; font-size: .62em; }
+#vFps.ok { color: #8CE0A0; } #vFps.moyen { color: #F8C838; } #vFps.mal { color: #FF8A8A; }
 #credit { position: fixed; right: 84px; bottom: calc(1vh + env(safe-area-inset-bottom, 0px)); font-size: 13px; color: #fff; opacity: .75; text-shadow: 1px 1px 0 #1B2440; pointer-events: none; }
 #bAuto { position: fixed; left: 50%; bottom: calc(3vh + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); font: inherit; font-size: min(4.4vh, 3.6vw); padding: .15em .9em; color: #383828; background: #F8F8E8; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; cursor: pointer; }
 #bAuto.on { background: #F8C838; }

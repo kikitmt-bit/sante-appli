@@ -701,7 +701,7 @@ Le circuit du jour a une fourche deux jours sur cinq (`jour.options`, jamais dan
 | `window.__verif()` | le contrôleur du niveau chargé |
 | `?s=120&fige=1`, `__aller(s)`, `__image()` | se placer à un endroit, redessiner tout de suite (pour une capture) |
 | `?vue=haut`, `?vue=gauche`, `?vue=droite`, `?vue=dessus&alt=60` | le plan vu du ciel, une rive de face, le ciel juste au-dessus de soi (un carrefour, un rond-point) |
-| `?perf=1` | taille de l'image, images par seconde, triangles |
+| `?perf=1` | en plus des images par seconde (toujours affichées en jeu, sous ⛶ : vert = 58 et plus sans image de plus de 25 ms, orange, rouge sous 45 ; « pire » = l'image la plus lente de la seconde) : taille de l'image, triangles, objets |
 | `?troncons=1`, `?troncons=0`, `?rayon=700`, `__troncons()`, `tronconsMaj(true)` | un parcours ouvert construit par tronçons (ou d'un bloc), un autre rayon, l'état des tronçons, tout finir tout de suite |
 | `?banc=1` | le banc de mesure : un tour tout seul, puis le verdict de la machine |
 | `?surface=terre`, `?machine=elliptique`, `?machine=velo`, `?eco=1` | le circuit sur la terre, une autre machine, 30 images par seconde |
