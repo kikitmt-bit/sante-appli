@@ -42,7 +42,7 @@ function poussiereTrot(s, d, y, large, force) {   // quelques grains qui sautent
 /* chaque image (appelé par monture.js : MONTURES.trotteur.animer) : p = où il est, k = la courbe de la piste devant lui */
 function trotter(N, t, dt, S, p, sol, bond, k) {
   if (!N) return;
-  orienterPantin(N, S.s, M.d);   // vu de la caméra (directions.js)
+  orienterPantin(N, S.s, M.d, .06);   // vu de la caméra (directions.js) ; (18/11, Kiki : « comme s'il dérapait ») de trois quarts seulement dans un lacet (rayon < 17 m)
   const f = N.trot || {}, cycles = f.cycles || 1, g = Math.sqrt(N.h), phi = S.phi === undefined ? 9 : S.phi, T_ = TROT;
   // le rythme : celui de tes gestes. À chaque geste reçu, le trot se recale en douceur sur le début d'un cycle ; sans geste, il s'éteint.
   const tours = (cadence() || MACHINE.cadence || 55) / 60, r = tours * cycles * (phi <= 1.3 ? 1 : clamp(2.3 - phi, 0, 1));
@@ -55,13 +55,14 @@ function trotter(N, t, dt, S, p, sol, bond, k) {
   N.image(N.pl.image(frac * N.pl.total * .999));
   const saut = Math.abs(Math.sin(T_.ph * Math.PI * 2)) * (f.foulee === undefined ? .05 : f.foulee) * g * marche;
   N.m.position.set(p.x, M.y + saut + bond * (bond > 0 ? 1 : N.h), p.z); N.regarder();
-  N.m.rotation.z = -clamp(k * 2.2, -.12, .12) * Math.min(1, (S.vd || 0) / 1.5) * (1 - M.sorti);   // il se penche un peu dans le virage
+  N.m.rotation.z = -clamp(k * .8, -.035, .035) * Math.min(1, (S.vd || 0) / 1.5) * (1 - M.sorti);   // il se penche à peine dans le virage (un coureur, pas une moto)
   N.m.scale.set(N.l, N.h, 1);
   // la poussière : à chaque foulée (deux par cycle), derrière lui
   const pas = Math.floor(T_.ph * 2);
   if (pas !== T_.pas) { T_.pas = pas; if (dt > 0 && marche > .6 && !S.enAir) poussiereTrot(S.s - .2 - N.h * .2, M.d, M.y, N.l * .7, clamp(g, .6, 1.3)); }
-  // l'ombre à sa taille : surfaces.js la dessine plus petite et plus pâle avec la hauteur ; on lui dit une hauteur qui donne sa largeur à lui
-  const haut = Math.max(0, M.y + Math.max(0, bond) + saut - sol), kO = clamp(N.l * 1.25, .3, 2.2);
-  OMBRE_U.uOmbre.value.set(.55 / kO, (1 / kO * (1 + haut * .35) - 1) / .35, 0);
+  // l'ombre à sa taille, sous ses pattes (18/11, Kiki : avant, une tache derrière lui, côté caméra : « il flotte à 20 cm »). surfaces.js : z = 2 + sa taille ;
+  // elle est centrée un peu devant lui : son dos en cache la moitié, on n'en voit qu'un liseré sombre collé aux pattes. Plus petite et plus pâle quand il saute.
+  const haut = Math.max(0, M.y + Math.max(0, bond) - sol), kO = clamp(N.l * .9, .25, 1.8);
+  OMBRE_U.uOmbre.value.set(.75, haut, 2 + kO);
 }
-if (typeof MONTURES !== "undefined") MONTURES.trotteur = {enfonce: 0, foulee: 0, trace: Infinity, animer: trotter};   // trace : la poussière vient de ses foulées, pas des mètres parcourus
+if (typeof MONTURES !== "undefined") MONTURES.trotteur = {enfonce: 0, foulee: 0, trace: Infinity, roulis: .3, animer: trotter};   // roulis : la caméra se penche trois fois moins dans les virages   // trace : la poussière vient de ses foulées, pas des mètres parcourus

@@ -60,7 +60,7 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   const spr = !velo && typeof cycActif === "function" && cycActif(), vit = velo || spr ? vitrine(dt, S, spr ? CYC_PL.velo.m.position : null) : 0; camera.lookAt(cam_cv);   // (17/11) le cycliste en sprite : contenu/montures/cycliste_sprite.js
   const roulis = clamp(-P.COURB[idx(S.s + 3)] * 1.5, -.11, .11) * (.35 + .65 * Math.min(1, S.vn));   // elle se penche dans le virage, d'autant plus qu'on va vite
   CAM.roulis += (roulis - CAM.roulis) * (net ? 1 : 1 - Math.exp(-dt / .35));
-  camera.rotateZ(CAM.roulis * (1 - vit));
+  camera.rotateZ(CAM.roulis * (1 - vit) * (CAM.roulisF === undefined ? 1 : CAM.roulisF));
   let fov = lerp(58 + S.vn * 9 + dz * 7, 46, vit);   // plus on va vite, plus le champ s'ouvre : le décor file sur les côtés
   if (camera.aspect < 1) fov = Math.min(92, 2 * Math.atan(Math.tan(fov * Math.PI / 360) / camera.aspect) * 180 / Math.PI);   // en portrait : on garde la largeur de vue
   if (Math.abs(fov - camera.fov) > .05) { camera.fov = fov; camera.updateProjectionMatrix(); }

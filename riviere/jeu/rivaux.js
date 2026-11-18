@@ -16,8 +16,16 @@ async function preparerRivaux() {
     const r = {num: nums[k], v: base * facteurs[k], vr: 0, s: 0, d: [-2.3, 2.5, -3.6][k % 3], couleur: COULEURS_RIVAUX[k % 3], pantin: null, ph: k * 1.7};
     RIVAUX.liste.push(r);
     const pl = await planche(String(r.num).padStart(4, "0") + "/Walk");
-    if (pl && RIVAUX.liste.includes(r)) { r.pantin = new Pantin(pl, 4, 1.25); r.pantin.m.visible = false; }
+    if (pl && RIVAUX.liste.includes(r)) { r.pantin = new Pantin(pl, 4, 1, hauteurVraie(pl, r.num)); r.pantin.m.visible = false; }
   }
+}
+/* (18/11, Kiki : « mon Caninos est plus petit que celui des adversaires ») chacun à sa VRAIE taille, comme ton Pokémon (trotteur, nageur) :
+   celle du Pokédex (TAILLES_PKM), rapportée au corps dessiné sur la première image (une marche qui bondit a une planche plus haute que lui).
+   Sans taille connue : la taille du dessin, comme avant. */
+function hauteurVraie(pl, num) {
+  const t = TAILLES_PKM[String(+num)]; if (!t) return 1.25 * (pl.boite(4).y1 - pl.boite(4).y0) * PXM;
+  const b = pl.boite(4), corps = typeof corpsTrotteur === "function" ? corpsTrotteur(pl, 4) || (b.y1 - b.y0) : b.y1 - b.y0;
+  return t * (b.y1 - b.y0) / corps;
 }
 function rivauxDepart() { RIVAUX.t0 = S.t; for (const r of RIVAUX.liste) r.vr = 0; }
 function animerRivaux(t, dt) {

@@ -32,12 +32,12 @@ const M_COUP = MACHINE.metres, TAU = MACHINE.tau, LISSE = MACHINE.lisse;
    Au trot (16/11, Kiki : un footing léger, 6-7 km/h à l'œil) : 6,5 km/h à ton allure habituelle, 8 à +25 %, 10 au plus.
    Une vraie côte freine, une descente lance. Les chiffres affichés restent les vrais (distance, km/h, cadence : ceux de tes jambes). */
 const VISUEL = MACHINE_NOM === "elliptique";
-const VU = MACHINE.monture === "trotteur" ? {base: 6.5, plus: 7, max: 10, descente: 1.25} : {base: 15, plus: 20, max: 30, descente: 1.5};
+const VU = MACHINE.monture === "trotteur" ? {base: 6.5, plus: 7, max: 10, descente: 1.1, cote: 1.6, min: .82} : {base: 15, plus: 20, max: 30, descente: 1.5, cote: 6, min: .38};   // cote, min : ce qu'une côte enlève (18/11, Kiki : au trot, presque rien ; à 10 % : −16 %)
 const CROISIERE_VRAIE = MACHINE.cadence * M_COUP / 60;   // tes vrais m/s à l'allure habituelle
 function kmhVus(v) { const r = v / CROISIERE_VRAIE; return Math.min(VU.max, r <= 1 ? VU.base * r : VU.base + VU.plus * (r - 1)); }
 function allureVue(i, v) {   // combien de mètres de décor pour un vrai mètre, ici, à cette vitesse
   const f = PISTE.ALL[i] / PISTE.ALL0[i], pente = NIVEAU.allurePente === false ? PISTE.PENTE[i] : (1 - f) / 3.5;   // la pente adoucie (piste.js en a tiré ALL ; une vraie route, à l'échelle 1:1, ne la met pas dans ALL)
-  return kmhVus(Math.max(v, .05)) / 3.6 * clamp(1 - pente * 6, .38, VU.descente) * (PISTE.ALL0[i] / ALLURE) / Math.max(v, .05);
+  return kmhVus(Math.max(v, .05)) / 3.6 * clamp(1 - pente * VU.cote, VU.min, VU.descente) * (PISTE.ALL0[i] / ALLURE) / Math.max(v, .05);
 }
 if (VISUEL) { MACHINE.allure = VU.base / 3.6 / (CROISIERE_VRAIE * ALLURE); MACHINE.tourVu = VU.base / 3.6 / (MACHINE.cadence / 60); }   // un tour de circuit à l'allure habituelle ; un tour de jambes = tant de mètres vus (pédales, foulées)
 const CLE_MACHINE = MACHINE_NOM + (VISUEL ? "-" + MACHINE.monture : "");   // records et fantômes à part : la vitesse vue change les temps des tours

@@ -113,6 +113,19 @@ const MODULES = {
     const force = voie(-c, bf, [Object.assign({long: S - 34, virage: 0}, bf), ...bosse("Les bosses"), Object.assign({long: 16, virage: 0}, bf), ...bosse()]); force[0].nom = "Le chemin des bosses";
     return [{fourche: "Le chemin des bosses", annonce: "LE CHEMIN DES BOSSES", calme, force, nom: "La fourche", long: 4 * L + S, virage: 0, large: 8, g: o.g, d: o.d, fixe: true}]; }},
   cendres_t: {nom: "Col des cendres", pour: "volcan", act: "terre", pieces: (R, o) => [{nom: "Le col des cendres", long: 130 + Math.round(R() * 40), virage: o.v, large: 7, g: o.v < 0 ? "cendres" : "ravin", d: o.v < 0 ? "ravin" : "cendres", ambiance: "volcan"}]},
+  // (18/11, Kiki : « à pied, ça pourrait être des parcours totalement différents : le trottoir, un petit chemin, la forêt, un escalier ») le footing du
+  // marcheur elliptique, au trot (o.style = "pied") : des passages qu'aucune voiture ne prend. Ils se suivent par quartiers (listeFooting), jamais au hasard.
+  rue_p: {nom: "Le trottoir d'une rue", pour: "village", act: "pied", pieces: (R, o) => [{nom: ["La rue des Lilas", "La rue du Marché", "L'avenue des Tilleuls", "La rue de la Gare", "La rue des Écoles", "La rue des Peupliers"][Math.floor(R() * 6)], long: 115 + Math.round(R() * 45), virage: clamp(o.v, -60, 60), large: 3, g: "rue", d: "facades", surface: "paves"}]},
+  ruelle_p: {nom: "Une ruelle", pour: "village", act: "pied", pieces: (R, o) => [{nom: "La ruelle", long: 70 + Math.round(R() * 30), virage: clamp(o.v, -50, 50), large: 2.4, g: "facades", d: "facades", surface: "paves"}]},
+  place_p: {nom: "Une place", pour: "village", act: "pied", pieces: (R, o) => [{nom: "La place", long: 40, virage: clamp(o.v, -12, 12), large: 7, g: "facades", d: "facades", surface: "paves", objets: [{o: "fontaine", cote: R() < .5 ? "g" : "d", a: 22, e: 3.5}]}]},
+  escalier_p: {nom: "Un escalier", pour: "escalier", act: "pied", pieces: (R, o) => { const m = R() < .7 ? 5.5 : -5.5, b = {virage: 0, large: 3, g: "escalier", d: "escalier", fixe: true};
+    return [Object.assign({long: 12, surface: "paves"}, b), Object.assign({nom: m > 0 ? "L'escalier" : "Les marches", long: 22, surface: "marches", monte: m, segment: "L'escalier"}, b), Object.assign({long: 10, surface: "paves"}, b)]; }},
+  parc_p: {nom: "Un parc", pour: "parc", act: "pied", pieces: (R, o) => [{nom: "Le parc", long: 100 + Math.round(R() * 40), virage: o.v, large: 3, g: "parc", d: "parc", surface: "terre"}]},
+  sentier_p: {nom: "Un sentier en forêt", pour: "foret", act: "pied", pieces: (R, o) => [{nom: "Le sentier", long: 90 + Math.round(R() * 40), virage: o.v, large: 2.2, g: "sous_bois", d: "sous_bois", surface: "terre", ambiance: "sous-bois"}]},
+  chemin_p: {nom: "Un chemin entre les champs", pour: "champs", act: "pied", pieces: (R, o) => [{nom: "Le chemin des champs", long: 110 + Math.round(R() * 40), virage: o.v, large: 2.6, g: "champ", d: "champ", surface: "terre"}]},
+  bordroute_p: {nom: "Le long d'une petite route", pour: "champs", act: "pied", pieces: (R, o) => [{nom: "Le long de la petite route", long: 120 + Math.round(R() * 40), virage: clamp(o.v, -40, 40), large: 2, g: "champ", d: "campagne", surface: "terre"}]},
+  passerelle_p: {nom: "Une passerelle", pour: "pont", act: "pied", pieces: (R, o) => { const b = {virage: 0, large: 2.6, g: "bas_cote", d: "bas_cote", surface: "terre", fixe: true};
+    return [Object.assign({long: 16}, b), Object.assign({nom: "La passerelle", long: 34, pont: R() < .6 ? "bois" : true, ravin: 6}, b), Object.assign({long: 16}, b)]; }},
 };
 
 /* un circuit : o = {km, virages, denivele (m), avec: {grotte, cascade, pont, lac, village, port, marais, plage, foret}, heure, meteo, graine, boucle, biome, terre}
@@ -156,10 +169,10 @@ function habiller(niveau, r, biome, terre, existe, sansParoi) {
 /* déplier le retour : le raccord d'une boucle (un virage, une ligne droite, un virage) fait souvent 300 à 500 m d'un seul paysage. Son premier
    virage et sa ligne droite deviennent de vraies pièces d'une centaine de mètres, que habiller() peut varier ; un petit raccord referme la
    boucle au bout (les 50 derniers mètres et le dernier virage). Le tracé ne change pas. Si le moteur n'en veut pas : on garde l'ancien. */
-function deplierRetour(niveau, r) {
+function deplierRetour(niveau, r) {   // (18/11 : ses pièces gardent le revêtement du retour : celui d'un footing reste sur le trottoir)
   const P = niveau.pieces, i0 = P.length - 1, modele = P[i0], bouts = r.PISTE.pieces.filter(q => q._i === i0), neufs = [];
   if (!modele.raccord || r.PISTE.N - bouts[0].s0 < 170) return r;
-  const piece = (long, virage) => { const q = {long, virage, g: modele.g, d: modele.d, libre: true}; if (modele.large !== undefined) q.large = modele.large; else q.eau = modele.eau; if (modele.monte === "auto") q.monte = "auto"; return q; };
+  const piece = (long, virage) => { const q = {long, virage, g: modele.g, d: modele.d, libre: true}; if (modele.surface) q.surface = modele.surface; if (modele.large !== undefined) q.large = modele.large; else q.eau = modele.eau; if (modele.monte === "auto") q.monte = "auto"; return q; };
   for (const b of bouts) {
     if (!b.droit) { if (b.long >= 12) neufs.push(piece(b.long, +b.virage.toFixed(3))); continue; }
     const reste = b.long - 50, n = Math.max(1, Math.round(reste / 105));
@@ -187,9 +200,25 @@ function onduler(pieces, R, garder) {
     if (p.monte !== undefined && typeof p.monte === "number") { q.monte = Math.round(p.monte / 2 * 10) / 10; p.monte = Math.round((p.monte - q.monte) * 10) / 10; }
     pieces.splice(i + 1, 0, q); }
 }
+/* (18/11) le footing : des quartiers qui se suivent comme une vraie sortie (la ville, un escalier, le parc, la forêt, les champs, une passerelle, la
+   ville) ; chaque quartier s'allonge d'un bout de plus tant que la longueur n'y est pas. Seuls les quartiers cochés ; jamais rien que de la ville. */
+function listeFooting(R, o, cible) {
+  const A = o.avec || {}, ville = A.village !== false, est = {rue_p: 137, ruelle_p: 85, place_p: 40, escalier_p: 44, parc_p: 120, sentier_p: 110, chemin_p: 130, bordroute_p: 140, passerelle_p: 66}, Z = [];
+  if (ville) Z.push({m: ["rue_p"].concat(R() < .6 ? ["place_p"] : [], ["ruelle_p"]), rep: "rue_p"});
+  if (A.escalier) Z.push({m: ["escalier_p"]});
+  if (A.parc) Z.push({m: ["parc_p"], rep: "parc_p"});
+  if (A.foret) Z.push({m: ["sentier_p"], rep: "sentier_p"});
+  if (A.champs) Z.push({m: ["chemin_p"].concat(R() < .7 ? ["bordroute_p"] : []), rep: "chemin_p"});
+  if (!Z.some(z => ["parc_p", "sentier_p", "chemin_p"].includes(z.rep))) Z.push({m: ["parc_p"], rep: "parc_p"});
+  if (A.pont) Z.push({m: ["passerelle_p"]});
+  if (ville) Z.push({m: ["rue_p"], rep: "rue_p"});
+  const reps = [].concat(...Z.filter(z => z.rep).map(z => Array(z.rep === "sentier_p" ? 3 : z.rep === "rue_p" ? 1 : 2).fill(z))), total = () => Z.reduce((t, z) => t + z.m.reduce((u, n) => u + est[n], 0), 0);   // (la nature s'allonge plus que la ville)
+  for (let k = 0; k < 60 && total() < cible * .92; k++) { const z = reps[Math.floor(R() * reps.length)]; z.m.push(z.rep); }
+  return [].concat(...Z.map(z => z.m));
+}
 const REGION_TERRE = b => BIOMES[b + "-routes"] ? b + "-routes" : Object.keys(BIOMES).find(k => /routes/.test(k)) || b;   // la région des routes qui va avec une région
 function genererCircuit(o) {
-  const terre = o.activite === "terre", huit = terre && o.forme === "huit";
+  const terre = o.activite === "terre", pied = terre && o.style === "pied", huit = terre && !pied && o.forme === "huit";   // pied : le footing (listeFooting)
   if (huit) o = Object.assign({}, o, {boucle: true});
   if (o.forme === "ouvert") o = Object.assign({}, o, {boucle: false});   // (la forme suffit : « De A à B » = pas une boucle)
   const biome0 = (o.biome || NIVEAU.biome).replace(/-routes$/, ""), biome = terre ? REGION_TERRE(biome0) : biome0, lieux = BIOMES[biome] && BIOMES[biome].lieux || biome0, sens = -1;
@@ -214,6 +243,7 @@ function genererCircuit(o) {
     const iPort = liste.indexOf("port"), iVillage = liste.indexOf(terre ? "village_t" : "village");   // le départ : devant le port ou le village, sinon une ligne droite
     const depart = iPort >= 0 ? liste.splice(iPort, 1)[0] : iVillage >= 0 ? liste.splice(iVillage, 1)[0] : terre ? "route" : "droite";
     liste.unshift(depart);
+    if (pied) liste.splice(0, liste.length, ...listeFooting(R, o, cible));
     // un 8 : deux lignes droites qui se croisent à niveau (un carrefour), une boucle à gauche entre elles, une boucle à droite
     const iCroix = huit ? 1 + Math.floor((liste.length - 1) / 2) : -1;
     if (huit) liste.splice(iCroix, 0, terre && iVillage >= 0 ? "village_t" : "route");
@@ -234,6 +264,7 @@ function genererCircuit(o) {
       if (huit && k === iCroix + 1) debutLobe2.push(pieces.length);
       const morceau = MODULES[nom].pieces(R, {v: virageDe(k), eau: 9 + Math.round(R() * 5), g: decor[0], d: decor[1], lieux, terre: !!o.terre, grotte: o.grotte, ouvert: o.boucle === false});
       if (huit && (k === 0 || k === iCroix)) for (const p of morceau) { p.virage = 0; p.long = Math.max(p.long, 150); delete p.monte; }   // les deux lignes droites du carrefour, à plat
+      if (pied && k && liste[k - 1] === nom) delete morceau[0].nom;   // (le footing) un quartier garde son nom : la même rue, le même sentier
       for (const p of morceau) { for (const q of [p].concat(p.calme || [], p.force || [])) for (const c of ["g", "d"]) if (!a(q[c])) q[c] = terre ? "bas_cote" : "pre"; if (p.surface === undefined) delete p.surface; haut += +p.monte || 0;
         if (BOUTS_LIBRES.includes(nom) && !(huit && (k === 0 || k === iCroix))) p.libre = true;
         if (BOUTS_LIBRES.includes(nom) && !p.nom && k && !BOUTS_LIBRES.includes(liste[k - 1]) && p === morceau[0]) p.nom = terre ? "La route" : "La rivière";   // (17/11) sinon il garde le nom du lieu d'avant (« Le rond-point » pendant des kilomètres)
@@ -242,7 +273,7 @@ function genererCircuit(o) {
     if (huit) { pieces.push({nom: "Le retour au carrefour", long: 90, virage: "auto", large: 8, g: decor[0], d: decor[1]}); for (const p of pieces) { if (p.monte !== undefined) delete p.monte; if (p.long < 40) { p.fixe = true; p.long = Math.max(p.long, 21); } } }   // (17/11) un 8 se referme en ajustant les longueurs : une pièce courte (les rampes d'un pont, 18 m) n'est jamais raccourcie sous 20 m
     // le dénivelé : ce que les bouts de relief n'ont pas apporté se répartit en montées et en descentes douces (7 % au plus) sur les bouts ordinaires
     // (sur la terre, 10 % au plus : le vélo monte bien plus que l'eau ; un 8 : chaque boucle monte puis redescend, le carrefour reste à plat)
-    const pente = terre ? .1 : .07, plat = p => !p.fixe && !p.net && !p.pont && !p.tunnel && !p.lieux && (terre ? p.surface !== "paves" && p.g !== "trottoir" : !p.surface) && p.virage !== "auto" && p.long >= 40 && !["mer", "marais", "dune", "plage", "quai"].includes(p.d);
+    const pente = pied ? .08 : terre ? .1 : .07, plat = p => !p.fixe && !p.net && !p.pont && !p.tunnel && !p.lieux && (terre ? p.surface !== "paves" && p.surface !== "marches" && p.g !== "trottoir" && p.g !== "escalier" : !p.surface) && p.virage !== "auto" && p.long >= 40 && !["mer", "marais", "dune", "plage", "quai"].includes(p.d);
     const repartir = (liste, monter, descendre) => { const libres = liste.filter(p => plat(p) && p.monte === undefined);
       for (let i = libres.length - 1; i > 0; i--) { const j = Math.floor(R() * (i + 1)); [libres[i], libres[j]] = [libres[j], libres[i]]; }
       let aMonter = Math.max(0, monter - liste.reduce((t, p) => t + Math.max(0, +p.monte || 0), 0)), aDescendre = Math.max(0, descendre - liste.reduce((t, p) => t + Math.max(0, -(+p.monte || 0)), 0));
@@ -254,10 +285,12 @@ function genererCircuit(o) {
     else repartir(pieces, D, o.boucle === false ? D * (.3 + .5 * R()) : D);
     if (!pieces[0].nom) pieces[0].nom = "Le départ";
     pieces[0].objets = [{o: "ligne", cote: "c", a: 0}].concat(pieces[0].objets || []);
-    if (o.boucle !== false && !huit) pieces.push(terre ? {nom: "Le retour", raccord: true, rayon: 34, large: 8, g: "bas_cote", d: "bas_cote", monte: "auto"} : {nom: "Le retour", raccord: true, rayon: 30, eau: 12, g: "pre", d: "pre", monte: "auto"});
+    if (o.boucle !== false && pied) pieces.push({nom: "Le retour", raccord: true, rayon: 30, large: 3, g: "rue", d: "facades", surface: "paves", monte: "auto"});
+    else if (o.boucle !== false && !huit) pieces.push(terre ? {nom: "Le retour", raccord: true, rayon: 34, large: 8, g: "bas_cote", d: "bas_cote", monte: "auto"} : {nom: "Le retour", raccord: true, rayon: 30, eau: 12, g: "pre", d: "pre", monte: "auto"});
     const niveau = {id: "perso-" + graine, nom: o.nom || (terre ? "Parcours n° " : "Circuit n° ") + (o.graine || 1), biome, lieux, graine: graine % 97 + 1, nageur: NIVEAU.nageur || 7, allure: 1, elan: 60, pieces};
     if (o.boucle !== false) niveau.boucle = huit ? "huit" : "gauche";
-    if (terre) { niveau.discipline = "terre"; niveau.surface = "goudron"; if (o.avec && o.avec.volcan && o.boucle !== false && !huit) niveau.massif = {haut: 120 + Math.round(R() * 80), rayon: .8, cratere: true}; else if (o.avec && o.avec.volcan) niveau.lointain = [{o: "volcan", cap: Math.round(R() * 360), taille: .7}]; }
+    if (pied) { niveau.machines = ["elliptique"]; if (!o.nom) niveau.nom = "Footing n° " + (o.graine || 1); }   // (un parcours à pied : pas pour le vélo)
+    if (terre) { niveau.discipline = "terre"; niveau.surface = pied ? "terre" : "goudron"; if (o.avec && o.avec.volcan && o.boucle !== false && !huit) niveau.massif = {haut: 120 + Math.round(R() * 80), rayon: .8, cratere: true}; else if (o.avec && o.avec.volcan) niveau.lointain = [{o: "volcan", cap: Math.round(R() * 360), taille: .7}]; }
     if (o.heure && o.heure !== "jour") niveau.heure = o.heure;
     if (o.meteo && o.meteo !== "beau") niveau.meteo = o.meteo;
     // on l'essaie ; trop long ou trop court : on étire ses lignes droites et on réessaie une fois
@@ -273,7 +306,7 @@ function genererCircuit(o) {
     if (o.boucle !== false && !huit && o.deplier !== false) r = deplierRetour(niveau, r);
     // parmi les tirages qui tiennent debout, on garde le mieux noté (à note égale : le plus ramassé, celui dont le retour est le plus court)
     const racc = r.PISTE.pieces.find(q => q._i === pieces.length - 1), retour = o.boucle === false || huit || !racc ? 0 : r.PISTE.N - racc.s0;
-    const note = o.habiller === false ? noterCircuit(r.PISTE, niveau, region(biome), r.tour) : habiller(niveau, r, biome, terre, a);
+    const note = o.habiller === false || pied ? noterCircuit(r.PISTE, niveau, region(biome), r.tour) : habiller(niveau, r, biome, terre, a);
     valables.push({niveau, r, long: r.PISTE.N, retour, note, rang: bons});
     if (++bons >= VOULUS) break;
   }

@@ -76,6 +76,7 @@ function animerMonture(t, dt, S) {
   EAU_U.uNag.value.set(S.s, M.d, S.vn, S.enAir || !M.liquide ? 1 : 0); EAU_U.uCorps.value.set(GABARIT.hw, 0, 0, 0);
   if (PISTE.NF) EAU_U.uVoie.value = PISTE.VO[idx(S.s + 4)] || PISTE.VO[idx(S.s)] || PISTE.VO[idx(S.s - 38)];   // dans une fourche : le sillage et l'ombre ne se dessinent que sur ta voie
   OMBRE_U.uOmbre.value.set(M.liquide ? 0 : mt.velo ? 1 : .55, Math.max(0, M.y + bond - sol), mt.velo ? 1 : 0);   // l'ombre au sol (et, à vélo, la trace du pneu)
+  CAM.roulisF = mt.roulis === undefined ? 1 : mt.roulis;   // (18/11) à pied, la caméra se penche moins dans les virages (MONTURES.trotteur.roulis)
   if (mt.velo) { animerVelo(t, dt, S, pose(S.s, M.d), M.y + Math.max(0, bond), nageur); return; }
   cacherVelo();
   const N = nageur, p = pose(S.s, M.d), k = PISTE.COURB[idx(S.s + 2)];

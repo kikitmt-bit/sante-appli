@@ -1,0 +1,276 @@
+{
+ "id": "footing-jadielle",
+ "nom": "Le footing de Jadielle",
+ "biome": "kanto-routes",
+ "lieux": "kanto",
+ "graine": 31,
+ "nageur": 58,
+ "allure": 1,
+ "elan": 40,
+ "note": "(18/11, Kiki : « vu que c'est à pied, ça pourrait être des parcours totalement différents ») un vrai footing pour le marcheur elliptique, au trot : le trottoir d'une rue, une place, une ruelle, un escalier, un parc, un sentier en forêt, un chemin entre les champs, le bord d'une petite route, une passerelle. Un tour = environ 2 km de vrais mètres au trot.",
+ "machines": [
+  "elliptique"
+ ],
+ "boucle": "gauche",
+ "discipline": "terre",
+ "surface": "terre",
+ "pieces": [
+  {
+   "nom": "La rue des Lilas",
+   "long": 204,
+   "virage": -15,
+   "large": 3,
+   "g": "rue",
+   "d": "facades",
+   "surface": "paves",
+   "objets": [
+    {
+     "o": "ligne",
+     "cote": "c",
+     "a": 0
+    },
+    {
+     "o": "panneau",
+     "cote": "d",
+     "a": 14,
+     "e": 1.6,
+     "texte": "JADIELLE",
+     "face": "arrivant",
+     "large": 3.2
+    }
+   ]
+  },
+  {
+   "long": 149,
+   "virage": 20,
+   "large": 3,
+   "g": "rue",
+   "d": "facades",
+   "surface": "paves"
+  },
+  {
+   "nom": "La place du marché",
+   "long": 54,
+   "virage": -9,
+   "large": 7,
+   "g": "facades",
+   "d": "facades",
+   "surface": "paves",
+   "objets": [
+    {
+     "o": "fontaine",
+     "cote": "g",
+     "a": 26,
+     "e": 3.5
+    }
+   ]
+  },
+  {
+   "nom": "La ruelle",
+   "long": 122,
+   "virage": -43,
+   "large": 2.4,
+   "g": "facades",
+   "d": "facades",
+   "surface": "paves"
+  },
+  {
+   "long": 12,
+   "virage": 0,
+   "large": 3,
+   "g": "escalier",
+   "d": "escalier",
+   "surface": "paves"
+  },
+  {
+   "nom": "L'escalier du parc",
+   "long": 22,
+   "virage": 0,
+   "large": 3,
+   "g": "escalier",
+   "d": "escalier",
+   "surface": "marches",
+   "monte": 5.5,
+   "segment": "L'escalier"
+  },
+  {
+   "long": 10,
+   "virage": 0,
+   "large": 3,
+   "g": "escalier",
+   "d": "escalier",
+   "surface": "paves"
+  },
+  {
+   "nom": "Le parc",
+   "long": 163,
+   "virage": -48,
+   "large": 3,
+   "g": "parc",
+   "d": "parc",
+   "surface": "terre"
+  },
+  {
+   "long": 149,
+   "virage": 31,
+   "large": 3,
+   "g": "parc",
+   "d": "parc",
+   "surface": "terre"
+  },
+  {
+   "long": 122,
+   "virage": -55,
+   "large": 3,
+   "g": "parc",
+   "d": "parc",
+   "surface": "terre"
+  },
+  {
+   "nom": "Le sentier des bois",
+   "long": 136,
+   "virage": 25,
+   "large": 2.2,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "monte": 3,
+   "segment": "Le sentier",
+   "ambiance": "sous-bois"
+  },
+  {
+   "long": 149,
+   "virage": -66,
+   "large": 2.2,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "monte": 4,
+   "segment": "Le sentier",
+   "ambiance": "sous-bois"
+  },
+  {
+   "long": 122,
+   "virage": 28,
+   "large": 2.2,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "segment": "Le sentier",
+   "ambiance": "sous-bois"
+  },
+  {
+   "nom": "La descente du sentier",
+   "long": 149,
+   "virage": -54,
+   "large": 2.2,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "monte": -6,
+   "segment": "Le sentier",
+   "ambiance": "sous-bois"
+  },
+  {
+   "long": 136,
+   "virage": 11,
+   "large": 2.2,
+   "g": "sous_bois",
+   "d": "sous_bois",
+   "surface": "terre",
+   "segment": "Le sentier",
+   "ambiance": "sous-bois"
+  },
+  {
+   "nom": "Le chemin des champs",
+   "long": 190,
+   "virage": -50,
+   "large": 2.6,
+   "g": "champ",
+   "d": "champ",
+   "surface": "terre"
+  },
+  {
+   "long": 163,
+   "virage": 9,
+   "large": 2.6,
+   "g": "champ",
+   "d": "champ",
+   "surface": "terre",
+   "monte": -2
+  },
+  {
+   "nom": "Le long de la petite route",
+   "long": 217,
+   "virage": -46,
+   "large": 2,
+   "g": "champ",
+   "d": "campagne",
+   "surface": "terre"
+  },
+  {
+   "long": 190,
+   "virage": 5,
+   "large": 2,
+   "g": "champ",
+   "d": "campagne",
+   "surface": "terre"
+  },
+  {
+   "long": 16,
+   "virage": 0,
+   "large": 2.6,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "surface": "terre"
+  },
+  {
+   "nom": "La passerelle",
+   "long": 34,
+   "virage": 0,
+   "large": 2.6,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "surface": "terre",
+   "pont": "bois",
+   "ravin": 6
+  },
+  {
+   "long": 16,
+   "virage": 0,
+   "large": 2.6,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "surface": "terre"
+  },
+  {
+   "nom": "Le retour en ville",
+   "long": 163,
+   "virage": -54,
+   "large": 2.6,
+   "g": "bas_cote",
+   "d": "bas_cote",
+   "surface": "terre",
+   "monte": -4.5
+  },
+  {
+   "nom": "La rue du Marché",
+   "long": 190,
+   "virage": -33,
+   "large": 3,
+   "g": "rue",
+   "d": "facades",
+   "surface": "paves"
+  },
+  {
+   "nom": "Le dernier virage",
+   "raccord": true,
+   "rayon": 30,
+   "large": 3,
+   "g": "rue",
+   "d": "facades",
+   "surface": "paves",
+   "monte": "auto"
+  }
+ ]
+}

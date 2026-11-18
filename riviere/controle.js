@@ -31,7 +31,7 @@ function decorParTroncons() {
   let haut = 0; for (let i = 0; i < P.M; i++) haut = Math.max(haut, P.Y[i]);
   const sol = scannerSol(hauteur, Q, G, (a, b) => ecart(sLigne(a), sLigne(b)), MASSIF, haut, TRONCONS ? 12 : 4);
   let serres = 0; for (const L of LIBRE) for (let i = 0; i < P.N; i++) if (L[i] < 50) serres++;
-  const bilan = Object.assign(v, {niveau: NIVEAU.id, objets, poses: MONDE.poses.length, sprites: MONDE.sprites.length, evenements: MONDE.evenements.length, metres: P.M, triangles: Math.round(triangles), masse: MONDE.masse || 0, effets: EFFETS_NOMS.filter(k => EFFETS[k]),
+  const bilan = Object.assign(v, {niveau: NIVEAU.id, objets, poses: MONDE.poses.length, ecartes: MONDE.ecartes || 0, sprites: MONDE.sprites.length, evenements: MONDE.evenements.length, metres: P.M, triangles: Math.round(triangles), masse: MONDE.masse || 0, effets: EFFETS_NOMS.filter(k => EFFETS[k]),
     troncons, absurdes: sol.absurdes, changements: sol.changements, cassures: sol.cassures, pire: sol.pire, rives_serrees: serres, surfaces: P.surfaces, ponts: P.PONT.reduce((a, b) => a + b, 0), ms: Date.now() - t0});
   bilan.note = noterCircuit(PISTE, NIVEAU, BIOME, TOUR_VRAI);
   // les fourches : les vrais mètres de chaque voie (ils doivent être les mêmes), et ce qui est posé sur la voie « force »

@@ -404,6 +404,46 @@ Tout le dessin est dans `contenu/objets/kanto-ville.js` ; deux petites accroches
 - **Sous un arbre** : son ombre sur l'herbe, jamais un carré de couleur (le cerisier avait un carré rose : retiré).
 - Exemple : `contenu/niveaux/terre-ville.json` (« Céladopole, la ville et les bois » : rue, carrefour, deux rond-points, sous-bois, échangeur).
 
+## Le footing : des parcours à pied (18/11, Kiki : « vu que c'est à pied, ça pourrait être des parcours totalement différents »)
+
+Au marcheur elliptique, ton Pokémon trottine : il n'a pas à suivre les routes des voitures. Un parcours de footing passe sur le **trottoir
+d'une rue**, traverse une **place**, prend une **ruelle**, monte un **escalier**, coupe par un **parc**, suit un **sentier en forêt**, un
+**chemin entre les champs**, longe une **petite route de campagne**, franchit une **passerelle**. Tout est fait de pièces ordinaires :
+
+- **Le revêtement `marches`** (surfaces.js, mode 3) : un escalier de pierre dessiné sur la pente (une marche tous les 36 cm de décor,
+  l'ombre de la contremarche, le nez clair, un bord de pierre). Une pièce `{"surface": "marches", "long": 22, "monte": 5.5, "large": 3}`
+  (25 %, sous les 30 % permis), entre deux paliers pavés de 10 à 12 m. Couleurs : `terres.marches` de la région.
+- **Les rives du footing** (`kanto-routes.json`, leurs règles sont à la fin de la liste : le décor des autres circuits ne bouge pas) :
+  `facades` (le côté des maisons : du pavé plat, maisons et boutiques à 7-8 m, réverbères, boîtes aux lettres, Pokémon), `rue` (de l'autre
+  côté du trottoir : la bordure, la chaussée de 6 m et ses voitures garées, le trottoir d'en face, les maisons d'en face), `parc` (pelouse,
+  grands arbres, bancs, réverbères, une mare, des Pokémon), `campagne` (le sentier longe une petite route : un peu d'herbe, la route, les
+  poteaux), `escalier` (un muret de pierre de 55 cm de chaque côté, réverbères, talus boisé). Plus les rives d'avant : `sous_bois` pour un
+  sentier (`large` 2,2), `champ` pour un chemin (`large` 2,6), `bas_cote` pour une passerelle (`pont: "bois"`, `ravin: 6`). Un sol de plus :
+  `goudron` (la chaussée d'une rue, peinte par le terrain).
+- **Étroit** : un trottoir fait 3 m, une ruelle 2,4 m, un sentier 2,2 m. Les tests acceptent 2 m pour un circuit `"machines": ["elliptique"]`.
+- **`"machines": ["elliptique"]`** à la racine du niveau : il n'est proposé qu'à ces machines (menu, `pourMachine` de depart.js ; un vélo dans un
+  escalier, non). Sans ce champ : toutes les machines de son activité, comme avant.
+- **La longueur** : au trot, le décor défile une fois et demie plus vite que tes vrais mètres (`MACHINE.allure` ≈ 1,5 : 6,5 km/h vus pour
+  4,3 km/h aux jambes). Un tour de 2 km de vrais mètres = ~3 km de décor.
+- **Le circuit** : `contenu/niveaux/footing-jadielle.json`, « Le footing de Jadielle » (3 019 m de décor, un tour ≈ 2,0 km au trot) : la rue des
+  Lilas sur le trottoir, la place du marché et sa fontaine, la ruelle, l'escalier du parc (segment chronométré), le parc, le sentier des bois
+  (segment, 13 m de montée), le chemin des champs, le long de la petite route, la passerelle en bois sur un ruisseau, le retour en ville. Les
+  virages ont été calculés pour que la boucle se referme presque toute seule (le dernier virage fait 140 m).
+- **Le générateur** (`style: "pied"`, à l'écran « Générer » du marcheur elliptique : « Où tu cours : À pied / Sur la route ») : les modules
+  `rue_p`, `ruelle_p`, `place_p`, `escalier_p` (monte ou descend), `parc_p`, `sentier_p`, `chemin_p`, `bordroute_p`, `passerelle_p` ; ils se suivent
+  par quartiers, comme une vraie sortie (`listeFooting` : la ville, l'escalier, le parc, la forêt, les champs, la passerelle, la ville), chaque
+  quartier s'allongeant jusqu'à la longueur voulue (la nature plus que la ville) ; cases : la ville, un escalier, un parc, un sentier, les
+  champs, une passerelle ; relief : plat, vallonné (15 m), ça grimpe (35 m), 8 % au plus ; pas de 8 ; la longueur demandée est celle de tes
+  jambes (`kmDecor` de l'éditeur), 5 km au plus en boucle. Les rives n'y sont jamais rhabillées (habiller() mettrait des champs en ville).
+  `python riviere/outils/generer.py` : `"style": "pied"` dans les options (page.generateur).
+
+**Le décor ne tombe plus sur un autre bout de la route** (18/11, Kiki : « les routes se croisent, les immeubles sont au milieu de la route »,
+sur un circuit généré) : une « rue qui part » (52 m, ses maisons, la façade du bout) posée à l'intérieur d'une épingle traversait l'autre
+branche ; seule la place des autres objets était regardée. `surAutreRoute` (decor.js) : un objet, ou un rond de son emprise, qui empiète sur
+un bout de piste à plus de 25 m de lui (le long de la piste) n'est pas posé ; sa recette tourne quand même à blanc, pour que le hasard du
+reste du décor ne bouge pas. Un pont ou une grotte bien au-dessus ou au-dessous ne compte pas. Le contrôle dit combien (`ecartes`) : 0 sur
+les circuits du jeu, 1 au Ventoux (un objet qui était sur la route).
+
 ## Ajouter une région (un autre style)
 
 **Le plus court : hériter.** `{"nom": "Johto", "herite": "kanto", "palette": {"feuilles": [...]}, "regles_plus": [...]}` : elle ne redit que ce
@@ -464,6 +504,13 @@ objets propres à la région dans `contenu/objets/<nom>.js`. Les niveaux choisis
     virage) et lit `mt.trace` (les mètres entre deux poussières) ; `sprites.js` : `changerNageur` passe la main à `changerTrotteur` quand
     `trotteurActif()`. La caméra s'adapte par `GABARIT.f`, comme pour un nageur ; le fantôme a sa taille.
   - Sur l'eau (une pièce d'eau dans un circuit de terre), le trotteur redevient un Pokémon ordinaire : il n'a pas de fiche de nageur.
+  - **Retours de Kiki du 18/11 (Caninos), faits** : les **adversaires sont à leur vraie taille** comme lui (`hauteurVraie` de rivaux.js : Pokédex
+    et corps de la première image ; avant, la taille du dessin × 1,25 : Caninos adversaire 1,2 m, le sien 0,73 m) ; **l'ombre est sous ses pattes**
+    (avant : une ellipse un peu derrière lui, côté caméra, « il flotte à 20 cm ») : `OMBRE_U.uOmbre.z` = 2 + sa taille, surfaces.js la centre un
+    peu devant lui, son dos en cache la moitié, on n'en voit qu'un liseré collé aux pattes ; **il ne dérape plus dans les virages** : penché de
+    2° au plus (7° avant), de trois quarts seulement dans un vrai lacet (`orienterPantin(…, .06)`, rayon < 17 m) et la caméra se penche trois
+    fois moins (`MONTURES.trotteur.roulis` = 0,3, lu par monture.js → `CAM.roulisF`) ; **une côte ne le freine presque plus** (`VU.cote`,
+    `VU.min` d'allure.js : au trot, −16 % à 10 % de pente, −18 % au plus ; avant, −60 % : « en footing, on garde son allure, ça consomme juste plus »).
 - **Les sprites qui suivent la caméra** (17/11, Kiki : le film de fin montre ton personnage de face, de côté, d'en haut) :
   `contenu/montures/directions.js`. Un sprite est une image plate : on choisit l'image d'après l'angle entre la direction où va le personnage
   et celle d'où regarde la caméra (`angleVue` : 0 = de dos, positif = vers la droite de l'écran, ±π = de face ; `rangeeVue` = la rangée de

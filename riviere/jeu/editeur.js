@@ -99,7 +99,7 @@ function edEtat() {
   el.className = v.ok ? "ok" : "ko";
   const faible = ED.note ? ED.note.criteres.slice().sort((a, b) => (a.note - 100) * a.poids - (b.note - 100) * b.poids)[0] : null;
   const st = $("edStatut"); if (st) { st.className = "ed-statut " + (v.ok ? "ok" : "ko"); st.textContent = v.ok ? "✔ Jouable" + (ED.note ? " · " + ED.note.note + " / 100" : "") : "✖ À corriger"; }
-  el.innerHTML = (v.ok ? "✔ Jouable" : "✖ À corriger") + " · " + v.longueur + " m de décor · " + (r.boucle ? "un tour" : "le parcours") + " ≈ " + Math.round(r.tour) + " vrais m · point haut " + v.haut + " m"
+  el.innerHTML = (v.ok ? "✔ Jouable" : "✖ À corriger") + " · " + v.longueur + " m de décor · " + (r.boucle ? "un tour" : "le parcours") + " ≈ " + Math.round(r.tour / (typeof VISUEL !== "undefined" && VISUEL ? MACHINE.allure : 1)) + " vrais m" + (typeof VISUEL !== "undefined" && VISUEL ? " " + ({trotteur: "au trot", cycliste: "à vélo"}[MACHINE.monture] || "") : "") + " · point haut " + v.haut + " m"
     + (ED.note ? " · <b>note " + ED.note.note + " / 100</b>" + (faible && faible.note < 70 ? "<br><small>Le point faible : " + faible.nom.toLowerCase() + ". " + esc(faible.phrase) + "</small>" : "") : "")
     + (v.ok ? "" : "<br>" + v.erreurs.map(esc).join("<br>")) + (ED.msg ? "<br><b>" + esc(ED.msg) + "</b>" : "");
 }
@@ -109,11 +109,15 @@ function edEtat() {
 // (17/11, Kiki : « on peut faire 5 km ? et des routes de 50 km, avec les tronçons ») la longueur au curseur, par crans : fins au début, larges ensuite.
 // Une boucle est construite d'un bloc : 8 km au plus ; de A à B, le monde se construit autour de soi (moteur/troncons.js) : 50 km.
 const PAS_KM = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50];
-const kmMax = G => PAS_KM.indexOf(G.forme === "ouvert" ? 50 : 8);
+const kmMax = G => PAS_KM.indexOf(G.forme === "ouvert" ? 50 : G.style === "pied" && piedPossible(G) ? 5 : 8);   // (à pied, les km sont ceux de tes jambes : le décor en fait une fois et demie plus)
+/* (18/11, Kiki) au marcheur elliptique, le générateur peut faire un footing : des trottoirs, une ruelle, un escalier, un parc, un sentier, une passerelle (style « pied ») */
+const piedPossible = G => G.activite === "terre" && MACHINE_NOM === "elliptique";
+const kmDecor = G => G.style === "pied" && piedPossible(G) && typeof VISUEL !== "undefined" && VISUEL ? +(G.km * MACHINE.allure).toFixed(2) : G.km;   // un tour de 2 km au trot = 3 km de décor
 const texteKm = km => String(km).replace(".", ",") + " km";
 const dureeKm = km => { const v = typeof vitesseHabituelle === "function" ? vitesseHabituelle() : 3.6, m = Math.round(km * 1000 / Math.max(.5, v) / 60); return " ≈ " + (m >= 90 ? Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") : m + " min") + " à ton allure"; };
 const puces = (cle, v, liste) => `<div class="ed-puces">${liste.map(([k, t]) => `<button class="ed-puce${String(v) === String(k) ? " on" : ""}" data-gk="${cle}" data-gv="${esc(k)}">${t}</button>`).join("")}</div>`;
 const CASES_GEN = {
+  pied: [["village", "🏘️", "La ville"], ["escalier", "🪜", "Un escalier"], ["parc", "🌳", "Un parc"], ["foret", "🌲", "Un sentier en forêt"], ["champs", "🌾", "Les champs"], ["pont", "🌉", "Une passerelle"]],   // (18/11) le footing
   eau: [["port", "⚓", "Un port"], ["village", "🏘️", "Un village"], ["lac", "🏞️", "Un lac"], ["foret", "🌲", "Un sous-bois"], ["marais", "🪷", "Un marais"], ["plage", "🏖️", "Une plage"], ["cascade", "💦", "Une cascade"], ["grotte", "🕳️", "Une grotte"], ["pont", "🌉", "Un pont"], ["ronflex", "😴", "Ronflex"], ["fourche", "⑂", "Des rapides"]],
   terre: [["village", "🏘️", "Un village"], ["foret", "🌲", "Un sous-bois"], ["champs", "🌾", "Des champs"], ["montagne", "⛰️", "Un col"], ["volcan", "🌋", "Un volcan"], ["tunnel", "🚇", "Un tunnel"], ["pont", "🌉", "Un pont"], ["ronflex", "😴", "Ronflex"], ["fourche", "⑂", "Un chemin à bosses"], ["rondpoint", "🔄", "Un rond-point"], ["echangeur", "🛣️", "Un échangeur"]]};
 function edAccueil() {
@@ -121,16 +125,20 @@ function edAccueil() {
   const G = ED.gen, terre = G.activite === "terre", brouillon = lireReglage(ED_CLE, null), bonBrouillon = brouillon && Array.isArray(brouillon.pieces) && disciplineDe(brouillon) === G.activite;
   const persos = Object.entries(CIRCUITS_PERSO).filter(([k, c]) => disciplineDe(c) === G.activite), jeu = Object.entries(NIVEAUX).filter(([k, c]) => !c.cache && !c.jour && disciplineDe(c) === G.activite);
   const pour = {rameur: "au rameur", elliptique: "au marcheur elliptique", velo: "à vélo"}[MACHINE_NOM] || "";
+  if (piedPossible(G) && G.style === undefined) G.style = MACHINE.monture === "trotteur" ? "pied" : "route";
+  const pied = piedPossible(G) && G.style === "pied";
+  if (pied && !G.avecPied) { G.avecPied = true; Object.assign(G.avec, {village: true, escalier: true, parc: true, foret: true, champs: true, pont: true}); if (G.forme === "huit") G.forme = "boucle"; if (PAS_KM.indexOf(G.km) > kmMax(G)) G.km = PAS_KM[kmMax(G)]; }
   $("edAccueil").innerHTML = `<div class="ed-acc">
     <section class="ed-bloc ed-gen"><h2>🎲 Générer un circuit</h2><p class="ed-note">Dis ce que tu veux, je le dessine ${pour} : je garde le mieux noté de plusieurs essais.</p>
-      <div class="ed-q">Forme</div>${puces("forme", G.forme === "huit" && !terre ? "boucle" : G.forme, [["boucle", "Une boucle (des tours)"], ["ouvert", "De A à B"]].concat(terre ? [["huit", "Un 8"]] : []))}
+      ${piedPossible(G) ? `<div class="ed-q">Où tu cours</div>${puces("style", G.style, [["pied", "À pied : trottoirs, sentiers, escaliers"], ["route", "Sur la route"]])}` : ""}
+      <div class="ed-q">Forme</div>${puces("forme", G.forme === "huit" && (!terre || pied) ? "boucle" : G.forme, [["boucle", "Une boucle (des tours)"], ["ouvert", "De A à B"]].concat(terre && !pied ? [["huit", "Un 8"]] : []))}
       <div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
       <div class="ed-curseur"><span>1 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G) }" step="1" value="${PAS_KM.indexOf(G.km)}"><span>${PAS_KM[kmMax(G)]} km</span></div>
       ${G.forme === "ouvert" ? "" : `<small class="ed-aide">Une boucle va jusqu'à ${PAS_KM[kmMax(G)]} km ; « De A à B » va jusqu'à 50 km (le monde se construit autour de toi au fil de la route).</small>`}
       <div class="ed-deux"><div><div class="ed-q">Virages</div>${puces("virages", G.virages, [["droit", "Presque droit"], ["quelques", "Quelques-uns"], ["sinueux", "Sinueux"], ["tres", "Très sinueux"]])}</div>
-      <div><div class="ed-q">Relief</div>${puces("denivele", G.denivele, terre ? [[0, "Plat"], [40, "Vallonné"], [120, "Montagneux"], [250, "Un col"]] : [[0, "Plat"], [20, "Vallonné"], [50, "Montagneux"]])}</div></div>
+      <div><div class="ed-q">Relief</div>${puces("denivele", G.denivele, pied ? [[0, "Plat"], [15, "Vallonné"], [35, "Ça grimpe"]] : terre ? [[0, "Plat"], [40, "Vallonné"], [120, "Montagneux"], [250, "Un col"]] : [[0, "Plat"], [20, "Vallonné"], [50, "Montagneux"]])}</div></div>
       <div class="ed-q">Ce que tu veux y voir</div>
-      <div class="ed-tuiles">${CASES_GEN[terre ? "terre" : "eau"].map(([k, ic, t]) => `<button class="ed-tuile${G.avec[k] ? " on" : ""}" data-avec="${k}"><i>${ic}</i>${t}</button>`).join("")}</div>
+      <div class="ed-tuiles">${CASES_GEN[pied ? "pied" : terre ? "terre" : "eau"].map(([k, ic, t]) => `<button class="ed-tuile${G.avec[k] ? " on" : ""}" data-avec="${k}"><i>${ic}</i>${t}</button>`).join("")}</div>
       <button class="rouge ed-grand" data-act="generer">▶ Générer mon circuit</button><p class="ed-msg" id="edMsg">${esc(ED.msg)}</p></section>
     <div class="ed-col">
       <section class="ed-bloc"><h2>✏️ Le dessiner</h2><p class="ed-note">Pièce par pièce, sur le plan : un virage, une ligne droite, un lac, une grotte…</p>
@@ -145,8 +153,8 @@ function edAccueil() {
    ce qui bloque ») : si le tirage échoue, on réessaie tout seul en assouplissant, dans cet ordre : le 8 devient une boucle, un cran de virages
    en moins, puis on retire un à un les éléments les plus difficiles à caser ; on dit ce qui a changé. L'effort suit la longueur (une longue route
    est vite tracée, mais habiller ses rives et contrôler tout son sol prendrait des minutes). ---- */
-const DIFFICILES = ["echangeur", "fourche", "montagne", "tunnel", "rondpoint", "pont", "grotte", "cascade", "port", "village", "volcan", "marais", "plage", "lac", "ronflex", "champs", "foret"];
-const NOMS_AVEC = Object.fromEntries([].concat(CASES_GEN.eau, CASES_GEN.terre).map(([k, , t]) => [k, t.toLowerCase()]));
+const DIFFICILES = ["escalier", "echangeur", "fourche", "montagne", "tunnel", "rondpoint", "pont", "grotte", "cascade", "port", "village", "volcan", "marais", "plage", "lac", "ronflex", "champs", "foret"];
+const NOMS_AVEC = Object.fromEntries([].concat(CASES_GEN.eau, CASES_GEN.terre, CASES_GEN.pied).map(([k, , t]) => [k, t.toLowerCase()]));
 function effortDe(G) { const km = +G.km || 1; return km <= 4 ? {} : km <= 8 ? {tirages: 3} : {tirages: km > 20 ? 1 : 2, habiller: false, sol: false}; }
 function genererSouple(G0, dire, fin) {
   const changes = [], cran = {tres: "sinueux", sinueux: "quelques", quelques: "droit"};
@@ -190,7 +198,7 @@ function edPanneau() {
     if (!p.raccord) plus += choix("Grotte", "tunnel", p.tunnel === true ? "roche" : p.tunnel || "", [["", "non"]].concat(Object.keys(Object.assign({roche: {}}, B.grottes)).map(k => [k, k])))
       + choix("Pont", "pont", p.pont === true ? "pierre" : p.pont || "", [["", "non"], ["pierre", "pierre"], ["bois", "bois"], ["arches", "arches dorées"]])
       + (p.pont ? champ("Ravin dessous", "ravin", p.ravin || 0, 0, 14, 1, " m") : "");
-    plus += choix("Surface", "surface", p.surface || "", terre ? [["", "celle du circuit"], ["terre", "chemin de terre"], ["goudron", "route goudronnée"], ["paves", "rue pavée"]] : [["", "celle du circuit"], ["eau", "eau"]].concat(Object.keys(B.eaux || {}).map(k => [k, "eau : " + k])))
+    plus += choix("Surface", "surface", p.surface || "", terre ? [["", "celle du circuit"], ["terre", "chemin de terre"], ["goudron", "route goudronnée"], ["paves", "rue pavée"], ["marches", "escalier (à pied)"]] : [["", "celle du circuit"], ["eau", "eau"]].concat(Object.keys(B.eaux || {}).map(k => [k, "eau : " + k])))
       + choix("Ambiance", "ambiance", p.ambiance || "", [["", "aucune"]].concat(Object.keys(AMBIANCES).filter(k => k !== "grotte").map(k => [k, k])))
       + champ("Vitesse du décor", "allure", p.allure || 1, .6, 1.6, .05, " ×")
       + `<label class="ed-l"><span>Segment chronométré</span><input type="text" data-k="segment" value="${esc(p.segment)}" placeholder="(aucun)"></label>`;
@@ -287,7 +295,7 @@ function edAction(act, bouton) {
   if (act === "generer" || act === "autre") {
     ED.gen.graine = Math.floor(Math.random() * 9000) + 1;   // un nouveau tirage à chaque fois
     bouton.disabled = true;
-    genererSouple(ED.gen, t => { bouton.textContent = t; }, r => {
+    genererSouple(Object.assign({}, ED.gen, {km: kmDecor(ED.gen), style: piedPossible(ED.gen) ? ED.gen.style : undefined}), t => { bouton.textContent = t; }, r => {
       if (r.erreur) { bouton.disabled = false; ED.msg = r.erreur; if (ED.vue === "accueil") edAccueil(); else { edEtat(); edPanneau(); } return; }
       edAtelier(r.niveau, true); ED.msg = "Voici ton circuit (" + r.note.note + " / 100). " + (r.change ? r.change + " " : "") + "Essaie-le, ou retouche-le en touchant le plan."
         + (r.sol && !r.sol.ok ? " Son sol a une marche quelque part : « Générer un autre » peut l'éviter." : ""); edEtat(); });

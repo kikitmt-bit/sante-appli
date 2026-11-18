@@ -129,7 +129,7 @@ for (const [nom, e] of Object.entries(BIOME.eaux || {})) {
 }
 
 /* ---- la terre ferme : un chemin de terre ou une route (ligne au milieu, bordures rouges et blanches) ---- */
-const OMBRE_U = {uOmbre: {value: new THREE.Vector3(0, 0, 0)}};   // l'ombre de ta monture sur la terre : (force, hauteur au-dessus du sol, vélo ?) ; uNag donne où elle est
+const OMBRE_U = {uOmbre: {value: new THREE.Vector3(0, 0, 0)}};   // l'ombre de ta monture sur la terre : (force, hauteur au-dessus du sol, 0 / 1 = vélo / 2 + taille = un trotteur) ; uNag donne où elle est
 const ROUTE_FS = `${PORTEE_FS} ${ABRI_PISTE ? "varying float vAbri;" : ""}
   uniform float uT, uB0, uB1, uSombre, uMode, uPluie, uVoie; uniform vec3 uC1, uC2, uBordC, uLigne, uBrume, uTeinte, uOmbre; uniform vec4 uNag;
   varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
@@ -142,7 +142,12 @@ const ROUTE_FS = `${PORTEE_FS} ${ABRI_PISTE ? "varying float vAbri;" : ""}
     c *= (.9 + .2 * vn(p / 9. + 2.3)) * (1. + (.14 * h21(floor(p * 8.)) - .07) * prox);              // (rendu plus réaliste) des taches et du grain` : ""}
     float o = sin(vSU.x * .9) * .12;
     bool marque = vBord < 50.;                                                                       // (dans un carrefour : aucune marque)
-    if (uMode > 1.5) {                                                                               // des pavés, une bordure de pierre
+    if (uMode > 2.5) {                                                                               // (18/11, footing) un escalier de pierre : une marche tous les 36 cm, l'ombre de la contremarche, le nez clair
+      float m = vSU.x / .36, f = fract(m), hp = h21(vec2(floor(m), floor(vSU.y * .8 + 9.)));
+      c = mix(uC1, uC2, step(.55, hp)) * (.95 + .07 * hp);
+      if (f > .78) c = uBordC * (.9 + .1 * hp); else if (f < .09) c = uLigne;
+      if (marque && vBord < .16) c = uBordC * .85;                                                   // le bord de pierre, de chaque côté
+    } else if (uMode > 1.5) {                                                                        // des pavés, une bordure de pierre
       vec2 g = vec2(vSU.x * 2.4, vSU.y * 2.8); g.x += step(1., mod(floor(g.y), 2.)) * .5; vec2 f = fract(g); float hp = h21(floor(g));
       c = mix(uC1, uC2, step(.5, hp)) * (.93 + .1 * hp); if (f.x < .1 || f.y < .13) c = uBordC;
       if (marque && vBord < .3) c = uLigne;
@@ -154,7 +159,8 @@ const ROUTE_FS = `${PORTEE_FS} ${ABRI_PISTE ? "varying float vAbri;" : ""}
       if (marque && vBord < .5 + o) c = uBordC;                                                      // l'accotement (plus d'ornières au milieu : Kiki, 11/11)
     }
     if (uOmbre.x > 0. && (vVoie < .5 || abs(vVoie - uVoie) < .5)) { float ds = vSU.x - uNag.x, du = vSU.y - uNag.y, h = uOmbre.y, k = 1. / (1. + h * .35);   // l'ombre : une ellipse simple, plus petite et plus pâle quand on saute
-      float e = length(vec2((ds + .1) / ((uOmbre.z > .5 ? .95 : .55) * k), du / ((uOmbre.z > .5 ? .26 : .42) * k)));   // (17/11, Kiki : l'ombre tramée et la trace du pneu, « complexe et moche ») : deux tons nets, rien d'autre
+      float e = uOmbre.z > 1.5 ? length(vec2((ds - .28 * (uOmbre.z - 2.)) / (.42 * (uOmbre.z - 2.) * k), du / (.55 * (uOmbre.z - 2.) * k)))   // (18/11, Kiki : « il flotte à 20 cm ») un trotteur (z = 2 + sa taille) : l'ombre sous ses pattes, un peu devant
+        : length(vec2((ds + .1) / ((uOmbre.z > .5 ? .95 : .55) * k), du / ((uOmbre.z > .5 ? .26 : .42) * k)));   // (17/11, Kiki : l'ombre tramée et la trace du pneu, « complexe et moche ») : deux tons nets, rien d'autre
       if (e < 1.) c *= 1. - (e < .62 ? .3 : .17) * uOmbre.x * k; }
     ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ) * (1. - vAbri));   // les ombres portées (effets.js)" : ""}
     c *= 1. - .16 * uPluie;                                                                           // mouillée, elle fonce
@@ -173,6 +179,7 @@ function matRoute(c1, c2, bord, ligne, mode) {
 const TERRES = BIOME.terres || {};
 SURFACES.terre = {materiau: matRoute(...(TERRES.terre || ["#D9B886", "#CBA672", "#B48C5C", "#FFFFFF"]), 0), liquide: false, monture: "coureur", poussiere: (TERRES.terre || ["#D9B886"])[0]};
 SURFACES.goudron = {materiau: matRoute(...(TERRES.goudron || ["#6E7480", "#646A76", "#F8F8E8", "#F8F8E8"]), 1), liquide: false, monture: "coureur", poussiere: "#C8CCD4"};
+SURFACES.marches = {materiau: matRoute(...(TERRES.marches || ["#CDC5B6", "#C1B9A9", "#8C857A", "#ECE6D8"]), 3), liquide: false, monture: "coureur", poussiere: "#D6D0C4"};   // (18/11) un escalier : pour le footing (le marcheur elliptique, au trot)
 SURFACES.paves = {materiau: matRoute(...(TERRES.paves || ["#BCB4A4", "#ACA494", "#7C766C", "#D4CEC0"]), 2), liquide: false, monture: "coureur", poussiere: "#C8C0B0"};   // une rue de village
 const surface = s => SURFACES[surfaceEn(s)] || SURFACES.eau;
 const DESSUS = {};   // le matériau du passage « du dessus » d'un carrefour : le même, dessiné par-dessus l'autre

@@ -2,7 +2,7 @@
     python riviere/outils/generer.py --notes                         -> la note de chaque circuit du jeu, avec ses raisons
     python riviere/outils/generer.py --notes vitrine                 -> un seul circuit, en détail (ses séquences de paysage)
     python riviere/outils/generer.py --km 2 --avec lac,grotte,pont   -> tire, construit, note, garde le meilleur ; écrit son bilan
-        options : --activite eau|terre, --virages droit|quelques|sinueux|tres, --denivele 15, --forme boucle|ouvert|huit, --graine 1,
+        options : --activite eau|terre, --style route|pied (un footing, sur la terre), --virages droit|quelques|sinueux|tres, --denivele 15, --forme boucle|ouvert|huit, --graine 1,
                   --tirages 8 (les tirages valables comparés : plus il y en a, meilleur est le circuit gardé, plus c'est long), --nom "…"
         --ecrire <nom> : range le circuit dans contenu/niveaux/<nom>.json, seulement si le moteur le construit sans défaut (le contrôle des tests)
         --json : écrit le circuit (son texte) au lieu du bilan
@@ -73,6 +73,7 @@ if __name__ == "__main__":
     ap.add_argument("--virages", choices=["droit", "quelques", "sinueux", "tres"], default="quelques")
     ap.add_argument("--denivele", type=float, default=15)
     ap.add_argument("--forme", choices=["boucle", "ouvert", "huit"], default="boucle")
+    ap.add_argument("--style", choices=["route", "pied"], default="route")   # (18/11) pied : un footing (avec --activite terre ; km de décor)
     ap.add_argument("--avec", default="")
     ap.add_argument("--graine", type=int, default=1)
     ap.add_argument("--tirages", type=int, default=8)
@@ -87,7 +88,7 @@ if __name__ == "__main__":
             print(f"{notes[nom]['note']:>3} / 100   {nom}   (un tour : {notes[nom]['duree'] // 60} min {notes[nom]['duree'] % 60:02d})")
             print(texte_note(notes[nom], detail=len(noms) == 1))
         sys.exit(0)
-    o = {"km": a.km, "activite": a.activite, "virages": a.virages, "denivele": a.denivele, "forme": a.forme, "boucle": a.forme != "ouvert",
+    o = {"km": a.km, "activite": a.activite, "style": a.style, "virages": a.virages, "denivele": a.denivele, "forme": a.forme, "boucle": a.forme != "ouvert",
          "avec": {k: True for k in a.avec.split(",") if k}, "graine": a.graine, "tirages": a.tirages}
     if a.nom:
         o["nom"] = a.nom

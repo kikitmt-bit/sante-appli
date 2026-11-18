@@ -128,8 +128,8 @@ function peindreCiel(cv, heure, meteo) {   // une petite scène en pixels : ciel
 /* ---- le menu ---- */
 function circuitsDuMenu() {
   const disc = ACTIVITE[MACHINE_NOM];
-  return Object.entries(NIVEAUX).filter(([k, n]) => !n.cache && disciplineDe(n) === disc).sort((x, y) => (y[1].jour ? 1 : 0) - (x[1].jour ? 1 : 0))
-    .concat(Object.entries(CIRCUITS_PERSO).filter(([k, n]) => disciplineDe(n) === disc));
+  return Object.entries(NIVEAUX).filter(([k, n]) => !n.cache && disciplineDe(n) === disc && pourMachine(n, MACHINE_NOM)).sort((x, y) => (y[1].jour ? 1 : 0) - (x[1].jour ? 1 : 0))
+    .concat(Object.entries(CIRCUITS_PERSO).filter(([k, n]) => disciplineDe(n) === disc && pourMachine(n, MACHINE_NOM)));
 }
 const estCourant = id => ACTIVITE[MACHINE_NOM] === DISCIPLINE && !NIVEAU.brouillon && (NIVEAU.id || "") === id;
 function recordDe(id) {   // ton meilleur tour sur ce circuit, à cette machine : celui de cette machine pour le circuit courant, ceux du serveur pour les autres

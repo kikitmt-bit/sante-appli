@@ -128,7 +128,8 @@ class Fichiers(unittest.TestCase):
                 large = p.get("large", p.get("eau"))
                 for c in (p["g"], p["d"]):
                     self.assertIn(c, b["rives"], f"{nom} : rive inconnue")
-                self.assertGreaterEqual(large, 5, f"{nom} : piste trop étroite")
+                # (18/11) un parcours à pied seulement (le footing du marcheur elliptique : "machines": ["elliptique"]) passe par des ruelles et des sentiers
+                self.assertGreaterEqual(large, 2 if n.get("machines") == ["elliptique"] else 5, f"{nom} : piste trop étroite")
                 if p.get("surface"):
                     self.assertIn(p["surface"], SURFACES | set(b.get("eaux", {})), f"{nom} : surface inconnue")
                 if isinstance(p.get("tunnel"), str):
@@ -365,9 +366,10 @@ class Moteur(unittest.TestCase):
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
     BUDGET_TRIANGLES = 220000
     BUDGET_SECONDES = 8
-    BUDGET_PAGE_KO = 2110   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits ;
+    BUDGET_PAGE_KO = 2140   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits ;
                             #  +40 Ko la nuit : le décor OpenStreetMap du Ventoux entier, 480 objets réels, et la région kanto-reel ;
-                            #  18/11 : +60 Ko pour le lac d'Allier à Vichy, son rivage mètre par mètre, ses 200 objets réels et la région vichy)
+                            #  18/11 : +60 Ko pour le lac d'Allier à Vichy, son rivage mètre par mètre, ses 200 objets réels et la région vichy ;
+                            #  18/11 au soir : +10 Ko pour le footing de Jadielle, ses rives et l'escalier)
 
     def test_budgets(self):
         import page

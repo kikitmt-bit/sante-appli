@@ -12,9 +12,9 @@ const rangeeVue = a => ((4 - Math.round(a / (Math.PI / 4))) % 8 + 8) % 8;
 const DERRIERE = Math.PI / 6;   // jusqu'à 30° : la caméra est « derrière » (le jeu)
 function avanceEn(s, d) { const a = pose(s, d), b = pose(s + 1, d); return [b.x - a.x, b.z - a.z]; }   // où va la piste au mètre s
 /* ton Pokémon (ou son fantôme) : la rangée vue de la caméra ; il garde la même image d'animation quand il change de rangée */
-function orienterPantin(N, s, d = 0) {
+function orienterPantin(N, s, d = 0, serre = .028) {   // serre : la courbe à partir de laquelle il se tourne (le trotteur : un vrai lacet seulement)
   const [fx, fz] = avanceEn(s, d), a = angleVue(N.m.position.x, N.m.position.z, fx, fz), k = PISTE.COURB[idx(s + 2)];
-  const r = Math.abs(a) < DERRIERE ? (k > .028 ? 3 : k < -.028 ? 5 : 4) : rangeeVue(a);   // derrière : dans un virage serré, il se tourne du côté du virage (comme avant)
+  const r = Math.abs(a) < DERRIERE ? (k > serre ? 3 : k < -serre ? 5 : 4) : rangeeVue(a);   // derrière : dans un virage serré, il se tourne du côté du virage (comme avant)
   if (r === N.rang) return;
   const i = N.i; N.rangee(r); if (i >= 0 && N.i < 0) N.image(i);
 }

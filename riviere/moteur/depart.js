@@ -34,6 +34,7 @@ const MACHINE_MENU = (() => { try { return sessionStorage.getItem("riviere_machi
 const MACHINE_CHOISIE = !!(MACHINE_MENU || ARGS.get("machine") || lireReglage("riviere_machine", null));   // sinon le menu demande d'abord la machine
 const MACHINE_VOULUE = MACHINE_MENU || ARGS.get("machine") || lireReglage("riviere_machine", null) || D.machine || "rameur";
 const DISC_VOULUE = MACHINE_VOULUE === "rameur" ? "eau" : "terre";
+const pourMachine = (n, m = MACHINE_VOULUE) => !n || !Array.isArray(n.machines) || n.machines.includes(m);   // (18/11) "machines" : un circuit fait pour certaines machines seulement (le footing : le marcheur elliptique)
 const NIVEAU = (() => {
   let brouillon = null, unefois = null;
   try { brouillon = JSON.parse(sessionStorage.getItem("riviere_essai") || "null"); sessionStorage.removeItem("riviere_essai"); } catch (e) {}
@@ -42,8 +43,8 @@ const NIVEAU = (() => {
   const garde = unefois || (FORCE ? null : lireReglage("riviere_niveau_" + DISC_VOULUE, null) || (DISC_VOULUE === "eau" ? lireReglage("riviere_niveau", null) : null));
   const duJour = garde && /^jour-/.test(garde) && !NIVEAUX[garde] ? Object.values(NIVEAUX).find(x => x.jour && disciplineDe(x) === DISC_VOULUE) : null;   // le circuit du jour d'hier, choisi la veille : celui d'aujourd'hui
   let n = CIRCUITS_PERSO[garde] || NIVEAUX[garde] || duJour || NIVEAUX[NIVEAU_SERVI] || Object.values(NIVEAUX)[0];
-  if (!unefois && !FORCE && (disciplineDe(n) !== DISC_VOULUE || n.cache)) {   // (17/11) un circuit caché (ceux qui servent aux essais du moteur) ne se choisit qu'à l'adresse   // la machine d'une autre activité : un circuit de son activité
-    const bon = [NIVEAUX[NIVEAU_SERVI]].concat(Object.values(NIVEAUX), Object.values(CIRCUITS_PERSO)).find(x => x && !x.cache && disciplineDe(x) === DISC_VOULUE); if (bon) n = bon; }
+  if (!unefois && !FORCE && (disciplineDe(n) !== DISC_VOULUE || n.cache || !pourMachine(n))) {   // (17/11) un circuit caché (ceux qui servent aux essais du moteur) ne se choisit qu'à l'adresse   // la machine d'une autre activité : un circuit de son activité
+    const bon = [NIVEAUX[NIVEAU_SERVI]].concat(Object.values(NIVEAUX), Object.values(CIRCUITS_PERSO)).find(x => x && !x.cache && disciplineDe(x) === DISC_VOULUE && pourMachine(x)); if (bon) n = bon; }
   return Object.values(CIRCUITS_PERSO).includes(n) ? Object.assign({}, n, {perso: true}) : n;
 })();
 const DISCIPLINE = disciplineDe(NIVEAU);

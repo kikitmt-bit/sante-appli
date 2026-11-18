@@ -46,6 +46,20 @@ const JONCTIONS = () => JONCTIONS_ || (JONCTIONS_ = (() => {
     const route = sens > 0 ? j : i, h0 = H(sens > 0 ? i - 3 : i + 3);
     o.push(Object.assign({o: J.objet, s: i, sens, tourne: (h0 - at(i).h) * 180 / Math.PI, surface: P.surfaces[P.SF[route]], large: P.W[route] * 2, vers: dh > 0 ? 1 : -1}, J.reglages)); }
   return o; })());
+/* (18/11, Kiki : « les routes se croisent, les immeubles sont au milieu de la route ») un objet posé au mètre s empiète-t-il sur UN AUTRE bout de la
+   piste ? Une rue qui part (52 m, ses maisons, la façade du bout) posée à l'intérieur d'une épingle traversait l'autre branche : jusque-là, seule la
+   place des autres objets était regardée. On ne regarde pas les mètres voisins de s (sa propre route), ni un bout qui passe bien au-dessus ou
+   au-dessous (un pont, une grotte). */
+function surAutreRoute(x, z, r, s) {
+  const P = PISTE, G = CASES, R = r + 7, n = Math.ceil(R / G.C), cx = Math.floor((x - G.x0) / G.C), cz = Math.floor((z - G.z0) / G.C); let y = null;
+  for (let j = Math.max(0, cz - n); j <= Math.min(G.nz - 1, cz + n); j++) for (let i = Math.max(0, cx - n); i <= Math.min(G.nx - 1, cx + n); i++)
+    for (const k of G.cases[j * G.nx + i]) {
+      if (Math.hypot(x - P.X[k], z - P.Z[k]) - P.W[k] >= r || Math.abs(ecart(sLigne(k), s)) < r + 25) continue;
+      if (P.PONT[k] || P.TUN[k]) { if (y === null) y = hauteur(x, z); if (Math.abs(y - P.Y[k]) > 3.5) continue; }
+      return true;
+    }
+  return false;
+}
 function poserDecor(Z) { const g = poserDecorPas(Z); let r; do r = g.next(); while (!r.done); return r.value; }
 function* poserDecorPas(Z) {
   const P = PISTE, MD = Z ? Z.monde : MONDE, K = Z ? Z.K : K_MONDE, R = Z ? Z.R : hasard((NIVEAU.graine || 1) * 7919 + 1), formes = new Map(), reserves = [], pris = new Map(), poses = [];
@@ -66,8 +80,13 @@ function* poserDecorPas(Z) {
     const a = at(s), sg = cote === "g" ? -1 : 1, q = cote === "c" || cote === "portail" ? pose(s, e || 0) : pose(s, sg * (a.w + e));
     const y = (cote === "c" || o.flotte ? a.y : cote === "portail" ? a.y + hRive(idx(s), 0, 2) + .5 : hauteur(q.x, q.z)) + (o.haut || 0);   // flotte : sur l'eau, contre la rive (un bateau, un ponton ; e négatif)   // « portail » : perché au-dessus de l'entrée d'une grotte ; haut : sur un toit, en l'air
     const lacet = lacetDe(a, sg, o), oo = Object.assign({eau: a.w * 2, _s: s, _cote: cote, _e: e || 0, _v: P.NF ? VOIES.prise.slice() : null, _vo: P.VO[idx(s)]}, o);
+    const r0 = (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech;
+    if ((cote !== "c" && cote !== "portail" && !o.flotte && surAutreRoute(q.x, q.z, r0 * .8, s)) || (EMPRISE[nom] && emprise(nom, oo, q, lacet, ech).some(([X, Z2, rr]) => surAutreRoute(X, Z2, rr * .8, s)))) {
+      // il tomberait sur un autre bout de la route : on ne le pose pas, mais sa recette tourne quand même, à blanc, pour que le hasard du reste du décor ne bouge pas
+      recette(new Forme().poser(q.x, y, q.z, lacet, ech).matiere(2), oo, R, kMonde({etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []})); MD.ecartes = (MD.ecartes || 0) + 1; return;
+    }
     recette(forme(s).poser(q.x, y, q.z, lacet, ech).matiere(2), oo, R, K); if (EVENEMENTS[nom]) MD.evenements.push({s: BOUCLE ? sLigne(idx(s)) : s, type: EVENEMENTS[nom], vo: P.VO[idx(s)]});   // un tronc, des rondins : ton Pokémon saute ou plonge
-    prendre(q.x, q.z, (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech); if (EMPRISE[nom]) for (const [X, Z2, r] of emprise(nom, oo, q, lacet, ech)) prendre(X, Z2, r); poses.push({nom, s, cote, e, v: P.NF ? VOIES.prise.slice() : null});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
+    prendre(q.x, q.z, r0); if (EMPRISE[nom]) for (const [X, Z2, r] of emprise(nom, oo, q, lacet, ech)) prendre(X, Z2, r); poses.push({nom, s, cote, e, v: P.NF ? VOIES.prise.slice() : null});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
   }
   const poserCache = (...args) => { exacts = true; try { poser(...args); } finally { exacts = false; } };   // (collé à son arbre, exprès : lui non plus ne regarde pas la place)
   // 1) les lieux et les objets que le niveau pose exactement
