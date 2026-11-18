@@ -35,13 +35,14 @@ const EAU_U = Object.assign({uC1: {value: new THREE.Vector3(...hex(BIOME.eau.c1)
 const EAU_PR = EFFETS.ombres ? "proxR" : "prox";
 const EAU_REFLETS = `vec2 g = vec2(p.x / 1.5, p.y / .42); float rang = floor(g.y); g.x += h21(vec2(rang, 3.)) * 7. + uT * .22 * (mod(rang, 2.) - .5);
     vec2 cel = floor(g), f = fract(g);
-    if (h21(cel + floor(uT * .9 + h21(cel) * 5.) * .013) > .9 && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, ${EAU_PR});`;
+    float phR = fract(uT * .9 + h21(cel) * 5.), douxR = smoothstep(0., .25, phR) * (1. - smoothstep(.75, 1., phR));   // (18/11, Kiki : des flashs) un reflet s'allume et s'éteint en fondu, plus d'un coup
+    if (h21(cel + floor(uT * .9 + h21(cel) * 5.) * .013) > .9 && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, ${EAU_PR} * netR * douxR);`;
 const EAU_COURANT = `if (vFlot.z > .999 || h21(floor(p / 2.5)) < vFlot.z) { ${EAU_REFLETS} }
     else { float cv = vFlot.x, av = abs(cv), bande = floor(vSU.x / 7.);
       for (int j = 0; j < 2; j++) { float fj = float(j), tt = uT / 2.6 + h21(vec2(bande, 5.)) + fj * .5, ph = fract(tt), vie = floor(tt), poids = 1. - abs(2. * ph - 1.), sj = vSU.x - cv * 2.6 * (ph - .5);
         vec2 g = vec2(vSU.y / 1.5, sj / .42); float rang = floor(g.y); g.x += h21(vec2(rang, 3. + fj)) * 7.;
         vec2 cel = floor(g), f = fract(g);
-        if (h21(cel + vie * .137 + fj * 31.) < .115 * poids && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, ${EAU_PR});
+        if (h21(cel + vie * .137 + fj * 31.) < .115 * poids && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, ${EAU_PR} * netR);
         if (av > 1.) { vec2 r = vec2(sj / 2.6, vSU.y / .3), k = floor(r); if (h21(k + vie * .31 + fj * 17.) < (av - 1.) * .07 * poids && fract(r.x) < .75 && fract(r.y) > .3) c = mix(c, CL, .6 * ${EAU_PR}); }
         if (vFlot.y > .02) { vec2 r = vec2(sj / .3, vSU.y / .36), k = floor(r), fr = fract(r); float hf = h21(k + vie * .53 + fj * 7.);   // des flocons d'écume, petits, de tailles inégales
           if (hf < vFlot.y * .16 * poids && fr.x > .15 && fr.y > .15 && fr.x < .6 + 6. * hf && fr.y < .55 + 6. * hf) c = mix(c, EC, .8 * prox); } } }`;
@@ -75,6 +76,8 @@ const EAU_FS = `${PORTEE_FS} ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${ABRI_P
     vec3 C1 = uC1, C2 = uC2, CL = uClair, RE = uReflet, EC = uEcume; float LU = uLuit;
   #endif
     vec2 p = vW.xz; float prox = 1. - smoothstep(45., 150., vZ);
+    float netR = 1. - smoothstep(12., 32., vZ);   // (18/11, Kiki : ça clignotait loin devant) un trait de reflet fait ~23 cm : au-delà de ~15 m il devient plus fin qu'un pixel
+    //   et paraît ou disparaît d'une image à l'autre ; il s'efface donc avec la distance (les taches des deux bleus, elles, restent jusqu'au loin)
     vec2 q = floor(p * 4.) / 4.;
     float n = sin(q.x * .42 + uT * .35) + sin(q.y * .57 - uT * .5 + sin(q.x * .23) * 1.8) + sin((q.x + q.y) * .31 + uT * .2);
     vec3 c = mix(C1, C2, step(.35, n) * prox);${REEL.reflets ? EAU_REEL : ""}
