@@ -44,7 +44,7 @@ setInterval(majMenuMontre, 1000);
 function commencer(mode) {
   if (!CHANTIER.pret) { CHANTIER.depart = mode; majMenuDepart(); return; }   // (17/11) le monde n'est pas fini : on part dès qu'il l'est
   fermerMenu();
-  Object.assign(S, {mode, s: PARAMS.has("s") ? +PARAMS.get("s") : BOUCLE ? LONG - ELAN : 6, v: 0, v1: 0, v2: 0, vL: 0, vn: 0, t: 0, dist: 0, nb: 0, coupsT: [], tour: 0, tourT0: 0, tours: [],
+  Object.assign(S, {mode, s: PARAMS.has("s") ? +PARAMS.get("s") : BOUCLE ? LONG - ELAN : 6, v: 0, v1: 0, v2: 0, vL: 0, vn: 0, t: 0, dist: 0, nb: 0, coupsT: [], cad: [], tour: 0, tourT0: 0, tours: [],
     lance: false, pause: false, capteurVu: false, debutMur: 0, t0: performance.now(), pauseTot: 0, auto: mode === "essai" && PARAMS.get("auto") !== "0", prochain: .6});
   M.y = null; CAM.y = null; sonDemarrer(); eveiller();
   S.capteur = false; BT.v = 0; BT.coups = null; RIVAUX.t0 = null; for (const r of RIVAUX.liste) r.vr = 0; SEG.actif = null; SEG.faits = []; SEG.dernier = null;
@@ -53,7 +53,7 @@ function commencer(mode) {
 }
 
 /* pendant la séance : on la garde sur la machine toutes les 10 s (un onglet fermé, une coupure : on la récupère au menu) */
-const bilanDe = () => ({machine: MACHINE_NOM, debutMur: S.debutMur, t: S.t, nb: S.nb, dist: MACHINE.continu ? S.dist : Math.max(S.dist, S.nb * M_COUP), tours: S.tours.slice(), segments: SEG.faits.slice(), capteur: !!S.capteurVu, maj: Date.now()});
+const bilanDe = () => ({machine: MACHINE_NOM, debutMur: S.debutMur, t: S.t, nb: S.nb, cad: (S.cad || []).slice(), dist: MACHINE.continu ? S.dist : Math.max(S.dist, S.nb * M_COUP), tours: S.tours.slice(), segments: SEG.faits.slice(), capteur: !!S.capteurVu, maj: Date.now()});
 setInterval(() => { if (S.mode === "vraie" && S.lance && !S.pause && MACHINE.enregistre) ecrireLS(ENCOURS, bilanDe()); }, 10000);
 
 function mettrePause() { S.pause = true; S.pauseDebut = performance.now(); majBoutons(); }
@@ -120,6 +120,7 @@ function garder(b, saisi) {
   const duree = saisi.temps_s || Math.round(b.t), debut = b.debutMur || Date.now() - b.t * 1000, meilleur = b.tours.length ? Math.min(...b.tours) : null;
   const s = {id: isoLocal(debut).slice(0, 19).replace("T", "-").replace(/:/g, ""), version: 1, machine: MACHINE_NOM, source: MACHINE.capteurRequis ? "capteur" : "montre",
     debut: isoLocal(debut), fin: isoLocal(debut + duree * 1000), duree_s: duree, actif_s: Math.round(b.t), coups: b.nb, cadence: b.t > 20 && b.nb ? Math.round(b.nb / (b.t / 60) * 10) / 10 : null,
+    ...(b.cad && b.cad.length ? {par_min: {cad: b.cad}} : {}),
     saisi: {distance: saisi.distance, temps_s: saisi.temps_s, watts: null, kcal: saisi.kcal},
     ...(MACHINE.saisie ? {} : MACHINE.capteurRequis ? {capteur: {distance: Math.round(b.dist)}} : {estime: {distance: Math.round(b.dist)}}),
     jeu: {mode: "riviere", niveau: NIVEAU.id, tour_m: Math.round(TOUR_M), dist: Math.round(b.dist), tours: b.tours.length,

@@ -16,6 +16,7 @@ import chiffres
 FICHIER = "data/pokemon/missions.json"
 DEPUIS = dt.date(2026, 10, 30)  # premier jour avec une mission
 NOUVELLES = dt.date(2026, 11, 4)  # premier jour des missions d'aujourd'hui
+RAMEUR_SPORT = dt.date(2026, 11, 18)  # premier jour où le rameur compte à la minute près (avec_coeur)
 BONUS = 25                       # points d'effort d'une ancienne mission réussie
 HISTOIRE = 14                    # jours de données qu'il faut pour le fantôme et Rattata (et jours regardés par l'ancien choix)
 PAS_REVENIR = 5                  # une mission ne revient pas avant ce nombre de jours
@@ -153,6 +154,13 @@ def avec_coeur(s, e, jour):
     if jour >= NOUVELLES and (z is None or z != z) and c is not None:
         s["zone_sport"] = c
         s["sport_estime"] = True
+    # Le rameur à la minute près (Kiki, 18/11, seances_rameur.minutes_sport) : ses minutes à 20 coups ou plus comptent toutes. Le cœur haut de la
+    # journée s'y ajoute seulement pour ce qui dépasse la durée des séances (sinon il serait compté deux fois), et on ne perd jamais rien.
+    ram = s.get("rame_sport") or 0
+    if jour >= RAMEUR_SPORT and ram:
+        z = s.get("zone_sport")
+        z = 0 if z is None or z != z else z
+        s["zone_sport"] = max(z, ram + max(0, z - (s.get("rame_duree") or 0)))
     return s
 
 

@@ -11,6 +11,8 @@ function coup(force = .6, muet = false) {   // un geste de la machine ; muet : u
   if (!S.mode || S.pause) return;
   demarrerChrono();   // le chrono de la séance part au premier geste, comme sur l'écran du rameur
   S.v += M_COUP / TAU; S.nb++; S.coupsT.push(S.t); if (S.coupsT.length > 8) S.coupsT.shift();
+  // les gestes minute par minute (pauses retirées) : dans Poké Fit, une minute de rameur à 20 coups ou plus = une minute de sport (seances_rameur.minutes_sport)
+  if (S.mode === "vraie") { S.cad = S.cad || []; const m = Math.floor(S.t / 60); while (S.cad.length <= m) S.cad.push(0); S.cad[m]++; }
   if (muet) return;
   S.elan = 1; S.coupT = T; sonCoup(force, M.liquide);
   if (M.liquide) { gerbe(S.s, force, M.d, M.y, GABARIT.hw); EAU_U.uCoups.value[S.nb % 4].set(S.s - .3, M.d, COMMUNS.uT.value); }

@@ -946,6 +946,27 @@ class TestRameur(unittest.TestCase):
         self.assertEqual(m["points"]["sport"], 20)  # comme le rameur de la montre
         self.assertEqual(pokemon.sport_principal(m)[2], ["Eau", "Glace"])
 
+    def sport(self, seance, zone, jour=None):
+        """Les minutes de sport du jour : le cœur haut de la montre (zone) et la séance de rameur."""
+        r = seances_rameur.fusionner({str(self.JOUR): {}}, {"seances": [seance]})
+        s = chiffres.stats_jour(r[str(self.JOUR)]) | {"zone_sport": zone}
+        return missions.avec_coeur(s, {}, jour or self.JOUR)["zone_sport"]
+
+    def test_minutes_ramees_a_20_coups(self):
+        dix = self.S | {"fin": "2026-11-20T18:10:30+01:00", "par_min": {"cad": [22] * 10 + [8]}}
+        self.assertEqual(self.sport(dix, 7), 10)    # 10 min à 22 coups = 10 min de sport, même si le cœur n'en a vu que 7
+        self.assertEqual(self.sport(dix, 0), 10)
+        lent = self.S | {"par_min": {"cad": [18] * 5 + [21] * 15}}
+        self.assertEqual(self.sport(lent, 0), 15)   # seules les minutes à 20 coups ou plus
+        self.assertEqual(self.sport(lent, 19), 19)  # jamais moins que le cœur
+        self.assertEqual(self.sport(self.S, 50), 50)   # 20 min ramées + 30 min de cœur haut hors de la séance
+        self.assertEqual(self.sport(self.S, 15), 20)
+        sans_detail = {k: v for k, v in self.S.items() if k != "par_min"} | {"actif_s": 1150}
+        self.assertEqual(self.sport(sans_detail, 0), 19)   # cadence moyenne de 24 : tout le temps ramé
+        self.assertEqual(self.sport(sans_detail | {"cadence": 18}, 0), 0)
+        self.assertEqual(self.sport(self.S, 7, dt.date(2026, 11, 17)), 7)   # avant le 18/11 : comme avant
+        self.assertEqual(self.sport(self.S | {"machine": "elliptique"}, 7), 7)   # le rameur seulement
+
     def test_la_montre_ne_compte_pas_une_deuxieme_fois(self):
         resumes = {str(self.JOUR): {"exercise": [self.montre("2026-11-20T17:01:00Z", "2026-11-20T17:19:00Z")]}}
         r = seances_rameur.fusionner(resumes, {"seances": [self.S]})

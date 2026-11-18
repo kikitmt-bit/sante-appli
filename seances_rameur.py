@@ -70,6 +70,26 @@ def texte_details(s):
     return out
 
 
+# Le rameur compte à la minute près (Kiki, 18/11) : le cœur met une ou deux minutes à monter, et 10 min ramées donnaient 7 à 10 min « en zone »,
+# impossible à savoir avant. Chaque minute ramée à au moins CADENCE_SPORT coups (seuil choisi par Kiki) = une minute de sport dans Poké Fit
+# (missions.avec_coeur l'ajoute au sport du jour, sans compter deux fois le cœur haut de la séance). Seulement le rameur : les autres machines n'ont
+# pas de coups qui disent l'effort aussi bien.
+CADENCE_SPORT = 20
+
+
+def minutes_sport(s):
+    """Les minutes de sport d'une séance de rameur : ses minutes à CADENCE_SPORT coups ou plus (par_min.cad, une case par minute depuis le premier
+    coup, pauses retirées) ; sans le détail minute par minute, tout son temps ramé si sa cadence moyenne y est, sinon rien."""
+    if machine_de(s) != "rameur":
+        return 0
+    cad = (s.get("par_min") or {}).get("cad") or []
+    if cad:
+        return sum(1 for c in cad if (c or 0) >= CADENCE_SPORT)
+    if (s.get("cadence") or 0) >= CADENCE_SPORT:
+        return int((s.get("actif_s") or s.get("duree_s") or 0) // 60)
+    return 0
+
+
 def point_de(s, montre=None):
     """Une séance d'une machine -> une séance comme celles de la montre, dont elle garde le cœur et les calories si elle l'a vue aussi.
     La clé "rameur" (le nom vient du premier, le rameur) = ce qu'on en sait, en texte, pour la page Santé."""
@@ -83,7 +103,7 @@ def point_de(s, montre=None):
     type_, nom, _ = MACHINES[machine_de(s)]
     return {"exercise": {"exerciseType": type_, "displayName": nom, "activeDuration": f"{round(s['duree_s'])}s",
                          "interval": {"startTime": debut.strftime("%Y-%m-%dT%H:%M:%SZ"), "endTime": fin.strftime("%Y-%m-%dT%H:%M:%SZ")},
-                         "metricsSummary": resume, "rameur": texte_details(s)}}
+                         "metricsSummary": resume, "rameur": texte_details(s), "minutes_sport": minutes_sport(s)}}
 
 
 def fusionner(resumes, fichier, autres=None):
