@@ -47,10 +47,12 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   const P = PISTE, i = idx(S.s), gab = velo ? 1 : GABARIT.f, kg = CAM.g === null || S.fige || !(dt > 0) ? 1 : 1 - Math.exp(-dt / .9);
   if (CAM.g === null) CAM.g = gab;
   CAM.g += (gab - CAM.g) * kg;
-  const g = CAM.g, recul = (5.5 + S.vn * .8 + dz * .7) * g + P.CAMR[i] - (velo ? 1.6 : 0), c = pose(S.s - recul, M.d * .6 + lat), d = pose(S.s + (velo ? 7 : 10 * g), M.d * .3 - lat * .1);
+  // (18/11) une monture peut demander une caméra plus près, plus basse, et juste dans son axe (CAM.fr, CAM.fh, CAM.fl : monture.js) ; sinon comme avant
+  const fr = velo ? 1 : CAM.fr || 1, fh = velo ? 1 : CAM.fh || 1, fl = velo || CAM.fl === null || CAM.fl === undefined ? null : CAM.fl;
+  const g = CAM.g, recul = (5.5 + S.vn * .8 + dz * .7) * g * fr + P.CAMR[i] - (velo ? 1.6 : 0), c = pose(S.s - recul, (fl === null ? M.d * .6 : M.d * fl) + lat), d = pose(S.s + (velo ? 7 : 10 * g * (fl === null ? 1 : .85)), (fl === null ? M.d * .3 : M.d * fl) - lat * .1);
   const voute = g > 1.05 && (P.TUN[i] || P.TUN[idx(S.s + 16)] || P.TUN[idx(S.s - recul)]);
-  CAM.h += ((voute ? Math.min(1.95 * g, 2.9) : 1.95 * g) - CAM.h) * kg;
-  const yc = c.y + CAM.h + (velo ? .45 : 0) + dz * .15 + P.CAMH[i], yl = d.y + (velo ? -.55 : .8 * g), net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
+  CAM.h += ((voute ? Math.min(1.95 * g * fh, 2.9) : 1.95 * g * fh) - CAM.h) * kg;
+  const yc = c.y + CAM.h + (velo ? .45 : 0) + dz * .15 + P.CAMH[i], yl = d.y + (velo ? -.55 : .8 * g * (fl === null ? 1 : .7)), net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
   if (CAM.y === null) { CAM.y = yc; CAM.ly = yl; }
   CAM.y += (yc - CAM.y) * k; CAM.ly += (yl - CAM.ly) * k;
   CAM.saut += ((M.y === null ? 0 : M.y - at(S.s).y) * .55 - CAM.saut) * k;   // un saut : la caméra le suit à moitié

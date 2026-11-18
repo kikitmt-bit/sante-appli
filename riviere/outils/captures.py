@@ -68,7 +68,7 @@ def prendre(dossier, noms):
             pg = nav.new_page(viewport={"width": LARG, "height": HAUT})
             for nom in noms:
                 url = f"http://localhost:{PORT}/?niveau={nom}&s=0&fige=1&h=432"
-                pg.goto(url)
+                pg.goto(url, timeout=120000)
                 pg.wait_for_function("window.__pret !== undefined", timeout=60000)
                 long_ = pg.evaluate("LONG")
                 for i in range(POINTS):

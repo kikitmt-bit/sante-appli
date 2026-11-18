@@ -72,7 +72,7 @@ const mondeFS = ombres => `${ombres ? PORTEE_FS : ""}
       return l; }
     void main() { vec3 n = normalize(vN); float brume = smoothstep(uB0, uB1, vZ) * .94; vec3 c;
       float lum = .6 + .4 * (dot(n, uSoleil) * .5 + .5) + .04 * n.y;${REEL.lumiere ? "" : " lum = floor(lum * 7. + .5) / 7.;"}   // la lumière en paliers (rendu plus réaliste : douce)
-      ${ombres ? "float omb = ombreEn(vW, n, vZ); lum = mix(lum, min(lum, .6), omb);   // à l'ombre : la lumière d'une face qui tourne le dos au soleil" : ""}${REEL.lumiere ? `
+      ${ombres ? "float omb = ombreEn(vW, n, vZ) * smoothstep(.3, .55, n.y); lum = mix(lum, min(lum, .6), omb);   // à l'ombre : la lumière d'une face qui tourne le dos au soleil. (18/11, Kiki : « le haut des maisons, l'ombre, c'est dégueulasse ») seulement ce qui regarde le ciel : un mur, vu par le soleil de biais, se faisait des dents de scie sous son toit" : ""}${REEL.lumiere ? `
       if (vM > 1.5) lum = floor((.8 + (lum - .8) * 1.2) * 7. + .5) / 7.;   // (rendu plus réaliste, 18/11, Kiki : les arbres devenaient des boules fades) les objets gardent leurs paliers, un peu plus marqués : des faces nettes` : ""}
       if (vM > 6.5) { c = mix(vC * lum * uSombre * uTeinte, uLueur, uNuit); gl_FragColor = vec4(mix(c, uBrume, brume * (1. - .6 * uNuit)), 1.); return; }
       if (vM > 3.5) {

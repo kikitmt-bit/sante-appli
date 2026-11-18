@@ -10,6 +10,8 @@ const OBJETS = {}, RAYON = {}, EVENEMENTS = {}, LOINTAINS = {};
 /* (17/11) la place d'un objet étendu (une rue qui part, un rond-point) : EMPRISE[nom] = o => [[x, z, r], …] dans le repère de l'objet ;
    rien d'autre ne sera posé dans ces ronds (une règle ne pose un tel objet que si tous ses ronds sont libres) */
 const EMPRISE = {};
+/* (18/11, footing) la coupe d'une rue à côté du trottoir : [u, hauteur], u = la distance au bord de la piste (surfaces.js : construireBandes ; l'objet rue_continue) */
+const BANDE_RUE = [[0, 0], [.22, 0], [.24, -.12], [.55, -.12], [3.6, -.12], [6.65, -.12], [6.96, -.12], [6.98, 0], [9.7, 0], [9.72, -.38]];
 const MONDE = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []};
 /* ce qu'une recette peut laisser dans le monde, en plus de ses volumes. Une fabrique : le monde entier a ses listes (MONDE), un tronçon a les siennes (troncons.js) */
 const kMonde = MONDE => ({

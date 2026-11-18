@@ -23,7 +23,8 @@ function ligneRoute() {
   if (LIGNE_) return LIGNE_;
   const P = PISTE, N = P.N, d = new Float64Array(N), lo = new Float64Array(N), hi = new Float64Array(N), fl = new Float64Array(N), nx = new Float64Array(N), nz = new Float64Array(N);
   const k = j => BOUCLE ? ((j % N) + N) % N : clamp(j, 0, N - 1);
-  for (let i = 0; i < N; i++) { nx[i] = Math.cos(P.H[i]); nz[i] = Math.sin(P.H[i]); lo[i] = -Math.max(0, P.W[i] - 1.7); hi[i] = Math.max(0, P.W[i] - .9);
+  const seul = typeof MACHINE !== "undefined" && MACHINE.monture === "trotteur", mg = seul ? .55 : 1.7, md = seul ? .55 : .9;   // (18/11) un trotteur court seul : la même marge des deux côtés (sur un trottoir de 2,6 m, il restait collé à droite)
+  for (let i = 0; i < N; i++) { nx[i] = Math.cos(P.H[i]); nz[i] = Math.sin(P.H[i]); lo[i] = -Math.max(0, P.W[i] - mg); hi[i] = Math.max(0, P.W[i] - md);
     fl[i] = clamp((bruit(i / 85 + 3.3, 7.1) - .5) * 2.4, -1, 1) * P.W[i] * .35; d[i] = clamp(fl[i], lo[i], hi[i]); }
   for (const [pas, n] of [[24, 50], [12, 50], [6, 50], [3, 30]]) for (let it = 0; it < n; it++) for (let i = 0; i < N; i++) {
     const a = k(i - pas), b = k(i + pas), px = (P.X[a] + nx[a] * d[a] + P.X[b] + nx[b] * d[b]) / 2, pz = (P.Z[a] + nz[a] * d[a] + P.Z[b] + nz[b] * d[b]) / 2;
@@ -77,6 +78,7 @@ function animerMonture(t, dt, S) {
   if (PISTE.NF) EAU_U.uVoie.value = PISTE.VO[idx(S.s + 4)] || PISTE.VO[idx(S.s)] || PISTE.VO[idx(S.s - 38)];   // dans une fourche : le sillage et l'ombre ne se dessinent que sur ta voie
   OMBRE_U.uOmbre.value.set(M.liquide ? 0 : mt.velo ? 1 : .55, Math.max(0, M.y + bond - sol), mt.velo ? 1 : 0);   // l'ombre au sol (et, à vélo, la trace du pneu)
   CAM.roulisF = mt.roulis === undefined ? 1 : mt.roulis;   // (18/11) à pied, la caméra se penche moins dans les virages (MONTURES.trotteur.roulis)
+  const mc = mt.camera || {}; CAM.fr = mc.recul || 1; CAM.fh = mc.haut || 1; CAM.fl = mc.suit === undefined ? null : mc.suit;   // (18/11, Kiki : « il est vraiment petit à l'écran ») une monture peut rapprocher la caméra (MONTURES.trotteur.camera)
   if (mt.velo) { animerVelo(t, dt, S, pose(S.s, M.d), M.y + Math.max(0, bond), nageur); return; }
   cacherVelo();
   const N = nageur, p = pose(S.s, M.d), k = PISTE.COURB[idx(S.s + 2)];

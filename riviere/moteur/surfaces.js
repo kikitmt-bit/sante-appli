@@ -142,7 +142,12 @@ const ROUTE_FS = `${PORTEE_FS} ${ABRI_PISTE ? "varying float vAbri;" : ""}
     c *= (.9 + .2 * vn(p / 9. + 2.3)) * (1. + (.14 * h21(floor(p * 8.)) - .07) * prox);              // (rendu plus réaliste) des taches et du grain` : ""}
     float o = sin(vSU.x * .9) * .12;
     bool marque = vBord < 50.;                                                                       // (dans un carrefour : aucune marque)
-    if (uMode > 2.5) {                                                                               // (18/11, footing) un escalier de pierre : une marche tous les 36 cm, l'ombre de la contremarche, le nez clair
+    if (uMode > 3.5) {                                                                               // (18/11, footing, 2e version) un trottoir : des dalles claires, des joints fins qui s'effacent au loin (pas de moiré), un liseré du côté des jardins
+      float W = vBord + abs(vSU.y), jn = 1. - smoothstep(14., 30., vZ); vec2 g = vec2(vSU.x / 1.2, (vSU.y + W) / 1.3), f = fract(g); float hp = h21(floor(g));
+      c = mix(uC1, uC2, step(.62, hp)) * (.97 + .05 * hp);
+      if (f.x < .06 || f.y < .06) c = mix(c, uBordC, .85 * jn);
+      if (marque && vSU.y > 0. && vBord < .14) c = uLigne;
+    } else if (uMode > 2.5) {                                                                        // (18/11, footing) un escalier de pierre : une marche tous les 36 cm, l'ombre de la contremarche, le nez clair
       float m = vSU.x / .36, f = fract(m), hp = h21(vec2(floor(m), floor(vSU.y * .8 + 9.)));
       c = mix(uC1, uC2, step(.55, hp)) * (.95 + .07 * hp);
       if (f > .78) c = uBordC * (.9 + .1 * hp); else if (f < .09) c = uLigne;
@@ -181,6 +186,63 @@ SURFACES.terre = {materiau: matRoute(...(TERRES.terre || ["#D9B886", "#CBA672", 
 SURFACES.goudron = {materiau: matRoute(...(TERRES.goudron || ["#6E7480", "#646A76", "#F8F8E8", "#F8F8E8"]), 1), liquide: false, monture: "coureur", poussiere: "#C8CCD4"};
 SURFACES.marches = {materiau: matRoute(...(TERRES.marches || ["#CDC5B6", "#C1B9A9", "#8C857A", "#ECE6D8"]), 3), liquide: false, monture: "coureur", poussiere: "#D6D0C4"};   // (18/11) un escalier : pour le footing (le marcheur elliptique, au trot)
 SURFACES.paves = {materiau: matRoute(...(TERRES.paves || ["#BCB4A4", "#ACA494", "#7C766C", "#D4CEC0"]), 2), liquide: false, monture: "coureur", poussiere: "#C8C0B0"};   // une rue de village
+SURFACES.trottoir = {materiau: matRoute(...(TERRES.trottoir || ["#D2CDC2", "#C9C4B9", "#ABA69B", "#9C978C"]), 4), liquide: false, monture: "coureur", poussiere: "#D0CBC0"};   // (18/11, footing) le trottoir où l'on court ; la rue d'à côté est une bande de la rive (construireBandes)
+
+/* ---- (18/11, footing, Kiki : « une vraie route, un trottoir de chaque côté, et on court sur le trottoir ») les bandes d'une rive ----
+   Une rive peut porter une bande ("bande": "rue" dans la région) : un ruban qui suit la piste exactement, à côté d'elle, dessiné comme elle
+   (net, sans les couleurs du terrain qui faisaient des escaliers) : la bordure, le caniveau, la chaussée et sa ligne, ses passages piétons,
+   l'autre bordure, le trottoir d'en face. u = la distance au bord de la piste (0 : la bordure de notre trottoir). Le terrain passe dessous
+   (le profil de la rive le creuse de 18 cm), la bande se pose par-dessus. Un objet peut la prolonger (Forme.sol("rue_bande", …), même u).
+   Règle de dessin : un virage qui a la rue à l'intérieur garde un rayon de 14 m au moins (sinon le bord d'en face se replie). */
+const BANDE_FS = `${PORTEE_FS} ${ABRI_PISTE ? "varying float vAbri;" : ""}
+  uniform float uB0, uB1, uSombre, uPluie; uniform vec3 uBrume, uTeinte;
+  varying vec3 vW; varying float vZ, vBord, vPente, vVoie; varying vec2 vSU, vEc;
+  float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+  float vb(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(h21(i), h21(i + vec2(1., 0.)), f.x), mix(h21(i + vec2(0., 1.)), h21(i + vec2(1., 1.)), f.x), f.y); }
+  vec3 dalles(vec2 q, float jn) { vec2 g = q / vec2(1.2, 1.3), f = fract(g); float hp = h21(floor(g) + 31.);
+    vec3 c = mix(vec3(.824, .804, .761), vec3(.788, .769, .725), step(.62, hp)) * (.97 + .05 * hp);
+    if (f.x < .06 || f.y < .06) c = mix(c, vec3(.671, .651, .608), .85 * jn); return c; }
+  void main() { float s = vSU.x, u = vSU.y, pres = 1. - smoothstep(16., 70., vZ), jn = 1. - smoothstep(14., 30., vZ); vec3 c;
+    vec3 bordure = vec3(.89, .87, .83), face = vec3(.55, .54, .51), caniveau = vec3(.70, .69, .66);
+    if (u < 0.) c = dalles(vec2(s, -u), jn);                                                         // (un objet qui prolonge la rue) notre trottoir
+    else if (u < .22 || (u > 6.98 && u < 7.2)) { c = bordure * (.96 + .05 * h21(vec2(floor(s / 1.), u > 1. ? 1. : 0.))); if (fract(s) < .04) c = mix(c, face, .5 * jn); }   // la bordure de pierre, par blocs d'un mètre
+    else if (u < .26 || (u > 6.94 && u < 6.98)) c = face;                                          // son flanc
+    else if (u < .55 || u > 6.65 && u < 6.94) c = caniveau;                                          // le caniveau
+    else if (u < 6.65) {                                                                             // la chaussée : un gris neutre, du grain de près, quelques reprises
+      vec2 g = floor(vec2(s, u) * 5.); c = vec3(.37, .375, .39) * (.92 + .16 * vb(vec2(s, u) / 7. + 4.)) * (1. + (.1 * h21(g) - .05) * pres);
+      if (vb(vec2(s / 11., u / 2.) + 9.) > .78) c *= .9;                                             // une reprise de goudron
+      float m = mod(s + 23., 97.);
+      if (m < 3.4 && u > .9 && u < 6.3) { if (fract((u - .9) / 1.) < .5) c = vec3(.93, .92, .88); }   // un passage piéton
+      else if (abs(u - 3.6) < .07 && fract(s / 6.) < .5) c = vec3(.93, .92, .88);                      // la ligne du milieu
+    }
+    else if (u < 9.62) c = dalles(vec2(s, u - 7.2), jn);                                            // le trottoir d'en face
+    else c = face * .9;                                                                              // son bord, du côté des jardins
+    ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ)" + (ABRI_PISTE ? " * (1. - vAbri)" : "") + ");" : ""}
+    c *= 1. - .16 * uPluie;
+    gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;
+const MAT_BANDE = new THREE.ShaderMaterial({uniforms: Object.assign({}, COMMUNS, EFFETS.ombres ? PORTEE_U : null), vertexShader: PISTE_VS, fragmentShader: BANDE_FS, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4});
+SURFACES.rue_bande = {materiau: MAT_BANDE, liquide: false, monture: "coureur", bande: true};   // (jamais une surface de piste : seulement les bandes et les objets qui les prolongent)
+function construireBandes() {
+  const P = PISTE, N = P.N, avec = TYPES.map((t, k) => RIVES[k].bande === "rue" ? 1 : 0);
+  if (!avec.some(Boolean)) return;
+  for (let cote = 0; cote < 2; cote++) {
+    const PW = cote ? P.PD : P.PG, sg = cote ? 1 : -1, oui = new Uint8Array(N);
+    for (let i = 0; i < N; i++) { let w = 0; for (let t = 0; t < NT; t++) if (avec[t]) w += PW[i * NT + t]; oui[i] = w > .5 && !P.PONT[i] && !P.TUN[i] ? 1 : 0; }
+    let debut = 0; if (BOUCLE && oui[0]) { debut = oui.indexOf(0); if (debut < 0) debut = 0; }
+    const runs = []; let a = -1;
+    for (let k = 0; k <= N; k++) { const i = (debut + k) % N, on = k < N && oui[i]; if (on && a < 0) a = debut + k; if (!on && a >= 0) { runs.push([a, debut + k]); a = -1; } }
+    for (const [a0, a1] of runs) {
+      const pos = [], su = [], bord = [], ind = [], abri = [], n = BANDE_RUE.length, fin = BOUCLE || a1 < N ? a1 : N - 1;
+      for (let s = a0; s <= fin; s++) { const sm = BOUCLE ? s % N : s, A = at(sm), rx = Math.cos(A.h), rz = Math.sin(A.h);
+        for (const [u, y] of BANDE_RUE) { const d = sg * (A.w + u); pos.push(A.x + rx * d, A.y + y + .02, A.z + rz * d); su.push(s, u); bord.push(99); if (ABRI_PISTE) abri.push(0); } }
+      for (let k = 0; k < fin - a0; k++) for (let j = 0; j < n - 1; j++) { const p = k * n + j, q = p + n; ind.push(p, p + 1, q, p + 1, q + 1, q); }
+      const g = new THREE.BufferGeometry();
+      g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute("aSU", new THREE.Float32BufferAttribute(su, 2)); g.setAttribute("aBord", new THREE.Float32BufferAttribute(bord, 1));
+      if (abri.length) g.setAttribute("aAbri", new THREE.Float32BufferAttribute(abri, 1)); g.setIndex(ind);
+      const m = new THREE.Mesh(g, MAT_BANDE); m.name = "bande"; scene.add(m);
+    }
+  }
+}
 const surface = s => SURFACES[surfaceEn(s)] || SURFACES.eau;
 const DESSUS = {};   // le matériau du passage « du dessus » d'un carrefour : le même, dessiné par-dessus l'autre
 function matDessus(nom) { const m = SURFACES[nom].materiau; return DESSUS[nom] || (DESSUS[nom] = new THREE.ShaderMaterial({uniforms: m.uniforms, vertexShader: m.vertexShader, fragmentShader: m.fragmentShader, side: m.side, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4})); }
@@ -263,6 +325,7 @@ function construirePiste() {
   K.decouper(0, LONG, -1, rubans);
   P.voies.forEach((v, nf) => surLaVoie(nf, () => K.decouper(v.a, v.b, nf, rubans)));   // la voie « force » de chaque fourche, entre les mêmes mètres
   for (const [a0, a1, nf] of rubans) { if (nf < 0) scene.add(K.unRuban(a0, a1)); else surLaVoie(nf, () => scene.add(K.unRuban(a0, a1))); }
+  construireBandes();   // (18/11) la rue à côté du trottoir
   if (DISC_PISTE === "terre") return;   // sur la terre : aucune mer
   const mer = new THREE.Mesh(new THREE.PlaneGeometry(7000, 7000), MAT_MER); mer.rotation.x = -Math.PI / 2; mer.position.set(P.X[P.N >> 1], RECUL ? -.035 : -.15, P.Z[P.N >> 1]); mer.name = "mer"; scene.add(mer);
 }

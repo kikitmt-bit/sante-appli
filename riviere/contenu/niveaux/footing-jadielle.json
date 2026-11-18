@@ -5,272 +5,55 @@
  "lieux": "kanto",
  "graine": 31,
  "nageur": 58,
- "allure": 1,
- "elan": 40,
- "note": "(18/11, Kiki : « vu que c'est à pied, ça pourrait être des parcours totalement différents ») un vrai footing pour le marcheur elliptique, au trot : le trottoir d'une rue, une place, une ruelle, un escalier, un parc, un sentier en forêt, un chemin entre les champs, le bord d'une petite route, une passerelle. Un tour = environ 2 km de vrais mètres au trot.",
- "machines": [
-  "elliptique"
- ],
- "boucle": "gauche",
+ "allure": 1.08,
+ "elan": 30,
+ "note": "(18/11, refait le même jour après le premier essai de Kiki : « ni beau, ni fun, ni pratique ») un vrai tour de quartier au trot pour le marcheur elliptique, ~15 min : le trottoir d'une vraie rue (la chaussée et le trottoir d'en face à côté), le coin de la boulangerie, un passage entre deux maisons, le parc des Roucool (allée des bancs, kiosque, la mare ou le raccourci de la butte à l'effort, Ronflex qui fait la sieste), la place du Marché, l'escalier de la butte, le belvédère, le sentier des bois, la passerelle, les jardins ouvriers.",
+ "machines": ["elliptique"],
+ "boucle": "droite",
  "discipline": "terre",
  "surface": "terre",
  "pieces": [
-  {
-   "nom": "La rue des Lilas",
-   "long": 204,
-   "virage": -15,
-   "large": 3,
-   "g": "rue",
-   "d": "facades",
-   "surface": "paves",
-   "objets": [
-    {
-     "o": "ligne",
-     "cote": "c",
-     "a": 0
-    },
-    {
-     "o": "panneau",
-     "cote": "d",
-     "a": 14,
-     "e": 1.6,
-     "texte": "JADIELLE",
-     "face": "arrivant",
-     "large": 3.2
-    }
-   ]
-  },
-  {
-   "long": 149,
-   "virage": 20,
-   "large": 3,
-   "g": "rue",
-   "d": "facades",
-   "surface": "paves"
-  },
-  {
-   "nom": "La place du marché",
-   "long": 54,
-   "virage": -9,
-   "large": 7,
-   "g": "facades",
-   "d": "facades",
-   "surface": "paves",
-   "objets": [
-    {
-     "o": "fontaine",
-     "cote": "g",
-     "a": 26,
-     "e": 3.5
-    }
-   ]
-  },
-  {
-   "nom": "La ruelle",
-   "long": 122,
-   "virage": -43,
-   "large": 2.4,
-   "g": "facades",
-   "d": "facades",
-   "surface": "paves"
-  },
-  {
-   "long": 12,
-   "virage": 0,
-   "large": 3,
-   "g": "escalier",
-   "d": "escalier",
-   "surface": "paves"
-  },
-  {
-   "nom": "L'escalier du parc",
-   "long": 22,
-   "virage": 0,
-   "large": 3,
-   "g": "escalier",
-   "d": "escalier",
-   "surface": "marches",
-   "monte": 5.5,
-   "segment": "L'escalier"
-  },
-  {
-   "long": 10,
-   "virage": 0,
-   "large": 3,
-   "g": "escalier",
-   "d": "escalier",
-   "surface": "paves"
-  },
-  {
-   "nom": "Le parc",
-   "long": 163,
-   "virage": -48,
-   "large": 3,
-   "g": "parc",
-   "d": "parc",
-   "surface": "terre"
-  },
-  {
-   "long": 149,
-   "virage": 31,
-   "large": 3,
-   "g": "parc",
-   "d": "parc",
-   "surface": "terre"
-  },
-  {
-   "long": 122,
-   "virage": -55,
-   "large": 3,
-   "g": "parc",
-   "d": "parc",
-   "surface": "terre"
-  },
-  {
-   "nom": "Le sentier des bois",
-   "long": 136,
-   "virage": 25,
-   "large": 2.2,
-   "g": "sous_bois",
-   "d": "sous_bois",
-   "surface": "terre",
-   "monte": 3,
-   "segment": "Le sentier",
-   "ambiance": "sous-bois"
-  },
-  {
-   "long": 149,
-   "virage": -66,
-   "large": 2.2,
-   "g": "sous_bois",
-   "d": "sous_bois",
-   "surface": "terre",
-   "monte": 4,
-   "segment": "Le sentier",
-   "ambiance": "sous-bois"
-  },
-  {
-   "long": 122,
-   "virage": 28,
-   "large": 2.2,
-   "g": "sous_bois",
-   "d": "sous_bois",
-   "surface": "terre",
-   "segment": "Le sentier",
-   "ambiance": "sous-bois"
-  },
-  {
-   "nom": "La descente du sentier",
-   "long": 149,
-   "virage": -54,
-   "large": 2.2,
-   "g": "sous_bois",
-   "d": "sous_bois",
-   "surface": "terre",
-   "monte": -6,
-   "segment": "Le sentier",
-   "ambiance": "sous-bois"
-  },
-  {
-   "long": 136,
-   "virage": 11,
-   "large": 2.2,
-   "g": "sous_bois",
-   "d": "sous_bois",
-   "surface": "terre",
-   "segment": "Le sentier",
-   "ambiance": "sous-bois"
-  },
-  {
-   "nom": "Le chemin des champs",
-   "long": 190,
-   "virage": -50,
-   "large": 2.6,
-   "g": "champ",
-   "d": "champ",
-   "surface": "terre"
-  },
-  {
-   "long": 163,
-   "virage": 9,
-   "large": 2.6,
-   "g": "champ",
-   "d": "champ",
-   "surface": "terre",
-   "monte": -2
-  },
-  {
-   "nom": "Le long de la petite route",
-   "long": 217,
-   "virage": -46,
-   "large": 2,
-   "g": "champ",
-   "d": "campagne",
-   "surface": "terre"
-  },
-  {
-   "long": 190,
-   "virage": 5,
-   "large": 2,
-   "g": "champ",
-   "d": "campagne",
-   "surface": "terre"
-  },
-  {
-   "long": 16,
-   "virage": 0,
-   "large": 2.6,
-   "g": "bas_cote",
-   "d": "bas_cote",
-   "surface": "terre"
-  },
-  {
-   "nom": "La passerelle",
-   "long": 34,
-   "virage": 0,
-   "large": 2.6,
-   "g": "bas_cote",
-   "d": "bas_cote",
-   "surface": "terre",
-   "pont": "bois",
-   "ravin": 6
-  },
-  {
-   "long": 16,
-   "virage": 0,
-   "large": 2.6,
-   "g": "bas_cote",
-   "d": "bas_cote",
-   "surface": "terre"
-  },
-  {
-   "nom": "Le retour en ville",
-   "long": 163,
-   "virage": -54,
-   "large": 2.6,
-   "g": "bas_cote",
-   "d": "bas_cote",
-   "surface": "terre",
-   "monte": -4.5
-  },
-  {
-   "nom": "La rue du Marché",
-   "long": 190,
-   "virage": -33,
-   "large": 3,
-   "g": "rue",
-   "d": "facades",
-   "surface": "paves"
-  },
-  {
-   "nom": "Le dernier virage",
-   "raccord": true,
-   "rayon": 30,
-   "large": 3,
-   "g": "rue",
-   "d": "facades",
-   "surface": "paves",
-   "monte": "auto"
-  }
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "nom": "La rue des Lilas", "long": 72, "virage": -13, "objets": [{"o": "ligne", "cote": "c", "a": 0}, {"o": "panneau", "cote": "d", "a": 12, "e": 1.3, "texte": "JADIELLE", "face": "arrivant", "large": 3.2}]},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "long": 52, "virage": 8},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "nom": "Le coin de la boulangerie", "long": 16, "virage": 78},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "nom": "La rue du Moulin", "long": 66, "virage": -13, "objets": [{"o": "rue_continue", "cote": "g", "a": 66, "e": 0, "long": 42}]},
+  {"large": 2.2, "g": "venelle", "d": "venelle", "surface": "paves", "nom": "Le passage des Chats", "long": 7, "virage": 67},
+  {"large": 2.2, "g": "venelle", "d": "venelle", "surface": "paves", "long": 24, "virage": -26, "segment": "Le passage"},
+  {"large": 2.2, "g": "venelle", "d": "venelle", "surface": "paves", "long": 20, "virage": 15, "segment": "Le passage"},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "L'entrée du parc", "long": 10, "virage": 0, "objets": [{"o": "portail_parc", "cote": "c", "a": 3, "texte": "PARC DES ROUCOOL"}]},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "L'allée des bancs", "long": 40, "virage": -32},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 36, "virage": 27},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 34, "virage": -32, "objets": [{"o": "pokemon", "num": 43, "cote": "d", "a": 18, "e": 2.2}]},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "La roseraie", "long": 40, "virage": 25, "objets": [{"o": "massif", "cote": "g", "a": 12, "e": 1.6}, {"o": "massif", "cote": "d", "a": 26, "e": 1.6}, {"o": "pokemon", "num": 39, "cote": "g", "a": 30, "e": 2.4}]},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 30, "virage": -24},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "Le kiosque", "long": 34, "virage": 25, "objets": [{"o": "kiosque", "cote": "g", "a": 17, "e": 5.5}]},
+  {"fourche": "Le raccourci de la butte", "annonce": "LA BUTTE", "calme": [{"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "Le tour de la mare", "long": 30, "virage": -35}, {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 40, "virage": 35, "objets": [{"o": "mare", "cote": "g", "a": 18, "e": 6}]}, {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 20, "virage": 0, "objets": [{"o": "banc", "cote": "g", "a": 10, "e": 0.6}]}, {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 40, "virage": 35}, {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 30, "virage": -35}], "force": [{"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "La butte", "long": 30, "virage": 35}, {"large": 2.4, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "long": 40, "virage": -35, "monte": 3}, {"large": 2.4, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "long": 20, "virage": 0, "objets": [{"o": "pokemon", "num": 1, "cote": "d", "a": 10, "e": 1.8}]}, {"large": 2.4, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "long": 40, "virage": -35, "monte": -3}, {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "long": 30, "virage": 35}]},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "Ronflex fait la sieste", "long": 34, "virage": -8, "objets": [{"o": "ronflex", "cote": "c", "a": 17}]},
+  {"large": 3, "g": "parc", "d": "parc", "surface": "terre", "nom": "La sortie du parc", "long": 26, "virage": 30, "objets": [{"o": "portail_parc", "cote": "c", "a": 21, "texte": "PARC DES ROUCOOL"}]},
+  {"nom": "La place du Marché", "long": 46, "virage": -1, "large": 12, "g": "place", "d": "place", "surface": "paves", "objets": [{"o": "fontaine", "cote": "g", "a": 24, "e": 2.8}]},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "nom": "La rue du Marché", "long": 80, "virage": 23},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "long": 62, "virage": -1, "objets": [{"o": "rue_continue", "cote": "g", "a": 62, "e": 0, "long": 40}]},
+  {"nom": "Vers l'escalier", "long": 8, "virage": 76, "large": 3, "g": "escalier", "d": "escalier", "surface": "paves"},
+  {"long": 8, "virage": 0, "large": 3, "g": "escalier", "d": "escalier", "surface": "paves"},
+  {"nom": "L'escalier de la butte", "long": 22, "virage": 0, "large": 3, "g": "escalier", "d": "escalier", "surface": "marches", "monte": 5.5, "segment": "L'escalier"},
+  {"long": 10, "virage": 0, "large": 3, "g": "escalier", "d": "escalier", "surface": "paves"},
+  {"nom": "Le belvédère", "long": 46, "virage": -12, "large": 2.4, "g": "bas_cote", "d": "champ", "surface": "terre", "objets": [{"o": "banc", "cote": "g", "a": 20, "e": 0.6}, {"o": "pokemon", "num": 16, "cote": "g", "a": 26, "e": 2.5}]},
+  {"large": 2.2, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "nom": "Le sentier des bois", "long": 44, "virage": 50, "segment": "Le sentier"},
+  {"large": 2.2, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "long": 40, "virage": -31, "monte": 2, "segment": "Le sentier"},
+  {"large": 2.2, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "long": 44, "virage": 53, "segment": "Le sentier", "objets": [{"o": "pokemon", "num": 10, "cote": "d", "a": 20, "e": 2}]},
+  {"large": 2.2, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "long": 40, "virage": -20, "monte": -1.5, "segment": "Le sentier"},
+  {"large": 2.6, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "nom": "La clairière", "long": 44, "virage": 41, "segment": "Le sentier", "objets": [{"o": "pokemon", "num": 133, "cote": "g", "a": 22, "e": 3}]},
+  {"large": 2.2, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "long": 36, "virage": -21, "segment": "Le sentier"},
+  {"large": 2.2, "g": "sous_bois", "d": "sous_bois", "surface": "terre", "ambiance": "sous-bois", "nom": "La descente", "long": 52, "virage": -26, "monte": -6},
+  {"long": 14, "virage": 0, "large": 2.6, "g": "bas_cote", "d": "bas_cote", "surface": "terre"},
+  {"nom": "La passerelle", "long": 30, "virage": 0, "large": 2.6, "g": "bas_cote", "d": "bas_cote", "surface": "terre", "pont": "bois", "ravin": 6},
+  {"long": 14, "virage": 0, "large": 2.6, "g": "bas_cote", "d": "bas_cote", "surface": "terre"},
+  {"nom": "Les jardins ouvriers", "long": 60, "virage": 29, "large": 2.6, "g": "champ", "d": "champ", "surface": "terre"},
+  {"long": 40, "virage": -16, "large": 2.6, "g": "champ", "d": "champ", "surface": "terre", "objets": [{"o": "meule", "cote": "d", "a": 20, "e": 4}]},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "nom": "L'avenue des Tilleuls", "long": 70, "virage": 12},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "long": 60, "virage": -12},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "nom": "Le coin de l'école", "long": 16, "virage": 79},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "long": 70, "virage": 6},
+  {"large": 2.6, "g": "rue", "d": "facades", "surface": "trottoir", "nom": "Le dernier virage", "raccord": true, "rayon": 16, "monte": "auto"}
  ]
 }

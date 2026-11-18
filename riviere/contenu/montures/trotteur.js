@@ -65,4 +65,4 @@ function trotter(N, t, dt, S, p, sol, bond, k) {
   const haut = Math.max(0, M.y + Math.max(0, bond) - sol), kO = clamp(N.l * .9, .25, 1.8);
   OMBRE_U.uOmbre.value.set(.75, haut, 2 + kO);
 }
-if (typeof MONTURES !== "undefined") MONTURES.trotteur = {enfonce: 0, foulee: 0, trace: Infinity, roulis: .3, animer: trotter};   // roulis : la caméra se penche trois fois moins dans les virages   // trace : la poussière vient de ses foulées, pas des mètres parcourus
+if (typeof MONTURES !== "undefined") MONTURES.trotteur = {enfonce: 0, foulee: 0, trace: Infinity, roulis: .3, camera: {recul: .6, haut: .62, suit: 1}, animer: trotter};   // camera (18/11, Kiki : « il est vraiment petit à l'écran ») : 40 % plus près, plus bas, juste derrière lui   // roulis : la caméra se penche trois fois moins dans les virages   // trace : la poussière vient de ses foulées, pas des mètres parcourus

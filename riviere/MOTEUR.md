@@ -413,22 +413,46 @@ d'une rue**, traverse une **place**, prend une **ruelle**, monte un **escalier**
 - **Le revêtement `marches`** (surfaces.js, mode 3) : un escalier de pierre dessiné sur la pente (une marche tous les 36 cm de décor,
   l'ombre de la contremarche, le nez clair, un bord de pierre). Une pièce `{"surface": "marches", "long": 22, "monte": 5.5, "large": 3}`
   (25 %, sous les 30 % permis), entre deux paliers pavés de 10 à 12 m. Couleurs : `terres.marches` de la région.
-- **Les rives du footing** (`kanto-routes.json`, leurs règles sont à la fin de la liste : le décor des autres circuits ne bouge pas) :
-  `facades` (le côté des maisons : du pavé plat, maisons et boutiques à 7-8 m, réverbères, boîtes aux lettres, Pokémon), `rue` (de l'autre
-  côté du trottoir : la bordure, la chaussée de 6 m et ses voitures garées, le trottoir d'en face, les maisons d'en face), `parc` (pelouse,
-  grands arbres, bancs, réverbères, une mare, des Pokémon), `campagne` (le sentier longe une petite route : un peu d'herbe, la route, les
-  poteaux), `escalier` (un muret de pierre de 55 cm de chaque côté, réverbères, talus boisé). Plus les rives d'avant : `sous_bois` pour un
-  sentier (`large` 2,2), `champ` pour un chemin (`large` 2,6), `bas_cote` pour une passerelle (`pont: "bois"`, `ravin: 6`). Un sol de plus :
-  `goudron` (la chaussée d'une rue, peinte par le terrain).
-- **Étroit** : un trottoir fait 3 m, une ruelle 2,4 m, un sentier 2,2 m. Les tests acceptent 2 m pour un circuit `"machines": ["elliptique"]`.
+- **La rue à côté du trottoir** (18/11, 2e version, Kiki : « une vraie route, un trottoir de chaque côté, et on court sur le trottoir ») :
+  la piste est **le trottoir** (revêtement `trottoir` : des dalles claires, mode 4 de la route, joints qui s'effacent au loin), 2,6 m de large ;
+  la rive `rue` porte une **bande** (`"bande": "rue"` dans la région ; `construireBandes` de surfaces.js) : un ruban qui suit la piste
+  exactement, dessiné comme elle, net : la bordure de pierre (22 cm), son flanc, le caniveau, la chaussée de 6 m (ligne du milieu,
+  un passage piéton tous les 97 m), l'autre caniveau, l'autre bordure, le trottoir d'en face (coupe : `BANDE_RUE`, u = la distance au
+  bord de la piste). Le terrain passe 18 cm dessous. Plus aucune couleur du terrain pour la ville (c'étaient elles, peintes sommet par
+  sommet, qui faisaient l'aliasing, les traits et les « textures qui se mélangent »). **Règle** : un virage qui a la rue à l'intérieur
+  garde un rayon de 15 m au moins. Là où l'on quitte la rue (un passage, un parc), **elle continue tout droit** : objet `rue_continue`
+  (`"cote": "g", "a": <fin de la pièce>, "e": 0, "long": 40` ; `"sens": -1` : elle venait de là), peint avec la même bande
+  (`Forme.sol("rue_bande", …)`), ses maisons d'en face, une façade qui ferme la vue.
+- **Les rives du footing** (`kanto-routes.json`, règles à la fin de la liste : le décor des autres circuits ne bouge pas) :
+  `rue` (la bande, les voitures garées des deux côtés, les arbres d'alignement et les réverbères du trottoir d'en face, ses haies, les
+  maisons d'en face à ~16 m), `facades` (notre côté : un réverbère au bord du trottoir tous les ~19 m, une haie basse coupée par les
+  portillons, boîtes aux lettres, massifs, un arbre, les maisons derrière leur jardin à ~3,5 m ; les haies et les réverbères sont posés
+  avant les maisons, sinon la place d'une maison, un grand rond, les refusait), `venelle` (un passage entre deux maisons tournées de
+  côté, des murets entre elles, un Miaouss perché dessus), `place` (le bord d'une place : la place elle-même est la piste, `large` 12,
+  en pavés ; terrasses de café, boutiques, réverbères), `parc` (allée des bancs : un banc tous les ~13 m, réverbères, massifs,
+  poubelles, grands arbres, une mare, des Pokémon), `campagne`, `escalier`, et celles d'avant (`sous_bois`, `champ`, `bas_cote`).
+  Objets du footing : `contenu/objets/kanto-footing.js` (`haie`, `muret`, `massif`, `poubelle`, `terrasse`, `kiosque`,
+  `portail_parc` posé sur la piste avec son nom, `rue_continue`).
+- **La caméra du trotteur** (`MONTURES.trotteur.camera` : `recul` .6, `haut` .62, `suit` 1 ; monture.js → `CAM.fr/fh/fl` → camera.js) :
+  40 % plus près, plus basse, juste dans son axe (avant, au milieu de la piste : sur un trottoir, il était petit et décalé ; Kiki :
+  « il est vraiment petit à l'écran »). Il court au milieu de sa piste, 55 cm de marge de chaque côté (`ligneRoute` : la marge de 1,7 m
+  à gauche n'est que pour le vélo).
+- **Les ombres sur les murs** (rendu.js, tous les circuits) : seules les faces tournées vers le ciel reçoivent les ombres portées. Un mur,
+  vu par le soleil de biais, se faisait des dents de scie sous son toit (Kiki : « le haut des maisons, l'ombre, c'est dégueulasse »).
+- **Étroit** : un trottoir fait 2,6 m, un passage 2,2 m, un sentier 2,2 m. Les tests acceptent 2 m pour un circuit `"machines": ["elliptique"]`.
 - **`"machines": ["elliptique"]`** à la racine du niveau : il n'est proposé qu'à ces machines (menu, `pourMachine` de depart.js ; un vélo dans un
   escalier, non). Sans ce champ : toutes les machines de son activité, comme avant.
 - **La longueur** : au trot, le décor défile une fois et demie plus vite que tes vrais mètres (`MACHINE.allure` ≈ 1,5 : 6,5 km/h vus pour
   4,3 km/h aux jambes). Un tour de 2 km de vrais mètres = ~3 km de décor.
-- **Le circuit** : `contenu/niveaux/footing-jadielle.json`, « Le footing de Jadielle » (3 019 m de décor, un tour ≈ 2,0 km au trot) : la rue des
-  Lilas sur le trottoir, la place du marché et sa fontaine, la ruelle, l'escalier du parc (segment chronométré), le parc, le sentier des bois
-  (segment, 13 m de montée), le chemin des champs, le long de la petite route, la passerelle en bois sur un ruisseau, le retour en ville. Les
-  virages ont été calculés pour que la boucle se referme presque toute seule (le dernier virage fait 140 m).
+- **Le circuit** : `contenu/niveaux/footing-jadielle.json`, « Le footing de Jadielle », refait le 18/11 (1 728 m de décor, un tour
+  ≈ 15 min au trot, une boucle à droite de ~660 × 360 m dont les virages ont été calculés pour qu'elle se referme par 70 m de rue :
+  plus aucune longue ligne droite) : la rue des Lilas sur le trottoir, le coin de la boulangerie, la rue du Moulin, le passage des Chats
+  entre deux maisons (segment), le portail du parc des Roucool, l'allée des bancs, la roseraie, le kiosque, **la fourche « Le raccourci
+  de la butte »** (à l'effort : par la butte boisée, sinon le tour de la mare), **Ronflex qui fait la sieste** sur l'allée, la place du
+  Marché et ses terrasses, la rue du Marché, l'escalier de la butte (segment), le belvédère, le sentier des bois et sa clairière
+  (segment), la descente, la passerelle, les jardins ouvriers, l'avenue des Tilleuls, le coin de l'école. Allure du niveau 1,08.
+  Pour retoucher le tracé sans casser la fermeture : changer une pièce, puis recalculer les virages (une tortue et un petit calcul de
+  moindres carrés : ils visent la fin du tour 60 m avant la ligne, au cap du départ, en bougeant chaque virage le moins possible).
 - **Le générateur** (`style: "pied"`, à l'écran « Générer » du marcheur elliptique : « Où tu cours : À pied / Sur la route ») : les modules
   `rue_p`, `ruelle_p`, `place_p`, `escalier_p` (monte ou descend), `parc_p`, `sentier_p`, `chemin_p`, `bordroute_p`, `passerelle_p` ; ils se suivent
   par quartiers, comme une vraie sortie (`listeFooting` : la ville, l'escalier, le parc, la forêt, les champs, la passerelle, la ville), chaque
