@@ -33,12 +33,13 @@ const MACHINE = MACHINES[MACHINE_NOM];
 if (MACHINE.pas && typeof document !== "undefined" && $("hPas")) $("hPas").hidden = false;   // (18/11) un aller-retour = 2 pas : séance du 18/11, 3 804 pas comptés ainsi pour 3 822 à la montre
 const M_COUP = MACHINE.metres, TAU = MACHINE.tau, LISSE = MACHINE.lisse;
 /* la vitesse VUE (12/11, Kiki) : au marcheur elliptique, le décor ne défile pas à tes vrais mètres par seconde mais à l'allure de ce que tu vois.
-   (18/11, Kiki : entre 4,2 et 4,3 km/h, on ne voyait aucune différence) au-dessus de l'allure habituelle, le décor amplifie l'écart :
-   à vélo, 15 km/h à ton allure habituelle (MACHINE.cadence tours par minute), 19 à +10 %, 25 à +25 %, 32 au plus.
-   Au trot (16/11, Kiki : un footing léger, 6-7 km/h à l'œil) : 6,5 km/h à ton allure habituelle, 9 à +10 % (de grands gestes appuyés), 12 au plus.
+   À vélo : 15 km/h à ton allure habituelle (MACHINE.cadence tours par minute), 20 quand tu accélères (+25 %), 25 à fond (+50 %), 30 au plus.
+   Au trot (16/11, Kiki : un footing léger, 6-7 km/h à l'œil) : 6,5 km/h à ton allure habituelle, 8 à +25 %, 10 au plus.
+   (18/11, Kiki : un décor qui amplifie l'écart, 9 km/h vus à +10 %, est refusé : « je ne veux pas avoir l'impression d'aller à 12 alors que j'en suis à 5 ».
+   L'écart vient des vrais chiffres : de ~4 km/h tout doux à ~5 à fond, grâce à l'amplitude des gestes.)
    Une vraie côte freine, une descente lance. Les chiffres affichés restent les vrais (distance, km/h, cadence : ceux de tes jambes). */
 const VISUEL = MACHINE_NOM === "elliptique";
-const VU = MACHINE.monture === "trotteur" ? {base: 6.5, plus: 25, max: 12, descente: 1.1, cote: 1.6, min: .82} : {base: 15, plus: 40, max: 32, descente: 1.5, cote: 6, min: .38};   // cote, min : ce qu'une côte enlève (18/11, Kiki : au trot, presque rien ; à 10 % : −16 %)
+const VU = MACHINE.monture === "trotteur" ? {base: 6.5, plus: 7, max: 10, descente: 1.1, cote: 1.6, min: .82} : {base: 15, plus: 20, max: 30, descente: 1.5, cote: 6, min: .38};   // cote, min : ce qu'une côte enlève (18/11, Kiki : au trot, presque rien ; à 10 % : −16 %)
 const CROISIERE_VRAIE = MACHINE.cadence * M_COUP / 60;   // tes vrais m/s à l'allure habituelle
 function kmhVus(v) { const r = v / CROISIERE_VRAIE; return Math.min(VU.max, r <= 1 ? VU.base * r : VU.base + VU.plus * (r - 1)); }
 function allureVue(i, v) {   // combien de mètres de décor pour un vrai mètre, ici, à cette vitesse
