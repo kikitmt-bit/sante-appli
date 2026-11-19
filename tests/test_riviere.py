@@ -366,11 +366,12 @@ class Moteur(unittest.TestCase):
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
     BUDGET_TRIANGLES = 220000
     BUDGET_SECONDES = 8
-    BUDGET_PAGE_KO = 2170   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits ;
+    BUDGET_PAGE_KO = 2190   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits ;
                             #  +40 Ko la nuit : le décor OpenStreetMap du Ventoux entier, 480 objets réels, et la région kanto-reel ;
                             #  18/11 : +60 Ko pour le lac d'Allier à Vichy, son rivage mètre par mètre, ses 200 objets réels et la région vichy ;
                             #  18/11 au soir : +10 Ko pour le footing de Jadielle, ses rives et l'escalier ;
-                            #  18/11, tard : +25 Ko pour le footing refait : la rue en bande, ses objets, le parc, le circuit plus long)
+                            #  18/11, tard : +25 Ko pour le footing refait : la rue en bande, ses objets, le parc, le circuit plus long ;
+                            #  19/11 : +20 Ko : le garage, les coins de rue, le sol des fourches, les pas du marcheur elliptique)
 
     def test_budgets(self):
         import page

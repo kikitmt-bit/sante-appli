@@ -10,6 +10,24 @@ const OBJETS = {}, RAYON = {}, EVENEMENTS = {}, LOINTAINS = {};
 /* (17/11) la place d'un objet étendu (une rue qui part, un rond-point) : EMPRISE[nom] = o => [[x, z, r], …] dans le repère de l'objet ;
    rien d'autre ne sera posé dans ces ronds (une règle ne pose un tel objet que si tous ses ronds sont libres) */
 const EMPRISE = {};
+/* (19/11) le sol qu'un objet peint lui-même (la rue qui continue tout droit : kanto-footing.js) : SOL_PLAT[nom] = (o, s) => [[x, z], …], un polygone
+   convexe dans le monde. Le ruban des rives (terrain.js) ne dessine pas son herbe dedans : sinon, un peu plus haute, elle recouvrait la rue. */
+const SOL_PLAT = {};
+let ZONES_SOL_ = null;
+function zonesSol() {
+  if (ZONES_SOL_) return ZONES_SOL_;
+  ZONES_SOL_ = [];
+  for (const pc of PISTE.pieces) for (const o of pc.objets || []) { if (!SOL_PLAT[o.o] || pc.voie) continue;
+    const pts = SOL_PLAT[o.o](o, pc.s0 + (o.a || 0)); let xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9; for (const [x, z] of pts) { xa = Math.min(xa, x); xb = Math.max(xb, x); za = Math.min(za, z); zb = Math.max(zb, z); }
+    ZONES_SOL_.push({pts, xa, xb, za, zb, y: at(pc.s0 + (o.a || 0) - 6).y}); }
+  return ZONES_SOL_;
+}
+function dansSolPlat(x, z) {
+  for (const Zn of zonesSol()) { if (x < Zn.xa || x > Zn.xb || z < Zn.za || z > Zn.zb) continue; const p = Zn.pts; let sg = 0, ok = true;
+    for (let i = 0; i < p.length && ok; i++) { const a = p[i], b = p[(i + 1) % p.length], c = (b[0] - a[0]) * (z - a[1]) - (b[1] - a[1]) * (x - a[0]); if (c !== 0) { if (!sg) sg = Math.sign(c); else if (Math.sign(c) !== sg) ok = false; } }
+    if (ok) return Zn; }
+  return null;
+}
 /* (18/11, footing) la coupe d'une rue à côté du trottoir : [u, hauteur], u = la distance au bord de la piste (surfaces.js : construireBandes ; l'objet rue_continue) */
 const BANDE_RUE = [[0, 0], [.22, 0], [.24, -.12], [.55, -.12], [3.6, -.12], [6.65, -.12], [6.96, -.12], [6.98, 0], [9.7, 0], [9.72, -.38]];
 const MONDE = {etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []};
@@ -62,6 +80,15 @@ function surAutreRoute(x, z, r, s) {
     }
   return false;
 }
+/* (19/11, Kiki : « la maison déborde sur le trottoir ») un bâtiment posé par une règle (une maison, un immeuble : BATIMENTS) ne regardait que son centre :
+   près d'un coin, son mur tombait sur la piste qui tourne. On regarde aussi huit points de son pourtour (le bord de sa place) : aucun ne doit être à moins d'un mètre d'une
+   piste, la sienne comprise. Seulement le décor neuf ("decor": "classique" ne bouge pas) ; jamais les arbres. */
+const BATIMENTS = new Set(["maison", "immeuble", "magasin", "boutique", "centre", "labo", "entrepot", "chapelle", "kiosque"]);
+function touchePiste(nom, x, z, r, y) {
+  if (!BATIMENTS.has(nom) || NIVEAU.decor === "classique") return false;
+  for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; pres(x + Math.cos(a) * r, z + Math.sin(a) * r); if (Q.e < 1 && Math.abs(PISTE.Y[Q.i] - y) < 3.5) return true; }
+  return false;
+}
 function poserDecor(Z) { const g = poserDecorPas(Z); let r; do r = g.next(); while (!r.done); return r.value; }
 function* poserDecorPas(Z) {
   const P = PISTE, MD = Z ? Z.monde : MONDE, K = Z ? Z.K : K_MONDE, R = Z ? Z.R : hasard((NIVEAU.graine || 1) * 7919 + 1), formes = new Map(), reserves = [], pris = new Map(), poses = [];
@@ -83,7 +110,7 @@ function* poserDecorPas(Z) {
     const y = (cote === "c" || o.flotte ? a.y : cote === "portail" ? a.y + hRive(idx(s), 0, 2) + .5 : hauteur(q.x, q.z)) + (o.haut || 0);   // flotte : sur l'eau, contre la rive (un bateau, un ponton ; e négatif)   // « portail » : perché au-dessus de l'entrée d'une grotte ; haut : sur un toit, en l'air
     const lacet = lacetDe(a, sg, o), oo = Object.assign({eau: a.w * 2, _s: s, _cote: cote, _e: e || 0, _v: P.NF ? VOIES.prise.slice() : null, _vo: P.VO[idx(s)]}, o);
     const r0 = (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech;
-    if ((cote !== "c" && cote !== "portail" && !o.flotte && surAutreRoute(q.x, q.z, r0 * .8, s)) || (EMPRISE[nom] && emprise(nom, oo, q, lacet, ech).some(([X, Z2, rr]) => surAutreRoute(X, Z2, rr * .8, s)))) {
+    if ((cote !== "c" && cote !== "portail" && !o.flotte && surAutreRoute(q.x, q.z, r0 * .8, s)) || (!exacts && cote !== "c" && cote !== "portail" && !o.flotte && touchePiste(nom, q.x, q.z, r0, a.y)) || (EMPRISE[nom] && emprise(nom, oo, q, lacet, ech).some(([X, Z2, rr]) => surAutreRoute(X, Z2, rr * .8, s)))) {
       // il tomberait sur un autre bout de la route : on ne le pose pas, mais sa recette tourne quand même, à blanc, pour que le hasard du reste du décor ne bouge pas
       recette(new Forme().poser(q.x, y, q.z, lacet, ech).matiere(2), oo, R, kMonde({etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []})); MD.ecartes = (MD.ecartes || 0) + 1; return;
     }

@@ -66,18 +66,32 @@ Object.assign(OBJETS, {
   /* la rue continue tout droit quand on la quitte (un passage entre deux maisons, l'entrée d'un parc) ; sens -1 : elle venait de là (on y entre).
      Posée côté de la rue ("cote": "g", "e": 0), au mètre où la bande de la rive s'arrête : la même coupe que la bande (surfaces.js, BANDE_RUE). */
   rue_continue(F, o, R, K) {
-    const L = o.long || 40, dir = o.sens === -1 ? -1 : 1, y0 = (at(o._s).y) - F.oy, pas = 2;
+    const dir = o.sens === -1 ? -1 : 1;
+    { const A = ancreRue(o, o._s); F.poser(A.x, hauteur(A.x, A.z), A.z, A.lacet, F.k); }   // (19/11) partir de la rue encore droite : 6 m avant le coin, dans l'axe qu'elle avait 10 m avant (la bande s'y arrête aussi : surfaces.js)
+    const L = (o.long || 40) + 6, y0 = (at(o._s - dir * 6).y) - F.oy, pas = 2;
     const coupe = BANDE_RUE.filter(([u]) => u < 9.71);
-    for (let x = 0; x < L; x += pas) for (let j = -1; j < coupe.length - 1; j++) {   // j = -1 : notre trottoir, qui continue aussi (à partir de 3 m : la piste tourne)
-      if (j < 0 && x < 3) continue;
+    for (let x = -1.5; x < L; x += pas) for (let j = -1; j < coupe.length - 1; j++) {   // (elle chevauche le bout de la bande d'un mètre et demi : aucune fente entre les deux)
+   // j = -1 : notre trottoir, qui continue aussi, intact, dès le coin (19/11, Kiki : « le trottoir doit rester un trottoir tout droit ») ; la piste qui tourne passe dessous
       const u0 = j < 0 ? -2.6 : coupe[j][0], u1 = j < 0 ? 0 : coupe[j + 1][0], dy0 = j < 0 ? 0 : coupe[j][1], dy1 = j < 0 ? 0 : coupe[j + 1][1];
       const pt = (xx, u, dy) => { const [X, Z] = F.monde(dir * xx, -u), yv = Math.max(hauteur(X, Z) + .03, F.oy + y0 + dy + .02); return [X, yv, Z]; };
       const A = pt(x, u0, dy0), B = pt(x, u1, dy1), C = pt(x + pas, u1, dy1), D = pt(x + pas, u0, dy0);
       for (const [p, sv, uv] of [[A, x, u0], [B, x, u1], [C, x + pas, u1], [A, x, u0], [C, x + pas, u1], [D, x + pas, u0]]) F.sol("rue_bande", p[0], p[1], p[2], dir * sv + o._s, uv);
+      if (j < 0) { const E = [A[0], A[1] - .4, A[2]], G = [D[0], D[1] - .4, D[2]];   // le flanc de notre trottoir, côté jardins
+        for (const [p, sv] of [[A, x], [D, x + pas], [G, x + pas], [A, x], [G, x + pas], [E, x]]) F.sol("rue_bande", p[0], p[1], p[2], dir * sv + o._s, 9.8); }
     }
     for (let x = 8; x < L - 4; x += 12) sousObjet(F, "maison", dir * x, -15.5, 0, {varie: true}, R, K);   // les maisons d'en face, tournées vers elle
     for (let x = 6; x < L; x += 16) sousObjet(F, "lampadaire", dir * x, -9.35, 0, {}, R, K);
+    for (let x = 11; x < L - 4; x += 12) { const [X, Z] = F.monde(dir * x, 9.6); pres(X, Z); if (Q.e > 5) sousObjet(F, "maison", dir * x, 9.6, Math.PI, {varie: true}, R, K); }   // de notre côté aussi, derrière le trottoir, jamais sur le chemin qu'on a pris
     sousObjet(F, hv(F, 4) < .5 ? "immeuble" : "maison", dir * (L + 6), -5, dir > 0 ? -Math.PI / 2 : Math.PI / 2, {varie: true}, R, K);   // au bout, une façade ferme la vue
   },
 });
-EMPRISE.rue_continue = o => { const L = o.long || 40, dir = o.sens === -1 ? -1 : 1, r = []; for (let x = 2; x <= L + 6; x += 5) r.push([dir * x, -5, 5.2]); return r; };
+/* l'ancre de la rue qui continue : le bord de la piste 6 m avant le coin, dans l'axe de la rue 10 m avant (repère : x le long, z vers la piste) */
+function ancreRue(o, s) {
+  const dir = o.sens === -1 ? -1 : 1, a10 = at(s - dir * 10), h = a10.h, fx = Math.sin(h), fz = -Math.cos(h);
+  return {x: a10.x + fx * dir * 4 - Math.cos(h) * a10.w, z: a10.z + fz * dir * 4 - Math.sin(h) * a10.w, lacet: Math.atan2(Math.cos(h), Math.sin(h)), fx, fz, rx: Math.cos(h), rz: Math.sin(h), dir};
+}
+SOL_PLAT.rue_continue = (o, s) => {   // la rue et notre trottoir, du coin jusqu'au bout : l'herbe des rives n'y pousse pas (terrain.js)
+  const A = ancreRue(o, s), L = (o.long || 40) + 6, P = (x, z) => [A.x + A.fx * A.dir * x + A.rx * z, A.z + A.fz * A.dir * x + A.rz * z];
+  return [P(0, -9.8), P(L, -9.8), P(L, 2.7), P(0, 2.7)];
+};
+EMPRISE.rue_continue = o => { const L = o.long || 40, dir = o.sens === -1 ? -1 : 1, r = []; for (let x = -4; x <= L + 6; x += 5) r.push([dir * x, -5, 5.2]); for (let x = -6; x <= L; x += 2.5) r.push([dir * x, 1.5, 2.1]); return r; };   // la rue, et notre trottoir qui la longe : rien n'y est posé

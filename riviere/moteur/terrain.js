@@ -70,7 +70,7 @@ function fabriqueRives() {   // de quoi construire les rives, d'un mètre à un 
   const coupe = (i, cote) => {
     let o = memo[cote].get(i); if (o) return o;
     const sg = cote ? 1 : -1, a = at(i), ii = idx(i), ox = sg * Math.cos(a.h), oz = sg * Math.sin(a.h), libre = LIBRE[cote][ii], serre = libre < 50, pointe = serre && P.INT[ii] === cote + 1, lim = serre ? (pointe ? Math.max(libre, .05) : Math.max(libre, .6) + .7) : 99, es = [], pts = [];
-    const sort = pointe ? lisse(.1, 1.8, libre) : 1;   // la pointe de l'île d'une fourche : la rive sort de l'eau peu à peu, là où les deux voies se quittent
+    const sort = pointe && surface(i).liquide ? lisse(.1, 1.8, libre) : 1;   // la pointe de l'île d'une fourche : la rive sort de l'eau peu à peu, là où les deux voies se quittent. (19/11, Kiki : « un trou bleu » à l'embranchement du parc) sur la terre, rien ne la cache : elle reste au niveau du sol
     for (let j = 0; j < nS; j++) {
       const e = Math.min(STATIONS[j], lim), x = a.x + ox * (a.w + e), z = a.z + oz * (a.w + e); let y;
       if (j === 0) y = a.y - .8;
@@ -78,6 +78,7 @@ function fabriqueRives() {   // de quoi construire les rives, d'un mètre à un 
         const sol = hSol(x, z), exact = a.y + hRive(ii, cote, e) + AMP[cote][ii] * lisse(4, 34, e) * (fbm(x / 46 + 3, z / 46 + 7) - .42) * 2;
         y = lerp(exact, sol, Math.max(lisse(1.2, 9, e), serre ? lisse(.35 * lim, lim, e) : 0)) - (j === nS - 1 && !serre ? .9 : 0);
         if (pointe) y = a.y - .8 + (y - a.y + .8) * sort;
+        if (zonesSol().length) { const Zn = dansSolPlat(x, z); if (Zn) y = Math.min(y, Zn.y - .25); }   // un objet peint ce sol lui-même (decor.js : SOL_PLAT) : le ruban passe dessous
       }
       es.push(e); pts.push([x, y, z]);
     }
@@ -129,6 +130,26 @@ function construireRives() {
   };
   ruban(0, LONG);
   P.voies.forEach((v, nf) => surLaVoie(nf, () => ruban(v.a, v.b)));
+  raccordFourches();
+}
+/* (19/11, Kiki : « un trou bleu à l'embranchement ») le sol entre les deux voies d'une fourche sur la terre. Près de la pointe, chaque voie ne
+   dessine son bord intérieur que jusqu'à sa largeur libre : une fente restait au milieu, où la grille, enfoncée pour laisser passer le ruban des
+   rives, laissait voir le ciel (sur l'eau, l'eau la cache). Un ruban d'herbe, juste sous les rives, va du bord d'une voie au bord de l'autre. */
+function raccordFourches() {
+  const P = PISTE, F = new Forme();
+  P.voies.forEach(v => {
+    let A = null;
+    for (let s = v.a; s <= v.b; s++) {
+      const c = Math.min(s, P.N - 1), f = v.dec + Math.min(s, v.b - 1), S = SURFACES[P.surfaces[P.SF[c]]];
+      if (!S || S.liquide || !P.INT[c] || LIBRE[P.INT[c] - 1][c] >= LARGE_RIVE - .5) { A = null; continue; }
+      const gc = P.INT[c] === 2 ? 1 : -1, gf = P.INT[f] === 2 ? 1 : -1, wc = P.W[c] - .05, wf = P.W[f] - .05;
+      const B = [[P.X[c] + gc * P.CH[c] * wc, P.Y[c] - .03, P.Z[c] + gc * P.SH[c] * wc], [P.X[f] + gf * P.CH[f] * wf, P.Y[f] - .03, P.Z[f] + gf * P.SH[f] * wf]];
+      if (A) { const mx = (A[0][0] + B[1][0]) / 2, mz = (A[0][2] + B[1][2]) / 2, col = couleurSol(c, P.INT[c] - 1, 1.5, 1, mx, mz).slice(0, 3);
+        F.v(...A[0], 0, 1, 0, col, 0); F.v(...A[1], 0, 1, 0, col, 0); F.v(...B[1], 0, 1, 0, col, 0); F.v(...A[0], 0, 1, 0, col, 0); F.v(...B[1], 0, 1, 0, col, 0); F.v(...B[0], 0, 1, 0, col, 0); }
+      A = B;
+    }
+  });
+  const m = F.maille(); if (m) { m.name = "rives"; scene.add(m); }
 }
 
 /* le cratère d'une montagne au milieu du circuit (champ.js : MASSIF) : de la lave au fond, sa lueur, une fumée qui monte */

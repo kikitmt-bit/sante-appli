@@ -231,6 +231,10 @@ function construireBandes() {
     let debut = 0; if (BOUCLE && oui[0]) { debut = oui.indexOf(0); if (debut < 0) debut = 0; }
     const runs = []; let a = -1;
     for (let k = 0; k <= N; k++) { const i = (debut + k) % N, on = k < N && oui[i]; if (on && a < 0) a = debut + k; if (!on && a >= 0) { runs.push([a, debut + k]); a = -1; } }
+    // (19/11) là où la piste quitte la rue en tournant (un passage, un parc), la rue ne suit pas le début du virage : elle s'arrête 6 m avant, droite,
+    // et l'objet rue_continue la prolonge tout droit depuis là (kanto-footing.js)
+    const cap = j => P.H[BOUCLE ? ((j % N) + N) % N : clamp(j, 0, N - 1)], tourne = (j0, j1) => Math.abs(cap(j1) - cap(j0)) > .26;
+    for (const r of runs) { if (r[1] - r[0] > 30 && tourne(r[1] - 12, r[1] + 6)) r[1] -= 6; if (r[1] - r[0] > 30 && tourne(r[0] - 6, r[0] + 12)) r[0] += 6; }
     for (const [a0, a1] of runs) {
       const pos = [], su = [], bord = [], ind = [], abri = [], n = BANDE_RUE.length, fin = BOUCLE || a1 < N ? a1 : N - 1;
       for (let s = a0; s <= fin; s++) { const sm = BOUCLE ? s % N : s, A = at(sm), rx = Math.cos(A.h), rz = Math.sin(A.h);

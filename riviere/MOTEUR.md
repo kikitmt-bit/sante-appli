@@ -437,6 +437,21 @@ d'une rue**, traverse une **place**, prend une **ruelle**, monte un **escalier**
   40 % plus près, plus basse, juste dans son axe (avant, au milieu de la piste : sur un trottoir, il était petit et décalé ; Kiki :
   « il est vraiment petit à l'écran »). Il court au milieu de sa piste, 55 cm de marge de chaque côté (`ligneRoute` : la marge de 1,7 m
   à gauche n'est que pour le vélo).
+- **Quitter la rue sans la casser** (19/11, Kiki : « le trottoir doit rester un trottoir tout droit ; mon personnage, lui, décide d'aller à droite
+  entre les deux maisons ») : là où la piste quitte une rue en tournant, la bande s'arrête 6 m avant le coin, droite (`construireBandes` : elle ne
+  suit plus le début du virage), et `rue_continue` (ancrée au même endroit, dans l'axe de la rue : `ancreRue`) prolonge **la chaussée, ses deux
+  trottoirs et notre trottoir, intact, dès le coin**, en chevauchant le bout de la bande. La piste qui tourne passe dessous : sa première pièce est
+  en revêtement `trottoir` (une petite entrée dallée qui s'arrondit vers le passage). Rien n'est posé sur ce trottoir ni sur cette rue (emprise),
+  et des maisons la bordent des deux côtés, jamais sur le chemin pris. **Le sol peint par un objet** : `SOL_PLAT[nom] = (o, s) => polygone` (decor.js) ;
+  le ruban des rives (terrain.js) passe 25 cm sous ce polygone (sinon, un peu plus haute, l'herbe d'une rive voisine recouvrait la rue).
+- **Aucune maison sur une piste** (decor.js, `touchePiste`, décor neuf seulement) : un bâtiment posé par une règle (`BATIMENTS` : maison, immeuble, magasin…)
+  regarde huit points du bord de sa place ; aucun ne doit être à moins d'un mètre d'une piste, la sienne comprise. Avant, seul son centre
+  comptait : dans un coin, un mur tombait sur le trottoir. (Refusé, la recette tourne à blanc : le hasard du reste du décor ne bouge pas.)
+- **Les voitures garées** (19/11, Kiki : « au milieu de la route ») : de notre côté, contre la bordure ; en face, à cheval sur le trottoir
+  (`"bordure": 1` dans les réglages de `voiture` : les roues de ce côté montées sur les 12 cm de la bordure, la voiture un peu penchée).
+- **Le trou bleu des fourches sur la terre** (19/11, Kiki) : près de la pointe, chaque voie ne dessinait son bord intérieur que jusqu'à sa largeur
+  libre, et la grille du sol, enfoncée pour laisser passer le ruban, laissait voir le ciel dans la fente du milieu (sur l'eau, l'eau la cache).
+  `raccordFourches` (terrain.js) pose un ruban d'herbe d'un bord à l'autre, juste sous les rives ; la pointe ne s'enfonce plus sur la terre.
 - **Le garage** (18/11, après le 1er essai de Kiki : « 4 roues carrées, c'est très très moche ») : `voiture` (kanto-ville.js, `dessinerVoiture`,
   `GARAGE`) a cinq modèles dessinés par leur profil de côté : citadine, berline, break (barres de toit), camionnette du Poké Mart (son nom
   des deux côtés), coupé sport (aileron) ; bas de caisse puis habitacle plus étroit, vitres et montants, pare-brise, roues rondes dans leurs

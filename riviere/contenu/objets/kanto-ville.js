@@ -167,7 +167,10 @@ Object.assign(OBJETS, {
     for (const x of [-.78, .78]) { F.boite(x, -.15, .18, .07, .6, .07, fonte); F.boite(x, -.15, -.24, .07, 1.2, .07, fonte); F.boite(x, .36, -.03, .07, .06, .48, fonte); F.boite(x, .62, -.02, .08, .05, .44, fonte, {haut: b}); F.boite(x, .45, .18, .07, .2, .06, fonte); } },
   voiture(F, o = {}, R, K) {  // une voiture du garage de Kanto (le long de x, l'avant en +x) : voir dessinerVoiture, plus bas
     const t = hv(F, 1), modele = o.modele || (t < .3 ? "citadine" : t < .58 ? "berline" : t < .75 ? "break" : t < .88 ? "camionnette" : "sport");
-    F.ombre(0, 0, 2.3, 1.1); dessinerVoiture(F, modele, Math.floor(hv(F) * 97), K); },
+    F.ombre(0, 0, 2.3, 1.1); const i0 = F.p.length; dessinerVoiture(F, modele, Math.floor(hv(F) * 97), K);
+    if (o.bordure) {   // (19/11, Kiki) garée à cheval sur le trottoir : les roues de ce côté (o.bordure = ±1 : le côté +z ou -z) montées sur la bordure de 12 cm, la voiture un peu penchée
+      const k = o.bordure * (o.marche || .12) / 1.5, dz = (o.marche || .12) / 2;
+      for (let i = i0; i < F.p.length; i += 3) { const zl = ((F.p[i] - F.ox) * F.sn + (F.p[i + 2] - F.oz) * F.cs) / F.k; F.p[i + 1] += zl * k + dz; } } },
   feu(F) {  // un feu tricolore
     const c = PAL.cadre; F.cyl(0, -.2, 0, .08, .07, 3, 6, c); F.boite(0, 2.3, .1, .42, 1.15, .3, fonce(c, .8));
     F.matiere(7); [["#E84030", 2.97], ["#F0B030", 2.65], ["#48C058", 2.33]].forEach(([h, y], k) => F.disque(0, y + .07, .26, .13, .13, k === Math.floor(hv(F) * 3) ? hex(h) : fonce(hex(h), .35))); F.matiere(2); },
