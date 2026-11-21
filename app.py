@@ -52,7 +52,7 @@ import seances_danse
 import seances_rameur
 from pokedex import LEGENDAIRES, POIDS, POKEMON
 from chiffres import (JOUEURS, JOURS, MEMOIRE, METRIQUES, OBJECTIFS, TZ, agrege, analyses_precedentes, bornes, charger,
-                      chemin_analyse, dossier_ami, dossier_coach, hm, joli, nombre, par_jour, table)
+                      chemin_analyse, dossier_ami, dossier_coach, hm, joli, nombre, par_jour, stats_jour, table)
 
 st.set_page_config(page_title="Poké Fit", page_icon=str(Path(__file__).with_name("pikachu.png")), layout="centered")
 
@@ -684,6 +684,38 @@ def noter_pesee(aujourd):
             st.toast("⚖️ Pesée enregistrée !")
             st.rerun()
         st.warning("Pesée pas enregistrée : réessaie dans un instant.")
+
+
+def corriger_pas():
+    """Kiki, 21/11 : les pas d'un jour tels que Google Santé les affiche, quand ses serveurs en envoient moins.
+    Le jeu garde le plus grand des deux chiffres (pesees.fusionner) : jamais de pas perdu ni compté deux fois."""
+    chemin = PREFIXE + pesees.FICHIER
+    try:
+        fichier = lire_depot([chemin], {chemin})[chemin]
+    except Panne:
+        return
+    hier = dt.datetime.now(TZ).date() - dt.timedelta(days=1)
+    jour = st.date_input("Le jour", value=hier, min_value=hier - dt.timedelta(days=13), max_value=hier + dt.timedelta(days=1), format="DD/MM/YYYY", key="corr_pas_jour")
+    with st.form("corr_pas_form", border=False):
+        chemin_res = f"{PREFIXE}data/resume/{jour.year}.json"
+        try:
+            res = lire_depot([chemin_res], {chemin_res}).get(chemin_res) or {}
+        except Panne:
+            res = {}
+        recu = stats_jour(res.get(str(jour)))["pas"]
+        deja = ((fichier or {}).get("pas_corriges") or {}).get(str(jour))
+        n = st.number_input("Pas affichés par Google Santé", min_value=1, max_value=pesees.PAS_MAX, value=deja, step=1, placeholder="Par exemple 10125")
+        ok = st.form_submit_button("Enregistrer", type="primary", width="stretch")
+    st.caption(f"Google a envoyé {nombre(recu) if recu else 'aucun'} pas pour ce jour" + (f", corrigé à {nombre(deja)}." if deja else ".")
+               + " Le jeu garde toujours le plus grand des deux.")
+    if ok and n:
+        if recu and n > recu * 1.2:
+            st.warning(f"{nombre(n)}, c'est bien plus que les {nombre(recu)} reçus : vérifie le chiffre (faute de frappe ?).")
+            return
+        if ecrire_depot(chemin, pesees.corriger_pas(fichier, jour, n), f"pas corrigés à la main ({jour})"):
+            st.toast("👟 Pas corrigés : le jeu les compte au prochain chargement.")
+            st.rerun()
+        st.warning("Pas enregistré : réessaie dans un instant.")
 
 
 def carte_pouls(bpm):
@@ -1381,6 +1413,8 @@ def configuration():
                 st.caption(f"{'✅ relié le ' + info['debut'] if info else '⏳ montre pas encore reliée'} · {email}")
             if any(id_ami(e) in REGISTRE for e in copains) and st.toggle("🔧 Suivi des amis (récolte, erreurs de Google)", key="suivi"):
                 suivi_amis(sorted(e for e in copains if id_ami(e) in REGISTRE))
+        if st.toggle("👟 Corriger mes pas d'un jour (Google Santé en montre plus)", key="corr_pas"):
+            corriger_pas()
         if st.toggle("📊 Calibrage du jeu (objectifs réussis, par qui, comment)", key="calibrage"):
             ecran_calibrage.afficher(lire_depot, REGISTRE, dt.datetime.now(TZ).date(), graphique, ecrire_depot)
     else:

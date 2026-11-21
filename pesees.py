@@ -50,3 +50,15 @@ def fusionner(resumes, fichier):
             r["body-fat"] = [*(r.get("body-fat") or []), {"bodyFat": {"sampleTime": temps, "percentage": p["gras"]}}]
         sortie[p["jour"]] = r
     return sortie
+
+
+PAS_MAX = 100_000
+
+
+def corriger_pas(fichier, jour, n):
+    """Le nouveau contenu du fichier avec les pas de ce jour, tels que Google Santé les affiche (Kiki, 21/11). ValueError si le chiffre n'a pas de sens.
+    `fusionner` garde toujours le plus grand des deux : une correction ne fait jamais perdre de pas, et rien n'est compté deux fois quand Google rattrape."""
+    if not 0 < n <= PAS_MAX:
+        raise ValueError("pas")
+    pas = {**((fichier or {}).get("pas_corriges") or {}), str(jour): int(n)}
+    return {**(fichier or {}), "pas_corriges": dict(sorted(pas.items()))}

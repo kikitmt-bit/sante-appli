@@ -145,6 +145,12 @@ def stats_jour(r, j=None):
     s = {"pas": num(premier(r.get("steps:jour"), "countSum"))}
     if s["pas"] is None and t:
         s["pas"] = somme(t.get("steps"), "countSum", "count")
+    # Les pas de toutes les sources recomptés par le script (montre + téléphone, minute par minute, le plus grand) :
+    # Google Santé les affiche, ses totaux en oublient parfois (Kiki, 20/11 : 10 125 affichés, 9 956 envoyés).
+    # Pris seulement s'ils dépassent le total de Google de 10 % au plus : au-delà, ce serait des doublons.
+    tous = num(premier(r.get("steps:sources"), "countSum"))
+    if tous and s["pas"] and s["pas"] < tous <= s["pas"] * 1.1:
+        s["pas"] = tous
     mm = num(premier(r.get("distance:jour"), "millimetersSum"))
     s["km"] = mm / 1e6 if mm is not None else None
     s["kcal"] = num(premier(r.get("total-calories:jour"), "kcalSum"))
