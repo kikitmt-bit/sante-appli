@@ -86,6 +86,9 @@ REGLAGES = {
     "paliers_gestes": (10, 15, 20), "gestes_debut": 2, "gestes_souvent": 4, "gestes_oubli": 2,
     "niveau_max": 100,  # le niveau du starter, comme dans les jeux
     "exploit_pas": 10000, "exploit_zone": 25, "exploit_seance": 45,
+    # Le vrai vélo (Kiki, 21/11) : les minutes de vélo de la journée, additionnées même en plusieurs fois, remplacent les pas (à vélo, la montre en
+    # compte peu) : 30 min = l'objectif de pas (il faut toujours les 10 min de sport pour la Super Ball), 1 h = les 10 000 pas de l'Hyper Ball.
+    "velo_objectif": 30, "velo_exploit": 60, "velo_depuis": dt.date(2026, 11, 21),
     # 01/11 (Kiki) : les « minutes en zone » de Google comptent la zone modérée (verte, dès 108 bpm), atteinte en marchant
     # ou assis le cœur un peu haut (soirée) : 323 min le 31/10 pour une journée de marche. Le jeu ne compte plus que les
     # minutes de vrai sport, zone intense ou maximum (jaune / rouge, dès 132 bpm : 60 % de la réserve cardiaque, seuil
@@ -232,6 +235,7 @@ def mesures(s, exercices, jour=None):
             m["sports"][t] = m["sports"].get(t, 0) + minutes
             m["seance_max"] = max(m["seance_max"], minutes)
     m["sport"] = sum(m["sports"].values())
+    m["velo"] = s["min_velo"] if (jour is None or jour >= REGLAGES["velo_depuis"]) and pd.notna(s.get("min_velo")) else 0
     force = double if jour is None or jour >= REGLAGES["force_depuis"] else 0
     m["points"] = points_par_source(m["pas"], m["zone"], 0 if equitable(jour) else m["etages"], m["sport"], force, seuils_zone(m)[0])
     return m
@@ -264,6 +268,8 @@ def exploit(m):
         return "🔥", f"{m['zone']:.0f} min {'de sport' if m.get('nouveau', True) else 'en zone'}", sport_principal(m)[2] or SOURCES["zone"][2]
     if m["pas"] >= REGLAGES["exploit_pas"]:
         return "👟", f"{chiffres.nombre(m['pas'])} pas", None
+    if m.get("velo", 0) >= REGLAGES["velo_exploit"]:
+        return "🚴", f"{m['velo']:.0f} min de vélo", SPORTS["BIKING"][2]
     return None
 
 
@@ -499,9 +505,14 @@ def obj_pas(m):
     return m.get("obj_pas") or REGLAGES["objectif_pas"]
 
 
+def pas_ok(m):
+    """L'objectif de pas du jour, ou ses minutes de vélo (REGLAGES["velo_objectif"])."""
+    return m["pas"] >= obj_pas(m) or m.get("velo", 0) >= REGLAGES["velo_objectif"]
+
+
 def double_ok(m):
-    """Journée « objectif double » : les pas ET les minutes de sport."""
-    return m["pas"] >= obj_pas(m) and m["zone"] >= seuils_zone(m)[1]
+    """Journée « objectif double » : les pas (ou le vélo) ET les minutes de sport."""
+    return pas_ok(m) and m["zone"] >= seuils_zone(m)[1]
 
 
 def super_ok(m):
@@ -511,7 +522,7 @@ def super_ok(m):
 
 def objectif_ok(m):
     """Le jour compte pour la Master Ball (5 000 pas ou 10 min de sport)."""
-    return m["pas"] >= obj_pas(m) or m["zone"] >= seuils_zone(m)[1]
+    return pas_ok(m) or m["zone"] >= seuils_zone(m)[1]
 
 
 def balls_du_jour(jour, m, avant, apres, shiny_ball=None, badges=(), debut=None, sanctuaires=(), region=None):
@@ -540,7 +551,7 @@ def balls_du_jour(jour, m, avant, apres, shiny_ball=None, badges=(), debut=None,
         dues.append({"cle": "hyper", "ball": "hyper", "raison": f"{e[0]} Exploit : {e[1]}", "types": e[2]})
     if super_ok(m):
         dues.append({"cle": "super", "ball": "super", "types": None,
-                     "raison": "🎯 Objectif double : pas et minutes de sport" if double_ok(m) else "🎯 Ton exploit du jour"})
+                     "raison": ("🎯 Objectif double : pas et minutes de sport" if m["pas"] >= obj_pas(m) else "🎯 Objectif double : vélo et minutes de sport") if double_ok(m) else "🎯 Ton exploit du jour"})
     ic, nom, types = origine_barre(m)
     b = REGLAGES["barre"]
     for k in range(math.floor(avant / b) + 1, math.floor(apres / b) + 1):

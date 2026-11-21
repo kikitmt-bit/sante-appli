@@ -140,10 +140,10 @@ def afficher(lire, aujourd, joueur=None, conseil=None, anniversaire=False, joueu
         "rameur": seances_rameur.pour_ecran(lire([seances_rameur.FICHIER])[seances_rameur.FICHIER], aujourd, seances_rameur.lien(st.secrets.get("JEU_CLE"), joueur["id"] if joueur else None)),
         "matin": {"hier": etat["hier"], "conseil": conseil, "voix": infirmiere.recap(aujourd, m.get("sommeil"), etat["hier"], sum(1 for c in captures if etat["hier"] and c["jour"] == etat["hier"]["jour"] and not c.get("rate")), etat["sport_vu"], joueur["id"] if joueur else "")},
         "jeu_etat": {k: etat.get(k) for k in ("defi_grise", "perdues", "retenues", "missions_gardees", "sac", "chasse", "fini", "starter", "semaine", "semaine_passee", "relance", "equipe")},
-        "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "sommeil": m["sommeil"],
+        "jour": {"pas": m["pas"], "zone": m["zone"], "seance": m["seance_max"], "velo": m.get("velo", 0), "sommeil": m["sommeil"],
                  "serie": etat["serie"], "serie_ok": etat["serie_ok"], "fenetre": etat["fenetre"],
                  "shiny_bonus": etat["shiny_bonus"]},
-        "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points",
+        "regles": {k: R[k] for k in ("objectif_pas", "objectif_zone", "exploit_pas", "exploit_zone", "exploit_seance", "zone_points", "velo_objectif", "velo_exploit",
                                      "master_jours", "master_fenetre", "nuit", "seance_min", "force", "partie", "sac", "rend", "pas_offerts", "bonus_pompe", "bonus_traction", "bonus_squat", "bonus_planche", "bonus_gestes_max", "objectif_gestes", "bonus_famille", "familles_semaine", "hebdo_jours")}
                   | {"objectif_pas": etat["objectifs"]["pas"], "objectif_gestes": etat["objectifs"]["gestes"]},  # ses objectifs du jour, qui s'adaptent
     }

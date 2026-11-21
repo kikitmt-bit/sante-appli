@@ -150,6 +150,27 @@ class Points(unittest.TestCase):
         self.assertEqual(partie(7, gestes=g)[1]["semaine"]["jours_ok"], 0)
 
 
+class VraiVelo(unittest.TestCase):
+    """Kiki, 21/11 : les minutes de vélo de la journée, même en plusieurs fois, remplacent les pas (30 min) ou les 10 000 pas (1 h)."""
+
+    def m(self, velo, zone=0, jour_=dt.date(2026, 11, 21)):
+        s = pd.Series({"pas": 1500, "zone": 0, "zone_sport": zone, "etages": 0, "sommeil": 400, "min_velo": velo})
+        return pokemon.mesures(s, [], jour_)
+
+    def test_trente_minutes_valent_les_pas(self):
+        self.assertFalse(pokemon.objectif_ok(self.m(29)))
+        self.assertTrue(pokemon.objectif_ok(self.m(30)))
+        self.assertFalse(pokemon.super_ok(self.m(30)))  # il faut toujours les 10 min de sport
+        self.assertTrue(pokemon.super_ok(self.m(30, zone=10)))
+
+    def test_une_heure_vaut_l_hyper_ball(self):
+        self.assertIsNone(pokemon.exploit(self.m(59)))
+        self.assertIn("vélo", pokemon.exploit(self.m(60))[1])
+
+    def test_rien_ne_change_avant(self):
+        self.assertFalse(pokemon.objectif_ok(self.m(90, jour_=dt.date(2026, 11, 20))))
+
+
 class ObjectifsAdaptes(unittest.TestCase):
     """Kiki, 07/11 : les objectifs du jour suivent les habitudes, sans jamais devenir une contrainte."""
 

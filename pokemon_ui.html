@@ -3887,16 +3887,18 @@ function dessinerSpeciales() {
       <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(rel.cible)}</span></div>${j(J.pas, rel.cible)}
       <div class="lien">ou</div>
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${rel.sport} min</span></div>${j(J.zone, rel.sport)}</div>` : "";
+  // le vrai vélo de la journée, même en plusieurs fois, remplace les pas (Kiki, 21/11) : montré dès qu'il y en a
+  const veloLigne = (cible, lien) => J.velo > 0 && cible ? `<div class="lien">${lien}</div><div class="ligne"><span>🚴 ${Math.round(J.velo)} min</span><span>${cible} min</span></div>${j(J.velo, cible)}` : "";
   document.getElementById("speciales").innerHTML = carteEquipe() + carteRelance + carteDefi() + carteMission(gris, champ, cadenas) + `
     <div class="speciale balle ${sup ? "ok" : ""} ${gris ? "grise" : ""}">${sup ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("super")}<span>Super Ball<small>shiny ×2</small></span></div>
-      <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}
+      <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.objectif_pas)}</span></div>${j(J.pas, R.objectif_pas)}${veloLigne(R.velo_objectif, "ou du vélo")}
       <div class="lien">et</div>
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.objectif_zone} min</span></div>${j(J.zone, R.objectif_zone)}
       <div class="lien centre">ou gagne l'Hyper Ball</div>${verrou("super") || ""}</div>
     <div class="speciale balle ${hyp ? "ok" : ""} ${gris ? "grise" : ""}">${hyp ? '<span class="tampon">✅</span>' : ""}
       <div class="tete">${ico("hyper")}<span>Hyper Ball<small>shiny ×4</small></span></div>
-      <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}
+      <div class="ligne"><span>👟 ${fr(J.pas)}</span><span>${fr(R.exploit_pas)}</span></div>${j(J.pas, R.exploit_pas)}${veloLigne(R.velo_exploit, "ou du vélo")}
       <div class="lien">ou</div>
       <div class="ligne"><span>🔥 ${Math.round(J.zone)} min</span><span>${R.exploit_zone} min</span></div>${j(J.zone, R.exploit_zone)}
       <div class="lien">ou une séance</div>
@@ -5126,10 +5128,10 @@ function dessinerRegles() {
       🚴 vélo → Vol, Normal ; 🚣 rameur, 🏊 natation → Eau, Glace ;
       🏞️ elliptique → Psy, Spectre, Fée ; 💪 pompes et squats → Combat, Acier ; 👟 pas → tous les types.</li>
     <li>${ico("super", "p")} <b>Semaine parfaite</b> : une Super Ball pour les ${R.familles_semaine} sports (marche, cardio, bras, dos, jambes), chacun un jour différent (un jour ne coche qu'un seul sport ; sans barre ni rameur, la planche fait le dos), et +${R.bonus_famille} points la première fois de la semaine pour chacun. Bilan le dimanche soir.</li>
-    <li>${ico("effort", "p")} <b>Ton objectif du jour</b> : ${fr(R.objectif_pas)} pas, ${R.objectif_zone} min de sport ou ${R.objectif_gestes} points de muscu (${R.objectif_gestes * 2} pompes). Il suit tes habitudes :
+    <li>${ico("effort", "p")} <b>Ton objectif du jour</b> : ${fr(R.objectif_pas)} pas (ou ${R.velo_objectif} min de vélo dans la journée), ${R.objectif_zone} min de sport ou ${R.objectif_gestes} points de muscu (${R.objectif_gestes * 2} pompes). Il suit tes habitudes :
       chaque lundi, les pas montent ou descendent de 500 (entre 4 500 et 5 500) selon ta semaine ; la muscu commence à 10 points, passe à 15, puis à 20 si tu en fais souvent, et ne redescend jamais sous 15.</li>
-    <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas <b>et</b> ${R.objectif_zone} min de sport dans la journée, ou n'importe quel exploit.</li>
-    <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas, ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>
+    <li>${ico("super", "p")} <b>Super Ball</b> : ${fr(R.objectif_pas)} pas (ou ${R.velo_objectif} min de vélo) <b>et</b> ${R.objectif_zone} min de sport dans la journée, ou n'importe quel exploit.</li>
+    <li>${ico("hyper", "p")} <b>Hyper Ball</b> : ${fr(R.exploit_pas)} pas (ou ${R.velo_exploit} min de vélo dans la journée), ${R.exploit_zone} min de sport ou une séance de ${R.exploit_seance} min.</li>
     <li>${ico("effort", "p")} <b>Ton starter</b> : il gagne un niveau tous les ${(G.starter || {}).pts_niveau || 195} points d'effort et évolue en grandissant. Ses évolutions ne sortent jamais d'une ball : c'est ton sport qui les fait naître.</li>
     <li>${ico("shiny", "p brille")} <b>Shiny Ball</b> : ${R.master_jours} jours sur les ${R.master_fenetre} derniers avec ton objectif (${fr(R.objectif_pas)} pas, ${R.objectif_zone} min de sport, ou ${R.objectif_gestes} points de muscu, soit ${R.objectif_gestes * 2} pompes) = un shiny garanti.
       Un jour raté ne remet rien à zéro : il sort du compte ${R.master_fenetre} jours plus tard.</li>
