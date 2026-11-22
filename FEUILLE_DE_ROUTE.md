@@ -97,3 +97,15 @@ amis ne font pas 3 pompes, ce serait frustrant (Kiki, 03/11). À faire quand les
     sont tirées dans ce qu'on a ; une « habitude » au choix (pesée, coucher, étirements…), même valeur pour tous.
 - Missions et captures figées tournent déjà pour chaque joueur (02/11). Restent pour Kiki seul : le coach et la montre.
 - Commencer avec 2-3 amis sur Android quelques semaines avant d'en inviter d'autres.
+
+## À faire : un jeu qui s'explique (Kiki, 22/11)
+
+Le 22/11, Kiki a gagné d'un coup une Shiny Ball de sanctuaire (Électhor déjà attrapé), la Super, l'Hyper et le 7e badge
+(une séance de rameur ajoutée l'a fait passer à ~30 min de sport), sans rien comprendre : il ne savait pas qu'il était près
+d'un sanctuaire, ni qu'il avait ces objectifs en cours. **Le jeu doit tout expliquer, clairement, pour tous les joueurs** :
+- montrer les objectifs en cours et ce qu'il reste à faire (sanctuaire : « Électhor : 4 jours d'exploit sur 5 », défi
+  d'arène, Super / Hyper), avant qu'ils tombent ;
+- dire qu'on arrive près d'un sanctuaire, et ce qu'il demande ;
+- à chaque ball gagnée, dire pourquoi, en clair (« 5e jour d'exploit au sanctuaire : Électhor déjà à toi, voici une
+  Shiny Ball ») ;
+- revoir l'ensemble avec Kiki avant de coder (où et comment l'afficher sans surcharger).
