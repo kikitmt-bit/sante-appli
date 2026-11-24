@@ -16,7 +16,10 @@ async function construireZone(cede) {   // cede : rendre la main toutes les 40 m
   const tri = (a, b, c, t, N, U, q = 0) => { const M = morceau(q, (a[0] + b[0] + c[0]) / 3, (a[2] + b[2] + c[2]) / 3); [a, b, c].forEach((v, k) => { const n = N || normale(v[0], v[2]); M.p.push(v[0], v[1], v[2]); M.n.push(n[0], n[1], n[2]); M.t.push(t); M.u.push(U ? U[k][0] : 0, U ? U[k][1] : 0); }); };
   // l'herbe, avec la matière du monde (les deux tons en taches), par carrés
   const CH = longue ? 64 : 96, HB = new Map(), forme = (x, z) => { const k = Math.floor(x / CH) + "," + Math.floor(z / CH); if (!HB.has(k)) HB.set(k, new Forme()); return HB.get(k); }, tons = SOLS.herbe.c, TON_AIRE = {foret: ["#5E9C46", "#7C8E4A"], clairiere: ["#8ED65E", "#80C852"], pre: ["#A2D868", "#94CC5C"]}, tonsAire = Object.fromEntries(Object.entries(TON_AIRE).map(([k, l]) => [k, l.map(hex)]));
-  const ton = (x, z) => { const a = Z.aires.length ? Z.aireEn(x, z, 4) : null, T = a && tonsAire[a.genre] || tons; return T[(bruit(x / 5.5 + 9, z / 5.5 + 2) > .56 ? 1 : 0) % T.length]; };   // (étape 14) l'herbe d'un pré, le sol d'un bois
+  // l'aire d'un point, gardée au mètre près (des centaines de milliers de sommets la demandent)
+  const ANX = Math.ceil(Z.xb - Z.xa) + 3, ANZ = Math.ceil(Z.zb - Z.za) + 3, AG = Z.aires.length ? new Int8Array(ANX * ANZ).fill(-1) : null, GENRES = [null].concat(Z.aires.map(a => a.genre));
+  const genreEn = (x, z) => { if (!AG) return null; const i = clamp(Math.round(x - Z.xa), 0, ANX - 1), j = clamp(Math.round(z - Z.za), 0, ANZ - 1), k = j * ANX + i; if (AG[k] < 0) { const a = Z.aireEn(Z.xa + i, Z.za + j, 4); AG[k] = a ? Z.aires.indexOf(a) + 1 : 0; } return GENRES[AG[k]]; };
+  const ton = (x, z) => { const T = tonsAire[genreEn(x, z)] || tons; return T[(bruit(x / 5.5 + 9, z / 5.5 + 2) > .56 ? 1 : 0) % T.length]; };   // (étape 14) l'herbe d'un pré, le sol d'un bois
   const avecMarches = V.some(v => v.marches), creux = (x, z) => avecMarches && P.enMarches(x, z, -.1) && Math.abs(D.u) < V[D.k].l / 2 + .42 ? .34 : 0;   // (lot 3) l'herbe ne dépasse pas des marches, au pied de leurs murets
   const herbe = L => { const F = forme(L[0].x, L[0].z); for (let i = 1; i + 1 < L.length; i++) for (const q of [L[0], L[i], L[i + 1]]) { const n = normale(q.x, q.z); F.v(q.x, Z.sol(q.x, q.z) - creux(q.x, q.z), q.z, n[0], n[1], n[2], ton(q.x, q.z), 0); } };
   // couper un polygone convexe là où un champ vaut « val » : [le morceau dessous, le morceau dessus, les deux points de la coupe]
@@ -38,7 +41,7 @@ async function construireZone(cede) {   // cede : rendre la main toutes les 40 m
     const [A, B] = T, ya = chaussee(A.x, A.z), yb = chaussee(B.x, B.z), ha = Z.sol(A.x, A.z), hb = Z.sol(B.x, B.z); if (ha - ya < .003 && hb - yb < .003) return;
     let nx = B.z - A.z, nz = A.x - B.x; const l = Math.hypot(nx, nz) || 1, m = L.reduce((t, q) => t + (q.x - A.x) * nx + (q.z - A.z) * nz, 0), N = [nx / l * (m < 0 ? -1 : 1), 0, nz / l * (m < 0 ? -1 : 1)];
     const a = [A.x, ya - .03, A.z], b = [B.x, yb - .03, B.z], c = [B.x, hb, B.z], d = [A.x, ha, A.z]; tri(a, b, c, 3, N); tri(a, c, d, 3, N); };
-  const bois = (x, z) => { const a = Z.aires.length ? Z.aireEn(x, z, 3) : null; return a && a.genre === "foret" ? 1 : 0; };
+  const bois = (x, z) => genreEn(x, z) === "foret" ? 1 : 0;
   const carre = L0 => {   // un triangle de la trame, coupé selon ce qu'il y a dessous
     let reste = L0, r, T;
     [r, reste, T] = couper(reste, "f", 0); if (r) route(r); if (T) flanc(T, r); if (!reste) return;

@@ -156,7 +156,7 @@ function remplirZone() {
       else if (d > 1.5 && u < .84 && proche > 2.5 && libreA(X, Y, 2) && !boitesPres(X, Y, 1.5)) { semer(X, Y, 2); poser("arbre_bois", X, Y, v * 6.28, {r: .45, couronne: 2.4, ech: .86 + w * .34, dur: d < 6, bois: true}); } continue; }
     const dense = d > 24 && proche > 40 ? .72 : d > 13 ? (proche > 40 ? .3 : .2) : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
     const loin = proche > 40 && d > 13, r = loin && d > 24 ? 1.9 : 2.5; if (!libreA(X, Y, r) || proche < 4.8) continue; semer(X, Y, r);
-    if (loin) poser("arbre_masse", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: .85 + w * .4, masse: true, dy: -.5}); else poser("arbre_rue", X, Y, v * 6.28, {r: .6, couronne: 2.5, dur: d < 6}); }
+    if (loin) poser(Z.aires.length ? "masse_bois" : "arbre_masse", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: .85 + w * .4, masse: true, dy: -.5}); else poser("arbre_rue", X, Y, v * 6.28, {r: .6, couronne: 2.5, dur: d < 6}); }
   // (étape 14) le sous-bois, seulement le long du chemin : fougères en nappes, jeunes pousses, rochers moussus, un tronc couché de temps en temps
   if (Z.aires.length) for (let x = Z.xa + 20; x < Z.xb - 20; x += 1.7) for (let z = Z.za + 20; z < Z.zb - 20; z += 1.7) { const u = R(), v = R(), w = R(), X = x + (v - .5) * 1.5, Y = z + (w - .5) * 1.5; if (u > .5) continue; pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]); if (proche > 15 || proche < 1.7) continue;
     const a = Z.aireEn(X, Y, 3); if (!a || a.genre !== "foret") continue; const d = P.distDur(X, Y), nappe = fbm(X / 11 + 2, Y / 11 + 8); if (d < .55 || boitesPres(X, Y, .8)) continue;

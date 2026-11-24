@@ -474,6 +474,18 @@ class VilleTiree(unittest.TestCase):
             else:
                 self.assertLess(max(p.get("y", 0) for v in n["zone"]["voies"] for p in v["pts"]), 3, "c'est plat")
 
+    def test_ville_et_nature(self):
+        """(étape 14, lot 2) Une part du tour hors de la ville : un bois, la longueur demandée, la part demandée, aucun défaut."""
+        for km, nature, denivele, graine, sorte in ((1.1, .5, 12, 65, "immeubles"), (.75, .7, 25, 63, ""), (1.5, .5, 25, 10, "bourg")):
+            n, long, b = self.tirer(km=km, nature=nature, denivele=denivele, graine=graine, sorte=sorte)
+            self.assertAlmostEqual(long, km * 1000, delta=km * 30)
+            self.assertEqual(b["erreurs"], [])
+            self.assertFalse(b.get("cassures"))
+            self.assertIn("bois", n["traverse"])
+            chemin = next(v for v in n["zone"]["voies"] if v["id"] == "bois")["pts"]
+            part = sum(((p["x"] - q["x"]) ** 2 + (p["z"] - q["z"]) ** 2) ** .5 for p, q in zip(chemin, chemin[1:])) / (km * 1000)
+            self.assertAlmostEqual(part, nature, delta=.2)
+
     def test_la_meme_partout(self):
         o = {"km": .75, "denivele": 12, "graine": 21, "sorte": "pavillons"}
         n = self.tirer(**o)[0]

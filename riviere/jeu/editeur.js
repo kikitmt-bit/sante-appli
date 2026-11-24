@@ -130,15 +130,16 @@ function edAccueil() {
   if (piedPossible(G) && G.style === undefined) G.style = MACHINE.monture === "trotteur" ? "pied" : "route";
   const pied = piedPossible(G) && G.style === "pied";
   if (pied && !G.avecPied) { G.avecPied = true; G.denivele = 12; Object.assign(G.avec, {village: true, escalier: true, parc: true, foret: true, champs: true, pont: true}); if (G.forme === "huit") G.forme = "boucle"; }
-  if (pied && !PAS_PIED.includes(G.km)) G.km = 1; if (!pied && !PAS_KM.includes(G.km)) G.km = 2; if (pied && ![0, 12, 25].includes(+G.denivele)) G.denivele = 12;
+  if (pied && !PAS_PIED.includes(G.km)) G.km = 1; if (!pied && !PAS_KM.includes(G.km)) G.km = 2; if (pied && ![0, 12, 25].includes(+G.denivele)) G.denivele = 12; if (pied && G.nature === undefined) G.nature = .5;
   $("edAccueil").innerHTML = `<div class="ed-acc">
     <section class="ed-bloc ed-gen"><h2>🎲 Générer un circuit</h2><p class="ed-note">Dis ce que tu veux, je le dessine ${pour}${pied ? " : je n'en garde que ce qui passe tous mes contrôles" : " : je garde le mieux noté de plusieurs essais"}.</p>
-      ${piedPossible(G) ? `<div class="ed-q">Où tu cours</div>${puces("style", G.style, [["pied", "À pied, en ville"], ["route", "Sur la route"]])}` : ""}
+      ${piedPossible(G) ? `<div class="ed-q">Où tu cours</div>${puces("style", G.style, [["pied", "À pied"], ["route", "Sur la route"]])}` : ""}
       ${pied ? `<div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
       <div class="ed-curseur"><span>0,5 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G)}" step="1" value="${PAS_PIED.indexOf(G.km)}"><span>1,5 km</span></div>
+      <div class="ed-q">Le décor</div>${puces("nature", G.nature, [[0, "Tout en ville"], [.5, "Moitié-moitié"], [.7, "Surtout la nature"]])}
       <div class="ed-q">Relief</div>${puces("denivele", G.denivele, [[0, "Plat"], [12, "Vallonné"], [25, "Ça grimpe"]])}
       <div class="ed-q">La ville</div>${puces("sorte", G.sorte || "", [["", "Surprise"], ["bourg", "Vieux bourg"], ["pavillons", "Pavillons"], ["immeubles", "Immeubles"], ["coteau", "Sur un coteau"]])}
-      <small class="ed-aide">Une ville tirée au sort, jamais deux fois la même : des rues qui tournent et qui grimpent, une placette, un jardin, des passages, un escalier quand ça monte.</small>` : `<div class="ed-q">Forme</div>${puces("forme", G.forme === "huit" && (!terre || pied) ? "boucle" : G.forme, [["boucle", "Une boucle (des tours)"], ["ouvert", "De A à B"]].concat(terre && !pied ? [["huit", "Un 8"]] : []))}
+      <small class="ed-aide">Une ville tirée au sort, jamais deux fois la même : des rues qui tournent et qui grimpent, une placette, un jardin, des passages, un escalier quand ça monte.${G.nature ? " On en sort par le bout d'une rue : des prés, des vergers, un bois et sa clairière, puis on revient." : ""}</small>` : `<div class="ed-q">Forme</div>${puces("forme", G.forme === "huit" && (!terre || pied) ? "boucle" : G.forme, [["boucle", "Une boucle (des tours)"], ["ouvert", "De A à B"]].concat(terre && !pied ? [["huit", "Un 8"]] : []))}
       <div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
       <div class="ed-curseur"><span>1 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G) }" step="1" value="${PAS_KM.indexOf(G.km)}"><span>${PAS_KM[kmMax(G)]} km</span></div>
       ${G.forme === "ouvert" ? "" : `<small class="ed-aide">Une boucle va jusqu'à ${PAS_KM[kmMax(G)]} km ; « De A à B » va jusqu'à 50 km (le monde se construit autour de toi au fil de la route).</small>`}
@@ -160,7 +161,7 @@ function edAccueil() {
    ce qui bloque ») : si le tirage échoue, on réessaie tout seul en assouplissant, dans cet ordre : le 8 devient une boucle, un cran de virages
    en moins, puis on retire un à un les éléments les plus difficiles à caser ; on dit ce qui a changé. L'effort suit la longueur (une longue route
    est vite tracée, mais habiller ses rives et contrôler tout son sol prendrait des minutes). ---- */
-const NOMS_LIEUX = {placette: "une placette", jardin: "un jardin", ruelle: "un passage entre deux murs", escalier: "un escalier", "belvédère": "un belvédère"};   // ce que traverse une ville tirée au sort (villes.js)
+const NOMS_LIEUX = {placette: "une placette", jardin: "un jardin", ruelle: "un passage entre deux murs", escalier: "un escalier", "belvédère": "un belvédère", bois: "un bois", "clairière": "une clairière"};   // ce que traverse une ville tirée au sort (villes.js)
 const DIFFICILES = ["escalier", "echangeur", "fourche", "montagne", "tunnel", "rondpoint", "pont", "grotte", "cascade", "port", "village", "volcan", "marais", "plage", "lac", "ronflex", "champs", "foret"];
 const NOMS_AVEC = Object.fromEntries([].concat(CASES_GEN.eau, CASES_GEN.terre, CASES_GEN.pied).map(([k, , t]) => [k, t.toLowerCase()]));
 function effortDe(G) { const km = +G.km || 1; return km <= 4 ? {} : km <= 8 ? {tirages: 3} : {tirages: km > 20 ? 1 : 2, habiller: false, sol: false}; }
@@ -283,7 +284,7 @@ $("editeur").addEventListener("change", e => {
 $("editeur").addEventListener("click", e => {
   const t = e.target.closest("button"); if (!t) return;
   const d = t.dataset, n = ED.n, p = n && edPiece(); ED.msg = "";
-  if (d.gk) { const G = ED.gen, v = d.gv; if (d.gk === "km" || d.gk === "denivele") G[d.gk] = +v; else if (d.gk === "forme") { G.forme = v; G.boucle = v !== "ouvert"; if (pasKm(G).indexOf(G.km) > kmMax(G)) G.km = pasKm(G)[kmMax(G)]; } else G[d.gk] = v; edAccueil(); }
+  if (d.gk) { const G = ED.gen, v = d.gv; if (["km", "denivele", "nature"].includes(d.gk)) G[d.gk] = +v; else if (d.gk === "forme") { G.forme = v; G.boucle = v !== "ouvert"; if (pasKm(G).indexOf(G.km) > kmMax(G)) G.km = pasKm(G)[kmMax(G)]; } else G[d.gk] = v; edAccueil(); }
   else if (d.avec) { ED.gen.avec[d.avec] = !ED.gen.avec[d.avec]; t.classList.toggle("on", !!ED.gen.avec[d.avec]); }
   else if (d.pm) { const inp = $("edCote").querySelector(`input[data-k="${d.pm}"]`); inp.value = clamp(+inp.value + +d.d, +inp.min, +inp.max); edRegler(d.pm, inp.value); edTout(); }
   else if (d.virage !== undefined) { p.virage = +d.virage; edTout(); }

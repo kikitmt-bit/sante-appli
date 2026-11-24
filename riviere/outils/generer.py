@@ -74,6 +74,8 @@ if __name__ == "__main__":
     ap.add_argument("--denivele", type=float, default=15)
     ap.add_argument("--forme", choices=["boucle", "ouvert", "huit"], default="boucle")
     ap.add_argument("--style", choices=["route", "pied"], default="route")   # (18/11) pied : un footing (avec --activite terre ; km de décor)
+    ap.add_argument("--nature", type=float, default=0)   # (24/11) avec --style pied : la part de nature (0, .5, .7)
+    ap.add_argument("--sorte", default="")
     ap.add_argument("--avec", default="")
     ap.add_argument("--graine", type=int, default=1)
     ap.add_argument("--tirages", type=int, default=8)
@@ -89,7 +91,7 @@ if __name__ == "__main__":
             print(texte_note(notes[nom], detail=len(noms) == 1))
         sys.exit(0)
     o = {"km": a.km, "activite": a.activite, "style": a.style, "virages": a.virages, "denivele": a.denivele, "forme": a.forme, "boucle": a.forme != "ouvert",
-         "avec": {k: True for k in a.avec.split(",") if k}, "graine": a.graine, "tirages": a.tirages}
+         "avec": {k: True for k in a.avec.split(",") if k}, "graine": a.graine, "tirages": a.tirages, "nature": a.nature, "sorte": a.sorte}
     if a.nom:
         o["nom"] = a.nom
     r = generer(o)

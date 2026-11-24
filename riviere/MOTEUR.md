@@ -577,6 +577,17 @@ Un chemin de terre est une voie comme une autre (`"sol": "terre"`, 2,1 m) : la m
 - **Léger** : `"sorte"` dans le dessin (ici `"bois"`) allume les distances de vue des longues villes ; un arbre du bois se simplifie à 95 m (`arbre_bois_loin`), le sous-bois disparaît à 55 m.
 - Fabriquer : `python riviere/outils/zone.py ville-bois` depuis `outils/zones/ville-bois.json` (jamais le niveau à la main ; un test compare).
 
+### Les villes tirées au sort, avec leur nature (24/11, étape 14, lot 2 : `jeu/nature.js`)
+
+`nature` (0, .5 ou .7 : la part du tour hors de la ville) dans les options de `tirerVille` ; sans navigateur : `python riviere/outils/generer.py --activite terre --style pied --km 1.5 --nature .5 --denivele 12 --graine 7`.
+
+- **La ville est tirée comme toujours** (une boucle de rues plus longue que ce qu'on en suivra : `cible`), puis `portesNature` choisit **deux portes** sur son bord : sorte 1 = une rue d'un coin qui sort de la ville
+  (son amorce, 72 à 88 m : les maisons s'arrêtent à 34 m du bout, clôtures, verger ou potagers ; le chemin continue son trottoir) ; sorte 2 = le milieu d'une rue (le chemin part d'équerre, entre deux haies). De l'une à
+  l'autre on suit les rues ; les rues du reste du bord existent, avec des amorces courtes. De préférence des portes qui laissent un coin à placette (Kiki aime qu'on coupe par la place).
+- **Le chemin** (`cheminNature`) : un arc qui s'éloigne du centre, sa flèche réglée par dichotomie pour faire la longueur voulue, qui serpente ; à 30 m au moins des rues, à 22 m de lui-même, 14 essais avant de jeter la
+  ville. Hauteur : une colline (ou un creux) entre les portes, 5,5 % au plus. Aires : prés, bois par bouts de ~110 m (chacun aussi large qu'il peut l'être), clairière, vergers, potagers ; sentiers, poteaux, tas de bois.
+- Le reste est celui d'une ville tirée : ce qui ne se case pas lève une erreur, seul ce qui passe `zoneControle` est rendu.
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal
