@@ -366,7 +366,7 @@ class Moteur(unittest.TestCase):
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
     BUDGET_TRIANGLES = 220000
     BUDGET_SECONDES = 8
-    BUDGET_PAGE_KO = 2460  # (24/11, étape 13) la ville libre : 70 Ko de plus (zone.js, zone_plan.js et leur copie pour le générateur, le dessin, le circuit d'essai) ; avant : 2360, les villes dessinées : 110 Ko de plus (le module, sa copie pour le générateur, deux circuits, des passants) ; avant : 2190
+    BUDGET_PAGE_KO = 2500  # (24/11, étape 13, lot 3) le générateur de villes libres : 30 Ko de plus, le vieux tirage à angles droits en moins ; avant : 2460, (24/11, étape 13) la ville libre : 70 Ko de plus (zone.js, zone_plan.js et leur copie pour le générateur, le dessin, le circuit d'essai) ; avant : 2360, les villes dessinées : 110 Ko de plus (le module, sa copie pour le générateur, deux circuits, des passants) ; avant : 2190
                             #  +40 Ko la nuit : le décor OpenStreetMap du Ventoux entier, 480 objets réels, et la région kanto-reel ;
                             #  18/11 : +60 Ko pour le lac d'Allier à Vichy, son rivage mètre par mètre, ses 200 objets réels et la région vichy ;
                             #  18/11 au soir : +10 Ko pour le footing de Jadielle, ses rives et l'escalier ;
@@ -398,20 +398,11 @@ class Villes(unittest.TestCase):
         import generer
         return generer.bilan(circuit=circuit)
 
-    def ville(self, graine=7, km=1.2):
-        import sys
-        sys.path.insert(0, str(C.parent / "outils"))
-        import generer
-        r = generer.generer({"km": km, "activite": "terre", "style": "pied", "graine": graine})
-        self.assertNotIn("erreur", r)
-        return r
+    def ville(self):
+        return {"niveau": lis("niveaux", "ville-place.json")}   # (étape 13, lot 3) la ville à angles droits validée par Kiki ; le générateur ne fait plus que des villes libres (VilleLibre)
 
     def test_une_ville(self):
-        r = self.ville()
-        self.assertAlmostEqual(r["long"], 1200, delta=40, msg="la longueur demandée")
-        b = self.bilan(r["niveau"])
-        self.assertEqual(b["erreurs"], [])
-        self.assertEqual(r["niveau"], self.ville()["niveau"], "mêmes options, même ville")
+        self.assertEqual(self.bilan(self.ville()["niveau"])["erreurs"], [])
 
     def test_le_trottoir_qui_devie(self):
         """Kiki : « le trottoir d'un coup dévie, fait un grand virage à droite ». Un parcours qui quitte le trottoir est refusé."""
@@ -480,6 +471,57 @@ class VilleLibre(unittest.TestCase):
             "etapes": [{"v": f"r{i}", "cote": "g", "de": 0, "a": 1, "nom": f"Rue {i}"} for i in range(4)]}
         e = self.controle(self.zone.niveau_de(d))["erreurs"]
         self.assertTrue(any("Rien ne se passe" in x for x in e), e)
+
+
+@unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")
+class VilleTiree(unittest.TestCase):
+    """Le générateur de villes libres (jeu/villes.js, étape 13, lot 3, 24/11) : une ville tirée au sort passe tous les contrôles, à la longueur demandée, la même partout."""
+
+    def tirer(self, **o):
+        sys.path.insert(0, str(R / "outils"))
+        import generer
+        r = generer.generer({"activite": "terre", "style": "pied", **o})
+        self.assertNotIn("erreur", r, o)
+        return r["niveau"], r["long"], generer.bilan(circuit=r["niveau"])
+
+    def test_villes_sans_defaut(self):
+        for km, denivele, graine, sorte in ((.7, 12, 12, "coteau"), (1.2, 0, 11, "bourg"), (1.6, 25, 3, "immeubles")):
+            n, long, b = self.tirer(km=km, denivele=denivele, graine=graine, sorte=sorte)
+            self.assertAlmostEqual(long, km * 1000, delta=km * 30, msg="la longueur demandée")
+            self.assertEqual(b["erreurs"], [])
+            self.assertFalse(b.get("cassures"))
+            self.assertGreaterEqual(len(n["traverse"]), 2, "des lieux à traverser")
+            if denivele:
+                self.assertGreater(max(p.get("y", 0) for v in n["zone"]["voies"] for p in v["pts"]), 8, "ça monte")
+            else:
+                self.assertLess(max(p.get("y", 0) for v in n["zone"]["voies"] for p in v["pts"]), 3, "c'est plat")
+
+    def test_la_meme_partout(self):
+        o = {"km": .75, "denivele": 12, "graine": 21, "sorte": "pavillons"}
+        n = self.tirer(**o)[0]
+        self.assertEqual(n, self.tirer(**o)[0], "mêmes options, même ville")
+        self.assertNotEqual(n["zone"], self.tirer(**{**o, "graine": 22})[0]["zone"], "une autre graine, une autre ville")
+
+    def test_par_tranches(self):
+        """Dans la page, les tirages se font par petits lots (la page reste vivante) : le même résultat que d'un coup."""
+        sys.path.insert(0, str(R / "outils"))
+        import generer
+        o, k0 = {"activite": "terre", "style": "pied", "km": .75, "denivele": 12, "graine": 21, "sorte": "pavillons"}, 0
+        for _ in range(60):
+            r = generer.generer({**o, "k0": k0, "tranche": 8})
+            if "suite" not in r:
+                break
+            k0 = r["suite"]
+        self.assertEqual(r["niveau"], generer.generer(o)["niveau"])
+
+    def test_un_escalier(self):
+        """Un escalier est plus raide qu'une rue, et lui seul : sans ses marches, la même pente est refusée."""
+        n = self.tirer(km=.7, denivele=12, graine=12, sorte="coteau")[0]
+        self.assertTrue([v for v in n["zone"]["voies"] if v.get("marches")], "cette ville a un escalier")
+        for v in n["zone"]["voies"]:
+            v.pop("marches", None)
+        import generer
+        self.assertTrue(any("pente" in e for e in generer.bilan(circuit=n)["erreurs"]))
 
 
 @unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")

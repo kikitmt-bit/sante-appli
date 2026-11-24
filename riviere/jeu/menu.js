@@ -19,6 +19,7 @@ const SOUS_HEURE = {circuit: () => "prévue : " + (NOM_HEURE[NIVEAU.heure || "jo
 const SOUS_METEO = {circuit: () => "prévu : " + (NOM_METEO[NIVEAU.meteo || "beau"] || NIVEAU.meteo), variable: () => "change toutes les 3 min"};
 const escM = t => String(t === undefined || t === null ? "" : t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;");
 const libelle = (liste, k) => (liste.find(x => x[0] === k) || liste[0])[1];
+const tourMenu = v => VISUEL ? v / MACHINE.allure : v;   // (24/11) au marcheur elliptique, le décor défile plus vite que toi : au menu, ce sont les mètres de tes jambes, ceux de l'écran de course
 const longueur = m => m < 1000 ? Math.round(m / 10) * 10 + " m" : (m / 1000).toFixed(m < 10000 ? 1 : 0).replace(".", ",") + " km";
 const metresNageur = n => n.taille ? String(n.taille).replace(".", ",") + " m" : "";
 
@@ -145,16 +146,16 @@ function carteCircuit([id, n]) {
 function infosCarte(id) {
   const el = document.querySelector(`#menu [data-c="${CSS.escape(id)}"] .m-c-info`), T = MENU.traces[id]; if (!el || !T) return;
   const r = recordDe(id), n = NIVEAUX[id] || CIRCUITS_PERSO[id] || {};
-  el.textContent = [longueur(T.tour), texteForme(T), texteRelief(T)].join(" · ") + (n.jour ? " · du jour" : r ? " · record " + chrono(r) : "");
+  el.textContent = [longueur(tourMenu(T.tour)), texteForme(T), texteRelief(T)].join(" · ") + (n.jour ? " · du jour" : r ? " · record " + chrono(r) : "");
 }
 function vitesseHabituelle() { return MACHINE.physique ? 7.5 : MACHINE.cadence * M_COUP / 60; }   // en vrais m/s, à l'allure habituelle
 function blocApercu() {
   const bonne = ACTIVITE[MACHINE_NOM] === DISCIPLINE, T = bonne ? resumeTrace(PISTE, TOUR_VRAI, BOUCLE) : null;
   if (!T) return `<div class="m-apercu vide"><p>${circuitsDuMenu().length ? "Choisis un circuit." : "Pas encore de circuit pour cette machine : crée le tien ou génère-le."}</p></div>`;
-  const duree = TOUR_VRAI / Math.max(.5, vitesseHabituelle()), r = record;
+  const duree = tourMenu(TOUR_VRAI) / Math.max(.5, vitesseHabituelle()), r = record;
   return `<div class="m-apercu"><canvas class="m-grand"></canvas><div class="m-fiche">
     <h1>${NIVEAU.brouillon ? "✏️ " : NIVEAU.jour ? "☀️ " : ""}${escM(NIVEAU.nom || NIVEAU.id)}</h1>
-    <div class="m-puces"><span><small>${BOUCLE ? "UN TOUR" : "DISTANCE"}</small>${longueur(TOUR_VRAI)}</span><span><small>FORME</small>${BOUCLE ? "Circuit" : "Parcours"}</span><span><small>DÉNIVELÉ</small>${T.dplus < 10 ? "Plat" : "+" + T.dplus + " m"}</span><span><small>À TON ALLURE</small>≈ ${Math.max(1, Math.round(duree / 60))} min</span></div>
+    <div class="m-puces"><span><small>${BOUCLE ? "UN TOUR" : "DISTANCE"}</small>${longueur(tourMenu(TOUR_VRAI))}</span><span><small>FORME</small>${BOUCLE ? "Circuit" : "Parcours"}</span><span><small>DÉNIVELÉ</small>${T.dplus < 10 ? "Plat" : "+" + T.dplus + " m"}</span><span><small>À TON ALLURE</small>≈ ${Math.max(1, Math.round(duree / 60))} min</span></div>
     <canvas class="m-profil"></canvas>
     <p class="m-record">${r ? (BOUCLE ? "Ton record du tour : " : "Ton record : ") + "<b>" + chrono(r) + "</b>" : "Pas encore de record ici."}${NIVEAU.jour && typeof NIVEAU.note === "number" ? " · note " + NIVEAU.note + " / 100" : ""}</p>
     ${NIVEAU.route ? `<p class="m-record" style="opacity:.6;font-size:.8em">${NIVEAU.osm ? "Tracé et décor d'après" : "Tracé d'après"} OpenStreetMap · © les contributeurs d'OpenStreetMap</p>` : ""}

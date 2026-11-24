@@ -198,13 +198,14 @@ function mailleEtiquette(e) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(e.l, e.h), new THREE.MeshBasicMaterial({map: t})); m.position.set(e.x, e.y, e.z); m.rotation.y = e.lacet; return m;
 }
 function mailleAnimee(a) { a.maille = a.forme.maille(); a.maille.position.set(a.x, a.y, a.z); a.maille.rotation.order = "YXZ"; a.maille.rotation.y = a.lacet; return a.maille; }
+const VU_DE = {q: [0, 110], n: [0, 130], i: [0, 130], j: [130, 999]};   // (étape 13, lot 3) une ville tirée au sort (NIVEAU.sorte) : de combien de mètres se voient les petits objets, les clôtures, un immeuble détaillé, sa silhouette (plan.js, poserPlan)
 async function construireDecor(cede) {   // cede (17/11) : rendre la main toutes les 40 ms entre deux règles et deux maillages (le menu reste vivant) ; le même décor
   let tc = performance.now(); const souffle = async () => { if (cede && performance.now() - tc > 40) { await cede(); tc = performance.now(); } };
   const g = poserDecorPas(); let r; do { r = g.next(); if (!r.done) await souffle(); } while (!r.done);
   const formes = r.value;
   MONDE.foret = [];   // les maillages de la forêt en masse : la qualité les cache si la machine peine (jeu.js)
   for (const [k, F] of formes) { await souffle(); const abri = typeof k === "string" && k[0] === "t", foret = typeof k === "string" && k[0] === "f", m = F.maille(abri ? MAT_ABRI : MAT_MONDE); if (m) { m.name = abri ? "decor-abri" : foret ? "foret" : typeof k === "string" && k[0] === "n" ? "decor-net" : "decor";   // (« n » : les haies et les murets d'une ville dessinée : leur ombre, rasante, faisait des dents de scie sur le trottoir)
-    if (foret) MONDE.foret.push(m); scene.add(m); } }
+    if (foret) MONDE.foret.push(m); if (NIVEAU.sorte && VU_DE[k[0]]) voirLoin(m, ...VU_DE[k[0]]); scene.add(m); } }
   // les étiquettes (le texte des panneaux) et les objets qui tournent
   for (const e of MONDE.etiquettes) scene.add(mailleEtiquette(e));
   for (const a of MONDE.animes) scene.add(mailleAnimee(a));

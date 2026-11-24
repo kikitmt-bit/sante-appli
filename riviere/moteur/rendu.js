@@ -233,7 +233,11 @@ function tailleEcran() {
     POST.mat.uniforms.tC.value = cible.texture; POST.mat.uniforms.tD.value = cible.depthTexture; POST.mat.uniforms.uPx.value.set(1 / W, 1 / H); }
 }
 addEventListener("resize", tailleEcran); tailleEcran();
-function dessiner() {  // d'abord le ciel (sa propre caméra, qui ne fait que tourner), puis le monde par-dessus
+/* (étape 13, lot 3) une longue ville tirée au sort : un maillage qui ne se voit que de près (max), ou de loin à la place d'un autre (min). Vide sur tous les autres circuits. */
+const LOIN = [];
+function voirLoin(m, min, max) { const g = m.geometry; if (!g.boundingSphere) g.computeBoundingSphere(); LOIN.push({m, x: g.boundingSphere.center.x, z: g.boundingSphere.center.z, r: g.boundingSphere.radius, min, max}); }
+function majLoin() { for (const q of LOIN) { const d = Math.max(0, Math.hypot(camera.position.x - q.x, camera.position.z - q.z) - q.r); q.m.visible = d >= q.min && d < q.max; } }
+function dessiner() { if (LOIN.length) majLoin();   // d'abord le ciel (sa propre caméra, qui ne fait que tourner), puis le monde par-dessus
   renderer.info.reset(); renderer.autoClear = false;
   CIEL.cam.quaternion.copy(camera.quaternion); CIEL.cam.fov = camera.fov; CIEL.cam.aspect = camera.aspect; CIEL.cam.updateProjectionMatrix(); CIEL.m.position.y = CIEL.y - camera.position.y; CIEL.loin.position.y = -camera.position.y;
   renderer.setRenderTarget(CONTOUR ? cible : null); renderer.clear(); if (CIEL.m.visible) renderer.render(CIEL.scene, CIEL.cam); renderer.clearDepth(); renderer.render(scene, camera);

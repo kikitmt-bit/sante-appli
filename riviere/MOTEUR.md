@@ -539,8 +539,26 @@ hauteur qu'on veut, et le sol se déduit de la distance à chacune : chaussée, 
 - **La piste** prend la hauteur de la zone (piste.js, `if (ZONE)`), et le terrain du monde la rejoint à son bord (champ.js). `SUR_PLAN` = l'une ou l'autre ville.
 - **La caméra** ne suit la pente qu'à 40 % dans une zone (`PENTE_VUE`, camera.js) : la rue monte ou plonge devant soi ; ailleurs, rien ne change.
 - Coût : 205 000 triangles au plus à l'image (297 000 pour `ville-place`), prête en ~2 s.
-- **Pas encore** (lots 2 et 3, étapes 14 à 16) : escaliers, murs de soutènement, belvédère, ruelles et parcs sur un vrai circuit (le code des pavés et des allées est là), voitures qui
-  roulent, le générateur « À pied » (il fait toujours des villes plates), Ronflex et fourches, sortir de la ville.
+- **Pas encore** (étapes 14 à 16) : voitures qui roulent, Ronflex et fourches en ville, sortir de la ville.
+
+### Les villes tirées au sort (24/11, étape 13, lot 3 : `jeu/villes.js`)
+
+Marcheur elliptique → Créer un circuit → Générer → « À pied, en ville » : longueur (0,5 à 1,5 km de jambes, 0,75 à 2,25 km de décor), relief (plat, vallonné, ça grimpe), genre (surprise, vieux
+bourg, pavillons, immeubles, sur un coteau). Sans navigateur : `python riviere/outils/generer.py --activite terre --style pied --km 1.5 --denivele 12 --graine 7`. Mêmes options, même ville partout.
+
+- **Le tirage** (`tirerVille`) : une trame de carrefours déformée (`trameVille`), chaque ligne est une rue ; quelques mailles sont coupées en deux par une ruelle, un escalier, une allée de jardin ou
+  une rue en biais ; **le parcours est le bord d'un groupe de mailles** (`groupeVille` : le bon nombre de mètres, le plus de lieux, les coins les plus variés), donc toujours une boucle de vraies rues.
+  Les rues : droites de chaque côté d'un carrefour, une courbe ou un S entre deux ; hauteurs : un versant et une bosse, bornés par la rue la plus raide ; une placette (à un coin, en bas, traversée
+  en diagonale, boutiques sur ses deux autres côtés), la rue commerçante autour, un belvédère en haut (du côté où l'on court, là où ça descend). `SORTES_VILLE` = le caractère de chaque genre.
+- **Ce qui ne se case pas lève une erreur** (angle, place, longueur) : le tirage est jeté sans rien calculer de lourd ; seules les villes qui tiennent passent `zoneControle` (~0,6 s). De 1 à 5 s en
+  général, 15 s au pire. Dans la page, par lots de 8 (`k0`, `tranche`, `{suite}`) : rien ne se fige. Si rien ne tient : une autre graine, puis un autre genre, puis à plat (et c'est dit).
+- **Nouveau dans une zone** : `marches: {a, b}` d'une ruelle (un escalier à 25 %, de vraies contremarches de 16 cm ; `PENTE_MARCHES`, permis là seulement), style « serre » (maisons serrées) et
+  « mur » (`mur_ruelle` : mur à chaperon, lierre, portes, lanternes), `boutiques` et `garde` d'une place (façades, garde-corps), `jardins` (portails, bancs, kiosque, bosquets), `vues` (rien de haut
+  devant un belvédère) ; un coin où l'on traverse deux rues de suite fait deux passages piétons ; des fenêtres au dos et au bout des bâtiments (`dos`, `pignon`). Tout cela est éteint sur `ville-hauts`.
+- **Une longue ville reste légère** (`NIVEAU.sorte` : les villes tirées seulement) : le sol fin ne se voit qu'à moins de 135 m (au-delà un ruban par rue, 30 cm plus bas), les petits objets à 110 m,
+  les clôtures à 130 m, un immeuble lointain devient sa silhouette (`immeuble_loin`). `LOIN`, `voirLoin` de rendu.js, `VU_DE` de decor.js. Au pire 300 000 triangles à l'image (835 000 avant),
+  comme `ville-place` ; prête en 2 à 4 s, 5,5 s pour 2,2 km d'immeubles.
+- Une ville ne se retouche pas pièce par pièce (le parcours quitterait le trottoir) : l'éditeur montre ce qu'on y traverse, on en génère une autre, on l'essaie, on la garde.
 
 ## Moins de défauts à la source (24/11)
 

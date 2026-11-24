@@ -219,15 +219,17 @@ const distBoite = (b, x, z) => { const dx = x - b.x, dz = z - b.z, u = Math.abs(
 const coinsBoite = b => [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([u, v]) => [b.x + (u * b.l * b.c + v * b.p * b.s) * .98, b.z + (-u * b.l * b.s + v * b.p * b.c) * .98]);
 function seTouchent(a, b) { const A = a.l ? boiteObjet(a) : null, B = b.l ? boiteObjet(b) : null; if (!A && !B) return Math.hypot(a.x - b.x, a.z - b.z) < (a.r || 0) + (b.r || 0) - .05; if (A && !B) return distBoite(A, b.x, b.z) < (b.r || 0) - .05; if (B && !A) return distBoite(B, a.x, a.z) < (a.r || 0) - .05;
   return coinsBoite(A).concat([[A.x, A.z]]).some(([x, z]) => distBoite(B, x, z) < -.08) || coinsBoite(B).concat([[B.x, B.z]]).some(([x, z]) => distBoite(A, x, z) < -.08); }
+const PETITS_PLAN = ["lampadaire", "voiture", "boite_lettres", "massif", "banc", "poubelle", "terrasse", "etal", "buisson", "longue_vue"];   // (lot 3) ce qui ne se voit plus à 110 m
 /* poser tout ça dans le monde (appelé par decor.js, comme le reste du décor) : par carrés de 64 m, clés « p… » (« f… » : la forêt) */
 function* poserPlan(formes, MD, K, poses) {
   remplirPlan(); const R = hasard(PLAN.graine * 331 + 7); let n = 0;
   for (const q of PLAN.objets) {
     const recette = OBJETS[q.o]; if (!recette) { console.warn("Objet inconnu : " + q.o); continue; }
-    const CA = q.masse || q.haie ? 120 : 64, k = (q.masse ? "f" : q.haie ? "n" : "p") + Math.floor(q.x / CA) + "," + Math.floor(q.z / CA); if (!formes.has(k)) formes.set(k, new Forme());
+    const sorte = NIVEAU.sorte, CA = q.masse || q.haie && !sorte ? 120 : 64, k = (q.masse ? "f" : q.haie ? "n" : sorte && PETITS_PLAN.includes(q.o) ? "q" : sorte && q.o === "immeuble_pente" ? "i" : "p") + Math.floor(q.x / CA) + "," + Math.floor(q.z / CA); if (!formes.has(k)) formes.set(k, new Forme());
     pres(q.x, q.z); const s = sLigne(Q.i), cote = Q.d > 0 ? "d" : "g", e = Q.e;
     const F = formes.get(k), n0 = F.m.length; recette(F.poser(q.x, PLAN.haut(q.x, q.z) + (q.dy || 0), q.z, q.lacet || 0, q.ech || 1).matiere(2), Object.assign({eau: 3, _s: s, _cote: cote, _e: e}, q), R, K);
     if (q.incline) { const gx = (PLAN.sol(q.x + 1, q.z) - PLAN.sol(q.x - 1, q.z)) / 2, gz = (PLAN.sol(q.x, q.z + 1) - PLAN.sol(q.x, q.z - 1)) / 2; for (let i = n0; i < F.m.length; i++) if (F.m[i]) F.p[i * 3 + 1] += (F.p[i * 3] - q.x) * gx + (F.p[i * 3 + 2] - q.z) * gz; }   // (étape 13) une voiture garée, une haie : couchées sur la pente (pas leur ombre, déjà posée au sol)
+    if (k[0] === "i") { const j = "j" + k.slice(1); if (!formes.has(j)) formes.set(j, new Forme()); OBJETS.immeuble_loin(formes.get(j).poser(q.x, PLAN.haut(q.x, q.z), q.z, q.lacet || 0, q.ech || 1).matiere(2), q, R, K); }   // sa silhouette, vue de loin
     if (q.masse) MD.masse++; else poses.push({nom: q.o, s, cote, e, plan: true, v: null});
     if (++n % 60 === 0) yield;
   }

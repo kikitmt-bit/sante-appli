@@ -2,8 +2,6 @@
 // (24/11, Kiki : « aucune carte qui ne soit pas réaliste ») Le parcours ne fait que ce qu'un piéton ferait : il reste au milieu d'un trottoir droit, tourne au coin
 // d'un îlot, traverse sur un passage, entre dans le parc par une porte, à angle droit, suit ses allées, traverse une place. Tout le reste est refusé (planControle).
 // Mêmes options, même ville, sur toutes les machines. Aucun accès à la page : se lance aussi avec node (page.py : generateur).
-const VILLES_NOMS = {rues: ["des Lilas", "du Moulin", "des Tilleuls", "du Marché", "de l'École", "des Roucool", "du Pont", "des Écoles", "de la Gare", "des Pêcheurs", "du Four", "des Cerisiers"],
-  parcs: ["Parc des Roucool", "Jardin des Plantes", "Parc de l'Étang", "Jardin Chetiflor", "Parc Ponyta"], places: ["La place du Marché", "La place de la Fontaine", "La place des Platanes"]};
 
 /* un chemin fermé (points {x, z, r, nom…}, coins arrondis de rayon r) → des pièces exactes : une droite, un arc, une droite… Le premier point est le départ, au milieu d'une droite */
 function piecesDuChemin(pts, modele) {
@@ -21,51 +19,165 @@ function piecesDuChemin(pts, modele) {
   return o;
 }
 
-/* une ville et son parcours. o : {km (décor), graine, nom} */
-function tirerVille(o, graine, k0) {
-  const R = hasard(graine * 6151 + 17), tire = (a, b) => a + (b - a) * R(), choix = l => l.splice(Math.floor(R() * l.length), 1)[0], noms = {rues: VILLES_NOMS.rues.slice(), parcs: VILLES_NOMS.parcs.slice(), places: VILLES_NOMS.places.slice()};
-  const T = 3, M = T / 2, k = k0 || Math.max(.8, Math.min(1.9, (o.km || 1.5) / 1.05)), miroir = R() < .5 ? -1 : 1;
-  // les rues : 5 nord-sud, 4 est-ouest. Les boulevards du tour et la rue de la place sont plus larges
-  const larg = [8.4, 6.4, 7.4, 6.4, 8.4], haut = [8.4, 6.4, 7.4, 8.4], kp = Math.min(k, 1.05), cols = [tire(72, 84) * k, tire(74, 86) * kp, tire(92, 108) * k, tire(86, 100) * k], rangs = [tire(66, 78) * k, tire(70, 80) * kp, tire(64, 74) * k];   // (la place garde une taille humaine)
-  const ns = [{x: 0, l: larg[0]}], eo = [{z: 0, l: haut[0]}]; cols.forEach((w, i) => ns.push({x: ns[i].x + w, l: larg[i + 1]})); rangs.forEach((w, i) => eo.push({z: eo[i].z + w, l: haut[i + 1]}));
-  const B = (i0, i1, j0, j1) => ({x0: ns[i0].x + ns[i0].l / 2, x1: ns[i1 + 1].x - ns[i1 + 1].l / 2, z0: eo[j0].z + eo[j0].l / 2, z1: eo[j1 + 1].z - eo[j1 + 1].l / 2});
-  const p = B(2, 3, 0, 1), s = B(1, 1, 1, 1), nParc = choix(noms.parcs), nPlace = choix(noms.places), X = u => p.x0 + (p.x1 - p.x0) * u, Z = v => p.z0 + (p.z1 - p.z0) * v;
-  const zc = s.z0 + (s.z1 - s.z0) * tire(.58, .68), gx = X(tire(.12, .2));   // la porte ouest du parc, en face de la place ; sa porte nord, sur le boulevard
-  const vz = (zc - p.z0) / (p.z1 - p.z0), jit = (a, d = .025) => a + tire(-d, d);
-  const tour = [{x: gx, z: p.z0 + T}, {x: gx, z: Z(.2), r: 9}, {x: X(jit(.36)), z: Z(jit(.23)), r: 14}, {x: X(jit(.62)), z: Z(jit(.13)), r: 16}, {x: X(jit(.86)), z: Z(jit(.27)), r: 16}, {x: X(jit(.87)), z: Z(jit(.58)), r: 15},
-    {x: X(jit(.7)), z: Z(jit(.68)), r: 13}, {x: X(jit(.7)), z: Z(jit(.87)), r: 12}, {x: X(jit(.42)), z: Z(jit(.86)), r: 14}, {x: X(.27), z: zc, r: 11}, {x: p.x0 + T, z: zc}];
-  const etang = {x: X(jit(.52)), z: Z(jit(.47)), r: Math.min((p.x1 - p.x0) * .115, (p.z1 - p.z0) * .13), k: 1.25, g: R() * 6}, q = tour.map(a => [a.x, a.z]);
-  const secondes = [{l: 2.4, pts: [{x: q[2][0], z: q[2][1] + 1}, {x: X(.31), z: Z(.5), r: 12}, {x: q[9][0] + 3, z: zc - .5}]},                                                             // l'allée de l'ouest, entre deux points du tour
-    {l: 2.6, pts: [{x: q[5][0], z: q[5][1] - 8}, {x: p.x1 - T, z: q[5][1] - 8}]}, {l: 2.6, pts: [{x: q[7][0] - 8, z: q[7][1] - .5}, {x: q[7][0] - 8, z: p.z1 - T}]}];            // les portes est et sud
-  const portes = [{cote: "n", x: gx, z: p.z0, texte: nParc}, {cote: "o", x: p.x0, z: zc, texte: nParc}, {cote: "e", x: p.x1, z: q[5][1] - 8, texte: nParc}, {cote: "s", x: q[7][0] - 8, z: p.z1, texte: nParc}];
-  const styles = {a: choix([{o: "maisons"}, {n: "residences", o: "maisons"}]), b: choix(["boutiques", "residences"]), c: choix([{o: "residences", s: "maisons"}, {o: "maisons", s: "boutiques"}, {o: "maisons", s: "residences"}])};
-  const ilots = [{i0: 2, i1: 3, j0: 0, j1: 1, type: "parc", nom: nParc, portes, allees: [{l: 3.2, pts: tour}].concat(secondes), etang, kiosque: {x: X(.14), z: Math.min(Z(.9), zc + 20) , lacet: Math.PI * .8}},
-    {i0: 1, i1: 1, j0: 1, j1: 1, type: "place", nom: nPlace, decale: -(s.z1 - s.z0) * .2},
-    {i0: 0, i1: 0, j0: 0, j1: 0, type: "bati", cotes: styles.a}, {i0: 1, i1: 1, j0: 0, j1: 0, type: "bati", cotes: {s: "boutiques", n: styles.b}}, {i0: 0, i1: 0, j0: 1, j1: 1, type: "bati", cotes: {e: "boutiques"}},
-    {i0: 0, i1: 0, j0: 2, j1: 2, type: "bati", cotes: styles.c}, {i0: 1, i1: 1, j0: 2, j1: 2, type: "bati", cotes: {n: "boutiques", o: "boutiques"}}, {i0: 2, i1: 2, j0: 2, j1: 2, type: "bati"}, {i0: 3, i1: 3, j0: 2, j1: 2, type: "bati"}];
-  // le parcours : le boulevard de l'ouest vers le nord, le boulevard du nord, la porte du parc (à angle droit), ses allées, la place, la rue commerçante, le retour
-  const ouest = B(0, 0, 0, 2), xo = ouest.x0 + M, zn = ouest.z0 + M, zs = ouest.z1 - M, xp = s.x0 + M, b12 = B(1, 1, 2, 2), rues = [1, 2, 3, 4].map(() => "La rue " + choix(noms.rues));
-  const chemin = [{x: xo, z: lerp(zn, zs, .62), nom: "Le boulevard " + choix(noms.rues)}, {x: xo, z: zn, r: 3, nom: rues[0]}, {x: gx, z: zn, r: 3, nom: nParc, segment: "Le tour du parc"}]
-    .concat(tour.slice(1, -1).map((a, i) => ({x: a.x, z: a.z, r: a.r, nom: [null, "L'allée des bancs", null, "Le tour de l'étang", null, "La roseraie", null, "La pelouse", null][i] || undefined, segment: "Le tour du parc"})))
-    .concat([{x: p.x0 + 12, z: zc, r: 3, nom: nPlace}, {x: xp, z: zc, r: 3, nom: rues[1]}, {x: xp, z: b12.z1 - M, r: 3, nom: rues[2]}, {x: xo, z: zs, r: 3, nom: chemin0()}]);
-  function chemin0() { return rues[3]; }
-  const x0 = chemin[0].x, z0 = chemin[0].z, C = v => Math.round(v * 1000) / 1000, dec = a => Object.assign({}, a, {x: C((a.x - x0) * miroir), z: C(a.z - z0)});
-  const route = chemin.map(dec), pieces = piecesDuChemin(route, {large: 2, g: "plan", d: "plan", surface: "libre"});
-  pieces[0].objets = [{o: "ligne", cote: "c", a: 1, eau: .1}];
-  const ns2 = ns.map(r => ({x: C((r.x - x0) * miroir), l: r.l})), eo2 = eo.map(r => ({z: C(r.z - z0), l: r.l})), nc = ns.length - 1;
-  if (miroir < 0) ns2.reverse();
-  const inverse = {n: "n", s: "s", o: "e", e: "o"}, il = ilots.map(a => { const b = JSON.parse(JSON.stringify(a)); if (miroir < 0) { b.i0 = nc - 1 - a.i1; b.i1 = nc - 1 - a.i0; if (b.cotes) b.cotes = Object.fromEntries(Object.entries(b.cotes).map(([c, v]) => [inverse[c], v])); }
-    if (b.portes) b.portes = b.portes.map(d => Object.assign(dec(d), {cote: miroir < 0 ? inverse[d.cote] : d.cote})); if (b.allees) b.allees = b.allees.map(d => ({l: d.l, pts: d.pts.map(dec)})); if (b.etang) b.etang = dec(b.etang); if (b.kiosque) b.kiosque = dec(b.kiosque); return b; });
-  const passages = [dec({x: ns[2].x, z: zc, l: ns[2].l, sens: "x"})];
-  return {id: "ville-" + graine, nom: o.nom || "Le tour de " + nPlace.replace(/^La /, "la ") + " et du parc", biome: "kanto-plan", lieux: "kanto", discipline: "terre", surface: "libre", machines: ["elliptique"], boucle: miroir > 0 ? "droite" : "gauche", allure: 1.08, elan: 40, graine, nageur: 25, loin: "terres",
-    peuple: ["boy", "lass", "youngster", "woman_1", "cooltrainer_f", "gentleman", "picnicker", "bug_catcher", "beauty", "camper"].map(nom => ({o: "habitant", nom})).concat([16, 133, 39, 43, 35, 52].map(num => ({o: "pokemon", num}))),
-    plan: {graine, ns: ns2, eo: eo2, ilots: il, passages}, pieces};
+/* ============ une ville libre, tirée au sort (étape 13, lot 3, 24/11) ============ */
+// On tire d'abord un QUARTIER, puis le parcours : une trame de carrefours déformée (chaque ligne est une rue), quelques mailles coupées en deux par une ruelle, un escalier, une allée
+// de jardin ou une rue en biais ; le parcours est le bord d'un groupe de mailles, donc toujours une boucle de vraies rues, prise aux carrefours. Autour : les rues de l'intérieur, et vers
+// l'extérieur des amorces. Tout ce qui est difficile à caser (angle, place, longueur) jette le tirage tout de suite, sans rien calculer de lourd ; le contrôle (zoneControle) vient après.
+// maille : la taille des îlots ; l : la largeur des rues ; ondule : ce qu'une rue tourne en plus à chaque carrefour (degrés) ; vague, courbure : le quartier entier est cintré ; bord : ce qui borde les rues
+const SORTES_VILLE = {
+  bourg:     {nom: ["Le bourg ", "Le vieux bourg "], maille: [66, 84], l: [5.2, 6], ondule: 12, vague: 12, bord: ["serre", "serre", "maisons"], boutiques: 2, courbure: .8, ruelles: 2},
+  pavillons: {nom: ["Le quartier ", "Les pavillons "], maille: [84, 112], l: [5.6, 6.4], ondule: 20, vague: 19, bord: ["maisons"], boutiques: 1, courbure: .6, ruelles: 1},
+  immeubles: {nom: ["Le quartier ", "Les boulevards "], maille: [86, 112], l: [6.8, 7.6], ondule: 8, vague: 9, bord: ["residences", "residences", "maisons"], boutiques: 2, courbure: .35, ruelles: 1},
+  coteau:    {nom: ["Les hauts ", "La colline "], maille: [74, 102], l: [5.6, 6.4], ondule: 15, vague: 17, bord: ["maisons", "maisons", "serre"], boutiques: 1, courbure: .75, ruelles: 1}};
+const VILLE_NOMS = {de: ["des Lilas", "du Moulin", "des Tilleuls", "du Marché", "de l'École", "des Roucool", "du Pont", "de la Gare", "des Pêcheurs", "du Four", "des Cerisiers", "de la Fontaine", "des Remparts", "du Lavoir", "des Vignes", "de l'Église", "des Forgerons", "du Puits",
+  "des Noyers", "de la Source", "des Artisans", "du Verger", "des Caninos", "de l'Étang", "des Glycines", "du Cadran", "des Ponyta", "du Couvent", "des Violettes", "du Colombier", "des Sureaux", "du Levant"],
+  passages: ["des Chats", "du Renard", "des Miaouss", "du Boulanger", "des Amoureux", "du Tonnelier"], jardins: ["des Roucool", "des Plantes", "de l'Étang", "Chetiflor", "Ponyta", "des Roses"]};
+const tourneV = (d, a) => ({x: d.x * Math.cos(a) - d.z * Math.sin(a), z: d.x * Math.sin(a) + d.z * Math.cos(a)}), versV = (a, b) => { const l = Math.hypot(b.x - a.x, b.z - a.z) || 1; return {x: (b.x - a.x) / l, z: (b.z - a.z) / l}; };
+const angleV = (a, b) => Math.atan2(a.x * b.z - a.z * b.x, a.x * b.x + a.z * b.z), distV = (a, b) => Math.hypot(a.x - b.x, a.z - b.z), mmV = v => Math.round(v * 1000) / 1000, ptV = (q, plus) => Object.assign({x: mmV(q.x), z: mmV(q.z)}, plus);
+
+/* la trame déformée : ses carrefours (N), ses côtés (E), ses mailles, certaines coupées en deux (coupes : ce qui les traverse) */
+function trameVille(S, R, nc, coupes) {
+  const tire = (a, b) => a + (b - a) * R(), n = nc + 1, us = [0], vs = [0]; for (let i = 0; i < nc; i++) { us.push(us[i] + tire(...S.maille)); vs.push(vs[i] + tire(...S.maille)); }
+  const U = us[nc], V = vs[nc], R0 = (R() < .5 ? 1 : -1) * Math.max(U, V) * .95 / (S.courbure * tire(.6, 1)), p1 = R() * 6, p2 = R() * 6, l1 = tire(230, 360), l2 = tire(230, 360), N = new Map();
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { const u = us[i] - U / 2 + tire(-6, 6), v = vs[j] - V / 2 + tire(-6, 6), x = u + S.vague * Math.sin(v / l1 * 6.28 + p1), z = v + S.vague * .8 * Math.sin(u / l2 * 6.28 + p2), r = R0 + z, th = x / R0; N.set(i + "," + j, {id: i + "," + j, x: r * Math.sin(th), z: r * Math.cos(th) - R0}); }
+  const E = new Map(); for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) for (const d of ["h", "v"]) { const b = N.get((d === "h" ? i + 1 : i) + "," + (d === "h" ? j : j + 1)); if (b) E.set(d + i + "," + j, {d, i, j, a: N.get(i + "," + j), b, milieu: null}); }   // un côté : "h" (d'une ligne) ou "v" (d'une colonne)
+  const mailles = []; for (let j = 0; j < nc; j++) for (let i = 0; i < nc; i++) mailles.push({i, j, c: null}); const restes = mailles.slice();
+  for (const c of coupes) { if (!restes.length) break; const m = restes[Math.floor(R() * restes.length)]; m.c = Object.assign({}, c, {debout: R() < .5}); for (let q = restes.length - 1; q >= 0; q--) if (Math.abs(restes[q].i - m.i) + Math.abs(restes[q].j - m.j) < 2) restes.splice(q, 1); }
+  const couper = (e, t, bosse) => { const A = e.a, B = e.b, d = versV(A, B), m = {id: "m" + e.d + e.i + "," + e.j, x: lerp(A.x, B.x, t) - d.z * bosse, z: lerp(A.z, B.z, t) + d.x * bosse, mi: true}; N.set(m.id, m); return e.milieu = m; };
+  for (const m of mailles) if (m.c) { const b = m.c.type === "rue" ? (R() < .5 ? .14 : -.14) : 0, e0 = E.get((m.c.debout ? "h" : "v") + m.i + "," + m.j), e1 = E.get(m.c.debout ? "h" + m.i + "," + (m.j + 1) : "v" + (m.i + 1) + "," + m.j); m.c.a = couper(e0, .5 - b + tire(-.04, .04), tire(-3, 3)); m.c.b = couper(e1, .5 + b + tire(-.04, .04), tire(-3, 3)); }
+  const faces = []; for (const m of mailles) { const H = E.get("h" + m.i + "," + m.j), D = E.get("v" + (m.i + 1) + "," + m.j), B = E.get("h" + m.i + "," + (m.j + 1)), G = E.get("v" + m.i + "," + m.j), L = [H.a, H.milieu, H.b, D.milieu, B.b, B.milieu, B.a, G.milieu].filter(Boolean);
+    if (!m.c) { faces.push({m, L}); continue; } const a = L.indexOf(m.c.a), b = L.indexOf(m.c.b), x = Math.min(a, b), y = Math.max(a, b); faces.push({m, L: L.slice(x, y + 1)}, {m, L: L.slice(y).concat(L.slice(0, x + 1))}); }
+  return {N, E, faces, mailles, nc};
 }
-/* plusieurs villes sont tirées ; la première qui passe tout le contrôle est gardée. controler(niveau) → une liste de défauts (vide : bonne) */
+/* le bord d'un groupe de mailles : la suite de ses carrefours, ou null s'il a un trou ou un pincement */
+function bordVille(G) {
+  const suite = new Map(), tout = new Set(); for (const f of G) f.L.forEach((a, k) => tout.add(a.id + ">" + f.L[(k + 1) % f.L.length].id));
+  let n = 0, d = null; for (const f of G) for (let k = 0; k < f.L.length; k++) { const a = f.L[k], b = f.L[(k + 1) % f.L.length]; if (tout.has(b.id + ">" + a.id)) continue; if (suite.has(a.id)) return null; suite.set(a.id, [a, b]); d = d || a; n++; }
+  const o = []; for (let q = d, k = 0; k < n; k++) { o.push(q); q = suite.get(q.id)[1]; if (q === d) return k === n - 1 ? o : null; } return null;
+}
+const longBord = b => b.reduce((s, a, i) => s + distV(a, b[(i + 1) % b.length]), 0);
+/* le groupe de mailles dont le bord fait à peu près « cible » mètres ; parmi beaucoup d'essais, celui qui traverse le plus de lieux et qui tourne le plus varié */
+function groupeVille(T, R, cible, essais) {
+  const voisines = new Map(); for (const f of T.faces) f.L.forEach((a, k) => voisines.set(a.id + ">" + f.L[(k + 1) % f.L.length].id, f));
+  const coupe = new Map(); for (const m of T.mailles) if (m.c) { coupe.set(m.c.a.id + ">" + m.c.b.id, m.c); coupe.set(m.c.b.id + ">" + m.c.a.id, m.c); }
+  let mieux = null;
+  for (let e = 0; e < essais; e++) {
+    const G = [T.faces[Math.floor(R() * T.faces.length)]]; let bord = bordVille(G), l = longBord(bord);
+    for (let k = 0; k < 40; k++) { const C = []; for (const f of G) f.L.forEach((a, q) => { const w = voisines.get(f.L[(q + 1) % f.L.length].id + ">" + a.id); if (w && !G.includes(w) && !C.includes(w)) C.push(w); }); if (!C.length) break;
+      let ok = false; for (let t = 0; t < 4 && !ok; t++) { const w = C[Math.floor(R() * C.length)], b = bordVille(G.concat([w])); if (!b) continue; const lb = longBord(b); if (lb > cible * 1.14) continue; G.push(w); bord = b; l = lb; ok = true; } if (!ok || l > cible * .97 && R() < .6) break; }
+    const r = l / cible; if (bord.length < 4 || r < .84 || r > 1.16) continue;
+    const pris = []; bord.forEach((a, i) => { const c = coupe.get(a.id + ">" + bord[(i + 1) % bord.length].id); if (c) pris.push(c); });
+    const m = bord.length, types = new Set(pris.map(c => c.type)), th = bord.map((a, i) => angleV(versV(bord[(i + m - 1) % m], a), versV(a, bord[(i + 1) % m]))), coins = th.filter(q => Math.abs(q) > .7).length;
+    let file = 0, pire = 0; for (let i = 0; i < m * 2; i++) { file = Math.abs(th[i % m]) > .7 ? 0 : file + distV(bord[i % m], bord[(i + 1) % m]); pire = Math.max(pire, Math.min(file, l)); }
+    const note = types.size * 5 + Math.min(pris.length, cible / 280) * 1.5 + coins * .5 - Math.abs(r - 1) * 12 - Math.max(0, pire - 170) / 30 + R();
+    if (!mieux || note > mieux.note) mieux = {note, bord, G, pris}; }
+  return mieux;
+}
+
+/* une ville libre et son parcours : le dessin que niveauDeZone met en niveau. o : {km (décor), denivele (m), graine, nom, sorte}. Lève une erreur claire si ce tirage ne tient pas. */
+function tirerVille(o, graine, echelle = 1) {
+  const R = hasard(graine * 6151 + 17), tire = (a, b) => a + (b - a) * R(), choix = l => l.splice(Math.floor(R() * l.length), 1)[0], hasardDe = l => l[Math.floor(R() * l.length)];
+  const cible = (o.km || 1.2) * 1000, H0 = o.denivele === undefined ? 10 : +o.denivele, sorte = o.sorte || "pavillons";
+  const S = Object.assign({}, SORTES_VILLE[sorte]), noms = {de: VILLE_NOMS.de.slice(), passages: VILLE_NOMS.passages.slice(), jardins: VILLE_NOMS.jardins.slice()}; S.maille = S.maille.map(m => m * echelle * (cible < 900 ? .88 : 1));
+  // 1. la trame, et les lieux qu'on voudrait traverser ; puis la boucle
+  const coupes = [{type: "jardin"}, {type: "ruelle"}, {type: "rue"}]; if (H0 >= 4) coupes.push({type: "escalier"}, {type: "escalier"}); for (let k = 1; k < S.ruelles; k++) coupes.push({type: "ruelle"}); if (cible > 1500) coupes.push({type: "jardin"}, {type: "rue"}, {type: "ruelle"}); if (cible > 1900) coupes.push({type: "ruelle"}, {type: "rue"});
+  const T = trameVille(S, R, cible < 1000 ? 4 : cible < 1700 ? 5 : 6, coupes), g = groupeVille(T, R, cible, cible < 1500 ? 160 : 100); if (!g) throw new Error("aucune boucle de cette longueur");
+  const bouts = new Set(g.pris.flatMap(c => [c.a, c.b])), bord = g.bord.filter(q => !q.mi || bouts.has(q)); if (R() < .5) bord.reverse();
+  const n = bord.length, suivant = i => bord[(i + 1) % n], avant = i => bord[(i + n - 1) % n], rang = new Map(bord.map((a, i) => [a.id, i])), tourneEn = i => angleV(versV(avant(i), bord[i]), versV(bord[i], suivant(i)));   // tourneEn : + = à droite
+  const estCoupe = (a, b) => g.pris.find(c => c.a === a && c.b === b || c.b === a && c.a === b) || null;
+  const droitier = bord.reduce((s, a, i) => s + a.x * suivant(i).z - suivant(i).x * a.z, 0) > 0;   // on tourne à droite (z vers le bas) : l'intérieur du tour est à droite
+  // 2. les côtés gardés : ceux du parcours, ceux de l'intérieur (pas tous), ceux qui bordent un lieu traversé
+  const garde = new Set(), pas = new Set(); for (let i = 0; i < n; i++) { pas.add(bord[i].id + ">" + suivant(i).id); pas.add(suivant(i).id + ">" + bord[i].id); }
+  const dedans = new Set(g.G.map(f => f.m)), bordent = (e, m) => e.d === "h" ? e.i === m.i && (e.j === m.j || e.j === m.j + 1) : e.j === m.j && (e.i === m.i || e.i === m.i + 1);
+  for (const e of T.E.values()) { const q = e.milieu; e.parcours = pas.has(e.a.id + ">" + e.b.id) || !!q && (pas.has(e.a.id + ">" + q.id) || pas.has(q.id + ">" + e.b.id));
+    const M = T.mailles.filter(m => bordent(e, m)), lieu = M.some(m => g.pris.includes(m.c)), jd = M.some(m => g.pris.includes(m.c) && m.c.type === "jardin"), interieur = M.length === 2 && M.every(m => dedans.has(m)), u = R(); if (e.parcours || jd || lieu && M.some(m => dedans.has(m)) || interieur && u < .78) garde.add(e); }
+  // 3. les voies : chaque ligne de la trame, par bouts d'un seul tenant ; puis ce qui coupe une maille
+  const voies = []; for (const d of ["h", "v"]) for (let k = 0; k <= T.nc; k++) { let L = null; for (let q = 0; q < T.nc; q++) { const e = T.E.get(d + (d === "h" ? q + "," + k : k + "," + q)); if (!garde.has(e)) { L = null; continue; } if (!L) { L = {noeuds: [e.a], cotes: []}; voies.push(L); } if (e.milieu && bouts.has(e.milieu)) { L.noeuds.push(e.milieu); L.cotes.push(e); } L.noeuds.push(e.b); L.cotes.push(e); } }
+  for (const L of voies) { L.sol = "chaussee"; L.l = Math.round(tire(...S.l) * 10) / 10; L.nom = (sorte === "immeubles" && R() < .5 ? "L'avenue " : "La rue ") + (noms.de.length ? choix(noms.de) : hasardDe(VILLE_NOMS.de)); L.parcours = L.cotes.some(e => e.parcours); }
+  for (const c of g.pris) { const t = c.type, L = {c, noeuds: [c.a, c.b], cotes: [], parcours: true, sol: t === "rue" ? "chaussee" : t === "jardin" ? "sable" : "paves", l: t === "rue" ? 5.4 : t === "ruelle" ? 3.1 : 3.3}; c.voie = L; voies.push(L);
+    const de = noms.de.length ? choix(noms.de) : hasardDe(VILLE_NOMS.de); L.nom = t === "rue" ? "La rue " + de : t === "jardin" ? "Le jardin " + choix(noms.jardins) : t === "escalier" ? "L'escalier " + de : "Le passage " + (noms.passages.length ? choix(noms.passages) : de); }
+  voies.sort((a, b) => (a.c ? 1 : 0) - (b.c ? 1 : 0) || (b.parcours ? 1 : 0) - (a.parcours ? 1 : 0)); voies.forEach((L, k) => { L.id = "v" + k; });
+  const parNoeud = new Map(); for (const L of voies) L.noeuds.forEach((q, i) => { if (!parNoeud.has(q.id)) parNoeud.set(q.id, []); parNoeud.get(q.id).push({L, i}); });
+  const voieEntre = (a, b) => { const c = estCoupe(a, b); if (c) return c.voie; const L = voies.find(L => !L.c && L.noeuds.includes(a) && L.noeuds.includes(b) && Math.abs(L.noeuds.indexOf(a) - L.noeuds.indexOf(b)) === 1); if (!L) throw new Error("le parcours n'a pas de rue ici"); return L; };
+  // 4. la direction d'une rue à chacun de ses carrefours : celle de ses voisins, un peu tournée ; deux rues qui se croisent restent presque d'équerre
+  const ondule = S.ondule / 57.3, droite = L => L.c && (L.c.type === "ruelle" || L.c.type === "escalier"); for (const L of voies) { L.bases = L.noeuds.filter(q => !q.mi); L.dirs = new Map(L.bases.map((q, i) => [q, tourneV(versV(L.bases[Math.max(0, i - 1)], L.bases[Math.min(L.bases.length - 1, i + 1)]), tire(-ondule, ondule))])); }
+  const croise = new Map(); for (const [id, P] of parNoeud) { const rues = P.filter(p => !p.L.c).map(p => p.L); if (rues.length === 2) croise.set(T.N.get(id), rues); }
+  const equerre = (A, B, q, max) => { const th = angleV(A.dirs.get(q), B.dirs.get(q)), ecart = th - Math.sign(th) * Math.PI / 2, trop = Math.sign(ecart) * Math.max(0, Math.abs(ecart) - max); if (trop) { A.dirs.set(q, tourneV(A.dirs.get(q), trop * .5)); B.dirs.set(q, tourneV(B.dirs.get(q), -trop * .5)); } }; for (const [q, [A, B]] of croise) equerre(A, B, q, rang.has(q.id) ? .24 : .34);
+  // 5. le côté où l'on court, et la placette : un coin du parcours entre deux rues, de ce côté-là
+  const cote = (R() < .68) === droitier ? "d" : "g", coins = bord.map((q, i) => i).filter(i => { const th = tourneEn(i); return !bord[i].mi && Math.abs(th) > 1.1 && Math.abs(th) < 2.05 && (th > 0) === (cote === "d") && !estCoupe(avant(i), bord[i]) && !estCoupe(bord[i], suivant(i)) && !avant(i).mi && !suivant(i).mi && distV(avant(i), bord[i]) > 60 && distV(bord[i], suivant(i)) > 60; });
+  // 6. les hauteurs : un versant tourné au hasard et une bosse ; jamais plus que ce que permet la rue la plus raide
+  const tous = voies.flatMap(L => L.noeuds), cap = R() * 6.28, dx = Math.cos(cap), dz = Math.sin(cap), pr = q => q.x * dx + q.z * dz, p0 = Math.min(...tous.map(pr)), p1 = Math.max(...tous.map(pr)), b1 = R() * 6, b2 = R() * 6, lb = tire(150, 230);
+  const brut = q => .5 - .5 * Math.cos(clamp((pr(q) - p0) / (p1 - p0), 0, 1) * Math.PI) + .13 * Math.sin(q.x / lb * 6.28 + b1) * Math.sin(q.z / lb * 6.28 + b2);
+  let raide = 1e-6, h0 = 1e9, h1 = -1e9; for (const L of voies) if (!L.c) for (let i = 0; i + 1 < L.noeuds.length; i++) raide = Math.max(raide, Math.abs(brut(L.noeuds[i]) - brut(L.noeuds[i + 1])) / distV(L.noeuds[i], L.noeuds[i + 1])); for (const q of bord) { h0 = Math.min(h0, brut(q)); h1 = Math.max(h1, brut(q)); }
+  const amp = Math.min(H0 / (h1 - h0 || 1), (H0 > 16 ? .074 : .06) / raide), bas = Math.min(...tous.map(brut)), haut = q => mmV((brut(q) - bas) * amp + 2.5); coins.sort((a, b) => haut(bord[a]) - haut(bord[b])); const iPlace = coins.length ? coins[0] : -1, tPlace = iPlace < 0 ? 0 : Math.round(clamp(.36 * Math.min(distV(avant(iPlace), bord[iPlace]), distV(bord[iPlace], suivant(iPlace))), 21, tire(25, 29)));
+  // 7. les points de chaque rue : droite de chaque côté d'un carrefour ; entre deux, une courbe ou un S, droit en son milieu si une ruelle y débouche. Trop serré : on détend les directions des deux bouts, quelques fois
+  const droitEn = q => { const k = rang.get(q.id); return k === undefined ? 8 : k === iPlace ? tPlace + 5 : Math.abs(tourneEn(k)) > .6 ? 13 : 8.5; };
+  const trace = (L, i) => { const q = L.bases[i], w = L.bases[i + 1], mi = L.noeuds[L.noeuds.indexOf(q) + 1] !== w, l = distV(q, w), da = L.dirs.get(q), db = L.dirs.get(w), sa = droitEn(q), sb = droitEn(w), f = mi ? .3 : .36; let a = Math.max(f * l, sa + 4), b = Math.max(f * l, sb + 4);
+    const reste = mi ? 30 : 8; if (sa + sb + 4 > l - reste) throw new Error("pas la place entre deux carrefours"); if (a + b > l - reste) { const k = (l - reste - sa - sb) / (a + b - sa - sb); a = sa + (a - sa) * k; b = sb + (b - sb) * k; }
+    const A = {x: q.x + da.x * a, z: q.z + da.z * a}, B = {x: w.x - db.x * b, z: w.z - db.z * b}, dm = versV(A, B), lm = distV(A, B), t1 = Math.abs(angleV(da, dm)), t2 = Math.abs(angleV(dm, db)), m = lm / 2 - (mi ? 12.5 : .3), r = (t, u) => t < .02 ? 0 : Math.min(90, Math.max(0, u) / Math.tan(t / 2)), ra = r(t1, Math.min(a - sa, m)), rb = r(t2, Math.min(b - sb, m));
+    return {A, B, dm, ra, rb, mi: mi ? {x: (A.x + B.x) / 2, z: (A.z + B.z) / 2} : null, mal: lm < 5 || t1 > 1.1 || t2 > 1.1 || t1 >= .02 && ra < 13 || t2 >= .02 && rb < 13}; };
+  for (let tour = 0; tour < 16; tour++) { let mal = 0; for (const L of voies) if (!L.c) for (let i = 0; i + 1 < L.bases.length; i++) { if (!trace(L, i).mal) continue; mal++; const c = versV(L.bases[i], L.bases[i + 1]); for (const q of [L.bases[i], L.bases[i + 1]]) { L.dirs.set(q, tourneV(L.dirs.get(q), angleV(L.dirs.get(q), c) * .35)); const r = croise.get(q); if (r) equerre(r[0], r[1], q, rang.has(q.id) ? .28 : .42); } } if (!mal) break; }
+  for (const L of voies) { L.pts = []; L.idx = []; if (L.c) continue; L.bases.forEach((q, i) => { L.idx.push(L.pts.length); L.pts.push(ptV(q, {y: haut(q)})); if (i === L.bases.length - 1) return; const c = trace(L, i); if (c.mal) throw new Error("un virage trop serré"); if (c.ra) L.pts.push(ptV(c.A, {r: mmV(c.ra * .99)})); if (c.mi) { const m = L.noeuds[L.noeuds.indexOf(q) + 1]; m.x = c.mi.x; m.z = c.mi.z; m.d = c.dm; L.dirs.set(m, c.dm); L.idx.push(L.pts.length); L.pts.push(ptV(m)); } if (c.rb) L.pts.push(ptV(c.B, {r: mmV(c.rb * .99)})); }); L.dir = L.noeuds.map(q => L.dirs.get(q)); }
+  // ce qui coupe une maille part d'équerre de ses deux rues (à 15° près, vers l'autre bout) ; une ruelle, un escalier : tout droit
+  for (const L of voies) if (L.c) { const [P, Q2] = L.noeuds, d = versV(P, Q2), eq = q => { const n = {x: -q.d.z, z: q.d.x}, m = n.x * d.x + n.z * d.z > 0 ? n : {x: -n.x, z: -n.z}; return tourneV(m, clamp(angleV(m, d) + arc, -.26, .26)); }; let arc = L.c.type === "ruelle" && distV(P, Q2) > 52 ? (R() < .5 ? -.24 : .24) : 0; const da = eq(P); arc = -arc; const db = eq(Q2); L.idx = [0]; L.pts = [ptV(P)];
+    const biais = Math.max(Math.abs(angleV(da, d)), Math.abs(angleV(db, d))); if (L.c.type === "escalier" && biais > .16) { L.c.type = "ruelle"; L.l = 3.1; L.nom = "Le passage " + (noms.passages.length ? choix(noms.passages) : hasardDe(VILLE_NOMS.de)); }
+    if (L.c.type === "escalier" || L.c.type === "ruelle" && biais < .06) { L.dir = [d, d]; L.pts.push(ptV(Q2)); L.idx.push(1); continue; }
+    const l = distV(P, Q2), s = L.sol === "chaussee" ? 11 : 8, a = Math.max(.36 * l, s + 4), A = {x: P.x + da.x * a, z: P.z + da.z * a}, B = {x: Q2.x - db.x * a, z: Q2.z - db.z * a}, dm = versV(A, B), lm = distV(A, B), r = t => t < .02 ? 0 : Math.min(60, Math.min(a - s, lm / 2 - .3) / Math.tan(t / 2)), t1 = Math.abs(angleV(da, dm)), t2 = Math.abs(angleV(dm, db)), ra = r(t1), rb = r(t2); if (lm < 4 || t1 > 1.2 || t2 > 1.2 || t1 >= .02 && ra < 8 || t2 >= .02 && rb < 8) throw new Error("une allée trop tordue");
+    if (ra) L.pts.push(ptV(A, {r: mmV(ra * .99)})); if (rb) L.pts.push(ptV(B, {r: mmV(rb * .99)})); L.idx.push(L.pts.length); L.pts.push(ptV(Q2)); L.dir = [da, db]; }
+  // 8. les amorces : la rue qu'on quitte continue ; à un coin, l'une des deux au moins (deux rues ne finissent jamais ensemble)
+  const loinDes = (q, sauf, d) => voies.every(L => L === sauf || L.pts.every((a, i) => { const b = L.pts[i + 1]; if (!b) return true; const ux = b.x - a.x, uz = b.z - a.z, t = clamp(((q.x - a.x) * ux + (q.z - a.z) * uz) / (ux * ux + uz * uz || 1), 0, 1); return Math.hypot(q.x - a.x - ux * t, q.z - a.z - uz * t) > d; }));
+  const amorcer = (L, fin) => { if (L.c || L["amorce" + fin]) return false; const i = fin ? L.noeuds.length - 1 : 0, q = L.noeuds[i], d = fin ? L.dir[i] : {x: -L.dir[i].x, z: -L.dir[i].z}, long = tire(40, 66), tr = tire(-.35, .35), d2 = tourneV(d, tr), A = {x: q.x + d.x * 22, z: q.z + d.z * 22}, B = {x: A.x + d2.x * (long - 22), z: A.z + d2.z * (long - 22)};
+    if (![[A, 20], [{x: (A.x + B.x) / 2, z: (A.z + B.z) / 2}, 30], [B, 34]].every(([w, m]) => loinDes(w, L, m))) return false;
+    const K = [ptV(A, {r: mmV(Math.min(50, 12 / Math.tan(Math.max(.02, Math.abs(tr)) / 2)))}), ptV(B, {y: mmV(Math.max(.4, haut(q) + clamp(haut(B) - haut(q), -.05 * long, .05 * long)))})]; L["amorce" + fin] = true; if (fin) L.pts.push(...K); else { L.pts.unshift(K[1], K[0]); L.idx = L.idx.map(v => v + 2); } return true; };
+  for (const [id, P] of parNoeud) { const k = rang.get(id), rues = P.filter(p => !p.L.c), libres = rues.filter(p => p.i === 0 || p.i === p.L.noeuds.length - 1); if (rues.length < 2) continue;
+    if (libres.length === 2) { const a = R() < .5 ? 0 : 1, f = x => amorcer(libres[x].L, libres[x].i ? 1 : 0); if (!f(a) && !f(1 - a)) throw new Error("deux rues finissent au même coin"); if (R() < .35) f(1 - a); } else if (k !== undefined && libres.length === 1 && R() < .55) amorcer(libres[0].L, libres[0].i ? 1 : 0); }
+  // 9. deux voies qui se frôlent loin de leur carrefour : on jette
+  const fines = voies.map(L => courbeZone(L.pts, 4, L.nom).pts), large = L => L.l / 2 + (L.sol === "chaussee" ? 3 : 0);
+  for (let a = 0; a < voies.length; a++) for (let b = 0; b < a; b++) { const com = voies[a].noeuds.filter(q => voies[b].noeuds.includes(q)), w = large(voies[a]) + large(voies[b]) + 7; for (const [x, z] of fines[a]) { if (com.some(q => Math.hypot(q.x - x, q.z - z) < 30)) continue; for (const [X, Z] of fines[b]) if (Math.abs(X - x) < w && Math.hypot(X - x, Z - z) < w) throw new Error("deux voies se frôlent"); } }
+  // 10. l'escalier : la ruelle est presque plate, puis elle monte d'un coup (25 %) ; sans dénivelé, c'est une simple ruelle
+  for (const L of voies) if (L.c && L.c.type === "escalier") { const [A, B] = L.noeuds, yA = haut(A), yB = haut(B), l = distV(A, B), sg = yB > yA ? 1 : -1, dh = Math.abs(yB - yA); if (dh < 2.2) { L.c.type = "ruelle"; L.l = 3.1; L.nom = "Le passage " + (noms.passages.length ? choix(noms.passages) : hasardDe(VILLE_NOMS.de)); continue; }
+    const run = Math.min(26, (dh - .5) / .25), reste = (dh - run * .25) / (l - run), a = (l - run) * tire(.4, .6), en = s => ({x: lerp(A.x, B.x, s / l), z: lerp(A.z, B.z, s / l)}), y = s => mmV(yA + sg * (s < a ? reste * s : s < a + run ? reste * a + (s - a) * .25 : reste * a + run * .25 + (s - a - run) * reste));
+    L.pts = [ptV(A)].concat([a, a + 1.5, a + run - 1.5, a + run].map(s => ptV(en(s), {r: 0, y: y(s)})), [ptV(B)]); L.idx = [0, 5]; L.marches = {a: mmV(a), b: mmV(a + run)}; }
+  // 11. ce qui borde chaque rue : la rue commerçante autour de la placette, les haies d'un jardin, le caractère du quartier
+  const courbes = new Map(), courbe = L => { if (!courbes.has(L)) courbes.set(L, courbeZone(L.pts, 1, L.nom)); return courbes.get(L); }, sEn = (L, i) => courbe(L).som[L.idx[i]], aDroite = (L, i, q) => { const d = L.dir[i], v = versV(L.noeuds[i], q); return d.x * v.z - d.z * v.x > 0 ? 1 : -1; };   // aDroite : de quel côté de la voie est q (au carrefour i) : 1 à droite, -1 à gauche
+  for (const L of voies) { L.g = []; L.d = []; }
+  const styler = (L, sg, a, b, style) => { if (L.sol !== "chaussee") return; const m = style === "haie" ? 0 : 13, trous = L.noeuds.map((q, i) => [q, i]).filter(([q]) => parNoeud.get(q.id).length > 1).map(([q, i]) => sEn(L, i)).concat([1e9]).sort((x, y) => x - y); let s = a; for (const t of trous) { const f = Math.min(b, t - m); if (f - s > (style === "boutiques" ? 16 : 4)) (sg < 0 ? L.g : L.d).push({a: mmV(s), b: mmV(f), style}); s = Math.max(s, t + m); if (s >= b) break; } };   // jamais à un carrefour
+  const jardins = []; for (const c of g.pris) if (c.type === "jardin") { const m = T.mailles.find(q => q.c === c), ctr = {x: (c.a.x + c.b.x) / 2, z: (c.a.z + c.b.z) / 2}; for (const L of voies) if (!L.c) L.cotes.forEach((e, i) => { if (bordent(e, m)) styler(L, aDroite(L, i, ctr), sEn(L, i), sEn(L, i + 1), "haie"); });
+    jardins.push({nom: c.voie.nom, x: mmV(ctr.x), z: mmV(ctr.z), pts: [[0, 0], [1, 0], [1, 1], [0, 1]].map(([i, j]) => ptV(T.N.get((m.i + i) + "," + (m.j + j))))}); }
+  const places = [], objets = []; let place = null;
+  if (iPlace >= 0) { const q = bord[iPlace], La = voieEntre(avant(iPlace), q), Lb = voieEntre(q, suivant(iPlace)), depuis = (L, w) => { const i = L.noeuds.indexOf(q), d = L.dir[i]; return L.noeuds.indexOf(w) > i ? d : {x: -d.x, z: -d.z}; }, da = depuis(La, avant(iPlace)), db = depuis(Lb, suivant(iPlace)), sn = Math.abs(da.x * db.z - da.z * db.x), ea = (La.l / 2 + 2.4) / sn, eb = (Lb.l / 2 + 2.4) / sn;   // da, db : en s'éloignant du coin ; s le long de la première rue, u le long de la seconde
+    const K = {x: q.x + db.x * ea + da.x * eb, z: q.z + db.z * ea + da.z * eb}, t = tPlace, Q = (s, u) => ({x: K.x + da.x * s + db.x * u, z: K.z + da.z * s + db.z * u}), nom = "La place " + (noms.de.length ? choix(noms.de) : "du Marché"), c = t * .62, aj = (o, s, u, plus) => objets.push(Object.assign({o}, ptV(Q(s, u)), plus)), face = (s, u) => { const a = Q(s, u), b = Q(c, c); return mmV(Math.atan2(b.x - a.x, b.z - a.z)); };
+    places.push({nom, pts: [[0, 0, 1], [t, 0, 1], [t, t, 4], [0, t, 1]].map(([s, u, r]) => ptV(Q(s, u), {r})), boutiques: [1, 2]}); place = {A: Q(t - 7, 0), B: Q(0, t - 7), nom};
+    aj("fontaine", c, c, {r: 2.3, voir: true}); aj("banc", c + 4.8, c - 1.6, {r: 1, lacet: face(c + 4.8, c - 1.6)}); aj("banc", c - 1.6, c + 4.8, {r: 1, lacet: face(c - 1.6, c + 4.8)}); for (const [s, u] of [[t - 4.6, 8], [8, t - 4.6]]) aj("arbre_rue", s, u, {r: .6, couronne: 2.4, esp: "cerisier"}); aj("lampadaire", 3.4, 3.4, {r: .3}); aj("massif", 6, 6, {r: 1.1}); if (R() < .7) aj("etal", c + 4.2, c + 4.2, {r: 1.7, voir: true, lacet: face(c + 4.2, c + 4.2)}); else aj("terrasse", c + 4, c + 4, {r: 1.3, voir: true});
+    for (const [L, w] of [[La, avant(iPlace)], [Lb, suivant(iPlace)]]) { const i = L.noeuds.indexOf(q), s = sEn(L, i), sens = L.noeuds.indexOf(w) > i ? 1 : -1, ded = aDroite(L, i, {x: K.x + (da.x + db.x) * 12 + (w.x - q.x) * .01, z: K.z + (da.z + db.z) * 12 + (w.z - q.z) * .01}), bout = (u, v) => [Math.min(s + sens * u, s + sens * v), Math.max(s + sens * u, s + sens * v)]; styler(L, -ded, ...bout(0, t + 34), "boutiques"); styler(L, ded, ...bout(t + 16, t + 50), "boutiques"); if (S.boutiques > 1) styler(L, ded, ...bout(-46, 0), "boutiques"); } }
+  // 12. le belvédère : en haut, du côté où l'on court, là où ça descend le plus ; une terrasse le long du trottoir, un garde-corps, la ville en dessous
+  const vues = []; if (H0 >= 8) { let m = null; for (let i = 0; i < n; i++) { const a = bord[i], b = suivant(i); if (estCoupe(a, b) || i === iPlace || (i + 1) % n === iPlace || distV(a, b) < 58) continue; const L = voieEntre(a, b), ia = L.noeuds.indexOf(a), ib = L.noeuds.indexOf(b), M = courbe(L), s = (sEn(L, ia) + sEn(L, ib)) / 2, k = M.s.findIndex(v => v >= s), p = M.pts[k], u = versV({x: M.pts[k - 5][0], z: M.pts[k - 5][1]}, {x: M.pts[k + 5][0], z: M.pts[k + 5][1]}), sg = (cote === "d" ? 1 : -1) * (ib > ia ? 1 : -1), nx = -u.z * sg, nz = u.x * sg, V = q => ({x: p[0] + nx * q, z: p[1] + nz * q}), chute = haut(V(0)) - haut(V(70));
+      if (chute < 2.4 || (sg < 0 ? L.g : L.d).some(q => q.a < s + 16 && q.b > s - 16) || !loinDes(V(24), L, 14) || !loinDes(V(42), L, 14)) continue; const c = chute + haut(V(0)) * .1; if (!m || c > m.c) m = {c, L, s, sg, u, P: (a, v) => ({x: p[0] + u.x * a + nx * v, z: p[1] + u.z * a + nz * v}), lac: mmV(Math.atan2(nx, nz))}; }
+    if (m) { const e = m.L.l / 2 + 2.4, lg = 11, f = e + 9.5, aj = (o, a, v, plus) => objets.push(Object.assign({o}, ptV(m.P(a, v)), plus)); places.push({nom: "Le belvédère", pts: [[-lg, e, 1], [-lg, f, 2.5], [lg, f, 2.5], [lg, e, 1]].map(([a, v, r]) => ptV(m.P(a, v), {r})), garde: [0, 1, 2]});
+      for (const a of [-4.4, 4.4]) aj("banc", a, e + 4.4, {r: 1, lacet: m.lac}); aj("longue_vue", 0, f - 1.5, {r: .5, lacet: m.lac, voir: true}); for (const a of [1.6 - lg, lg - 1.6]) aj("lampadaire", a, f - 2.4, {r: .3}); (m.sg < 0 ? m.L.g : m.L.d).unshift({a: mmV(m.s - lg - 3), b: mmV(m.s + lg + 3), style: "rien"}); vues.push(ptV(m.P(0, f + 29), {r: 30})); } }
+  for (const L of voies) if (L.sol === "chaussee") for (const c of ["g", "d"]) L[c].push({style: hasardDe(S.bord)});
+  // 13. le parcours : une étape par voie suivie, la placette en diagonale ; le départ au milieu du plus long bout droit
+  const etapes = []; for (let k = 0; k < n; k++) { const i = (k + Math.max(0, iPlace)) % n, L = voieEntre(bord[i], suivant(i)), ia = L.idx[L.noeuds.indexOf(bord[i])], ib = L.idx[L.noeuds.indexOf(suivant(i))], der = etapes[etapes.length - 1], rue = L.sol === "chaussee"; if (der && der.v === L.id && rue) { der.a = ib; continue; } etapes.push({v: L.id, cote: rue ? cote : "m", de: ia, a: ib, nom: L.nom, r: place && !k ? 10 : 3}); }
+  if (place) etapes.push({x0: place.A.x, z0: place.A.z, x1: place.B.x, z1: place.B.z, r: 10, nom: place.nom});
+  const zone = {voies: voies.map(L => Object.assign({id: L.id, nom: L.nom, l: L.l}, L.sol === "chaussee" ? {} : {sol: L.sol}, L.marches ? {marches: L.marches} : {}, {pts: L.pts}, L.sol === "chaussee" ? {g: L.g, d: L.d} : {}))}; for (const [k, v] of Object.entries({places, objets, jardins, vues})) if (v.length) zone[k] = v;
+  const lieux = [...new Set(g.pris.map(c => c.type).filter(q => q !== "rue").concat(place ? ["placette"] : [], vues.length ? ["belvédère"] : []))]; if (lieux.length < (o.lieux || 0) || o.lieux && H0 >= 8 && !lieux.includes("escalier") && !lieux.includes("belvédère")) throw new Error("pas assez de lieux");
+  // l'arrondi d'un coin : 3 m, moins s'il est pointu (le coureur ne doit ni mordre sur le jardin, ni tourner plus court que ce que la piste permet)
+  { const c0 = cheminDeZone(zone, etapes), m0 = c0.length - 1; let k = 0; for (const e of etapes) { if (e.r === 3) { const A = c0[(k + m0 - 2) % m0 + 1], B = c0[(k + m0 - 1) % m0 + 1], C = c0[k % m0 + 1], f = Math.abs(angleV(versV(A, B), versV(B, C))), c = Math.cos(f / 2), max = f < .3 ? 3 : Math.min(3, (1.5 - .78 * c) / (1 - c)); let r = max; while (r > 2.2 && Math.round(r * f) / f < 2.5) r -= .02; if (r <= 2.2) { r = max; while (r < max + .15 && Math.round(r * f) / f < 2.5) r += .02; if (Math.round(r * f) / f < 2.5) throw new Error("un coin trop pointu"); } e.r = mmV(r); } k += e.v === undefined ? 1 : Math.abs(e.a - e.de); } }
+  const ch = cheminDeZone(zone, etapes), m = ch.length - 1, pt = j => ch[(j + m - 1) % m + 1], tan = (A, B, C) => (B.r || 3) * Math.tan(Math.abs(angleV(versV(A, B), versV(B, C))) / 2); let dep = null;   // pt(k) : le sommet k du chemin ; jamais dans une ruelle, un jardin ou sur la placette : l'arche a besoin de la largeur d'une rue
+  const rues = etapes.flatMap(e => e.v === undefined ? [false] : Array(Math.abs(e.a - e.de)).fill(e.cote !== "m"));
+  for (let k = 1; k <= m; k++) { const A = pt(k), B = pt(k + 1), l = distV(A, B), ta = tan(pt(k - 1), A, B), libre = l - ta - tan(A, B, pt(k + 2)); if (libre < -.01) throw new Error("un coin n'a pas la place"); if (rues[k % m] && (!dep || libre > dep.libre)) dep = {libre, k: k % m, f: (ta + libre / 2) / l}; }
+  if (!dep || dep.libre < 9) throw new Error("pas de bout droit pour le départ");
+  return {id: "ville-" + graine, nom: o.nom || hasardDe(S.nom) + (place ? place.nom.slice(9) : hasardDe(VILLE_NOMS.de)), graine: graine % 9973 + 1, sorte, traverse: lieux, zone, etapes, depart: [dep.k, dep.f]};
+}
+/* plusieurs villes sont tirées ; la première qui passe tout le contrôle est gardée (tranche : combien de tirages à la fois, à partir de k0 ; {suite} s'il faut continuer : la page reste vivante) controler(niveau) → une liste de défauts (vide : bonne). Les tirages ratés sont jetés avant le contrôle, qui est lent. */
 function genererVille(o, controler) {
-  let dernier = null, essais = 0;
-  for (let k = 0; k < 40; k++) { essais++; let n; try { const g = (o.graine || 1) + k * 101, long = q => q.pieces.reduce((t, a) => t + a.long, 0); n = tirerVille(o, g); for (let j = 0, kk = Math.max(.8, Math.min(1.9, (o.km || 1.5) / 1.05)); j < 3; j++) { kk = Math.max(.8, Math.min(1.9, kk * (o.km || 1.5) * 1000 / long(n))); n = tirerVille(o, g, kk); } const d = controler(n); if (!d.length) return {niveau: n, essais}; dernier = d; } catch (e) { dernier = [e.message]; } }
-  return {erreur: "Aucune ville sans défaut : " + (dernier || []).slice(0, 3).join(" ; "), essais};
+  const raisons = {}, dire = t => { const c = String(t).replace(/« [^»]*»/g, "«»").replace(/[0-9.,-]+/g, "#"); raisons[c] = (raisons[c] || 0) + 1; }, long = q => q.pieces.reduce((t, a) => t + a.long, 0), cible = (o.km || 1.2) * 1000; let essais = 0, lourds = 0; if (!o.sorte) { const R = hasard((o.graine || 1) * 911 + 5), L = +o.denivele >= 8 ? ["bourg", "coteau", "pavillons", "immeubles", "coteau"] : ["bourg", "pavillons", "immeubles"]; R(); R(); o = Object.assign({}, o, {sorte: L[Math.floor(R() * L.length)]}); } else if (o.sorte === "coteau" && !(+o.denivele >= 8)) o = Object.assign({}, o, {denivele: 12});   // le caractère se tire une fois : sinon les plus faciles à caser reviendraient toujours ; un coteau n'est jamais plat
+  const k1 = Math.min(400, (o.k0 || 0) + (o.tranche || 400)); for (let k = o.k0 || 0; k < k1 && lourds < (o.lourds || 14); k++) { essais++; let n = null; const gr = (o.graine || 1) * 1000 + k;
+    try { let ech = 1; for (let j = 0; j < 4; j++) { n = niveauDeZone(tirerVille(Object.assign({lieux: k < 160 ? (cible < 1000 ? 2 : 3) : k < 280 ? 2 : 0}, o), gr, ech)); const r = cible / long(n); if (Math.abs(r - 1) < .025) break; if (j === 3) throw new Error("pas la bonne longueur"); ech = clamp(ech * r, .8, 1.25); } }
+    catch (e) { dire(e.message); continue; }
+    lourds++; const d = controler(n); if (!d.length) return {niveau: n, essais, lourds, raisons}; d.slice(0, 3).forEach(dire); }
+  if (o.tranche && k1 < 400) return {suite: k1};
+  return {erreur: "Aucune ville sans défaut avec ces réglages : essaie une autre longueur.", essais, lourds, raisons};
 }
 
 /* ---- une ville libre (moteur/zone.js, étape 13) : le parcours d'un piéton posé sur ses voies ----
@@ -92,7 +204,7 @@ function cheminDeZone(zone, etapes, depart = [0, .5]) {   // depart : [sur la co
 function recalerZone(zone, chemin) {
   const x0 = chemin[0].x, z0 = chemin[0].z, l = Math.hypot(chemin[1].x - x0, chemin[1].z - z0), sn = (chemin[1].x - x0) / l, cs = -(chemin[1].z - z0) / l, C = v => Math.round(v * 1000) / 1000;
   const tourner = q => Object.assign({}, q, {x: C((q.x - x0) * cs + (q.z - z0) * sn), z: C(-(q.x - x0) * sn + (q.z - z0) * cs)}), o = JSON.parse(JSON.stringify(zone));
-  for (const v of o.voies) v.pts = v.pts.map(tourner); for (const p of o.places || []) p.pts = p.pts.map(tourner);
+  for (const v of o.voies) v.pts = v.pts.map(tourner); for (const p of (o.places || []).concat(o.jardins || [])) p.pts = p.pts.map(tourner); for (const c of ["jardins", "vues"]) if (o[c]) o[c] = o[c].map(tourner);
   o.objets = (o.objets || []).map(q => { const L = q.lacet || 0, a = Math.sin(L), b = Math.cos(L); return Object.assign(tourner(q), {lacet: C(Math.atan2(a * cs + b * sn, -a * sn + b * cs))}); });
   return {zone: o, chemin: chemin.map(tourner)};
 }

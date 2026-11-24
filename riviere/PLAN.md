@@ -50,7 +50,7 @@ Répondre en français, simplement : Kiki n'est pas développeur.
 | 11 | Thèmes : un rendu plus réaliste | le choix entre le thème Pokémon actuel et un thème plus immersif ; d'abord le style « entre les deux » : lumière, eau, matières plus réalistes sur le décor de Kanto | éteint = monde d'avant (shaders identiques) | — | moyen | par lot | **lot 1 fait le 18/11** (trois interrupteurs dans ⚙ : la lumière, l'eau, les matières ; à essayer sur la tablette, Vichy et kanto-1km) ; plus tard : vrais arbres et maisons, puis l'avatar du thème réaliste (pas un sprite Pokémon : à décider avec Kiki) |
 
 | 12 | Plus de défauts : la fabrication refaite | des circuits neufs, sans chemin impossible | le contrôleur de défauts, l'inspection image par image, le bouton ⚑ | — | moyen | 2 à 3 | **faite en grande partie le 24/11** (Kiki : ne pas corriger les anciens circuits, réparer la fabrication et repartir de zéro) : villes dessinées d'abord (`ville-place`), objets vraiment au sol, rives sans trait, `eau-lac`, inspection, ⚑ Signaler. Reste : une ville avec du relief et une fourche, d'autres plans de ville, un circuit neuf pour le vélo, retirer les anciens circuits quand Kiki le dit |
-| 13 | La ville libre (la fondation commune) | des rues courbes, en diagonale, qui montent et descendent ; des quartiers en pente | le plan devient une ZONE posée dans le monde (plus tout le niveau), avec sa propre hauteur de sol, raccordée au terrain ; rues = courbes quelconques, sol peint d'après la distance aux rues (aucune jointure possible), parcelles le long des courbes | — | **élevé** (le cœur) | 2 à 3 | **lot 1 fait et validé par Kiki le 24/11** (la fondation, circuit d'essai « Le quartier des Hauts » ; voir le journal) ; **lot 2 sauté (24/11, Kiki : 669 m ont suffi)** ; **à faire : lot 3, le générateur** (brief juste sous le tableau) |
+| 13 | La ville libre (la fondation commune) | des rues courbes, en diagonale, qui montent et descendent ; des quartiers en pente | le plan devient une ZONE posée dans le monde (plus tout le niveau), avec sa propre hauteur de sol, raccordée au terrain ; rues = courbes quelconques, sol peint d'après la distance aux rues (aucune jointure possible), parcelles le long des courbes | — | **élevé** (le cœur) | 2 à 3 | **lot 1 fait et validé par Kiki le 24/11** (la fondation, circuit d'essai « Le quartier des Hauts » ; voir le journal) ; **lot 2 sauté (24/11, Kiki : 669 m ont suffi)** ; **lot 3, le générateur : fait et publié le 24/11, avis de Kiki attendu** (voir le journal ; brief juste sous le tableau) |
 | 14 | Ville ET nature | un circuit à moitié en ville : on sort par une vraie rue (dernières maisons, jardins, chemin, lisière), un tour de forêt, on revient | l'étape 13 ; la liste fermée des sorties de ville | — | moyen | 1 à 2 | proposée le 24/11 |
 | 15 | La même ville pour tous | à vélo, on roule sur la chaussée ; au rameur, une ville longée ou vue en contrebas, avec ses quais, ses lampadaires, ses voitures | l'étape 13 ; une ville vue de loin allégée ; retirer l'ancien système de rues | — | moyen | 2 | proposée le 24/11 |
 | 16 | La diversité | des villes qui ne se ressemblent pas (vieille ville, bourg de montagne, port, quartier d'immeubles), Ronflex et fourches en ville, des moments à voir ; le circuit du jour sur ce système | les étapes 13 à 15 | — | faible | par lots | proposée le 24/11 |
@@ -83,6 +83,29 @@ deux fois (copie pour le générateur).
 
 **Le filet** : `empreintes.py ref` avant de commencer, `compare` à la fin (déjà pris le 24/11 : 12 circuits) ; `fentes.py` ; `python -m unittest discover tests` (197 verts) ; `outils/zone.py ville-hauts` doit
 rendre le même niveau. **Essai demandé à Kiki** : générer deux ou trois villes, en courir une ; dire si ça fait vrai et si c'est varié. Demander s'il garde la règle de 45 m et le dénivelé.
+
+**FAIT et publié le 24/11 (plan accepté).** Ce qui suit est la conception, pour mémoire.
+Fait ce jour-là : lot 1 publié (`3321cc0`, GitHub vert), ses deux ⚑ lus (ombre du parc au mètre 898, quadrillage et arbre au mètre 175 des Hauts : déjà corrigés), empreintes des 12 circuits identiques.
+Dit à Kiki : `ville-place` ne bouge pas, « À pied » ne tirera plus de villes plates ; long = lourd, mesurer, alléger, au pire limiter la longueur ; un des quatre lieux qui ne fait pas bien est laissé de côté.
+
+La conception retenue (à suivre, sauf meilleure idée) :
+- **Le réseau** : une trame de carrefours déformée (4 à 6 lignes par sens, mailles de 70 à 120 m, bruit doux, rotation), une déformation par caractère : bourg (anneaux et rayons, rues étroites, maisons
+  serrées, nouveau style « serre »), pavillons (grandes courbes), immeubles (presque droit, large, `residences`), coteau (rues le long des courbes de niveau). Chaque ligne = une voie. Entre deux carrefours
+  Pi → A → B → Pi+1, A = Pi + tangente × 0,36 L (la tangente d'un carrefour = la direction de ses voisins ± un peu) : droit 9-10 m de chaque côté du carrefour, une courbe ou un S entre les deux ;
+  r = la place disponible / tan(th / 2), entre 14 et 90 ; angle entre deux rues 62 à 118°, sinon tirage jeté avant tout calcul lourd.
+- **Le parcours = le bord d'un groupe de mailles** : on part d'une maille, on en ajoute au hasard (groupe sans trou ni point de pincement) jusqu'à la longueur ; des centaines d'essais ne coûtent rien ; on
+  garde le meilleur (longueur, lieux traversés, virages variés), puis on met toute la trame à l'échelle pour la longueur exacte. Une **ruelle, un escalier ou une allée de jardin coupe une maille en
+  deux** d'une rue à l'autre (milieux de deux côtés) : elle entre alors dans le parcours comme n'importe quelle rue.
+- **Gardé** : les rues du parcours et celles de l'intérieur ; vers l'extérieur, des amorces de 45 à 75 m ; quelques-unes enlevées au hasard (carrefours en T). À chaque coin, une des deux rues continue
+  (jamais deux rues qui finissent ensemble : un L serait mal dessiné). Les voies du parcours écrites en premier (hauteurs). Côté de la rue : le même tout le tour, avec une ou deux traversées droites.
+- **Les hauteurs** : un champ lisse (une colline), `y` aux carrefours ; pente moyenne d'une rue 6,5 % au plus (le lissage la multiplie par 1,5) : l'amplitude est bornée par la longueur.
+- **Placette** : à un coin du parcours, 26 à 34 m, coupée en diagonale (droite libre, r 12), des boutiques sur ses deux autres côtés (une « voie » factice de h = 0 pour FILES) ; rue commerçante à côté
+  (`boutiques` à 14 m au moins des carrefours).
+- **Ruelle** : `sol: "paves"`, style « mur » à dessiner (murs de 2,2 m, pans de 3,2 m au plus). **Escalier** : ruelle avec un tronçon à 25 % (marches en boîtes sur la rampe, rampe au milieu, `PENTE_MAX`
+  levé là seulement). **Belvédère** : place à mi-hauteur côté intérieur, garde-corps, aucun arbre ni maison devant sur 45 m (la ville vue d'en haut). **Jardin** : maille sans maisons, haies, `portail_parc`,
+  `kiosque`, allées `sable` courbes.
+- **Le code** : `tirerVille` (plate, 9 Ko) à retirer de villes.js (`ville-place.json` est déjà un fichier ; l'essai des villes plates se fait dessus) ; `circuitVille` et `essayerNiveau` pour `niveau.zone` ;
+  `ED.msg` : pas de note pour `zone` ; éditeur : texte de la tuile « À pied » et puces de relief (Plat, Vallonné, Ça grimpe). Cribles bon marché avant `zoneControle` (longue ville : plusieurs secondes).
 
 **Retours de Kiki sur « Le tour de la place et du parc » (24/11, sur la tablette) : validé.** Transitions rue → parc → place, virages, caméra, largeur du trottoir : très bien ; 60 images/s
 tout du long. **À changer : les lignes droites sont trop longues** (on avance très doucement, ~1,8 m de décor par seconde au trot : 200 m de boulevard = presque 2 min). Règle pour les
@@ -463,3 +486,11 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   gros arbre qui semblait flotter (pommiers dont le feuillage descend au sol, tronc caché par une haie, silhouettes de forêt sans tronc plantées trop près : `arbre_rue`, silhouettes à plus
   de 40 m). Au passage : un ⚑ part tout de suite (avant : à l'ouverture suivante du jeu), essayé dans un vrai Streamlit (0,5 s, partie pas rechargée). Les 11 autres circuits identiques
   (empreintes ; le shader et le sol de `ville-place` aussi). **Le lot 1 est donc validé ; suite : le lot 3 (le lot 2 est sauté, Kiki).** Outils gardés dans le dépôt : `empreintes.py`, `fentes.py`.
+- **Étape 13 — La ville libre, lot 3, le générateur (24/11/2026, Opus ; plan accepté).** **Ce que Kiki verra** : Marcheur elliptique → Créer un circuit → Générer → « À pied, en ville » : longueur,
+  relief, genre de ville ; une ville différente à chaque fois, avec sa placette, son jardin, ses ruelles, un escalier et un belvédère quand ça monte. **Comment** : `MOTEUR.md`, « Les villes tirées au
+  sort ». Le vieux tirage à angles droits est retiré (`ville-place` est un fichier, inchangé). **Le filet** : 24 villes (0,7 à 2,2 km, plates et pentues) contrôlées en entier, aucun défaut, et
+  36 autres tirées sans un échec (contrôle du tirage seul) ; trois regardées tous les 10 m (immeubles 1,6 km pentu, bourg plat 1,2 km, pavillons 0,7 km) et une quatrième (coteau) tous les 15 m ;
+  empreintes des 12 circuits identiques ; page 2 471 Ko (plafond 2 500), 201 tests verts. Au passage : au menu du marcheur elliptique, la longueur d'un tour et sa durée sont celles de tes jambes (avant : celles du décor,
+  40 % de trop). **Corrigé en regardant** : murs arrière aveugles, ruelles trop droites, herbe qui dépassait des marches, lierre trop gros, départ dans une ruelle. **Pas essayé** : la tablette, une
+  vraie séance. **À essayer par Kiki** : deux ou trois villes, en courir une ; dire si ça fait vrai, si c'est varié, s'il garde la règle de 45 m et les reliefs. **Reste possible** : « ça grimpe » ne
+  dépasse guère 10 à 12 m sur 0,5 km (borné par la pente des rues) ; changer de trottoir en cours de route ; des voitures qui roulent.
