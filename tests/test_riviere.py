@@ -498,6 +498,25 @@ class VilleTiree(unittest.TestCase):
             part = sum(((p["x"] - q["x"]) ** 2 + (p["z"] - q["z"]) ** 2) ** .5 for p, q in zip(chemin, chemin[1:])) / (km * 1000)
             self.assertAlmostEqual(part, nature, delta=.2)
 
+    def test_a_velo(self):
+        """(étape 15, lot 1b) Ville et campagne à vélo : la longueur, rien à redire au contrôle du cycliste, une vraie campagne, le même partout ; la piste cyclable et la rue barrée existent."""
+        vus = set()
+        for km, nature, denivele, graine, sorte, sinueux in ((1.5, .75, 0, 544, "", 0), (3, .34, 15, 211, "bourg", 1), (2.5, .5, 35, 174, "immeubles", 0)):
+            o = dict(km=km, nature=nature, denivele=denivele, graine=graine, sorte=sorte, sinueux=sinueux)
+            n, long, b = self.tirer(style="velo", **o)
+            self.assertAlmostEqual(long, km * 1000, delta=km * 30)
+            self.assertEqual(b["erreurs"], [])
+            self.assertFalse(b.get("cassures"))
+            self.assertEqual((n["machines"], n["allure"], n["zone"]["velo"]), (["velo"], 1, True))
+            camp = [v for v in n["zone"]["voies"] if v["id"].startswith("camp")]
+            self.assertTrue(camp[0].get("t") == 0 and camp[-1].get("t") == 0, "on sort de la ville, et on y revient, par une route")
+            self.assertEqual([v["id"] for v in n["zone"]["voies"] if not v["deux"] and v["l"] > 2], [], "on roule à deux partout, sauf sur un sentier")
+            vus.update(k for v in n["zone"]["voies"] for k in ("piste", "traces") if v.get(k))
+            vus.update(q["raison"] for q in n["zone"]["bateaux"])
+            self.assertNotIn("barr", " ".join(n["traverse"]), "une surprise ne s'annonce pas")
+        self.assertEqual(n, self.tirer(style="velo", **o)[0], "mêmes options, même circuit")
+        self.assertLessEqual({"piste", "traces", "travaux"}, vus)
+
     def test_la_meme_partout(self):
         o = {"km": .75, "denivele": 12, "graine": 21, "sorte": "pavillons"}
         n = self.tirer(**o)[0]

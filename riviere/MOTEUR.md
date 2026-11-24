@@ -605,6 +605,22 @@ La même zone, mais on roule sur la chaussée : `"velo": true` dans la zone, `"m
 - **Les objets** : `contenu/objets/kanto-velo.js` (`plate_bande`, `barriere_chantier`, `cone_chantier`, `tranchee`, `tas_paves`, `panneau_route` : travaux, barree, deviation, cyclable, sens ; `panneau_ville`, `borne_bois`).
 - Fabriquer : `python riviere/outils/zone.py velo-cerisiers` (jamais le niveau à la main). La caméra ne regarde jamais à plus de 11° du cycliste.
 
+### Les circuits à vélo tirés au sort (24/11, étape 15, lot 1b : `jeu/velo_villes.js`)
+
+Vélo → Créer un circuit → Générer → « Ville et campagne » : longueur (1,5 à 4 km, la vraie distance), décor (`nature` .34, .5, .75 : la part de campagne), relief, « Ça tourne » (`sinueux` 0 ou 1), genre de ville. Sans navigateur :
+`python riviere/outils/generer.py --activite terre --style velo --km 3 --nature .5 --denivele 15 --sinueux --graine 7`. Mêmes options, même circuit partout.
+
+- **La ville** est celle de `tirerVille` (`o.velo`, `VE` dans villes.js ; sans ce drapeau, rien ne change et aucun tirage ne bouge) : des îlots plus grands, des parcs et une rue en biais (jamais de ruelle ni d'escalier), une placette qu'on
+  longe, des commerces sur deux rues du parcours, un style de façades par bout de rue. `avenueVelo` : une rue du tour prise ET quittée en tournant à droite devient l'avenue et sa piste cyclable (deux circuits sur trois).
+  `travauxVelo`, `rueBarree` : un bout de rue tout droit, un circuit sur trois environ, **jamais annoncée** (ni dans le bilan, ni par un panneau qui dit où passer).
+- **La campagne** (`campagneVelo`) : d'une porte de la ville à l'autre, des **files** de morceaux (`filesVelo`, par exemple `"rhr|cs|r"`) : `r` petite route, `h` hameau, `c` chemin carrossable, `s` sentier (`VELO_SORTES`). Dans une file,
+  deux morceaux se suivent **bout à bout**, au milieu d'un bout droit ; d'une file à l'autre on **tourne d'équerre** à un croisement, et la voie la plus importante continue de l'autre côté (`suite`, ~110 m). Un arc porte les croisements,
+  sa flèche est réglée par dichotomie pour la longueur. Un grand tournant se fait en plusieurs fois (`tourner`). Un paysage tous les 120 à 190 m, un repère par paysage ouvert.
+- **Rouler à deux** (pas encore joué) : `deux` sur chaque voie (faux sur un sentier), rien de dur à moins de 1,4 m du parcours là où c'est vrai.
+- **Dans le moteur, à vélo seulement** : `net` (là où le goudron finit et où la terre continue, une coupe droite), un étang est posé sur un sol à plat (`aplat`). `files` dans un niveau = un circuit à vélo tiré au sort : il est allégé
+  (bâtiments jusqu'à 92 m du parcours, bois des îlots plus clair, `PETITS_VELO`, ombres des feuillages redessinées 5 fois par seconde).
+- **Les réglages qui comptent** : portes à moins de .46 × la campagne (`portesNature(…, velo)`), croisements entre 46° et 132° avant redressement, rayons `r` de `VELO_SORTES`, pente 5,4 % (6,6 % si ça grimpe).
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal

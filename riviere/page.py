@@ -18,7 +18,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent
 MOTEUR = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "plan_dessin", "zone_dessin", "tunnel", "decor", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
-JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "villes", "nature", "generateur", "editeur", "signaler", "banc"]
+JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "villes", "nature", "velo_villes", "generateur", "editeur", "signaler", "banc"]
 PURS = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
@@ -232,7 +232,7 @@ def generateur(options):
     base = "vichy-lac"   # (la page a besoin d'un circuit pour démarrer ; la région du circuit tiré est celle des options, Kanto sinon)
     return (AVANT_NODE % '""' + donnees_js({"force": True}, niveaux, biomes, lieux, {}, base, sprites=False) + "\n"
             + "\n".join(_module("moteur", m) for m in ("depart", "outils", "zone", "piste")) + "\n" + source_piste() + "\n"
-            + _module("jeu", "note") + "\n" + _module("jeu", "villes") + "\n" + _module("jeu", "nature") + "\n" + _module("jeu", "generateur")
+            + _module("jeu", "note") + "\n" + _module("jeu", "villes") + "\n" + _module("jeu", "nature") + "\n" + _module("jeu", "velo_villes") + "\n" + _module("jeu", "generateur")
             + "\nconsole.log('CIRCUIT ' + JSON.stringify(genererCircuit(" + _js(options) + ")));\n")
 
 

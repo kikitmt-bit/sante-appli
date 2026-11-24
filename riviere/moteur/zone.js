@@ -67,6 +67,8 @@ const ZONE = (() => {
         const t = ((cx - ax) * s2 - (cz - az) * s1) / den, w = ((cx - ax) * r2 - (cz - az) * r1) / den; if (t < 0 || t >= 1 || w < 0 || w >= 1) continue;
         noter(ax + r1 * t, az + r2 * t, j, lerp(A.S[m], A.S[m + 1], w), k, lerp(B.S[i], B.S[i + 1], t)); } }
   }
+  // (étape 15, lot 1b) là où le goudron finit et où un chemin de terre continue dans le même sens : une coupe nette, pas un bout rond ; net : [au début, à la fin] ; paires : les deux voies de ce joint
+  const paires = new Set(); if (VEL) for (const n of noeuds) { if (n.v.length !== 2) continue; const L = n.v.map(q => ({v: voies[q.k], fin: q.s > voies[q.k].L - 1.5 ? 1 : q.s < 1.5 ? 0 : -1})); if (L.some(q => q.fin < 0)) continue; const r = L.find(q => q.v.sol === "chaussee" && !q.v.t), c = L.find(q => q.v.sol === "terre"); if (!r || !c) continue; r.v.net = r.v.net || [false, false]; r.v.net[r.fin] = true; paires.add(r.v.k * 512 + c.v.k).add(c.v.k * 512 + r.v.k); }
   // la hauteur de chaque voie : ses points, puis les voies déjà réglées qu'elle croise
   for (const v of voies) {
     let C = v.pts.map((q, i) => [v.som[i], q.y]).filter(q => typeof q[1] === "number");
@@ -108,7 +110,8 @@ const ZONE = (() => {
   }
   // la hauteur du sol, gardée sur deux trames (calculées au premier besoin) : de 8 m partout, de 1 m à moins de 26 m d'une rue, l'une passant à l'autre en douceur.
   // Partout la même fonction, lissée entre ses points : jamais deux sols qui se croisent.
-  const trame = pas => { const nx = Math.ceil((xb - xa) / pas) + 2, nz = Math.ceil((zb - za) / pas) + 2, H = new Float32Array(nx * nz).fill(NaN), E = new Float32Array(nx * nz), R = {y: 0, e: 0}; const n = (i, j) => { const k = j * nx + i; if (H[k] !== H[k]) { voter_(xa + i * pas, za + j * pas); H[k] = R0.y + (aires.length ? bosse(xa + i * pas, za + j * pas, R0.em) : 0); E[k] = R0.em; } return k; };
+  const etangs = VEL ? (z0.objets || []).filter(q => q.o === "mare" && q.r > 4).map(q => ({x: q.x, z: q.z, y: null})) : [], aplat = (x, z, y, em) => { for (const q of etangs) { const d = Math.hypot(q.x - x, q.z - z); if (d > 17 || em < 2) continue; if (q.y === null) { const Y = R0.y, E0 = R0.em; voter_(q.x, q.z); q.y = R0.y; R0.y = Y; R0.em = E0; } y = lerp(y, q.y - .12, (1 - lisse(9.5, 17, d)) * lisse(2, 5, em)); } return y; };   // (lot 1b) un étang est à plat
+  const trame = pas => { const nx = Math.ceil((xb - xa) / pas) + 2, nz = Math.ceil((zb - za) / pas) + 2, H = new Float32Array(nx * nz).fill(NaN), E = new Float32Array(nx * nz), R = {y: 0, e: 0}; const n = (i, j) => { const k = j * nx + i; if (H[k] !== H[k]) { voter_(xa + i * pas, za + j * pas); const y = R0.y, em = R0.em; H[k] = y + (aires.length ? bosse(xa + i * pas, za + j * pas, em) : 0); if (etangs.length) H[k] = aplat(xa + i * pas, za + j * pas, H[k], em); E[k] = em; } return k; };
     return (x, z) => { const u = clamp((x - xa) / pas, 0, nx - 1.001), w = clamp((z - za) / pas, 0, nz - 1.001), i = Math.floor(u), j = Math.floor(w), a = u - i, b = w - j, k0 = n(i, j), k1 = n(i + 1, j), k2 = n(i, j + 1), k3 = n(i + 1, j + 1), p = (1 - a) * (1 - b), q = a * (1 - b), r = (1 - a) * b, s = a * b; R.y = H[k0] * p + H[k1] * q + H[k2] * r + H[k3] * s; R.e = E[k0] * p + E[k1] * q + E[k2] * r + E[k3] * s; return R; }; };
   const large = trame(8), fine = trame(VEL ? 2 : 1);
   const sol = (x, z) => { const g = large(x, z), e = g.e, y = g.y; if (e >= 26) return y; const f = fine(x, z).y; return e <= 16 ? f : lerp(f, y, lisse(16, 26, e)); };
@@ -129,13 +132,14 @@ const ZONE = (() => {
   const bD = new Float64Array(voies.length), bI = new Int32Array(voies.length), vu = new Int32Array(voies.length), pris = new Int32Array(voies.length); let tour = 0, np = 0;
   const parvis = [];   // (zone_plan.js) {k, sg, s0, s1, e} : le trottoir élargi de e mètres, d'un côté d'une voie, entre deux distances
   const D = {f: 99, t: 99, p: 99, a: 99, c: 99, y: 99, b: 99, k: -1, s: 0, u: 0, e: 99};
+  const coupeNette = (v, k, x, z) => { const d = Math.sqrt(bD[k]), i = bI[k]; for (const w of [0, 1]) if (v.net[w] && (w ? i > v.n - 4 : i < 2)) { const j = w ? v.n - 1 : 0, o = ((x - v.P[j][0]) * v.TX[j] + (z - v.P[j][1]) * v.TZ[j]) * (w ? 1 : -1); return Math.max(d, o + v.l / 2); } return d; };   // au-delà du bout, la distance compte à partir de la coupe
   function champs(x, z) {
     tour++; np = 0; const L = carreV(x, z);
     for (let n = 0; n < L.length; n += 2) { const k = L[n], i = L[n + 1], P = voies[k].P, A = P[i], B = P[i + 1], ux = B[0] - A[0], uz = B[1] - A[1], ex = x - A[0], ez = z - A[1]; let t = (ex * ux + ez * uz) / (ux * ux + uz * uz || 1); t = t < 0 ? 0 : t > 1 ? 1 : t; const q = (ex - ux * t) ** 2 + (ez - uz * t) ** 2;
       if (vu[k] !== tour) { vu[k] = tour; bD[k] = q; bI[k] = i; pris[np++] = k; } else if (q < bD[k]) { bD[k] = q; bI[k] = i; } }
-    let f = 99, t = 99, p = 99, al = 99, ch = 99, e = 99, ko = -1, m = 0;
-    for (let n = 0; n < np; n++) { const k = pris[n]; if (bD[k] > PORTEE_V * PORTEE_V) { vu[k] = 0; continue; } pris[m++] = k; const v = voies[k], d = Math.sqrt(bD[k]), dh = d - v.h; if (dh < e) { e = dh; ko = k; }
-      if (v.sol === "chaussee") { f = unionRonde(f, d - v.l / 2, RC); t = unionRonde(t, d - v.l / 2 - v.t, RT); if (VEL && !v.t) ch = unionRonde(ch, d - v.l / 2 - .3, 5); } else if (v.sol === "paves") p = unionRonde(p, d - v.l / 2, 1); else if (v.sol === "terre") ch = unionRonde(ch, d - v.l / 2, VEL ? 5 : 2); else al = unionRonde(al, d - v.l / 2, 2.5); }
+    let f = 99, t = 99, p = 99, al = 99, ch = 99, e = 99, ko = -1, m = 0, kc = -1;
+    for (let n = 0; n < np; n++) { const k = pris[n]; if (bD[k] > PORTEE_V * PORTEE_V) { vu[k] = 0; continue; } pris[m++] = k; const v = voies[k], d = v.net ? coupeNette(v, k, x, z) : Math.sqrt(bD[k]), dh = d - v.h; if (dh < e) { e = dh; ko = k; }
+      if (v.sol === "chaussee") { f = unionRonde(f, d - v.l / 2, RC); t = unionRonde(t, d - v.l / 2 - v.t, RT); if (VEL && !v.t) { ch = unionRonde(ch, d - v.l / 2 - .3, kc >= 0 && paires.has(k * 512 + kc) ? .8 : 5); kc = k; } } else if (v.sol === "paves") p = unionRonde(p, d - v.l / 2, 1); else if (v.sol === "terre") { ch = unionRonde(ch, d - v.l / 2, VEL ? (kc >= 0 && paires.has(k * 512 + kc) ? .8 : 5) : 2); kc = k; } else al = unionRonde(al, d - v.l / 2, 2.5); }
     np = m;
     // (étape 15) les pistes cyclables : une bande plantée, puis la piste ; là où une rue coupe l'avenue, la bande s'arrête avant elle et la piste s'évase pour qu'on y tourne
     let y = 99, bn = 99; if (VEL) for (let n = 0; n < np; n++) { const k = pris[n], v = voies[k]; if (!v.piste) continue; const eb = Math.sqrt(bD[k]) - v.l / 2; if (eb > 16) continue; let fo = 99; for (let j = 0; j < np; j++) { const o = voies[pris[j]]; if (pris[j] !== k && o.sol === "chaussee") fo = Math.min(fo, Math.sqrt(bD[pris[j]]) - o.l / 2); }

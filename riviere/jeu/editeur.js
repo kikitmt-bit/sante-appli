@@ -116,10 +116,12 @@ function edEtat() {
 // Une boucle est construite d'un bloc : 8 km au plus ; de A à B, le monde se construit autour de soi (moteur/troncons.js) : 50 km.
 const PAS_KM = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50];
 const PAS_PIED = [.5, .75, 1, 1.25, 1.5];   // (étape 13, lot 3) une ville à pied : des km de tes jambes (le décor en fait une fois et demie plus)
-const pasKm = G => G.style === "pied" && piedPossible(G) ? PAS_PIED : PAS_KM;
-const kmMax = G => G.style === "pied" && piedPossible(G) ? PAS_PIED.reduce((m, k, i) => !VISUEL || k * MACHINE.allure * 1.08 < 3.7 ? i : m, 0) : PAS_KM.indexOf(G.forme === "ouvert" ? 50 : 8);
+const PAS_VELO = [1.5, 2, 2.5, 3, 3.5, 4];   // (étape 15, lot 1b) ville et campagne à vélo : la vraie distance
+const pasKm = G => enVelo(G) ? PAS_VELO : G.style === "pied" && piedPossible(G) ? PAS_PIED : PAS_KM;
+const kmMax = G => enVelo(G) ? PAS_VELO.length - 1 : G.style === "pied" && piedPossible(G) ? PAS_PIED.reduce((m, k, i) => !VISUEL || k * MACHINE.allure * 1.08 < 3.7 ? i : m, 0) : PAS_KM.indexOf(G.forme === "ouvert" ? 50 : 8);
 /* (18/11, Kiki) au marcheur elliptique, le générateur peut faire un footing : des trottoirs, une ruelle, un escalier, un parc, un sentier, une passerelle (style « pied ») */
 const piedPossible = G => G.activite === "terre" && MACHINE_NOM === "elliptique";
+const veloPossible = G => G.activite === "terre" && MACHINE_NOM === "velo", enVelo = G => G.style === "velo" && veloPossible(G), styleDe = G => enVelo(G) ? "velo" : piedPossible(G) ? (G.style === "velo" ? "pied" : G.style) : undefined;   // (étape 15, lot 1b) à la machine vélo : « Ville et campagne », ou la route d'avant
 const kmDecor = G => G.style === "pied" && piedPossible(G) && typeof VISUEL !== "undefined" && VISUEL ? +(G.km * MACHINE.allure * 1.08).toFixed(2) : G.km;   // un tour de 1 km au trot = ~1,5 km de décor (1,08 : l'allure d'une ville, villes.js)
 const texteKm = km => String(km).replace(".", ",") + " km";
 const dureeKm = km => { const v = typeof vitesseHabituelle === "function" ? vitesseHabituelle() : 3.6, m = Math.round(km * 1000 / Math.max(.5, v) / 60); return " ≈ " + (m >= 90 ? Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") : m + " min") + " à ton allure"; };
@@ -134,13 +136,24 @@ function edAccueil() {
   const persos = Object.entries(CIRCUITS_PERSO).filter(([k, c]) => disciplineDe(c) === G.activite), jeu = Object.entries(NIVEAUX).filter(([k, c]) => !c.cache && !c.jour && disciplineDe(c) === G.activite);
   const pour = {rameur: "au rameur", elliptique: "au marcheur elliptique", velo: "à vélo"}[MACHINE_NOM] || "";
   if (piedPossible(G) && G.style === undefined) G.style = MACHINE.monture === "trotteur" ? "pied" : "route";
-  const pied = piedPossible(G) && G.style === "pied";
+  if (veloPossible(G) && G.style !== "route") G.style = "velo"; if (piedPossible(G) && G.style === "velo") G.style = MACHINE.monture === "trotteur" ? "pied" : "route";
+  const velo = enVelo(G), pied = piedPossible(G) && G.style === "pied";
+  if (velo && !G.avecVelo) { G.avecVelo = true; G.km = 2.5; G.denivele = 15; G.nature = .5; }
+  if (velo) { if (!PAS_VELO.includes(G.km)) G.km = 2.5; if (![0, 15, 35].includes(+G.denivele)) G.denivele = 15; if (![.34, .5, .75].includes(G.nature)) G.nature = .5; G.sinueux = G.sinueux ? 1 : 0; if (G.sorte === "coteau") G.sorte = ""; }
+  else if (pied && ![0, .5, .7].includes(G.nature)) G.nature = .5;
   if (pied && !G.avecPied) { G.avecPied = true; G.denivele = 12; Object.assign(G.avec, {village: true, escalier: true, parc: true, foret: true, champs: true, pont: true}); if (G.forme === "huit") G.forme = "boucle"; }
-  if (pied && (!PAS_PIED.includes(G.km) || PAS_PIED.indexOf(G.km) > kmMax(G))) G.km = PAS_PIED[Math.min(2, kmMax(G))]; if (!pied && !PAS_KM.includes(G.km)) G.km = 2; if (pied && ![0, 12, 25].includes(+G.denivele)) G.denivele = 12; if (pied && G.nature === undefined) G.nature = .5;
+  if (pied && (!PAS_PIED.includes(G.km) || PAS_PIED.indexOf(G.km) > kmMax(G))) G.km = PAS_PIED[Math.min(2, kmMax(G))]; if (!pied && !velo && !PAS_KM.includes(G.km)) G.km = 2; if (pied && ![0, 12, 25].includes(+G.denivele)) G.denivele = 12; if (pied && G.nature === undefined) G.nature = .5;
   $("edAccueil").innerHTML = `<div class="ed-acc">
-    <section class="ed-bloc ed-gen"><h2>🎲 Générer un circuit</h2><p class="ed-note">Dis ce que tu veux, je le dessine ${pour}${pied ? " : je n'en garde que ce qui passe tous mes contrôles" : " : je garde le mieux noté de plusieurs essais"}.</p>
+    <section class="ed-bloc ed-gen"><h2>🎲 Générer un circuit</h2><p class="ed-note">Dis ce que tu veux, je le dessine ${pour}${pied || velo ? " : je n'en garde que ce qui passe tous mes contrôles" : " : je garde le mieux noté de plusieurs essais"}.</p>
       ${piedPossible(G) ? `<div class="ed-q">Où tu cours</div>${puces("style", G.style, [["pied", "À pied"], ["route", "Sur la route"]])}` : ""}
-      ${pied ? `<div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
+      ${veloPossible(G) ? `<div class="ed-q">Où tu roules</div>${puces("style", G.style, [["velo", "Ville et campagne"], ["route", "Sur la route"]])}` : ""}
+      ${velo ? `<div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
+      <div class="ed-curseur"><span>1,5 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G)}" step="1" value="${PAS_VELO.indexOf(G.km)}"><span>4 km</span></div>
+      <div class="ed-q">Le décor</div>${puces("nature", G.nature, [[.34, "Surtout la ville"], [.5, "Moitié-moitié"], [.75, "Surtout la campagne"]])}
+      <div class="ed-deux"><div><div class="ed-q">Relief</div>${puces("denivele", G.denivele, [[0, "Plat"], [15, "Vallonné"], [35, "Ça grimpe"]])}</div>
+      <div><div class="ed-q">Ça tourne</div>${puces("sinueux", G.sinueux, [[0, "Tranquille"], [1, "Sinueux"]])}</div></div>
+      <div class="ed-q">La ville</div>${puces("sorte", G.sorte || "", [["", "Surprise"], ["bourg", "Vieux bourg"], ["pavillons", "Pavillons"], ["immeubles", "Immeubles"]])}
+      <small class="ed-aide">Une boucle tirée au sort, jamais deux fois la même : la ville, ses commerces, ses parcs, puis la campagne par les petites routes, les chemins et les sentiers. Pour un col ou une longue route : « Sur la route ».</small>` : pied ? `<div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
       <div class="ed-curseur"><span>0,5 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G)}" step="1" value="${PAS_PIED.indexOf(G.km)}"><span>${texteKm(PAS_PIED[kmMax(G)])}</span></div>
       <div class="ed-q">Le décor</div>${puces("nature", G.nature, [[0, "Tout en ville"], [.5, "Moitié-moitié"], [.7, "Surtout la nature"]])}
       <div class="ed-q">Relief</div>${puces("denivele", G.denivele, [[0, "Plat"], [12, "Vallonné"], [25, "Ça grimpe"]])}
@@ -167,7 +180,7 @@ function edAccueil() {
    ce qui bloque ») : si le tirage échoue, on réessaie tout seul en assouplissant, dans cet ordre : le 8 devient une boucle, un cran de virages
    en moins, puis on retire un à un les éléments les plus difficiles à caser ; on dit ce qui a changé. L'effort suit la longueur (une longue route
    est vite tracée, mais habiller ses rives et contrôler tout son sol prendrait des minutes). ---- */
-const NOMS_LIEUX = {placette: "une placette", jardin: "un jardin", ruelle: "un passage entre deux murs", escalier: "un escalier", "belvédère": "un belvédère", bois: "un bois", "clairière": "une clairière", hameau: "un hameau", champs: "des champs", lande: "une lande", verger: "un verger", "étang": "un étang", potagers: "des potagers"};   // ce que traverse une ville tirée au sort (villes.js)
+const NOMS_LIEUX = {placette: "une placette", jardin: "un jardin", parc: "un parc", ruelle: "un passage entre deux murs", escalier: "un escalier", "belvédère": "un belvédère", bois: "un bois", "clairière": "une clairière", hameau: "un hameau", champs: "des champs", lande: "une lande", verger: "un verger", "étang": "un étang", potagers: "des potagers", "piste cyclable": "une piste cyclable"};   // ce que traverse une ville tirée au sort (villes.js)
 const DIFFICILES = ["escalier", "echangeur", "fourche", "montagne", "tunnel", "rondpoint", "pont", "grotte", "cascade", "port", "village", "volcan", "marais", "plage", "lac", "ronflex", "champs", "foret"];
 const NOMS_AVEC = Object.fromEntries([].concat(CASES_GEN.eau, CASES_GEN.terre, CASES_GEN.pied).map(([k, , t]) => [k, t.toLowerCase()]));
 function effortDe(G) { const km = +G.km || 1; return km <= 4 ? {} : km <= 8 ? {tirages: 3} : {tirages: km > 20 ? 1 : 2, habiller: false, sol: false}; }
@@ -180,11 +193,11 @@ function genererSouple(G0, dire, fin) {
   if (cran[G.virages]) { G = Object.assign({}, G, {virages: cran[G.virages]}); changes.push("Un peu moins de virages."); essais.push([G, changes.join(" ")]); }
   const retires = [];
   for (const k of DIFFICILES) if (G.avec[k]) { G = Object.assign({}, G, {avec: Object.assign({}, G.avec, {[k]: false})}); retires.push(NOMS_AVEC[k] || k); essais.push([G, changes.concat("Sans : " + retires.join(", ") + " (je n'arrivais pas à tout caser).").join(" ")]); }
-  if (G0.style === "pied") {   // (étape 13, lot 3) une ville : rien à retirer ; si aucune ne tient, on en cherche d'autres, puis le relief qu'on peut. Par petits lots : la page reste vivante
+  if (G0.style === "pied" || G0.style === "velo") {   // (étape 13, lot 3) une ville : rien à retirer ; si aucune ne tient, on en cherche d'autres, puis le relief qu'on peut. Par petits lots : la page reste vivante
     essais.length = 0; essais.push([G0, ""], [Object.assign({}, G0, {graine: (+G0.graine || 1) + 9001}), ""], [Object.assign({}, G0, {graine: (+G0.graine || 1) + 18002, sorte: ""}), "Je n'ai pas réussi à caser ce genre de ville : en voici une autre."], [Object.assign({}, G0, {graine: (+G0.graine || 1) + 27003, sorte: "", denivele: 0}), "Je n'ai pas réussi avec ce relief : celle-ci est plate."]); }
   let i = 0, k0 = 0;
   const suivant = () => { const [o, change] = essais[i];
-    if (G0.style === "pied") { dire(i || k0 ? "Je dessine ta ville… (essai " + (i * 400 + k0) + ")" : "Je dessine ta ville…");
+    if (G0.style === "pied" || G0.style === "velo") { const quoi = G0.style === "velo" ? "Je dessine ta boucle…" : "Je dessine ta ville…"; dire(i || k0 ? quoi + " (essai " + (i * 400 + k0) + ")" : quoi);
       setTimeout(() => { const r = genererCircuit(Object.assign({}, o, {k0, tranche: 8})); if (r.suite) { k0 = r.suite; suivant(); } else if (!r.erreur) { r.change = change; fin(r); } else { k0 = 0; if (++i < essais.length) suivant(); else fin({erreur: "Je n'ai vraiment rien trouvé : essaie une autre longueur."}); } }, 30); return; }
     dire(i === 0 ? (+o.km > 8 ? "Je trace ta route…" : "Je dessine ton circuit…") : "Je cherche autrement…");
     setTimeout(() => { const r = genererCircuit(Object.assign({}, o, effortDe(o), i ? {essais: 30} : {}));   // (un essai assoupli cherche moins longtemps)
@@ -290,7 +303,7 @@ $("editeur").addEventListener("change", e => {
 $("editeur").addEventListener("click", e => {
   const t = e.target.closest("button"); if (!t) return;
   const d = t.dataset, n = ED.n, p = n && edPiece(); ED.msg = "";
-  if (d.gk) { const G = ED.gen, v = d.gv; if (["km", "denivele", "nature"].includes(d.gk)) G[d.gk] = +v; else if (d.gk === "forme") { G.forme = v; G.boucle = v !== "ouvert"; if (pasKm(G).indexOf(G.km) > kmMax(G)) G.km = pasKm(G)[kmMax(G)]; } else G[d.gk] = v; edAccueil(); }
+  if (d.gk) { const G = ED.gen, v = d.gv; if (["km", "denivele", "nature", "sinueux"].includes(d.gk)) G[d.gk] = +v; else if (d.gk === "forme") { G.forme = v; G.boucle = v !== "ouvert"; if (pasKm(G).indexOf(G.km) > kmMax(G)) G.km = pasKm(G)[kmMax(G)]; } else G[d.gk] = v; edAccueil(); }
   else if (d.avec) { ED.gen.avec[d.avec] = !ED.gen.avec[d.avec]; t.classList.toggle("on", !!ED.gen.avec[d.avec]); }
   else if (d.pm) { const inp = $("edCote").querySelector(`input[data-k="${d.pm}"]`); inp.value = clamp(+inp.value + +d.d, +inp.min, +inp.max); edRegler(d.pm, inp.value); edTout(); }
   else if (d.virage !== undefined) { p.virage = +d.virage; edTout(); }
@@ -319,9 +332,9 @@ function edAction(act, bouton) {
   if (act === "generer" || act === "autre") {
     ED.gen.graine = Math.floor(Math.random() * 9000) + 1;   // un nouveau tirage à chaque fois
     bouton.disabled = true;
-    genererSouple(Object.assign({}, ED.gen, {km: kmDecor(ED.gen), style: piedPossible(ED.gen) ? ED.gen.style : undefined}), t => { bouton.textContent = t; }, r => {
+    genererSouple(Object.assign({}, ED.gen, {km: kmDecor(ED.gen), style: styleDe(ED.gen)}), t => { bouton.textContent = t; }, r => {
       if (r.erreur) { bouton.disabled = false; ED.msg = r.erreur; if (ED.vue === "accueil") edAccueil(); else { edEtat(); edPanneau(); } return; }
-      edAtelier(r.niveau, true); ED.msg = (r.niveau.zone ? "Voici ta ville" : "Voici ton circuit") + (r.niveau.plan ? ". " : r.niveau.zone ? " : " + (r.niveau.traverse || []).map(q => NOMS_LIEUX[q] || q).join(", ") + ". " : " (" + r.note.note + " / 100). ") + (r.change ? r.change + " " : "") + (r.niveau.zone ? "Essaie-la, ou génères-en une autre." : "Essaie-le, ou retouche-le en touchant le plan.")
+      edAtelier(r.niveau, true); ED.msg = (r.niveau.zone ? (r.niveau.zone.velo ? "Voici ta boucle" : "Voici ta ville") : "Voici ton circuit") + (r.niveau.plan ? ". " : r.niveau.zone ? " : " + (r.niveau.traverse || []).map(q => NOMS_LIEUX[q] || q).join(", ") + ". " : " (" + r.note.note + " / 100). ") + (r.change ? r.change + " " : "") + (r.niveau.zone ? "Essaie-la, ou génères-en une autre." : "Essaie-le, ou retouche-le en touchant le plan.")
         + (r.sol && !r.sol.ok ? " Son sol a une marche quelque part : « Générer un autre » peut l'éviter." : ""); edEtat(); });
     return; }
   if (act === "reprendre") { edAtelier(lireReglage(ED_CLE, null), false); return; }

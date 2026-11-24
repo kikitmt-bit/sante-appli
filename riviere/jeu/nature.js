@@ -11,7 +11,7 @@ const BOIS_NOMS = {bois: ["Le bois des Roucool", "Le bois du Loup", "Le bois Jol
   clairiere: ["La clairière", "La clairière de la Mare", "Le rond des Fées"], panneau: ["LE BOIS", "LES PRÉS", "CHEMIN VERT"], haut: ["LA CRÊTE", "L'ÉTANG", "LE MOULIN", "LA FERME", "LE CREUX", "LA SOURCE"], hameau: ["des Noisetiers", "du Puits", "de la Croix", "des Roses", "du Four", "des Abeilles", "de la Chapelle", "du Vieux Pont"]};
 
 /* les deux portes : par où l'on quitte la ville (x), par où l'on y revient (y) ; de y à x, on suit les rues du bord. Une porte au milieu d'une rue devient un carrefour de plus. */
-function portesNature(T, bord, bouts, g, R, total, fN) {
+function portesNature(T, bord, bouts, g, R, total, fN, velo) {
   const n = bord.length, sens = bord.reduce((s, a, i) => s + a.x * bord[(i + 1) % n].z - bord[(i + 1) % n].x * a.z, 0) > 0 ? 1 : -1, estCoupe = (a, b) => g.pris.some(c => c.a === a && c.b === b || c.b === a && c.a === b);
   const coupee = q => { const [i, j] = q.id.split(",").map(Number); return T.mailles.some(m => m.c && g.pris.includes(m.c) && (m.i === i || m.i === i - 1) && (m.j === j || m.j === j - 1)); };   // à côté d'une maille coupée, une rue continue souvent plus loin
   const P = [];   // les portes possibles, à leur place le long du bord
@@ -22,7 +22,7 @@ function portesNature(T, bord, bouts, g, R, total, fN) {
   // les coins où une placette tiendrait (Kiki : « on coupe le virage par la place, c'est réaliste, ça varie ») : on garde de préférence des portes qui en laissent un dans la ville
   const coins = []; { let w = 0; for (let i = 0; i < n; i++) { const a = bord[i], b = bord[(i + 1) % n], av = bord[(i + n - 1) % n], th = angleV(versV(av, a), versV(a, b)) * sens; if (!a.mi && !av.mi && !b.mi && th > 1.1 && th < 2.05 && distV(av, a) > 60 && distV(a, b) > 60 && !estCoupe(av, a) && !estCoupe(a, b)) coins.push(w); w += distV(a, b); } }
   const tour = s, ville = total * (1 - fN); let C = [];
-  for (const x of P) if (x.pour.includes("x")) for (const y of P) if (y.pour.includes("y") && y.i !== x.i && (total < 1000 || x.t + y.t < 4)) { const l = ((x.s - y.s) % tour + tour) % tour, rues = l + (x.t === 1 ? 82 : 0) + (y.t === 1 ? 82 : 0), reste = tour - l; if (l < 110 || reste < 60 || Math.abs(rues - ville) > ville * (total < 1000 ? .4 : .24) || distV(x.q, y.q) > (total - rues) * (total < 1000 ? .5 : .62) || distV(x.q, y.q) < 50) continue; C.push({x, y, l, rues, coin: coins.some(q => { const w = ((q - y.s) % tour + tour) % tour; return w > 50 && w < l - 50; })}); }
+  for (const x of P) if (x.pour.includes("x")) for (const y of P) if (y.pour.includes("y") && y.i !== x.i && (total < 1000 || x.t + y.t < 4)) { const l = ((x.s - y.s) % tour + tour) % tour, rues = l + (x.t === 1 ? 82 : 0) + (y.t === 1 ? 82 : 0), reste = tour - l; if (l < 110 || reste < 60 || Math.abs(rues - ville) > ville * (total < 1000 ? .4 : .24) || distV(x.q, y.q) > (total - rues) * (velo ? .46 : total < 1000 ? .5 : .62) || distV(x.q, y.q) < (velo ? 90 : 50)) continue; C.push({x, y, l, rues, coin: coins.some(q => { const w = ((q - y.s) % tour + tour) % tour; return w > 50 && w < l - 50; })}); }
   if (!C.length) throw new Error("aucune porte de ville");
   if (C.some(q => q.coin)) C = C.filter(q => q.coin);
   const c = C[Math.floor(R() * C.length)], noeud = p => { if (p.t === 1) return bord[p.i]; const A = p.e.a, B = p.e.b, m = {id: "m" + p.e.d + p.e.i + "," + p.e.j, x: (A.x + B.x) / 2, z: (A.z + B.z) / 2, mi: true}; T.N.set(m.id, m); p.e.milieu = m; bouts.add(m); return m; };

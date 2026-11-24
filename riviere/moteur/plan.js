@@ -220,13 +220,14 @@ const coinsBoite = b => [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([u, v]) => [b.
 function seTouchent(a, b) { const A = a.l ? boiteObjet(a) : null, B = b.l ? boiteObjet(b) : null; if (!A && !B) return Math.hypot(a.x - b.x, a.z - b.z) < (a.r || 0) + (b.r || 0) - .05; if (A && !B) return distBoite(A, b.x, b.z) < (b.r || 0) - .05; if (B && !A) return distBoite(B, a.x, a.z) < (a.r || 0) - .05;
   return coinsBoite(A).concat([[A.x, A.z]]).some(([x, z]) => distBoite(B, x, z) < -.08) || coinsBoite(B).concat([[B.x, B.z]]).some(([x, z]) => distBoite(A, x, z) < -.08); }
 const PETITS_PLAN = ["lampadaire", "voiture", "boite_lettres", "massif", "banc", "poubelle", "terrasse", "etal", "buisson", "longue_vue", "rang_ble", "rang_tournesols", "rang_lavande", "rang_vignes", "bruyere", "ruche"];   // (lot 3) ce qui ne se voit plus à 110 m
+const PETITS_VELO = ["carre_potager", "cabane_jardin", "plate_bande", "massif"];   // (étape 15, lot 1b) les mêmes, en plus, sur un circuit à vélo tiré au sort (NIVEAU.files)
 const SOUS_BOIS = ["fougere", "buisson_bois", "jeune_pousse", "rocher_mousse", "tronc_couche"];   // (étape 14) ce qui ne se voit plus à 55 m
 /* poser tout ça dans le monde (appelé par decor.js, comme le reste du décor) : par carrés de 64 m, clés « p… » (« f… » : la forêt) */
 function* poserPlan(formes, MD, K, poses) {
   remplirPlan(); const R = hasard(PLAN.graine * 331 + 7); let n = 0;
   for (const q of PLAN.objets) {
     const recette = OBJETS[q.o]; if (!recette) { console.warn("Objet inconnu : " + q.o); continue; }
-    const sorte = NIVEAU.sorte, CA = q.masse || q.haie && !sorte ? 120 : 64, k = (q.masse ? "f" : sorte && q.bois ? "b" : sorte && SOUS_BOIS.includes(q.o) ? "s" : q.haie ? "n" : sorte && PETITS_PLAN.includes(q.o) ? "q" : sorte && q.o === "immeuble_pente" ? "i" : "p") + Math.floor(q.x / CA) + "," + Math.floor(q.z / CA); if (!formes.has(k)) formes.set(k, new Forme());
+    const sorte = NIVEAU.sorte, CA = q.masse || q.haie && !sorte ? 120 : 64, k = (q.masse ? "f" : sorte && q.bois ? "b" : sorte && SOUS_BOIS.includes(q.o) ? "s" : q.haie ? "n" : sorte && (PETITS_PLAN.includes(q.o) || NIVEAU.files && PETITS_VELO.includes(q.o)) ? "q" : sorte && q.o === "immeuble_pente" ? "i" : "p") + Math.floor(q.x / CA) + "," + Math.floor(q.z / CA); if (!formes.has(k)) formes.set(k, new Forme());
     pres(q.x, q.z); const s = sLigne(Q.i), cote = Q.d > 0 ? "d" : "g", e = Q.e;
     const F = formes.get(k), n0 = F.m.length; recette(F.poser(q.x, PLAN.haut(q.x, q.z) + (q.dy || 0), q.z, q.lacet || 0, q.ech || 1).matiere(2), Object.assign({eau: 3, _s: s, _cote: cote, _e: e}, q), R, K);
     if (q.incline) { const gx = (PLAN.sol(q.x + 1, q.z) - PLAN.sol(q.x - 1, q.z)) / 2, gz = (PLAN.sol(q.x, q.z + 1) - PLAN.sol(q.x, q.z - 1)) / 2; for (let i = n0; i < F.m.length; i++) if (F.m[i]) F.p[i * 3 + 1] += (F.p[i * 3] - q.x) * gx + (F.p[i * 3 + 2] - q.z) * gz; }   // (étape 13) une voiture garée, une haie : couchées sur la pente (pas leur ombre, déjà posée au sol)

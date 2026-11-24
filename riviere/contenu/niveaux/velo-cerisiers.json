@@ -5900,17 +5900,6 @@
     "dur": false
    },
    {
-    "o": "panneau_route",
-    "x": 151.244,
-    "z": -226.064,
-    "lacet": -0.156,
-    "genre": "deviation",
-    "haut": 1.45,
-    "r": 0.2,
-    "dur": false,
-    "voir": true
-   },
-   {
     "o": "tranchee",
     "x": 151.892,
     "z": -239.527,

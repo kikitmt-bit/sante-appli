@@ -69,7 +69,7 @@ function effetsMaj(t, meteo, nuit) {
   const cx = _oc.dot(_ox), cy = _oc.dot(_oy), sx = Math.round(cx / cran) * cran, sy = Math.round(cy / cran) * cran;
   _oc.addScaledVector(_ox, sx - cx).addScaledVector(_oy, sy - cy);
   O.cam.position.copy(_oc).addScaledVector(L, 350); O.cam.lookAt(_oc); O.cam.updateMatrixWorld(); O.cam.matrixWorldInverse.copy(O.cam.matrixWorld).invert();
-  const cle = Math.round(sx / cran) + "," + Math.round(sy / cran) + "," + Math.round(_oc.dot(L) / 40) + "/" + Math.round(L.x * 500) + "," + Math.round(L.y * 500) + "," + Math.round(L.z * 500) + "/" + (EFFETS.vent ? VENT_U.uVt.value + "," + VENT_U.uVf.value.toFixed(2) : "");
+  const cle = Math.round(sx / cran) + "," + Math.round(sy / cran) + "," + Math.round(_oc.dot(L) / 40) + "/" + Math.round(L.x * 500) + "," + Math.round(L.y * 500) + "," + Math.round(L.z * 500) + "/" + (EFFETS.vent ? (NIVEAU.files ? Math.floor(VENT_U.uVt.value * 5) : VENT_U.uVt.value) + "," + VENT_U.uVf.value.toFixed(2) : "");
   if (cle === O.cle) return;
   O.cle = cle; O.images++;
   PORTEE_U.uOmbreM.value.set(.5, 0, 0, .5, 0, .5, 0, .5, 0, 0, .5, .5, 0, 0, 0, 1).multiply(_om.multiplyMatrices(O.cam.projectionMatrix, O.cam.matrixWorldInverse));
