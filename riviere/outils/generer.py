@@ -42,7 +42,7 @@ def generer(options):
 
 def bilan(niveau=None, circuit=None):
     """Le contrôle complet d'un circuit (piste, sol, décor posé) et sa note : celui d'un fichier du jeu, ou d'un circuit pas encore écrit."""
-    return _node(page.controle(niveau or "essai", circuit=circuit), "BILAN")
+    return _node(page.controle(niveau or "vichy-lac", circuit=circuit), "BILAN")
 
 
 def defauts(b):

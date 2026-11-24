@@ -1078,7 +1078,7 @@ if st.query_params.get("ecran") == "rameur":
     elif q.get("circuit"):
         page_rameur = "rameur_circuit.html"
     else:
-        page_rameur = "riviere/" + (q.get("riviere") if q.get("riviere") not in (None, "", "1") else "kanto-1km")
+        page_rameur = "riviere/" + (q.get("riviere") if q.get("riviere") not in (None, "", "1") else "vichy-lac")
     if not page_rameur.startswith("riviere/"):  # les anciens jeux seulement : La Rivière ne se sert pas de la partie Poké Fit
         try:  # la région et les arènes de Poké Fit : le décor et les séances d'arène à débloquer
             voyage_r = pokemon.charger_jeu(lire, aujourd_r, JOUEUR)[1]["voyage"]

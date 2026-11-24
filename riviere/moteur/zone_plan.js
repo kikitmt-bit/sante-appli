@@ -30,15 +30,15 @@ function planDeZone() {
   const rampe = (k, s) => { let m = -99; for (const p of platsDe[k]) m = Math.max(m, Math.min(s - p.s0, p.s1 - s)); return m; };
   const surPlat = (k, s) => clamp(1 + rampe(k, s) / RAMPE, 0, 1);
   const surPassage = (x, z, plus = 2) => passages.find(p => { const ex = x - p.x, ez = z - p.z; return Math.abs(ex * p.dx + ez * p.dz) < p.l + plus && Math.abs(ez * p.dx - ex * p.dz) < p.w; }) || null;
-  function nature(x, z) {   // « chaussee », « passage », « trottoir », « place » (pavés), « allee », « jardin », « pelouse », « dehors »
+  function nature(x, z) {   // « chaussee », « passage », « trottoir », « place » (pavés), « allee », « chemin » (de terre), « jardin », « pelouse », « dehors »
     Z.champs(x, z);
     if (D.f < 0) return surPassage(x, z) ? "passage" : "chaussee";
-    if (D.t < 0) return "trottoir"; if (D.p < 0) return "place"; if (D.a < 0) return "allee";
-    return Math.min(D.t, D.p, D.a) < 16 ? "jardin" : Z.bord(x, z) > 0 ? "dehors" : "pelouse";
+    if (D.t < 0) return "trottoir"; if (D.p < 0) return "place"; if (D.a < 0) return "allee"; if (D.c < 0) return "chemin";
+    return Math.min(D.t, D.p, D.a, D.c) < 16 ? "jardin" : Z.bord(x, z) > 0 ? "dehors" : "pelouse";
   }
   const MARCHE = .12;   // la hauteur d'une bordure
   const haut = (x, z) => { const h = Z.sol(x, z); Z.champs(x, z); if (D.f >= 0) return h; const k = D.k; return h - MARCHE * (1 - surPlat(k, Z.place(k, x, z).s)); };
-  const distDur = (x, z) => { Z.champs(x, z); return Math.min(D.t, D.p, D.a); };   // la distance au sol dur le plus proche (négative : dessus)
+  const distDur = (x, z) => { Z.champs(x, z); return Math.min(D.t, D.p, D.a, D.c); };   // la distance au sol dur le plus proche (négative : dessus)
   return {zone: Z, graine: Z.graine, nature, haut, bord: Z.bord, sol: Z.sol, passages, plateaux: plats, surPlat, rampe, RAMPE, MARCHE, surPassage, distDur, objets: [], sols: [], entrees: [], maisons: [], enMarches: (x, z, plus = 0) => { Z.champs(x, z); const k = D.k, m = k >= 0 && V[k].marches; if (!m) return false; const s = Z.place(k, x, z).s; return s > m.a - plus && s < m.b + plus; }};
 }
 
@@ -51,6 +51,7 @@ function remplirZone() {
   const BOITES = new Map(), cle = (a, b) => a * 4096 + b;
   const autour = (x, z, f) => { const cx = Math.floor(x / 16), cz = Math.floor(z / 16); for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const q of BOITES.get(cle(cx + a, cz + c)) || []) if (f(q)) return true; return false; };
   const prendre = b => { const k = cle(Math.floor(b.x / 16), Math.floor(b.z / 16)); if (!BOITES.has(k)) BOITES.set(k, []); BOITES.get(k).push(b); };
+  const boitesDe = (x, z, d) => autour(x, z, b => distBoite(b, x, z) < d), sauvages = g => ((NIVEAU.sauvages || {})[g] || {}).nums || [];
   const boite = (x, z, lacet, l, p) => ({x, z, c: Math.cos(lacet), s: Math.sin(lacet), l: l / 2, p: p / 2});
   const points = b => [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0], [.5, 1], [-.5, 1], [0, 0]].map(([u, v]) => [b.x + u * b.l * b.c + v * b.p * b.s, b.z - u * b.l * b.s + v * b.p * b.c]);
   const croise = (A, B, m) => { const G = Object.assign({}, A, {l: A.l + m, p: A.p + m}); return points(G).some(([x, z]) => distBoite(B, x, z) < 0) || points(B).some(([x, z]) => distBoite(G, x, z) < 0); };
@@ -58,7 +59,7 @@ function remplirZone() {
   const tient = (b, m, libre = .9) => !dansVue(b.x, b.z, 4) && points(b).every(([x, z]) => P.distDur(x, z) >= libre && Z.bord(x, z) <= -3) && !autour(b.x, b.z, q => croise(b, q, m));
   // un point du bord d'une voie : sg = -1 à gauche, 1 à droite ; e mètres derrière le trottoir ; (nx, nz) : vers la rue
   const bord = (v, sg, s, e) => { const q = Z.enVoie(v, s, sg * (v.h + e)), nx = sg * q.tz, nz = -sg * q.tx; return {x: q.x, z: q.z, nx, nz, lacet: Math.atan2(nx, nz)}; };
-  const styleEn = (v, sg, s) => { const b = sg < 0 ? v.g : v.d, def = v.sol === "chaussee" ? "maisons" : v.sol === "paves" ? "mur" : "arbres"; if (!b) return def; if (typeof b === "string") return b; const q = b.find(a => s >= (a.a || 0) && s < (a.b === undefined ? 1e9 : a.b)); return q ? q.style : def; };
+  const styleEn = (v, sg, s) => { const b = sg < 0 ? v.g : v.d, def = v.sol === "chaussee" ? "maisons" : v.sol === "paves" ? "mur" : v.sol === "terre" ? "rien" : "arbres"; if (!b) return def; if (typeof b === "string") return b; const q = b.find(a => s >= (a.a || 0) && s < (a.b === undefined ? 1e9 : a.b)); return q ? q.style : def; };
   const noms = ["Boulangerie", "Librairie", "Fleuriste", "Café", "Épicerie", "Coiffeur", "Pharmacie", "Cycles", "Pâtisserie", "Primeur", "Presse", "Cordonnier"]; let kEns = Math.floor(R() * 12);
   const chemin = (x0, z0, x1, z1, w, nature = "trottoir") => P.sols.push({x0, z0, x1, z1, w, nature});
   // 0. les parvis : le trottoir élargi devant chaque file de boutiques (avant tout le reste : il compte dans les distances)
@@ -101,7 +102,7 @@ function remplirZone() {
     const run = (a, b) => { if (b - a < 3.4) return; for (let s = a; s < b - .4;) {
       let c = Math.min(b, s + .5); const A = bord(v, sg, s, .5), m = MS.find(q => s >= q.sa && s < q.sb), fin = m ? Math.min(b, Math.max(m.sb, s + .6)) : b;
       for (;;) { const n = Math.min(fin, c + .5); if (n <= c || n - s > 3.2) break; const B = bord(v, sg, n, .5), M = bord(v, sg, (s + n) / 2, .5); if (Math.hypot((A.x + B.x) / 2 - M.x, (A.z + B.z) / 2 - M.z) > .06) break; c = n; }
-      const B = bord(v, sg, c, .5), l = Math.hypot(B.x - A.x, B.z - A.z), n = bord(v, sg, (s + c) / 2, .5), genre = m ? m.genre : styleEn(v, sg, s) === "haie" ? "haie" : ["barriere", "haie"][Math.floor(s / 34 + v.k * 3 + sg) & 1], h = genre === "haie";
+      const B = bord(v, sg, c, .5), l = Math.hypot(B.x - A.x, B.z - A.z), n = bord(v, sg, (s + c) / 2, .5), genre = m ? m.genre : styleEn(v, sg, s) === "haie" ? "haie" : styleEn(v, sg, s) === "cloture" ? "cloture_bois" : ["barriere", "haie"][Math.floor(s / 34 + v.k * 3 + sg) & 1], h = genre === "haie";
       if (l > .5) poser(genre, (A.x + B.x) / 2, (A.z + B.z) / 2, Math.atan2(-(B.z - A.z), B.x - A.x), {long: l + (h ? .06 : 0), h: h ? (m ? m.hh : .7) : genre === "muret" ? .6 : undefined, l, p: h ? .75 : .4, dur: true, haie: true, incline: h}); s = c; } };
     for (let s = 0; s <= v.L; s += .5) { const on = bonne(s); if (on && debut === null) debut = s; if ((!on || s + .5 > v.L) && debut !== null) { run(debut, s - .25); debut = null; } } } }
   // 4 bis (lot 3). une ruelle entre ses murs (une haie haute par endroits) ; un escalier entre deux murets à main courante ; le garde-corps d'un belvédère
@@ -113,6 +114,18 @@ function remplirZone() {
       poser(g, (A.x + B.x) / 2, (A.z + B.z) / 2, L, {long: l + .04, l, p: .4, dur: true, haie: true, h: rampe ? .5 : mur ? 2.05 : 1.5, rampe, ton, lampe, porte: mur && !rampe && l > 2 && R() < .07, lierre: mur && !rampe && R() < .3, incline: !mur}); s = c; } } }
   for (const p of Z.places) for (const i of p.garde || []) { const A = p.pts[i], B = p.pts[(i + 1) % p.pts.length], l = Math.hypot(B.x - A.x, B.z - A.z), ux = (B.x - A.x) / l, uz = (B.z - A.z) / l, ex = p.cx - (A.x + B.x) / 2, ez = p.cz - (A.z + B.z) / 2, d = Math.hypot(ex, ez), nx = ex / d, nz = ez / d, g = p.garde, n = p.pts.length, a0 = g.includes((i + n - 1) % n) ? .35 : 1.4, a1 = l - (g.includes((i + 1) % n) ? .35 : 1.4), m = Math.max(1, Math.round((a1 - a0) / 2.6));
     for (let k = 0; k < m; k++) { const s = a0 + (k + .5) * (a1 - a0) / m; poser("garde_corps", A.x + ux * s + nx * .35, A.z + uz * s + nz * .35, Math.atan2(-uz, ux), {long: (a1 - a0) / m + .02, l: (a1 - a0) / m, p: .3, dur: true, haie: true}); } }
+  // 4 ter (étape 14). la campagne : les clôtures le long d'un chemin ("cloture" : des prés, "haie" : entre deux jardins), les potagers, le verger
+  for (const v of V) { if (v.sol !== "terre") continue; for (const sg of [-1, 1]) {
+    const ok = (s, st) => { if (styleEn(v, sg, s) !== st) return false; const e = st === "haie" ? .85 : 1.1, q = bord(v, sg, s, e), d = P.distDur(q.x, q.z); return d > e - .25 && !boitesDe(q.x, q.z, .5); };
+    for (let s = .5; s < v.L - .5;) { const st = styleEn(v, sg, s); if (st !== "cloture" && st !== "haie" || !ok(s, st)) { s += .5; continue; }
+      const e = st === "haie" ? .85 : 1.1; let c = s; while (c + .5 <= Math.min(v.L, s + (st === "haie" ? 3 : 2.7)) && ok(c + .5, st)) { c += .5; const A = bord(v, sg, s, e), B = bord(v, sg, c, e), M = bord(v, sg, (s + c) / 2, e); if (Math.hypot((A.x + B.x) / 2 - M.x, (A.z + B.z) / 2 - M.z) > .09) break; }
+      if (c - s < (st === "haie" ? 1.6 : 1)) { s = c + .5; continue; } const A = bord(v, sg, s, e), B = bord(v, sg, c, e), l = Math.hypot(B.x - A.x, B.z - A.z), L = Math.atan2(-(B.z - A.z), B.x - A.x), h = st === "haie";
+      poser(h ? "haie" : "cloture_bois", (A.x + B.x) / 2, (A.z + B.z) / 2, L, {long: l + (h ? .06 : 0), h: h ? 1.1 : undefined, l, p: h ? .75 : .3, dur: true, haie: true, incline: h}); s = c; } } }
+  const tournee = (a, x, z) => { const q = a.pts, i = a.cote || 0, A = q[i], B = q[(i + 1) % q.length], l = Math.hypot(B.x - A.x, B.z - A.z), ux = (B.x - A.x) / l, uz = (B.z - A.z) / l; return {ux, uz, x: a.cx + ux * x - uz * z, z: a.cz + uz * x + ux * z, lacet: Math.atan2(-uz, ux)}; };   // une place dans une aire, rangée le long d'un de ses côtés (cote)
+  for (const a of Z.aires) { const R2 = hasard(P.graine * 31 + Math.round(a.cx)), t2 = (u, w) => u + (w - u) * R2(), G = Math.hypot(a.x1 - a.x0, a.z1 - a.z0) / 2;
+    if (a.genre === "potagers") { let cab = 0; for (let x = -G; x < G; x += 6.4) for (let z = -G; z < G; z += 5.2) { const q = tournee(a, x, z), cabane = cab % 5 === 2; if (Z.distPlace(a, q.x, q.z) > -2.4) continue; const b = boite(q.x, q.z, q.lacet, cabane ? 2.8 : 5, cabane ? 2.4 : 3.8); if (!tient(b, .6, 1)) continue; prendre(b); cab++; poser(cabane ? "cabane_jardin" : "carre_potager", q.x, q.z, q.lacet, {l: cabane ? 2.8 : 5, p: cabane ? 2.4 : 3.8, dur: true, voir: cabane}); } }
+    if (a.genre === "verger") for (let x = -G; x < G; x += 6) for (let z = -G; z < G; z += 6) { const q = tournee(a, x + t2(-.3, .3), z + t2(-.3, .3)); if (Z.distPlace(a, q.x, q.z) > -2 || P.distDur(q.x, q.z) < 2.6 || boitesDe(q.x, q.z, 3)) continue; poser("arbre_rue", q.x, q.z, R2() * 6, {esp: a.esp || "pommier", r: .5, couronne: 1.9, ech: .74, dur: P.distDur(q.x, q.z) < 6}); }
+    if (a.genre === "pre") for (let k = 0; k < 26; k++) { const x = t2(a.x0, a.x1), z = t2(a.z0, a.z1); if (Z.distPlace(a, x, z) > -5 || P.distDur(x, z) < 5) continue; if (k % 5 === 0) poser("meule", x, z, t2(0, 6), {r: 1.6}); else if (k % 2 && sauvages("pre").length) poser("pokemon", x, z, 0, {num: choix(sauvages("pre")), r: .8}); } }
   // 5. la rue : réverbères d'un côté puis de l'autre, voitures garées, boîtes aux lettres
   for (const v of V) { if (v.sol !== "chaussee") continue; let k = 0;
     for (let s = 7; s < v.L - 4; s += 13) { const sg = k++ % 2 ? 1 : -1, q = Z.enVoie(v, s, sg * (v.l / 2 + .38)); Z.champs(q.x, q.z); if (Math.abs(D.f - .38) > .1 || P.passages.some(p => Math.hypot(p.x - q.x, p.z - q.z) < p.l + 2.2) || !degage(q.x, q.z, 1.04)) continue; poser("lampadaire", q.x, q.z, 0, {r: .24, dur: true, bordure: true}); }
@@ -136,18 +149,31 @@ function remplirZone() {
     if (t < .55) poser(t < .3 ? "massif" : "buisson", x, z, 0, {r: 1.1}); else if (degage(x, z, 3.3)) poser("arbre_rue", x, z, R() * 6, {esp: t < .8 ? "pommier" : "cerisier", r: .5, couronne: 1.6, ech: .62}); } }
   // (24/11, Kiki : « un gros arbre qui flotte, sans tronc ») les silhouettes de forêt n'ont pas de tronc : jamais à moins de 40 m du chemin, et un peu enfoncées
   for (let x = Z.xa + 20; x < Z.xb - 20; x += 4.6) for (let z = Z.za + 20; z < Z.zb - 20; z += 4.6) {
-    const X = x + tire(-1.9, 1.9), Y = z + tire(-1.9, 1.9), u = R(), v = R(), w = R(), bz = Z.bord(X, Y); if (bz > 6 || dansVue(X, Y) || dansJardin(X, Y)) continue; const d = Math.min(P.distDur(X, Y), bz + Z.MARGE); pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]), dense = d > 24 && proche > 40 ? .72 : d > 13 ? (proche > 40 ? .3 : .2) : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
+    const X = x + tire(-1.9, 1.9), Y = z + tire(-1.9, 1.9), u = R(), v = R(), w = R(), bz = Z.bord(X, Y); if (bz > 6 || dansVue(X, Y) || dansJardin(X, Y)) continue; const d = Math.min(P.distDur(X, Y), bz + Z.MARGE); pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]);
+    // (étape 14) un bois : de vrais troncs près du chemin, des silhouettes loin ; un pré, un verger : presque rien
+    const ai = Z.aireEn(X, Y, 3), g = ai && ai.genre; if (g && g !== "foret") { if (g !== "pre" || u > .012 || d < 6 || proche < 8 || !libreA(X, Y, 3)) continue; semer(X, Y, 3); poser("arbre_rue", X, Y, v * 6.28, {r: .6, couronne: 2.5}); continue; }
+    if (g) { if (proche > 42) { if (d < 3 || u > .86 || boitesPres(X, Y, 2.1) || !libreA(X, Y, 1.9)) continue; semer(X, Y, 1.9); poser("masse_bois", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: 1 + w * .5, masse: true, dy: -.5}); }
+      else if (d > 1.5 && u < .84 && proche > 2.5 && libreA(X, Y, 2) && !boitesPres(X, Y, 1.5)) { semer(X, Y, 2); poser("arbre_bois", X, Y, v * 6.28, {r: .45, couronne: 2.4, ech: .86 + w * .34, dur: d < 6, bois: true}); } continue; }
+    const dense = d > 24 && proche > 40 ? .72 : d > 13 ? (proche > 40 ? .3 : .2) : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
     const loin = proche > 40 && d > 13, r = loin && d > 24 ? 1.9 : 2.5; if (!libreA(X, Y, r) || proche < 4.8) continue; semer(X, Y, r);
     if (loin) poser("arbre_masse", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: .85 + w * .4, masse: true, dy: -.5}); else poser("arbre_rue", X, Y, v * 6.28, {r: .6, couronne: 2.5, dur: d < 6}); }
+  // (étape 14) le sous-bois, seulement le long du chemin : fougères en nappes, jeunes pousses, rochers moussus, un tronc couché de temps en temps
+  if (Z.aires.length) for (let x = Z.xa + 20; x < Z.xb - 20; x += 1.7) for (let z = Z.za + 20; z < Z.zb - 20; z += 1.7) { const u = R(), v = R(), w = R(), X = x + (v - .5) * 1.5, Y = z + (w - .5) * 1.5; if (u > .5) continue; pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]); if (proche > 15 || proche < 1.7) continue;
+    const a = Z.aireEn(X, Y, 3); if (!a || a.genre !== "foret") continue; const d = P.distDur(X, Y), nappe = fbm(X / 11 + 2, Y / 11 + 8); if (d < .55 || boitesPres(X, Y, .8)) continue;
+    if (u < .006 && d > 1.2 && proche > 3.4 && libreA(X, Y, 1.7)) { semer(X, Y, 1.7); poser(w < .5 ? "tronc_couche" : "rocher_mousse", X, Y, v * 6.28, {r: 1.1, dur: d < 6, voir: proche < 6}); }
+    else if (nappe > .5 && u < (nappe - .5) * 4.2 && libreA(X, Y, .62)) { semer(X, Y, .62); poser("fougere", X, Y, v * 6.28, {r: .5, ech: .7 + w * .6, libre: true}); }
+    else if (u > .436 && u < .466 && d > 1.5 && proche > 2.6 && libreA(X, Y, 1.75)) { semer(X, Y, 1.75); poser("arbre_bois", X, Y, v * 6.28, {r: .45, couronne: 2.4, ech: .84 + w * .3, dur: d < 6, bois: true}); }
+    else if (u > .466 && u < .486 && proche > 2.6 && libreA(X, Y, .95)) { semer(X, Y, .95); poser("buisson_bois", X, Y, v * 6.28, {r: .7, ech: .7 + w * .6, libre: true}); }
+    else if (u > .488 && libreA(X, Y, 1)) { semer(X, Y, 1); poser("jeune_pousse", X, Y, v * 6.28, {r: .4, libre: true}); } }
   // 7. les passants et les Pokémon : près du chemin, jamais dessus
   const gens = (NIVEAU.peuple || []).filter(q => q.o === "habitant").map(q => q.nom), nums = (NIVEAU.peuple || []).filter(q => q.o === "pokemon").map(q => q.num); let kg = 0, dernier = -99;
-  for (let i = 12; i < PISTE.N - 6; i++) { if (i - dernier < 26) continue; const a = PISTE.H[i], sg = R() < .5 ? -1 : 1;
+  for (let i = 12; i < PISTE.N - 6; i++) { if (i - dernier < 26) continue; const a = PISTE.H[i], sg = R() < .5 ? -1 : 1; let saut = 0;
     for (const sd of [sg, -sg]) { const e = tire(2.1, 4.6), x = PISTE.X[i] + Math.cos(a) * e * sd, z = PISTE.Z[i] + Math.sin(a) * e * sd, n = P.nature(x, z); if (!degage(x, z, 1.5) || P.surPassage(x, z, 3) || !libreA(x, z, .9) || boitesPres(x, z, .7)) continue;
-      if ((n === "trottoir" || n === "place") && gens.length) poser("habitant", x, z, 0, {nom: gens[kg++ % gens.length], r: .3, voir: true}); else if (n === "jardin" && nums.length && P.distDur(x, z) > .9) poser("pokemon", x, z, 0, {num: nums[kg++ % nums.length], r: .4, voir: true}); else continue;
-      semer(x, z, .9); dernier = i + Math.floor(tire(-6, 8)); break; } }
+      if ((n === "trottoir" || n === "place") && gens.length) poser("habitant", x, z, 0, {nom: gens[kg++ % gens.length], r: .3, voir: true}); else if (n === "jardin" && nums.length && P.distDur(x, z) > .9) { const a = Z.aireEn(x, z), S = a ? sauvages(a.genre === "pre" ? "verger" : a.genre) : nums; if (!S.length) continue; poser("pokemon", x, z, 0, {num: S[kg++ % S.length], r: .4, voir: true}); if (a) saut = 20; } else continue;
+      semer(x, z, .9); dernier = i + saut + Math.floor(tire(-6, 8)); break; } }
   // ce qui est loin du parcours ne se voit que de loin : les petits objets n'y sont pas, les arbres y sont de simples silhouettes
   P.objets = P.objets.filter(q => { pres(q.x, q.z); const d = Math.hypot(q.x - PISTE.X[Q.i], q.z - PISTE.Z[Q.i]);
-    if (["massif", "banc", "poubelle", "terrasse", "boite_lettres", "buisson", "etal"].includes(q.o)) return d < 42; if (q.o === "lampadaire" || q.o === "voiture") return d < 60; if (q.haie) return d < 90;
+    if (["massif", "banc", "poubelle", "terrasse", "boite_lettres", "buisson", "etal"].includes(q.o)) return d < 42; if (q.o === "lampadaire" || q.o === "voiture") return d < 60; if (SOUS_BOIS.includes(q.o)) return d < 16; if (q.haie) return d < 90;
     if (["arbre", "arbre_rue", "bouleau"].includes(q.o) && d > 60) { q.o = "arbre_masse"; q.pres = true; q.ech = (q.ech || 1) * .8; q.dur = false; q.dy = -.5; } return true; });
 }
 
@@ -168,12 +194,20 @@ function videZone() {   // le plus long bout où rien ne se passe : {m, i}
   const E = evenementsZone(), N = PISTE.N; if (!E.length) return {m: N, i: 0}; let r = {m: 0, i: 0};
   for (let k = 0; k < E.length; k++) { const a = E[k].i, c = k + 1 < E.length ? E[k + 1].i : E[0].i + N; if (c - a > r.m) r = {m: c - a, i: a}; } return r;
 }
+/* (étape 14) les sorties de ville, une liste fermée : 1. la rue finit, et le chemin part dans le prolongement de son trottoir ; 2. le chemin arrive sur un trottoir, à angle droit (à 25° près) */
+function sortieZone(i) {
+  const Z = PLAN.zone, x = PISTE.X[i], z = PISTE.Z[i]; let k = -1, b = null; for (const v of Z.voies) { if (v.sol !== "chaussee") continue; const q = Z.surVoieZ(v, x, z); if (!b || q.d < b.d) { b = q; k = v.k; } }
+  if (!b || b.d > 12) return "le chemin commence loin de toute rue."; const v = Z.voies[k], e = Z.enVoie(v, b.s); let q = null, w = null; for (const o of Z.voies) if (o.sol === "terre") { const r = Z.surVoieZ(o, x, z); if (!q || r.d < q.d) { q = r; w = o; } } const g = Z.enVoie(w, q.s), c = Math.abs(g.tx * e.tx + g.tz * e.tz), bout = b.s < 1 || b.s > v.L - 1;
+  if (bout && c > .97) return ""; if (!bout && c < .42) return "";
+  return "on passe de « " + (v.nom || v.id) + " » au chemin " + (bout ? "au bout de la rue, mais pas dans le prolongement de son trottoir." : "de biais (" + Math.round(90 - Math.acos(c) * 57.3) + "° au lieu de 0).");
+}
 function zoneControle() {
   const P = PLAN, Z = P.zone, T = PISTE, o = []; remplirZone(); const dire = t => { if (o.length < 30) o.push(t); }; let avant = null;
   for (let i = 0; i < T.N; i++) {
     const a = T.H[i], n = P.nature(T.X[i], T.Z[i]);
     for (const u of [-.7, 0, .7]) { const m = P.nature(T.X[i] + Math.cos(a) * u, T.Z[i] + Math.sin(a) * u); if (!SOLS_A_PIED.includes(m)) dire("Au mètre " + i + ", le coureur marche sur « " + m + " »."); }
     if (avant && n !== avant && !PASSAGES_PERMIS[avant + ">" + n]) dire("Au mètre " + i + ", le sol passe de « " + avant + " » à « " + n + " ».");
+    if (avant && n !== avant && (n === "chemin" || avant === "chemin")) { const m = sortieZone(i); if (m) dire("Au mètre " + i + ", " + m); }
     avant = n; }
   for (const p of P.passages) if (p.route) { const v = Z.voies[p.k], e = Z.enVoie(v, p.s), an = Math.abs(p.dx * e.tx + p.dz * e.tz);
     if (an > Math.sin(.49)) dire("Au mètre " + p.i0 + ", on traverse « " + (v.nom || v.id) + " » en biais (" + Math.round(Math.asin(an) * 57.3) + "°)."); if (p.l > 6) dire("Au mètre " + p.i0 + ", la traversée fait " + Math.round(p.l * 2 - 1.4) + " m."); }

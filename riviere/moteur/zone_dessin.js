@@ -15,11 +15,12 @@ async function construireZone(cede) {   // cede : rendre la main toutes les 40 m
   const chaussee = (x, z) => { Z.champs(x, z); const k = D.k; return Z.sol(x, z) - (k < 0 ? P.MARCHE : P.MARCHE * (1 - P.surPlat(k, Z.place(k, x, z).s))); };   // la hauteur de la chaussée (plus bas que le trottoir, sauf sur un plateau)
   const tri = (a, b, c, t, N, U, q = 0) => { const M = morceau(q, (a[0] + b[0] + c[0]) / 3, (a[2] + b[2] + c[2]) / 3); [a, b, c].forEach((v, k) => { const n = N || normale(v[0], v[2]); M.p.push(v[0], v[1], v[2]); M.n.push(n[0], n[1], n[2]); M.t.push(t); M.u.push(U ? U[k][0] : 0, U ? U[k][1] : 0); }); };
   // l'herbe, avec la matière du monde (les deux tons en taches), par carrés
-  const CH = longue ? 64 : 96, HB = new Map(), forme = (x, z) => { const k = Math.floor(x / CH) + "," + Math.floor(z / CH); if (!HB.has(k)) HB.set(k, new Forme()); return HB.get(k); }, tons = SOLS.herbe.c, ton = (x, z) => tons[(bruit(x / 5.5 + 9, z / 5.5 + 2) > .56 ? 1 : 0) % tons.length];
+  const CH = longue ? 64 : 96, HB = new Map(), forme = (x, z) => { const k = Math.floor(x / CH) + "," + Math.floor(z / CH); if (!HB.has(k)) HB.set(k, new Forme()); return HB.get(k); }, tons = SOLS.herbe.c, TON_AIRE = {foret: ["#5E9C46", "#7C8E4A"], clairiere: ["#8ED65E", "#80C852"], pre: ["#A2D868", "#94CC5C"]}, tonsAire = Object.fromEntries(Object.entries(TON_AIRE).map(([k, l]) => [k, l.map(hex)]));
+  const ton = (x, z) => { const a = Z.aires.length ? Z.aireEn(x, z, 4) : null, T = a && tonsAire[a.genre] || tons; return T[(bruit(x / 5.5 + 9, z / 5.5 + 2) > .56 ? 1 : 0) % T.length]; };   // (étape 14) l'herbe d'un pré, le sol d'un bois
   const avecMarches = V.some(v => v.marches), creux = (x, z) => avecMarches && P.enMarches(x, z, -.1) && Math.abs(D.u) < V[D.k].l / 2 + .42 ? .34 : 0;   // (lot 3) l'herbe ne dépasse pas des marches, au pied de leurs murets
   const herbe = L => { const F = forme(L[0].x, L[0].z); for (let i = 1; i + 1 < L.length; i++) for (const q of [L[0], L[i], L[i + 1]]) { const n = normale(q.x, q.z); F.v(q.x, Z.sol(q.x, q.z) - creux(q.x, q.z), q.z, n[0], n[1], n[2], ton(q.x, q.z), 0); } };
   // couper un polygone convexe là où un champ vaut « val » : [le morceau dessous, le morceau dessus, les deux points de la coupe]
-  const CHAMPS = ["x", "z", "f", "t", "p", "a", "g"];
+  const CHAMPS = ["x", "z", "f", "t", "p", "a", "c", "g"];
   const couper = (L, c, val) => {
     let dedans = 0, dehors = 0; for (const q of L) if (q[c] < val) dedans++; else dehors++;
     if (!dehors) return [L, null, null]; if (!dedans) return [null, L, null];
@@ -28,7 +29,7 @@ async function construireZone(cede) {   // cede : rendre la main toutes les 40 m
       if (vp < 0 !== vq < 0) { const w = vp / (vp - vq), m = {k: p.k, v: p.v}; for (const k of CHAMPS) m[k] = p[k] + (q[k] - p[k]) * w; m[c] = val; A.push(m); B.push(m); T.push(m); } }
     return [A.length > 2 ? A : null, B.length > 2 ? B : null, T.length === 2 ? T : null]; };
   // les sommets de la trame, gardés (chaque point n'est mesuré qu'une fois) ; i, j : en demi-mètres
-  const NX = Math.ceil(Z.xb - Z.xa) + 2, NZ = Math.ceil(Z.zb - Z.za) + 2, memo = new Map(), sommet = (i, j) => { const k = j * NX * 2 + i; let o = memo.get(k); if (!o) { const x = Z.xa + i / 2, z = Z.za + j / 2; Z.champs(x, z); o = {x, z, f: D.f, t: D.t, p: D.p, a: D.a, k: D.e < 6 ? D.k : -1, v: Z.proches()}; memo.set(k, o); } return o; };
+  const NX = Math.ceil(Z.xb - Z.xa) + 2, NZ = Math.ceil(Z.zb - Z.za) + 2, memo = new Map(), sommet = (i, j) => { const k = j * NX * 2 + i; let o = memo.get(k); if (!o) { const x = Z.xa + i / 2, z = Z.za + j / 2; Z.champs(x, z); o = {x, z, f: D.f, t: D.t, p: D.p, a: D.a, c: D.c, k: D.e < 6 ? D.k : -1, v: Z.proches()}; memo.set(k, o); } return o; };
   let kC = -1, kA = -1, kB = -1;   // la voie du petit carré en cours : ses dalles la suivent ; à un coin de rue, il y en a deux (kA, kB) et les dalles se coupent sur la ligne à égale distance des deux
   const bande = q => { const r = Z.place(kC, q.x, q.z); return [r.s, Math.abs(r.u) - V[kC].l / 2]; }, ruelle = q => { const r = Z.place(kC, q.x, q.z); return [r.u, r.s]; }, libre = q => [q.x, q.z];
   const dur = (L, t, U) => { const pts = L.map(q => [q.x, Z.sol(q.x, q.z) - (t === 6 && kC >= 0 && V[kC].marches && P.enMarches(q.x, q.z, -.2) ? .32 : 0), q.z]), u = U ? L.map(U) : null; for (let i = 1; i + 1 < L.length; i++) tri(pts[0], pts[i], pts[i + 1], t, null, u ? [u[0], u[i], u[i + 1]] : null); };
@@ -37,6 +38,7 @@ async function construireZone(cede) {   // cede : rendre la main toutes les 40 m
     const [A, B] = T, ya = chaussee(A.x, A.z), yb = chaussee(B.x, B.z), ha = Z.sol(A.x, A.z), hb = Z.sol(B.x, B.z); if (ha - ya < .003 && hb - yb < .003) return;
     let nx = B.z - A.z, nz = A.x - B.x; const l = Math.hypot(nx, nz) || 1, m = L.reduce((t, q) => t + (q.x - A.x) * nx + (q.z - A.z) * nz, 0), N = [nx / l * (m < 0 ? -1 : 1), 0, nz / l * (m < 0 ? -1 : 1)];
     const a = [A.x, ya - .03, A.z], b = [B.x, yb - .03, B.z], c = [B.x, hb, B.z], d = [A.x, ha, A.z]; tri(a, b, c, 3, N); tri(a, c, d, 3, N); };
+  const bois = (x, z) => { const a = Z.aires.length ? Z.aireEn(x, z, 3) : null; return a && a.genre === "foret" ? 1 : 0; };
   const carre = L0 => {   // un triangle de la trame, coupé selon ce qu'il y a dessous
     let reste = L0, r, T;
     [r, reste, T] = couper(reste, "f", 0); if (r) route(r); if (T) flanc(T, r); if (!reste) return;
@@ -44,10 +46,11 @@ async function construireZone(cede) {   // cede : rendre la main toutes les 40 m
     if (r) { let pierre; [pierre, r] = couper(r, "f", .2); if (pierre) dur(pierre, 2, bande); if (r) dur(r, 1, bande); } if (!reste) return;
     [r, reste] = couper(reste, "p", 0); if (r) dur(r, 6, kC >= 0 && V[kC].sol === "paves" && Z.ecart(kC) < .6 ? ruelle : libre); if (!reste) return;
     [r, reste] = couper(reste, "a", 0); if (r) { let bo; [r, bo] = couper(r, "a", -.18); if (bo) dur(bo, 5); if (r) dur(r, 4); } if (!reste) return;
-    herbe(reste); };
+    herbe(reste);
+    [r] = couper(reste, "c", .62); if (r) { const u = r.map(q => [bois(q.x, q.z), q.c]), pts = r.map(q => [q.x, Z.sol(q.x, q.z) + .015, q.z]); for (let i = 1; i + 1 < r.length; i++) tri(pts[0], pts[i], pts[i + 1], 10, null, [u[0], u[i], u[i + 1]], 1); } };   // (étape 14) un chemin de terre : posé sur l'herbe, ses bords s'effilochent dans le shader (aucun trait entre la terre et l'herbe)
   // trois finesses de trame côte à côte : là où deux se touchent, la plus grosse prend les points de la plus fine (un éventail depuis son milieu), donc jamais une fente
   const G = 4, FIN = new Map(), finEn = (a, b) => { const k = b * NX + a; let v = FIN.get(k); if (v === undefined) { Z.champs(Z.xa + a + .5, Z.za + b + .5); v = Math.abs(D.f) < .8 && Z.arrondi() ? 1 : 2; if (v === 2 && D.f < 0 && D.k >= 0) { const r = P.rampe(D.k, Z.place(D.k, Z.xa + a + .5, Z.za + b + .5).s); if (r > -1.8 && r < .7) v = 1; } FIN.set(k, v); } return v; };
-  const BL = new Map(), bloc = (i, j) => { const k = j * NX + i; let v = BL.get(k); if (v === undefined) { const x = Z.xa + i + G / 2, z = Z.za + j + G / 2; if (Z.bord(x, z) > 1) v = 0; else { Z.champs(x, z); v = Math.min(D.t, D.p, D.a) > 4.2 ? 1 : 2; } BL.set(k, v); } return v; };   // 0 : hors de la zone · 1 : de l'herbe · 2 : à couper
+  const BL = new Map(), bloc = (i, j) => { const k = j * NX + i; let v = BL.get(k); if (v === undefined) { const x = Z.xa + i + G / 2, z = Z.za + j + G / 2; if (Z.bord(x, z) > 1) v = 0; else { Z.champs(x, z); v = Math.min(D.t, D.p, D.a, D.c) > 4.2 ? 1 : 2; } BL.set(k, v); } return v; };   // 0 : hors de la zone · 1 : de l'herbe · 2 : à couper
   const eventail = (c, L, f) => { for (let k = 0; k < L.length; k++) f([c, L[k], L[(k + 1) % L.length]]); };
   for (let j = 0; j + G < NZ; j += G) { if (cede && performance.now() - tc > 40) { await cede(); tc = performance.now(); }
    for (let i = 0; i + G < NX; i += G) {
@@ -89,7 +92,7 @@ async function construireZone(cede) {   // cede : rendre la main toutes les 40 m
   let HL = null; if (longue) { HL = new Forme(); const pas = 8, bas = .5, pt = (x, z, d) => [x, Z.sol(x, z) - d, z];
     for (let x = Z.xa; x < Z.xb; x += pas) for (let z = Z.za; z < Z.zb; z += pas) { if (Z.bord(x + pas / 2, z + pas / 2) > 3) continue; const L = [[x, z], [x + pas, z], [x + pas, z + pas], [x, z + pas]]; for (const i of [0, 1, 2, 0, 2, 3]) { const [X, Y] = L[i], n = normale(X, Y); HL.v(X, Z.sol(X, Y) - bas, Y, n[0], n[1], n[2], ton(X, Y), 0); } }
     const bandeLoin = (v, u0, u1, t, d) => { let a = null; for (let s = 0; s <= v.L + 3.9; s += 4) { const q = Math.min(s, v.L), A = Z.enVoie(v, q, u0), B = Z.enVoie(v, q, u1), b = [pt(A.x, A.z, d), pt(B.x, B.z, d)]; if (a) { tri(a[0], a[1], b[1], t, null, null, 2); tri(a[0], b[1], b[0], t, null, null, 2); } a = b; } };
-    for (const v of V) { const r = v.l / 2; if (v.sol === "chaussee") { bandeLoin(v, -r - v.t, -r, 1, .34); bandeLoin(v, r, r + v.t, 1, .34); bandeLoin(v, -r, r, 0, .26); } else bandeLoin(v, -r, r, v.sol === "paves" ? 6 : 4, .34); }
+    for (const v of V) { const r = v.l / 2; if (v.sol === "chaussee") { bandeLoin(v, -r - v.t, -r, 1, .34); bandeLoin(v, r, r + v.t, 1, .34); bandeLoin(v, -r, r, 0, .26); } else bandeLoin(v, -r, r, v.sol === "paves" ? 6 : v.sol === "terre" ? 11 : 4, .34); }
     for (const p of Z.places) { const c = pt(p.cx, p.cz, .3); for (let i = 0; i + 1 < p.C.length; i += 1) tri(c, pt(p.C[i][0], p.C[i][1], .3), pt(p.C[i + 1][0], p.C[i + 1][1], .3), 6, null, null, 2); } }
   lots.forEach((M, q) => { for (const m of M.values()) { const g = new THREE.BufferGeometry(); g.setAttribute("position", new THREE.Float32BufferAttribute(m.p, 3)); g.setAttribute("normal", new THREE.Float32BufferAttribute(m.n, 3)); g.setAttribute("aT", new THREE.Float32BufferAttribute(m.t, 1)); g.setAttribute("aU", new THREE.Float32BufferAttribute(m.u, 2));
     const o = new THREE.Mesh(g, q === 1 ? MAT_ZONE_PEINT : MAT_ZONE); o.name = q === 2 ? "plan-loin" : "plan"; if (longue && q < 2) voirLoin(o, 0, q ? 100 : 135); scene.add(o); } });

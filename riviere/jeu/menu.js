@@ -150,7 +150,7 @@ function infosCarte(id) {
 }
 function vitesseHabituelle() { return MACHINE.physique ? 7.5 : MACHINE.cadence * M_COUP / 60; }   // en vrais m/s, à l'allure habituelle
 function blocApercu() {
-  const bonne = ACTIVITE[MACHINE_NOM] === DISCIPLINE, T = bonne ? resumeTrace(PISTE, TOUR_VRAI, BOUCLE) : null;
+  const bonne = ACTIVITE[MACHINE_NOM] === DISCIPLINE && !NIVEAU.vide, T = bonne ? resumeTrace(PISTE, TOUR_VRAI, BOUCLE) : null;
   if (!T) return `<div class="m-apercu vide"><p>${circuitsDuMenu().length ? "Choisis un circuit." : "Pas encore de circuit pour cette machine : crée le tien ou génère-le."}</p></div>`;
   const duree = tourMenu(TOUR_VRAI) / Math.max(.5, vitesseHabituelle()), r = record;
   return `<div class="m-apercu"><canvas class="m-grand"></canvas><div class="m-fiche">
@@ -179,7 +179,7 @@ function ouvrirMenu() {
   const el = $("menu"), choisie = MACHINE_CHOISIE || !!lireReglage("riviere_machine", null);
   const enc = lireLS(ENCOURS, null), reprise = enc && aDuContenu(enc) && Date.now() - enc.maj < 12 * 3600e3 && (enc.machine || "rameur") === MACHINE_NOM && gardable(enc) ? enc : null;
   if (enc && !reprise && (enc.machine || "rameur") === MACHINE_NOM) ecrireLS(ENCOURS, null);   // une séance qui ne s'enregistre pas (marcheur elliptique) ou trop vieille : rien à récupérer
-  const attend = (lireLS(ATTENTE, []) || []).length, der = (D.dernieres || {})[MACHINE_NOM] || (MACHINE_NOM === "rameur" ? D.derniere : null), bonne = ACTIVITE[MACHINE_NOM] === DISCIPLINE;
+  const attend = (lireLS(ATTENTE, []) || []).length, der = (D.dernieres || {})[MACHINE_NOM] || (MACHINE_NOM === "rameur" ? D.derniere : null), bonne = ACTIVITE[MACHINE_NOM] === DISCIPLINE && !NIVEAU.vide;
   const liste = circuitsDuMenu();
   MENU.sur = 0; MENU.jet = 0;
   el.innerHTML = `<header class="m-tete"><div class="m-nom">Poké Swift</div>

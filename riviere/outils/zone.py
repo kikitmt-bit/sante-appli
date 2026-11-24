@@ -16,10 +16,10 @@ sys.path.insert(0, str(RACINE))
 import page  # noqa: E402
 from generer import _node, defauts  # noqa: E402
 
-COULEURS = {"chaussee": "#5E5F63", "passage": "#E8E6DF", "trottoir": "#CDC8BC", "place": "#BFB4A3", "allee": "#D9BC88", "jardin": "#9BD672", "pelouse": "#86C860", "dehors": "#5FA04C"}
+COULEURS = {"chaussee": "#5E5F63", "passage": "#E8E6DF", "trottoir": "#CDC8BC", "place": "#BFB4A3", "allee": "#D9BC88", "chemin": "#B0804E", "jardin": "#9BD672", "pelouse": "#86C860", "dehors": "#5FA04C"}
 
 VUE = r"""
-;(() => { const P = PLAN, Z = P.zone, PAS = %s, o = {x0: Z.xa, z0: Z.za, nx: Math.ceil((Z.xb - Z.xa) / PAS), nz: Math.ceil((Z.zb - Z.za) / PAS), pas: PAS, noms: ["chaussee", "passage", "trottoir", "place", "allee", "jardin", "pelouse", "dehors"], n: "", h: []};
+;(() => { const P = PLAN, Z = P.zone, PAS = %s, o = {x0: Z.xa, z0: Z.za, nx: Math.ceil((Z.xb - Z.xa) / PAS), nz: Math.ceil((Z.zb - Z.za) / PAS), pas: PAS, noms: ["chaussee", "passage", "trottoir", "place", "allee", "chemin", "jardin", "pelouse", "dehors"], n: "", h: []};
   for (let j = 0; j < o.nz; j++) for (let i = 0; i < o.nx; i++) o.n += o.noms.indexOf(P.nature(o.x0 + i * PAS, o.z0 + j * PAS));
   for (let j = 0; j < o.nz; j += 4) for (let i = 0; i < o.nx; i += 4) o.h.push(+Z.sol(o.x0 + i * PAS, o.z0 + j * PAS).toFixed(2));
   o.objets = P.objets.map(q => ({o: q.o, x: q.x, z: q.z, lacet: q.lacet || 0, l: q.l, p: q.p, r: q.r, haie: q.haie, masse: q.masse, axe: q.boiteX}));
@@ -62,8 +62,8 @@ def plan(v, fichier, ech=5):
             coins = [pt(q["x"] + a * l * c + b * p * s, q["z"] - a * l * s + b * p * c) for a, b in ((1, 1), (1, -1), (-1, -1), (-1, 1))]
             d.polygon(coins, fill={"maison_pente": "#C8584A", "magasin_pente": "#4A78C8", "immeuble_pente": "#8A68B0", "voiture": "#E8C030"}.get(q["o"], "#2E7A3A"), outline="#402020" if not q.get("haie") else None)
         else:
-            r = {"arbre": 2.3, "arbre_masse": 1.6}.get(q["o"], .5) * ech
-            d.ellipse((x - r, z - r, x + r, z + r), fill={"arbre": "#3F8A3A", "arbre_masse": "#3A7A38", "lampadaire": "#202020", "pokemon": "#FF00C0", "habitant": "#FF7000"}.get(q["o"], "#5FA050"))
+            r = {"arbre": 2.3, "arbre_masse": 1.6, "arbre_bois": 1.2, "arbre_rue": 1.6}.get(q["o"], .5) * ech
+            d.ellipse((x - r, z - r, x + r, z + r), fill={"arbre": "#3F8A3A", "arbre_masse": "#3A7A38", "arbre_bois": "#2E6A30", "arbre_rue": "#3F8A3A", "lampadaire": "#202020", "pokemon": "#FF00C0", "habitant": "#FF7000"}.get(q["o"], "#5FA050"))
     R = v["route"]
     for i in range(len(R)):
         a, b = R[i], R[(i + 1) % len(R)]

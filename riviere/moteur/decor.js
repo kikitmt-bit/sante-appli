@@ -198,7 +198,7 @@ function mailleEtiquette(e) {
   const m = new THREE.Mesh(new THREE.PlaneGeometry(e.l, e.h), new THREE.MeshBasicMaterial({map: t})); m.position.set(e.x, e.y, e.z); m.rotation.y = e.lacet; return m;
 }
 function mailleAnimee(a) { a.maille = a.forme.maille(); a.maille.position.set(a.x, a.y, a.z); a.maille.rotation.order = "YXZ"; a.maille.rotation.y = a.lacet; return a.maille; }
-const VU_DE = {q: [0, 110], n: [0, 130], i: [0, 130], j: [130, 999]};   // (étape 13, lot 3) une ville tirée au sort (NIVEAU.sorte) : de combien de mètres se voient les petits objets, les clôtures, un immeuble détaillé, sa silhouette (plan.js, poserPlan)
+const VU_DE = {q: [0, 110], n: [0, 130], i: [0, 130], j: [130, 999], b: [0, 95], c: [95, 999], s: [0, 55]};   // (étape 13, lot 3) une ville tirée au sort (NIVEAU.sorte) : de combien de mètres se voient les petits objets, les clôtures, un immeuble détaillé, sa silhouette (plan.js, poserPlan)
 async function construireDecor(cede) {   // cede (17/11) : rendre la main toutes les 40 ms entre deux règles et deux maillages (le menu reste vivant) ; le même décor
   let tc = performance.now(); const souffle = async () => { if (cede && performance.now() - tc > 40) { await cede(); tc = performance.now(); } };
   const g = poserDecorPas(); let r; do { r = g.next(); if (!r.done) await souffle(); } while (!r.done);

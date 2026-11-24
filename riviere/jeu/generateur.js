@@ -226,7 +226,7 @@ function genererCircuit(o) {
   const terre = o.activite === "terre", pied = terre && o.style === "pied", huit = terre && !pied && o.forme === "huit";   // pied : le footing (listeFooting)
   if (huit) o = Object.assign({}, o, {boucle: true});
   if (o.forme === "ouvert") o = Object.assign({}, o, {boucle: false});   // (la forme suffit : « De A à B » = pas une boucle)
-  const biome0 = (o.biome || NIVEAU.biome).replace(/-routes$/, ""), biome = terre ? REGION_TERRE(biome0) : biome0, lieux = BIOMES[biome] && BIOMES[biome].lieux || biome0, sens = -1;
+  const biome0 = (o.biome || "kanto").replace(/-routes$/, ""), biome = terre ? REGION_TERRE(biome0) : biome0, lieux = BIOMES[biome] && BIOMES[biome].lieux || biome0, sens = -1;
   const rives = Object.keys(region(biome).rives), a = n => rives.includes(n);
   // la recherche : au plus MAX tirages ; elle s'arrête quand VOULUS tirages tiennent debout, et garde le mieux noté (o.tirages, o.essais : pour chercher plus longtemps)
   const VOULUS = clamp(Math.round(+o.tirages || 8), 1, 200), MAX = clamp(Math.round(+o.essais || Math.max(60, VOULUS * 6)), 1, 1500);

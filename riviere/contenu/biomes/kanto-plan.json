@@ -5,6 +5,7 @@
  "regles": [],
  "forets": [],
  "jonctions": null,
+ "ambiances": {"bois": {"teinte": [0.94, 0.98, 0.9], "sombre": 0.95, "brume": "#CDE8B4", "voile": 0.35, "dense": 0.15, "particules": "pollen"}},
  "rives": {
   "plan": {
    "profil": [

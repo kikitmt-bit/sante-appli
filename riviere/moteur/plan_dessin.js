@@ -4,7 +4,7 @@
 const PLAN_VS = `attribute float aT; attribute vec2 aU; varying vec3 vW, vN; varying float vZ, vT; varying vec2 vU;
   void main() { vT = aT; vU = aU; vN = normal; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`;
 // aT : 0 la chaussée · 1 le trottoir (dalles) · 2 la bordure de pierre · 3 son flanc · 4 une allée de parc (sable stabilisé) · 5 le bord d'une allée
-//      6 une place pavée · 7 la peinture · 8 la pierre (bassin, béton) · 9 le plateau d'un carrefour
+//      6 une place pavée · 7 la peinture · 8 la pierre (bassin, béton) · 9 le plateau d'un carrefour · 10 un chemin de terre (aU : 1 dans un bois, la distance à son bord) · 11 le même, de loin
 const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
   uniform float uB0, uB1, uSombre, uPluie; uniform vec3 uBrume, uTeinte, uSoleil;
   varying vec3 vW, vN; varying float vZ, vT; varying vec2 vU;
@@ -20,6 +20,10 @@ const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
     else if (vT < 6.5) { vec2 g = ${paves}; g.x += step(1., mod(floor(g.y), 2.)) * .5; vec2 f = fract(g); float hp = h21(floor(g)), m = vb(p / 9.); c = mix(vec3(.75, .71, .64), vec3(.69, .65, .585), mix(.5, step(.5, hp), mo)) * (.93 + .1 * mix(.5, hp, mo)) * (.96 + .08 * m); if (f.x < .08 || f.y < .1) c = mix(c, vec3(.53, .5, .45), .8 * jn); }
     else if (vT < 7.5) c = vec3(.93, .92, .88) * (.95 + .07 * h21(floor(p * 3.)));
     else if (vT < 8.5) c = vec3(.60, .59, .57) * (.95 + .08 * vb(p * 1.3));
+    else if (vT > 9.5) { float n = vb(p / 1.3 + 3.), m = vb(p / 5. + 1.), g = h21(floor(p * 7.)), bord = vT > 10.5 ? -1. : vU.y + (vb(p * 1.1 + 8.) - .5) * .55 + (h21(floor(p * 8.)) - .5) * .34; if (bord > .1) discard;
+      c = mix(vec3(.745, .60, .425), vec3(.69, .545, .375), smoothstep(.4, .62, m)) * (.95 + .1 * n) * (1. + (.09 * g - .045) * pres); c = mix(c, vec3(.545, .425, .30), .42 * vU.x); c = mix(c, c * vec3(.86, .9, .78), smoothstep(-.5, .05, bord));
+      float cl = h21(floor(p * 13.) + 5.); if (cl > .985) c *= mix(1., .8, pres); else if (cl < .012) c = mix(c, vec3(.78, .72, .64), .6 * pres);   // des cailloux
+      float f = h21(floor(p * 11.) + 17.); if (vU.x > .5 && f > .955) c = mix(c, f > .978 ? vec3(.76, .48, .22) : vec3(.60, .55, .27), .7 * pres); }   // dans un bois : la terre plus sombre, des feuilles tombées
     else c = vec3(.44, .445, .455) * (.95 + .08 * vb(p / 5.)) * (1. + (.08 * h21(floor(p * 5.)) - .04) * pres);
     c *= vN.y > .5 ? ${ombrage} : .78 + .22 * max(0., dot(vN, uSoleil));
     ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ));" : ""}

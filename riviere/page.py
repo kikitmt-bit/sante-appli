@@ -177,7 +177,7 @@ def source_piste():
             "const SOURCE_CHAMP = " + _js(_module("moteur", "champ")) + ";")   # le sol : le générateur contrôle celui du circuit qu'il retient
 
 
-def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
+def page(donnees=None, niveau="vichy-lac", cache=None, artifact=False):
     """`donnees` : ce que la page reçoit de l'appli (lien de la montre, mètres par coup, dernière séance, machine…)."""
     cache = Path(cache or Path(tempfile.gettempdir()) / "riviere-sprites")
     cache.mkdir(parents=True, exist_ok=True)
@@ -186,7 +186,7 @@ def page(donnees=None, niveau="kanto-1km", cache=None, artifact=False):
         if isinstance(n, dict) and n.get("id") and n.get("pieces"):
             niveaux[n["id"]] = n
     if niveau not in niveaux:
-        niveau = "kanto-1km"
+        niveau = "vichy-lac"
     besoins = {(n.get("nageur", 7), "Walk") for n in niveaux.values()} | {(p["num"], "Walk") for p in nageurs()["liste"]} | {(p["num"], "Walk") for p in trotteurs()["liste"]}
     for o in (niveaux, biomes, lieux):
         _pokemon(o, besoins)
@@ -206,7 +206,7 @@ AVANT_NODE = ('"use strict";\nvar window = globalThis, location = {search: %s}, 
               'document = {getElementById: () => null, createElement: () => ({getContext: () => null}), addEventListener() {}};\n')
 
 
-def controle(niveau="kanto-1km", params="", circuit=None):
+def controle(niveau="vichy-lac", params="", circuit=None):
     """Un programme JavaScript SANS navigateur ni dessin : il construit la piste, le champ et pose tout le décor d'un niveau, puis écrit
     ce qu'il a trouvé (une ligne de JSON, avec la note du circuit : jeu/note.js). Lancé par les contrôles automatiques avec node : un niveau
     cassé ou une instruction avalée se voit. `circuit` : un circuit qui n'est pas (encore) un fichier, par exemple sorti du générateur."""
@@ -229,7 +229,7 @@ def generateur(options):
     meilleur circuit sur une ligne « CIRCUIT {…} ». `options` : celles de genererCircuit (jeu/generateur.js) : km, virages, denivele, avec,
     graine, activite, forme, boucle, biome, tirages. Mêmes options, même circuit, sur toutes les machines (aucune limite de temps)."""
     niveaux, biomes, lieux = tout()
-    base = "terre-ville" if options.get("activite") == "terre" else "kanto-1km"
+    base = "vichy-lac"   # (la page a besoin d'un circuit pour démarrer ; la région du circuit tiré est celle des options, Kanto sinon)
     return (AVANT_NODE % '""' + donnees_js({"force": True}, niveaux, biomes, lieux, {}, base, sprites=False) + "\n"
             + "\n".join(_module("moteur", m) for m in ("depart", "outils", "zone", "piste")) + "\n" + source_piste() + "\n"
             + _module("jeu", "note") + "\n" + _module("jeu", "villes") + "\n" + _module("jeu", "generateur")

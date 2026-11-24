@@ -1,0 +1,1448 @@
+{
+ "biome": "kanto-plan",
+ "lieux": "kanto",
+ "discipline": "terre",
+ "surface": "libre",
+ "machines": [
+  "elliptique"
+ ],
+ "boucle": "gauche",
+ "allure": 1.08,
+ "elan": 40,
+ "nageur": 25,
+ "loin": "terres",
+ "peuple": [
+  {
+   "o": "habitant",
+   "nom": "boy"
+  },
+  {
+   "o": "habitant",
+   "nom": "lass"
+  },
+  {
+   "o": "habitant",
+   "nom": "youngster"
+  },
+  {
+   "o": "habitant",
+   "nom": "woman_1"
+  },
+  {
+   "o": "habitant",
+   "nom": "cooltrainer_f"
+  },
+  {
+   "o": "habitant",
+   "nom": "gentleman"
+  },
+  {
+   "o": "habitant",
+   "nom": "picnicker"
+  },
+  {
+   "o": "habitant",
+   "nom": "bug_catcher"
+  },
+  {
+   "o": "habitant",
+   "nom": "beauty"
+  },
+  {
+   "o": "habitant",
+   "nom": "camper"
+  },
+  {
+   "o": "pokemon",
+   "num": 16
+  },
+  {
+   "o": "pokemon",
+   "num": 133
+  },
+  {
+   "o": "pokemon",
+   "num": 39
+  },
+  {
+   "o": "pokemon",
+   "num": 43
+  },
+  {
+   "o": "pokemon",
+   "num": 35
+  },
+  {
+   "o": "pokemon",
+   "num": 52
+  }
+ ],
+ "id": "ville-bois",
+ "nom": "La ville et le bois",
+ "graine": 8,
+ "sorte": "bois",
+ "note": "(24/11, étape 14, lot 1) le circuit d'essai ville et nature : on sort par le bout d'une rue, un tour de bois, on revient entre deux jardins. Coordonnées de l'auteur ; python riviere/outils/zone.py ville-bois en fait le niveau.",
+ "sauvages": {
+  "foret": {
+   "nums": [
+    10,
+    13,
+    25,
+    43,
+    46,
+    48
+   ]
+  },
+  "verger": {
+   "nums": [
+    16,
+    39,
+    133
+   ]
+  },
+  "pre": {
+   "nums": [
+    128,
+    77
+   ]
+  }
+ },
+ "zone": {
+  "graine": 8,
+  "marge": 82,
+  "voies": [
+   {
+    "id": "marche",
+    "nom": "La rue du Marché",
+    "l": 6.6,
+    "pts": [
+     {
+      "x": -10.302,
+      "z": 199.939,
+      "y": 2.6
+     },
+     {
+      "x": -20.951,
+      "z": 138.209,
+      "r": 70
+     },
+     {
+      "x": 4.8,
+      "z": 25.489,
+      "r": 90,
+      "y": 3
+     },
+     {
+      "x": 4.8,
+      "z": -140.719,
+      "y": 3.6
+     }
+    ],
+    "g": [
+     {
+      "a": 72,
+      "b": 110,
+      "style": "boutiques"
+     },
+     {
+      "a": 122,
+      "b": 158,
+      "style": "rien"
+     },
+     {
+      "a": 158,
+      "b": 196,
+      "style": "boutiques"
+     }
+    ],
+    "d": [
+     {
+      "a": 64,
+      "b": 172,
+      "style": "boutiques"
+     }
+    ]
+   },
+   {
+    "id": "ecole",
+    "nom": "La rue de l'École",
+    "l": 5.6,
+    "pts": [
+     {
+      "x": 4.845,
+      "z": -62.143
+     },
+     {
+      "x": -42.55,
+      "z": -65.873,
+      "r": 34,
+      "y": 4.3
+     },
+     {
+      "x": -83.884,
+      "z": -40.663,
+      "r": 30
+     },
+     {
+      "x": -175.216,
+      "z": -51.734,
+      "y": 6.6
+     }
+    ],
+    "g": [
+     {
+      "a": 0,
+      "b": 138,
+      "style": "maisons"
+     },
+     {
+      "a": 138,
+      "b": 156,
+      "style": "haie"
+     },
+     {
+      "style": "cloture"
+     }
+    ],
+    "d": [
+     {
+      "a": 0,
+      "b": 142,
+      "style": "maisons"
+     },
+     {
+      "a": 142,
+      "b": 150,
+      "style": "haie"
+     },
+     {
+      "style": "cloture"
+     }
+    ]
+   },
+   {
+    "id": "lavoir",
+    "nom": "La rue du Lavoir",
+    "l": 5.6,
+    "pts": [
+     {
+      "x": -145.915,
+      "z": 221.779,
+      "y": 6.4
+     },
+     {
+      "x": -134.604,
+      "z": 194.945,
+      "r": 40
+     },
+     {
+      "x": -127.384,
+      "z": 135.381,
+      "r": 50,
+      "y": 5.2
+     },
+     {
+      "x": -108.011,
+      "z": 75.276,
+      "r": 60
+     },
+     {
+      "x": -116.434,
+      "z": 11.801,
+      "r": 60
+     },
+     {
+      "x": -109.695,
+      "z": -43.792
+     }
+    ],
+    "g": "maisons",
+    "d": "maisons"
+   },
+   {
+    "id": "fontaine",
+    "nom": "La rue de la Fontaine",
+    "l": 5.6,
+    "pts": [
+     {
+      "x": -111.789,
+      "z": 46.613
+     },
+     {
+      "x": -83.042,
+      "z": 52.112,
+      "r": 40
+     },
+     {
+      "x": -50.974,
+      "z": 70.102,
+      "r": 40
+     },
+     {
+      "x": -7.477,
+      "z": 79.403
+     }
+    ],
+    "g": "serre",
+    "d": "serre"
+   },
+   {
+    "id": "four",
+    "nom": "La rue du Four",
+    "l": 5.4,
+    "pts": [
+     {
+      "x": -67.008,
+      "z": 61.107
+     },
+     {
+      "x": -49.018,
+      "z": 29.038,
+      "r": 40,
+      "y": 3.9
+     },
+     {
+      "x": -55.125,
+      "z": -11.994,
+      "r": 40
+     },
+     {
+      "x": -61.806,
+      "z": -54.104
+     }
+    ]
+   },
+   {
+    "id": "pecheurs",
+    "nom": "La rue des Pêcheurs",
+    "l": 5.6,
+    "pts": [
+     {
+      "x": 4.773,
+      "z": -1.712
+     },
+     {
+      "x": 34.582,
+      "z": -4.143,
+      "r": 40,
+      "y": 2.2
+     },
+     {
+      "x": 62.198,
+      "z": 17.336,
+      "y": 1.4
+     }
+    ]
+   },
+   {
+    "id": "tilleuls",
+    "nom": "La rue des Tilleuls",
+    "l": 5.6,
+    "pts": [
+     {
+      "x": -59.998,
+      "z": -54.893
+     },
+     {
+      "x": -60.299,
+      "z": -102.273,
+      "r": 40
+     },
+     {
+      "x": -67.579,
+      "z": -125.317,
+      "y": 5
+     }
+    ]
+   },
+   {
+    "id": "bois",
+    "nom": "Le chemin des Potagers",
+    "sol": "terre",
+    "l": 2.1,
+    "pts": [
+     {
+      "x": -175.733,
+      "z": -47.465,
+      "y": 6.55
+     },
+     {
+      "x": -197.573,
+      "z": -50.112,
+      "r": 24,
+      "y": 7.2
+     },
+     {
+      "x": -223.649,
+      "z": -67.678,
+      "r": 22,
+      "y": 8.6
+     },
+     {
+      "x": -260.049,
+      "z": -49.929,
+      "r": 20,
+      "y": 10.6
+     },
+     {
+      "x": -293.983,
+      "z": -69.152,
+      "r": 18,
+      "y": 12.8
+     },
+     {
+      "x": -330.443,
+      "z": -34.286,
+      "r": 22,
+      "y": 15.6
+     },
+     {
+      "x": -317.387,
+      "z": 7.589,
+      "r": 18,
+      "y": 17.2
+     },
+     {
+      "x": -345.545,
+      "z": 40.44,
+      "r": 18,
+      "y": 18.6
+     },
+     {
+      "x": -342.897,
+      "z": 85.083,
+      "r": 20,
+      "y": 18.8
+     },
+     {
+      "x": -307.34,
+      "z": 107.525,
+      "r": 17,
+      "y": 17.2
+     },
+     {
+      "x": -299.999,
+      "z": 146.692,
+      "r": 17,
+      "y": 15.2
+     },
+     {
+      "x": -262.697,
+      "z": 171.36,
+      "r": 22,
+      "y": 12.4
+     },
+     {
+      "x": -223.589,
+      "z": 147.896,
+      "r": 20,
+      "y": 9.6
+     },
+     {
+      "x": -187.55,
+      "z": 166.367,
+      "r": 22,
+      "y": 7.2
+     },
+     {
+      "x": -131.957,
+      "z": 173.105
+     }
+    ],
+    "g": [
+     {
+      "a": 150,
+      "b": 176,
+      "style": "rien"
+     },
+     {
+      "a": 468,
+      "b": 506,
+      "style": "cloture"
+     },
+     {
+      "a": 520,
+      "b": 566,
+      "style": "haie"
+     },
+     {
+      "style": "rien"
+     }
+    ],
+    "d": [
+     {
+      "a": 13,
+      "b": 54,
+      "style": "cloture"
+     },
+     {
+      "a": 520,
+      "b": 566,
+      "style": "haie"
+     },
+     {
+      "style": "rien"
+     }
+    ]
+   },
+   {
+    "id": "crete",
+    "nom": "Le sentier de la crête",
+    "sol": "terre",
+    "l": 2,
+    "pts": [
+     {
+      "x": -323.915,
+      "z": -13.348
+     },
+     {
+      "x": -355.713,
+      "z": -25.261,
+      "r": 20,
+      "y": 18.2
+     },
+     {
+      "x": -393.136,
+      "z": -15.695,
+      "y": 20
+     }
+    ]
+   },
+   {
+    "id": "creux",
+    "nom": "Le sentier du creux",
+    "sol": "terre",
+    "l": 2,
+    "pts": [
+     {
+      "x": -303.669,
+      "z": 127.109
+     },
+     {
+      "x": -272.323,
+      "z": 117.813,
+      "r": 20,
+      "y": 14.6
+     },
+     {
+      "x": -249.581,
+      "z": 96.394,
+      "y": 12.6
+     }
+    ]
+   }
+  ],
+  "places": [
+   {
+    "nom": "La place de la Fontaine",
+    "pts": [
+     {
+      "x": -11.842,
+      "z": 73.032,
+      "r": 1
+     },
+     {
+      "x": -7.107,
+      "z": 52.25,
+      "r": 1
+     },
+     {
+      "x": -29.464,
+      "z": 50.548,
+      "r": 4
+     },
+     {
+      "x": -33.688,
+      "z": 68.772,
+      "r": 1
+     }
+    ],
+    "boutiques": [
+     1,
+     2
+    ]
+   }
+  ],
+  "objets": [
+   {
+    "o": "entree_chemin",
+    "x": -182.285,
+    "z": -48.259,
+    "lacet": 1.45,
+    "large": 2.5,
+    "r": 0.1,
+    "ouvert": true,
+    "voir": true,
+    "texte": "LES POTAGERS"
+   },
+   {
+    "o": "barriere_bout",
+    "x": -175.775,
+    "z": -52.104,
+    "lacet": 1.45,
+    "r": 1.3,
+    "voir": true
+   },
+   {
+    "o": "banc",
+    "x": -182.977,
+    "z": -54.186,
+    "lacet": 1.45,
+    "r": 1
+   },
+   {
+    "o": "abreuvoir",
+    "x": -235.953,
+    "z": -40.964,
+    "lacet": 2.65,
+    "r": 1.3,
+    "voir": true
+   },
+   {
+    "o": "stere",
+    "x": -285.018,
+    "z": -60.007,
+    "lacet": 2.55,
+    "r": 1.4,
+    "voir": true
+   },
+   {
+    "o": "poteau_indicateur",
+    "x": -320.149,
+    "z": -14.503,
+    "lacet": 1.45,
+    "r": 0.4,
+    "haut": "LA CRÊTE",
+    "bas": "LE VILLAGE",
+    "voir": true
+   },
+   {
+    "o": "mare",
+    "x": -353.547,
+    "z": 56.594,
+    "r": 3,
+    "voir": true,
+    "lacet": 1.45
+   },
+   {
+    "o": "table_bois",
+    "x": -337.257,
+    "z": 67.635,
+    "lacet": 1.65,
+    "r": 1.3,
+    "voir": true
+   },
+   {
+    "o": "table_bois",
+    "x": -337.829,
+    "z": 47.419,
+    "lacet": 0.95,
+    "r": 1.3,
+    "voir": true
+   },
+   {
+    "o": "stere",
+    "x": -353.607,
+    "z": 40.47,
+    "lacet": 1.85,
+    "r": 1.4
+   },
+   {
+    "o": "poteau_indicateur",
+    "x": -307.135,
+    "z": 129.106,
+    "lacet": 1.45,
+    "r": 0.4,
+    "haut": "LE LAVOIR",
+    "bas": "LE CREUX",
+    "voir": true
+   },
+   {
+    "o": "stere",
+    "x": -269.195,
+    "z": 175.106,
+    "lacet": 2.75,
+    "r": 1.4,
+    "voir": true
+   },
+   {
+    "o": "banc",
+    "x": -225.725,
+    "z": 140.586,
+    "lacet": 1.98,
+    "r": 1,
+    "voir": true
+   },
+   {
+    "o": "longue_vue",
+    "x": -222.058,
+    "z": 139.418,
+    "lacet": 1.98,
+    "r": 0.5
+   },
+   {
+    "o": "fontaine",
+    "x": -21.056,
+    "z": 60.129,
+    "r": 2.3,
+    "voir": true,
+    "lacet": 1.45
+   },
+   {
+    "o": "banc",
+    "x": -21.968,
+    "z": 55.183,
+    "lacet": 0.15,
+    "r": 1
+   },
+   {
+    "o": "banc",
+    "x": -26.462,
+    "z": 64.007,
+    "lacet": 1.95,
+    "r": 1
+   },
+   {
+    "o": "arbre_rue",
+    "x": -14.378,
+    "z": 54.895,
+    "r": 0.6,
+    "couronne": 2.4,
+    "esp": "cerisier",
+    "lacet": 1.45
+   },
+   {
+    "o": "arbre_rue",
+    "x": -26.023,
+    "z": 58.721,
+    "r": 0.6,
+    "couronne": 2.4,
+    "esp": "cerisier",
+    "lacet": 1.45
+   },
+   {
+    "o": "lampadaire",
+    "x": -13.217,
+    "z": 70.246,
+    "r": 0.3,
+    "lacet": 1.45
+   },
+   {
+    "o": "etal",
+    "x": -25.358,
+    "z": 54.067,
+    "r": 1.7,
+    "voir": true,
+    "lacet": 0.65
+   }
+  ],
+  "nature": [
+   {
+    "genre": "foret",
+    "nom": "Le bois des Roucool",
+    "pts": [
+     {
+      "x": -222.325,
+      "z": -178.323,
+      "r": 6
+     },
+     {
+      "x": -237.126,
+      "z": -89.458,
+      "r": 6
+     },
+     {
+      "x": -235.442,
+      "z": -36.873,
+      "r": 6
+     },
+     {
+      "x": -256.319,
+      "z": 19.021,
+      "r": 6
+     },
+     {
+      "x": -244.466,
+      "z": 70.824,
+      "r": 6
+     },
+     {
+      "x": -256.439,
+      "z": 119.738,
+      "r": 6
+     },
+     {
+      "x": -241.699,
+      "z": 147.715,
+      "r": 6
+     },
+     {
+      "x": -235.081,
+      "z": 192.84,
+      "r": 6
+     },
+     {
+      "x": -260.591,
+      "z": 270.333,
+      "r": 6
+     },
+     {
+      "x": -469.065,
+      "z": 245.063,
+      "r": 6
+     },
+     {
+      "x": -414.916,
+      "z": -201.667,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "clairiere",
+    "nom": "La clairière",
+    "pts": [
+     {
+      "x": -333.451,
+      "z": 23.774,
+      "r": 6
+     },
+     {
+      "x": -364.677,
+      "z": 32.077,
+      "r": 6
+     },
+     {
+      "x": -370.514,
+      "z": 63.604,
+      "r": 6
+     },
+     {
+      "x": -350.599,
+      "z": 82.135,
+      "r": 6
+     },
+     {
+      "x": -330.082,
+      "z": 62.461,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "potagers",
+    "nom": "Les potagers",
+    "cote": 0,
+    "pts": [
+     {
+      "x": -183.374,
+      "z": -50.91,
+      "r": 2
+     },
+     {
+      "x": -179.848,
+      "z": -96.618,
+      "r": 2
+     },
+     {
+      "x": -221.543,
+      "z": -101.671,
+      "r": 2
+     },
+     {
+      "x": -219.498,
+      "z": -85.306,
+      "r": 2
+     },
+     {
+      "x": -203.554,
+      "z": -67.257,
+      "r": 2
+     },
+     {
+      "x": -193.205,
+      "z": -52.907,
+      "r": 2
+     }
+    ]
+   },
+   {
+    "genre": "potagers",
+    "nom": "Les jardins ouvriers",
+    "cote": 0,
+    "pts": [
+     {
+      "x": -132.679,
+      "z": -53.629,
+      "r": 6
+     },
+     {
+      "x": -170.402,
+      "z": -58.202,
+      "r": 6
+     },
+     {
+      "x": -164.687,
+      "z": -88.736,
+      "r": 6
+     },
+     {
+      "x": -126.963,
+      "z": -84.163,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "verger",
+    "nom": "Le verger",
+    "cote": 0,
+    "pts": [
+     {
+      "x": -130.392,
+      "z": -39.25,
+      "r": 6
+     },
+     {
+      "x": -219.738,
+      "z": -50.079,
+      "r": 6
+     },
+     {
+      "x": -224.672,
+      "z": -9.377,
+      "r": 6
+     },
+     {
+      "x": -138.033,
+      "z": 7.168,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "Le pré des Tauros",
+    "pts": [
+     {
+      "x": -142.726,
+      "z": 12.643,
+      "r": 6
+     },
+     {
+      "x": -233.576,
+      "z": -2.398,
+      "r": 6
+     },
+     {
+      "x": -235.321,
+      "z": 61.859,
+      "r": 6
+     },
+     {
+      "x": -241.819,
+      "z": 115.467,
+      "r": 6
+     },
+     {
+      "x": -218.896,
+      "z": 142.421,
+      "r": 6
+     },
+     {
+      "x": -166.492,
+      "z": 158.846,
+      "r": 6
+     },
+     {
+      "x": -142.004,
+      "z": 73.17,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "Le pré du bas",
+    "pts": [
+     {
+      "x": -222.566,
+      "z": 156.078,
+      "r": 6
+     },
+     {
+      "x": -190.738,
+      "z": 176.053,
+      "r": 6
+     },
+     {
+      "x": -167.154,
+      "z": 180.927,
+      "r": 6
+     },
+     {
+      "x": -176.359,
+      "z": 240.25,
+      "r": 6
+     },
+     {
+      "x": -238.33,
+      "z": 252.885,
+      "r": 6
+     }
+    ]
+   }
+  ]
+ },
+ "pieces": [
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 55.43782047541593,
+   "virage": 0,
+   "nom": "La rue du Marché",
+   "objets": [
+    {
+     "o": "ligne",
+     "cote": "c",
+     "a": 1,
+     "eau": 0.1
+    }
+   ]
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 4.476778212528367,
+   "virage": -85.5001657979987
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 29.239742085229555,
+   "virage": 0,
+   "nom": "La rue de l'École"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 18.598230034744887,
+   "virage": -35.87879082169456
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 26.992760625358045,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 22.922317292707223,
+   "virage": 38.29014686681828
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 81.58466155390057,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 16.22563535206832,
+   "virage": 0,
+   "nom": "Le chemin des Potagers"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 11.33298523679636,
+   "virage": 27.05550930635422
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 12.975025468584493,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 23.02312234654004,
+   "virage": -59.96035189409439
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 17.277092660231066,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 19.381913840130707,
+   "virage": 55.525093096284394
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 15.09211250591749,
+   "virage": 0,
+   "nom": "Le bois des Roucool",
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 23.012334031977517,
+   "virage": -73.25053426542135,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 23.427627512554686,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 24.419470940513968,
+   "virage": -63.596937401536785,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 20.262642633919395,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 18.19547438556438,
+   "virage": 57.91799380729077,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 26.03488420574059,
+   "virage": 0,
+   "nom": "La clairière"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.821693600822005,
+   "virage": -43.995817169448806
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 27.18280447229435,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 18.970743048107035,
+   "virage": -54.347175544184
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 24.365919105149583,
+   "virage": 0,
+   "nom": "Le bois des Roucool",
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.98257083963142,
+   "virage": 47.12601740315154,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 25.235092217064555,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.6210160964145,
+   "virage": -45.90745500025356,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 23.65611780968814,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 24.74309122357349,
+   "virage": -64.43975905536132,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 20.633309514644218,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 20.280484766754427,
+   "virage": 58.099309180719324,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 25.464074811626976,
+   "virage": 0,
+   "nom": "Le chemin du Lavoir"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 7.766004047727413,
+   "virage": -20.225420709831578
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 45.17680883219182,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 4.084072077015385,
+   "virage": -90.0000358616191
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 30.605578706550546,
+   "virage": 0,
+   "nom": "La rue du Lavoir"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 10.381280380749354,
+   "virage": 10.954024894270761
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 44.821573339649504,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 24.716342705904427,
+   "virage": -25.424454614852433
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 17.185969595352663,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 5.675204489975399,
+   "virage": 108.38842171642843
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 24.595703610528858,
+   "virage": 0,
+   "nom": "La rue de la Fontaine"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 14.274860569379914,
+   "virage": 18.46251159736308
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 24.21179692806154,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 10.730001770511068,
+   "virage": -17.220835171377733
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.711772695245294,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 6.768625085592566,
+   "virage": -48.476706313853704
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 20.312364073466348,
+   "virage": 0,
+   "nom": "La place de la Fontaine"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 2.1323898972740594,
+   "virage": -40.72564713004626
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 21.059605612526187,
+   "virage": 0,
+   "nom": "La rue du Marché"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 19.135385843597096,
+   "virage": -12.868272866109107
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 15.338885096685365,
+   "virage": 0
+  }
+ ]
+}

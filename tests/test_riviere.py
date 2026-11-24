@@ -17,6 +17,11 @@ lis = lambda *p: json.loads(C.joinpath(*p).read_text(encoding="utf-8"))
 OBJETS = {n for d in ("objets", "evenements") for f in (C / d).glob("*.js") for n in re.findall(r"^  (\w+)\(F", f.read_text(encoding="utf-8"), re.M)}  # les recettes : objets/ et evenements/ (Ronflex)
 SURFACES = set(re.findall(r"^SURFACES\.(\w+) = ", (R / "moteur" / "surfaces.js").read_text(encoding="utf-8"), re.M)) | {"libre"}   # libre : la piste posée sur une ville dessinée (plan_dessin.js)
 NIVEAUX = sorted(f.stem for f in (C / "niveaux").glob("*.json"))
+
+
+def fige(nom):
+    """Un circuit figé qui ne sert qu'à éprouver le moteur (pont, fourche, longue route…) : tests/circuits/, jamais dans le jeu (24/11, Kiki : les anciens circuits sont retirés)."""
+    return json.loads((Path(__file__).parent / "circuits" / f"{nom}.json").read_text(encoding="utf-8"))
 sys.path.insert(0, str(R))
 import page as _page  # noqa: E402
 region = lambda nom: _page.region(nom)  # une région avec ce dont elle hérite (comme le jeu)
@@ -206,7 +211,7 @@ class Moteur(unittest.TestCase):
         t = time.time()
         with tempfile.TemporaryDirectory() as d:
             f = Path(d) / "controle.js"
-            f.write_text(page.controle(niveau, params), encoding="utf-8")
+            f.write_text(page.controle(niveau, params, None if niveau in NIVEAUX else fige(niveau)), encoding="utf-8")
             r = subprocess.run(["node", str(f)], capture_output=True, text=True, encoding="utf-8", timeout=240)
         self.assertEqual(r.returncode, 0, f"{niveau} : le moteur plante\n{r.stderr[-1500:]}")
         lignes = [l for l in r.stdout.splitlines() if l.startswith("BILAN ")]
@@ -238,13 +243,6 @@ class Moteur(unittest.TestCase):
         self.assertGreater(b["rives_serrees"], 20, "l'épingle doit rétrécir ses rives")
         self.assertEqual(self.bilan("essai", "?surface=terre")["surfaces"], ["eau"])
 
-    def test_anciens_niveaux(self):
-        """Un ancien fichier de niveau marche toujours : le tour de Bourg Palette fait 2 000 m, à plat."""
-        b = self.bilan("kanto-1km")
-        self.assertEqual(b["longueur"], 2000)
-        self.assertEqual(b["haut"], 0)
-        self.assertEqual(b["evenements"], 3)
-
     def test_notes(self):
         """Chaque circuit du jeu a sa note (étape 4 du plan) : sept critères de 0 à 100, des séquences de paysage qui couvrent le tour."""
         for nom in NIVEAUX:
@@ -271,7 +269,7 @@ class Moteur(unittest.TestCase):
         self.assertGreater(v["ecart_haut"], 1.5, "la voie « force » a sa chute")
         self.assertGreater(v["poses"], 20, "la voie « force » a son décor")
         self.assertIn("fourche", [x["quoi"] for x in b["note"]["forts"]])
-        k = self.bilan("kanto-1km")
+        k = self.bilan("essai")
         self.assertEqual((k["fourches"], k["voies"], k["metres"]), ([], [], k["longueur"]))
         g = self.generer({"km": 1.5, "avec": {"fourche": True}, "graine": 2, "tirages": 2})
         self.assertNotIn("erreur", g)
@@ -290,7 +288,7 @@ class Moteur(unittest.TestCase):
     def test_fourche_impossible(self):
         """Une fourche mal dessinée est refusée avec une phrase claire (elle ne casse jamais le jeu en silence)."""
         import page
-        n = lis("niveaux", "fourche.json")
+        n = fige("fourche")
         fourche = next(p for p in n["pieces"] if p.get("fourche"))
         for p in fourche["force"]:
             p["virage"] = 0
@@ -340,18 +338,14 @@ class Moteur(unittest.TestCase):
         self.assertTrue(self.controle_de(terre["niveau"])["ok"])
 
     def test_effets(self):
-        """Étape 9 du plan (15/11) : l'eau qui coule, le vent, les forêts en masse et les ombres sont des options. Le circuit de Kiki
-        (kanto-1km) n'en a aucune ; ailleurs, les couper rend le monde d'avant, et les forêts s'ajoutent sans déplacer un seul objet posé."""
-        self.assertIs(lis("niveaux", "kanto-1km.json").get("effets"), False, "kanto-1km doit rester identique à l'œil : \"effets\": false")
-        k, k0 = self.bilan("kanto-1km"), self.bilan("kanto-1km", "effets=0")
-        self.assertEqual(k["effets"], [])
-        self.assertEqual((k["triangles"], k["poses"], k["masse"], k["objets"]), (k0["triangles"], k0["poses"], 0, k0["objets"]))
-        avec, sans, foret = self.bilan("vitrine"), self.bilan("vitrine", "effets=0"), self.bilan("vitrine", "effets=foret")
+        """Étape 9 du plan (15/11) : l'eau qui coule, le vent, les forêts en masse et les ombres sont des options : les couper rend le monde
+        d'avant, et les forêts s'ajoutent sans déplacer un seul objet posé."""
+        avec, sans, foret = self.bilan("essai"), self.bilan("essai", "effets=0"), self.bilan("essai", "effets=foret")
         self.assertEqual(avec["effets"], ["eau", "vent", "foret", "ombres"])
         self.assertEqual(sans["effets"], [])
         self.assertEqual((avec["objets"], avec["poses"], avec["sprites"]), (sans["objets"], sans["poses"], sans["sprites"]), "les forêts ne doivent déplacer aucun objet posé")
         self.assertEqual(sans["masse"], 0)
-        self.assertGreater(avec["masse"], 800, "la vitrine a des rives boisées : une forêt en masse y pousse")
+        self.assertGreater(avec["masse"], 300, "des rives boisées : une forêt en masse y pousse")
         self.assertLessEqual(avec["masse"], 3200, "le plafond d'arbres de la forêt en masse")
         self.assertEqual(foret["masse"], avec["masse"], "mêmes options, même forêt")
         self.assertGreater(avec["triangles"], sans["triangles"])
@@ -389,38 +383,6 @@ class Moteur(unittest.TestCase):
 
 
 @unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")
-class Villes(unittest.TestCase):
-    """Les villes dessinées (moteur/plan.js, jeu/villes.js, 24/11) : le parcours est celui d'un vrai piéton, et ce qui ne l'est pas est refusé."""
-
-    def bilan(self, circuit):
-        import sys
-        sys.path.insert(0, str(C.parent / "outils"))
-        import generer
-        return generer.bilan(circuit=circuit)
-
-    def ville(self):
-        return {"niveau": lis("niveaux", "ville-place.json")}   # (étape 13, lot 3) la ville à angles droits validée par Kiki ; le générateur ne fait plus que des villes libres (VilleLibre)
-
-    def test_une_ville(self):
-        self.assertEqual(self.bilan(self.ville()["niveau"])["erreurs"], [])
-
-    def test_le_trottoir_qui_devie(self):
-        """Kiki : « le trottoir d'un coup dévie, fait un grand virage à droite ». Un parcours qui quitte le trottoir est refusé."""
-        n = self.ville()["niveau"]
-        n["pieces"][0]["virage"] = 25
-        n["pieces"][2]["virage"] = -25
-        self.assertTrue(any("marche sur" in e for e in self.bilan(n)["erreurs"]))
-
-    def test_une_porte_fermee(self):
-        """Entrer dans le parc ailleurs que par une allée : refusé."""
-        n = self.ville()["niveau"]
-        for o in n["plan"]["ilots"]:
-            if o["type"] == "parc":
-                o["allees"] = o["allees"][1:]
-        self.assertTrue(any("pelouse" in e for e in self.bilan(n)["erreurs"]))
-
-
-@unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")
 class VilleLibre(unittest.TestCase):
     """La ville libre (moteur/zone.js, 24/11, étape 13 du plan) : des rues courbes, en diagonale, en pente ; le parcours d'un vrai piéton, jamais 45 m sans rien."""
 
@@ -429,17 +391,23 @@ class VilleLibre(unittest.TestCase):
         import zone
         import generer
         self.zone, self.node, self.controle = zone, generer._node, lambda n: generer.bilan(circuit=n)
-        self.dessin = json.loads((R / "outils" / "zones" / "ville-hauts.json").read_text(encoding="utf-8"))
+        self.dessin = fige("dessin-ville-hauts")
 
     def test_la_ville_essai(self):
         n = self.zone.niveau_de(self.dessin)
-        self.assertEqual(n, lis("niveaux", "ville-hauts.json"), "le circuit du jeu n'est plus celui de son dessin : python riviere/outils/zone.py ville-hauts")
         self.assertEqual(self.controle(n)["erreurs"], [])
+
+    def test_les_dessins(self):
+        """Un circuit dessiné (outils/zones/) et son niveau vont ensemble, et le niveau n'a aucun défaut."""
+        for f in sorted((R / "outils" / "zones").glob("*.json")):
+            n = self.zone.niveau_de(json.loads(f.read_text(encoding="utf-8")))
+            self.assertEqual(n, lis("niveaux", f.name), f"le circuit du jeu n'est plus celui de son dessin : python riviere/outils/zone.py {f.stem}")
+            self.assertEqual(self.controle(n)["erreurs"], [])
 
     def test_le_sol(self):
         """Une rue est plate en travers (loin d'un carrefour), et le sol ne fait jamais de marche."""
         n = self.zone.niveau_de(self.dessin)
-        r = self.node(_page.controle("essai", circuit=n) + """
+        r = self.node(_page.controle(circuit=n) + """
 ;(() => { const Z = ZONE; let travers = 0, marche = 0, piste = 0;
   for (const v of Z.voies) for (let s = 8; s < v.L - 8; s += 3) { const c = Z.enVoie(v, s); if (Z.noeuds.some(q => Math.hypot(q.x - c.x, q.z - c.z) < 24)) continue; for (const u of [-v.h + .3, v.h - .3]) { const e = Z.enVoie(v, s, u); travers = Math.max(travers, Math.abs(Z.sol(e.x, e.z) - Z.sol(c.x, c.z))); } }
   for (let x = Z.xa + 5; x < Z.xb - 5; x += 2.3) for (let z = Z.za + 5; z < Z.zb - 5; z += 2.3) if (Z.bord(x, z) < 0) marche = Math.max(marche, Math.abs(Z.sol(x + .5, z) - Z.sol(x, z)), Math.abs(Z.sol(x, z + .5) - Z.sol(x, z)));
@@ -462,6 +430,16 @@ class VilleLibre(unittest.TestCase):
                 if "y" in q:
                     q["y"] *= 1.6
         self.assertTrue(any("pente" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+
+    def test_sortir_de_la_ville(self):
+        """(étape 14) On sort de la ville dans le prolongement du trottoir, au bout d'une rue, ou à angle droit : le reste est refusé."""
+        d = json.loads((R / "outils" / "zones" / "ville-bois.json").read_text(encoding="utf-8"))
+        bois = next(v for v in d["zone"]["voies"] if v["id"] == "bois")
+        bois["pts"][1]["x"] -= 10   # le chemin part de biais au bout de la rue
+        self.assertTrue(any("prolongement" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+        bois["pts"][1]["x"] += 10
+        bois["pts"][-2]["x"] -= 40   # il arrive de biais sur l'autre
+        self.assertTrue(any("de biais" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
 
     def test_rien_pendant_45_m(self):
         """Kiki : « les lignes droites sont trop longues ». Un pâté de maisons tout droit, sans personne : refusé."""
@@ -545,7 +523,7 @@ class Troncons(unittest.TestCase):
         self.assertIsNone(self.bilan("col-ventoux")["troncons"])
         t = self.bilan("col-ventoux", "?troncons=1")["troncons"]
         self.assertTrue(t and t["ordre"] and t["chevauchements"] == 0)
-        self.assertIsNone(self.bilan("kanto-1km", "?troncons=1")["troncons"])
+        self.assertIsNone(self.bilan("essai", "?troncons=1")["troncons"])
         self.assertIsNone(self.bilan("fourche", "?troncons=1")["troncons"])
 
     def test_meme_piste(self):

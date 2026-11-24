@@ -26,6 +26,9 @@ riviere/
 sans rien redemander à l'appli. `moteur/depart.js` choisit le circuit joué : un brouillon de l'éditeur, sinon le choix du menu (gardé sur la
 machine, `riviere_niveau`), sinon celui que l'appli a servi. Si l'adresse nomme un circuit (`&riviere=<nom>`, `?niveau=`), c'est lui.
 
+> **(24/11, Kiki) Les circuits cités plus bas (`kanto-1km`, `vitrine`, `ville-hauts`, `footing-jadielle`…) n'existent plus** : il reste `vichy-lac` (rameur, par défaut) et le circuit en cours d'essai. Plus aucune
+> contrainte « identique à `kanto-1km` ». `tests/circuits/` : quelques circuits figés, pour les tests du moteur seulement.
+
 ## Le moteur en une phrase
 
 On ne dirige jamais : tout le monde se déduit d'**une ligne**, la piste, et la position du joueur est un seul nombre, `s`, ses
@@ -559,6 +562,20 @@ bourg, pavillons, immeubles, sur un coteau). Sans navigateur : `python riviere/o
   les clôtures à 130 m, un immeuble lointain devient sa silhouette (`immeuble_loin`). `LOIN`, `voirLoin` de rendu.js, `VU_DE` de decor.js. Au pire 300 000 triangles à l'image (835 000 avant),
   comme `ville-place` ; prête en 2 à 4 s, 5,5 s pour 2,2 km d'immeubles.
 - Une ville ne se retouche pas pièce par pièce (le parcours quitterait le trottoir) : l'éditeur montre ce qu'on y traverse, on en génère une autre, on l'essaie, on la garde.
+
+### La nature autour d'une ville (24/11, étape 14, lot 1)
+
+Un chemin de terre est une voie comme une autre (`"sol": "terre"`, 2,1 m) : la même zone, le même sol, donc aucun raccord entre la ville et les bois.
+
+- **Le dessin** : `nature: [{genre, nom, pts, cote?, esp?}]` dans la zone (`ZONE.aireEn` dit où l'on est, la dernière écrite l'emporte) : `foret` (troncs hauts à moins de 42 m du chemin, silhouettes
+  `masse_bois` au-delà, sous-bois jusqu'à 15 m), `clairiere`, `pre` (bottes de foin, Pokémon de `sauvages.pre`), `verger` (rangs le long du côté `cote`), `potagers` (carrés et cabanes). `sauvages` du niveau =
+  les Pokémon par genre. Styles d'un bord de chemin : `cloture`, `haie`, `rien` ; `cloture` marche aussi le long d'une rue. `marge` de la zone : 82 m, pour que le bois se ferme.
+- **Les sorties de ville, une liste fermée** (`sortieZone`) : 1. la rue finit et le chemin part dans le **prolongement de son trottoir** (le 1er point du chemin = le bout de la rue décalé de l / 2 + 1,5 m) ;
+  2. le chemin **arrive sur un trottoir à angle droit** (25° près). Le reste est refusé. L'étape d'un chemin : `cote: "m"` ; `ambs: {point: "bois"}` = l'air du lieu (région `kanto-plan`, `ambiances`).
+- **Le sol** (`zone_dessin.js`) : le chemin est posé sur l'herbe et s'effiloche dans le shader (matière 10 : aucun trait) ; herbe de pré, sol de bois par aire ; hors des chemins, le sol est bosselé (`bosse`).
+- **Les objets** : `contenu/objets/kanto-bois.js` (`arbre_bois`, `fougere`, `cloture_bois`, `entree_chemin`, `carre_potager`, `cabane_jardin`, `stere`, `table_bois`, `abreuvoir`…).
+- **Léger** : `"sorte"` dans le dessin (ici `"bois"`) allume les distances de vue des longues villes ; un arbre du bois se simplifie à 95 m (`arbre_bois_loin`), le sous-bois disparaît à 55 m.
+- Fabriquer : `python riviere/outils/zone.py ville-bois` depuis `outils/zones/ville-bois.json` (jamais le niveau à la main ; un test compare).
 
 ## Moins de défauts à la source (24/11)
 

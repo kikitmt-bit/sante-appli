@@ -4,8 +4,9 @@
 // distance à chaque voie, et cette distance dit ce qu'il y a sous les pieds (chaussée, trottoir, pavés, allée, jardin). Aucune jointure ne peut s'ouvrir.
 // La hauteur du sol, elle, est votée par les voies voisines : une rue est toujours plate en travers, deux rues qui se croisent se rejoignent en douceur.
 // La zone (mètres, x vers la droite, z vers le bas ; le départ du parcours est en 0, 0 et regarde vers -z) :
-//   graine · voies: [{id, nom, sol: "chaussee" (défaut) | "paves" (une ruelle) | "sable" (une allée), l: la largeur, t: ses trottoirs (3 m ; 0 sans chaussée),
+//   graine · voies: [{id, nom, sol: "chaussee" (défaut) | "paves" (une ruelle) | "sable" (une allée) | "terre" (un chemin de campagne, étape 14), l: la largeur, t: ses trottoirs (3 m ; 0 sans chaussée),
 //     pts: [{x, z, r: l'arrondi, y: la hauteur}, …], g, d: ce qui borde chaque côté (zone_plan.js)}] · places: [{nom, pts: [{x, z, r}], …}]
+//   (étape 14) nature: [{genre: "foret" | "clairiere" | "pre" | "verger" | "potagers", nom, pts: [{x, z, r}]}] : ce qu'il y a autour des chemins (zone_plan.js) ; la dernière écrite l'emporte
 //   Une hauteur donnée à un point vaut pour lui ; entre deux, la pente est douce. Là où une voie en croise une autre écrite avant elle, elle prend sa hauteur.
 // Ce fichier ne connaît pas la piste (c'est elle qui se pose sur la zone : piste.js) et ne dessine rien : il se contrôle sans navigateur.
 
@@ -44,7 +45,7 @@ const ZONE = (() => {
   const RC = 3, MARGE_Z = z0.marge || 46;   // l'arrondi d'une bordure à un coin de rue ; ce que la zone garde autour de ses rues (parcelles, jardins, arbres)
   const voies = z0.voies.map((v, k) => {
     const sol = v.sol || "chaussee", c = courbeZone(v.pts, 1, v.nom || v.id);
-    return Object.assign({}, v, {k, sol, l: v.l || (sol === "chaussee" ? 6.2 : 2.8), t: sol === "chaussee" ? (v.t === undefined ? 3 : v.t) : 0, P: c.pts, S: c.s, som: c.som, L: c.s[c.s.length - 1], n: c.pts.length});
+    return Object.assign({}, v, {k, sol, l: v.l || (sol === "chaussee" ? 6.2 : sol === "terre" ? 2.4 : 2.8), t: sol === "chaussee" ? (v.t === undefined ? 3 : v.t) : 0, P: c.pts, S: c.s, som: c.som, L: c.s[c.s.length - 1], n: c.pts.length});
   });
   for (const v of voies) { v.h = v.l / 2 + v.t; v.TX = new Float32Array(v.n); v.TZ = new Float32Array(v.n);
     for (let i = 0; i < v.n; i++) { const a = v.P[Math.max(0, i - 1)], b = v.P[Math.min(v.n - 1, i + 1)], d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; v.TX[i] = (b[0] - a[0]) / d; v.TZ[i] = (b[1] - a[1]) / d; } }
@@ -68,14 +69,17 @@ const ZONE = (() => {
     for (const n of noeuds) { const ici = n.v.find(q => q.k === v.k), avant = n.v.filter(q => q.k < v.k).sort((a, b) => a.k - b.k)[0]; if (!ici || !avant) continue; C = C.filter(q => Math.abs(q[0] - ici.s) > 5); C.push([ici.s, voies[avant.k].yEn(avant.s)]); }
     C.sort((a, b) => a[0] - b[0]); const joint = s => noeuds.some(n => n.v.some(q => q.k === v.k && Math.abs(q.s - s) < 1.5)); v.yEn = profilZone(C, [joint(0), joint(v.L)]); v.Y = Float32Array.from(v.S, v.yEn);
   }
-  // les places : un contour arrondi, sa boîte
-  const places = (z0.places || []).map(p => { const q = p.pts, m = {x: (q[0].x + q[1].x) / 2, z: (q[0].z + q[1].z) / 2}, C = courbeZone([m].concat(q.slice(1), [q[0], m]), 1, p.nom).pts; let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+  // les places, et la nature : un contour arrondi, sa boîte
+  const contour = (p, pas) => { const q = p.pts, m = {x: (q[0].x + q[1].x) / 2, z: (q[0].z + q[1].z) / 2}, C = courbeZone([m].concat(q.slice(1), [q[0], m]), pas, p.nom).pts; let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
     for (const [x, z] of C) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); z0 = Math.min(z0, z); z1 = Math.max(z1, z); }
-    return Object.assign({}, p, {C, x0, x1, z0, z1, cx: C.reduce((t, a) => t + a[0], 0) / C.length, cz: C.reduce((t, a) => t + a[1], 0) / C.length}); });
+    return Object.assign({}, p, {C, x0, x1, z0, z1, cx: C.reduce((t, a) => t + a[0], 0) / C.length, cz: C.reduce((t, a) => t + a[1], 0) / C.length}); }, places = (z0.places || []).map(p => contour(p, 1)), aires = (z0.nature || []).map(p => contour(p, 5));
   const distPlace = (p, x, z) => {   // la distance au bord d'une place (négative : dedans)
     const hx = Math.max(p.x0 - x, x - p.x1, 0), hz = Math.max(p.z0 - z, z - p.z1, 0); if (hx > 16 || hz > 16) return Math.hypot(hx, hz);
     let b = 1e18, dedans = false; const C = p.C; for (let i = 0, j = C.length - 1; i < C.length; j = i++) { const [ax, az] = C[j], [bx, bz] = C[i], ux = bx - ax, uz = bz - az, t = clamp(((x - ax) * ux + (z - az) * uz) / (ux * ux + uz * uz || 1), 0, 1); b = Math.min(b, (x - ax - ux * t) ** 2 + (z - az - uz * t) ** 2); if ((bz > z) !== (az > z) && x < (ax - bx) * (z - bz) / (az - bz) + bx) dedans = !dedans; }
     return (dedans ? -1 : 1) * Math.sqrt(b); };
+  /* (étape 14) ce qu'il y a là : "foret", "pre"… ou null (la ville, ses jardins) ; flou : le bord de l'aire ondule de tant de mètres */
+  const aireEn = (x, z, flou = 0) => { if (!aires.length) return null; const X = flou ? x + (fbm(x / 9 + 3, z / 9) - .5) * flou * 2 : x, W = flou ? z + (fbm(x / 9, z / 9 + 7) - .5) * flou * 2 : z; for (let i = aires.length - 1; i >= 0; i--) { const a = aires[i]; if (X > a.x0 && X < a.x1 && W > a.z0 && W < a.z1 && distPlace(a, X, W) < 0) return a; } return null; };
+  const bosse = (x, z, em) => { if (em < 2) return 0; let d = 0; for (const a of aires) d = Math.max(d, -distPlace(a, x, z)); return d <= 0 ? 0 : lisse(2, 12, em) * lisse(0, 12, d) * (fbm(x / 17 + 5, z / 17 + 1) - .5) * 2.4; };   // le sol d'un bois ou d'un pré n'est jamais lisse (loin du chemin)
   // tout ce qui est dur, en points (tous les 2 m) : pour la hauteur et pour le bord de la zone
   let xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9; const PT = [];
   for (const v of voies) for (let i = 0; i < v.n; i++) { const [x, z] = v.P[i]; if (i % 2 === 0 || i === v.n - 1) PT.push([x, z, v.Y[i], v.h]); xa = Math.min(xa, x); xb = Math.max(xb, x); za = Math.min(za, z); zb = Math.max(zb, z); }
@@ -95,12 +99,12 @@ const ZONE = (() => {
   }
   // la hauteur du sol, gardée sur deux trames (calculées au premier besoin) : de 8 m partout, de 1 m à moins de 26 m d'une rue, l'une passant à l'autre en douceur.
   // Partout la même fonction, lissée entre ses points : jamais deux sols qui se croisent.
-  const trame = pas => { const nx = Math.ceil((xb - xa) / pas) + 2, nz = Math.ceil((zb - za) / pas) + 2, H = new Float32Array(nx * nz).fill(NaN), E = new Float32Array(nx * nz), R = {y: 0, e: 0}; const n = (i, j) => { const k = j * nx + i; if (H[k] !== H[k]) { voter_(xa + i * pas, za + j * pas); H[k] = R0.y; E[k] = R0.em; } return k; };
+  const trame = pas => { const nx = Math.ceil((xb - xa) / pas) + 2, nz = Math.ceil((zb - za) / pas) + 2, H = new Float32Array(nx * nz).fill(NaN), E = new Float32Array(nx * nz), R = {y: 0, e: 0}; const n = (i, j) => { const k = j * nx + i; if (H[k] !== H[k]) { voter_(xa + i * pas, za + j * pas); H[k] = R0.y + (aires.length ? bosse(xa + i * pas, za + j * pas, R0.em) : 0); E[k] = R0.em; } return k; };
     return (x, z) => { const u = clamp((x - xa) / pas, 0, nx - 1.001), w = clamp((z - za) / pas, 0, nz - 1.001), i = Math.floor(u), j = Math.floor(w), a = u - i, b = w - j, k0 = n(i, j), k1 = n(i + 1, j), k2 = n(i, j + 1), k3 = n(i + 1, j + 1), p = (1 - a) * (1 - b), q = a * (1 - b), r = (1 - a) * b, s = a * b; R.y = H[k0] * p + H[k1] * q + H[k2] * r + H[k3] * s; R.e = E[k0] * p + E[k1] * q + E[k2] * r + E[k3] * s; return R; }; };
   const large = trame(8), fine = trame(1);
   const sol = (x, z) => { const g = large(x, z), e = g.e, y = g.y; if (e >= 26) return y; const f = fine(x, z).y; return e <= 16 ? f : lerp(f, y, lisse(16, 26, e)); };
   const bord = (x, z) => { const hx = Math.max(xa - x, x - xb, 0), hz = Math.max(za - z, z - zb, 0); let d = large(x, z).e; for (const p of places) if (d > 0) d = Math.min(d, Math.max(0, distPlace(p, x, z))); return d - MARGE_Z + Math.hypot(hx, hz); };   // la distance au bord de la zone (négative : dedans)
-  // les distances à chaque voie, en un point. Après l'appel, D : f (bord de chaussée, négatif : dessus), t (bord extérieur du trottoir), p (pavés), a (sable), et la voie la plus proche (k, s, u)
+  // les distances à chaque voie, en un point. Après l'appel, D : f (bord de chaussée, négatif : dessus), t (bord extérieur du trottoir), p (pavés), a (sable), c (chemin de terre), et la voie la plus proche (k, s, u)
   const C8 = 8, grille = new Map();
   // une rue qui s'arrête sur une autre : son bout (un demi-disque) ne doit pas dépasser de l'autre côté, sinon la bordure d'en face fait une bosse
   for (const v of voies) { v.a0 = 0; v.a1 = v.L; for (const n of noeuds) { const q = n.v.find(o => o.k === v.k); if (!q || !n.v.some(o => o.k !== v.k && voies[o.k].sol === "chaussee")) continue; if (q.s < 1.5) v.a0 = v.l / 2; if (q.s > v.L - 1.5) v.a1 = v.L - v.l / 2; } }
@@ -115,18 +119,18 @@ const ZONE = (() => {
     L = Int32Array.from(r); CAND.set(cle, L); return L; };
   const bD = new Float64Array(voies.length), bI = new Int32Array(voies.length), vu = new Int32Array(voies.length), pris = new Int32Array(voies.length); let tour = 0, np = 0;
   const parvis = [];   // (zone_plan.js) {k, sg, s0, s1, e} : le trottoir élargi de e mètres, d'un côté d'une voie, entre deux distances
-  const D = {f: 99, t: 99, p: 99, a: 99, k: -1, s: 0, u: 0, e: 99};
+  const D = {f: 99, t: 99, p: 99, a: 99, c: 99, k: -1, s: 0, u: 0, e: 99};
   function champs(x, z) {
     tour++; np = 0; const L = carreV(x, z);
     for (let n = 0; n < L.length; n += 2) { const k = L[n], i = L[n + 1], P = voies[k].P, A = P[i], B = P[i + 1], ux = B[0] - A[0], uz = B[1] - A[1], ex = x - A[0], ez = z - A[1]; let t = (ex * ux + ez * uz) / (ux * ux + uz * uz || 1); t = t < 0 ? 0 : t > 1 ? 1 : t; const q = (ex - ux * t) ** 2 + (ez - uz * t) ** 2;
       if (vu[k] !== tour) { vu[k] = tour; bD[k] = q; bI[k] = i; pris[np++] = k; } else if (q < bD[k]) { bD[k] = q; bI[k] = i; } }
-    let f = 99, t = 99, p = 99, al = 99, e = 99, ko = -1, m = 0;
+    let f = 99, t = 99, p = 99, al = 99, ch = 99, e = 99, ko = -1, m = 0;
     for (let n = 0; n < np; n++) { const k = pris[n]; if (bD[k] > PORTEE_V * PORTEE_V) { vu[k] = 0; continue; } pris[m++] = k; const v = voies[k], d = Math.sqrt(bD[k]), dh = d - v.h; if (dh < e) { e = dh; ko = k; }
-      if (v.sol === "chaussee") { f = unionRonde(f, d - v.l / 2, RC); t = unionRonde(t, d - v.l / 2 - v.t, .4); } else if (v.sol === "paves") p = unionRonde(p, d - v.l / 2, 1); else al = unionRonde(al, d - v.l / 2, 2.5); }
+      if (v.sol === "chaussee") { f = unionRonde(f, d - v.l / 2, RC); t = unionRonde(t, d - v.l / 2 - v.t, .4); } else if (v.sol === "paves") p = unionRonde(p, d - v.l / 2, 1); else if (v.sol === "terre") ch = unionRonde(ch, d - v.l / 2, 2); else al = unionRonde(al, d - v.l / 2, 2.5); }
     np = m;
     for (const q of places) if (x > q.x0 - 17 && x < q.x1 + 17 && z > q.z0 - 17 && z < q.z1 + 17) p = unionRonde(p, distPlace(q, x, z), .5);
     if (parvis.length && t < 12) for (const q of parvis) { if (vu[q.k] !== tour) continue; const v = voies[q.k], w = surVoieZ(v, x, z, bI[q.k] - 1, bI[q.k] + 1), o = q.sg * w.u - v.h; t = Math.min(t, Math.max(q.s0 - w.s, w.s - q.s1, o - q.e, -o - 2)); }   // le trottoir élargi devant les boutiques
-    D.f = f; D.t = t; D.p = p; D.a = al; D.k = ko; D.e = e; return D;
+    D.f = f; D.t = t; D.p = p; D.a = al; D.c = ch; D.k = ko; D.e = e; return D;
   }
   /* la place d'un point le long de la voie k : D.s (la distance depuis son début), D.u (l'écart, + = à droite) ; à demander juste après champs(x, z) */
   const place = (k, x, z) => { const v = voies[k], ici = vu[k] === tour, q = surVoieZ(v, x, z, ici ? bI[k] - 3 : 0, ici ? bI[k] + 3 : v.n); D.s = q.s; D.u = q.u; return D; };
@@ -135,6 +139,6 @@ const ZONE = (() => {
   const ecart = k => vu[k] === tour ? Math.sqrt(bD[k]) - voies[k].l / 2 : 99;   // la distance au bord de la voie k ; à demander juste après champs(x, z)
   const enVoie = (v, s, u = 0) => { s = clamp(s, 0, v.L); let i = Math.min(v.n - 2, Math.max(0, Math.floor(s / v.L * (v.n - 1)))); while (i > 0 && v.S[i] > s) i--; while (i < v.n - 2 && v.S[i + 1] < s) i++; const w = (s - v.S[i]) / (v.S[i + 1] - v.S[i] || 1), tx = lerp(v.TX[i], v.TX[i + 1], w), tz = lerp(v.TZ[i], v.TZ[i + 1], w), d = Math.hypot(tx, tz) || 1;
     return {x: lerp(v.P[i][0], v.P[i + 1][0], w) - tz / d * u, z: lerp(v.P[i][1], v.P[i + 1][1], w) + tx / d * u, tx: tx / d, tz: tz / d}; };   // un point de la voie (u : l'écart, + = à droite), et sa direction
-  return {zone: true, graine: z0.graine || 1, donnees: z0, voies, places, noeuds, RC, MARGE: MARGE_Z, xa, xb, za, zb, parvis, sol, bord, champs, place, ecart, proches, arrondi, surVoieZ, enVoie, distPlace, D};
+  return {zone: true, graine: z0.graine || 1, donnees: z0, voies, places, noeuds, RC, MARGE: MARGE_Z, xa, xb, za, zb, parvis, sol, bord, champs, place, ecart, proches, arrondi, surVoieZ, enVoie, distPlace, aires, aireEn, D};
 })();
 const SUR_PLAN = !!(NIVEAU.plan || NIVEAU.zone);   // la piste est posée sur une ville (plan.js ou zone.js) : ses longueurs sont exactes

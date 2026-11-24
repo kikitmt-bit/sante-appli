@@ -29,7 +29,7 @@ class H(http.server.BaseHTTPRequestHandler):
             return
         importlib.reload(page)
         q = parse_qs(urlparse(self.path).query)
-        niveau = (q.get("niveau") or ["essai"])[0]
+        niveau = (q.get("niveau") or ["vichy-lac"])[0]
         try:
             if q.get("pur"):
                 js = page.controle(niveau).split("\n", 2)[2]  # sans les faux « window » et « document » : ici, il y a un vrai navigateur
