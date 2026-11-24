@@ -111,10 +111,12 @@ function remplirZone() {
   for (const q of P.objets) if (q.r && !q.haie) semer(q.x, q.z, q.r);
   for (const m of P.maisons) { if (m.pr > 8) continue; for (const dx of [-.36, .12, .4]) { if (R() < .35) continue;
     const e = m.pr / 2 + m.e * tire(.42, .62), x = m.x + Math.cos(m.L) * dx * m.l + Math.sin(m.L) * e, z = m.z - Math.sin(m.L) * dx * m.l + Math.cos(m.L) * e, t = R(); if (P.distDur(x, z) < 1.2 || chemins(x, z, 1) || boitesPres(x, z, .9) || !libreA(x, z, 1.1)) continue; semer(x, z, 1.1);
-    if (t < .55) poser(t < .3 ? "massif" : "buisson", x, z, 0, {r: 1.1}); else poser(t < .8 ? "pommier" : "cerisier", x, z, R() * 6, {r: .5, couronne: 1.6, ech: .62}); } }
+    if (t < .55) poser(t < .3 ? "massif" : "buisson", x, z, 0, {r: 1.1}); else if (degage(x, z, 3.3)) poser("arbre_rue", x, z, R() * 6, {esp: t < .8 ? "pommier" : "cerisier", r: .5, couronne: 1.6, ech: .62}); } }
+  // (24/11, Kiki : « un gros arbre qui flotte, sans tronc ») les silhouettes de forêt n'ont pas de tronc : jamais à moins de 40 m du chemin, et un peu enfoncées
   for (let x = Z.xa + 20; x < Z.xb - 20; x += 4.6) for (let z = Z.za + 20; z < Z.zb - 20; z += 4.6) {
-    const X = x + tire(-1.9, 1.9), Y = z + tire(-1.9, 1.9), u = R(), v = R(), w = R(); if (Z.bord(X, Y) > 6) continue; const d = P.distDur(X, Y), dense = d > 24 ? .72 : d > 13 ? .3 : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
-    const r = d > 24 ? 1.9 : 2.5; if (!libreA(X, Y, r)) continue; semer(X, Y, r); if (d > 24) poser("arbre_masse", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: .85 + w * .4, masse: true}); else poser("arbre", X, Y, v * 6.28, {r: .6, couronne: 2.5, dur: d < 6}); }
+    const X = x + tire(-1.9, 1.9), Y = z + tire(-1.9, 1.9), u = R(), v = R(), w = R(), bz = Z.bord(X, Y); if (bz > 6) continue; const d = Math.min(P.distDur(X, Y), bz + Z.MARGE); pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]), dense = d > 24 && proche > 40 ? .72 : d > 13 ? (proche > 40 ? .3 : .2) : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
+    const loin = proche > 40 && d > 13, r = loin && d > 24 ? 1.9 : 2.5; if (!libreA(X, Y, r) || proche < 4.8) continue; semer(X, Y, r);
+    if (loin) poser("arbre_masse", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: .85 + w * .4, masse: true, dy: -.5}); else poser("arbre_rue", X, Y, v * 6.28, {r: .6, couronne: 2.5, dur: d < 6}); }
   // 7. les passants et les Pokémon : près du chemin, jamais dessus
   const gens = (NIVEAU.peuple || []).filter(q => q.o === "habitant").map(q => q.nom), nums = (NIVEAU.peuple || []).filter(q => q.o === "pokemon").map(q => q.num); let kg = 0, dernier = -99;
   for (let i = 12; i < PISTE.N - 6; i++) { if (i - dernier < 26) continue; const a = PISTE.H[i], sg = R() < .5 ? -1 : 1;
@@ -124,7 +126,7 @@ function remplirZone() {
   // ce qui est loin du parcours ne se voit que de loin : les petits objets n'y sont pas, les arbres y sont de simples silhouettes
   P.objets = P.objets.filter(q => { pres(q.x, q.z); const d = Math.hypot(q.x - PISTE.X[Q.i], q.z - PISTE.Z[Q.i]);
     if (["massif", "banc", "poubelle", "terrasse", "boite_lettres", "buisson", "etal"].includes(q.o)) return d < 42; if (q.o === "lampadaire" || q.o === "voiture") return d < 60; if (q.haie) return d < 90;
-    if (["arbre", "pommier", "cerisier", "bouleau"].includes(q.o) && d > 34) { q.o = "arbre_masse"; q.pres = true; q.ech = (q.ech || 1) * .8; q.dur = false; } return true; });
+    if (["arbre", "arbre_rue", "bouleau"].includes(q.o) && d > 60) { q.o = "arbre_masse"; q.pres = true; q.ech = (q.ech || 1) * .8; q.dur = false; q.dy = -.5; } return true; });
 }
 
 /* ---- le contrôle : le parcours d'un vrai piéton, rien sur le chemin, rien qui se touche, des pentes douces, et jamais plus de 45 m sans qu'il se passe quelque chose ---- */

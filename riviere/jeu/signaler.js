@@ -1,7 +1,7 @@
 /* ============ signaler un défaut : un toucher, et l'endroit exact est gardé (24/11, Kiki : « comment arriver à ce que tu corriges tous les bugs ? ») ============ */
 // Le bouton ⚑ (en course) garde le circuit, le mètre, l'heure, le temps qu'il fait, la machine et l'image qu'on a sous les yeux. Rien à écrire.
-// Tout attend sur la machine (localStorage « riviere_signal », 20 au plus) ; l'appli les range au chargement suivant dans data/riviere/signalements/
-// (app.py : envoyer_signalements), où Claude les relit. Aucune donnée de santé : ni cœur, ni temps, ni distance.
+// Tout attend sur la machine (localStorage « riviere_signal », 20 au plus) ; l'appli les range tout de suite (sinon au chargement suivant) dans
+// data/riviere/signalements/ (app.py : envoyer_signalements), où Claude les relit. Aucune donnée de santé : ni cœur, ni temps, ni distance.
 const SIGNAL = {cle: "riviere_signal", max: 20};
 function signalerImage() {   // l'image affichée, en petit (640 px de large) : redessinée tout de suite, car l'image d'avant n'est plus lisible
   try { dessiner(); const c = renderer.domElement, l = 640, h = Math.round(640 * c.height / c.width), t = document.createElement("canvas"); t.width = l; t.height = h; t.getContext("2d").drawImage(c, 0, 0, l, h); return t.toDataURL("image/jpeg", .72); } catch (e) { return null; }
@@ -14,6 +14,7 @@ function signaler() {
   const liste = lireReglage(SIGNAL.cle, []), l = (Array.isArray(liste) ? liste : []).concat(o).slice(-SIGNAL.max);
   const ok = ecrireReglage(SIGNAL.cle, l) || ecrireReglage(SIGNAL.cle, l.map(q => Object.assign({}, q, {image: null})));   // plus de place sur la machine : l'endroit seul, sans les images
   annoncer(ok ? "⚑ NOTÉ, MERCI !" : "⚑ PAS GARDÉ (PLUS DE PLACE)");
+  try { const b = window.parent !== window && window.parent.document.querySelector(".st-key-signalements button"); if (b) b.click(); } catch (e) {}   // dans l'appli : il part tout de suite (app.py, un bouton caché ; la partie n'est pas rechargée)
   return o;
 }
 $("bSignal").addEventListener("pointerdown", e => { e.stopPropagation(); e.preventDefault(); if (S.mode) signaler(); });

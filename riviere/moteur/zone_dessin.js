@@ -1,8 +1,11 @@
 /* ============ la zone, dessinée : le sol d'une ville libre, d'un seul tenant (moteur/zone.js dit où sont les rues, zone_plan.js ce qu'on y pose) ============ */
 // Le sol est une trame de petits triangles (50 cm aux coins des rues, 1 m près d'elles, 4 m dans l'herbe), coupés exactement là où la distance à une rue change de signe : la bordure,
 // le bord du trottoir, celui d'une allée. Chaque coupe tombe sur une arête partagée par deux triangles : aucune fente possible, quelle que soit la courbe.
-// Les dalles, la bordure et les pavés d'une ruelle suivent leur rue (s le long, u en travers) ; le goudron et les pavés d'une place, le monde.
-const MAT_ZONE = PLAN && PLAN.zone ? new THREE.ShaderMaterial({uniforms: Object.assign({uSoleil: {value: SOLEIL}}, COMMUNS, EFFETS.ombres ? PORTEE_U : null), vertexShader: PLAN_VS, fragmentShader: planFS("vU / 1.25", "vU * vec2(1.5, 1.9)", "clamp(1. + .9 * (dot(vN, uSoleil) - uSoleil.y), .8, 1.14)"), side: THREE.DoubleSide}) : null;
+// La bordure et les pavés d'une ruelle suivent leur rue (s le long, u en travers) ; le goudron, le trottoir et les pavés d'une place, le monde.
+// (24/11, Kiki : « dans un virage, on voit le raccord du quadrillage », et entre le trottoir et les allées des maisons) Le trottoir n'a donc plus de dalles :
+// un enrobé clair, sans direction, avec un grain et de grandes taches ; le même, au même endroit du monde, pour les allées des maisons. Aucun raccord possible.
+const ZONE_TROTTOIR = "{ float l = vb(p / 8. + 2.), m = vb(p / 1.9 + 5.), g = h21(floor(p * 7.)); c = mix(vec3(.815, .796, .755), vec3(.785, .765, .722), step(.56, l)) * (.972 + .056 * m) * (1. + (.075 * g - .037) * pres); if (h21(floor(p * 3.5) + 7.) > .955) c *= mix(1., .935, pres); }";
+const MAT_ZONE = PLAN && PLAN.zone ? new THREE.ShaderMaterial({uniforms: Object.assign({uSoleil: {value: SOLEIL}}, COMMUNS, EFFETS.ombres ? PORTEE_U : null), vertexShader: PLAN_VS, fragmentShader: planFS(ZONE_TROTTOIR, "vU * vec2(1.5, 1.9)", "clamp(1. + .9 * (dot(vN, uSoleil) - uSoleil.y), .8, 1.14)"), side: THREE.DoubleSide}) : null;
 const MAT_ZONE_PEINT = MAT_ZONE ? Object.assign(MAT_ZONE.clone(), {uniforms: MAT_ZONE.uniforms, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -6}) : null;
 
 async function construireZone(cede) {   // cede : rendre la main toutes les 40 ms (le menu reste vivant pendant que le monde se construit derrière) ; le résultat est le même

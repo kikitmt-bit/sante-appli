@@ -226,7 +226,7 @@ function* poserPlan(formes, MD, K, poses) {
     const recette = OBJETS[q.o]; if (!recette) { console.warn("Objet inconnu : " + q.o); continue; }
     const CA = q.masse || q.haie ? 120 : 64, k = (q.masse ? "f" : q.haie ? "n" : "p") + Math.floor(q.x / CA) + "," + Math.floor(q.z / CA); if (!formes.has(k)) formes.set(k, new Forme());
     pres(q.x, q.z); const s = sLigne(Q.i), cote = Q.d > 0 ? "d" : "g", e = Q.e;
-    const F = formes.get(k), n0 = F.m.length; recette(F.poser(q.x, PLAN.haut(q.x, q.z), q.z, q.lacet || 0, q.ech || 1).matiere(2), Object.assign({eau: 3, _s: s, _cote: cote, _e: e}, q), R, K);
+    const F = formes.get(k), n0 = F.m.length; recette(F.poser(q.x, PLAN.haut(q.x, q.z) + (q.dy || 0), q.z, q.lacet || 0, q.ech || 1).matiere(2), Object.assign({eau: 3, _s: s, _cote: cote, _e: e}, q), R, K);
     if (q.incline) { const gx = (PLAN.sol(q.x + 1, q.z) - PLAN.sol(q.x - 1, q.z)) / 2, gz = (PLAN.sol(q.x, q.z + 1) - PLAN.sol(q.x, q.z - 1)) / 2; for (let i = n0; i < F.m.length; i++) if (F.m[i]) F.p[i * 3 + 1] += (F.p[i * 3] - q.x) * gx + (F.p[i * 3 + 2] - q.z) * gz; }   // (étape 13) une voiture garée, une haie : couchées sur la pente (pas leur ombre, déjà posée au sol)
     if (q.masse) MD.masse++; else poses.push({nom: q.o, s, cote, e, plan: true, v: null});
     if (++n % 60 === 0) yield;

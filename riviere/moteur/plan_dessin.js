@@ -5,14 +5,14 @@ const PLAN_VS = `attribute float aT; attribute vec2 aU; varying vec3 vW, vN; var
   void main() { vT = aT; vU = aU; vN = normal; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`;
 // aT : 0 la chaussée · 1 le trottoir (dalles) · 2 la bordure de pierre · 3 son flanc · 4 une allée de parc (sable stabilisé) · 5 le bord d'une allée
 //      6 une place pavée · 7 la peinture · 8 la pierre (bassin, béton) · 9 le plateau d'un carrefour
-const planFS = (dalles, paves, ombrage) => `${PORTEE_FS}
+const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
   uniform float uB0, uB1, uSombre, uPluie; uniform vec3 uBrume, uTeinte, uSoleil;
   varying vec3 vW, vN; varying float vZ, vT; varying vec2 vU;
   float h21(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
   float vb(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(h21(i), h21(i + vec2(1., 0.)), f.x), mix(h21(i + vec2(0., 1.)), h21(i + vec2(1., 1.)), f.x), f.y); }
   void main() { vec2 p = vW.xz; float pres = 1. - smoothstep(16., 70., vZ), jn = 1. - smoothstep(14., 34., vZ), mo = 1. - smoothstep(26., 80., vZ); vec3 c;
     if (vT < .5) { c = vec3(.37, .375, .39) * (.92 + .16 * vb(p / 7. + 4.)) * (1. + (.1 * h21(floor(p * 5.)) - .05) * pres); if (vb(p / vec2(11., 3.) + 9.) > .8) c *= .92; }
-    else if (vT < 1.5) { vec2 g = ${dalles}, f = fract(g); float hp = h21(floor(g) + 31.); c = mix(vec3(.824, .804, .761), vec3(.788, .769, .725), mix(.38, step(.62, hp), mo)) * (.97 + .05 * mix(.5, hp, mo)); if (f.x < .05 || f.y < .05) c = mix(c, vec3(.671, .651, .608), .85 * jn); }
+    else if (vT < 1.5) ${trottoir}
     else if (vT < 2.5) { float b = floor(vU.x); c = vec3(.89, .87, .83) * (.96 + .05 * h21(vec2(b, 1.))); if (fract(vU.x) < .04) c = mix(c, vec3(.55, .54, .51), .5 * jn); }
     else if (vT < 3.5) c = vec3(.55, .54, .51);
     else if (vT < 4.5) { float n = vb(p / 1.7 + 3.), m = vb(p / 6.); c = mix(vec3(.85, .735, .545), vec3(.80, .68, .49), step(.56, m)) * (1. + (.1 * n - .05)); if (h21(floor(p * 4.)) > .95) c *= mix(1., .86, pres); }
@@ -24,8 +24,9 @@ const planFS = (dalles, paves, ombrage) => `${PORTEE_FS}
     c *= vN.y > .5 ? ${ombrage} : .78 + .22 * max(0., dot(vN, uSoleil));
     ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ));" : ""}
     c *= 1. - .16 * uPluie;
-    gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;   // (étape 13) le même pour une ville libre (zone_dessin.js) : ses dalles suivent la rue, ses pentes prennent la lumière
-const PLAN_FS = planFS("p / 1.25", "p * vec2(1.5, 1.9)", "1.");
+    gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;   // (étape 13) le même pour une ville libre (zone_dessin.js) : son trottoir uni, ses pentes prennent la lumière
+const PLAN_DALLES = "{ vec2 g = p / 1.25, f = fract(g); float hp = h21(floor(g) + 31.); c = mix(vec3(.824, .804, .761), vec3(.788, .769, .725), mix(.38, step(.62, hp), mo)) * (.97 + .05 * mix(.5, hp, mo)); if (f.x < .05 || f.y < .05) c = mix(c, vec3(.671, .651, .608), .85 * jn); }";   // le trottoir d'une ville à angles droits : de grandes dalles
+const PLAN_FS = planFS(PLAN_DALLES, "p * vec2(1.5, 1.9)", "1.");
 const MAT_PLAN = PLAN ? new THREE.ShaderMaterial({uniforms: Object.assign({uSoleil: {value: SOLEIL}}, COMMUNS, EFFETS.ombres ? PORTEE_U : null), vertexShader: PLAN_VS, fragmentShader: PLAN_FS, side: THREE.DoubleSide}) : null;
 
 /* la piste posée sur un plan ne se dessine pas : seulement l'ombre du coureur sous ses pattes (le même calcul que celle de la terre : surfaces.js) */

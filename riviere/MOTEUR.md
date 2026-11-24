@@ -526,8 +526,8 @@ hauteur qu'on veut, et le sol se déduit de la distance à chacune : chaussée, 
 |---|---|
 | `moteur/zone.js` (pur, avant la piste) | `ZONE` : les voies (droites et arcs), leurs croisements, la hauteur du sol (`ZONE.sol`, votée par les voies voisines : une rue est plate en travers), les distances (`ZONE.champs` → `D.f` bordure, `D.t` bord du trottoir, `D.p` pavés, `D.a` sable) |
 | `moteur/zone_plan.js` (pur, après la piste) | `planDeZone` : `PLAN` avec les mêmes réponses que plan.js (champ, terrain, décor, formes ne voient pas la différence) ; les passages piétons (où le parcours traverse, et à chaque branche d'un carrefour), les plateaux ; `remplirZone` pose boutiques, maisons, clôtures, voitures, jardins le long des courbes ; `zoneControle` |
-| `moteur/zone_dessin.js` | le sol d'un seul tenant : une trame de triangles (4 m, 1 m près des rues, 50 cm aux coins) coupée exactement où une distance change de signe ; dalles et bordures suivent leur rue ; la peinture posée dessus |
-| `contenu/objets/kanto-zone.js` | `maison_pente`, `magasin_pente`, `immeuble_pente` : le seuil à la hauteur du sol devant la façade, un soubassement de pierre, les marches qu'il faut |
+| `moteur/zone_dessin.js` | le sol d'un seul tenant : une trame de triangles (4 m, 1 m près des rues, 50 cm aux coins) coupée exactement où une distance change de signe ; la bordure suit sa rue ; **le trottoir est uni, sans dalles** (un enrobé clair sans direction, `ZONE_TROTTOIR`, le même pour les allées des maisons : aucun raccord dans un virage ; Kiki, 24/11) ; la peinture posée dessus |
+| `contenu/objets/kanto-zone.js` | `maison_pente`, `magasin_pente`, `immeuble_pente` : le seuil à la hauteur du sol devant la façade, un soubassement de pierre, les marches qu'il faut ; `arbre_rue` : la même essence sur un tronc plus haut, qu'on voit au-dessus d'une haie (les silhouettes `arbre_masse`, sans tronc, jamais à moins de 40 m du chemin) |
 | `jeu/villes.js` | `cheminDeZone`, `recalerZone`, `niveauDeZone` : un parcours posé sur les voies (tel trottoir de telle rue, puis telle autre ; on tourne au coin, jamais ailleurs) |
 | `outils/zone.py` | `python riviere/outils/zone.py ville-hauts` : le dessin (`outils/zones/ville-hauts.json`) → le niveau, son contrôle, son plan vu du ciel avec courbes de niveau et pentes du parcours (hors dépôt) |
 
@@ -551,8 +551,8 @@ hauteur qu'on veut, et le sol se déduit de la distance à chacune : chaussée, 
 - **Le bord des ombres** (effets.js, `ombreEn`) : seize lectures de la carte au lieu de quatre, un bord lisse et net ; plus de dents de scie quand le soleil est rasant (+1 ms par image sur le PC de Kiki).
 - **Étais de mine** en travers de la galerie (ils étaient plantés dans l'axe, au milieu de l'eau) ; écume des rapides en traits fins ; ailes de pont en pierre.
 - **Inspecter** : `python riviere/outils/inspecter.py <circuit> --pas 10` = une image tous les 10 m, en planches (hors dépôt). **À regarder avant de donner un circuit à Kiki.**
-- **⚑ Signaler** (jeu/signaler.js) : en course, un toucher garde le circuit, le mètre et l'image ; l'appli les range dans `data/riviere/signalements/<date>.json` (dépôt privé) au
-  chargement suivant. À relire quand Kiki dit « regarde mes signalements ».
+- **⚑ Signaler** (jeu/signaler.js) : en course, un toucher garde le circuit, le mètre et l'image ; l'appli les range tout de suite dans `data/riviere/signalements/<date>.json` (dépôt privé ;
+  un bouton caché d'app.py, dans un fragment : la partie n'est pas rechargée), sinon au chargement suivant. À relire quand Kiki dit « regarde mes signalements ».
 
 ## Ajouter une région (un autre style)
 

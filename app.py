@@ -516,10 +516,15 @@ def envoyer_rameur():
             st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
 
 
+@st.fragment
 def envoyer_signalements():
     """Les défauts du décor signalés dans La Rivière (bouton ⚑, riviere/jeu/signaler.js) : un fichier chacun dans data/riviere/signalements/, pour que Claude les corrige.
-    N'attend jamais et ne casse jamais la page : s'ils ne partent pas, ils restent sur la machine pour la fois d'après."""
-    texte = streamlit_js_eval(js_expressions="localStorage.getItem('riviere_signal') || ''", key="signal_lire")
+    N'attend jamais et ne casse jamais la page : s'ils ne partent pas, ils restent sur la machine pour la fois d'après.
+    (24/11 : ils n'arrivaient qu'à l'ouverture suivante) le jeu touche le bouton caché : un fragment, donc seul lui tourne et la partie en cours n'est jamais rechargée."""
+    n = st.session_state.get("signal_n", 0)
+    if st.button("⚑", key="signal_bouton"):
+        n = st.session_state["signal_n"] = n + 1
+    texte = streamlit_js_eval(js_expressions="localStorage.getItem('riviere_signal') || ''", key=f"signal_lire_{n}")
     if not texte or st.session_state.get("signal_envoye") == hash(texte):
         return
     try:
@@ -529,7 +534,9 @@ def envoyer_signalements():
         ok = False
     if ok:
         st.session_state["signal_envoye"] = hash(texte)
-        streamlit_js_eval(js_expressions="localStorage.removeItem('riviere_signal')", key="signal_effacer")
+        ids = json.dumps([s["id"] for s in liste])  # seulement ceux qui sont partis : un autre a pu être signalé entre-temps
+        streamlit_js_eval(js_expressions=f"(() => {{ const l = JSON.parse(localStorage.getItem('riviere_signal') || '[]').filter(s => !{ids}.includes(s.id)); "
+                          "l.length ? localStorage.setItem('riviere_signal', JSON.stringify(l)) : localStorage.removeItem('riviere_signal'); return 1; })()", key=f"signal_effacer_{n}_{hash(texte)}")
 
 
 def bloc_rameur(debut, fin, un_jour, j_ref, lire_vite):
@@ -1049,7 +1056,7 @@ JOUEUR = {"id": AMI, "debut": dt.date.fromisoformat(REGISTRE[AMI]["debut"])} if 
 # L'écran du rameur sur la tablette (?ecran=rameur, Kiki, 07/11) : le jeu seul, en plein écran, qui avance avec les coups envoyés en direct par le téléphone sous le siège.
 # Rien d'autre : ni récolte, ni jeu Pokémon, ni données de santé (seulement le modèle des mètres par coup).
 if st.query_params.get("ecran") == "rameur":
-    st.markdown("<style>.st-key-ecran_rameur iframe{position:fixed;inset:0;width:100vw !important;height:100dvh !important;border:0;z-index:999990;background:#22315A}"
+    st.markdown("<style>.st-key-signalements{position:fixed;left:-9999px;top:0;width:60px}.st-key-ecran_rameur iframe{position:fixed;inset:0;width:100vw !important;height:100dvh !important;border:0;z-index:999990;background:#22315A}"
                 "header,[data-testid='stToolbar'],.st-key-outils{display:none !important}</style>", unsafe_allow_html=True)
     envoyer_rameur()  # une séance finie sur la tablette (« La Rivière ») attend sur cette machine : on l'envoie avant de relire les séances
     with st.container(key="signalements"):  # une place fixe : ce qui y apparaît ne déplace pas le cadre du jeu (il se rechargerait)
