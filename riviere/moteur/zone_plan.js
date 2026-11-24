@@ -1,0 +1,166 @@
+/* ============ la zone, habillée : les passages piétons, les parcelles le long des courbes, et le contrôle du parcours (moteur/zone.js dit où sont les rues) ============ */
+// Mêmes réponses que plan.js (nature, haut, bord, objets…) : champ.js, decor.js, terrain.js et forme.js ne savent pas laquelle des deux villes ils ont.
+// Ce fichier vient après la piste : c'est elle qui dit où l'on traverse. Il ne dessine rien (aucun appel à three.js).
+// Le bord d'une voie (g, d : sa gauche, sa droite) : "maisons" (défaut d'une rue), "boutiques", "residences", "haie", "arbres", "rien",
+// ou une liste [{a: de ce mètre, b: à celui-ci, style}] ; ce qui n'est pas dit prend le style par défaut.
+function planDeZone() {
+  const Z = ZONE, D = Z.D, V = Z.voies, T = PISTE;
+  // où le parcours traverse une chaussée : un passage piéton, dans sa direction
+  const passages = [], dessus = i => Z.champs(T.X[i], T.Z[i]).f < .12; let i0 = 0; while (i0 < T.N && dessus(i0)) i0++;
+  for (let n = 0; n < T.N;) { const i = (i0 + n) % T.N; if (!dessus(i)) { n++; continue; } let m = n; while (m < T.N + n && dessus((i0 + m) % T.N)) m++;
+    const a = i, b = (i0 + m - 1) % T.N, dx = T.X[b] - T.X[a], dz = T.Z[b] - T.Z[a], l = Math.hypot(dx, dz) || 1, x = (T.X[a] + T.X[b]) / 2, z = (T.Z[a] + T.Z[b]) / 2; Z.champs(x, z); const k = D.k, q = Z.place(k, x, z);
+    passages.push({x, z, dx: dx / l, dz: dz / l, l: l / 2 + .7, w: 1.5, k, s: q.s, route: true, i0: a, i1: b}); n = m; }
+  // à chaque croisement : le plateau (le carrefour au niveau des trottoirs), et un passage sur chaque branche
+  const plateaux = [];   // {k, s0, s1} : la chaussée de la voie k est surélevée entre s0 et s1 (une rampe de 1,1 m de chaque côté)
+  for (const n of Z.noeuds) {
+    const rues = n.v.filter(q => V[q.k].sol === "chaussee"); if (rues.length < 2) continue;
+    for (const q of rues) { const v = V[q.k], e = Z.enVoie(v, q.s); let d = 0;
+      for (const w of rues) { if (w === q) continue; const o = V[w.k], f = Z.enVoie(o, w.s), sn = Math.max(.35, Math.abs(e.tx * f.tz - e.tz * f.tx)), cs = Math.abs(e.tx * f.tx + e.tz * f.tz); d = Math.max(d, (o.l / 2 + o.t / 2) / sn + v.l / 2 * cs / sn); }
+      plateaux.push({k: q.k, s0: q.s - d - 1.8, s1: q.s + d + 1.8});
+      for (const sg of [-1, 1]) { const s = q.s + sg * d; if (s < 8 || s > v.L - 8) continue; const p = Z.enVoie(v, s); if (passages.some(a => Math.hypot(a.x - p.x, a.z - p.z) < 4.5 || a.k === q.k && Math.abs(a.s - s) < 4)) continue;
+        passages.push({x: p.x, z: p.z, dx: -p.tz, dz: p.tx, l: v.l / 2, w: 1.25, k: q.k, s}); } } }
+  for (const p of passages) if (p.route) { const v = V[p.k], e = Z.enVoie(v, p.s), biais = Math.abs(p.dx * e.tx + p.dz * e.tz) * v.l / 2; plateaux.push({k: p.k, s0: p.s - 1.9 - biais, s1: p.s + 1.9 + biais}); }
+  for (let k = 0; k < V.length; k++) { const L = plateaux.filter(p => p.k === k).sort((a, b) => a.s0 - b.s0); for (let i = 0; i + 1 < L.length; i++) if (L[i + 1].s0 < L[i].s1 + 4) { L[i + 1].s0 = L[i].s0; L[i + 1].s1 = Math.max(L[i + 1].s1, L[i].s1); L[i].mort = true; } }
+  const RAMPE = 1.1, plats = plateaux.filter(p => !p.mort), platsDe = V.map((v, k) => plats.filter(p => p.k === k));
+  /* rampe : de combien de mètres on est entré dans le plateau le plus proche (négatif : encore dehors) ; surPlat : 1 au niveau des trottoirs, 0 en bas, une rampe entre les deux */
+  const rampe = (k, s) => { let m = -99; for (const p of platsDe[k]) m = Math.max(m, Math.min(s - p.s0, p.s1 - s)); return m; };
+  const surPlat = (k, s) => clamp(1 + rampe(k, s) / RAMPE, 0, 1);
+  const surPassage = (x, z, plus = 2) => passages.find(p => { const ex = x - p.x, ez = z - p.z; return Math.abs(ex * p.dx + ez * p.dz) < p.l + plus && Math.abs(ez * p.dx - ex * p.dz) < p.w; }) || null;
+  function nature(x, z) {   // « chaussee », « passage », « trottoir », « place » (pavés), « allee », « jardin », « pelouse », « dehors »
+    Z.champs(x, z);
+    if (D.f < 0) return surPassage(x, z) ? "passage" : "chaussee";
+    if (D.t < 0) return "trottoir"; if (D.p < 0) return "place"; if (D.a < 0) return "allee";
+    return Math.min(D.t, D.p, D.a) < 16 ? "jardin" : Z.bord(x, z) > 0 ? "dehors" : "pelouse";
+  }
+  const MARCHE = .12;   // la hauteur d'une bordure
+  const haut = (x, z) => { const h = Z.sol(x, z); Z.champs(x, z); if (D.f >= 0) return h; const k = D.k; return h - MARCHE * (1 - surPlat(k, Z.place(k, x, z).s)); };
+  const distDur = (x, z) => { Z.champs(x, z); return Math.min(D.t, D.p, D.a); };   // la distance au sol dur le plus proche (négative : dessus)
+  return {zone: Z, graine: Z.graine, nature, haut, bord: Z.bord, sol: Z.sol, passages, plateaux: plats, surPlat, rampe, RAMPE, MARCHE, surPassage, distDur, objets: [], sols: [], entrees: [], maisons: []};
+}
+
+/* ---- ce qui est posé : les boutiques, les maisons, les clôtures, la rue, les jardins. Tout est essayé à sa place le long de la courbe ; ce qui ne tient pas n'est pas posé. ---- */
+function remplirZone() {
+  const P = PLAN; if (!P || P.rempli) return; P.rempli = true;
+  const Z = P.zone, V = Z.voies, D = Z.D, R = hasard(P.graine * 7121 + 13), tire = (a, b) => a + (b - a) * R(), choix = l => l[Math.floor(R() * l.length)];
+  const poser = (o, x, z, lacet, q = {}) => { const b = Object.assign({o, x, z, lacet}, q); P.objets.push(b); return b; };
+  // les boîtes déjà prises (les bâtiments), rangées par cases de 16 m
+  const BOITES = new Map(), cle = (a, b) => a * 4096 + b;
+  const autour = (x, z, f) => { const cx = Math.floor(x / 16), cz = Math.floor(z / 16); for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const q of BOITES.get(cle(cx + a, cz + c)) || []) if (f(q)) return true; return false; };
+  const prendre = b => { const k = cle(Math.floor(b.x / 16), Math.floor(b.z / 16)); if (!BOITES.has(k)) BOITES.set(k, []); BOITES.get(k).push(b); };
+  const boite = (x, z, lacet, l, p) => ({x, z, c: Math.cos(lacet), s: Math.sin(lacet), l: l / 2, p: p / 2});
+  const points = b => [[1, 1], [1, -1], [-1, 1], [-1, -1], [0, 1], [0, -1], [1, 0], [-1, 0], [.5, 1], [-.5, 1], [0, 0]].map(([u, v]) => [b.x + u * b.l * b.c + v * b.p * b.s, b.z - u * b.l * b.s + v * b.p * b.c]);
+  const croise = (A, B, m) => { const G = Object.assign({}, A, {l: A.l + m, p: A.p + m}); return points(G).some(([x, z]) => distBoite(B, x, z) < 0) || points(B).some(([x, z]) => distBoite(G, x, z) < 0); };
+  const tient = (b, m, libre = .9) => points(b).every(([x, z]) => P.distDur(x, z) >= libre && Z.bord(x, z) <= -3) && !autour(b.x, b.z, q => croise(b, q, m));
+  // un point du bord d'une voie : sg = -1 à gauche, 1 à droite ; e mètres derrière le trottoir ; (nx, nz) : vers la rue
+  const bord = (v, sg, s, e) => { const q = Z.enVoie(v, s, sg * (v.h + e)), nx = sg * q.tz, nz = -sg * q.tx; return {x: q.x, z: q.z, nx, nz, lacet: Math.atan2(nx, nz)}; };
+  const styleEn = (v, sg, s) => { const b = sg < 0 ? v.g : v.d, def = v.sol === "chaussee" ? "maisons" : v.sol === "paves" ? "mur" : "arbres"; if (!b) return def; if (typeof b === "string") return b; const q = b.find(a => s >= (a.a || 0) && s < (a.b === undefined ? 1e9 : a.b)); return q ? q.style : def; };
+  const noms = ["Boulangerie", "Librairie", "Fleuriste", "Café", "Épicerie", "Coiffeur", "Pharmacie", "Cycles", "Pâtisserie", "Primeur", "Presse", "Cordonnier"]; let kEns = Math.floor(R() * 12);
+  const chemin = (x0, z0, x1, z1, w, nature = "trottoir") => P.sols.push({x0, z0, x1, z1, w, nature});
+  // 0. les parvis : le trottoir élargi devant chaque file de boutiques (avant tout le reste : il compte dans les distances)
+  const FILES = [];
+  for (const v of V) for (const sg of [-1, 1]) { let a = null; for (let s = 0; s <= v.L + 1; s += 1) { const on = s <= v.L && styleEn(v, sg, s) === "boutiques"; if (on && a === null) a = s; if (!on && a !== null) { if (s - a > 12) FILES.push({v, sg, a, b: Math.min(s, v.L)}); a = null; } } }
+  for (const f of FILES) Z.parvis.push({k: f.v.k, sg: f.sg, s0: f.a, s1: f.b, e: 2.6});
+  // 1. les repères de la zone ("objets" : une fontaine, un kiosque…), à leur place exacte
+  for (const q of Z.donnees.objets || []) { poser(q.o, q.x, q.z, q.lacet || 0, Object.assign({dur: true}, q)); if (q.r) prendre(boite(q.x, q.z, 0, q.r * 2, q.r * 2)); }
+  // 2. les boutiques, côte à côte
+  for (const f of FILES) { const n = Math.max(1, Math.round((f.b - f.a) / 9)), w = (f.b - f.a) / n;
+    for (let k = 0; k < n; k++) {
+      const s = f.a + (k + .5) * w, A = bord(f.v, f.sg, s - w / 2, 2.6), B = bord(f.v, f.sg, s + w / 2, 2.6), mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2, q = bord(f.v, f.sg, s, 2.6), L = q.lacet, pr = 6;
+      const angle = Math.acos(clamp(A.nx * B.nx + A.nz * B.nz, -1, 1)), creux = (B.nx - A.nx) * (B.x - A.x) + (B.nz - A.nz) * (B.z - A.z) < 0;   // creux : la façade est au creux de la courbe, les fonds s'écartent ; sinon ils se serrent
+      const l = Math.hypot(B.x - A.x, B.z - A.z) - .08 - (creux ? 0 : 2 * pr * Math.tan(angle / 2)), b = boite(mx - q.nx * pr / 2, mz - q.nz * pr / 2, L, l, pr); if (l < 5.2 || !tient(b, -.2, -.15)) continue; prendre(b);
+      const im = l > 7.4 && R() < .2, nom = noms[kEns++ % noms.length]; poser(im ? "immeuble_pente" : "magasin_pente", b.x, b.z, L, {varie: im, l, p: pr, enseigne: im ? undefined : nom, dur: true, voir: !im});
+      const pt = (dx, e) => [mx + Math.cos(L) * dx + q.nx * e, mz - Math.sin(L) * dx + q.nz * e];
+      if (!im && (nom === "Café" || nom === "Pâtisserie")) for (const g of [-1, 1]) { const [x, z] = pt(g * 1.9, 1.45); poser("terrasse", x, z, L, {r: 1, libre: true}); }
+      else if (!im && (nom === "Primeur" || nom === "Épicerie")) { const [x, z] = pt(-1.4, 1.3); poser("etal", x, z, L, {r: 1.2, libre: true}); }
+      else if (!im && nom === "Fleuriste") for (const g of [-1, 1]) { const [x, z] = pt(g * 2.4, .9); poser("massif", x, z, 0, {r: .9, r0: .6, libre: true}); } } }
+  // 3. les maisons et les résidences : on avance le long de la courbe, chacune essayée à plusieurs reculs
+  for (const v of V) for (const sg of [-1, 1]) {
+    for (let s = 5; s < v.L - 4;) {
+      const st = styleEn(v, sg, s), res = st === "residences"; if (st !== "maisons" && !res) { s += 2; continue; }
+      const l = res ? tire(12, 15) : tire(7.6, 9.2), pr = res ? 8.4 : tire(5.9, 6.6), w = l + (res ? tire(7, 9) : tire(5, 6.6)), e0 = res ? 6 : tire(3.8, 5.4), sc = s + w / 2; let mis = null;
+      if (sc > v.L - 3 || styleEn(v, sg, sc) !== st) { s += 2; continue; }
+      for (const de of [0, 1.2, 2.4]) { const q = bord(v, sg, sc, e0 + de + pr / 2), b = boite(q.x, q.z, q.lacet, l + 1.2, pr + 1.2); if (!tient(b, 1.6)) continue; mis = {q, L: q.lacet, b, e: e0 + de}; break; }
+      if (!mis) { s += 1.5; continue; }
+      prendre(mis.b); const M = {v, sg, sa: sc - w / 2, sb: sc + w / 2, sc, l, pr, e: mis.e, L: mis.L, x: mis.q.x, z: mis.q.z, genre: choix(["haie", "barriere", "barriere", "muret"]), hh: choix([.6, .75, .9]), larg: res ? 1.2 : .9};
+      poser(res ? "immeuble_pente" : "maison_pente", M.x, M.z, M.L, {varie: true, l, p: pr, dur: true});
+      // la porte (à gauche de la façade) et son chemin jusqu'au trottoir
+      const px = res ? 0 : -l * .27, pt = (dx, e) => [M.x + Math.cos(M.L) * dx + mis.q.nx * e, M.z - Math.sin(M.L) * dx + mis.q.nz * e]; let e1 = pr / 2 + .6; const [dx0, dz0] = pt(px, e1);
+      while (e1 < 18) { const [x, z] = pt(px, e1); if (P.distDur(x, z) < .05) break; e1 += .1; }
+      if (e1 < 18) { const [dx1, dz1] = pt(px, e1 + .15); chemin(dx0, dz0, dx1, dz1, res ? 2 : 1.4); Z.champs(dx1, dz1); if (D.k === v.k) M.sp = Z.place(v.k, dx1, dz1).s; }
+      P.maisons.push(M); s = sc + w / 2; } }
+  // 4. les clôtures : le long du trottoir, d'un coin à l'autre, ouvertes devant chaque porte
+  for (const v of V) { if (v.sol !== "chaussee") continue; for (const sg of [-1, 1]) {
+    const MS = P.maisons.filter(m => m.v === v && m.sg === sg); let debut = null;
+    const bonne = s => { const st = styleEn(v, sg, s); if (st === "boutiques" || st === "rien") return false; const q = bord(v, sg, s, .5), d = P.distDur(q.x, q.z); return d > .34 && d < .75 && !MS.some(m => m.sp !== undefined && Math.abs(s - m.sp) < m.larg); };
+    const run = (a, b) => { if (b - a < 3.4) return; for (let s = a; s < b - .4;) {
+      let c = Math.min(b, s + .5); const A = bord(v, sg, s, .5), m = MS.find(q => s >= q.sa && s < q.sb), fin = m ? Math.min(b, Math.max(m.sb, s + .6)) : b;
+      for (;;) { const n = Math.min(fin, c + .5); if (n <= c || n - s > 3.2) break; const B = bord(v, sg, n, .5), M = bord(v, sg, (s + n) / 2, .5); if (Math.hypot((A.x + B.x) / 2 - M.x, (A.z + B.z) / 2 - M.z) > .06) break; c = n; }
+      const B = bord(v, sg, c, .5), l = Math.hypot(B.x - A.x, B.z - A.z), n = bord(v, sg, (s + c) / 2, .5), genre = m ? m.genre : ["barriere", "haie"][Math.floor(s / 34 + v.k * 3 + sg) & 1], h = genre === "haie";
+      if (l > .5) poser(genre, (A.x + B.x) / 2, (A.z + B.z) / 2, Math.atan2(-(B.z - A.z), B.x - A.x), {long: l + (h ? .06 : 0), h: h ? (m ? m.hh : .7) : genre === "muret" ? .6 : undefined, l, p: h ? .75 : .4, dur: true, haie: true, incline: h}); s = c; } };
+    for (let s = 0; s <= v.L; s += .5) { const on = bonne(s); if (on && debut === null) debut = s; if ((!on || s + .5 > v.L) && debut !== null) { run(debut, s - .25); debut = null; } } } }
+  // 5. la rue : réverbères d'un côté puis de l'autre, voitures garées, boîtes aux lettres
+  for (const v of V) { if (v.sol !== "chaussee") continue; let k = 0;
+    for (let s = 7; s < v.L - 4; s += 13) { const sg = k++ % 2 ? 1 : -1, q = Z.enVoie(v, s, sg * (v.l / 2 + .38)); Z.champs(q.x, q.z); if (Math.abs(D.f - .38) > .1 || P.passages.some(p => Math.hypot(p.x - q.x, p.z - q.z) < p.l + 2.2) || !degage(q.x, q.z, 1.04)) continue; poser("lampadaire", q.x, q.z, 0, {r: .24, dur: true, bordure: true}); }
+    if (v.voitures !== false && v.l >= 6) { const sg = v.k % 2 ? 1 : -1; for (let s = 10; s < v.L - 8; s += 6.4) { if (R() < .5 || P.rampe(v.k, s) > -5.5) continue; const q = Z.enVoie(v, s, sg * (v.l / 2 - 1.1)); Z.champs(q.x, q.z); if (D.k !== v.k || Math.abs(D.f + 1.1) > .15) continue; const dir = sg > 0 ? 1 : -1; poser("voiture", q.x, q.z, Math.atan2(-q.tz * dir, q.tx * dir), {l: 4.6, p: 1.9, boiteX: true, dur: true, incline: true}); } } }
+  for (const m of P.maisons) { if (m.sp === undefined || m.pr > 8) continue; const q = bord(m.v, m.sg, m.sp + (m.larg + .35) * (R() < .5 ? -1 : 1), .55); if (P.distDur(q.x, q.z) > .3) poser("boite_lettres", q.x, q.z, q.lacet, {r: .3, libre: true}); }
+  // 6. les jardins et les bois : par essais, jamais sur du dur, ni dans une maison ; plus serrés loin des rues
+  const S = new Map(), semer = (x, z, r) => { const k = cle(Math.floor(x / 6), Math.floor(z / 6)); if (!S.has(k)) S.set(k, []); S.get(k).push([x, z, r]); };
+  const libreA = (x, z, r) => { const cx = Math.floor(x / 6), cz = Math.floor(z / 6); for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const q of S.get(cle(cx + a, cz + c)) || []) if (Math.hypot(q[0] - x, q[1] - z) < q[2] + r) return false; return true; };
+  const boitesPres = (x, z, d) => autour(x, z, b => distBoite(b, x, z) < d);
+  const chemins = (x, z, d) => P.sols.some(s => { if (Math.abs(s.x0 - x) > 20 || Math.abs(s.z0 - z) > 20) return false; const ux = s.x1 - s.x0, uz = s.z1 - s.z0, t = clamp(((x - s.x0) * ux + (z - s.z0) * uz) / (ux * ux + uz * uz || 1), 0, 1); return Math.hypot(x - s.x0 - ux * t, z - s.z0 - uz * t) < s.w / 2 + d; });
+  for (const q of P.objets) if (q.r && !q.haie) semer(q.x, q.z, q.r);
+  for (const m of P.maisons) { if (m.pr > 8) continue; for (const dx of [-.36, .12, .4]) { if (R() < .35) continue;
+    const e = m.pr / 2 + m.e * tire(.42, .62), x = m.x + Math.cos(m.L) * dx * m.l + Math.sin(m.L) * e, z = m.z - Math.sin(m.L) * dx * m.l + Math.cos(m.L) * e, t = R(); if (P.distDur(x, z) < 1.2 || chemins(x, z, 1) || boitesPres(x, z, .9) || !libreA(x, z, 1.1)) continue; semer(x, z, 1.1);
+    if (t < .55) poser(t < .3 ? "massif" : "buisson", x, z, 0, {r: 1.1}); else poser(t < .8 ? "pommier" : "cerisier", x, z, R() * 6, {r: .5, couronne: 1.6, ech: .62}); } }
+  for (let x = Z.xa + 20; x < Z.xb - 20; x += 4.6) for (let z = Z.za + 20; z < Z.zb - 20; z += 4.6) {
+    const X = x + tire(-1.9, 1.9), Y = z + tire(-1.9, 1.9), u = R(), v = R(), w = R(); if (Z.bord(X, Y) > 6) continue; const d = P.distDur(X, Y), dense = d > 24 ? .72 : d > 13 ? .3 : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
+    const r = d > 24 ? 1.9 : 2.5; if (!libreA(X, Y, r)) continue; semer(X, Y, r); if (d > 24) poser("arbre_masse", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: .85 + w * .4, masse: true}); else poser("arbre", X, Y, v * 6.28, {r: .6, couronne: 2.5, dur: d < 6}); }
+  // 7. les passants et les Pokémon : près du chemin, jamais dessus
+  const gens = (NIVEAU.peuple || []).filter(q => q.o === "habitant").map(q => q.nom), nums = (NIVEAU.peuple || []).filter(q => q.o === "pokemon").map(q => q.num); let kg = 0, dernier = -99;
+  for (let i = 12; i < PISTE.N - 6; i++) { if (i - dernier < 26) continue; const a = PISTE.H[i], sg = R() < .5 ? -1 : 1;
+    for (const sd of [sg, -sg]) { const e = tire(2.1, 4.6), x = PISTE.X[i] + Math.cos(a) * e * sd, z = PISTE.Z[i] + Math.sin(a) * e * sd, n = P.nature(x, z); if (!degage(x, z, 1.5) || P.surPassage(x, z, 3) || !libreA(x, z, .9) || boitesPres(x, z, .7)) continue;
+      if ((n === "trottoir" || n === "place") && gens.length) poser("habitant", x, z, 0, {nom: gens[kg++ % gens.length], r: .3, voir: true}); else if (n === "jardin" && nums.length && P.distDur(x, z) > .9) poser("pokemon", x, z, 0, {num: nums[kg++ % nums.length], r: .4, voir: true}); else continue;
+      semer(x, z, .9); dernier = i + Math.floor(tire(-6, 8)); break; } }
+  // ce qui est loin du parcours ne se voit que de loin : les petits objets n'y sont pas, les arbres y sont de simples silhouettes
+  P.objets = P.objets.filter(q => { pres(q.x, q.z); const d = Math.hypot(q.x - PISTE.X[Q.i], q.z - PISTE.Z[Q.i]);
+    if (["massif", "banc", "poubelle", "terrasse", "boite_lettres", "buisson", "etal"].includes(q.o)) return d < 42; if (q.o === "lampadaire" || q.o === "voiture") return d < 60; if (q.haie) return d < 90;
+    if (["arbre", "pommier", "cerisier", "bouleau"].includes(q.o) && d > 34) { q.o = "arbre_masse"; q.pres = true; q.ech = (q.ech || 1) * .8; q.dur = false; } return true; });
+}
+
+/* ---- le contrôle : le parcours d'un vrai piéton, rien sur le chemin, rien qui se touche, des pentes douces, et jamais plus de 45 m sans qu'il se passe quelque chose ---- */
+const VIDE_MAX = 45, PENTE_MAX = .11;   // (24/11, Kiki : « les lignes droites sont trop longues » ; on fait 1,8 m de décor par seconde : 45 m = 25 s)
+/* ce qui se passe le long du parcours : [{i, quoi}] */
+function evenementsZone() {
+  const P = PLAN, T = PISTE, N = T.N, o = [], b = i => ((i % N) + N) % N, tourne = (i, j) => { const d = T.H[b(j)] - T.H[b(i)]; return Math.abs(Math.atan2(Math.sin(d), Math.cos(d))); }; let avant = null;
+  for (let i = 0; i < N; i++) {
+    if (tourne(i - 8, i + 8) > .24) o.push({i, quoi: "virage"});
+    const n = P.nature(T.X[i], T.Z[i]); if (avant && n !== avant) o.push({i, quoi: n}); avant = n;
+    const p1 = (T.Y[b(i)] - T.Y[b(i - 14)]) / 14, p2 = (T.Y[b(i + 14)] - T.Y[b(i)]) / 14; if (Math.abs(p2 - p1) > .035) o.push({i, quoi: "pente"}); }
+  for (const n of P.zone.noeuds) { pres(n.x, n.z); if (Math.hypot(n.x - T.X[Q.i], n.z - T.Z[Q.i]) < 12) o.push({i: sLigne(Q.i), quoi: "carrefour"}); }
+  for (const q of P.objets) if (q.voir) { pres(q.x, q.z); if (Math.hypot(q.x - T.X[Q.i], q.z - T.Z[Q.i]) < (q.l ? q.p / 2 + 5 : 6)) o.push({i: sLigne(Q.i), quoi: q.o}); }
+  return o.sort((a, c) => a.i - c.i);
+}
+function videZone() {   // le plus long bout où rien ne se passe : {m, i}
+  const E = evenementsZone(), N = PISTE.N; if (!E.length) return {m: N, i: 0}; let r = {m: 0, i: 0};
+  for (let k = 0; k < E.length; k++) { const a = E[k].i, c = k + 1 < E.length ? E[k + 1].i : E[0].i + N; if (c - a > r.m) r = {m: c - a, i: a}; } return r;
+}
+function zoneControle() {
+  const P = PLAN, Z = P.zone, T = PISTE, o = []; remplirZone(); const dire = t => { if (o.length < 30) o.push(t); }; let avant = null;
+  for (let i = 0; i < T.N; i++) {
+    const a = T.H[i], n = P.nature(T.X[i], T.Z[i]);
+    for (const u of [-.7, 0, .7]) { const m = P.nature(T.X[i] + Math.cos(a) * u, T.Z[i] + Math.sin(a) * u); if (!SOLS_A_PIED.includes(m)) dire("Au mètre " + i + ", le coureur marche sur « " + m + " »."); }
+    if (avant && n !== avant && !PASSAGES_PERMIS[avant + ">" + n]) dire("Au mètre " + i + ", le sol passe de « " + avant + " » à « " + n + " ».");
+    avant = n; }
+  for (const p of P.passages) if (p.route) { const v = Z.voies[p.k], e = Z.enVoie(v, p.s), an = Math.abs(p.dx * e.tx + p.dz * e.tz);
+    if (an > Math.sin(.49)) dire("Au mètre " + p.i0 + ", on traverse « " + (v.nom || v.id) + " » en biais (" + Math.round(Math.asin(an) * 57.3) + "°)."); if (p.l > 6) dire("Au mètre " + p.i0 + ", la traversée fait " + Math.round(p.l * 2 - 1.4) + " m."); }
+  let pm = 0, im = 0; for (let i = 0; i < T.N; i++) if (Math.abs(T.PENTE[i]) > pm) { pm = Math.abs(T.PENTE[i]); im = i; }
+  if (pm > PENTE_MAX) dire("La pente atteint " + Math.round(pm * 100) + " % au mètre " + im + ".");
+  const vide = videZone(); if (vide.m > VIDE_MAX) dire("Rien ne se passe pendant " + Math.round(vide.m) + " m, à partir du mètre " + vide.i + " (" + VIDE_MAX + " au plus).");
+  for (const q of P.objets) { if (!q.dur || q.ouvert) continue; pres(q.x, q.z); if (Math.hypot(q.x - T.X[Q.i], q.z - T.Z[Q.i]) > 16) continue; const b = q.l ? boiteObjet(q) : null;
+    for (let k = -14; k <= 14; k++) { const i = idx(sLigne(Q.i) + k), dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = b ? distBoite(b, T.X[i], T.Z[i]) : Math.hypot(dx, dz) - q.r; if (d < .75) { dire("« " + q.o + " » à " + d.toFixed(2) + " m du chemin, au mètre " + i + "."); break; } } }
+  const C = 16, G = new Map(), solides = P.objets.filter(q => q.dur && !q.haie && !q.ouvert && !q.libre && !q.masse);
+  for (const q of solides) { const b = q.l && !q.boiteX ? boiteObjet(q) : null; if (b) for (const [x, z] of coinsBoite(b)) if (P.distDur(x, z) < -.3) { dire("« " + q.o + " » déborde sur « " + P.nature(x, z) + " » (" + Math.round(x) + ", " + Math.round(z) + ")."); break; }
+    const k = Math.floor(q.x / C) + "," + Math.floor(q.z / C); if (!G.has(k)) G.set(k, []); G.get(k).push(q); }
+  for (const q of solides) { const cx = Math.floor(q.x / C), cz = Math.floor(q.z / C); for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const w of G.get((cx + a) + "," + (cz + c)) || []) { if (w === q || w.x < q.x || w.x === q.x && w.z <= q.z) continue; if (seTouchent(q, w)) dire("« " + q.o + " » et « " + w.o + " » se touchent (" + Math.round(q.x) + ", " + Math.round(q.z) + ")."); } }
+  return o;
+}

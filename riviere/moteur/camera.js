@@ -1,6 +1,7 @@
 /* ============ la caméra : derrière ta monture, elle suit la pente, se penche dans les virages et accompagne les sauts ============ */
 // Une pièce du niveau peut la régler : "camera": {"haut": 1.5, "recul": 2} (plus haute au-dessus d'un lac, plus loin dans une descente).
 const VUE = {mode: PARAMS.get("vue") || "jeu"};
+const PENTE_VUE = typeof PLAN !== "undefined" && PLAN && PLAN.zone ? .4 : 1;   // (24/11, étape 13) dans une ville en pente, la caméra ne suit la pente qu'à 40 % : la rue monte devant soi, ou plonge (ailleurs : en entier, comme avant)
 const CAM = {y: null, ly: 0, roulis: 0, saut: 0, choc: 0, z1: null, z2: 0, g: null, h: 1.95};
 /* le zoom de la vitesse (Kiki, 11/11) : à l'arrêt la caméra est plus près, à l'allure de croisière comme avant, en turbo un peu plus loin.
    Il suit la vitesse du DÉCOR (une côte freine : elle se rapproche) à travers deux filtres lents : on ne le voit jamais bouger. */
@@ -52,7 +53,7 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   const g = CAM.g, recul = (5.5 + S.vn * .8 + dz * .7) * g * fr + P.CAMR[i] - (velo ? 1.6 : 0), c = pose(S.s - recul, (fl === null ? M.d * .6 : M.d * fl) + lat), d = pose(S.s + (velo ? 7 : 10 * g * (fl === null ? 1 : .85)), (fl === null ? M.d * .3 : M.d * fl) - lat * .1);
   const voute = g > 1.05 && (P.TUN[i] || P.TUN[idx(S.s + 16)] || P.TUN[idx(S.s - recul)]);
   CAM.h += ((voute ? Math.min(1.95 * g * fh, 2.9) : 1.95 * g * fh) - CAM.h) * kg;
-  const yc = c.y + CAM.h + (velo ? .45 : 0) + dz * .15 + P.CAMH[i], yl = d.y + (velo ? -.55 : .8 * g * (fl === null ? 1 : .7)), net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
+  const yc = c.y + CAM.h + (velo ? .45 : 0) + dz * .15 + P.CAMH[i], yl = d.y - (d.y - c.y) * (1 - PENTE_VUE) + (velo ? -.55 : .8 * g * (fl === null ? 1 : .7)), net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
   if (CAM.y === null) { CAM.y = yc; CAM.ly = yl; }
   CAM.y += (yc - CAM.y) * k; CAM.ly += (yl - CAM.ly) * k;
   CAM.saut += ((M.y === null ? 0 : M.y - at(S.s).y) * .55 - CAM.saut) * k;   // un saut : la caméra le suit à moitié

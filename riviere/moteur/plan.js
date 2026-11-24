@@ -9,6 +9,7 @@
 //   passages: [{x, z, l, sens}] les passages piétons au milieu d'une rue (les autres, aux carrefours, sont déduits)
 // Ce fichier ne dessine rien (aucun appel à three.js) : il se contrôle sans navigateur (planControle, tout en bas).
 const PLAN = (() => {
+  if (ZONE) return planDeZone();   // (étape 13) une ville libre : mêmes réponses, autre fabrication (zone.js, zone_plan.js)
   const p = NIVEAU.plan; if (!p) return null;
   const T = 3, RC = 3, MARGE_P = 90;   // la largeur d'un trottoir ; l'arrondi d'un coin d'îlot ; la ceinture d'arbres autour de la ville
   const ns = p.ns, eo = p.eo, xA = ns[0].x - ns[0].l / 2, xB = ns[ns.length - 1].x + ns[ns.length - 1].l / 2, zA = eo[0].z - eo[0].l / 2, zB = eo[eo.length - 1].z + eo[eo.length - 1].l / 2;
@@ -78,7 +79,7 @@ const COUL_PLAN = {trottoir: [.80, .78, .73], passage: [.80, .78, .73], chaussee
 /* ---- ce qui est posé sur le plan : des listes, sans rien dessiner. Chaque objet : {o, x, z, lacet, r (place au sol, rayon), l, p (place en rectangle), dur (arrête le coureur), …réglages}
    Tout est à sa parcelle, donc rien ne se touche par construction ; planControle le vérifie quand même. ---- */
 function remplirPlan() {
-  const P = PLAN; if (!P || P.rempli) return; P.rempli = true;
+  const P = PLAN; if (P && P.zone) return remplirZone(); if (!P || P.rempli) return; P.rempli = true;
   const R = hasard(P.graine * 7121 + 13), tire = (a, b) => a + (b - a) * R(), choix = l => l[Math.floor(R() * l.length)];
   const poser = (o, x, z, lacet, q = {}) => { P.objets.push(Object.assign({o, x, z, lacet}, q)); };
   const sol = (x0, z0, x1, z1, nature, y = -.008) => P.sols.push({x0: Math.min(x0, x1), x1: Math.max(x0, x1), z0: Math.min(z0, z1), z1: Math.max(z0, z1), nature, y});
@@ -194,7 +195,7 @@ const SOLS_A_PIED = ["trottoir", "passage", "allee", "place"];
 /* les passages permis d'un sol à un autre : la liste fermée. Tout ce qui n'y est pas est refusé. */
 const PASSAGES_PERMIS = {"trottoir>passage": 1, "passage>trottoir": 1, "trottoir>allee": 1, "allee>trottoir": 1, "trottoir>place": 1, "place>trottoir": 1};
 function planControle() {
-  const P = PLAN, o = []; if (!P) return o; remplirPlan();
+  const P = PLAN, o = []; if (!P) return o; if (P.zone) return zoneControle(); remplirPlan();
   const T = PISTE; let avant = null; const dire = t => { if (o.length < 30) o.push(t); };
   for (let i = 0; i < T.N; i++) {
     const a = T.H[i], n = P.nature(T.X[i], T.Z[i]);
@@ -225,7 +226,8 @@ function* poserPlan(formes, MD, K, poses) {
     const recette = OBJETS[q.o]; if (!recette) { console.warn("Objet inconnu : " + q.o); continue; }
     const CA = q.masse || q.haie ? 120 : 64, k = (q.masse ? "f" : q.haie ? "n" : "p") + Math.floor(q.x / CA) + "," + Math.floor(q.z / CA); if (!formes.has(k)) formes.set(k, new Forme());
     pres(q.x, q.z); const s = sLigne(Q.i), cote = Q.d > 0 ? "d" : "g", e = Q.e;
-    recette(formes.get(k).poser(q.x, PLAN.haut(q.x, q.z), q.z, q.lacet || 0, q.ech || 1).matiere(2), Object.assign({eau: 3, _s: s, _cote: cote, _e: e}, q), R, K);
+    const F = formes.get(k), n0 = F.m.length; recette(F.poser(q.x, PLAN.haut(q.x, q.z), q.z, q.lacet || 0, q.ech || 1).matiere(2), Object.assign({eau: 3, _s: s, _cote: cote, _e: e}, q), R, K);
+    if (q.incline) { const gx = (PLAN.sol(q.x + 1, q.z) - PLAN.sol(q.x - 1, q.z)) / 2, gz = (PLAN.sol(q.x, q.z + 1) - PLAN.sol(q.x, q.z - 1)) / 2; for (let i = n0; i < F.m.length; i++) if (F.m[i]) F.p[i * 3 + 1] += (F.p[i * 3] - q.x) * gx + (F.p[i * 3 + 2] - q.z) * gz; }   // (étape 13) une voiture garée, une haie : couchées sur la pente (pas leur ombre, déjà posée au sol)
     if (q.masse) MD.masse++; else poses.push({nom: q.o, s, cote, e, plan: true, v: null});
     if (++n % 60 === 0) yield;
   }

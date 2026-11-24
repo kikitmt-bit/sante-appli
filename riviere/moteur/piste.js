@@ -59,7 +59,7 @@ function cheminRaccord(x0, z0, t0, x1, z1, t1, R) {
   return sol[0] || null;
 }
 function nombres(pieces) {   // le nombre de mètres de chaque pièce : arrondis en cumulé, pour que le total soit juste
-  if (NIVEAU.plan) return pieces.map(p => Math.max(1, Math.round(p.long)));
+  if (SUR_PLAN) return pieces.map(p => Math.max(1, Math.round(p.long)));
   let cum = 0;
   return pieces.map(p => { const a = Math.round(cum); cum += p.long; return Math.max(1, Math.round(cum) - a); });
 }
@@ -131,7 +131,7 @@ const PISTE = (() => {
   if (source.some(p => p.raccord)) {
     if (!BOUCLE || !source[source.length - 1].raccord) throw new Error("La pièce « raccord » se met à la fin d'un circuit en boucle.");
     source = raccorder(source);
-  } else if (BOUCLE && !NIVEAU.plan) fermer(source);
+  } else if (BOUCLE && !SUR_PLAN) fermer(source);
   // la hauteur : chaque pièce monte ou descend ; un circuit revient à sa hauteur de départ
   const autosY = source.filter(p => p.monte === "auto"), sommeY = source.reduce((t, p) => t + (+p.monte || 0), 0);
   for (const p of autosY) p.monte = BOUCLE ? -sommeY / autosY.length : 0;
@@ -145,7 +145,7 @@ const PISTE = (() => {
     if (!(w > 0)) throw new Error("Pièce sans largeur : « " + titre + " ».");
     const surf = p.surface || NIVEAU.surface || (DISC_PISTE === "terre" ? "terre" : "eau"); if (!surfaces.includes(surf)) surfaces.push(surf);   // la surface : la pièce, sinon le circuit (12/11 : la machine ne change plus un circuit d'eau en chemin)
     pieces.push(Object.assign(p, {s0: s, s1: s + n, titre, surface: surf, grotte: p.tunnel ? (typeof p.tunnel === "string" ? p.tunnel : p.tunnel.style || "roche") : null}));
-    const pas = NIVEAU.plan ? (Math.abs(k) < 1e-9 ? p.long / n : 2 * (p.long / (k * n)) * Math.sin(k / 2)) : 1;   // (24/11) sur un plan, les longueurs sont exactes (une corde d'arc), pas arrondies au mètre : le parcours reste au milieu du trottoir
+    const pas = SUR_PLAN ? (Math.abs(k) < 1e-9 ? p.long / n : 2 * (p.long / (k * n)) * Math.sin(k / 2)) : 1;   // (24/11) sur un plan, les longueurs sont exactes (une corde d'arc), pas arrondies au mètre : le parcours reste au milieu du trottoir
     for (let i = 0; i < n; i++) {
       X.push(x); Z.push(z); H.push(h); Y0.push(y); W0.push(w / 2); KG.push(TYPES.indexOf(p.g)); KD.push(TYPES.indexOf(p.d));
       TUN.push(p.tunnel && i >= MARGE && i < n - MARGE ? 1 : 0); PONT.push(p.pont ? 1 : 0); NET.push(p.net ? 1 : 0); SF.push(surfaces.indexOf(surf)); PC.push(ip);
@@ -204,6 +204,8 @@ const PISTE = (() => {
     const mi = n >> 1; o.droite = (o.X[mi] - X[a + mi]) * Math.cos(H[a + mi]) + (o.Z[mi] - Z[a + mi]) * Math.sin(H[a + mi]) > 0;   // la voie « force » passe à droite de la calme ?
     return o;
   });
+  if (ZONE) { for (let i = 0; i < N; i++) Y[i] = ZONE.sol(X[i], Z[i]); bas = 0; }   // (24/11) sur une ville libre (zone.js), la piste prend la hauteur du sol
+  else
   for (let i = 0; i < N; i++) bas = Math.min(bas, Y[i]);
   for (let i = 0; i < N; i++) Y[i] -= bas;
   for (const v of voies) for (let i = 0; i < v.n; i++) v.Y[i] -= bas;

@@ -106,7 +106,7 @@ class Fichiers(unittest.TestCase):
             pieces = n["pieces"]
             if n.get("boucle"):  # une boucle se referme par une pièce « raccord » à la fin (ou, à l'ancienne, par une pièce au virage « auto »)
                 autos = sum(1 for p in pieces if p.get("virage") == "auto")
-                self.assertTrue(pieces[-1].get("raccord") or autos == 1 or n.get("plan"), f"{nom} : une boucle finit par une pièce « raccord »")
+                self.assertTrue(pieces[-1].get("raccord") or autos == 1 or n.get("plan") or n.get("zone"), f"{nom} : une boucle finit par une pièce « raccord »")
             self.assertEqual(sum(1 for p in pieces[:-1] if p.get("raccord")), 0, f"{nom} : « raccord » ne se met qu'à la fin")
             if n.get("surface"):
                 self.assertIn(n["surface"], SURFACES, f"{nom} : surface inconnue")
@@ -253,7 +253,7 @@ class Moteur(unittest.TestCase):
             for c in n["criteres"]:
                 self.assertTrue(0 <= c["note"] <= 100 and c["phrase"], f"{nom} : {c}")
             self.assertTrue(0 <= n["note"] <= 100, nom)
-            if not (lis("niveaux", nom + ".json").get("route") or lis("niveaux", nom + ".json").get("plan")):   # (une vraie route peut traverser 20 km de forêt : son paysage est celui du vrai lieu)
+            if not any(lis("niveaux", nom + ".json").get(k) for k in ("route", "plan", "zone")):   # (une vraie route peut traverser 20 km de forêt : son paysage est celui du vrai lieu)
                 self.assertGreater(len(n["sequences"]), 1, f"{nom} : un seul paysage ?")
             self.assertAlmostEqual(sum(s["t"] for s in n["sequences"]), n["duree"], delta=len(n["sequences"]) + 2, msg=f"{nom} : les séquences ne couvrent pas le tour")
 
@@ -366,7 +366,7 @@ class Moteur(unittest.TestCase):
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
     BUDGET_TRIANGLES = 220000
     BUDGET_SECONDES = 8
-    BUDGET_PAGE_KO = 2360  # (24/11) les villes dessinées : 110 Ko de plus (le module, sa copie pour le générateur, deux circuits, des passants) ; avant : 2190
+    BUDGET_PAGE_KO = 2460  # (24/11, étape 13) la ville libre : 70 Ko de plus (zone.js, zone_plan.js et leur copie pour le générateur, le dessin, le circuit d'essai) ; avant : 2360, les villes dessinées : 110 Ko de plus (le module, sa copie pour le générateur, deux circuits, des passants) ; avant : 2190
                             #  +40 Ko la nuit : le décor OpenStreetMap du Ventoux entier, 480 objets réels, et la région kanto-reel ;
                             #  18/11 : +60 Ko pour le lac d'Allier à Vichy, son rivage mètre par mètre, ses 200 objets réels et la région vichy ;
                             #  18/11 au soir : +10 Ko pour le footing de Jadielle, ses rives et l'escalier ;
@@ -379,7 +379,7 @@ class Moteur(unittest.TestCase):
             b = self.bilan(nom)
             km = max(1, b["metres"] / 2000)   # (16/11) une vraie route de 5 km (outils/gpx.py) : le budget d'un circuit de 2 km par tranche de 2 km
             self.assertLess(b["secondes"], self.BUDGET_SECONDES * km, f"{nom} : construction trop lente")
-            if lis("niveaux", nom + ".json").get("plan"):   # (24/11) une ville dessinée : dense, mais on n'en voit jamais plus des deux tiers (250 000 triangles au pire sur ce PC)
+            if lis("niveaux", nom + ".json").get("plan") or lis("niveaux", nom + ".json").get("zone"):   # (24/11) une ville dessinée : dense, mais on n'en voit jamais plus des deux tiers (250 000 triangles au pire sur ce PC)
                 km *= 1.7
             self.assertLess(b["triangles"], self.BUDGET_TRIANGLES * km, f"{nom} : trop de triangles ({b['triangles']})")
             if b["troncons"]:   # une longue route, construite par tronçons : ce qui compte, c'est ce qu'on voit d'un coup (un kilomètre)
@@ -427,6 +427,59 @@ class Villes(unittest.TestCase):
             if o["type"] == "parc":
                 o["allees"] = o["allees"][1:]
         self.assertTrue(any("pelouse" in e for e in self.bilan(n)["erreurs"]))
+
+
+@unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")
+class VilleLibre(unittest.TestCase):
+    """La ville libre (moteur/zone.js, 24/11, étape 13 du plan) : des rues courbes, en diagonale, en pente ; le parcours d'un vrai piéton, jamais 45 m sans rien."""
+
+    def setUp(self):
+        sys.path.insert(0, str(R / "outils"))
+        import zone
+        import generer
+        self.zone, self.node, self.controle = zone, generer._node, lambda n: generer.bilan(circuit=n)
+        self.dessin = json.loads((R / "outils" / "zones" / "ville-hauts.json").read_text(encoding="utf-8"))
+
+    def test_la_ville_essai(self):
+        n = self.zone.niveau_de(self.dessin)
+        self.assertEqual(n, lis("niveaux", "ville-hauts.json"), "le circuit du jeu n'est plus celui de son dessin : python riviere/outils/zone.py ville-hauts")
+        self.assertEqual(self.controle(n)["erreurs"], [])
+
+    def test_le_sol(self):
+        """Une rue est plate en travers (loin d'un carrefour), et le sol ne fait jamais de marche."""
+        n = self.zone.niveau_de(self.dessin)
+        r = self.node(_page.controle("essai", circuit=n) + """
+;(() => { const Z = ZONE; let travers = 0, marche = 0, piste = 0;
+  for (const v of Z.voies) for (let s = 8; s < v.L - 8; s += 3) { const c = Z.enVoie(v, s); if (Z.noeuds.some(q => Math.hypot(q.x - c.x, q.z - c.z) < 24)) continue; for (const u of [-v.h + .3, v.h - .3]) { const e = Z.enVoie(v, s, u); travers = Math.max(travers, Math.abs(Z.sol(e.x, e.z) - Z.sol(c.x, c.z))); } }
+  for (let x = Z.xa + 5; x < Z.xb - 5; x += 2.3) for (let z = Z.za + 5; z < Z.zb - 5; z += 2.3) if (Z.bord(x, z) < 0) marche = Math.max(marche, Math.abs(Z.sol(x + .5, z) - Z.sol(x, z)), Math.abs(Z.sol(x, z + .5) - Z.sol(x, z)));
+  for (let i = 0; i < PISTE.N; i++) piste = Math.max(piste, Math.abs(PISTE.Y[i] - Z.sol(PISTE.X[i], PISTE.Z[i])));
+  console.log("SOL " + JSON.stringify({travers, marche, piste})); })();""", "SOL")
+        self.assertLess(r["travers"], .2, "une rue penche en travers")
+        self.assertLess(r["marche"], .3, "une marche dans le sol")
+        self.assertLess(r["piste"], .001, "la piste n'est pas posée sur le sol")
+
+    def test_le_trottoir_quitte(self):
+        n = self.zone.niveau_de(self.dessin)
+        n["pieces"][0]["virage"] = 25
+        n["pieces"][2]["virage"] -= 25
+        self.assertTrue(any("marche sur" in e for e in self.controle(n)["erreurs"]))
+
+    def test_une_rue_trop_raide(self):
+        d = json.loads(json.dumps(self.dessin))
+        for v in d["zone"]["voies"]:
+            for q in v["pts"]:
+                if "y" in q:
+                    q["y"] *= 1.6
+        self.assertTrue(any("pente" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+
+    def test_rien_pendant_45_m(self):
+        """Kiki : « les lignes droites sont trop longues ». Un pâté de maisons tout droit, sans personne : refusé."""
+        pts = [[0, 0], [150, 0], [150, -150], [0, -150]]
+        d = {"id": "carre", "nom": "Carré", "graine": 1, "peuple": [], "depart": [0, .5], "zone": {"voies": [
+            {"id": f"r{i}", "nom": f"Rue {i}", "pts": [{"x": pts[i][0], "z": pts[i][1], "y": 1}, {"x": pts[(i + 1) % 4][0], "z": pts[(i + 1) % 4][1], "y": 1}]} for i in range(4)]},
+            "etapes": [{"v": f"r{i}", "cote": "g", "de": 0, "a": 1, "nom": f"Rue {i}"} for i in range(4)]}
+        e = self.controle(self.zone.niveau_de(d))["erreurs"]
+        self.assertTrue(any("Rien ne se passe" in x for x in e), e)
 
 
 @unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")

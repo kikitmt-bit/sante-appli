@@ -35,6 +35,7 @@ un seul nombre. Voir « Une fourche ».)
 | Fichier | Ce qu'il fait | Dessine ? |
 |---|---|---|
 | `outils.js` | petites fonctions, les options de l'adresse (`PARAMS`) | non |
+| `zone.js`, `zone_plan.js` | une ville libre (étape 13) : ses voies, la hauteur de son sol, ce qu'on y pose ; voir « Une ville libre » | non |
 | `piste.js` | les pièces du niveau → une ligne en 3D, mètre par mètre (`PISTE`, `at`, `pose`, `pres`, `verifier`) | non |
 | `champ.js` | la hauteur et la couleur du sol en tout point, par **vote** des points de piste (`hauteur`, `hSol`, `couleurSol`) | non |
 | `forme.js` | les volumes simples (boîte, toit, boule…) dont sont faits les objets | non |
@@ -515,6 +516,31 @@ posé dessus (surface `libre` : elle ne dessine que l'ombre du coureur). Le sol 
 - À plat pour l'instant (aucun relief), rues à angle droit seulement ; le parc a ses allées courbes. Le générateur « À pied » ne fait plus que ça (les anciens modules `_p` ne servent plus).
 - La caméra du trotteur ne regarde jamais à plus de 12° de son Pokémon (camera.js) : un coin de rue tourne à 90° en 5 m.
 - Loin du parcours, les petits objets ne sont pas posés et les arbres sont des silhouettes : 60 000 à 250 000 triangles à l'image, 7 à 14 ms sur le PC de Kiki.
+
+## Une ville libre : des rues courbes, en diagonale, en pente (24/11, étape 13 du plan, lot 1)
+
+La ville dessinée (au-dessus) est plate, à angles droits, et prend tout le circuit. Ici, **`"zone"` dans un niveau décrit des VOIES**, chacune une courbe quelconque à la
+hauteur qu'on veut, et le sol se déduit de la distance à chacune : chaussée, trottoir, pavés, allée, jardin. Rien n'est assemblé, donc **aucune jointure ne peut s'ouvrir**.
+
+| Fichier | Rôle |
+|---|---|
+| `moteur/zone.js` (pur, avant la piste) | `ZONE` : les voies (droites et arcs), leurs croisements, la hauteur du sol (`ZONE.sol`, votée par les voies voisines : une rue est plate en travers), les distances (`ZONE.champs` → `D.f` bordure, `D.t` bord du trottoir, `D.p` pavés, `D.a` sable) |
+| `moteur/zone_plan.js` (pur, après la piste) | `planDeZone` : `PLAN` avec les mêmes réponses que plan.js (champ, terrain, décor, formes ne voient pas la différence) ; les passages piétons (où le parcours traverse, et à chaque branche d'un carrefour), les plateaux ; `remplirZone` pose boutiques, maisons, clôtures, voitures, jardins le long des courbes ; `zoneControle` |
+| `moteur/zone_dessin.js` | le sol d'un seul tenant : une trame de triangles (4 m, 1 m près des rues, 50 cm aux coins) coupée exactement où une distance change de signe ; dalles et bordures suivent leur rue ; la peinture posée dessus |
+| `contenu/objets/kanto-zone.js` | `maison_pente`, `magasin_pente`, `immeuble_pente` : le seuil à la hauteur du sol devant la façade, un soubassement de pierre, les marches qu'il faut |
+| `jeu/villes.js` | `cheminDeZone`, `recalerZone`, `niveauDeZone` : un parcours posé sur les voies (tel trottoir de telle rue, puis telle autre ; on tourne au coin, jamais ailleurs) |
+| `outils/zone.py` | `python riviere/outils/zone.py ville-hauts` : le dessin (`outils/zones/ville-hauts.json`) → le niveau, son contrôle, son plan vu du ciel avec courbes de niveau et pentes du parcours (hors dépôt) |
+
+- **Dessiner une ville** = un fichier dans `outils/zones/` : `voies` (`pts` arrondis par `r`, quelques hauteurs `y` ; `l` chaussée, `t` trottoirs de 3 m ; `sol` "paves" pour une ruelle,
+  "sable" pour une allée ; `g`, `d` : "maisons", "boutiques", "residences", "rien", ou par bouts), `places`, `objets` (repères), `etapes` du parcours, `depart`. Une rue qui en croise une
+  autre prend sa hauteur toute seule. **Ne jamais retoucher le niveau à la main** (un test compare) : changer le dessin, relancer l'outil.
+- **Ce qui est refusé** (`zoneControle`) : tout ce que refuse une ville dessinée, plus une traversée en biais (> 28°) ou trop longue, une pente de plus de 11 %, et **plus de 45 m (25 s) sans
+  qu'il se passe quelque chose** (`evenementsZone` : virage, changement de sol, carrefour, cassure de pente, boutique, passant, Pokémon, repère).
+- **La piste** prend la hauteur de la zone (piste.js, `if (ZONE)`), et le terrain du monde la rejoint à son bord (champ.js). `SUR_PLAN` = l'une ou l'autre ville.
+- **La caméra** ne suit la pente qu'à 40 % dans une zone (`PENTE_VUE`, camera.js) : la rue monte ou plonge devant soi ; ailleurs, rien ne change.
+- Coût : 205 000 triangles au plus à l'image (297 000 pour `ville-place`), prête en ~2 s.
+- **Pas encore** (lots 2 et 3, étapes 14 à 16) : escaliers, murs de soutènement, belvédère, ruelles et parcs sur un vrai circuit (le code des pavés et des allées est là), voitures qui
+  roulent, le générateur « À pied » (il fait toujours des villes plates), Ronflex et fourches, sortir de la ville.
 
 ## Moins de défauts à la source (24/11)
 

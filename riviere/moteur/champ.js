@@ -136,7 +136,7 @@ function finir(x, z) {  // après le vote : les bosses, puis les ravins, puis le
     else h = lerp(h, -3, lisse(120, 170, e));
   }
   if (MASSIF) { const m = massifEn(x, z); if (m > h) h = lerp(h, m, lisse(8, 40, e)); }
-  if (typeof PLAN !== "undefined" && PLAN) { const t = PLAN.bord(x, z); h = lerp(-.26, h, lisse(-14, 40, t)); }   // (24/11) sous une ville dessinée (plan.js), le terrain ne dépasse jamais ; il remonte en collines autour
+  if (typeof PLAN !== "undefined" && PLAN) { const t = PLAN.bord(x, z); h = lerp(PLAN.zone ? PLAN.sol(x, z) - .26 : -.26, h, lisse(-14, 40, t)); }   // (24/11) sous une ville dessinée (plan.js), le terrain ne dépasse jamais ; il remonte en collines autour
   return h;
 }
 function hSol(x, z) { voter(x, z); return finir(x, z); }   // le sol, sans creuser le lit de la piste (pour les rives)

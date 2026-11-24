@@ -15,7 +15,7 @@ function piecesDuChemin(pts, modele) {
     const la = Math.hypot(B.x - A.x, B.z - A.z), lc = Math.hypot(C.x - B.x, C.z - B.z), ux = (B.x - A.x) / la, uz = (B.z - A.z) / la, vx = (C.x - B.x) / lc, vz = (C.z - B.z) / lc;
     const th = Math.atan2(ux * vz - uz * vx, ux * vx + uz * vz), r = B.r || 3, d = r * Math.tan(Math.abs(th) / 2);   // (z vers le bas : th positif = à droite, comme les virages d'un niveau)
     if (Math.abs(th) < .01) { pousser(Math.hypot(B.x - x, B.z - z), 0, A); x = B.x; z = B.z; continue; }
-    const long = Math.hypot(B.x - ux * d - x, B.z - uz * d - z); if ((B.x - ux * d - x) * ux + (B.z - uz * d - z) * uz < -.01) throw new Error("Un coin du parcours est trop arrondi pour la place qu'il a.");
+    const long = Math.hypot(B.x - ux * d - x, B.z - uz * d - z); if ((B.x - ux * d - x) * ux + (B.z - uz * d - z) * uz < -.01) throw new Error("Un coin du parcours est trop arrondi pour la place qu'il a (vers " + B.x.toFixed(0) + ", " + B.z.toFixed(0) + ").");
     pousser(long, 0, A); pousser(r * Math.abs(th), th * deg, A); x = B.x + vx * d; z = B.z + vz * d;
   }
   return o;
@@ -66,4 +66,41 @@ function genererVille(o, controler) {
   let dernier = null, essais = 0;
   for (let k = 0; k < 40; k++) { essais++; let n; try { const g = (o.graine || 1) + k * 101, long = q => q.pieces.reduce((t, a) => t + a.long, 0); n = tirerVille(o, g); for (let j = 0, kk = Math.max(.8, Math.min(1.9, (o.km || 1.5) / 1.05)); j < 3; j++) { kk = Math.max(.8, Math.min(1.9, kk * (o.km || 1.5) * 1000 / long(n))); n = tirerVille(o, g, kk); } const d = controler(n); if (!d.length) return {niveau: n, essais}; dernier = d; } catch (e) { dernier = [e.message]; } }
   return {erreur: "Aucune ville sans défaut : " + (dernier || []).slice(0, 3).join(" ; "), essais};
+}
+
+/* ---- une ville libre (moteur/zone.js, étape 13) : le parcours d'un piéton posé sur ses voies ----
+   etapes : [{v: l'id d'une voie, cote: "g" | "d" | "m" (le trottoir à sa gauche, à sa droite, le milieu d'une ruelle ; ou x0, z0, x1, z1 : une droite, pour traverser une place), de, a: les points de la voie, de tel à tel (dans
+   l'ordre où l'on marche : de 3 à 1, on la descend), r: l'arrondi du coin en y entrant, nom, segment}, …]. Chaque bout de voie est une droite décalée ; deux droites
+   qui se suivent se rejoignent à leur croisement : on tourne au coin, jamais ailleurs. Rend les points d'un chemin fermé (piecesDuChemin). */
+function cheminDeZone(zone, etapes, depart = [0, .5]) {   // depart : [sur la combientième droite, à quelle part d'elle]
+  const L = [];
+  for (const e of etapes) {
+    if (e.x0 !== undefined) { const d = Math.hypot(e.x1 - e.x0, e.z1 - e.z0); L.push({x: e.x0, z: e.z0, ux: (e.x1 - e.x0) / d, uz: (e.z1 - e.z0) / d, r: e.r || 3, nom: e.nom, segment: e.segment}); continue; }   // une droite libre : on traverse une place
+    const v = zone.voies.find(q => q.id === e.v); if (!v) throw new Error("Voie inconnue dans le parcours : " + e.v);
+    const sol = v.sol || "chaussee", l = v.l || (sol === "chaussee" ? 6.2 : 2.8), t = sol === "chaussee" ? (v.t === undefined ? 3 : v.t) : 0, o = e.cote === "m" ? (e.decale || 0) : (e.cote === "g" ? -1 : 1) * (l / 2 + t / 2), pas = e.a > e.de ? 1 : -1; let avant = null;
+    for (let i = e.de; i !== e.a; i += pas) {
+      const A = v.pts[i], B = v.pts[i + pas], d = Math.hypot(B.x - A.x, B.z - A.z), ux = (B.x - A.x) / d, uz = (B.z - A.z) / d; let r = e.r || 3;
+      if (avant) { const th = Math.atan2(avant.ux * uz - avant.uz * ux, avant.ux * ux + avant.uz * uz); r = Math.abs(th) < .005 ? 0 : (A.r || 4) - o * Math.sign(th); if (r < 0) throw new Error("« " + (v.nom || v.id) + " » : le point " + i + " tourne trop serré pour son trottoir."); }
+      const q = {x: A.x - uz * o, z: A.z + ux * o, ux, uz, r, nom: avant ? e.noms && e.noms[i] : e.nom, segment: e.segment}; L.push(q); avant = q; } }
+  const n = L.length, S = L.map((b, i) => {   // le sommet entre la droite d'avant et celle-ci
+    const a = L[(i + n - 1) % n], den = a.ux * b.uz - a.uz * b.ux; if (Math.abs(den) < .004) return {x: b.x, z: b.z, r: 0, nom: b.nom, segment: b.segment};
+    const t = ((b.x - a.x) * b.uz - (b.z - a.z) * b.ux) / den; return {x: a.x + a.ux * t, z: a.z + a.uz * t, r: b.r, nom: b.nom, segment: b.segment}; });
+  const i0 = depart[0], A = S[i0], B = S[(i0 + 1) % n]; let nom = null; for (let k = 0; k <= i0; k++) nom = S[k].nom || nom;
+  return [{x: lerp(A.x, B.x, depart[1]), z: lerp(A.z, B.z, depart[1]), nom, segment: A.segment}].concat(S.slice(i0 + 1), S.slice(0, i0 + 1).map(q => Object.assign({}, q)));
+}
+/* la même zone, tournée et déplacée : le point du départ en (0, 0), regardant vers -z (le repère d'un niveau). chemin : celui de cheminDeZone */
+function recalerZone(zone, chemin) {
+  const x0 = chemin[0].x, z0 = chemin[0].z, l = Math.hypot(chemin[1].x - x0, chemin[1].z - z0), sn = (chemin[1].x - x0) / l, cs = -(chemin[1].z - z0) / l, C = v => Math.round(v * 1000) / 1000;
+  const tourner = q => Object.assign({}, q, {x: C((q.x - x0) * cs + (q.z - z0) * sn), z: C(-(q.x - x0) * sn + (q.z - z0) * cs)}), o = JSON.parse(JSON.stringify(zone));
+  for (const v of o.voies) v.pts = v.pts.map(tourner); for (const p of o.places || []) p.pts = p.pts.map(tourner);
+  o.objets = (o.objets || []).map(q => { const L = q.lacet || 0, a = Math.sin(L), b = Math.cos(L); return Object.assign(tourner(q), {lacet: C(Math.atan2(a * cs + b * sn, -a * sn + b * cs))}); });
+  return {zone: o, chemin: chemin.map(tourner)};
+}
+/* un niveau entier à partir d'une ville dessinée : {id, nom, graine, zone, etapes, depart, …réglages du niveau} */
+function niveauDeZone(d) {
+  const r = recalerZone(d.zone, cheminDeZone(d.zone, d.etapes, d.depart)), pieces = piecesDuChemin(r.chemin, {large: 2, g: "plan", d: "plan", surface: "libre"}), virage = pieces.reduce((t, p) => t + p.virage, 0);
+  if (Math.abs(Math.abs(virage) - 360) > .5) throw new Error("Le parcours ne fait pas un tour : il tourne de " + Math.round(virage) + "°.");
+  pieces[0].objets = [{o: "ligne", cote: "c", a: 1, eau: .1}]; const reste = Object.assign({}, d); for (const k of ["zone", "etapes", "depart"]) delete reste[k];
+  return Object.assign({biome: "kanto-plan", lieux: "kanto", discipline: "terre", surface: "libre", machines: ["elliptique"], boucle: virage > 0 ? "droite" : "gauche", allure: 1.08, elan: 40, nageur: 25, loin: "terres",
+    peuple: ["boy", "lass", "youngster", "woman_1", "cooltrainer_f", "gentleman", "picnicker", "bug_catcher", "beauty", "camper"].map(nom => ({o: "habitant", nom})).concat([16, 133, 39, 43, 35, 52].map(num => ({o: "pokemon", num})))}, reste, {zone: Object.assign({graine: d.graine || 1}, r.zone), pieces});
 }
