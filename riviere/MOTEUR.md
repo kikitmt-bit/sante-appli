@@ -591,6 +591,20 @@ Un chemin de terre est une voie comme une autre (`"sol": "terre"`, 2,1 m) : la m
 - **À vélo** (marcheur elliptique), le décor défile trois fois plus : la longueur proposée s'arrête à 3,7 km de décor (`kmMax`).
 - Le reste est celui d'une ville tirée : ce qui ne se case pas lève une erreur, seul ce qui passe `zoneControle` est rendu.
 
+### La ville à vélo (24/11, étape 15, lot 1a)
+
+La même zone, mais on roule sur la chaussée : `"velo": true` dans la zone, `"machines": ["velo"]`, `"allure": 1` (la vraie distance). Tout est derrière ce drapeau : une zone à pied n'en voit rien.
+
+- **Les voies en plus** : `t: 0` = une route de campagne (ni trottoir ni bordure, un accotement de terre) ; `piste: {b, l}` = une avenue, de chaque côté une bande plantée de `b` mètres puis une piste cyclable de `l` mètres
+  (`esp` : l'essence de ses arbres) ; `traces: true` = un chemin carrossable ; `rc` de la zone = l'arrondi des coins (6 m) ; `bateaux: [{v, s0, s1, raison: "travaux" | "portail"}]` = la chaussée monte au niveau du trottoir ;
+  `vides` = pas de voiture garée là. Une rue et une route bout à bout : la bordure s'efface sur 16 m. Pas de plateau aux carrefours ; `ZONE.creux` dit de combien la chaussée est basse, la piste la suit en douceur.
+- **Les étapes du parcours** (`cheminDeZone`) : `cote: "v"` la voie de droite (`decale` sinon un quart de la chaussée), `"p"` la piste cyclable, `"m"` le milieu ; `{v, de, a, s0, s1, u0, u1}` glisse d'un côté à l'autre.
+  Virages : r 8 à 10 à gauche, 5 à 6 à droite ; une piste cyclable se prend et se quitte en tournant à droite à un carrefour (elle s'y évase).
+- **Ce qui est refusé** (`parcoursVelo`) : rouler à gauche (hors carrefours), passer sur un trottoir sans bateau, plus de 36 m de trottoir pour des travaux (10 sinon), entrer sur la piste cyclable ailleurs qu'à un carrefour,
+  quitter une route pour un chemin autrement que d'équerre ou bout à bout, plus de 130 m sans événement (`VIDE_VELO`).
+- **Les objets** : `contenu/objets/kanto-velo.js` (`plate_bande`, `barriere_chantier`, `cone_chantier`, `tranchee`, `tas_paves`, `panneau_route` : travaux, barree, deviation, cyclable, sens ; `panneau_ville`, `borne_bois`).
+- Fabriquer : `python riviere/outils/zone.py velo-cerisiers` (jamais le niveau à la main). La caméra ne regarde jamais à plus de 11° du cycliste.
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal

@@ -74,7 +74,7 @@ const PLAN = (() => {
   const bord = (x, z) => Math.max(xA - MARGE_P - x, x - xB - MARGE_P, zA - MARGE_P - z, z - zB - MARGE_P);   // la distance au plan (négative : dedans)
   return {T, RC, MARGE: MARGE_P, ns, eo, ilots, ilotEn, carrefours, passages, plateaux, allees, arrondir, distAllee, distRect, bordIlot, distEtang, rayonEtang, nature, haut, bord, xA, xB, zA, zB, graine: p.graine || 1, objets: [], entrees, sols: []};
 })();
-const COUL_PLAN = {trottoir: [.80, .78, .73], passage: [.80, .78, .73], chaussee: [.37, .375, .39], allee: [.83, .71, .52], place: [.74, .70, .64]};
+const COUL_PLAN = {piste: [.72, .46, .38], trottoir: [.80, .78, .73], passage: [.80, .78, .73], chaussee: [.37, .375, .39], allee: [.83, .71, .52], place: [.74, .70, .64]};
 
 /* ---- ce qui est posé sur le plan : des listes, sans rien dessiner. Chaque objet : {o, x, z, lacet, r (place au sol, rayon), l, p (place en rectangle), dur (arrête le coureur), …réglages}
    Tout est à sa parcelle, donc rien ne se touche par construction ; planControle le vérifie quand même. ---- */

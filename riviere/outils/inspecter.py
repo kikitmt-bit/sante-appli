@@ -47,7 +47,7 @@ def inspecter(niveau, pas=10, de=0, a=None, machine=None, vues=("jeu",), cols=4,
             for vue in vues:
                 url = f"http://localhost:{port}/?niveau={niveau}&machine={machine}&s=0&fige=1&h=540" + (f"&vue={vue}&alt={alt}" if vue != "jeu" else "") + (f"&heure={heure}" if heure else "") + (f"&voie={voie}" if voie is not None else "")
                 pg.goto(url, timeout=120000)
-                pg.wait_for_function("window.__pret !== undefined", timeout=40000)
+                pg.wait_for_function("window.__pret !== undefined", timeout=120000)
                 pg.add_style_tag(content="body > *:not(canvas) { display: none !important }")
                 long_, images = pg.evaluate("LONG"), []
                 for s in range(int(de), int(a if a is not None else long_), int(pas)):

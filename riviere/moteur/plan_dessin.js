@@ -5,6 +5,7 @@ const PLAN_VS = `attribute float aT; attribute vec2 aU; varying vec3 vW, vN; var
   void main() { vT = aT; vU = aU; vN = normal; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`;
 // aT : 0 la chaussée · 1 le trottoir (dalles) · 2 la bordure de pierre · 3 son flanc · 4 une allée de parc (sable stabilisé) · 5 le bord d'une allée
 //      6 une place pavée · 7 la peinture · 8 la pierre (bassin, béton) · 9 le plateau d'un carrefour · 10 un chemin de terre (aU : 1 dans un bois, la distance à son bord) · 11 le même, de loin
+//      12 une piste cyclable (aU : s, la distance à son bord) · 13 la même, peinte en travers d'une rue · 14 l'herbe au milieu d'un chemin carrossable · 15 une piste cyclable, de loin
 const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
   uniform float uB0, uB1, uSombre, uPluie; uniform vec3 uBrume, uTeinte, uSoleil;
   varying vec3 vW, vN; varying float vZ, vT; varying vec2 vU;
@@ -20,6 +21,8 @@ const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
     else if (vT < 6.5) { vec2 g = ${paves}; g.x += step(1., mod(floor(g.y), 2.)) * .5; vec2 f = fract(g); float hp = h21(floor(g)), m = vb(p / 9.); c = mix(vec3(.75, .71, .64), vec3(.69, .65, .585), mix(.5, step(.5, hp), mo)) * (.93 + .1 * mix(.5, hp, mo)) * (.96 + .08 * m); if (f.x < .08 || f.y < .1) c = mix(c, vec3(.53, .5, .45), .8 * jn); }
     else if (vT < 7.5) c = vec3(.93, .92, .88) * (.95 + .07 * h21(floor(p * 3.)));
     else if (vT < 8.5) c = vec3(.60, .59, .57) * (.95 + .08 * vb(p * 1.3));
+    else if (vT > 13.5 && vT < 14.5) { float d = abs(vU.y - .45) + (vb(p * 1.3 + 3.) - .5) * .3 + (h21(floor(p * 8.)) - .5) * .16; if (d > .3) discard; c = mix(vec3(.56, .72, .34), vec3(.50, .66, .31), step(.5, vb(p / 2.1))) * (1. + (.12 * h21(floor(p * 7.)) - .06) * pres); }
+    else if (vT > 11.5) { c = mix(vec3(.735, .475, .395), vec3(.70, .445, .37), step(.55, vb(p / 4. + 3.))) * (1. + (.09 * h21(floor(p * 6.)) - .045) * pres); if (vT > 12.5 && vT < 13.5) c *= .97; else if (vT < 12.5 && vU.y > -.11) c = mix(c, vec3(.93, .92, .88), .9); }
     else if (vT > 9.5) { float n = vb(p / 1.3 + 3.), m = vb(p / 5. + 1.), g = h21(floor(p * 7.)), bord = vT > 10.5 ? -1. : vU.y + (vb(p * 1.1 + 8.) - .5) * .55 + (h21(floor(p * 8.)) - .5) * .34; if (bord > .1) discard;
       c = mix(vec3(.745, .60, .425), vec3(.69, .545, .375), smoothstep(.4, .62, m)) * (.95 + .1 * n) * (1. + (.09 * g - .045) * pres); c = mix(c, vec3(.545, .425, .30), .42 * vU.x); c = mix(c, c * vec3(.86, .9, .78), smoothstep(-.5, .05, bord));
       float cl = h21(floor(p * 13.) + 5.); if (cl > .985) c *= mix(1., .8, pres); else if (cl < .012) c = mix(c, vec3(.78, .72, .64), .6 * pres);   // des cailloux

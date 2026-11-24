@@ -60,9 +60,9 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   CAM.choc = Math.max(0, CAM.choc - (dt || 0) * 1.6);                          // une retombée : une petite secousse
   camera.position.set(c.x, CAM.y + CAM.saut - CAM.choc * Math.abs(Math.sin(T * 30)) * .25, c.z);
   cam_cv.set(d.x, CAM.ly + CAM.saut * .6, d.z);
-  if (fl !== null && VUE.mode === "jeu") {   // (24/11) à pied, un coin de rue tourne à 90° en 4 m : on ne regarde jamais à plus de 12° de son Pokémon, sinon il sort de l'image
+  if ((fl !== null || typeof ZONE !== "undefined" && ZONE && ZONE.velo) && VUE.mode === "jeu") {   // (24/11) à pied, un coin de rue tourne à 90° en 4 m : on ne regarde jamais à plus de 12° de son Pokémon, sinon il sort de l'image
     const m = pose(S.s, M.d), a0 = Math.atan2(m.x - c.x, m.z - c.z), dx = d.x - c.x, dz2 = d.z - c.z; let e = Math.atan2(dx, dz2) - a0; e -= Math.round(e / (Math.PI * 2)) * Math.PI * 2;
-    if (Math.abs(e) > .21) { const a1 = a0 + Math.sign(e) * .21, l = Math.hypot(dx, dz2); cam_cv.x = c.x + Math.sin(a1) * l; cam_cv.z = c.z + Math.cos(a1) * l; } }
+    const em = fl !== null ? .21 : .2; if (Math.abs(e) > em) { const a1 = a0 + Math.sign(e) * em, l = Math.hypot(dx, dz2); cam_cv.x = c.x + Math.sin(a1) * l; cam_cv.z = c.z + Math.cos(a1) * l; } }
   const spr = !velo && typeof cycActif === "function" && cycActif(), vit = velo || spr ? vitrine(dt, S, spr ? CYC_PL.velo.m.position : null) : 0; camera.lookAt(cam_cv);   // (17/11) le cycliste en sprite : contenu/montures/cycliste_sprite.js
   const roulis = clamp(-P.COURB[idx(S.s + 3)] * 1.5, -.11, .11) * (.35 + .65 * Math.min(1, S.vn));   // elle se penche dans le virage, d'autant plus qu'on va vite
   CAM.roulis += (roulis - CAM.roulis) * (net ? 1 : 1 - Math.exp(-dt / .35));

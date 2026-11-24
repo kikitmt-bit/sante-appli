@@ -66,7 +66,7 @@ function animerMonture(t, dt, S) {
   // la poussière de la course, sur la terre
   if (!M.liquide && !S.enAir && S.vd > 1) {
     M.trace += S.vd * dt;
-    if (M.trace > (mt.velo ? (surfaceEn(S.s) === "terre" ? .9 : 4) : mt.trace || 1.1)) {   // à vélo : la poussière part de la roue arrière, beaucoup sur un chemin, un peu sur la route
+    if (M.trace > (mt.velo ? (surfaceEn(S.s) === "terre" || surChemin(S.s) ? .9 : 4) : mt.trace || 1.1)) {   // à vélo : la poussière part de la roue arrière, beaucoup sur un chemin, un peu sur la route
       M.trace = 0; const p = pose(S.s - (mt.velo ? .65 * ECH_VELO : .4), M.d), G = GOUTTES;
       for (let j = 0; j < 3; j++) {
         const k = G.k = (G.k + 1) % G.n; G.p[k * 3] = p.x + (Math.random() - .5) * .5; G.p[k * 3 + 1] = M.y + .08; G.p[k * 3 + 2] = p.z + (Math.random() - .5) * .5; G.sol[k] = M.y - .1;
@@ -114,3 +114,4 @@ function nager(N, t, dt, S, sol, bond, k) {
 }
 /* à quelle hauteur dessiner un autre pantin au mètre s (le fantôme) */
 function hauteurPantin(s, N, t) { return at(s).y + (surface(s).liquide ? -N.h * (N.enfonce === undefined ? .42 : N.enfonce) + Math.sin(t * 3 + 1) * .03 : 0); }
+function surChemin(p) { if (typeof ZONE === "undefined" || !ZONE || !ZONE.velo) return false; const q = at(p), n = PLAN.nature(q.x, q.z); return n === "chemin" || n === "allee"; }   // (étape 15) dans une zone, la piste est « libre » : c'est le sol qui dit si l'on soulève de la poussière

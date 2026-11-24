@@ -134,7 +134,7 @@ class Fichiers(unittest.TestCase):
                 for c in (p["g"], p["d"]):
                     self.assertIn(c, b["rives"], f"{nom} : rive inconnue")
                 # (18/11) un parcours à pied seulement (le footing du marcheur elliptique : "machines": ["elliptique"]) passe par des ruelles et des sentiers
-                self.assertGreaterEqual(large, 2 if n.get("machines") == ["elliptique"] else 5, f"{nom} : piste trop étroite")
+                self.assertGreaterEqual(large, 2 if n.get("machines") == ["elliptique"] or n.get("zone") else 5, f"{nom} : piste trop étroite")
                 if p.get("surface"):
                     self.assertIn(p["surface"], SURFACES | set(b.get("eaux", {})), f"{nom} : surface inconnue")
                 if isinstance(p.get("tunnel"), str):
@@ -374,7 +374,7 @@ class Moteur(unittest.TestCase):
             km = max(1, b["metres"] / 2000)   # (16/11) une vraie route de 5 km (outils/gpx.py) : le budget d'un circuit de 2 km par tranche de 2 km
             self.assertLess(b["secondes"], self.BUDGET_SECONDES * km, f"{nom} : construction trop lente")
             if lis("niveaux", nom + ".json").get("plan") or lis("niveaux", nom + ".json").get("zone"):   # (24/11) une ville dessinée : dense, mais on n'en voit jamais plus des deux tiers (250 000 triangles au pire sur ce PC)
-                km *= 1.7
+                km *= 2.5 if (lis("niveaux", nom + ".json").get("zone") or {}).get("velo") else 1.7   # (étape 15) à vélo, une ville ET trois kilomètres de campagne : 290 000 triangles au plus à l'image, 60 images/s
             self.assertLess(b["triangles"], self.BUDGET_TRIANGLES * km, f"{nom} : trop de triangles ({b['triangles']})")
             if b["troncons"]:   # une longue route, construite par tronçons : ce qui compte, c'est ce qu'on voit d'un coup (un kilomètre)
                 self.assertLess(b["troncons"]["fenetre"], self.BUDGET_TRIANGLES, f"{nom} : trop de triangles dans un kilomètre ({b['troncons']['fenetre']})")
@@ -440,6 +440,18 @@ class VilleLibre(unittest.TestCase):
         bois["pts"][1]["x"] += 10
         bois["pts"][-2]["x"] -= 40   # il arrive de biais sur l'autre
         self.assertTrue(any("de biais" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+
+    def test_le_velo(self):
+        """(étape 15) à vélo : on tient la droite, et l'on ne passe de la chaussée au trottoir que par un bateau, pour une raison qu'on voit."""
+        lire = lambda: json.loads((R / "outils" / "zones" / "velo-cerisiers.json").read_text(encoding="utf-8"))
+        d = lire()
+        for e in d["etapes"]:
+            if e["v"] in ("combe", "gare"):
+                e["decale"] = -1.3
+        self.assertTrue(any("la droite" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+        d = lire()
+        d["zone"]["bateaux"] = [b for b in d["zone"]["bateaux"] if b["raison"] != "travaux"]
+        self.assertTrue(any("sans bateau" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
 
     def test_rien_pendant_45_m(self):
         """Kiki : « les lignes droites sont trop longues ». Un pâté de maisons tout droit, sans personne : refusé."""

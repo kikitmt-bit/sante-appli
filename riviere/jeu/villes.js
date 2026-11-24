@@ -203,8 +203,10 @@ function cheminDeZone(zone, etapes, depart = [0, .5]) {   // depart : [sur la co
   const L = [];
   for (const e of etapes) {
     if (e.x0 !== undefined) { const d = Math.hypot(e.x1 - e.x0, e.z1 - e.z0); L.push({x: e.x0, z: e.z0, ux: (e.x1 - e.x0) / d, uz: (e.z1 - e.z0) / d, r: e.r || 3, nom: e.nom, segment: e.segment}); continue; }   // une droite libre : on traverse une place
+    // (étape 15) cote "v" : la voie de droite de la chaussée, "p" : la piste cyclable ; {v, de, a, s0, s1, u0, u1} : glisser d'un côté à l'autre, entre deux distances (s : depuis le point « de » ; u : l'écart, + = à droite)
     const v = zone.voies.find(q => q.id === e.v); if (!v) throw new Error("Voie inconnue dans le parcours : " + e.v);
-    const sol = v.sol || "chaussee", l = v.l || (sol === "chaussee" ? 6.2 : 2.8), t = sol === "chaussee" ? (v.t === undefined ? 3 : v.t) : 0, o = e.cote === "m" ? (e.decale || 0) : (e.cote === "g" ? -1 : 1) * (l / 2 + t / 2), pas = e.a > e.de ? 1 : -1; let avant = null;
+    const sol = v.sol || "chaussee", l = v.l || (sol === "chaussee" ? 6.2 : 2.8), t = sol === "chaussee" ? (v.t === undefined ? 3 : v.t) : 0, o = e.cote === "m" ? (e.decale || 0) : e.cote === "v" ? (e.decale === undefined ? l / 4 : e.decale) : e.cote === "p" ? l / 2 + v.piste.b + v.piste.l / 2 : (e.cote === "g" ? -1 : 1) * (l / 2 + t / 2), pas = e.a > e.de ? 1 : -1; let avant = null;
+    if (e.s0 !== undefined) { const A = v.pts[e.de], B = v.pts[e.a], d = Math.hypot(B.x - A.x, B.z - A.z), ux = (B.x - A.x) / d, uz = (B.z - A.z) / d, pt = (s, w) => [A.x + ux * s - uz * w, A.z + uz * s + ux * w], [x0, z0] = pt(e.s0, e.u0), [x1, z1] = pt(e.s1, e.u1), m = Math.hypot(x1 - x0, z1 - z0); L.push({x: x0, z: z0, ux: (x1 - x0) / m, uz: (z1 - z0) / m, r: e.r || 3, nom: e.nom}); continue; }
     for (let i = e.de; i !== e.a; i += pas) {
       const A = v.pts[i], B = v.pts[i + pas], d = Math.hypot(B.x - A.x, B.z - A.z), ux = (B.x - A.x) / d, uz = (B.z - A.z) / d; let r = e.r || 3;
       if (avant) { const th = Math.atan2(avant.ux * uz - avant.uz * ux, avant.ux * ux + avant.uz * uz); r = Math.abs(th) < .005 ? 0 : (A.r || 4) - o * Math.sign(th); if (r < 0) throw new Error("« " + (v.nom || v.id) + " » : le point " + i + " tourne trop serré pour son trottoir."); }

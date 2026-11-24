@@ -204,7 +204,8 @@ const PISTE = (() => {
     const mi = n >> 1; o.droite = (o.X[mi] - X[a + mi]) * Math.cos(H[a + mi]) + (o.Z[mi] - Z[a + mi]) * Math.sin(H[a + mi]) > 0;   // la voie « force » passe à droite de la calme ?
     return o;
   });
-  if (ZONE) { for (let i = 0; i < N; i++) Y[i] = ZONE.sol(X[i], Z[i]); bas = 0; }   // (24/11) sur une ville libre (zone.js), la piste prend la hauteur du sol
+  if (ZONE) { for (let i = 0; i < N; i++) Y[i] = ZONE.sol(X[i], Z[i]); bas = 0;
+    if (ZONE.velo) { for (let i = 0; i < N; i++) if (ZONE.champs(X[i], Z[i]).f < 0) Y[i] -= ZONE.creux(X[i], Z[i]); for (let t = 0; t < 4; t++) { const o = Float32Array.from(Y); for (let i = 0; i < N; i++) Y[i] = (o[(i + N - 1) % N] + 2 * o[i] + o[(i + 1) % N]) / 4; } } }   // (étape 15) à vélo, on est sur la chaussée ; une rampe se prend en douceur (24/11) sur une ville libre (zone.js), la piste prend la hauteur du sol
   else
   for (let i = 0; i < N; i++) bas = Math.min(bas, Y[i]);
   for (let i = 0; i < N; i++) Y[i] -= bas;
