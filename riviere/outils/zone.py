@@ -16,7 +16,7 @@ sys.path.insert(0, str(RACINE))
 import page  # noqa: E402
 from generer import _node, defauts  # noqa: E402
 
-COULEURS = {"chaussee": "#5E5F63", "passage": "#E8E6DF", "trottoir": "#CDC8BC", "place": "#BFB4A3", "allee": "#D9BC88", "chemin": "#B0804E", "jardin": "#9BD672", "pelouse": "#86C860", "dehors": "#5FA04C"}
+COULEURS = {"chaussee": "#5E5F63", "passage": "#E8E6DF", "trottoir": "#CDC8BC", "place": "#BFB4A3", "allee": "#D9BC88", "chemin": "#8A4A1E", "jardin": "#9BD672", "pelouse": "#86C860", "dehors": "#5FA04C"}
 
 VUE = r"""
 ;(() => { const P = PLAN, Z = P.zone, PAS = %s, o = {x0: Z.xa, z0: Z.za, nx: Math.ceil((Z.xb - Z.xa) / PAS), nz: Math.ceil((Z.zb - Z.za) / PAS), pas: PAS, noms: ["chaussee", "passage", "trottoir", "place", "allee", "chemin", "jardin", "pelouse", "dehors"], n: "", h: []};

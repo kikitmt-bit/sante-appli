@@ -125,7 +125,9 @@ function remplirZone() {
   for (const a of Z.aires) { const R2 = hasard(P.graine * 31 + Math.round(a.cx)), t2 = (u, w) => u + (w - u) * R2(), G = Math.hypot(a.x1 - a.x0, a.z1 - a.z0) / 2;
     if (a.genre === "potagers") { let cab = 0; for (let x = -G; x < G; x += 6.4) for (let z = -G; z < G; z += 5.2) { const q = tournee(a, x, z), cabane = cab % 5 === 2; if (Z.distPlace(a, q.x, q.z) > -2.4) continue; const b = boite(q.x, q.z, q.lacet, cabane ? 2.8 : 5, cabane ? 2.4 : 3.8); if (!tient(b, .6, 1)) continue; prendre(b); cab++; poser(cabane ? "cabane_jardin" : "carre_potager", q.x, q.z, q.lacet, {l: cabane ? 2.8 : 5, p: cabane ? 2.4 : 3.8, dur: true, voir: cabane}); } }
     if (a.genre === "verger") for (let x = -G; x < G; x += 6) for (let z = -G; z < G; z += 6) { const q = tournee(a, x + t2(-.3, .3), z + t2(-.3, .3)); if (Z.distPlace(a, q.x, q.z) > -2 || P.distDur(q.x, q.z) < 2.6 || boitesDe(q.x, q.z, 3)) continue; poser("arbre_rue", q.x, q.z, R2() * 6, {esp: a.esp || "pommier", r: .5, couronne: 1.9, ech: .74, dur: P.distDur(q.x, q.z) < 6}); }
-    if (a.genre === "pre") for (let k = 0; k < 26; k++) { const x = t2(a.x0, a.x1), z = t2(a.z0, a.z1); if (Z.distPlace(a, x, z) > -5 || P.distDur(x, z) < 5) continue; if (k % 5 === 0) poser("meule", x, z, t2(0, 6), {r: 1.6}); else if (k % 2 && sauvages("pre").length) poser("pokemon", x, z, 0, {num: choix(sauvages("pre")), r: .8}); } }
+    if (a.genre === "champ") { const vi = a.culture === "vignes", pz = vi ? 2.3 : a.culture === "ble" ? 1.15 : 1.7, px = vi ? 2.5 : 3; for (let x = -G; x < G; x += px) for (let z = -G; z < G; z += pz) { const q = tournee(a, x, z); if (Z.distPlace(a, q.x, q.z) > -1) continue; const d = P.distDur(q.x, q.z); if (d < 1.7 || d > 22 || boitesDe(q.x, q.z, 2) || VUES.some(v => Math.hypot(v.x - q.x, v.z - q.z) < v.r)) continue; pres(q.x, q.z); if (Math.hypot(q.x - PISTE.X[Q.i], q.z - PISTE.Z[Q.i]) > 24) continue; poser("rang_" + a.culture, q.x, q.z, q.lacet, {l: px, p: .6, libre: true, long: px + .02}); } }
+    if (a.genre === "lande") for (let k = 0; k < 1500; k++) { const x = t2(a.x0, a.x1), z = t2(a.z0, a.z1), n = fbm(x / 8 + 4, z / 8), w = R2(); if (Z.distPlace(a, x, z) > -1 || n < .42) continue; const d = P.distDur(x, z); if (d < .8 || d > 30 || boitesDe(x, z, 1)) continue; poser(w < .93 ? "bruyere" : w < .97 ? "rocher_mousse" : "jeune_pousse", x, z, w * 60, {r: .7, ech: .7 + R2() * .6, libre: true}); }
+    if (a.genre === "pre") for (let k = 0; k < 26; k++) { const x = t2(a.x0, a.x1), z = t2(a.z0, a.z1); if (Z.distPlace(a, x, z) > -5 || P.distDur(x, z) < 5) continue; { const top = Z.aireEn(x, z); if (!top || top.genre !== "pre") continue; } if (k % 7 === 0) poser("meule", x, z, t2(0, 6), {r: 1.6}); else if (k % 5 === 1 && sauvages("pre").length) poser("pokemon", x, z, 0, {num: choix(sauvages("pre")), r: .8}); } }
   // 5. la rue : réverbères d'un côté puis de l'autre, voitures garées, boîtes aux lettres
   for (const v of V) { if (v.sol !== "chaussee") continue; let k = 0;
     for (let s = 7; s < v.L - 4; s += 13) { const sg = k++ % 2 ? 1 : -1, q = Z.enVoie(v, s, sg * (v.l / 2 + .38)); Z.champs(q.x, q.z); if (Math.abs(D.f - .38) > .1 || P.passages.some(p => Math.hypot(p.x - q.x, p.z - q.z) < p.l + 2.2) || !degage(q.x, q.z, 1.04)) continue; poser("lampadaire", q.x, q.z, 0, {r: .24, dur: true, bordure: true}); }
@@ -152,17 +154,18 @@ function remplirZone() {
     const X = x + tire(-1.9, 1.9), Y = z + tire(-1.9, 1.9), u = R(), v = R(), w = R(), bz = Z.bord(X, Y); if (bz > 6 || dansVue(X, Y) || dansJardin(X, Y)) continue; const d = Math.min(P.distDur(X, Y), bz + Z.MARGE); pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]);
     // (étape 14) un bois : de vrais troncs près du chemin, des silhouettes loin ; un pré, un verger : presque rien
     const ai = Z.aireEn(X, Y, 3), g = ai && ai.genre; if (g && g !== "foret") { if (g !== "pre" || u > .012 || d < 6 || proche < 8 || !libreA(X, Y, 3)) continue; semer(X, Y, 3); poser("arbre_rue", X, Y, v * 6.28, {r: .6, couronne: 2.5}); continue; }
-    if (g) { if (proche > 42) { if (d < 3 || u > .86 || boitesPres(X, Y, 2.1) || !libreA(X, Y, 1.9)) continue; semer(X, Y, 1.9); poser("masse_bois", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: 1 + w * .5, masse: true, dy: -.5}); }
-      else if (d > 1.5 && u < .84 && proche > 2.5 && libreA(X, Y, 2) && !boitesPres(X, Y, 1.5)) { semer(X, Y, 2); poser("arbre_bois", X, Y, v * 6.28, {r: .45, couronne: 2.4, ech: .86 + w * .34, dur: d < 6, bois: true}); } continue; }
-    const dense = d > 24 && proche > 40 ? .72 : d > 13 ? (proche > 40 ? .3 : .2) : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
+    if (g) { if (proche > 32) { if (d < 3 || u > .86 || boitesPres(X, Y, 2.1) || !libreA(X, Y, 1.9)) continue; semer(X, Y, 1.9); poser("masse_bois", X, Y, v * 6.28, {esp: ai.esp, r: 1.6, couronne: 2, pres: true, ech: 1 + w * .5, masse: true, dy: -.5}); }
+      else if (d > 1.5 && u < .84 && proche > 2.5 && libreA(X, Y, 2) && !boitesPres(X, Y, 1.5)) { semer(X, Y, 2); poser("arbre_bois", X, Y, v * 6.28, {esp: ai.esp, r: .45, couronne: 2.4, ech: .86 + w * .34, dur: d < 6, bois: true, leger: proche > 15}); } continue; }
+    const dense = Z.aires.length && proche > 115 ? 0 : d > 24 && proche > 40 ? (Z.aires.length ? .5 : .72) : d > 13 ? (proche > 40 ? .3 : .2) : .13; if (d < 2.6 || u > dense || boitesPres(X, Y, 2.1) || chemins(X, Y, 1.2)) continue;
     const loin = proche > 40 && d > 13, r = loin && d > 24 ? 1.9 : 2.5; if (!libreA(X, Y, r) || proche < 4.8) continue; semer(X, Y, r);
     if (loin) poser(Z.aires.length ? "masse_bois" : "arbre_masse", X, Y, v * 6.28, {r: 1.6, couronne: 2, pres: true, ech: .85 + w * .4, masse: true, dy: -.5}); else poser("arbre_rue", X, Y, v * 6.28, {r: .6, couronne: 2.5, dur: d < 6}); }
   // (étape 14) le sous-bois, seulement le long du chemin : fougères en nappes, jeunes pousses, rochers moussus, un tronc couché de temps en temps
-  if (Z.aires.length) for (let x = Z.xa + 20; x < Z.xb - 20; x += 1.7) for (let z = Z.za + 20; z < Z.zb - 20; z += 1.7) { const u = R(), v = R(), w = R(), X = x + (v - .5) * 1.5, Y = z + (w - .5) * 1.5; if (u > .5) continue; pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]); if (proche > 15 || proche < 1.7) continue;
+  const PRES = new Set(); if (Z.aires.length) for (let i = 0; i < PISTE.N; i += 4) { const cx = Math.floor(PISTE.X[i] / 16), cz = Math.floor(PISTE.Z[i] / 16); for (let a = -2; a <= 2; a++) for (let c = -2; c <= 2; c++) PRES.add(cle(cx + a, cz + c)); }
+  if (Z.aires.length) for (let x = Z.xa + 20; x < Z.xb - 20; x += 1.7) for (let z = Z.za + 20; z < Z.zb - 20; z += 1.7) { if (!PRES.has(cle(Math.floor(x / 16), Math.floor(z / 16)))) continue; const u = R(), v = R(), w = R(), X = x + (v - .5) * 1.5, Y = z + (w - .5) * 1.5; if (u > .5) continue; pres(X, Y); const proche = Math.hypot(X - PISTE.X[Q.i], Y - PISTE.Z[Q.i]); if (proche > 15 || proche < 1.7) continue;
     const a = Z.aireEn(X, Y, 3); if (!a || a.genre !== "foret") continue; const d = P.distDur(X, Y), nappe = fbm(X / 11 + 2, Y / 11 + 8); if (d < .55 || boitesPres(X, Y, .8)) continue;
     if (u < .006 && d > 1.2 && proche > 3.4 && libreA(X, Y, 1.7)) { semer(X, Y, 1.7); poser(w < .5 ? "tronc_couche" : "rocher_mousse", X, Y, v * 6.28, {r: 1.1, dur: d < 6, voir: proche < 6}); }
     else if (nappe > .5 && u < (nappe - .5) * 4.2 && libreA(X, Y, .62)) { semer(X, Y, .62); poser("fougere", X, Y, v * 6.28, {r: .5, ech: .7 + w * .6, libre: true}); }
-    else if (u > .436 && u < .466 && d > 1.5 && proche > 2.6 && libreA(X, Y, 1.75)) { semer(X, Y, 1.75); poser("arbre_bois", X, Y, v * 6.28, {r: .45, couronne: 2.4, ech: .84 + w * .3, dur: d < 6, bois: true}); }
+    else if (u > .436 && u < .466 && d > 1.5 && proche > 2.6 && libreA(X, Y, 1.75)) { semer(X, Y, 1.75); poser("arbre_bois", X, Y, v * 6.28, {esp: a.esp, r: .45, couronne: 2.4, ech: .84 + w * .3, dur: d < 6, bois: true}); }
     else if (u > .466 && u < .486 && proche > 2.6 && libreA(X, Y, .95)) { semer(X, Y, .95); poser("buisson_bois", X, Y, v * 6.28, {r: .7, ech: .7 + w * .6, libre: true}); }
     else if (u > .488 && libreA(X, Y, 1)) { semer(X, Y, 1); poser("jeune_pousse", X, Y, v * 6.28, {r: .4, libre: true}); } }
   // 7. les passants et les Pokémon : près du chemin, jamais dessus
@@ -202,10 +205,10 @@ function sortieZone(i) {
   return "on passe de « " + (v.nom || v.id) + " » au chemin " + (bout ? "au bout de la rue, mais pas dans le prolongement de son trottoir." : "de biais (" + Math.round(90 - Math.acos(c) * 57.3) + "° au lieu de 0).");
 }
 function zoneControle() {
-  const P = PLAN, Z = P.zone, T = PISTE, o = []; remplirZone(); const dire = t => { if (o.length < 30) o.push(t); }; let avant = null;
+  const P = PLAN, Z = P.zone, T = PISTE, o = []; const dire = t => { if (o.length < 30) o.push(t); }; let avant = null;
   for (let i = 0; i < T.N; i++) {
     const a = T.H[i], n = P.nature(T.X[i], T.Z[i]);
-    for (const u of [-.7, 0, .7]) { const m = P.nature(T.X[i] + Math.cos(a) * u, T.Z[i] + Math.sin(a) * u); if (!SOLS_A_PIED.includes(m)) dire("Au mètre " + i + ", le coureur marche sur « " + m + " »."); }
+    const de = n === "chemin" ? .35 : .7; for (const u of [-de, 0, de]) { const m = P.nature(T.X[i] + Math.cos(a) * u, T.Z[i] + Math.sin(a) * u); if (!SOLS_A_PIED.includes(m)) dire("Au mètre " + i + ", le coureur marche sur « " + m + " »."); }
     if (avant && n !== avant && !PASSAGES_PERMIS[avant + ">" + n]) dire("Au mètre " + i + ", le sol passe de « " + avant + " » à « " + n + " ».");
     if (avant && n !== avant && (n === "chemin" || avant === "chemin")) { const m = sortieZone(i); if (m) dire("Au mètre " + i + ", " + m); }
     avant = n; }
@@ -213,7 +216,8 @@ function zoneControle() {
     if (an > Math.sin(.49)) dire("Au mètre " + p.i0 + ", on traverse « " + (v.nom || v.id) + " » en biais (" + Math.round(Math.asin(an) * 57.3) + "°)."); if (p.l > 6) dire("Au mètre " + p.i0 + ", la traversée fait " + Math.round(p.l * 2 - 1.4) + " m."); }
   let pm = 0, im = 0; for (let i = 0; i < T.N; i++) { const q = Math.abs(T.PENTE[i]); if (q > PENTE_MAX && q < PENTE_MARCHES && P.enMarches(T.X[i], T.Z[i], 9)) continue; if (q > pm) { pm = q; im = i; } }   // (un escalier, lui seul, est plus raide)
   if (pm > PENTE_MAX) dire("La pente atteint " + Math.round(pm * 100) + " % au mètre " + im + ".");
-  const vide = videZone(); if (vide.m > VIDE_MAX) dire("Rien ne se passe pendant " + Math.round(vide.m) + " m, à partir du mètre " + vide.i + " (" + VIDE_MAX + " au plus).");
+  if (o.length) return o;   // (étape 14) un parcours déjà fautif : inutile de poser tout le décor (c'est le plus long)
+  remplirZone(); const vide = videZone(); if (vide.m > VIDE_MAX) dire("Rien ne se passe pendant " + Math.round(vide.m) + " m, à partir du mètre " + vide.i + " (" + VIDE_MAX + " au plus).");
   for (const q of P.objets) { if (!q.dur || q.ouvert) continue; pres(q.x, q.z); if (Math.hypot(q.x - T.X[Q.i], q.z - T.Z[Q.i]) > 16) continue; const b = q.l ? boiteObjet(q) : null;
     for (let k = -14; k <= 14; k++) { const i = idx(sLigne(Q.i) + k), dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = b ? distBoite(b, T.X[i], T.Z[i]) : Math.hypot(dx, dz) - q.r; if (d < .75) { dire("« " + q.o + " » à " + d.toFixed(2) + " m du chemin, au mètre " + i + "."); break; } } }
   const C = 16, G = new Map(), solides = P.objets.filter(q => q.dur && !q.haie && !q.ouvert && !q.libre && !q.masse);

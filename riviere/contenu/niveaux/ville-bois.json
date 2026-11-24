@@ -1058,7 +1058,7 @@
    "g": "plan",
    "d": "plan",
    "surface": "libre",
-   "long": 81.58466155390057,
+   "long": 81.0846615538949,
    "virage": 0
   },
   {
@@ -1066,7 +1066,15 @@
    "g": "plan",
    "d": "plan",
    "surface": "libre",
-   "long": 16.22563535206832,
+   "long": 0.9999999999999999,
+   "virage": -0.0006682509973965632
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 15.725635352062644,
    "virage": 0,
    "nom": "Le chemin des Potagers"
   },

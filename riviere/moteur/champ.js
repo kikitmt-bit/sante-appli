@@ -132,13 +132,14 @@ function finir(x, z) {  // après le vote : les bosses, puis les ravins, puis le
     const lac = e < RECUL[Q.d > 0 ? 1 : 0][Q.i] - 6;
     h = lac ? Math.min(h, FOND_LAC) : lerp(h, V.y + 2 + 1.5 * (fbm(x / 90 + 1, z / 90 + 4) - .4), lisse(110, 220, e));
   } else if (e > 100) {
-    if ((BOUCLE && dedans(x, z)) || !ILE) h = lerp(h, V.y + 5 + 5 * (fbm(x / 70 + 1, z / 70 + 4) - .4), lisse(100, 190, e));
+    if ((BOUCLE && dedansLoin(x, z)) || !ILE) h = lerp(h, V.y + 5 + 5 * (fbm(x / 70 + 1, z / 70 + 4) - .4), lisse(100, 190, e));
     else h = lerp(h, -3, lisse(120, 170, e));
   }
   if (MASSIF) { const m = massifEn(x, z); if (m > h) h = lerp(h, m, lisse(8, 40, e)); }
   if (typeof PLAN !== "undefined" && PLAN) { const t = PLAN.bord(x, z); h = lerp(PLAN.zone ? PLAN.sol(x, z) - .26 : -.26, h, lisse(-14, 40, t)); }   // (24/11) sous une ville dessinée (plan.js), le terrain ne dépasse jamais ; il remonte en collines autour
   return h;
 }
+const DEDANS = new Map(); function dedansLoin(x, z) { const a = Math.floor(x / 32), b = Math.floor(z / 32), k = a * 8192 + b; let v = DEDANS.get(k); if (v === undefined) { v = dedans(a * 32 + 16, b * 32 + 16); DEDANS.set(k, v); } return v; }   // (à plus de 100 m de la piste : toute la case de 32 m est du même côté)
 function hSol(x, z) { voter(x, z); return finir(x, z); }   // le sol, sans creuser le lit de la piste (pour les rives)
 function hauteur(x, z) {  // la hauteur du sol en un point du monde (dans la piste : son lit ; au-dessus d'un tunnel : le dessus de la montagne)
   if (typeof PLAN !== "undefined" && PLAN && PLAN.bord(x, z) < -14) { pres(x, z); return PLAN.haut(x, z); }
@@ -186,7 +187,7 @@ function couleurSol(i, cote, e, ny, x, z) {  // la couleur du sol : celle de la 
     const S = SOLS[nom], Pa = SOLS[R.paroi], c = S.c[tache % S.c.length], p = Pa.c[tache % Pa.c.length];
     const k0 = w * (1 - raide), k1 = wp * raide; r += k0 * c[0] + k1 * p[0]; g += k0 * c[1] + k1 * p[1]; b += k0 * c[2] + k1 * p[2]; m += raide > .5 ? wp * Pa.mat : w * S.mat;
   }
-  if (e > 100 && ((BOUCLE && dedans(x, z)) || !ILE)) {   // au loin, dans les collines : la même herbe partout
+  if (e > 100 && ((BOUCLE && dedansLoin(x, z)) || !ILE)) {   // au loin, dans les collines : la même herbe partout
     const k = lisse(100, 190, e), c = SOLS.herbe.c[tache % SOLS.herbe.c.length]; r = lerp(r, c[0], k); g = lerp(g, c[1], k); b = lerp(b, c[2], k);
   }
   if (MASSIF && e > 8) { const rr = Math.hypot(x - MASSIF.x, z - MASSIF.z) / MASSIF.r;   // la montagne : de l'herbe au pied, de la cendre en haut, sa roche dans les pentes raides

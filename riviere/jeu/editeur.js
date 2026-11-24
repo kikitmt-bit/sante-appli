@@ -64,11 +64,17 @@ function edPlan() {
   const trait = (couleur, larg, garde, cap = "round") => { c.strokeStyle = couleur; c.lineWidth = larg; c.lineJoin = "round"; c.lineCap = cap; c.beginPath(); let dedans = false;
     for (let i = 0; i <= N; i++) { if (!r.boucle && i === N) break; const j = i % N, ok = garde(j); if (ok && !dedans) { c.moveTo(X(j), Z(j)); dedans = true; } else if (ok) c.lineTo(X(j), Z(j)); else dedans = false; } c.stroke(); };
   // les rives (la couleur de leur sol), puis la piste, les grottes, les ponts, la pièce choisie
-  for (const cote of [0, 1]) for (const p of P.pieces) { const nom = cote ? p.d : p.g; c.strokeStyle = nom === "mer" ? "#3C90EC" : solDe(nom); c.lineWidth = 30 * k + 4; c.lineCap = "butt"; c.beginPath();
+  if (ED.n.zone) {   // (24/11, Kiki : « regarde le plan ») une ville et sa nature : les bois, les champs, les rues, comme sur une carte
+    const z = ED.n.zone, px = q => [q.x * k + ox, q.z * k + oz], CARTE = {foret: "#4E9A46", clairiere: "#9BDC72", pre: "#A4DA78", verger: "#86C062", potagers: "#B08A5C", lande: "#B79AAE", ble: "#E6CC6C", tournesols: "#F0C040", lavande: "#B49AD8", vignes: "#A8A860"};
+    for (const a of z.nature || []) { c.fillStyle = CARTE[a.culture || a.genre] || "#8FCF70"; c.beginPath(); a.pts.forEach((q, i) => i ? c.lineTo(...px(q)) : c.moveTo(...px(q))); c.fill(); }
+    for (const [o, coul] of [["mare", "#4C9CE8"], ["chapelle", "#E8785A"]]) for (const q of (z.objets || []).filter(q => q.o === o)) { c.fillStyle = coul; c.beginPath(); c.arc(...px(q), Math.max(3 * devicePixelRatio, (q.r || 3) * k), 0, 7); c.fill(); }
+    for (const v of z.voies) { const rue = (v.sol || "chaussee") === "chaussee"; c.strokeStyle = rue ? "#D8D2C4" : v.sol === "terre" ? "#B98A58" : "#E8D4A8"; c.lineWidth = Math.max(rue ? 3 : 2, (v.l + (rue ? 5 : 0)) * k) ; c.lineJoin = c.lineCap = "round"; c.beginPath(); v.pts.forEach((q, i) => i ? c.lineTo(...px(q)) : c.moveTo(...px(q))); c.stroke(); }
+    for (const q of z.places || []) { c.fillStyle = "#CDBFA6"; c.beginPath(); q.pts.forEach((w, i) => i ? c.lineTo(...px(w)) : c.moveTo(...px(w))); c.fill(); }
+  } else for (const cote of [0, 1]) for (const p of P.pieces) { const nom = cote ? p.d : p.g; c.strokeStyle = nom === "mer" ? "#3C90EC" : solDe(nom); c.lineWidth = 30 * k + 4; c.lineCap = "butt"; c.beginPath();
     for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { const sg = cote ? 1 : -1, x = (P.X[edJ(P, p, i)] + sg * P.CH[edJ(P, p, i)] * (P.W[edJ(P, p, i)] + 15)) * k + ox, z = (P.Z[edJ(P, p, i)] + sg * P.SH[edJ(P, p, i)] * (P.W[edJ(P, p, i)] + 15)) * k + oz; if (i === p.s0) c.moveTo(x, z); else c.lineTo(x, z); } c.stroke(); }
   const larg = i => Math.max(5, P.W[i] * 2 * k), eau = s => !["terre", "goudron"].includes(s);
   for (const p of P.pieces) { c.strokeStyle = "#1B2440"; c.lineWidth = larg(edJ(P, p, p.s0)) + 5; c.lineCap = "round"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); else c.lineTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); } if (r.boucle && p.s1 >= N) c.lineTo(X(0), Z(0)); c.stroke(); }
-  P.pieces.forEach((p, ip) => { const couleur = p.tunnel ? "#8088A0" : p.pont ? "#D8C8A0" : p.surface === "terre" ? "#D9B886" : p.surface === "goudron" ? "#6E7480" : (B.eaux && B.eaux[p.surface] ? B.eaux[p.surface].c1 : "#3C90EC");
+  P.pieces.forEach((p, ip) => { const couleur = p.tunnel ? "#8088A0" : p.pont ? "#D8C8A0" : p.surface === "terre" ? "#D9B886" : p.surface === "goudron" ? "#6E7480" : p.surface === "libre" ? "#F0803C" : (B.eaux && B.eaux[p.surface] ? B.eaux[p.surface].c1 : "#3C90EC");
     c.strokeStyle = couleur; c.lineWidth = larg(p.s0); c.lineCap = "butt"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); else c.lineTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); } if (r.boucle && p.s1 >= N) c.lineTo(X(0), Z(0)); c.stroke(); });
   const choisie = P.pieces.filter(p => p._i === ED.sel || edIndex(p) === ED.sel);
   for (const p of choisie) { c.strokeStyle = "#F8C838"; c.lineWidth = Math.max(4, 3 * devicePixelRatio); c.setLineDash([8, 6]); c.lineCap = "butt"; c.beginPath(); for (let i = p.s0; i <= Math.min(p.s1, N - 1); i++) { if (i === p.s0) c.moveTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); else c.lineTo(X(edJ(P, p, i)), Z(edJ(P, p, i))); } c.stroke(); c.setLineDash([]); }
@@ -78,7 +84,7 @@ function edPlan() {
   c.save(); c.translate(X(0), Z(0)); c.rotate(P.H[0]); const u = 5 * devicePixelRatio; for (let a = -2; a < 2; a++) for (let b = 0; b < 2; b++) { c.fillStyle = (a + b) & 1 ? "#1B2440" : "#fff"; c.fillRect(a * u, (b - 1) * u, u, u); } c.restore();
   for (const x of r.verif.croisements) { c.strokeStyle = x.bon ? "#2E8A48" : "#D83830"; c.lineWidth = 3 * devicePixelRatio; c.beginPath(); c.arc(X(x.s1), Z(x.s1), 9 * devicePixelRatio, 0, 7); c.stroke(); }
   c.font = Math.round(13 * devicePixelRatio) + 'px "Jersey 15", monospace'; c.textAlign = "center"; c.lineWidth = 3 * devicePixelRatio; c.strokeStyle = "#1B2440"; c.fillStyle = "#fff";
-  for (const p of P.pieces) { if (!p.nom) continue; const i = Math.min(N - 1, Math.round((p.s0 + p.s1) / 2)); c.strokeText(p.nom, X(edJ(P, p, i)), Z(edJ(P, p, i)) - 10 * devicePixelRatio); c.fillText(p.nom, X(edJ(P, p, i)), Z(edJ(P, p, i)) - 10 * devicePixelRatio); }
+  const pris = [], H13 = 14 * devicePixelRatio; for (const p of P.pieces) { if (!p.nom) continue; const i = Math.min(N - 1, Math.round((p.s0 + p.s1) / 2)), tx = X(edJ(P, p, i)), tz = Z(edJ(P, p, i)) - 10 * devicePixelRatio, w = c.measureText(p.nom).width / 2 + 4; if (ED.n.zone && pris.some(q => q.nom === p.nom && Math.hypot(q.x - tx, q.z - tz) < 160 * devicePixelRatio || Math.abs(q.x - tx) < q.w + w && Math.abs(q.z - tz) < H13)) continue; pris.push({x: tx, z: tz, w, nom: p.nom}); c.strokeText(p.nom, X(edJ(P, p, i)), Z(edJ(P, p, i)) - 10 * devicePixelRatio); c.fillText(p.nom, X(edJ(P, p, i)), Z(edJ(P, p, i)) - 10 * devicePixelRatio); }
   edProfil(r);
 }
 const edJ = (P, p, i) => p.voie && i < P.voies[p.voie - 1].b ? P.voies[p.voie - 1].dec + i : i;   // l'indice du mètre i d'une pièce (une pièce de la voie « force » d'une fourche a ses mètres à part)
@@ -111,7 +117,7 @@ function edEtat() {
 const PAS_KM = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50];
 const PAS_PIED = [.5, .75, 1, 1.25, 1.5];   // (étape 13, lot 3) une ville à pied : des km de tes jambes (le décor en fait une fois et demie plus)
 const pasKm = G => G.style === "pied" && piedPossible(G) ? PAS_PIED : PAS_KM;
-const kmMax = G => G.style === "pied" && piedPossible(G) ? PAS_PIED.length - 1 : PAS_KM.indexOf(G.forme === "ouvert" ? 50 : 8);
+const kmMax = G => G.style === "pied" && piedPossible(G) ? PAS_PIED.reduce((m, k, i) => !VISUEL || k * MACHINE.allure * 1.08 < 3.7 ? i : m, 0) : PAS_KM.indexOf(G.forme === "ouvert" ? 50 : 8);
 /* (18/11, Kiki) au marcheur elliptique, le générateur peut faire un footing : des trottoirs, une ruelle, un escalier, un parc, un sentier, une passerelle (style « pied ») */
 const piedPossible = G => G.activite === "terre" && MACHINE_NOM === "elliptique";
 const kmDecor = G => G.style === "pied" && piedPossible(G) && typeof VISUEL !== "undefined" && VISUEL ? +(G.km * MACHINE.allure * 1.08).toFixed(2) : G.km;   // un tour de 1 km au trot = ~1,5 km de décor (1,08 : l'allure d'une ville, villes.js)
@@ -130,12 +136,12 @@ function edAccueil() {
   if (piedPossible(G) && G.style === undefined) G.style = MACHINE.monture === "trotteur" ? "pied" : "route";
   const pied = piedPossible(G) && G.style === "pied";
   if (pied && !G.avecPied) { G.avecPied = true; G.denivele = 12; Object.assign(G.avec, {village: true, escalier: true, parc: true, foret: true, champs: true, pont: true}); if (G.forme === "huit") G.forme = "boucle"; }
-  if (pied && !PAS_PIED.includes(G.km)) G.km = 1; if (!pied && !PAS_KM.includes(G.km)) G.km = 2; if (pied && ![0, 12, 25].includes(+G.denivele)) G.denivele = 12; if (pied && G.nature === undefined) G.nature = .5;
+  if (pied && (!PAS_PIED.includes(G.km) || PAS_PIED.indexOf(G.km) > kmMax(G))) G.km = PAS_PIED[Math.min(2, kmMax(G))]; if (!pied && !PAS_KM.includes(G.km)) G.km = 2; if (pied && ![0, 12, 25].includes(+G.denivele)) G.denivele = 12; if (pied && G.nature === undefined) G.nature = .5;
   $("edAccueil").innerHTML = `<div class="ed-acc">
     <section class="ed-bloc ed-gen"><h2>🎲 Générer un circuit</h2><p class="ed-note">Dis ce que tu veux, je le dessine ${pour}${pied ? " : je n'en garde que ce qui passe tous mes contrôles" : " : je garde le mieux noté de plusieurs essais"}.</p>
       ${piedPossible(G) ? `<div class="ed-q">Où tu cours</div>${puces("style", G.style, [["pied", "À pied"], ["route", "Sur la route"]])}` : ""}
       ${pied ? `<div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
-      <div class="ed-curseur"><span>0,5 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G)}" step="1" value="${PAS_PIED.indexOf(G.km)}"><span>1,5 km</span></div>
+      <div class="ed-curseur"><span>0,5 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G)}" step="1" value="${PAS_PIED.indexOf(G.km)}"><span>${texteKm(PAS_PIED[kmMax(G)])}</span></div>
       <div class="ed-q">Le décor</div>${puces("nature", G.nature, [[0, "Tout en ville"], [.5, "Moitié-moitié"], [.7, "Surtout la nature"]])}
       <div class="ed-q">Relief</div>${puces("denivele", G.denivele, [[0, "Plat"], [12, "Vallonné"], [25, "Ça grimpe"]])}
       <div class="ed-q">La ville</div>${puces("sorte", G.sorte || "", [["", "Surprise"], ["bourg", "Vieux bourg"], ["pavillons", "Pavillons"], ["immeubles", "Immeubles"], ["coteau", "Sur un coteau"]])}
@@ -161,7 +167,7 @@ function edAccueil() {
    ce qui bloque ») : si le tirage échoue, on réessaie tout seul en assouplissant, dans cet ordre : le 8 devient une boucle, un cran de virages
    en moins, puis on retire un à un les éléments les plus difficiles à caser ; on dit ce qui a changé. L'effort suit la longueur (une longue route
    est vite tracée, mais habiller ses rives et contrôler tout son sol prendrait des minutes). ---- */
-const NOMS_LIEUX = {placette: "une placette", jardin: "un jardin", ruelle: "un passage entre deux murs", escalier: "un escalier", "belvédère": "un belvédère", bois: "un bois", "clairière": "une clairière"};   // ce que traverse une ville tirée au sort (villes.js)
+const NOMS_LIEUX = {placette: "une placette", jardin: "un jardin", ruelle: "un passage entre deux murs", escalier: "un escalier", "belvédère": "un belvédère", bois: "un bois", "clairière": "une clairière", hameau: "un hameau", champs: "des champs", lande: "une lande", verger: "un verger", "étang": "un étang", potagers: "des potagers"};   // ce que traverse une ville tirée au sort (villes.js)
 const DIFFICILES = ["escalier", "echangeur", "fourche", "montagne", "tunnel", "rondpoint", "pont", "grotte", "cascade", "port", "village", "volcan", "marais", "plage", "lac", "ronflex", "champs", "foret"];
 const NOMS_AVEC = Object.fromEntries([].concat(CASES_GEN.eau, CASES_GEN.terre, CASES_GEN.pied).map(([k, , t]) => [k, t.toLowerCase()]));
 function effortDe(G) { const km = +G.km || 1; return km <= 4 ? {} : km <= 8 ? {tirages: 3} : {tirages: km > 20 ? 1 : 2, habiller: false, sol: false}; }

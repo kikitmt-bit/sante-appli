@@ -514,3 +514,9 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   quatre regardés tous les 18 à 20 m (bourg plat, bourg pentu, immeubles, coteau au plan) ; 294 000 triangles au pire (2,25 km d'immeubles), prêt en 7 à 8 s pour le plus long (2 à 5 s en général) ; essayé dans l'éditeur du
   jeu (générer, essayer) ; 200 tests verts ; page 2 232 Ko. **Pas essayé** : la tablette. **À essayer par Kiki** : deux ou trois « Moitié-moitié », une « Surtout la nature ». La placette coupée en diagonale
   n'est pas dans toutes les villes (un tirage sur trois environ).
+  **Retour de Kiki (24/11, à vélo, « Surtout la nature », « Ça grimpe ») : long à générer, et « une boucle dans les bois assez monotone ».** À vélo, « 1 km » = 3,5 km de décor (je n'avais essayé que 2,25). **Refait le soir
+  même** : le chemin n'est plus un cercle (grandes boucles, bouts calmes) ; un ou deux **hameaux** au-delà de 640 m de chemin (on arrive d'équerre face à une chapelle, on repart par le bout de la rue) ; un paysage nouveau
+  tous les 70 à 130 m (bois par essences, clairière, rond de pierres, blé, tournesols, lavande, vignes, lande, étang, verger, prés) et des repères (chapelle, ferme, éolienne, vieux chêne, rochers, ruches) ; la placette
+  est désormais dans la plupart des villes. **Vitesse** : 4 à 7 s pour son cas, dans le navigateur (contrôle par étapes, croisements et aires rangés par cases) ; le plus long met ~9 s à se construire ; à vélo, 1 km au plus (3,7 km de décor).
+  **Un vrai bug trouvé** : un angle presque nul ne tournait pas, le cap dérivait et le parcours finissait à côté de son trottoir (villes jetées pour rien) : corrigé dans `piecesDuChemin`. Le plan de l'éditeur est une carte
+  (bois, champs, rues, parcours en orange, noms qui ne se recouvrent plus). 31 tirages de suite sans échec, 200 tests verts, 60 images/s sur ce PC. **Publié le 24/11.**

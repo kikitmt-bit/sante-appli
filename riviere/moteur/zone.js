@@ -47,6 +47,7 @@ const ZONE = (() => {
     const sol = v.sol || "chaussee", c = courbeZone(v.pts, 1, v.nom || v.id);
     return Object.assign({}, v, {k, sol, l: v.l || (sol === "chaussee" ? 6.2 : sol === "terre" ? 2.4 : 2.8), t: sol === "chaussee" ? (v.t === undefined ? 3 : v.t) : 0, P: c.pts, S: c.s, som: c.som, L: c.s[c.s.length - 1], n: c.pts.length});
   });
+  for (const v of voies) { v.bx0 = v.bz0 = 1e9; v.bx1 = v.bz1 = -1e9; for (const [x, z] of v.P) { v.bx0 = Math.min(v.bx0, x); v.bx1 = Math.max(v.bx1, x); v.bz0 = Math.min(v.bz0, z); v.bz1 = Math.max(v.bz1, z); } }
   for (const v of voies) { v.h = v.l / 2 + v.t; v.TX = new Float32Array(v.n); v.TZ = new Float32Array(v.n);
     for (let i = 0; i < v.n; i++) { const a = v.P[Math.max(0, i - 1)], b = v.P[Math.min(v.n - 1, i + 1)], d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; v.TX[i] = (b[0] - a[0]) / d; v.TZ[i] = (b[1] - a[1]) / d; } }
   /* le point d'une voie le plus proche : {d, s, u (écart, + = à droite de son sens), i} */
@@ -58,8 +59,9 @@ const ZONE = (() => {
     const A = voies[j], B = voies[k];
     for (const bout of [0, B.n - 1]) { const q = surVoieZ(A, B.P[bout][0], B.P[bout][1]); if (q.d < A.l / 2 + .5) noter(B.P[bout][0], B.P[bout][1], j, q.s, k, B.S[bout]); }
     for (const bout of [0, A.n - 1]) { const q = surVoieZ(B, A.P[bout][0], A.P[bout][1]); if (q.d < B.l / 2 + .5) noter(A.P[bout][0], A.P[bout][1], j, A.S[bout], k, q.s); }
-    for (let i = 0; i + 1 < B.n; i++) { const [ax, az] = B.P[i], [bx, bz] = B.P[i + 1];
-      for (let m = 0; m + 1 < A.n; m++) { const [cx, cz] = A.P[m]; if (Math.abs(cx - ax) > 3 || Math.abs(cz - az) > 3) continue; const [dx, dz] = A.P[m + 1], r1 = bx - ax, r2 = bz - az, s1 = dx - cx, s2 = dz - cz, den = r1 * s2 - r2 * s1; if (Math.abs(den) < 1e-9) continue;
+    if (A.bx0 > B.bx1 + 3 || B.bx0 > A.bx1 + 3 || A.bz0 > B.bz1 + 3 || B.bz0 > A.bz1 + 3) continue;
+    for (let i = 0; i + 1 < B.n; i++) { const [ax, az] = B.P[i], [bx, bz] = B.P[i + 1]; if (ax < A.bx0 - 3 || ax > A.bx1 + 3 || az < A.bz0 - 3 || az > A.bz1 + 3) continue;
+      for (let m = 0; m + 1 < A.n; m++) { const [cx, cz] = A.P[m]; { const dd = Math.max(Math.abs(cx - ax), Math.abs(cz - az)); if (dd > 8) { m += Math.floor(dd) - 6; continue; } } if (Math.abs(cx - ax) > 3 || Math.abs(cz - az) > 3) continue; const [dx, dz] = A.P[m + 1], r1 = bx - ax, r2 = bz - az, s1 = dx - cx, s2 = dz - cz, den = r1 * s2 - r2 * s1; if (Math.abs(den) < 1e-9) continue;
         const t = ((cx - ax) * s2 - (cz - az) * s1) / den, w = ((cx - ax) * r2 - (cz - az) * r1) / den; if (t < 0 || t >= 1 || w < 0 || w >= 1) continue;
         noter(ax + r1 * t, az + r2 * t, j, lerp(A.S[m], A.S[m + 1], w), k, lerp(B.S[i], B.S[i + 1], t)); } }
   }
@@ -78,8 +80,10 @@ const ZONE = (() => {
     let b = 1e18, dedans = false; const C = p.C; for (let i = 0, j = C.length - 1; i < C.length; j = i++) { const [ax, az] = C[j], [bx, bz] = C[i], ux = bx - ax, uz = bz - az, t = clamp(((x - ax) * ux + (z - az) * uz) / (ux * ux + uz * uz || 1), 0, 1); b = Math.min(b, (x - ax - ux * t) ** 2 + (z - az - uz * t) ** 2); if ((bz > z) !== (az > z) && x < (ax - bx) * (z - bz) / (az - bz) + bx) dedans = !dedans; }
     return (dedans ? -1 : 1) * Math.sqrt(b); };
   /* (étape 14) ce qu'il y a là : "foret", "pre"… ou null (la ville, ses jardins) ; flou : le bord de l'aire ondule de tant de mètres */
-  const aireEn = (x, z, flou = 0) => { if (!aires.length) return null; const X = flou ? x + (fbm(x / 9 + 3, z / 9) - .5) * flou * 2 : x, W = flou ? z + (fbm(x / 9, z / 9 + 7) - .5) * flou * 2 : z; for (let i = aires.length - 1; i >= 0; i--) { const a = aires[i]; if (X > a.x0 && X < a.x1 && W > a.z0 && W < a.z1 && distPlace(a, X, W) < 0) return a; } return null; };
-  const bosse = (x, z, em) => { if (em < 2) return 0; let d = 0; for (const a of aires) d = Math.max(d, -distPlace(a, x, z)); return d <= 0 ? 0 : lisse(2, 12, em) * lisse(0, 12, d) * (fbm(x / 17 + 5, z / 17 + 1) - .5) * 2.4; };   // le sol d'un bois ou d'un pré n'est jamais lisse (loin du chemin)
+  const CA = 48, casesA = new Map(); aires.forEach((a, i) => { for (let u = Math.floor((a.x0 - 12) / CA); u <= Math.floor((a.x1 + 12) / CA); u++) for (let w = Math.floor((a.z0 - 12) / CA); w <= Math.floor((a.z1 + 12) / CA); w++) { const k = u * 4096 + w; if (!casesA.has(k)) casesA.set(k, []); casesA.get(k).push(a); } });   // les aires, rangées par cases (un long chemin en a une soixantaine)
+  const VIDE_A = [], airesPres = (x, z) => casesA.get(Math.floor(x / CA) * 4096 + Math.floor(z / CA)) || VIDE_A;
+  const aireEn = (x, z, flou = 0) => { const L = airesPres(x, z); if (!L.length) return null; const X = flou ? x + (fbm(x / 9 + 3, z / 9) - .5) * flou * 2 : x, W = flou ? z + (fbm(x / 9, z / 9 + 7) - .5) * flou * 2 : z; for (let i = L.length - 1; i >= 0; i--) { const a = L[i]; if (X > a.x0 && X < a.x1 && W > a.z0 && W < a.z1 && distPlace(a, X, W) < 0) return a; } return null; };
+  const bosse = (x, z, em) => { if (em < 2) return 0; let d = 0; for (const a of airesPres(x, z)) { if (x < a.x0 || x > a.x1 || z < a.z0 || z > a.z1) continue; d = Math.max(d, -distPlace(a, x, z)); if (d > 12) break; } return d <= 0 ? 0 : lisse(2, 12, em) * lisse(0, 12, d) * (fbm(x / 17 + 5, z / 17 + 1) - .5) * 2.4; };   // le sol d'un bois ou d'un pré n'est jamais lisse (loin du chemin)
   // tout ce qui est dur, en points (tous les 2 m) : pour la hauteur et pour le bord de la zone
   let xa = 1e9, xb = -1e9, za = 1e9, zb = -1e9; const PT = [];
   for (const v of voies) for (let i = 0; i < v.n; i++) { const [x, z] = v.P[i]; if (i % 2 === 0 || i === v.n - 1) PT.push([x, z, v.Y[i], v.h]); xa = Math.min(xa, x); xb = Math.max(xb, x); za = Math.min(za, z); zb = Math.max(zb, z); }

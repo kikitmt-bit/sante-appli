@@ -584,8 +584,11 @@ Un chemin de terre est une voie comme une autre (`"sol": "terre"`, 2,1 m) : la m
 - **La ville est tirée comme toujours** (une boucle de rues plus longue que ce qu'on en suivra : `cible`), puis `portesNature` choisit **deux portes** sur son bord : sorte 1 = une rue d'un coin qui sort de la ville
   (son amorce, 72 à 88 m : les maisons s'arrêtent à 34 m du bout, clôtures, verger ou potagers ; le chemin continue son trottoir) ; sorte 2 = le milieu d'une rue (le chemin part d'équerre, entre deux haies). De l'une à
   l'autre on suit les rues ; les rues du reste du bord existent, avec des amorces courtes. De préférence des portes qui laissent un coin à placette (Kiki aime qu'on coupe par la place).
-- **Le chemin** (`cheminNature`) : un arc qui s'éloigne du centre, sa flèche réglée par dichotomie pour faire la longueur voulue, qui serpente ; à 30 m au moins des rues, à 22 m de lui-même, 14 essais avant de jeter la
-  ville. Hauteur : une colline (ou un creux) entre les portes, 5,5 % au plus. Aires : prés, bois par bouts de ~110 m (chacun aussi large qu'il peut l'être), clairière, vergers, potagers ; sentiers, poteaux, tas de bois.
+- **Les hameaux** (`natureEntiere`) : au-delà de 640 m de chemin, un hameau ; au-delà de 1,5 km, deux. Un hameau = une rue de ~120 m, une entrée de sorte 2 en son milieu (une chapelle en face), une sortie de sorte 1 à son bout.
+- **Chaque chemin** (`cheminNature`) : un arc dont la flèche est réglée par dichotomie pour faire la longueur voulue, déformé par de grandes boucles, vif par endroits et calme ailleurs ; à 30 m au moins des rues, à 22 m
+  de lui-même, 16 essais. Pentes 6 % au plus (`kY`). Les paysages se suivent (`L0`) : un bois (essence `esp` de l'aire), autre chose (`champ` + `culture`, `lande`, `etang`, `verger`, `pre`), un bois d'une autre essence… ;
+  `sac` = ce qui a déjà servi dans le tour. Un repère par paysage ouvert. `poser` refuse ce qui touche un autre objet ou le chemin ; là où rien ne se passe, un objet est ajouté.
+- **À vélo** (marcheur elliptique), le décor défile trois fois plus : la longueur proposée s'arrête à 3,7 km de décor (`kmMax`).
 - Le reste est celui d'une ville tirée : ce qui ne se case pas lève une erreur, seul ce qui passe `zoneControle` est rendu.
 
 ## Moins de défauts à la source (24/11)

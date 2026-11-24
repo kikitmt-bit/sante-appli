@@ -1,26 +1,26 @@
 /* ============ la campagne et les bois autour d'une ville (moteur/zone.js, étape 14, 24/11) ============ */
 // Les arbres d'un bois (un long tronc nu, la couronne au-dessus de la tête), le sous-bois, et ce qu'on voit en sortant d'un village :
 // clôtures de prés, potagers et leur cabane, entrée d'un chemin, tas de bois, table. Tout suit le sol (solLocal).
-Object.assign(RAYON, {arbre_bois: 2.4, masse_bois: 2, fougere: .5, buisson_bois: .9, jeune_pousse: .4, rocher_mousse: 1.1, tronc_couche: 1.3, cloture_bois: .3, entree_chemin: 0, carre_potager: 3, cabane_jardin: 2, stere: 1.4, table_bois: 1.5, barriere_bout: 1.6, abreuvoir: 1.3});
+Object.assign(RAYON, {rang_ble: 1, rang_tournesols: 1, rang_lavande: 1, rang_vignes: 1, bruyere: .6, ruche: .6, arbre_bois: 2.4, masse_bois: 2, fougere: .5, buisson_bois: .9, jeune_pousse: .4, rocher_mousse: 1.1, tronc_couche: 1.3, cloture_bois: .3, entree_chemin: 0, carre_potager: 3, cabane_jardin: 2, stere: 1.4, table_bois: 1.5, barriere_bout: 1.6, abreuvoir: 1.3});
 const BOISERIE = {gris: ["#7A6A5C", "#8E7E6E"].map(hex), brun: ["#6A4A30", "#7E5A3C"].map(hex), roux: ["#8A5434", "#B06E42"].map(hex), rustique: ["#7C6248", "#94785A", "#AC9070"].map(hex), coupe: hex("#E2C088"),
   hetre: ["#3E8E40", "#5AAE4C", "#8ED066"].map(hex), chene: ["#3A7E3A", "#549A44", "#84BC58"].map(hex), bouleau: ["#5CA84A", "#88CA62", "#C0EA8E"].map(hex), pin: ["#2C6A3A", "#3C8646", "#5AA258"].map(hex), dore: ["#8E9A36", "#B8B444", "#DCCE60"].map(hex),
   fougere: ["#3A8038", "#4F9A40", "#6CB650"].map(hex), mousse: [hex("#5E8E3C"), hex("#78AA48")], terre: [hex("#7A5638"), hex("#8C6644")]};
 /* l'essence d'un arbre du bois : par bosquets de 34 m, un arbre sur quatre d'une autre */
-function essenceBois(F) { const a = h2(Math.floor(F.ox / 34) + 11, Math.floor(F.oz / 34) - 7), b = hv(F, 5) > .74 ? hv(F, 6) : a; return b < .36 ? "hetre" : b < .6 ? "chene" : b < .78 ? "pin" : b < .93 ? "bouleau" : "dore"; }
+function essenceBois(F, o) { if (o && o.esp && hv(F, 7) < .82) return o.esp; const a = h2(Math.floor(F.ox / 34) + 11, Math.floor(F.oz / 34) - 7), b = hv(F, 5) > .74 ? hv(F, 6) : a; return b < .36 ? "hetre" : b < .6 ? "chene" : b < .78 ? "pin" : b < .93 ? "bouleau" : "dore"; }
 Object.assign(OBJETS, {
   arbre_bois(F, o) {   // un arbre de forêt : tronc haut et nu, une fourche, la couronne à 4 ou 5 m : on passe dessous
-    const e = essenceBois(F), t = BOISERIE[e], k = hv(F, 1), q = hv(F, 2), a = hv(F, 3) * 6.28; F.ombre(0, 0, 1.6, 1.5);
+    const e = essenceBois(F, o), t = BOISERIE[e], k = hv(F, 1), q = hv(F, 2), a = hv(F, 3) * 6.28; F.ombre(0, 0, 1.6, 1.5);
     if (e === "pin") { const h = 6 + k * 2; F.cyl(0, -.5, 0, .3, .17, h + .5, 6, BOISERIE.roux[0], BOISERIE.roux[1]); for (const [y, r, d] of [[h - 2.2, 1.5, .6], [h - .6, 1.9, 0], [h + .5, 1.3, 0]]) F.vent(.25, h * .5, h + 1.5).dome(Math.cos(a) * d, y, Math.sin(a) * d, r, .7, r, t, 6); F.vent(); return; }
     if (e === "bouleau") { const h = 6.2 + k * 1.6, b = hex("#EEEAE0"); F.cyl(0, -.5, 0, .19, .1, h, 5, b, b); for (let i = 0; i < 4; i++) { const y = .5 + i * .95 + q * .3, s = i % 2 ? 1 : -1; F.boite(s * .1, y, .08, .16, .08, .12, PAL.cadre); }
       F.vent(.35, h * .4, h + 1).dome(.3, h - 2, .2, 1.25, 1.3, 1.25, t, 6); F.dome(0, h - .5, 0, 1.35, 1.7, 1.35, t, 7); F.vent(); return; }
     const gros = e === "chene", h = (gros ? 3.8 : 4.6) + k * 1.4, tr = e === "hetre" ? BOISERIE.gris : BOISERIE.brun, r = (gros ? 2.7 : 2.5) + q * .5, cx = Math.cos(a), cz = Math.sin(a);
     F.cyl(0, -.5, 0, gros ? .44 : .34, gros ? .26 : .2, h + 1, 6, tr[0], tr[1]);
-    for (const s of [0, 2.2, 4.3]) F.pointe(Math.cos(a + s) * .3, -.3, Math.sin(a + s) * .3, Math.cos(a + s) * .5, .9, Math.sin(a + s) * .5, .16, .95, 4, tr[0]);   // les racines
+    if (!o.leger) for (const s of [0, 2.2, 4.3]) F.pointe(Math.cos(a + s) * .3, -.3, Math.sin(a + s) * .3, Math.cos(a + s) * .5, .9, Math.sin(a + s) * .5, .16, .95, 4, tr[0]);   // les racines
     F.pointe(0, h - .9, 0, cx, .9, cz, .13, 1.9, 4, tr[0]);   // une branche basse
-    F.vent(.25, h * .6, h + 4).dome(0, h + 1.2, 0, r, 1.55, r, t, 8); F.dome(cx * 1.4, h + .5, cz * 1.4, r * .62, .95, r * .62, t, 6); F.dome(-cz * 1.3, h + .9, cx * 1.3, r * .55, .9, r * .55, t, 6); F.dome(-cx * .3, h + 2.1, -cz * .3, r * .72, 1.7, r * .72, t, 7, true); F.vent(); },
-  arbre_bois_loin(F) { const t = BOISERIE[essenceBois(F)], h = 4.4 + hv(F, 1); F.cyl(0, -.5, 0, .34, .2, h, 4, BOISERIE.brun[0], BOISERIE.brun[1]); F.dome(0, h + .9, 0, 2.6, 2.5, 2.6, t, 5); },   // le même, à plus de 95 m
+    F.vent(.25, h * .6, h + 4).dome(0, h + 1.2, 0, r, 1.55, r, t, 8); F.dome(cx * 1.4, h + .5, cz * 1.4, r * .62, .95, r * .62, t, 6); if (!o.leger) F.dome(-cz * 1.3, h + .9, cx * 1.3, r * .55, .9, r * .55, t, 6); F.dome(-cx * .3, h + 2.1, -cz * .3, r * .72, 1.7, r * .72, t, 7, true); F.vent(); },
+  arbre_bois_loin(F, o) { const t = BOISERIE[essenceBois(F, o)], h = 4.4 + hv(F, 1); F.cyl(0, -.5, 0, .34, .2, h, 4, BOISERIE.brun[0], BOISERIE.brun[1]); F.dome(0, h + .9, 0, 2.6, 2.5, 2.6, t, 5); },   // le même, à plus de 95 m
   masse_bois(F, o, R) {   // le fond du bois, à plus de 40 m : la silhouette d'un arbre, aux couleurs du bosquet
-    const e = essenceBois(F), t = BOISERIE[e === "dore" ? "hetre" : e], k = .78 + R() * .16, c = [fonce(t[0], k * .9), fonce(melange(t[0], t[1], .5), k), fonce(melange(t[1], t[2], .3), k)], r = 2.4 + R() * .8, h = 5.6 + R() * 2.4;
+    const e = essenceBois(F, o), t = BOISERIE[e === "dore" ? "hetre" : e], k = .78 + R() * .16, c = [fonce(t[0], k * .9), fonce(melange(t[0], t[1], .5), k), fonce(melange(t[1], t[2], .3), k)], r = 2.4 + R() * .8, h = 5.6 + R() * 2.4;
     F.vent(.4, .5, h + 1).dome(0, .4, 0, r, h * .62, r, c, 5, true); F.dome(0, .4 + h * .42, 0, r * .66, h * .58, r * .66, c, 5, true); F.vent(); },
   fougere(F) {   // une fougère : des frondes fines en couronne, qui montent, s'arrondissent et retombent
     const n = 8, t = BOISERIE.fougere; F.vent(.05, 0, .7); for (let i = 0; i < n; i++) { const a = (i + hv(F, i) * .6) / n * 6.283, c = Math.cos(a), s = Math.sin(a), l = .6 + hv(F, i + 9) * .28, h = .34 + hv(F, i + 20) * .16, P = (d, u, y) => [c * d - s * u, y, s * d + c * u], K = [[.03, .015, 0], [l * .38, .075, h * .86], [l * .74, .06, h], [l, 0, h * .62]];
@@ -60,6 +60,19 @@ Object.assign(OBJETS, {
     F.toit(0, 2, 0, 2.4, 1.9, .75, .28, t, g[0]); F.plaque(-.75, .12, .05, 1.8, .97, fonce(g[0], .7)); F.plaque(-.69, .16, -.01, 1.74, .99, fonce(g[1], .86)); F.boite(-.1, .9, 1.02, .06, .12, .05, PAL.or[1]);
     F.plaque(.3, .85, .92, 1.5, .97, PAL.blanc); F.matiere(3).plaque(.36, .91, .86, 1.44, .99, PAL.vitre).matiere(2);
     { const y = solLocal(F, 1.55, .6); F.cyl(1.55, y - .1, .6, .28, .3, .85, 8, BOISERIE.rustique[0], BOISERIE.rustique[1], null); for (const h of [.15, .55]) F.cyl(1.55, y + h, .6, .31, .31, .06, 8, FER); } },
+  rang_ble(F, o) {   // un bout de rang de blé : des touffes dorées, serrées, le dessus plus clair
+    const L = o.long || 3; F.vent(.06, .1, .8); for (let k = 0; k < 4; k++) { const x = -L / 2 + L * (k + .5) / 4, y = solLocal(F, x), h = .5 + hv(F, k) * .14; F.dome(x, y + .12, (hv(F, k + 5) - .5) * .25, .52, h, .58, [hex("#B8963C"), hex("#D6B654"), hex("#EED884")], 6, true); } F.vent(); },
+  rang_tournesols(F, o) {   // un bout de rang de tournesols : des tiges, deux feuilles, la fleur tournée vers le soleil
+    const L = o.long || 3, ve = [hex("#4C8A36"), hex("#68A846")], ja = hex("#F4C22C"), br = hex("#6A4420"); F.vent(.08, .1, 1.6); for (let k = 0; k < 3; k++) { const x = -L / 2 + L * (k + .5) / 3 + (hv(F, k) - .5) * .25, h = 1.15 + hv(F, k + 4) * .3, y = solLocal(F, x); F.boite(x, y - .1, 0, .06, h + .1, .06, ve[0]); F.quad([x, y + h * .45, 0], [x + .16, y + h * .6, .1], [x + .42, y + h * .5, .02], [x + .16, y + h * .55, -.14], ve[1], [0, 1, 0]); F.quad([x, y + h * .6, 0], [x - .16, y + h * .74, .1], [x - .4, y + h * .62, .02], [x - .16, y + h * .68, -.14], ve[1], [0, 1, 0]);
+      const c = y + h + .06, n = 8; for (let i = 0; i < n; i++) { const a = i / n * 6.283, b = (i + 1) / n * 6.283; F.tri([x, c, .1], [x + Math.cos(a) * .27, c + Math.sin(a) * .25, .05], [x + Math.cos(b) * .27, c + Math.sin(b) * .25, .05], i % 2 ? ja : fonce(ja, .93), [0, .2, 1]); } for (let i = 0; i < 6; i++) { const a = i / 6 * 6.283, b = (i + 1) / 6 * 6.283; F.tri([x, c, .13], [x + Math.cos(a) * .12, c + Math.sin(a) * .12, .12], [x + Math.cos(b) * .12, c + Math.sin(b) * .12, .12], br, [0, .2, 1]); } } F.vent(); },
+  rang_lavande(F, o) {   // un bout de rang de lavande : des touffes rondes, gris-vert dessous, mauves dessus
+    const L = o.long || 3; F.vent(.04, .1, .6); for (let k = 0; k < 3; k++) { const x = -L / 2 + L * (k + .5) / 3, y = solLocal(F, x); F.dome(x, y + .22, 0, .56, .42 + hv(F, k) * .08, .5, [hex("#6E8A5E"), hex("#8A6AB8"), hex("#B292DC")], 7, true); } F.vent(); },
+  rang_vignes(F, o) {   // un bout de rang de vigne : les ceps, leur feuillage sur le fil, un piquet
+    const L = o.long || 2.5, t = [hex("#4E9A36"), hex("#6CB244"), hex("#9ED066")]; for (let k = 0; k < 2; k++) { const x = -L / 2 + L * (k + .5) / 2, y = solLocal(F, x); F.boite(x, y - .1, 0, .09, .55, .09, hex("#6A4A30")); F.dome(x, y + .38, 0, .62, .6, .3, t, 6, true); } const y = solLocal(F, -L / 2); F.boite(-L / 2, y - .2, 0, .09, 1.3, .09, BOISERIE.rustique[0]); lisseEnPente(F, -L / 2, y + .92, L / 2, solLocal(F, L / 2) + .92, 0, .025, .025, hex("#8A8478")); },
+  bruyere(F) {   // une touffe de bruyère : un coussin vert sombre, fleuri de rose
+    const r = [hex("#4E6E3E"), hex("#A85E8E"), hex("#D088B4")], v = [hex("#46683A"), hex("#628A48"), hex("#86AA5E")], a = hv(F) < .72 ? r : v; F.vent(.03, 0, .5).dome(0, .08, 0, .55, .34, .5, a, 7, true); F.dome(.4, .06, .2, .36, .26, .34, a, 6, true); F.vent(); },
+  ruche(F) {   // une ruche de bois peint, sur ses pieds
+    const c = [hex("#E8D48A"), hex("#9CC4D8"), hex("#E0A87A"), hex("#B8D09A")][Math.floor(hv(F) * 4)], y = solLocal(F, 0); for (const x of [-.3, .3]) for (const z of [-.22, .22]) F.boite(x, y - .2, z, .08, .5, .08, BOISERIE.rustique[0]); F.boite(0, y + .28, 0, .8, .42, .66, c); F.boite(0, y + .7, 0, .8, .32, .66, melange(c, BLANC, .25)); F.boite(0, y + 1.02, 0, .92, .09, .78, hex("#8A8E94")); F.plaque(-.18, y + .33, .18, y + .39, .34, fonce(c, .4)); },
   stere(F) {   // un tas de bois de chauffage : des rondins rangés entre deux piquets
     const L = 2.2, b = BOISERIE.brun; F.ombre(0, 0, 1.5, .8); F.boite(0, solLocal(F, 0) - .4, 0, L - .16, 1.27, .9, fonce(b[0], .5));   // (24/11, Kiki : « on voit à travers ») le cœur du tas, sombre, derrière les rondins
     for (const x of [-L / 2 - .08, L / 2 + .08]) F.boite(x, solLocal(F, x) - .3, 0, .1, 1.55, .1, BOISERIE.rustique[0]);

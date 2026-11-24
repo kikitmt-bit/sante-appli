@@ -219,7 +219,7 @@ const distBoite = (b, x, z) => { const dx = x - b.x, dz = z - b.z, u = Math.abs(
 const coinsBoite = b => [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([u, v]) => [b.x + (u * b.l * b.c + v * b.p * b.s) * .98, b.z + (-u * b.l * b.s + v * b.p * b.c) * .98]);
 function seTouchent(a, b) { const A = a.l ? boiteObjet(a) : null, B = b.l ? boiteObjet(b) : null; if (!A && !B) return Math.hypot(a.x - b.x, a.z - b.z) < (a.r || 0) + (b.r || 0) - .05; if (A && !B) return distBoite(A, b.x, b.z) < (b.r || 0) - .05; if (B && !A) return distBoite(B, a.x, a.z) < (a.r || 0) - .05;
   return coinsBoite(A).concat([[A.x, A.z]]).some(([x, z]) => distBoite(B, x, z) < -.08) || coinsBoite(B).concat([[B.x, B.z]]).some(([x, z]) => distBoite(A, x, z) < -.08); }
-const PETITS_PLAN = ["lampadaire", "voiture", "boite_lettres", "massif", "banc", "poubelle", "terrasse", "etal", "buisson", "longue_vue"];   // (lot 3) ce qui ne se voit plus à 110 m
+const PETITS_PLAN = ["lampadaire", "voiture", "boite_lettres", "massif", "banc", "poubelle", "terrasse", "etal", "buisson", "longue_vue", "rang_ble", "rang_tournesols", "rang_lavande", "rang_vignes", "bruyere", "ruche"];   // (lot 3) ce qui ne se voit plus à 110 m
 const SOUS_BOIS = ["fougere", "buisson_bois", "jeune_pousse", "rocher_mousse", "tronc_couche"];   // (étape 14) ce qui ne se voit plus à 55 m
 /* poser tout ça dans le monde (appelé par decor.js, comme le reste du décor) : par carrés de 64 m, clés « p… » (« f… » : la forêt) */
 function* poserPlan(formes, MD, K, poses) {
