@@ -36,7 +36,7 @@ Object.assign(OBJETS, {
     for (const [x, y, s] of [[-L / 2, y0, -1], [L / 2, y1, 1]]) for (let i = 0; i < n; i++) F.tri([x, y, 0], P(x, y, i), P(x, y, i + 1), i % 2 ? BOISERIE.coupe : fonce(BOISERIE.coupe, .9), [s, 0, 0]);
     F.pointe(L * .1, lerp(y0, y1, .6) + r * .6, 0, .4, 1, .3, .08, .6, 4, b[0]); },
   cloture_bois(F, o) {   // la clôture d'un pré : des pieux, deux lisses rondes, un peu de travers
-    const L = o.long || 2.6, b = BOISERIE.rustique, xs = [-L / 2 + .04, L / 2 - .04]; F.cyl(xs[0], solLocal(F, xs[0]) - .3, 0, .085, .07, 1.45 + hv(F) * .12, 5, b[0], b[1], b[2]);
+    const L = o.long || 2.6, b = BOISERIE.rustique, xs = [-L / 2 + .04, L / 2 - .04]; for (const x of o.fin ? xs : [xs[0]]) F.cyl(x, solLocal(F, x) - .3, 0, .085, .07, 1.45 + hv(F) * .12, 5, b[0], b[1], b[2]);
     for (const [h, e] of [[.42, .1], [.86, .11]]) { const d = (hv(F, h * 10) - .5) * .06; lisseEnPente(F, -L / 2 - .05, solLocal(F, -L / 2) + h + d, L / 2 + .05, solLocal(F, L / 2) + h - d, 0, e, .08, b[1], b[2]); } },
   entree_chemin(F, o, R, K) {   // l'entrée d'un chemin au bout d'une rue : deux forts poteaux, une barrière de chaque côté, le panneau du chemin (o.large : le passage libre)
     const w = (o.large || 2.6) / 2 + .16, b = BOISERIE.rustique; for (const s of [-1, 1]) { const y = solLocal(F, s * w); F.boite(s * w, y - .4, 0, .26, 1.75, .26, b[0], {haut: b[2]}); F.boite(s * w, y + 1.35, 0, .34, .1, .34, b[2]);
@@ -61,7 +61,8 @@ Object.assign(OBJETS, {
     F.plaque(.3, .85, .92, 1.5, .97, PAL.blanc); F.matiere(3).plaque(.36, .91, .86, 1.44, .99, PAL.vitre).matiere(2);
     { const y = solLocal(F, 1.55, .6); F.cyl(1.55, y - .1, .6, .28, .3, .85, 8, BOISERIE.rustique[0], BOISERIE.rustique[1], null); for (const h of [.15, .55]) F.cyl(1.55, y + h, .6, .31, .31, .06, 8, FER); } },
   stere(F) {   // un tas de bois de chauffage : des rondins rangés entre deux piquets
-    const L = 2.2, b = BOISERIE.brun; F.ombre(0, 0, 1.5, .8); for (const x of [-L / 2 - .08, L / 2 + .08]) F.boite(x, solLocal(F, x) - .3, 0, .1, 1.55, .1, BOISERIE.rustique[0]);
+    const L = 2.2, b = BOISERIE.brun; F.ombre(0, 0, 1.5, .8); F.boite(0, solLocal(F, 0) - .4, 0, L - .16, 1.27, .9, fonce(b[0], .5));   // (24/11, Kiki : « on voit à travers ») le cœur du tas, sombre, derrière les rondins
+    for (const x of [-L / 2 - .08, L / 2 + .08]) F.boite(x, solLocal(F, x) - .3, 0, .1, 1.55, .1, BOISERIE.rustique[0]);
     for (let j = 0; j < 4; j++) for (let k = 0; k < 8 - (j % 2); k++) { const r = .125 + hv(F, j * 9 + k) * .02, x = -L / 2 + .14 + k * .275 + (j % 2) * .137, y = solLocal(F, 0) + .12 + j * .235, n = 6, P = (i, z) => [x + Math.cos(i / n * 6.283) * r, y + Math.sin(i / n * 6.283) * r, z];
       for (const z of [.5, -.5]) for (let i = 0; i < n; i++) F.tri([x, y, z], P(i, z), P(i + 1, z), i % 3 ? BOISERIE.coupe : fonce(BOISERIE.coupe, .88), [0, 0, Math.sign(z)]);
       if (j === 3 || k === 0 || k === 7 - (j % 2)) for (let i = 0; i < n; i++) { const m = (i + .5) / n * 6.283; F.quad(P(i, .5), P(i + 1, .5), P(i + 1, -.5), P(i, -.5), b[i % 2], [Math.cos(m), Math.sin(m), 0]); } } },
