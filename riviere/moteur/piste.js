@@ -59,6 +59,7 @@ function cheminRaccord(x0, z0, t0, x1, z1, t1, R) {
   return sol[0] || null;
 }
 function nombres(pieces) {   // le nombre de mètres de chaque pièce : arrondis en cumulé, pour que le total soit juste
+  if (NIVEAU.plan) return pieces.map(p => Math.max(1, Math.round(p.long)));
   let cum = 0;
   return pieces.map(p => { const a = Math.round(cum); cum += p.long; return Math.max(1, Math.round(cum) - a); });
 }
@@ -130,7 +131,7 @@ const PISTE = (() => {
   if (source.some(p => p.raccord)) {
     if (!BOUCLE || !source[source.length - 1].raccord) throw new Error("La pièce « raccord » se met à la fin d'un circuit en boucle.");
     source = raccorder(source);
-  } else if (BOUCLE) fermer(source);
+  } else if (BOUCLE && !NIVEAU.plan) fermer(source);
   // la hauteur : chaque pièce monte ou descend ; un circuit revient à sa hauteur de départ
   const autosY = source.filter(p => p.monte === "auto"), sommeY = source.reduce((t, p) => t + (+p.monte || 0), 0);
   for (const p of autosY) p.monte = BOUCLE ? -sommeY / autosY.length : 0;
@@ -144,11 +145,12 @@ const PISTE = (() => {
     if (!(w > 0)) throw new Error("Pièce sans largeur : « " + titre + " ».");
     const surf = p.surface || NIVEAU.surface || (DISC_PISTE === "terre" ? "terre" : "eau"); if (!surfaces.includes(surf)) surfaces.push(surf);   // la surface : la pièce, sinon le circuit (12/11 : la machine ne change plus un circuit d'eau en chemin)
     pieces.push(Object.assign(p, {s0: s, s1: s + n, titre, surface: surf, grotte: p.tunnel ? (typeof p.tunnel === "string" ? p.tunnel : p.tunnel.style || "roche") : null}));
+    const pas = NIVEAU.plan ? (Math.abs(k) < 1e-9 ? p.long / n : 2 * (p.long / (k * n)) * Math.sin(k / 2)) : 1;   // (24/11) sur un plan, les longueurs sont exactes (une corde d'arc), pas arrondies au mètre : le parcours reste au milieu du trottoir
     for (let i = 0; i < n; i++) {
       X.push(x); Z.push(z); H.push(h); Y0.push(y); W0.push(w / 2); KG.push(TYPES.indexOf(p.g)); KD.push(TYPES.indexOf(p.d));
       TUN.push(p.tunnel && i >= MARGE && i < n - MARGE ? 1 : 0); PONT.push(p.pont ? 1 : 0); NET.push(p.net ? 1 : 0); SF.push(surfaces.indexOf(surf)); PC.push(ip);
       A0.push(p.allure || 1); K0.push(k); CH0.push((p.camera && p.camera.haut) || 0); CR0.push((p.camera && p.camera.recul) || 0);
-      y += (+p.monte || 0) / n; h += k / 2; x += Math.sin(h); z -= Math.cos(h); h += k / 2; s++;
+      y += (+p.monte || 0) / n; h += k / 2; x += Math.sin(h) * pas; z -= Math.cos(h) * pas; h += k / 2; s++;
     }
   });
   const N = X.length, borne = i => BOUCLE ? ((i % N) + N) % N : clamp(i, 0, N - 1);

@@ -114,7 +114,7 @@ function filmEcran() {
     + "#film .fin{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);text-align:center;white-space:nowrap;font-size:min(8vh,6vw);opacity:0;transition:opacity .5s}"
     + "#film .fin.vu{opacity:1}#film .fin small{font-size:.45em;color:#F8C838;margin-bottom:.3em}#film .fin p{margin:.25em 0 0;font-size:.55em}"
     + "#film button{position:absolute;right:max(2.2vw,env(safe-area-inset-right,0px));bottom:calc(9vh + 1.5vh);pointer-events:auto;font:inherit;font-size:min(4.4vh,3.6vw);padding:.15em .9em;color:#383828;background:#F8F8E8;border:2px solid #484838;border-radius:12px 5px;box-shadow:3px 3px 0 #1B2440}"
-    + "body.film .hud,body.film #carte,body.film #profil,body.film #bAuto,body.film #bFin,body.film #bSon,body.film #bPlein,body.film #panneau{display:none!important}body.film #film .hud{display:block!important}";
+    + "body.film .hud,body.film #carte,body.film #profil,body.film #bAuto,body.film #bFin,body.film #bSon,body.film #bPlein,body.film #bSignal,body.film #panneau{display:none!important}body.film #film .hud{display:block!important}";
   document.head.appendChild(st);
   const el = document.createElement("div"); el.id = "film"; el.hidden = true;
   el.innerHTML = '<div class="noir"></div><div class="bande b1"></div><div class="bande b2"></div><div class="hud tete">LE RÉSUMÉ DE TA SÉANCE</div>'

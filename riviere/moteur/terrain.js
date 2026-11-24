@@ -53,6 +53,7 @@ async function construireTerrain(cede) {   // cede (17/11) : rendre la main tout
       for (const [p, q, r] of [[a, c, b], [b, c, d]]) {
         if (HH[p] < -.3 && HH[q] < -.3 && HH[r] < -.3) continue;   // sous la mer : rien à dessiner
         if (GK[p] === 1 && GK[q] === 1 && GK[r] === 1) continue;   // sous la piste : rien à dessiner
+        if (typeof PLAN !== "undefined" && PLAN && [p, q, r].every(k => PLAN.bord(x0 + (k % nx) * C, z0 + Math.floor(k / nx) * C) < -8)) continue;   // sous une ville dessinée (plan.js)
         const k1 = GK[p] === 1 || GK[q] === 1 || GK[r] === 1, k2 = GK[p] >= 2 || GK[q] >= 2 || GK[r] >= 2; if (k1 && k2) continue;   // à cheval sur l'entrée d'un tunnel : la façade prend le relais
         for (const k of [p, q, r]) som(k % nx, Math.floor(k / nx));
       }
@@ -120,6 +121,7 @@ function fabriqueRives() {   // de quoi construire les rives, d'un mètre à un 
   return {morceau, oublier() { memo[0].clear(); memo[1].clear(); }};
 }
 function construireRives() {
+  if (typeof PLAN !== "undefined" && PLAN) return;   // (24/11) une ville dessinée : la piste n'a pas de rives
   const P = PISTE, K = fabriqueRives();
   // la ligne, de s0 à s1 ; puis la voie « force » de chaque fourche, entre les deux mêmes mètres (idx et at la suivent : surLaVoie)
   const ruban = (s0, s1) => { K.oublier();

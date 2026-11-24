@@ -2,7 +2,7 @@
 // Ce qui manquait pour une vraie sortie à pied : des haies et des murets tout près du trottoir (on sent qu'on avance), la rue qui continue
 // tout droit quand on la quitte pour un passage, l'entrée d'un parc, un kiosque, une terrasse de café, des massifs.
 // Même repère que les autres objets : x le long de la piste, z vers la piste, y vers le haut. Aucun tirage dans le hasard du niveau (hv : la place).
-Object.assign(RAYON, {voiture_roule: 0, haie: .5, muret: .4, rue_continue: 0, portail_parc: 0, kiosque: 4.2, terrasse: 1.8, massif: 1.2, poubelle: .3});
+Object.assign(RAYON, {voiture_roule: 0, haie: .5, muret: .4, rue_continue: 0, portail_parc: 0, kiosque: 4.2, terrasse: 1.8, massif: 1.2, poubelle: .3, etal: 1.7});
 
 const FOOT = {haie: [hex("#3E8E46"), hex("#4FA352"), hex("#69BC5E")], terre: hex("#8C6A44")};
 /* une haie taillée, le long de la piste (long : sa longueur) : un pied plus sombre, un dessus clair, quelques bosses pour casser le trait */
@@ -21,8 +21,15 @@ Object.assign(OBJETS, {
   massif(F, o) {   // un massif de fleurs dans sa bordure de pierre : de la terre, des touffes rondes de couleurs franches (jamais des cubes)
     const r = o.r0 || 1.1, c = [hex("#E84A5F"), hex("#F7D046"), hex("#F2F0F5"), hex("#B05CC8")][Math.floor(hv(F, 2) * 4)], f = PAL.feuilles;
     F.cyl(0, -.1, 0, r + .12, r + .12, .32, 10, PAL.pierre[2], PAL.pierre[2]); F.rond(0, .23, 0, r, r, FOOT.terre, 10);
+    if (typeof PLAN !== "undefined" && PLAN) { for (let k = 0; k < 6; k++) { const a = k / 5 * Math.PI * 2 + hv(F, k) * .4, d = k === 5 ? 0 : r * .55; F.dome(Math.cos(a) * d, .2, Math.sin(a) * d, .4, .24, .4, [f[0], f[1], f[1]], 5, true); F.dome(Math.cos(a) * d, .4, Math.sin(a) * d, .24, .18, .24, [melange(c, [0, 0, 0], .2), c, melange(c, BLANC, .3)], 5, true); } return; }   // (une ville en porte des dizaines : le même, plus léger)
     for (let k = 0; k < 7; k++) { const a = k / 7 * Math.PI * 2 + hv(F, k) * .4, d = k === 6 ? 0 : r * .55; F.boule(Math.cos(a) * d, .3, Math.sin(a) * d, .32, .26, .32, [f[0], f[1], f[1]], 0);
       F.boule(Math.cos(a) * d, .5, Math.sin(a) * d, .2, .14, .2, [melange(c, [0, 0, 0], .2), c, melange(c, BLANC, .3)], 0); } },
+  etal(F, o) {   // (24/11) un étal de marché : un tréteau, des cageots de fruits, un auvent rayé sur quatre poteaux
+    const b = PAL.bois_clair, t = [hex("#D84838"), hex("#3C8C5A"), hex("#3C7CD8"), hex("#E8A030")][Math.floor(hv(F, 3) * 4)], f = [hex("#E8483C"), hex("#F2A030"), hex("#F7D046"), hex("#6CB84C"), hex("#9A5CB0")];
+    F.boite(0, 0, 0, 2.4, .75, 1.1, melange(b, BLANC, .1), {haut: fonce(b, .9)});
+    for (let k = 0; k < 4; k++) { const x = -.87 + k * .58, c = f[Math.floor(hv(F, k + 5) * 5)]; F.boite(x, .75, .05, .5, .16, .8, b); for (const [dx, dz] of [[-.12, -.2], [.12, -.2], [-.12, .05], [.12, .05], [0, .28]]) F.boule(x + dx, .93, dz, .12, .11, .12, [fonce(c, .8), c, melange(c, BLANC, .25)], 0); }
+    for (const x of [-1.25, 1.25]) for (const z of [-.75, .85]) F.boite(x, 0, z, .07, z > 0 ? 2 : 2.3, .07, PAL.cadre);
+    for (let k = 0; k < 6; k++) { const x0 = -1.35 + k * .45, c = k % 2 ? BLANC : t; F.quad([x0, 2.02, 1.05], [x0 + .45, 2.02, 1.05], [x0 + .45, 2.36, -.85], [x0, 2.36, -.85], c, [0, 1, .2]); F.quad([x0, 1.82, 1.07], [x0 + .45, 1.82, 1.07], [x0 + .45, 2.02, 1.05], [x0, 2.02, 1.05], fonce(c, .9), [0, 0, 1]); } },
   poubelle(F) { const v = hex("#3C7A4E"); F.cyl(0, 0, 0, .04, .04, .55, 6, PAL.cadre, PAL.cadre); F.cyl(0, .5, 0, .24, .26, .55, 8, v, melange(v, BLANC, .15), v); },
   terrasse(F, o, R, K) {   // une table de café, deux chaises, un parasol à bandes
     const b = PAL.bois_clair, toile = [hex("#E04A3A"), hex("#F4F0E6")], h = 2.3;
@@ -45,7 +52,7 @@ Object.assign(OBJETS, {
     for (let k = 0; k < 14; k++) { const a0 = k / 14 * Math.PI, a1 = (k + 1) / 14 * Math.PI, y0 = 2.45 + Math.sin(a0) * .8, y1 = 2.45 + Math.sin(a1) * .8, x0 = -Math.cos(a0) * w, x1 = -Math.cos(a1) * w;
       F.quad([x0, y0, 0], [x1, y1, 0], [x1, y1 + .12, 0], [x0, y0 + .12, 0], fer, [0, 0, 1]); F.quad([x1, y1, 0], [x0, y0, 0], [x0, y0 + .12, 0], [x1, y1 + .12, 0], fer, [0, 0, -1]); }
     if (o.texte) { F.boite(0, 2.72, 0, Math.min(2 * w - .5, 3.3), .5, .08, hex("#2E3640")); K.etiquette(F, o.texte, 0, 2.97, .05, Math.min(2 * w - .7, 3.1), .4, 48); }
-    haieFoot(F, w + .4, w + 6, 0, 1.15, .8, 3); haieFoot(F, -w - 6, -w - .4, 0, 1.15, .8, 5);
+    if (!o.sansHaie) { haieFoot(F, w + .4, w + 6, 0, 1.15, .8, 3); haieFoot(F, -w - 6, -w - .4, 0, 1.15, .8, 5); }
     F.poser(...sv); },
   /* (18/11, Kiki : « une qui roule très rarement, ça donne de la vie ») une voiture qui passe de temps en temps sur la chaussée de la rue,
      dans un sens ou dans l'autre, à 30 km/h, au milieu (les voitures garées restent le long des bordures). Posée "cote": "g", "e": 0 au début

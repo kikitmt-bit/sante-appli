@@ -10,6 +10,15 @@ const OBJETS = {}, RAYON = {}, EVENEMENTS = {}, LOINTAINS = {};
 /* (17/11) la place d'un objet étendu (une rue qui part, un rond-point) : EMPRISE[nom] = o => [[x, z, r], …] dans le repère de l'objet ;
    rien d'autre ne sera posé dans ces ronds (une règle ne pose un tel objet que si tous ses ronds sont libres) */
 const EMPRISE = {};
+/* (24/11, Kiki : « un caillou posé au-dessus du sol, ou qui vole au-dessus de l'eau ») l'assise d'un objet : le rayon de son pied. Jusque-là, seul le sol sous son
+   milieu était regardé. Le sol ne doit pas descendre de plus de « tient » m sous son pied, et le pied ne doit pas dépasser sur l'eau ni sur la piste.
+   Une règle ne pose pas un objet mal assis ; un objet posé exactement par le niveau descend jusqu'à toucher le sol. */
+const PIED_OBJET = {rocher: [1.15, .3], buisson: [.9, .3], banc: [.9, .12], maison: [4, 1], immeuble: [4.5, 1], magasin: [4, 1], centre: [6, 1], boutique: [5, 1], labo: [6, 1], entrepot: [6, 1], meule: [1.2, .25], caisses: [1.1, .15], massif: [1.1, .12], terrasse: [1, .1], kiosque: [3.6, .4]};
+function assiseDe(nom, x, z, y, ech) {   // {creux : de combien le sol descend sous le pied ; eau : le pied dépasse sur la piste}
+  const A = PIED_OBJET[nom] || [.35, .3], r = A[0] * ech; let creux = 0, eau = false;
+  for (let k = 0; k < 8; k++) { const a = k * Math.PI / 4, X = x + Math.cos(a) * r, Z = z + Math.sin(a) * r; creux = Math.max(creux, y - hauteur(X, Z)); if (Q.e < .15 && Q.bout !== 2 && !PISTE.TUN[Q.i]) eau = true; }
+  return {creux, eau, tient: A[1] * ech};
+}
 /* (19/11) le sol qu'un objet peint lui-même (la rue qui continue tout droit : kanto-footing.js) : SOL_PLAT[nom] = (o, s) => [[x, z], …], un polygone
    convexe dans le monde. Le ruban des rives (terrain.js) ne dessine pas son herbe dedans : sinon, un peu plus haute, elle recouvrait la rue. */
 const SOL_PLAT = {};
@@ -108,14 +117,16 @@ function* poserDecorPas(Z) {
     const recette = OBJETS[nom]; if (!recette) { console.warn("Objet inconnu : " + nom); return; }
     const a = at(s), sg = cote === "g" ? -1 : 1, q = cote === "c" || cote === "portail" ? pose(s, e || 0) : pose(s, sg * (a.w + e));
     const y = (cote === "c" || o.flotte ? a.y : cote === "portail" ? a.y + hRive(idx(s), 0, 2) + .5 : hauteur(q.x, q.z)) + (o.haut || 0);   // flotte : sur l'eau, contre la rive (un bateau, un ponton ; e négatif)   // « portail » : perché au-dessus de l'entrée d'une grotte ; haut : sur un toit, en l'air
+    const auSol = NIVEAU.decor !== "classique" && cote !== "c" && cote !== "portail" && !o.flotte && !o.haut && PIED_OBJET[nom]; let yPose = y;
+    let flotte = 0; if (auSol) { const s0 = assiseDe(nom, q.x, q.z, y, ech); if (s0.creux > s0.tient) { yPose = y - Math.min(s0.creux - s0.tient, 1.2 * ech); flotte = Math.max(0, s0.creux - s0.tient - 1.2 * ech); } }
     const lacet = lacetDe(a, sg, o), oo = Object.assign({eau: a.w * 2, _s: s, _cote: cote, _e: e || 0, _v: P.NF ? VOIES.prise.slice() : null, _vo: P.VO[idx(s)]}, o);
     const r0 = (o.r === undefined ? RAYON[nom] || 1 : o.r) * ech;
     if ((cote !== "c" && cote !== "portail" && !o.flotte && surAutreRoute(q.x, q.z, r0 * .8, s)) || (!exacts && cote !== "c" && cote !== "portail" && !o.flotte && touchePiste(nom, q.x, q.z, r0, a.y)) || (EMPRISE[nom] && emprise(nom, oo, q, lacet, ech).some(([X, Z2, rr]) => surAutreRoute(X, Z2, rr * .8, s)))) {
       // il tomberait sur un autre bout de la route : on ne le pose pas, mais sa recette tourne quand même, à blanc, pour que le hasard du reste du décor ne bouge pas
       recette(new Forme().poser(q.x, y, q.z, lacet, ech).matiere(2), oo, R, kMonde({etiquettes: [], animes: [], sprites: [], evenements: [], poses: [], lumieres: [], sons: []})); MD.ecartes = (MD.ecartes || 0) + 1; return;
     }
-    recette(forme(s).poser(q.x, y, q.z, lacet, ech).matiere(2), oo, R, K); if (EVENEMENTS[nom]) MD.evenements.push({s: BOUCLE ? sLigne(idx(s)) : s, type: EVENEMENTS[nom], vo: P.VO[idx(s)]});   // un tronc, des rondins : ton Pokémon saute ou plonge
-    prendre(q.x, q.z, r0); if (EMPRISE[nom]) for (const [X, Z2, r] of emprise(nom, oo, q, lacet, ech)) prendre(X, Z2, r); poses.push({nom, s, cote, e, v: P.NF ? VOIES.prise.slice() : null});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
+    recette(forme(s).poser(q.x, yPose, q.z, lacet, ech).matiere(2), oo, R, K); if (EVENEMENTS[nom]) MD.evenements.push({s: BOUCLE ? sLigne(idx(s)) : s, type: EVENEMENTS[nom], vo: P.VO[idx(s)]});   // un tronc, des rondins : ton Pokémon saute ou plonge
+    prendre(q.x, q.z, r0); if (EMPRISE[nom]) for (const [X, Z2, r] of emprise(nom, oo, q, lacet, ech)) prendre(X, Z2, r); poses.push({nom, s, cote, e, v: P.NF ? VOIES.prise.slice() : null, flotte});   // (11/11 : ces deux appels étaient avalés par le commentaire ci-dessus : aucun contrôle de place, aucun Pokémon caché derrière un arbre)
   }
   const poserCache = (...args) => { exacts = true; try { poser(...args); } finally { exacts = false; } };   // (collé à son arbre, exprès : lui non plus ne regarde pas la place)
   // 1) les lieux et les objets que le niveau pose exactement
@@ -128,6 +139,7 @@ function* poserDecorPas(Z) {
   for (const j of JONCTIONS()) if (ici(j.s)) poser(j.o, j.s, "c", 0, j); else if (Z) garder(j.o, j.s, "c", 0, j);   // (17/11) une route qui devient un chemin : un embranchement
   for (const pc of P.pieces) { if (Z && (pc.s1 < Z.a - 400 || pc.s0 > Z.b + 400)) continue; if (pc.voie) surLaVoie(pc.voie - 1, () => exact(pc)); else exact(pc); }   // (une pièce de la voie « force » d'une fourche : ses objets sont posés sur elle)
   exacts = false; yield;   // (17/11) sans tronçon aussi : poserDecor va jusqu'au bout d'un coup, construireDecor rend la main entre deux
+  if (typeof PLAN !== "undefined" && PLAN && !Z) { MD.masse = 0; yield* poserPlan(formes, MD, K, poses); MD.poses = poses; return formes; }   // (24/11) une ville dessinée : tout vient du plan
   // 2) les règles de la région
   const reserve = (s, cote, e) => reserves.some(z => z.cote === cote && s > z.s0 && s < z.s1 && e < z.e && !(z.vo && P.VO[idx(s)] && z.vo !== P.VO[idx(s)]));   // (pas un lieu de l'autre voie d'une fourche)
   for (const r of BIOME.regles) { const sur = r.sur.map(t => TYPES.indexOf(t)), total = Object.values(r.objets).reduce((a, b) => a + b, 0);
@@ -145,6 +157,7 @@ function* poserDecorPas(Z) {
         const y = hauteur(q.x, q.z); if (Q.e < .3 || y - P.Y[Q.i] < (DISC_PISTE === "terre" ? -90 : .15)) continue;   // jamais sur une route ; sur l'eau, jamais au ras de l'eau
         if (r.plat !== undefined) { const q3 = pose(s, sg * (at(s).w + 3)); if (hauteur(q3.x, q3.z) - P.Y[Q.i] > r.plat) continue; }   // plat : la rive, à 3 m du bord, ne monte pas plus haut (des roseaux jamais au pied d'une paroi)
         const pente = Math.max(Math.abs(hauteur(q.x + 1.5, q.z) - hauteur(q.x - 1.5, q.z)), Math.abs(hauteur(q.x, q.z + 1.5) - hauteur(q.x, q.z - 1.5))) / 3; if (pente > (r.pente || .45)) continue;
+        if (NIVEAU.decor !== "classique" && !r.flotte) { const s0 = assiseDe(nom, q.x, q.z, y, ech); if (s0.eau || s0.creux > s0.tient + (r.pente > 1 ? .6 : .1)) { MD.malAssis = (MD.malAssis || 0) + 1; continue; } }
         const rayon = (RAYON[nom] || 1) * ech * (r.serre || 1); if (!libre(q.x, q.z, rayon)) continue;
         if (EMPRISE[nom]) { const a2 = at(s), oo = Object.assign({eau: a2.w * 2}, r.reglages); if (emprise(nom, oo, q, lacetDe(a2, sg, oo), ech).some(([X, Z2, rr]) => !libre(X, Z2, rr))) continue; }
         poser(nom, s, cote, e, Object.assign({r: (RAYON[nom] || 1) * (r.serre || 1)}, r.reglages, r.nums ? {num: r.nums[Math.floor(R() * r.nums.length)]} : null), ech); } } };
@@ -190,7 +203,8 @@ async function construireDecor(cede) {   // cede (17/11) : rendre la main toutes
   const g = poserDecorPas(); let r; do { r = g.next(); if (!r.done) await souffle(); } while (!r.done);
   const formes = r.value;
   MONDE.foret = [];   // les maillages de la forêt en masse : la qualité les cache si la machine peine (jeu.js)
-  for (const [k, F] of formes) { await souffle(); const abri = typeof k === "string" && k[0] === "t", foret = typeof k === "string" && k[0] === "f", m = F.maille(abri ? MAT_ABRI : MAT_MONDE); if (m) { m.name = abri ? "decor-abri" : foret ? "foret" : "decor"; if (foret) MONDE.foret.push(m); scene.add(m); } }
+  for (const [k, F] of formes) { await souffle(); const abri = typeof k === "string" && k[0] === "t", foret = typeof k === "string" && k[0] === "f", m = F.maille(abri ? MAT_ABRI : MAT_MONDE); if (m) { m.name = abri ? "decor-abri" : foret ? "foret" : typeof k === "string" && k[0] === "n" ? "decor-net" : "decor";   // (« n » : les haies et les murets d'une ville dessinée : leur ombre, rasante, faisait des dents de scie sur le trottoir)
+    if (foret) MONDE.foret.push(m); scene.add(m); } }
   // les étiquettes (le texte des panneaux) et les objets qui tournent
   for (const e of MONDE.etiquettes) scene.add(mailleEtiquette(e));
   for (const a of MONDE.animes) scene.add(mailleAnimee(a));

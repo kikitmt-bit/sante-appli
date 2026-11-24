@@ -136,10 +136,12 @@ function finir(x, z) {  // après le vote : les bosses, puis les ravins, puis le
     else h = lerp(h, -3, lisse(120, 170, e));
   }
   if (MASSIF) { const m = massifEn(x, z); if (m > h) h = lerp(h, m, lisse(8, 40, e)); }
+  if (typeof PLAN !== "undefined" && PLAN) { const t = PLAN.bord(x, z); h = lerp(-.26, h, lisse(-14, 40, t)); }   // (24/11) sous une ville dessinée (plan.js), le terrain ne dépasse jamais ; il remonte en collines autour
   return h;
 }
 function hSol(x, z) { voter(x, z); return finir(x, z); }   // le sol, sans creuser le lit de la piste (pour les rives)
 function hauteur(x, z) {  // la hauteur du sol en un point du monde (dans la piste : son lit ; au-dessus d'un tunnel : le dessus de la montagne)
+  if (typeof PLAN !== "undefined" && PLAN && PLAN.bord(x, z) < -14) { pres(x, z); return PLAN.haut(x, z); }
   voter(x, z);
   if (Q.e < 0 && Q.bout !== 2 && !PISTE.TUN[Q.i]) return PISTE.Y[Q.i] - 1.5;
   return finir(x, z);
@@ -161,13 +163,28 @@ const LIBRE = [0, 1].map(cote => {
 });
 
 const COUL = [0, 0, 0, 0];
+/* (24/11, Kiki : « le haut de la berge, c'est du vert, il y a un trait, et le bas, c'est du jaune ») entre deux rives, les couleurs se mélangeaient à parts
+   égales : le pied d'une falaise qui descend vers un pré ou une plage devenait brun ou sable, sous l'herbe. Maintenant : le dessus du sol est de l'une OU
+   de l'autre, par taches, de plus en plus ; et une paroi prend la couleur de la rive qui la fait monter (la roche de la falaise jusqu'au bout de sa pente).
+   "decor": "classique" garde l'ancien mélange. */
+const TACHES = NIVEAU.decor !== "classique", HAUTES = RIVES.map(R => Math.max(.04, profil(R.profil, 12)));
+const P_DESSUS = new Float32Array(NT), P_PAROI = new Float32Array(NT);
+function poidsSol(P, i, x, z) {
+  let n = 0, tot = 0; for (let t = 0; t < NT; t++) { const w = P[i * NT + t]; P_DESSUS[t] = w; if (w > .001) n++; P_PAROI[t] = w * HAUTES[t]; tot += P_PAROI[t]; }
+  for (let t = 0; t < NT; t++) P_PAROI[t] /= tot || 1;
+  if (n < 2 || !TACHES) { if (!TACHES) P_PAROI.set(P_DESSUS); return; }
+  const u = clamp((bruit(x / 2.6 + 31, z / 2.6 - 17) * .62 + bruit(x / 8.5 - 5, z / 8.5 + 23) * .38 - .22) / .56, 0, .999); let c = 0, pris = -1;
+  for (let t = 0; t < NT; t++) { c += P_DESSUS[t]; if (pris < 0 && u < c) pris = t; }
+  if (pris < 0) return; for (let t = 0; t < NT; t++) P_DESSUS[t] = t === pris ? 1 : 0;
+}
 function couleurSol(i, cote, e, ny, x, z) {  // la couleur du sol : celle de la rive (sable puis herbe…), la paroi si ça monte raide, en taches de deux tons
   const P = cote ? PISTE.PD : PISTE.PG, raide = 1 - lisse(.6, .8, ny), tache = bruit(x / 5.5 + 9, z / 5.5 + 2) > .56 ? 1 : 0, ee = e - (RECUL ? RECUL[cote][i] : 0) + (bruit(x / 6, z / 6) - .5) * (RECUL ? 1 : 4); let r = 0, g = 0, b = 0, m = 0;   // (un grand lac : les bandes de sol se comptent depuis la vraie berge, nettes : l'allée le long de l'eau)
+  poidsSol(P, i, x, z);
   for (let t = 0; t < NT; t++) {
-    const w = P[i * NT + t]; if (!w) continue;
+    const w = P_DESSUS[t], wp = P_PAROI[t]; if (!w && !wp) continue;
     const R = RIVES[t]; let nom = R.sols[R.sols.length - 1][0]; for (const [n, jusqu] of R.sols) if (ee < jusqu) { nom = n; break; }
     const S = SOLS[nom], Pa = SOLS[R.paroi], c = S.c[tache % S.c.length], p = Pa.c[tache % Pa.c.length];
-    r += w * lerp(c[0], p[0], raide); g += w * lerp(c[1], p[1], raide); b += w * lerp(c[2], p[2], raide); m += w * (raide > .5 ? Pa.mat : S.mat);
+    const k0 = w * (1 - raide), k1 = wp * raide; r += k0 * c[0] + k1 * p[0]; g += k0 * c[1] + k1 * p[1]; b += k0 * c[2] + k1 * p[2]; m += raide > .5 ? wp * Pa.mat : w * S.mat;
   }
   if (e > 100 && ((BOUCLE && dedans(x, z)) || !ILE)) {   // au loin, dans les collines : la même herbe partout
     const k = lisse(100, 190, e), c = SOLS.herbe.c[tache % SOLS.herbe.c.length]; r = lerp(r, c[0], k); g = lerp(g, c[1], k); b = lerp(b, c[2], k);
@@ -177,4 +194,4 @@ function couleurSol(i, cote, e, ny, x, z) {  // la couleur du sol : celle de la 
       r = lerp(r, c[0], k); g = lerp(g, c[1], k); b = lerp(b, c[2], k); } }
   COUL[0] = r; COUL[1] = g; COUL[2] = b; COUL[3] = m > .5 ? 1 : 0; return COUL;
 }
-function couleurEn(x, z) { pres(x, z); const c = couleurSol(Q.i, Q.d > 0 ? 1 : 0, Math.max(Q.e, 0), 1, x, z); return [c[0], c[1], c[2]]; }
+function couleurEn(x, z) { if (typeof PLAN !== "undefined" && PLAN) { const n = PLAN.nature(x, z); if (COUL_PLAN[n]) return COUL_PLAN[n].slice(); } pres(x, z); const c = couleurSol(Q.i, Q.d > 0 ? 1 : 0, Math.max(Q.e, 0), 1, x, z); return [c[0], c[1], c[2]]; }

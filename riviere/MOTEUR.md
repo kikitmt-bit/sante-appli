@@ -495,6 +495,39 @@ un bout de piste à plus de 25 m de lui (le long de la piste) n'est pas posé ; 
 reste du décor ne bouge pas. Un pont ou une grotte bien au-dessus ou au-dessous ne compte pas. Le contrôle dit combien (`ecartes`) : 0 sur
 les circuits du jeu, 1 au Ventoux (un objet qui était sur la route).
 
+## Une ville dessinée : le plan d'abord, le parcours ensuite (24/11, Kiki : « le trottoir d'un coup dévie, change de texture, c'est trop bizarre »)
+
+Partout ailleurs, le monde se déduit de la piste. En ville, c'était la cause de tout : la piste ÉTAIT le trottoir, donc il tournait avec elle.
+Ici l'inverse : **`"plan"` dans un niveau décrit une ville** (rues droites, îlots, trottoirs, place, parc) et la piste n'est qu'un chemin invisible
+posé dessus (surface `libre` : elle ne dessine que l'ombre du coureur). Le sol ne change donc jamais parce que l'on tourne.
+
+| Fichier | Rôle |
+|---|---|
+| `moteur/plan.js` (pur) | `PLAN` : carrefours, passages, plateaux, allées déduits du plan ; `PLAN.nature(x, z)` = le sol en un point (trottoir, passage, allee, place, pelouse, jardin, chaussee, etang) ; `remplirPlan` pose maisons, boutiques, résidences, marché, bancs… chacun dans sa parcelle ; **`planControle`** refuse ce qu'aucun piéton ne ferait |
+| `moteur/plan_dessin.js` | le sol en couches (chaussée, plateaux, îlots, allées, peinture), les pelouses, l'étang, la circulation (seulement dans les rues que le parcours ne traverse pas) |
+| `jeu/villes.js` | `tirerVille`, `genererVille` : une ville et son parcours tirés d'une graine, à la longueur demandée (0,9 à 1,9 km de décor) |
+
+- **Un niveau sur plan** : région `kanto-plan`, `"surface": "libre"`, `"machines": ["elliptique"]`, des pièces aux longueurs exactes (droites et arcs : `piecesDuChemin`) ; ses
+  rives ne servent à rien (`"plan"`). `"peuple"` : les passants et les Pokémon à charger avec la page.
+- **Ce qui est refusé** (`planControle`, dans le générateur, les tests et `controle.js`) : marcher ailleurs que sur un trottoir, un passage, une allée ou une place ; passer d'un sol à
+  un autre hors de la liste fermée `PASSAGES_PERMIS` ; entrer dans le parc autrement qu'à angle droit ; un objet solide à moins de 75 cm du chemin ; deux objets l'un dans l'autre ; un
+  bâtiment sur la chaussée. Ajouter un module = l'ajouter au plan, jamais tordre la piste.
+- À plat pour l'instant (aucun relief), rues à angle droit seulement ; le parc a ses allées courbes. Le générateur « À pied » ne fait plus que ça (les anciens modules `_p` ne servent plus).
+- La caméra du trotteur ne regarde jamais à plus de 12° de son Pokémon (camera.js) : un coin de rue tourne à 90° en 5 m.
+- Loin du parcours, les petits objets ne sont pas posés et les arbres sont des silhouettes : 60 000 à 250 000 triangles à l'image, 7 à 14 ms sur le PC de Kiki.
+
+## Moins de défauts à la source (24/11)
+
+- **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal
+  assis ni dont le pied dépasse sur l'eau ; un objet posé par le niveau descend jusqu'au sol. Le contrôle refuse un objet qui flotte encore de plus de 15 cm (circuits non cachés).
+- **D'une rive à l'autre** (champ.js, `poidsSol`) : le dessus du sol est d'une rive OU de l'autre, par taches ; une paroi prend la couleur de la rive qui la fait monter (plus de berge
+  verte au-dessus, jaune ou brune au-dessous). `"decor": "classique"` garde l'ancien mélange.
+- **Le bord des ombres** (effets.js, `ombreEn`) : seize lectures de la carte au lieu de quatre, un bord lisse et net ; plus de dents de scie quand le soleil est rasant (+1 ms par image sur le PC de Kiki).
+- **Étais de mine** en travers de la galerie (ils étaient plantés dans l'axe, au milieu de l'eau) ; écume des rapides en traits fins ; ailes de pont en pierre.
+- **Inspecter** : `python riviere/outils/inspecter.py <circuit> --pas 10` = une image tous les 10 m, en planches (hors dépôt). **À regarder avant de donner un circuit à Kiki.**
+- **⚑ Signaler** (jeu/signaler.js) : en course, un toucher garde le circuit, le mètre et l'image ; l'appli les range dans `data/riviere/signalements/<date>.json` (dépôt privé) au
+  chargement suivant. À relire quand Kiki dit « regarde mes signalements ».
+
 ## Ajouter une région (un autre style)
 
 **Le plus court : hériter.** `{"nom": "Johto", "herite": "kanto", "palette": {"feuilles": [...]}, "regles_plus": [...]}` : elle ne redit que ce

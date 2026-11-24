@@ -25,6 +25,8 @@ function decorParTroncons() {
 }
 (() => {
   const t0 = Date.now(), v = verifier(), [formes, troncons] = TRONCONS ? decorParTroncons() : [poserDecor(), null], objets = {}, P = PISTE, G = CASES;
+  if (typeof PLAN !== "undefined" && PLAN) { v.erreurs.push(...planControle()); v.ok = !v.erreurs.length; }   // (24/11) une ville dessinée : le parcours est-il celui d'un piéton ?
+  const flottants = MONDE.poses.filter(p => p.flotte > .15); if (flottants.length && !NIVEAU.cache) { v.erreurs.push(flottants.length + " objet(s) au-dessus du sol : « " + flottants[0].nom + " » au mètre " + Math.round(flottants[0].s)); v.ok = false; }   // (24/11)
   for (const p of MONDE.poses) objets[p.nom] = (objets[p.nom] || 0) + 1;
   let triangles = 0; for (const F of formes.values()) triangles += F.p.length / 9;
   // le sol, point par point : jamais de valeur absurde, jamais de mur entre deux bouts de piste qui se font face (jeu/note.js : scannerSol)

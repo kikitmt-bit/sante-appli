@@ -109,7 +109,7 @@ function edEtat() {
 // (17/11, Kiki : « on peut faire 5 km ? et des routes de 50 km, avec les tronçons ») la longueur au curseur, par crans : fins au début, larges ensuite.
 // Une boucle est construite d'un bloc : 8 km au plus ; de A à B, le monde se construit autour de soi (moteur/troncons.js) : 50 km.
 const PAS_KM = [1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 10, 12, 15, 20, 25, 30, 35, 40, 45, 50];
-const kmMax = G => PAS_KM.indexOf(G.forme === "ouvert" ? 50 : G.style === "pied" && piedPossible(G) ? 5 : 8);   // (à pied, les km sont ceux de tes jambes : le décor en fait une fois et demie plus)
+const kmMax = G => PAS_KM.indexOf(G.forme === "ouvert" ? 50 : G.style === "pied" && piedPossible(G) ? 1 : 8);   // (à pied, les km sont ceux de tes jambes : le décor en fait une fois et demie plus)
 /* (18/11, Kiki) au marcheur elliptique, le générateur peut faire un footing : des trottoirs, une ruelle, un escalier, un parc, un sentier, une passerelle (style « pied ») */
 const piedPossible = G => G.activite === "terre" && MACHINE_NOM === "elliptique";
 const kmDecor = G => G.style === "pied" && piedPossible(G) && typeof VISUEL !== "undefined" && VISUEL ? +(G.km * MACHINE.allure).toFixed(2) : G.km;   // un tour de 2 km au trot = 3 km de décor
@@ -130,15 +130,17 @@ function edAccueil() {
   if (pied && !G.avecPied) { G.avecPied = true; Object.assign(G.avec, {village: true, escalier: true, parc: true, foret: true, champs: true, pont: true}); if (G.forme === "huit") G.forme = "boucle"; if (PAS_KM.indexOf(G.km) > kmMax(G)) G.km = PAS_KM[kmMax(G)]; }
   $("edAccueil").innerHTML = `<div class="ed-acc">
     <section class="ed-bloc ed-gen"><h2>🎲 Générer un circuit</h2><p class="ed-note">Dis ce que tu veux, je le dessine ${pour} : je garde le mieux noté de plusieurs essais.</p>
-      ${piedPossible(G) ? `<div class="ed-q">Où tu cours</div>${puces("style", G.style, [["pied", "À pied : trottoirs, sentiers, escaliers"], ["route", "Sur la route"]])}` : ""}
-      <div class="ed-q">Forme</div>${puces("forme", G.forme === "huit" && (!terre || pied) ? "boucle" : G.forme, [["boucle", "Une boucle (des tours)"], ["ouvert", "De A à B"]].concat(terre && !pied ? [["huit", "Un 8"]] : []))}
+      ${piedPossible(G) ? `<div class="ed-q">Où tu cours</div>${puces("style", G.style, [["pied", "À pied : une ville, sa place, son parc"], ["route", "Sur la route"]])}` : ""}
+      ${pied ? `<div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
+      <div class="ed-curseur"><span>1 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G) }" step="1" value="${PAS_KM.indexOf(G.km)}"><span>${PAS_KM[kmMax(G)]} km</span></div>
+      <small class="ed-aide">Une vraie petite ville, tirée au sort : des rues, une place de marché, un parc. On y reste sur les trottoirs, les passages et les allées.</small>` : `<div class="ed-q">Forme</div>${puces("forme", G.forme === "huit" && (!terre || pied) ? "boucle" : G.forme, [["boucle", "Une boucle (des tours)"], ["ouvert", "De A à B"]].concat(terre && !pied ? [["huit", "Un 8"]] : []))}
       <div class="ed-q">Longueur <b class="ed-km" id="edKm">${texteKm(G.km)}</b><small id="edKmT">${dureeKm(G.km)}</small></div>
       <div class="ed-curseur"><span>1 km</span><input type="range" id="edKmR" min="0" max="${kmMax(G) }" step="1" value="${PAS_KM.indexOf(G.km)}"><span>${PAS_KM[kmMax(G)]} km</span></div>
       ${G.forme === "ouvert" ? "" : `<small class="ed-aide">Une boucle va jusqu'à ${PAS_KM[kmMax(G)]} km ; « De A à B » va jusqu'à 50 km (le monde se construit autour de toi au fil de la route).</small>`}
       <div class="ed-deux"><div><div class="ed-q">Virages</div>${puces("virages", G.virages, [["droit", "Presque droit"], ["quelques", "Quelques-uns"], ["sinueux", "Sinueux"], ["tres", "Très sinueux"]])}</div>
       <div><div class="ed-q">Relief</div>${puces("denivele", G.denivele, pied ? [[0, "Plat"], [15, "Vallonné"], [35, "Ça grimpe"]] : terre ? [[0, "Plat"], [40, "Vallonné"], [120, "Montagneux"], [250, "Un col"]] : [[0, "Plat"], [20, "Vallonné"], [50, "Montagneux"]])}</div></div>
       <div class="ed-q">Ce que tu veux y voir</div>
-      <div class="ed-tuiles">${CASES_GEN[pied ? "pied" : terre ? "terre" : "eau"].map(([k, ic, t]) => `<button class="ed-tuile${G.avec[k] ? " on" : ""}" data-avec="${k}"><i>${ic}</i>${t}</button>`).join("")}</div>
+      <div class="ed-tuiles">${CASES_GEN[pied ? "pied" : terre ? "terre" : "eau"].map(([k, ic, t]) => `<button class="ed-tuile${G.avec[k] ? " on" : ""}" data-avec="${k}"><i>${ic}</i>${t}</button>`).join("")}</div>`}
       <button class="rouge ed-grand" data-act="generer">▶ Générer mon circuit</button><p class="ed-msg" id="edMsg">${esc(ED.msg)}</p></section>
     <div class="ed-col">
       <section class="ed-bloc"><h2>✏️ Le dessiner</h2><p class="ed-note">Pièce par pièce, sur le plan : un virage, une ligne droite, un lac, une grotte…</p>
@@ -297,7 +299,7 @@ function edAction(act, bouton) {
     bouton.disabled = true;
     genererSouple(Object.assign({}, ED.gen, {km: kmDecor(ED.gen), style: piedPossible(ED.gen) ? ED.gen.style : undefined}), t => { bouton.textContent = t; }, r => {
       if (r.erreur) { bouton.disabled = false; ED.msg = r.erreur; if (ED.vue === "accueil") edAccueil(); else { edEtat(); edPanneau(); } return; }
-      edAtelier(r.niveau, true); ED.msg = "Voici ton circuit (" + r.note.note + " / 100). " + (r.change ? r.change + " " : "") + "Essaie-le, ou retouche-le en touchant le plan."
+      edAtelier(r.niveau, true); ED.msg = "Voici ton circuit" + (r.niveau.plan ? ". " : " (" + r.note.note + " / 100). ") + (r.change ? r.change + " " : "") + "Essaie-le, ou retouche-le en touchant le plan."
         + (r.sol && !r.sol.ok ? " Son sol a une marche quelque part : « Générer un autre » peut l'éviter." : ""); edEtat(); });
     return; }
   if (act === "reprendre") { edAtelier(lireReglage(ED_CLE, null), false); return; }

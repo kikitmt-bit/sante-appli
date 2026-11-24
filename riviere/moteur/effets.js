@@ -27,11 +27,16 @@ const PORTEE_FS = EFFETS.ombres ? `uniform sampler2D tOmbre; uniform mat4 uOmbre
     if (uOmbreP.x <= 0. || z > uOmbreP.w) return 0.;
     vec4 q = uOmbreM * vec4(w + n * .16 + uOmbreL * .1, 1.);   // on regarde un peu au-dessus de la surface : elle ne se fait pas d'ombre à elle-même
     if (q.x < .002 || q.x > .998 || q.y < .002 || q.y > .998 || q.z > 1.) return 0.;
-    ${REEL.lumiere ? "float e = uOmbreP.y * 3.; vec2 t = q.xy / e - .5, f = fract(t), b = (floor(t) + .5) * e; float d = q.z - .0004;   // (rendu plus réaliste) un bord flou : les quatre lectures, trois points de carte plus loin (~23 cm)"
-      : "vec2 t = q.xy / uOmbreP.y - .5, f = fract(t), b = (floor(t) + .5) * uOmbreP.y; float d = q.z - .0004, e = uOmbreP.y;"}
-    float s = mix(mix(step(texture2D(tOmbre, b).x, d), step(texture2D(tOmbre, b + vec2(e, 0.)).x, d), f.x),
-                  mix(step(texture2D(tOmbre, b + vec2(0., e)).x, d), step(texture2D(tOmbre, b + vec2(e, e)).x, d), f.x), f.y);
-    return ${REEL.lumiere ? "s" : "step(.5, s)"} * uOmbreP.x * (1. - smoothstep(uOmbreP.z, uOmbreP.w, z)); }` : "";
+    // (24/11, Kiki : « des bords en dents de scie ») seize lectures (4 × 4 points de carte, pondérées en douceur) au lieu de quatre : le bord d'une ombre rasante suit une ligne
+    // lisse au lieu de monter en escalier d'un point à l'autre ; puis il est resserré : deux tons, un bord net d'un ou deux pixels. (rendu plus réaliste : trois fois plus large, flou)
+    float e = uOmbreP.y${REEL.lumiere ? " * 2." : ""}, d = q.z - .0004; vec2 t = q.xy / e - .5, f = fract(t), b = (floor(t) + .5) * e;
+    vec4 wx = vec4((1. - f.x) * (1. - f.x), 2. + 2. * f.x - 2. * f.x * f.x, 1. + 2. * f.x, f.x * f.x), wy = vec4((1. - f.y) * (1. - f.y), 2. + 2. * f.y - 2. * f.y * f.y, 1. + 2. * f.y, f.y * f.y);
+    wx.y = 2. - f.x * f.x; wx.z = 1. + 2. * f.x - f.x * f.x; wy.y = 2. - f.y * f.y; wy.z = 1. + 2. * f.y - f.y * f.y; float s = 0.;
+    for (int j = 0; j < 4; j++) { float y = float(j) - 1., wj = j == 0 ? wy.x : j == 1 ? wy.y : j == 2 ? wy.z : wy.w;
+      vec4 l = vec4(texture2D(tOmbre, b + vec2(-e, y * e)).x, texture2D(tOmbre, b + vec2(0., y * e)).x, texture2D(tOmbre, b + vec2(e, y * e)).x, texture2D(tOmbre, b + vec2(2. * e, y * e)).x);
+      s += wj * dot(wx, step(l, vec4(d))); }
+    s /= dot(wx, vec4(1.)) * dot(wy, vec4(1.));
+    return ${REEL.lumiere ? "s" : "smoothstep(.38, .62, s)"} * uOmbreP.x * (1. - smoothstep(uOmbreP.z, uOmbreP.w, z)); }` : "";
 
 const OMBRES_PORTENT = ["terrain", "rives", "decor", "foret", "ponts", "cratere"];
 function ombrePour(m) { if (!EFFETS.ombres) return; if (OMBRES_PORTENT.includes(m.name)) m.layers.enable(1); OMBRES.cle = ""; }   // une maille arrivée après coup (un tronçon : troncons.js) : elle porte son ombre, la carte est à refaire

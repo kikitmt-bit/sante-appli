@@ -40,7 +40,7 @@ Object.assign(OBJETS, {
   arbre_masse(F, o, R) { const t = tonsMasse(F) || PAL.feuilles, k = .8 + R() * .2, tons = [fonce(t[0], k * .9), fonce(melange(t[0], t[1], .5), k), fonce(melange(t[1], t[2], .3), k)], r = 2.5 + R() * .9, h = 5.4 + R() * 2.4;
     F.vent(.45, .5, h + 1).dome(0, .4, 0, r, o.pres ? h * .62 : h, r, tons, 5, true); if (o.pres) F.dome(0, .4 + h * .42, 0, r * .62, h * .58, r * .62, tons, 5, true); F.vent(); },
   buisson(F, o, R) { const t = PAL.feuilles; F.ombre(.2, 0, 1.3, 1); F.vent(.07, 0, 1.2).boule(0, .45, 0, 1, .75, .9, t, 0); F.boule(.7, .35, .2, .65, .55, .6, t, 0); F.vent(); },
-  rocher(F, o, R) { F.ombre(.2, 0, 1.4, 1.2); F.caillou(0, .25, 0, 1.1, .8, .95, PAL.pierre, R); if (R() < .5) F.caillou(.9, .1, .4, .5, .4, .5, PAL.pierre, R); },
+  rocher(F, o, R) { F.ombre(.2, 0, 1.4, 1.2); F.caillou(0, .25, 0, 1.1, .8, .95, PAL.pierre, R); if (R() < .5) F.caillou(.9, DECOR_NEUF ? Math.min(.1, solLocal(F, .9, .4) + .08) : .1, .4, .5, .4, .5, PAL.pierre, R); },   // (24/11) le petit caillou d'à côté suit son propre sol
   // (hautes herbes en pyramides et fleurs en cubes : retirées, Kiki, 11/11)
   roseaux(F, o, R) { F.vent(.2, -.1, 1.1); for (let k = 0; k < 4; k++) { const x = (R() - .5) * 1.4, z = (R() - .5) * .5, h = .55 + R() * .5; F.boite(x, -.4, z, .06, h + .4, .06, PAL.herbes[1]); if (k % 2) F.boite(x, h - .05, z, .11, .26, .11, PAL.tronc[1]); } },
   barriere(F, o) { const L = o.long || 6, n = Math.max(2, Math.round(L / 1.25) + 1), b = PAL.blanc;   // chaque poteau sur le sol à sa place, les lisses suivent la pente (17/11)

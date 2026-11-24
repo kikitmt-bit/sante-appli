@@ -10,7 +10,7 @@ Object.assign(OBJETS, {
     const profil = [[-.2, .12], [1, -.5], [e - .1, -2.4], [e + .25, pied + .05]];             // la nappe : du rebord jusqu'à l'eau
     F.matiere(5);
     for (let k = 0; k < profil.length - 1; k++) { const [z0, y0] = profil[k], [z1, y1] = profil[k + 1]; F.quad([-d, y0, z0], [d, y0, z0], [d, y1, z1], [-d, y1, z1], eau, [0, .25, 1]); }
-    F.rond(0, pied + .07, e + 1.1, d + 1.1, 1.7, blanc, 10);                                   // l'écume, au pied
+    F.rond(0, pied + .07, e + (DECOR_NEUF ? .7 : 1.1), d + (DECOR_NEUF ? .5 : 1.1), DECOR_NEUF ? 1.1 : 1.7, DECOR_NEUF ? eau : blanc, 10);                                   // l'écume, au pied
     F.matiere(2);
     for (const sx of [-1, 1]) { F.caillou(sx * (d + .5), -.2, .5, .9, .8, .9, PAL.pierre, R); F.caillou(sx * (d + .9), pied + .2, e + .9, .8, .6, .7, PAL.pierre, R); }
     K.son(F, 0, pied, e, .09, 85); },

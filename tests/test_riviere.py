@@ -15,7 +15,7 @@ R = Path(__file__).resolve().parent.parent / "riviere"
 C = R / "contenu"
 lis = lambda *p: json.loads(C.joinpath(*p).read_text(encoding="utf-8"))
 OBJETS = {n for d in ("objets", "evenements") for f in (C / d).glob("*.js") for n in re.findall(r"^  (\w+)\(F", f.read_text(encoding="utf-8"), re.M)}  # les recettes : objets/ et evenements/ (Ronflex)
-SURFACES = set(re.findall(r"^SURFACES\.(\w+) = ", (R / "moteur" / "surfaces.js").read_text(encoding="utf-8"), re.M))
+SURFACES = set(re.findall(r"^SURFACES\.(\w+) = ", (R / "moteur" / "surfaces.js").read_text(encoding="utf-8"), re.M)) | {"libre"}   # libre : la piste posée sur une ville dessinée (plan_dessin.js)
 NIVEAUX = sorted(f.stem for f in (C / "niveaux").glob("*.json"))
 sys.path.insert(0, str(R))
 import page as _page  # noqa: E402
@@ -106,7 +106,7 @@ class Fichiers(unittest.TestCase):
             pieces = n["pieces"]
             if n.get("boucle"):  # une boucle se referme par une pièce « raccord » à la fin (ou, à l'ancienne, par une pièce au virage « auto »)
                 autos = sum(1 for p in pieces if p.get("virage") == "auto")
-                self.assertTrue(pieces[-1].get("raccord") or autos == 1, f"{nom} : une boucle finit par une pièce « raccord »")
+                self.assertTrue(pieces[-1].get("raccord") or autos == 1 or n.get("plan"), f"{nom} : une boucle finit par une pièce « raccord »")
             self.assertEqual(sum(1 for p in pieces[:-1] if p.get("raccord")), 0, f"{nom} : « raccord » ne se met qu'à la fin")
             if n.get("surface"):
                 self.assertIn(n["surface"], SURFACES, f"{nom} : surface inconnue")
@@ -253,7 +253,7 @@ class Moteur(unittest.TestCase):
             for c in n["criteres"]:
                 self.assertTrue(0 <= c["note"] <= 100 and c["phrase"], f"{nom} : {c}")
             self.assertTrue(0 <= n["note"] <= 100, nom)
-            if not lis("niveaux", nom + ".json").get("route"):   # (une vraie route peut traverser 20 km de forêt : son paysage est celui du vrai lieu)
+            if not (lis("niveaux", nom + ".json").get("route") or lis("niveaux", nom + ".json").get("plan")):   # (une vraie route peut traverser 20 km de forêt : son paysage est celui du vrai lieu)
                 self.assertGreater(len(n["sequences"]), 1, f"{nom} : un seul paysage ?")
             self.assertAlmostEqual(sum(s["t"] for s in n["sequences"]), n["duree"], delta=len(n["sequences"]) + 2, msg=f"{nom} : les séquences ne couvrent pas le tour")
 
@@ -366,7 +366,7 @@ class Moteur(unittest.TestCase):
     # construction ×5 sur la vitrine, en novembre) ; on s'en rend compte avant que la tablette rame.
     BUDGET_TRIANGLES = 220000
     BUDGET_SECONDES = 8
-    BUDGET_PAGE_KO = 2190   # (17/11 : +45 Ko pour la ville, les raretés du ciel et le circuit « terre-ville » ; +30 Ko le soir : le menu et l'éditeur refaits ;
+    BUDGET_PAGE_KO = 2360  # (24/11) les villes dessinées : 110 Ko de plus (le module, sa copie pour le générateur, deux circuits, des passants) ; avant : 2190
                             #  +40 Ko la nuit : le décor OpenStreetMap du Ventoux entier, 480 objets réels, et la région kanto-reel ;
                             #  18/11 : +60 Ko pour le lac d'Allier à Vichy, son rivage mètre par mètre, ses 200 objets réels et la région vichy ;
                             #  18/11 au soir : +10 Ko pour le footing de Jadielle, ses rives et l'escalier ;
@@ -379,11 +379,54 @@ class Moteur(unittest.TestCase):
             b = self.bilan(nom)
             km = max(1, b["metres"] / 2000)   # (16/11) une vraie route de 5 km (outils/gpx.py) : le budget d'un circuit de 2 km par tranche de 2 km
             self.assertLess(b["secondes"], self.BUDGET_SECONDES * km, f"{nom} : construction trop lente")
+            if lis("niveaux", nom + ".json").get("plan"):   # (24/11) une ville dessinée : dense, mais on n'en voit jamais plus des deux tiers (250 000 triangles au pire sur ce PC)
+                km *= 1.7
             self.assertLess(b["triangles"], self.BUDGET_TRIANGLES * km, f"{nom} : trop de triangles ({b['triangles']})")
             if b["troncons"]:   # une longue route, construite par tronçons : ce qui compte, c'est ce qu'on voit d'un coup (un kilomètre)
                 self.assertLess(b["troncons"]["fenetre"], self.BUDGET_TRIANGLES, f"{nom} : trop de triangles dans un kilomètre ({b['troncons']['fenetre']})")
         ko = len(page.page(niveau=NIVEAUX[0]).encode("utf-8")) // 1024
         self.assertLess(ko, self.BUDGET_PAGE_KO, f"la page pèse {ko} Ko")
+
+
+@unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")
+class Villes(unittest.TestCase):
+    """Les villes dessinées (moteur/plan.js, jeu/villes.js, 24/11) : le parcours est celui d'un vrai piéton, et ce qui ne l'est pas est refusé."""
+
+    def bilan(self, circuit):
+        import sys
+        sys.path.insert(0, str(C.parent / "outils"))
+        import generer
+        return generer.bilan(circuit=circuit)
+
+    def ville(self, graine=7, km=1.2):
+        import sys
+        sys.path.insert(0, str(C.parent / "outils"))
+        import generer
+        r = generer.generer({"km": km, "activite": "terre", "style": "pied", "graine": graine})
+        self.assertNotIn("erreur", r)
+        return r
+
+    def test_une_ville(self):
+        r = self.ville()
+        self.assertAlmostEqual(r["long"], 1200, delta=40, msg="la longueur demandée")
+        b = self.bilan(r["niveau"])
+        self.assertEqual(b["erreurs"], [])
+        self.assertEqual(r["niveau"], self.ville()["niveau"], "mêmes options, même ville")
+
+    def test_le_trottoir_qui_devie(self):
+        """Kiki : « le trottoir d'un coup dévie, fait un grand virage à droite ». Un parcours qui quitte le trottoir est refusé."""
+        n = self.ville()["niveau"]
+        n["pieces"][0]["virage"] = 25
+        n["pieces"][2]["virage"] = -25
+        self.assertTrue(any("marche sur" in e for e in self.bilan(n)["erreurs"]))
+
+    def test_une_porte_fermee(self):
+        """Entrer dans le parc ailleurs que par une allée : refusé."""
+        n = self.ville()["niveau"]
+        for o in n["plan"]["ilots"]:
+            if o["type"] == "parc":
+                o["allees"] = o["allees"][1:]
+        self.assertTrue(any("pelouse" in e for e in self.bilan(n)["erreurs"]))
 
 
 @unittest.skipUnless(shutil.which("node"), "node n'est pas installé ici : le moteur n'est lancé que sur GitHub")

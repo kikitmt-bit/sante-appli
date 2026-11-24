@@ -1,0 +1,642 @@
+{
+ "id": "ville-place",
+ "nom": "Le tour de la place et du parc",
+ "biome": "kanto-plan",
+ "lieux": "kanto",
+ "discipline": "terre",
+ "surface": "libre",
+ "machines": [
+  "elliptique"
+ ],
+ "boucle": "droite",
+ "allure": 1.08,
+ "elan": 40,
+ "graine": 7,
+ "nageur": 25,
+ "loin": "terres",
+ "peuple": [
+  {
+   "o": "habitant",
+   "nom": "boy"
+  },
+  {
+   "o": "habitant",
+   "nom": "lass"
+  },
+  {
+   "o": "habitant",
+   "nom": "youngster"
+  },
+  {
+   "o": "habitant",
+   "nom": "woman_1"
+  },
+  {
+   "o": "habitant",
+   "nom": "cooltrainer_f"
+  },
+  {
+   "o": "habitant",
+   "nom": "gentleman"
+  },
+  {
+   "o": "habitant",
+   "nom": "picnicker"
+  },
+  {
+   "o": "habitant",
+   "nom": "bug_catcher"
+  },
+  {
+   "o": "habitant",
+   "nom": "beauty"
+  },
+  {
+   "o": "habitant",
+   "nom": "camper"
+  },
+  {
+   "o": "pokemon",
+   "num": 16
+  },
+  {
+   "o": "pokemon",
+   "num": 133
+  },
+  {
+   "o": "pokemon",
+   "num": 39
+  },
+  {
+   "o": "pokemon",
+   "num": 43
+  },
+  {
+   "o": "pokemon",
+   "num": 35
+  },
+  {
+   "o": "pokemon",
+   "num": 52
+  }
+ ],
+ "plan": {
+  "graine": 7,
+  "ns": [
+   {
+    "x": -5.7,
+    "l": 8.4
+   },
+   {
+    "x": 125.352,
+    "l": 6.4
+   },
+   {
+    "x": 205.245,
+    "l": 7.4
+   },
+   {
+    "x": 384.888,
+    "l": 6.4
+   },
+   {
+    "x": 559.541,
+    "l": 8.4
+   }
+  ],
+  "eo": [
+   {
+    "z": -198.812,
+    "l": 8.4
+   },
+   {
+    "z": -71.979,
+    "l": 6.4
+   },
+   {
+    "z": 7.551,
+    "l": 7.4
+   },
+   {
+    "z": 124.059,
+    "l": 8.4
+   }
+  ],
+  "ilots": [
+   {
+    "i0": 2,
+    "i1": 3,
+    "j0": 0,
+    "j1": 1,
+    "type": "parc",
+    "nom": "Parc de l'Étang",
+    "portes": [
+     {
+      "cote": "n",
+      "x": 253.408,
+      "z": -194.612,
+      "texte": "Parc de l'Étang"
+     },
+     {
+      "cote": "o",
+      "x": 208.945,
+      "z": -26.611,
+      "texte": "Parc de l'Étang"
+     },
+     {
+      "cote": "e",
+      "x": 555.341,
+      "z": -83.265,
+      "texte": "Parc de l'Étang"
+     },
+     {
+      "cote": "s",
+      "x": 441.799,
+      "z": 3.851,
+      "texte": "Parc de l'Étang"
+     }
+    ],
+    "allees": [
+     {
+      "l": 3.2,
+      "pts": [
+       {
+        "x": 253.408,
+        "z": -191.612
+       },
+       {
+        "x": 253.408,
+        "z": -154.919,
+        "r": 9
+       },
+       {
+        "x": 330.929,
+        "z": -153.85,
+        "r": 14
+       },
+       {
+        "x": 420.61,
+        "z": -171.34,
+        "r": 16
+       },
+       {
+        "x": 507.863,
+        "z": -143.083,
+        "r": 16
+       },
+       {
+        "x": 507.878,
+        "z": -75.265,
+        "r": 15
+       },
+       {
+        "x": 449.148,
+        "z": -57.106,
+        "r": 13
+       },
+       {
+        "x": 449.799,
+        "z": -21.983,
+        "r": 12
+       },
+       {
+        "x": 362.057,
+        "z": -19.36,
+        "r": 14
+       },
+       {
+        "x": 302.472,
+        "z": -26.611,
+        "r": 11
+       },
+       {
+        "x": 211.945,
+        "z": -26.611
+       }
+      ]
+     },
+     {
+      "l": 2.4,
+      "pts": [
+       {
+        "x": 330.929,
+        "z": -152.85
+       },
+       {
+        "x": 316.328,
+        "z": -95.38,
+        "r": 12
+       },
+       {
+        "x": 305.472,
+        "z": -27.111
+       }
+      ]
+     },
+     {
+      "l": 2.6,
+      "pts": [
+       {
+        "x": 507.878,
+        "z": -83.265
+       },
+       {
+        "x": 552.341,
+        "z": -83.265
+       }
+      ]
+     },
+     {
+      "l": 2.6,
+      "pts": [
+       {
+        "x": 441.799,
+        "z": -22.483
+       },
+       {
+        "x": 441.799,
+        "z": 0.851
+       }
+      ]
+     }
+    ],
+    "etang": {
+     "x": 387.536,
+     "z": -98.72,
+     "r": 25.800171402823906,
+     "k": 1.25,
+     "g": 3.318125941324979
+    },
+    "kiosque": {
+     "x": 257.44,
+     "z": -15.995,
+     "lacet": 2.5132741228718345
+    }
+   },
+   {
+    "i0": 1,
+    "i1": 1,
+    "j0": 1,
+    "j1": 1,
+    "type": "place",
+    "nom": "La place de la Fontaine",
+    "decale": -14.52593674017582
+   },
+   {
+    "i0": 0,
+    "i1": 0,
+    "j0": 0,
+    "j1": 0,
+    "type": "bati",
+    "cotes": {
+     "o": "maisons"
+    }
+   },
+   {
+    "i0": 1,
+    "i1": 1,
+    "j0": 0,
+    "j1": 0,
+    "type": "bati",
+    "cotes": {
+     "s": "boutiques",
+     "n": "residences"
+    }
+   },
+   {
+    "i0": 0,
+    "i1": 0,
+    "j0": 1,
+    "j1": 1,
+    "type": "bati",
+    "cotes": {
+     "e": "boutiques"
+    }
+   },
+   {
+    "i0": 0,
+    "i1": 0,
+    "j0": 2,
+    "j1": 2,
+    "type": "bati",
+    "cotes": {
+     "o": "maisons",
+     "s": "residences"
+    }
+   },
+   {
+    "i0": 1,
+    "i1": 1,
+    "j0": 2,
+    "j1": 2,
+    "type": "bati",
+    "cotes": {
+     "n": "boutiques",
+     "o": "boutiques"
+    }
+   },
+   {
+    "i0": 2,
+    "i1": 2,
+    "j0": 2,
+    "j1": 2,
+    "type": "bati"
+   },
+   {
+    "i0": 3,
+    "i1": 3,
+    "j0": 2,
+    "j1": 2,
+    "type": "bati"
+   }
+  ],
+  "passages": [
+   {
+    "x": 205.245,
+    "z": -26.611,
+    "l": 7.4,
+    "sens": "x"
+   }
+  ]
+ },
+ "pieces": [
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 190.112,
+   "virage": 0,
+   "nom": "Le boulevard de la Gare",
+   "objets": [
+    {
+     "o": "ligne",
+     "cote": "c",
+     "a": 1,
+     "eau": 0.1
+    }
+   ]
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 4.71238898038469,
+   "virage": 90
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 247.408,
+   "virage": 0,
+   "nom": "La rue du Pont"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 4.71238898038469,
+   "virage": 90
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 26.3162526317212,
+   "virage": 0,
+   "nom": "Parc de l'Étang",
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 14.013066500886936,
+   "virage": -89.20995205966422,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 67.20170083120003,
+   "virage": 0,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 2.8895426227883028,
+   "virage": -11.825614072066585,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 85.78572310210626,
+   "virage": 0,
+   "nom": "L'allée des bancs",
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 8.092793258082615,
+   "virage": 28.98018113500379,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 75.9457463757022,
+   "virage": 0,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 20.118120508335608,
+   "virage": 72.04271230395103,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 45.118918522291466,
+   "virage": 0,
+   "nom": "Le tour de l'étang",
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 19.067201602032718,
+   "virage": 72.83134526143712,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 40.63300760603545,
+   "virage": 0,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 16.762958347085164,
+   "virage": -73.88052041858265,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.48953098598474,
+   "virage": 0,
+   "nom": "La roseraie",
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 18.713322062364185,
+   "virage": 89.34953123687644,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 74.85777905534438,
+   "virage": 0,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 2.1137457569535107,
+   "virage": 8.650622202651547,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 58.298842098426405,
+   "virage": 0,
+   "nom": "La pelouse",
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 1.3320590475297593,
+   "virage": -6.938305589606503,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 80.86015537573547,
+   "virage": 0,
+   "segment": "Le tour du parc"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 87.893,
+   "virage": 0,
+   "nom": "La place de la Fontaine"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 4.71238898038469,
+   "virage": -90
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 138.97,
+   "virage": 0,
+   "nom": "La rue des Cerisiers"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 4.71238898038469,
+   "virage": 90
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 124.05199999999999,
+   "virage": 0,
+   "nom": "La rue du Moulin"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 4.71238898038469,
+   "virage": 90
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 115.359,
+   "virage": 0,
+   "nom": "La rue des Roucool"
+  }
+ ]
+}

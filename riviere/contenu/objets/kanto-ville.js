@@ -143,7 +143,7 @@ function statueBall(F, x, y, z) { const rouge = hex("#D83830"), blanc = hex("#F4
 /* ---- les objets de la ville ---- */
 Object.assign(OBJETS, {
   magasin(F, o, R, K) {  // une boutique : grande vitrine, store rayé, enseigne ; un étage d'habitation au-dessus
-    const t = hv(F), l = 7.4 + hv(F, 1) * 1.8, p = 6, d = p / 2, h = 5.6, mur = PAL.murs[["blanc", "creme", "jaune", "gris", "pierre"][Math.floor(hv(F, 2) * 5)]];
+    const t = hv(F), l = o.l || 7.4 + hv(F, 1) * 1.8, p = 6, d = p / 2, h = 5.6, mur = PAL.murs[["blanc", "creme", "jaune", "gris", "pierre"][Math.floor(hv(F, 2) * 5)]];
     const store = hex(["#D84838", "#3C7CD8", "#3CA058", "#E8A030", "#9050C0"][Math.floor(t * 5)]), toit = PAL.toits[["rouge", "bleu", "vert", "orange", "gris", "brun"][Math.floor(hv(F, 3) * 6)]];
     F.tapis(-l / 2 - .6, -d - .6, l / 2 + .6, d + 1, null, .74, 3);
     F.boite(0, -1.2, 0, l + .2, 1.55, p + .2, PAL.pierre[1]); F.boite(0, .35, 0, l, h - .35, p, mur);

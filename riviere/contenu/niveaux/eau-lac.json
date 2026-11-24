@@ -1,0 +1,353 @@
+{
+ "id": "eau-lac",
+ "nom": "Le lac et la grotte",
+ "biome": "kanto",
+ "lieux": "kanto",
+ "graine": 86,
+ "nageur": 7,
+ "allure": 1,
+ "elan": 60,
+ "pieces": [
+  {
+   "nom": "Bourg palette",
+   "long": 134,
+   "virage": 20,
+   "eau": 13,
+   "g": "bourg",
+   "d": "pre",
+   "lieux": [
+    {
+     "lieu": "bourg-palette",
+     "cote": "g",
+     "a": 20
+    }
+   ],
+   "objets": [
+    {
+     "o": "ligne",
+     "cote": "c",
+     "a": 0
+    }
+   ]
+  },
+  {
+   "nom": "Le sous-bois",
+   "long": 77,
+   "virage": -108,
+   "eau": 9,
+   "g": "foret",
+   "d": "foret",
+   "ambiance": "sous-bois"
+  },
+  {
+   "nom": "Le lac",
+   "long": 100,
+   "virage": 38,
+   "eau": 31,
+   "g": "plage",
+   "d": "foret",
+   "surface": "lagon",
+   "camera": {
+    "haut": 0.8,
+    "recul": 1
+   },
+   "objets": [
+    {
+     "o": "pokemon",
+     "num": 131,
+     "cote": "c",
+     "a": 60,
+     "e": 8,
+     "haut": -0.9,
+     "bouge": {
+      "type": "nage",
+      "long": 44,
+      "vitesse": 1.3
+     }
+    }
+   ]
+  },
+  {
+   "long": 63,
+   "virage": -75,
+   "eau": 11,
+   "g": "falaise",
+   "d": "falaise",
+   "nom": "La rivière"
+  },
+  {
+   "long": 37,
+   "virage": 47,
+   "eau": 10,
+   "g": "dune",
+   "d": "pre"
+  },
+  {
+   "long": 37,
+   "virage": 1,
+   "eau": 10,
+   "g": "falaise",
+   "d": "falaise"
+  },
+  {
+   "nom": "Le sous-bois",
+   "long": 94,
+   "virage": 29,
+   "eau": 9,
+   "g": "foret",
+   "d": "foret",
+   "ambiance": "sous-bois"
+  },
+  {
+   "long": 62,
+   "virage": -61,
+   "eau": 12,
+   "g": "pre",
+   "d": "pre",
+   "nom": "La rivière",
+   "monte": -4.1
+  },
+  {
+   "long": 37,
+   "virage": 38,
+   "eau": 12,
+   "g": "pre",
+   "d": "pre"
+  },
+  {
+   "long": 37,
+   "virage": 10,
+   "eau": 12,
+   "g": "pre",
+   "d": "pre"
+  },
+  {
+   "long": 63,
+   "virage": -101,
+   "eau": 12,
+   "g": "foret",
+   "d": "foret",
+   "monte": 6.7,
+   "nom": "La côte"
+  },
+  {
+   "long": 53,
+   "virage": 36,
+   "eau": 11,
+   "g": "foret",
+   "d": "foret"
+  },
+  {
+   "nom": "La galerie",
+   "long": 102,
+   "virage": -80,
+   "eau": 9,
+   "g": "montagne",
+   "d": "montagne",
+   "tunnel": "terre"
+  },
+  {
+   "long": 61,
+   "virage": 72,
+   "eau": 14,
+   "g": "foret",
+   "d": "foret",
+   "nom": "La rivière"
+  },
+  {
+   "long": 37,
+   "virage": 50,
+   "eau": 13,
+   "g": "falaise",
+   "d": "pre"
+  },
+  {
+   "long": 37,
+   "virage": -145,
+   "eau": 13,
+   "g": "falaise",
+   "d": "pre"
+  },
+  {
+   "nom": "Le sous-bois",
+   "long": 93,
+   "virage": 39,
+   "eau": 9,
+   "g": "foret",
+   "d": "foret",
+   "ambiance": "sous-bois"
+  },
+  {
+   "long": 37,
+   "virage": 39,
+   "eau": 12,
+   "g": "falaise",
+   "d": "pre",
+   "nom": "La rivière"
+  },
+  {
+   "long": 37,
+   "virage": -103,
+   "eau": 12,
+   "g": "falaise",
+   "d": "pre"
+  },
+  {
+   "nom": "Le sous-bois",
+   "long": 95,
+   "virage": 27,
+   "eau": 9,
+   "g": "foret",
+   "d": "foret",
+   "ambiance": "sous-bois"
+  },
+  {
+   "long": 37,
+   "virage": 43,
+   "eau": 11,
+   "g": "falaise",
+   "d": "pre",
+   "nom": "La rivière"
+  },
+  {
+   "long": 37,
+   "virage": -113,
+   "eau": 11,
+   "g": "falaise",
+   "d": "pre"
+  },
+  {
+   "nom": "Le sous-bois",
+   "long": 75,
+   "virage": 40,
+   "eau": 9,
+   "g": "foret",
+   "d": "foret",
+   "ambiance": "sous-bois"
+  },
+  {
+   "long": 37,
+   "virage": 47,
+   "eau": 11,
+   "g": "foret",
+   "d": "pre",
+   "nom": "La rivière",
+   "monte": 1.3
+  },
+  {
+   "long": 37,
+   "virage": 1,
+   "eau": 11,
+   "g": "foret",
+   "d": "pre"
+  },
+  {
+   "nom": "Le marais",
+   "long": 92,
+   "virage": -82,
+   "eau": 13,
+   "g": "marais",
+   "d": "marais",
+   "surface": "marais",
+   "ambiance": "marais",
+   "objets": [
+    {
+     "o": "nenuphars",
+     "cote": "c",
+     "a": 24,
+     "e": -4.6
+    },
+    {
+     "o": "nenuphars",
+     "cote": "c",
+     "a": 62,
+     "e": 4.7
+    },
+    {
+     "o": "pokemon",
+     "num": 60,
+     "cote": "c",
+     "a": 62,
+     "e": 4.9,
+     "haut": 0.05
+    }
+   ]
+  },
+  {
+   "long": 64,
+   "virage": 56,
+   "eau": 13,
+   "g": "foret",
+   "d": "pre",
+   "nom": "La rivière"
+  },
+  {
+   "nom": "La grande cascade",
+   "long": 60,
+   "virage": -81,
+   "eau": 10,
+   "g": "falaise",
+   "d": "foret",
+   "objets": [
+    {
+     "o": "cascade",
+     "cote": "g",
+     "a": 45,
+     "e": 2,
+     "large": 6
+    }
+   ]
+  },
+  {
+   "long": 37,
+   "virage": 52,
+   "eau": 10,
+   "g": "dune",
+   "d": "pre",
+   "nom": "La rivière",
+   "monte": -3.9
+  },
+  {
+   "long": 37,
+   "virage": -18,
+   "eau": 10,
+   "g": "foret",
+   "d": "foret"
+  },
+  {
+   "long": 38,
+   "virage": -72.866,
+   "g": "foret",
+   "d": "foret",
+   "eau": 12,
+   "monte": "auto",
+   "nom": "Le retour"
+  },
+  {
+   "long": 88,
+   "virage": 16,
+   "g": "falaise",
+   "d": "pre",
+   "eau": 12,
+   "monte": "auto"
+  },
+  {
+   "long": 88,
+   "virage": -16,
+   "g": "pre",
+   "d": "pre",
+   "eau": 12,
+   "monte": "auto"
+  },
+  {
+   "nom": "Le dernier virage",
+   "raccord": true,
+   "rayon": 30,
+   "eau": 12,
+   "g": "pre",
+   "d": "pre",
+   "monte": "auto"
+  }
+ ],
+ "boucle": "gauche"
+}

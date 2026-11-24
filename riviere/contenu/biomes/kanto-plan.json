@@ -1,0 +1,29 @@
+{
+ "nom": "Kanto, la ville dessinée",
+ "herite": "kanto-routes",
+ "note": "(24/11) La région des circuits à pied sur un plan (moteur/plan.js) : aucune rive, aucune règle, tout vient du plan.",
+ "regles": [],
+ "forets": [],
+ "jonctions": null,
+ "rives": {
+  "plan": {
+   "profil": [
+    [
+     0,
+     -0.26
+    ],
+    [
+     110,
+     -0.26
+    ]
+   ],
+   "sols": [
+    [
+     "herbe",
+     999
+    ]
+   ],
+   "paroi": "herbe"
+  }
+ }
+}

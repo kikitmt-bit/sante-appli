@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import json
 import random
+import re
 import sys
 import threading
 import time
@@ -513,6 +514,22 @@ def envoyer_rameur():
             st.toast("🏁 Séance enregistrée !")
         else:
             st.toast("⚠️ Séance pas encore envoyée : elle reste sur ton téléphone, recharge l'appli pour réessayer.")
+
+
+def envoyer_signalements():
+    """Les défauts du décor signalés dans La Rivière (bouton ⚑, riviere/jeu/signaler.js) : un fichier chacun dans data/riviere/signalements/, pour que Claude les corrige.
+    N'attend jamais et ne casse jamais la page : s'ils ne partent pas, ils restent sur la machine pour la fois d'après."""
+    texte = streamlit_js_eval(js_expressions="localStorage.getItem('riviere_signal') || ''", key="signal_lire")
+    if not texte or st.session_state.get("signal_envoye") == hash(texte):
+        return
+    try:
+        liste = [s for s in json.loads(texte) if isinstance(s, dict) and re.fullmatch(r"[0-9]{8}-[0-9]{6}", str(s.get("id")))][:20]
+        ok = all(ecrire_depot(f"{PREFIXE}data/riviere/signalements/{s['id']}.json", s, "riviere : un défaut signalé") for s in liste)
+    except (ValueError, TypeError, AttributeError, Panne):
+        ok = False
+    if ok:
+        st.session_state["signal_envoye"] = hash(texte)
+        streamlit_js_eval(js_expressions="localStorage.removeItem('riviere_signal')", key="signal_effacer")
 
 
 def bloc_rameur(debut, fin, un_jour, j_ref, lire_vite):
@@ -1035,6 +1052,8 @@ if st.query_params.get("ecran") == "rameur":
     st.markdown("<style>.st-key-ecran_rameur iframe{position:fixed;inset:0;width:100vw !important;height:100dvh !important;border:0;z-index:999990;background:#22315A}"
                 "header,[data-testid='stToolbar'],.st-key-outils{display:none !important}</style>", unsafe_allow_html=True)
     envoyer_rameur()  # une séance finie sur la tablette (« La Rivière ») attend sur cette machine : on l'envoie avant de relire les séances
+    with st.container(key="signalements"):  # une place fixe : ce qui y apparaît ne déplace pas le cadre du jeu (il se rechargerait)
+        envoyer_signalements()  # les défauts du décor signalés pendant une course (bouton ⚑)
     try:
         f_r = lire([seances_rameur.FICHIER, seances_rameur.AUTRES, seances_rameur.RECORDS], {seances_rameur.FICHIER, seances_rameur.AUTRES, seances_rameur.RECORDS})
         fichier_rameur, fichier_autres, records_r = f_r[seances_rameur.FICHIER], f_r[seances_rameur.AUTRES], f_r[seances_rameur.RECORDS]  # records_r : ses records de La Rivière (étape 2)

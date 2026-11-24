@@ -119,10 +119,10 @@ function construireTunnels() {
     if (G.poutres) { const bois = PAL.tronc, feu = hex(G.lanterne || "#FFD070");
       for (let s = ia + 4; s < ib - 3; s += G.poutres) { const A = at(s), a = A.w - .32, yb = PIED + (hv - PIED) * .46, demi = a * Math.sqrt(Math.max(.05, 1 - .46 * .46)) + .15;
         F.poser(A.x, A.y, A.z, -A.h, 1).matiere(2);
-        for (const sg of [-1, 1]) F.boite(0, -.8, sg * a, .34, yb + .8, .34, bois[0], {haut: bois[1]});
-        F.boite(0, yb, 0, .38, .34, demi * 2, bois[1], {haut: bois[0]});
-        F.boite(0, yb - .42, -a + 1, .1, .42, .1, bois[0]); F.matiere(4).boite(0, yb - .82, -a + 1, .3, .4, .3, feu).matiere(2);
-        const [lx, lz] = F.monde(0, -a + 1); MONDE.lumieres.push({x: lx, y: A.y + yb - .62, z: lz, c: feu, t: 5, toujours: true}); }
+        for (const sg of [-1, 1]) F.boite(sg * a, -.8, 0, .34, yb + .8, .34, bois[0], {haut: bois[1]});   // (24/11) en travers : x ; ils étaient plantés dans l'axe, au milieu de l'eau
+        F.boite(0, yb, 0, demi * 2, .34, .38, bois[1], {haut: bois[0]});
+        F.boite(-a + 1, yb - .42, 0, .1, .42, .1, bois[0]); F.matiere(4).boite(-a + 1, yb - .82, 0, .3, .4, .3, feu).matiere(2);
+        const [lx, lz] = F.monde(-a + 1, 0); MONDE.lumieres.push({x: lx, y: A.y + yb - .62, z: lz, c: feu, t: 5, toujours: true}); }
       F.poser(0, 0, 0, 0, 1).matiere(0); }
     }
     // les deux façades

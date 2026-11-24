@@ -43,7 +43,7 @@ const EAU_COURANT = `if (vFlot.z > .999 || h21(floor(p / 2.5)) < vFlot.z) { ${EA
         vec2 g = vec2(vSU.y / 1.5, sj / .42); float rang = floor(g.y); g.x += h21(vec2(rang, 3. + fj)) * 7.;
         vec2 cel = floor(g), f = fract(g);
         if (h21(cel + vie * .137 + fj * 31.) < .115 * poids && f.x > .1 && f.x < .55 + .3 * h21(cel + 7.) && f.y < .55) c = mix(c, RE, ${EAU_PR} * netR);
-        if (av > 1.) { vec2 r = vec2(sj / 2.6, vSU.y / .3), k = floor(r); if (h21(k + vie * .31 + fj * 17.) < (av - 1.) * .07 * poids && fract(r.x) < .75 && fract(r.y) > .3) c = mix(c, CL, .6 * ${EAU_PR}); }
+        if (av > 1.) { vec2 r = vec2(sj / 2.6, vSU.y / .3), k = floor(r); if (h21(k + vie * .31 + fj * 17.) < min((av - 1.) * .07, .085) * poids && fract(r.x) < .75 && fract(r.y) > .3) c = mix(c, CL, .6 * ${EAU_PR}); }
         if (vFlot.y > .02) { vec2 r = vec2(sj / .3, vSU.y / .36), k = floor(r), fr = fract(r); float hf = h21(k + vie * .53 + fj * 7.);   // des flocons d'écume, petits, de tailles inégales
           if (hf < vFlot.y * .16 * poids && fr.x > .15 && fr.y > .15 && fr.x < .6 + 6. * hf && fr.y < .55 + 6. * hf) c = mix(c, EC, .8 * prox); } } }`;
 /* (rendu plus réaliste, REEL.reflets, 18/11) : l'eau reflète le ciel, de plus en plus quand on la regarde de loin (Fresnel), des vaguelettes la
@@ -85,8 +85,8 @@ const EAU_FS = `${PORTEE_FS} ${EFFETS.eau ? "varying vec3 vFlot;" : ""} ${ABRI_P
     ${EFFETS.eau ? EAU_COURANT : EAU_REFLETS}
     ${REEL.reflets ? EAU_SOLEIL : ""}float raide = abs(vPente), rap = smoothstep(.02, .11, raide);
     if (rap > 0.) { float sens = vPente < 0. ? 1. : -1.;   // l'eau qui dévale : des traits d'écume qui filent vers le bas de la pente
-      vec2 r = vec2(vSU.x * .7 - sens * uT * 4.5, vSU.y * 1.7), k = floor(r);
-      if (h21(k) < rap * .5 && fract(r.x) < .72 && fract(r.y) > .18) c = mix(c, EC, .85);
+      vec2 r = vec2(vSU.x * .9 - sens * uT * 4.5, vSU.y * 4.6), k = floor(r); r.x += h21(vec2(k.y, 7.)); k = floor(r);   // (24/11) des traits fins et décalés (avant : un damier de plaques de 1,4 m)
+      if (h21(k) < rap * .26 && fract(r.x) < .45 + .5 * h21(k + 3.) && fract(r.y) > .2) c = mix(c, EC, .5 + .35 * h21(k + 9.));
       float chute = smoothstep(.3, .7, raide);
       if (chute > 0.) { vec2 t = floor(vec2(vSU.y * 3.5, vSU.x * .6 - sens * uT * 9.)); c = mix(c, mix(CL, EC, step(.4, h21(t))), chute); } }
     float ec = vSU.y < 0. ? vEc.x : vEc.y;
@@ -371,7 +371,7 @@ function construirePonts() {
       let sol = Infinity; for (const u of [-e, 0, e]) { const q = pose(i0 + sens * 2.5, u); sol = Math.min(sol, hauteur(q.x, q.z)); }
       const bas = Math.min(a.y - 3.5, sol - 1), G = F.poser(a.x, bas, a.z, -a.h, 1);
       G.boite(0, 0, 0, e0 * 2, a.y - .9 - bas, 5.2, pierre[1], {haut: pierre[2], mat: 0});                                       // sous le tablier
-      for (const sg of [-1, 1]) G.boite(sg * (e0 + 1.25), 0, 0, 2.5, a.y + .55 - bas, 5.2, pierre[1], {haut: pierre[2], mat: 0});   // les deux ailes, à hauteur du parapet
+      for (const sg of [-1, 1]) G.boite(sg * (e0 + 1.25), 0, 0, 2.5, a.y + .55 - bas, 5.2, pierre[1], {haut: pierre[2], mat: NIVEAU.decor === "classique" ? 0 : 1.3});   // les deux ailes, à hauteur du parapet
     }
     if (style === "arches" || style === "bois") {   // au-dessus des parapets : des poteaux ; pour « arches », une grande arche dorée d'un poteau à l'autre, une lampe sur chaque poteau
       const pas = style === "arches" ? 10 : 4, or = PAL.or || [PAL.pierre[0], PAL.lumiere, PAL.lumiere], n0 = Math.max(1, Math.round((ib - ia) / pas)), dl = (ib - ia) / n0;

@@ -11,7 +11,7 @@
 /* construire un brouillon avec le vrai code de la piste, sans toucher à la page : {PISTE, verif, erreur} */
 function essayerNiveau(niveau) {
   try {
-    const f = new Function("NIVEAU", "BIOME", "D", "location", SOURCE_PISTE + "\nreturn {PISTE, verif: verifier(), tour: TOUR_VRAI, boucle: BOUCLE};");
+    const f = new Function("NIVEAU", "BIOME", "D", "location", SOURCE_PISTE + (niveau.plan ? "\n" + SOURCE_PLAN : "") + "\nconst verif_ = verifier(); " + (niveau.plan ? "verif_.erreurs.push(...planControle()); verif_.ok = !verif_.erreurs.length; " : "") + "return {PISTE, verif: verif_, tour: TOUR_VRAI, boucle: BOUCLE};");
     return f(JSON.parse(JSON.stringify(niveau)), region(BIOMES[niveau.biome] ? niveau.biome : Object.keys(BIOMES)[0]), {}, {search: ""});
   } catch (e) { return {erreur: e && e.message || String(e)}; }
 }
@@ -217,7 +217,12 @@ function listeFooting(R, o, cible) {
   return [].concat(...Z.map(z => z.m));
 }
 const REGION_TERRE = b => BIOMES[b + "-routes"] ? b + "-routes" : Object.keys(BIOMES).find(k => /routes/.test(k)) || b;   // la région des routes qui va avec une région
+function circuitVille(o) {
+  const r = genererVille({km: o.km, graine: o.graine, nom: o.nom}, n => { const e = essayerNiveau(n); return e.erreur ? [e.erreur] : e.verif.erreurs; }); if (r.erreur) return r;
+  const e = essayerNiveau(r.niveau); return {niveau: r.niveau, note: noterCircuit(e.PISTE, r.niveau, region(r.niveau.biome), e.tour), long: e.PISTE.N, retour: 0, essais: r.essais, bons: 1};
+}
 function genererCircuit(o) {
+  if (o.activite === "terre" && o.style === "pied" && typeof genererVille === "function") return circuitVille(o);   // (24/11) à pied : une ville dessinée d'abord (villes.js), plus des modules bout à bout
   const terre = o.activite === "terre", pied = terre && o.style === "pied", huit = terre && !pied && o.forme === "huit";   // pied : le footing (listeFooting)
   if (huit) o = Object.assign({}, o, {boucle: true});
   if (o.forme === "ouvert") o = Object.assign({}, o, {boucle: false});   // (la forme suffit : « De A à B » = pas une boucle)

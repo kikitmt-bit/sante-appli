@@ -101,6 +101,7 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #bSon { position: fixed; right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(22vh, 17vw)); font: inherit; font-size: min(3.2vh, 2.6vw); padding: .1em .7em; color: #383828; background: #F8F8E8; border: 2px solid #484838; border-radius: 10px 4px; box-shadow: 2px 2px 0 #1B2440; cursor: pointer; opacity: .85; }
 #bSon.off { background: #A8A890; }
 #bPlein { position: fixed; right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(22vh, 17vw) + min(3.2vh, 2.6vw) * 2.2); font: inherit; font-size: min(2.6vh, 2.1vw); padding: .05em .6em; color: #383828; background: #F8F8E8; border: 2px solid #484838; border-radius: 10px 4px; box-shadow: 2px 2px 0 #1B2440; cursor: pointer; opacity: .55; }
+#bSignal { position: fixed; right: max(2.2vw, env(safe-area-inset-right, 0px)); top: calc(1.6vh + env(safe-area-inset-top, 0px) + min(22vh, 17vw) + min(3.2vh, 2.6vw) * 6.4); font: inherit; font-size: min(2.6vh, 2.1vw); padding: .05em .6em; color: #383828; background: #F8F8E8; border: 2px solid #484838; border-radius: 10px 4px; box-shadow: 2px 2px 0 #1B2440; cursor: pointer; opacity: .55; }
 #hPret { left: 50%; top: 34vh; transform: translateX(-50%); font-size: min(7vh, 5.4vw); text-align: center; white-space: nowrap; }
 @media (max-width: 520px) { #panneau .machines { grid-template-columns: 1fr; } #panneau button.machine b { font-size: 26px; } #panneau .chiffres { grid-template-columns: repeat(2, 1fr); } #panneau h1 { font-size: 32px; } }
 /* l'éditeur de circuits (refait le 17/11 : un accueil, puis l'atelier ; « Essayer » en grand) */
@@ -186,14 +187,14 @@ body.relief #bAuto { bottom: calc(3vh + env(safe-area-inset-bottom, 0px) + min(1
 #editeur .ed-obj b { flex: 1.4; font-weight: normal; font-size: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #editeur .ed-obj input[type=number] { flex: 0 0 3.6em; }
 #editeur textarea { width: 100%; box-sizing: border-box; font-family: monospace; font-size: 12px; }
-body.edite .hud, body.edite #carte, body.edite #profil, body.edite #bSon, body.edite #bPlein, body.edite #credit { display: none; }
+body.edite .hud, body.edite #carte, body.edite #profil, body.edite #bSon, body.edite #bPlein, body.edite #bSignal, body.edite #credit { display: none; }
 @media (max-width: 760px), (orientation: portrait) { #editeur .ed-tete { font-size: 22px; flex-wrap: wrap; } #editeur .ed-essayer { font-size: 22px; padding: 4px 14px; } #editeur .ed-acc { grid-template-columns: 1fr; } #editeur .ed-deux { grid-template-columns: 1fr; } #editeur .ed-corps { flex-direction: column; overflow-y: auto; } #editeur .ed-gauche { flex: none; height: 46vh; } #edCote { flex: none; overflow: visible; max-width: none; min-width: 0; } }
 /* le menu (17/11) : un seul écran, sans défiler ; derrière, rien n'est dessiné (jeu/menu.js) */
 #menu { position: fixed; inset: 0; z-index: 4; display: flex; flex-direction: column; gap: 1.2vh; box-sizing: border-box; overflow: hidden; color: #383828; font-size: clamp(16px, 2.3vh, 22px); line-height: 1.08;
   padding: max(1.4vh, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(1.4vh, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
   background: repeating-linear-gradient(180deg, #22315A 0 7px, #25355F 7px 14px); }
 #charge { background: repeating-linear-gradient(180deg, #22315A 0 7px, #25355F 7px 14px); font-size: 26px; color: #8C9AC8; }
-body.au-menu .hud, body.au-menu #carte, body.au-menu #profil, body.au-menu #bSon, body.au-menu #bPlein, body.au-menu #credit, body.au-menu #c { visibility: hidden; }
+body.au-menu .hud, body.au-menu #carte, body.au-menu #profil, body.au-menu #bSon, body.au-menu #bPlein, body.au-menu #bSignal, body.au-menu #credit, body.au-menu #c { visibility: hidden; }
 #menu button { font: inherit; color: inherit; cursor: pointer; border: 3px solid #484838; border-radius: 12px 5px; box-shadow: 3px 3px 0 #1B2440; background: #F8F8E8; text-align: left; }
 #menu button:disabled { opacity: .45; cursor: default; }
 #menu button:not(:disabled):active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 #1B2440; }
@@ -361,6 +362,7 @@ body.au-menu .hud, body.au-menu #carte, body.au-menu #profil, body.au-menu #bSon
 <button id="bFin" hidden>■ Fin</button>
 <button id="bSon">Son</button>
 <button id="bPlein">⛶ Plein écran</button>
+<button id="bSignal" title="Signaler un défaut du décor">⚑ Signaler</button>
 <div class="hud" id="hPret" hidden>PRÊT ?<small>le chrono part à ton premier coup de rame</small></div>
 <div id="credit">Pokémon : Donjon Mystère (Chunsoft), via PMD SpriteCollab · habitants : Pokémon Rouge Feu</div>
 <div id="voile"></div>

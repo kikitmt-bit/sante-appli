@@ -184,7 +184,7 @@ async function batirMonde() {
   const t0 = performance.now(), etape = async (f, part) => { const a = performance.now(); await f(); CHANTIER.etapes.push([part, Math.round(performance.now() - a)]); CHANTIER.part = part; for (const s of CHANTIER.suivis) s(part); await pause0(); };
   // les parts : le temps que prend chaque étape (mesuré le 17/11 : le terrain la moitié, le décor un quart, sur la Baie de Carmin comme sur Céladopole)
   if (TRONCONS) await etape(tronconsDemarrer, .45);   // (16/11, lot 3) une longue route : seulement ce qui entoure le départ, le reste au fil de la route (moteur/troncons.js)
-  else { await etape(() => construireTerrain(vers(.5)), .5); await etape(construireRives, .58); await etape(construirePiste, .6); await etape(() => construireDecor(vers(.88)), .88); }
+  else { await etape(() => construireTerrain(vers(.5)), .5); await etape(construireRives, .58); await etape(() => { construirePiste(); construirePlan(); }, .6); await etape(() => construireDecor(vers(.88)), .88); }
   await etape(() => { construireMassif(); construirePonts(); construireTunnels(); construireLointain(); construireAmbiance(); }, .91);
   await etape(construireSprites, .98); await etape(() => { construireRencontres(); construireFourches(); construireOmbres(); }, .99);
   window.__pret = CHANTIER.ms = Math.round(performance.now() - t0); if (VUE.mode !== "jeu") window.__vue(VUE.mode);
