@@ -453,6 +453,18 @@ class VilleLibre(unittest.TestCase):
         d["zone"]["bateaux"] = [b for b in d["zone"]["bateaux"] if b["raison"] != "travaux"]
         self.assertTrue(any("sans bateau" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
 
+    def test_une_route_qui_se_retrecit(self):
+        """(25/11, ⚑ de Kiki) Deux voies bout à bout n'en font qu'une : la chaussée ne gonfle jamais, elle s'affine de moins de 5 cm par mètre de chaque côté ; le trottoir s'arrête au bout de sa rue."""
+        r = self.node(_page.controle("velo-cerisiers") + """
+;(() => { const Z = ZONE, D = Z.D, V = Z.voies, o = {joints: 0, gonfle: 0, saut: 0, trottoir: 0}, large = (v, s, sg) => { let u = 0; while (u < 9) { const q = Z.enVoie(v, s, sg * (u + .02)); if (Z.champs(q.x, q.z).f >= 0) break; u += .02; } return u; };
+  for (const n of Z.noeuds) { if (!n.bout) continue; o.joints++; const [A, B] = n.v.slice().sort((a, b) => V[b.k].l - V[a.k].l), v = V[B.k], w = V[A.k], d = B.s < 2 ? 1 : -1;
+    for (const sg of [-1, 1]) { let av = w.l / 2; for (let k = .5; k < 34; k += .5) { const h = large(v, B.s + d * k, sg); o.gonfle = Math.max(o.gonfle, h - av - .03); o.saut = Math.max(o.saut, (av - h) / .5); av = h; } const q = Z.enVoie(v, B.s + d * 2, sg * (w.l / 2 + 1)); Z.champs(q.x, q.z); if (D.t < 0) o.trottoir++; } }
+  console.log("JOINT " + JSON.stringify(o)); })();""", "JOINT")
+        self.assertGreaterEqual(r["joints"], 2)
+        self.assertLess(r["gonfle"], .01, "la chaussée gonfle au raccord")
+        self.assertLess(r["saut"], .1, "la chaussée se rétrécit d'un coup")
+        self.assertEqual(r["trottoir"], 0, "le trottoir s'enroule autour du bout de sa rue")
+
     def test_rien_pendant_45_m(self):
         """Kiki : « les lignes droites sont trop longues ». Un pâté de maisons tout droit, sans personne : refusé."""
         pts = [[0, 0], [150, 0], [150, -150], [0, -150]]

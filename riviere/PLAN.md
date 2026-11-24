@@ -559,3 +559,5 @@ et la dépense monte vite. Monter l'effort d'un cran avant de changer de modèle
   nette), étangs cachés par les bosses, champs mal alignés dans les virages, bois absents des sentiers très tordus, panneau devant l'entrée d'un sentier, rues trop pareilles. **Limites** : moins de 1,4 m de place à deux au chantier,
   aux portails des parcs et à l'entrée d'un sentier (à la file) ; un circuit ne se retouche pas pièce par pièce ; pas de voitures qui roulent. **Pas essayé** : la tablette, un vrai home trainer. **À essayer par Kiki** : deux ou
   trois « Moitié-moitié » et une « Surtout la campagne » qui grimpe ; dire si c'est varié, si ça fait vrai, si c'est fluide ; ⚑ pour le reste.
+  **Avis de Kiki (25/11, sur la tablette) : « les zones sont diversifiées », « dans l'ensemble c'est très très bien », « le reste est vraiment excellent ».** Un seul ⚑ (velo-337009, mètre 1 412, la sortie d'un hameau) : la route qui se
+  rétrécit faisait bizarre (la chaussée gonflait, puis se pinçait, le trottoir s'enroulait autour). Corrigé dans le moteur le jour même, pour tous les raccords bout à bout, donc aussi « La boucle des Cerisiers » et les circuits déjà gardés.

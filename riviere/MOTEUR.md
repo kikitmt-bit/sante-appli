@@ -617,6 +617,8 @@ Vélo → Créer un circuit → Générer → « Ville et campagne » : longueur
   deux morceaux se suivent **bout à bout**, au milieu d'un bout droit ; d'une file à l'autre on **tourne d'équerre** à un croisement, et la voie la plus importante continue de l'autre côté (`suite`, ~110 m). Un arc porte les croisements,
   sa flèche est réglée par dichotomie pour la longueur. Un grand tournant se fait en plusieurs fois (`tourner`). Un paysage tous les 120 à 190 m, un repère par paysage ouvert.
 - **Rouler à deux** (pas encore joué) : `deux` sur chaque voie (faux sur un sentier), rien de dur à moins de 1,4 m du parcours là où c'est vrai.
+- **Deux voies bout à bout n'en font qu'une** (25/11, ⚑ de Kiki : « quand la route se rétrécit, c'est assez bizarre » ; zone.js, toutes les zones à vélo) : la plus étroite part de la largeur de l'autre et s'affine en 30 m (12 m sur la
+  terre : `evase`, `AFFINE`, `demi`), la chaussée ne gonfle jamais (`paires` : réunies sans arrondi), le trottoir d'une rue qui devient une route s'arrête en biais à son bout (`finT`).
 - **Dans le moteur, à vélo seulement** : `net` (là où le goudron finit et où la terre continue, une coupe droite), un étang est posé sur un sol à plat (`aplat`). `files` dans un niveau = un circuit à vélo tiré au sort : il est allégé
   (bâtiments jusqu'à 92 m du parcours, bois des îlots plus clair, `PETITS_VELO`, ombres des feuillages redessinées 5 fois par seconde).
 - **Les réglages qui comptent** : portes à moins de .46 × la campagne (`portesNature(…, velo)`), croisements entre 46° et 132° avant redressement, rayons `r` de `VELO_SORTES`, pente 5,4 % (6,6 % si ça grimpe).
