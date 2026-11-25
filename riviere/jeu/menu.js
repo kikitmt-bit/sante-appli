@@ -157,7 +157,7 @@ function blocApercu() {
     <h1>${NIVEAU.brouillon ? "✏️ " : NIVEAU.jour ? "☀️ " : ""}${escM(NIVEAU.nom || NIVEAU.id)}</h1>
     <div class="m-puces"><span><small>${BOUCLE ? "UN TOUR" : "DISTANCE"}</small>${longueur(tourMenu(TOUR_VRAI))}</span><span><small>FORME</small>${BOUCLE ? "Circuit" : "Parcours"}</span><span><small>DÉNIVELÉ</small>${T.dplus < 10 ? "Plat" : "+" + T.dplus + " m"}</span><span><small>À TON ALLURE</small>≈ ${Math.max(1, Math.round(duree / 60))} min</span></div>
     <canvas class="m-profil"></canvas>
-    <p class="m-record">${r ? (BOUCLE ? "Ton record du tour : " : "Ton record : ") + "<b>" + chrono(r) + "</b>" : "Pas encore de record ici."}${NIVEAU.jour && typeof NIVEAU.note === "number" ? " · note " + NIVEAU.note + " / 100" : ""}</p>
+    <p class="m-record">${NIVEAU.jour ? "Circuit du jour, " + NIVEAU.jour.slice(8, 10) + "/" + NIVEAU.jour.slice(5, 7) + ". " : ""}${r ? (BOUCLE ? "Ton record du tour : " : "Ton record : ") + "<b>" + chrono(r) + "</b>" : "Pas encore de record ici."}${NIVEAU.jour && typeof NIVEAU.note === "number" ? " · note " + NIVEAU.note + " / 100" : ""}</p>
     ${NIVEAU.route ? `<p class="m-record" style="opacity:.6;font-size:.8em">${NIVEAU.osm ? "Tracé et décor d'après" : "Tracé d'après"} OpenStreetMap · © les contributeurs d'OpenStreetMap</p>` : ""}
     ${NIVEAU.brouillon ? blocGarder("m") : classementDuJour()}</div></div>`;
 }

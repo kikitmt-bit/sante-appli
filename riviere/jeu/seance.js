@@ -23,11 +23,11 @@ function majBoutons() { $("bAuto").hidden = S.mode !== "essai"; $("bFin").hidden
    le meilleur tour de chaque joueur sur ce circuit et cette machine, pris dans les records du serveur (un record part avec la séance enregistrée) */
 function classementDuJour() {
   if (!NIVEAU.jour || !D.jour) return "";
-  const lignes = (((D.jour.classement || {})[DISCIPLINE] || {})[MACHINE_NOM] || []).slice(0, 10), pour = {rameur: "au rameur", elliptique: "au marcheur elliptique", velo: "à vélo"}[MACHINE_NOM] || "";
+  const lignes = (((D.jour.classement || {})[MACHINE_NOM] || (D.jour.classement || {})[DISCIPLINE] || {})[MACHINE_NOM] || []).slice(0, 10), pour = {rameur: "au rameur", elliptique: "au marcheur elliptique", velo: "à vélo"}[MACHINE_NOM] || "";
   const esc2 = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
   return `<div class="classement"><small>CLASSEMENT DU JOUR ${pour.toUpperCase()}</small>${lignes.length ? `<ol>${lignes.map(l => `<li${l.moi ? ' class="moi"' : ""}><span>${esc2(l.nom)}</span><b>${chrono(l.t)}</b></li>`).join("")}</ol>`
     : `<p class="petit">Personne n'a encore bouclé un tour aujourd'hui : le premier tour d'une séance enregistrée prend la tête.</p>`}
-    <p class="petit">Un nouveau circuit chaque matin. Ton meilleur tour compte une fois la séance enregistrée.</p></div>`;
+    <p class="petit">Un nouveau circuit chaque matin, un par machine. Ton meilleur tour compte une fois la séance enregistrée.</p></div>`;
 }
 function majTexteFantome() { const el = $("mFantome"); if (!el) return;
   el.textContent = FANTOME.choix === "aucun" ? "Pas de fantôme." : FANTOME.choix === "record" ? (FANTOME.record ? "Ton record (" + chrono(FANTOME.record.t) + ") nage avec toi dès le premier tour." : "Pas encore de record : ton meilleur tour de la séance le remplace dès le 2e tour.") : "Ton meilleur tour de cette séance nage avec toi dès le 2e tour."; }

@@ -43,7 +43,7 @@ class H(http.server.BaseHTTPRequestHandler):
                 if q.get("jour") and fj.exists():  # le circuit du jour (étape 5) : outils/circuit_du_jour.py --sortie riviere/outils/jour-essai.json ; classement tiré des records d'essai
                     import jour as J
                     fichier = __import__("json").loads(fj.read_text(encoding="utf-8"))
-                    donnees["jour"] = J.pour_le_jeu(fichier, J.classement(fichier, {"kiki": records, "ami": {"records": {"x": {"machine": "rameur", "niveau": (fichier.get("eau") or {}).get("id"), "tour": {"t": 612.4}}}}},
+                    donnees["jour"] = J.pour_le_jeu(fichier, J.classement(fichier, {"kiki": records, "ami": {"records": {"x": {"machine": "rameur", "niveau": (fichier.get("rameur") or {}).get("id"), "tour": {"t": 612.4}}}}},
                                                                          {"kiki": {"nom": "Kiki"}, "ami": {"nom": "Un ami"}}, "kiki"))
                 octets = page.page(donnees=donnees, niveau=niveau).encode("utf-8")
                 if q.get("cadre"):  # comme dans l'appli : la page dans un cadre (pour essayer le changement de circuit sans rechargement de l'appli)

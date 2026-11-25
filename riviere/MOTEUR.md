@@ -712,6 +712,12 @@ L'ancien « Sur une rivière » n'est plus au menu (25/11, Kiki) ; son code rest
 - **La page ne porte plus le moteur en double** (page.py, `SOURCES`, `source_piste_page`) : `SOURCE_PISTE`, `SOURCE_PLAN`, `SOURCE_CHAMP` sont repris dans le texte du script, entre les repères « /* ----- moteur/… ----- */ » ; avec node, les chaînes d'avant. 200 Ko de moins.
 - Mesuré le 25/11 : 72 tirages sur 72 sans défaut pour chaque forme (contrôle complet), 3,5 à 5 s en général ; aucun triangle de sol au-dessus de l'eau ; `chevauchements.py` : rien de plus que sur `rame-ile` ; prêt en 7 à 14 s ; au banc (Chrome, 1440 × 800) 56 à 59 images/s, 311 000 triangles au plus (l'île, le même jour : 58 à 59).
 
+### Le circuit du jour (refait le 25/11 : `riviere/jour.py`, `riviere/outils/circuit_du_jour.py`)
+
+Trois circuits par jour, indépendants : `rameur`, `velo`, `elliptique` (`data/riviere/jour/AAAA-MM-JJ.json`, dépôt privé ; un fichier d'avant, `eau` et `terre`, se lit encore). Les réglages viennent de la date (`options`) : ceux de « Créer un circuit → Générer ». `_chacun_son_tour` : une forme, un décor, un genre de ville
+revient aussi souvent que les autres et jamais deux jours de suite. Le circuit garde son nom (« Le lac du Moulin ») ; au menu : ☀️, « du jour », le classement de sa machine. GitHub écrit celui du jour et du lendemain, et ne refait jamais un jour déjà écrit (un générateur qui change ne change pas le circuit en cours).
+Essayer : `circuit_du_jour.py --jour 2026-11-26 --sortie riviere/outils/jour-essai.json`, puis le serveur d'essai avec `?jour=1`.
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal
