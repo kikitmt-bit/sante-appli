@@ -6,6 +6,7 @@ const RB = 12, STATIONS = [0, .02, .4, 1.2, 3, 6, 10, LARGE_RIVE];   // le ruban
 /* une cellule de la grille du sol : sa hauteur, le mètre de piste le plus proche (GI), sa distance au bord (GE), son côté (GC), sa nature (GK) :
    1 = le lit de la piste à ciel ouvert, 2 = le dessus d'un tunnel, 3 = les flancs d'un tunnel, 0 = le reste. Partagée avec les tronçons (troncons.js). */
 function celluleSol(x, z, k, HH, GI, GE, GC, GK) {
+  if (typeof ZONE !== "undefined" && ZONE && ZONE.eaux.length && ZONE.bord(x, z) < -26) { HH[k] = ZONE.sol(x, z) - .26; GI[k] = 0; GE[k] = 50; GC[k] = 0; GK[k] = 0; return; }   // (25/11) loin sous une ville au bord de l'eau : jamais dessiné, inutile de faire voter la piste
   const P = PISTE, h = hSol(x, z), e = Q.e, pi = Q.i, cote = Q.d > 0 ? 1 : 0, tun = P.TUN[pi], culee = Q.bout === 2;
   GI[k] = pi; GE[k] = e; GC[k] = cote;
   const bec = culee && Q.av > -3 && Math.abs(Q.d) < P.W[pi] + .8;   // juste au bout d'un pont, dans le couloir de la piste : le sol passe sous le tablier (11/11 : deux coins d'herbe sur l'eau ; puis un trou sous le pont, d'où la culée)

@@ -73,10 +73,11 @@ if __name__ == "__main__":
     ap.add_argument("--virages", choices=["droit", "quelques", "sinueux", "tres"], default="quelques")
     ap.add_argument("--denivele", type=float, default=15)
     ap.add_argument("--forme", choices=["boucle", "ouvert", "huit"], default="boucle")
-    ap.add_argument("--style", choices=["route", "pied", "velo"], default="route")   # (18/11) pied : un footing (avec --activite terre ; km de décor)
+    ap.add_argument("--style", choices=["route", "pied", "velo", "quais"], default="route")   # (18/11) pied : un footing (avec --activite terre ; km de décor)
     ap.add_argument("--nature", type=float, default=0)   # (24/11) avec --style pied : la part de nature (0, .5, .7)
     ap.add_argument("--sinueux", action="store_true")   # (24/11) avec --style velo : ville et campagne à vélo (--nature .34, .5 ou .75)
     ap.add_argument("--sorte", default="")
+    ap.add_argument("--facon", default="")   # (25/11) avec --style quais : rives, rive ou ponts (sinon tirée)
     ap.add_argument("--avec", default="")
     ap.add_argument("--graine", type=int, default=1)
     ap.add_argument("--tirages", type=int, default=8)
@@ -92,7 +93,7 @@ if __name__ == "__main__":
             print(texte_note(notes[nom], detail=len(noms) == 1))
         sys.exit(0)
     o = {"km": a.km, "activite": a.activite, "style": a.style, "virages": a.virages, "denivele": a.denivele, "forme": a.forme, "boucle": a.forme != "ouvert",
-         "avec": {k: True for k in a.avec.split(",") if k}, "graine": a.graine, "tirages": a.tirages, "nature": a.nature, "sorte": a.sorte, "sinueux": int(a.sinueux)}
+         "avec": {k: True for k in a.avec.split(",") if k}, "graine": a.graine, "tirages": a.tirages, "nature": a.nature, "sorte": a.sorte, "sinueux": int(a.sinueux), **({"facon": a.facon} if a.facon else {})}
     if a.nom:
         o["nom"] = a.nom
     r = generer(o)

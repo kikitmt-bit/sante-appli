@@ -443,7 +443,7 @@ class VilleLibre(unittest.TestCase):
 
     def test_le_velo(self):
         """(étape 15) à vélo : on tient la droite, et l'on ne passe de la chaussée au trottoir que par un bateau, pour une raison qu'on voit."""
-        lire = lambda: json.loads((R / "outils" / "zones" / "velo-cerisiers.json").read_text(encoding="utf-8"))
+        lire = lambda: fige("dessin-velo-cerisiers")   # (25/11) retirée du jeu (Kiki : les circuits sont jetables), gardée pour éprouver le moteur
         d = lire()
         for e in d["etapes"]:
             if e["v"] in ("combe", "gare"):
@@ -474,7 +474,7 @@ class VilleLibre(unittest.TestCase):
 
     def test_une_route_qui_se_retrecit(self):
         """(25/11, ⚑ de Kiki) Deux voies bout à bout n'en font qu'une : la chaussée ne gonfle jamais, elle s'affine de moins de 5 cm par mètre de chaque côté ; le trottoir s'arrête au bout de sa rue."""
-        r = self.node(_page.controle("velo-cerisiers") + """
+        r = self.node(_page.controle("velo-cerisiers", circuit=self.zone.niveau_de(fige("dessin-velo-cerisiers"))) + """
 ;(() => { const Z = ZONE, D = Z.D, V = Z.voies, o = {joints: 0, gonfle: 0, saut: 0, trottoir: 0}, large = (v, s, sg) => { let u = 0; while (u < 9) { const q = Z.enVoie(v, s, sg * (u + .02)); if (Z.champs(q.x, q.z).f >= 0) break; u += .02; } return u; };
   for (const n of Z.noeuds) { if (!n.bout) continue; o.joints++; const [A, B] = n.v.slice().sort((a, b) => V[b.k].l - V[a.k].l), v = V[B.k], w = V[A.k], d = B.s < 2 ? 1 : -1;
     for (const sg of [-1, 1]) { let av = w.l / 2; for (let k = .5; k < 34; k += .5) { const h = large(v, B.s + d * k, sg); o.gonfle = Math.max(o.gonfle, h - av - .03); o.saut = Math.max(o.saut, (av - h) / .5); av = h; } const q = Z.enVoie(v, B.s + d * 2, sg * (w.l / 2 + 1)); Z.champs(q.x, q.z); if (D.t < 0) o.trottoir++; } }
@@ -547,6 +547,21 @@ class VilleTiree(unittest.TestCase):
             self.assertNotIn("barr", " ".join(n["traverse"]), "une surprise ne s'annonce pas")
         self.assertEqual(n, self.tirer(style="velo", **o)[0], "mêmes options, même circuit")
         self.assertLessEqual({"piste", "traces", "travaux"}, vus)
+
+    def test_au_bord_de_l_eau(self):
+        """(étape 15, lot 2b) Les trois façons de longer une rivière : la longueur, rien à redire, une rivière à quais et à ponts, le même circuit partout."""
+        for facon, km, nature, denivele, graine, sorte in (("rives", 2, .34, 0, 5, "bourg"), ("rive", 1.5, .5, 15, 6, ""), ("ponts", 2.5, .5, 15, 7, "immeubles")):
+            o = dict(facon=facon, km=km, nature=nature, denivele=denivele, graine=graine, sorte=sorte)
+            n, long, b = self.tirer(style="quais", **o)
+            self.assertAlmostEqual(long, km * 1000, delta=km * 30)
+            self.assertEqual(b["erreurs"], [])
+            self.assertFalse(b.get("cassures"))
+            self.assertEqual((n["facon"], n["machines"], n["allure"], n["zone"]["velo"]), (facon, ["velo"], 1, True))
+            eau, = n["zone"]["eaux"]
+            self.assertTrue(any(q["style"] == "quai" for q in eau["g"] + eau["d"]), "un quai au moins")
+            self.assertGreaterEqual(sum(1 for v in n["zone"]["voies"] if v["id"] in ("vieux", "neuf", "moulin", "pont", "port")), 1, "un pont au moins")
+            self.assertEqual([v["id"] for v in n["zone"]["voies"] if not v["deux"] and v["l"] > 2.2 and v.get("sol") == "chaussee"], [], "on roule à deux sur toutes les routes")
+        self.assertEqual(n, self.tirer(style="quais", **o)[0], "mêmes options, même circuit")
 
     def test_la_meme_partout(self):
         o = {"km": .75, "denivele": 12, "graine": 21, "sorte": "pavillons"}

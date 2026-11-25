@@ -603,7 +603,7 @@ La même zone, mais on roule sur la chaussée : `"velo": true` dans la zone, `"m
 - **Ce qui est refusé** (`parcoursVelo`) : rouler à gauche (hors carrefours), passer sur un trottoir sans bateau, plus de 36 m de trottoir pour des travaux (10 sinon), entrer sur la piste cyclable ailleurs qu'à un carrefour,
   quitter une route pour un chemin autrement que d'équerre ou bout à bout, plus de 130 m sans événement (`VIDE_VELO`).
 - **Les objets** : `contenu/objets/kanto-velo.js` (`plate_bande`, `barriere_chantier`, `cone_chantier`, `tranchee`, `tas_paves`, `panneau_route` : travaux, barree, deviation, cyclable, sens ; `panneau_ville`, `borne_bois`).
-- Fabriquer : `python riviere/outils/zone.py velo-cerisiers` (jamais le niveau à la main). La caméra ne regarde jamais à plus de 11° du cycliste.
+- « La boucle des Cerisiers », le circuit d'essai, n'est plus dans le jeu (25/11) : son dessin est figé dans `tests/circuits/dessin-velo-cerisiers.json`, pour les tests. La caméra ne regarde jamais à plus de 11° du cycliste.
 
 ### Les circuits à vélo tirés au sort (24/11, étape 15, lot 1b : `jeu/velo_villes.js`)
 
@@ -641,6 +641,20 @@ tout le reste est un talus. Sans `eaux`, rien ne change nulle part.
   vont et viennent dans la rivière (`bouge: {"type": "va"}`). Objets : `contenu/objets/kanto-eau.js`.
 - **Le circuit d'essai** « La boucle des Quais » (`velo-quais`) : `python riviere/outils/zones/velo_quais.py` (la rivière d'abord, tout le reste en parallèles exactes) écrit le dessin, puis `python riviere/outils/zone.py velo-quais`.
 - **Pour le rameur (lot 3)** : la rivière a déjà son tracé, sa largeur et sa hauteur ; l'eau passe sous les trois ponts avec la place qu'il faut. Reste à y poser une piste (sa hauteur = `eaux[k].y`, pas `ZONE.sol`) et à ne pas dessiner deux eaux.
+
+### Les circuits au bord de l'eau tirés au sort (25/11, étape 15, lot 2b : `jeu/quais.js`)
+
+Vélo → Créer un circuit → Générer → « Au bord de l'eau » : mêmes réglages que « Ville et campagne ». Sans navigateur :
+`python riviere/outils/generer.py --activite terre --style quais --km 2.5 --nature .5 --denivele 15 --graine 7 [--facon rives|rive|ponts]`. Mêmes options, même circuit partout.
+
+- **La rivière d'abord** (`riviereQuais`) : une suite de bouts droits et d'arrondis, sa largeur (19 à 29 m en ville, jusqu'à 37 à la campagne), ses méandres. `sur(s, u)` = un point à `s` m le long de l'eau et `u` m à côté ; **tout le reste en est une parallèle exacte**
+  (`longer`, `coin`) : rues des quais, piste, halage, berges. Les ponts et les rues de travers ne se posent que sur un bout droit (`droit`, `caler`, `libre`).
+- **Trois façons** (`tirerQuais`) : `rives` (les deux rives et deux ponts), `rive` (une seule rive, détour par la vieille ville), `ponts` (d'un pont à l'autre). La façon se tire sur la graine de départ : le générateur, qui relance une ville ratée, n'en
+  favorise aucune. Puis la piste cyclable ou la rue du quai, les promenades, la vieille rue et sa placette, le chemin de halage, le pont du Moulin, et la campagne de `campagneVelo` d'une porte à l'autre.
+- **Une promenade change de visage** tous les 80 à 150 m : `bouts: [{a, b, genre, arbres, garde}]` sur une berge `quai`, genres `arbres`, `fleurs`, `livres` (bouquinistes), `terrasses`, `nu`. Sans `bouts`, comme avant.
+- **Les ponts** : pierre (`arches`), bois, et `pont: "fer"` (poutres rivetées, garde-corps à barreaux). Objets neufs : `pont_fer`, `bouquiniste`.
+- **Une piste cyclable s'évase** là où elle touche une rue (`unionRonde` dans zone.js), pour qu'on y tourne.
+- **Plus vite prêt** : loin sous une ville au bord de l'eau, le terrain ne fait plus voter la piste (`celluleSol`), les normales sont gardées (`NM`). Rien ne change sans `eaux`.
 
 ## Moins de défauts à la source (24/11)
 
