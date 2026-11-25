@@ -222,7 +222,7 @@ function circuitVille(o) {   // (étape 13, lot 3) une ville libre (villes.js) :
   return {niveau: r.niveau, note: noterCircuit(bon.PISTE, r.niveau, region(r.niveau.biome), bon.tour), long: bon.PISTE.N, retour: 0, essais: r.essais, lourds: r.lourds, raisons: r.raisons, bons: 1};
 }
 function genererCircuit(o) {
-  if (o.activite === "eau" && o.style === "ile") return circuitVille(Object.assign({}, o, {iles: true, denivele: 0}));   // (étape 15, lot 3b-1) au rameur, le tour d'une île (iles.js)
+  if (o.activite === "eau" && ["ile", "lac", "retour", "surprise"].includes(o.style)) return circuitVille(Object.assign({}, o, {iles: true, denivele: 0, forme2: o.style === "surprise" ? ["ile", "lac", "retour"][((o.graine || 1) * 7919 >>> 4) % 3] : o.style}));   // (étape 15, lot 3b-1) au rameur, le tour d'une île (iles.js)
   if (o.activite === "terre" && (o.style === "pied" || o.style === "velo" || o.style === "quais") && typeof genererVille === "function") return circuitVille(o.style === "pied" ? o : Object.assign({}, o, {velo: true}, o.style === "quais" ? {quais: true} : {}));   // (24/11) à pied : une ville dessinée d'abord (villes.js), plus des modules bout à bout
   const terre = o.activite === "terre", pied = terre && o.style === "pied", huit = terre && !pied && o.forme === "huit";   // pied : le footing (listeFooting)
   if (huit) o = Object.assign({}, o, {boucle: true});

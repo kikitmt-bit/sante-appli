@@ -624,6 +624,37 @@ class VilleTiree(unittest.TestCase):
         self.assertEqual(n, self.tirer(**o)[0], "mêmes options, même circuit")
         self.assertLess(len(vus[0] & vus[1]), len(vus[0]) * .6, "deux tirages se ressemblent trop")
 
+    def test_un_lac_un_aller_retour(self):
+        """(étape 15, lot 3b-2) Le rameur sur un lac, ou en aller-retour : la longueur, rien à redire au contrôle du rameur, deux files, des îlots, le même circuit partout."""
+        for style, km, nature, sinueux, graine, sorte in (("lac", 1.5, .34, 0, 301, "bourg"), ("lac", 2.5, .75, 1, 302, "pavillons"), ("retour", 2, .34, 1, 303, "immeubles"), ("retour", 1.5, .75, 0, 304, "bourg")):
+            o = dict(activite="eau", style=style, km=km, nature=nature, sinueux=sinueux, graine=graine, sorte=sorte)
+            n, long, b = self.tirer(**o)
+            self.assertAlmostEqual(long, km * 1000, delta=km * 30)
+            self.assertEqual(b["erreurs"], [])
+            self.assertFalse(b.get("cassures"))
+            self.assertLess(b["fermeture"], .05, "la boucle se referme mal : le départ n'est pas sur une vraie droite")
+            self.assertEqual((n["machines"], n["discipline"], n["allure"], n["zone"]["rame"], n["plan_eau"]), (["rameur"], "eau", 1, True, style))
+            ids = [e["id"] for e in n["zone"]["eaux"]]
+            self.assertTrue({"vieux", "canal"} <= set(ids))
+            self.assertEqual(any(i.startswith("large") for i in ids), style == "lac", "un lac a son large, pas une rivière")
+            self.assertGreaterEqual(sum(1 for q in n["zone"]["nature"] if q["nom"] == "L'îlot"), 2, "deux îlots au moins")
+            noms = [q["nom"] for q in n["pieces"] if q.get("nom")]
+            self.assertEqual(len(set(noms)), len(noms) - (noms[0] == noms[-1]), "un paysage porte deux fois le même nom")
+            if style == "retour":
+                self.assertTrue(any(v.get("arches") == 2 for v in n["zone"]["voies"]), "un pont d'une rive à l'autre")
+        self.assertEqual(n, self.tirer(**o)[0], "mêmes options, même circuit")
+
+    def test_le_texte_du_moteur_dans_la_page(self):
+        """(25/11) La page ne porte plus le moteur en double : l'éditeur reprend son texte dans le script, au caractère près."""
+        import page
+        html = page.page()
+        js = html[html.rindex("<script>"):]
+        for nom, mods in page.SOURCES.items():
+            for m in mods:
+                texte = page._module("moteur", m)
+                self.assertEqual(js.count(texte), 1, m)
+                self.assertTrue(js[js.index(texte) + len(texte):].startswith("\n/* ----- "), m)
+
     def test_la_meme_partout(self):
         o = {"km": .75, "denivele": 12, "graine": 21, "sorte": "pavillons"}
         n = self.tirer(**o)[0]

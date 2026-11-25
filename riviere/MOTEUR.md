@@ -684,7 +684,7 @@ Vélo → Créer un circuit → Générer → « Au bord de l'eau » : mêmes r�
 
 ### Les circuits au rameur tirés au sort : autour d'une île (25/11, étape 15, lot 3b-1 : `jeu/iles.js`)
 
-Rameur → Créer un circuit → Générer → « Autour d'une île » : longueur (1,5 à 3 km), le décor (ville, moitié-moitié, nature), calme ou sinueux, genre de ville. « Sur une rivière » = l'ancien générateur, inchangé. Sans navigateur :
+Rameur → Créer un circuit → Générer → « Autour d'une île » : longueur (1,5 à 3 km), le décor (ville, moitié-moitié, nature), calme ou sinueux, genre de ville. Sans navigateur :
 `python riviere/outils/generer.py --activite eau --style ile --km 2 --nature .5 --sorte bourg --graine 7 [--sinueux]`. Mêmes options, même circuit partout.
 
 - **L'eau d'abord** (`formeIle`) : la rivière arrive, se sépare en deux bras (`canal`, `vieux`), se rejoint, repart ; les jonctions sont d'équerre (65 à 115°), jamais deux bras à moins de 104 m. `brasIle` = les mesures d'un bras : `sur(i, m, u)` un point (bout droit i, m mètres, u à
@@ -694,6 +694,23 @@ Rameur → Créer un circuit → Générer → « Autour d'une île » : longueu
 - **La ville** : un ou deux bourgs le long du tour ; un pont pour deux ou trois bouts de ville, un pour cinq de nature (pierre, fer, passerelle de bois), seulement d'équerre et là où rien d'autre ne passe (`ponter`) ; la rue de l'île relie deux ponts si elle tient ; l'église se voit par-dessus les toits.
 - **Refusé** : ce que refuse `parcoursRame` (contrôlé dans le générateur : `zone_rame.js` est dans `SOURCE_PLAN` de page.py), un départ qui n'est pas sur un vrai bout droit, moins de deux ponts.
 - Mesuré le 25/11 : 72 tirages sur 72 sans défaut (contrôle complet : sol, décor, boucle fermée à 2 cm près), 3 à 6 s de calcul ; aucun triangle de sol au-dessus de l'eau ; prêt en 10 à 13 s ; 60 images/s au banc (Chrome, 1440 × 800), 393 000 triangles au plus à l'image.
+
+### Un lac, un aller-retour, tirés au sort (25/11, étape 15, lot 3b-2 : `jeu/lacs.js`)
+
+Rameur → Créer un circuit → Générer → « Où tu rames » : Surprise (une des trois formes, tirée sur la graine), Autour d'une île, Sur un lac, Aller-retour. Mêmes réglages. Sans navigateur : `generer.py --activite eau --style lac|retour|surprise …`.
+L'ancien « Sur une rivière » n'est plus au menu (25/11, Kiki) ; son code reste : le circuit du jour s'en sert encore.
+
+- **Une seule idée** (`formeDouble`) : une épine, deux files parallèles (`canal` à droite, `vieux` à gauche), les jonctions d'équerre de l'île aux deux bouts. La rive du dehors est toujours à 6-8 m ; tout le reste (paysages, berges, rues, départ, miroir)
+  est le code de l'île (`tirerIle`, drapeau `DB`). `forme2` = `lac` ou `retour` ; `plan_eau` dans le niveau. L'île n'a pas bougé d'un caractère (72 tirages comparés).
+- **`retour`** : chaque sommet est « F » (les files se touchent : une rivière de 28 m) ou « I » (elles s'écartent autour d'un îlot en amande). Un îlot à chaque bout, dont on fait le tour (`tour`). Ponts à deux arches d'une rive à l'autre, seulement sur un bout F-F
+  (`pontsDouble`) ; entre les deux files d'un bout F : roseaux, nénuphars, barque à l'ancre (jamais à moins de 4-5 m d'une file : `loinFile`). La ville est sur les deux rives.
+- **`lac`** (`largesLac`) : entre les files, une bande de 45 à 85 m faite de « larges » (des eaux parallèles à l'épine, qui se recouvrent de 8 m : `reunir` n'en fait qu'une), coupées d'îlots contre une file ou l'autre ; passerelles de bois d'une rive à un îlot ;
+  au large : voiliers, barques, nénuphars et joncs, là où il n'y a pas d'îlot. Le lac est resserré exprès : à 100 m d'écart, on ne voyait que du bleu.
+- **Les paysages en plus** (`PAYSAGES_ILE`, clé `pour` : les formes permises) : `plage` (`g.sable` : une voie de sable jusqu'à l'eau, berge `genre: "sable"` où rien ne pousse), `crique` (`g.crique` : une petite eau qui entre dans la rive), `phare`, `village`, `voiles`, `fond` ; `tour` pour un bout d'îlot.
+  Dans une forme double, `e = -1` (le côté de l'intérieur) n'a ni quai, ni rue, ni champ : un talus, et des objets seulement s'il y a un îlot là.
+- **Moteur** : `calme: true` d'une eau (pas de Pokémon en plus : les larges recouvrent les files), `peu` de la zone (les Pokémon des berges et de l'eau plus espacés, 1,8) ; `parcoursRame` refuse plus de 36 m sans rive ni îlot à moins de 14 m.
+- **La page ne porte plus le moteur en double** (page.py, `SOURCES`, `source_piste_page`) : `SOURCE_PISTE`, `SOURCE_PLAN`, `SOURCE_CHAMP` sont repris dans le texte du script, entre les repères « /* ----- moteur/… ----- */ » ; avec node, les chaînes d'avant. 200 Ko de moins.
+- Mesuré le 25/11 : 72 tirages sur 72 sans défaut pour chaque forme (contrôle complet), 3,5 à 5 s en général ; aucun triangle de sol au-dessus de l'eau ; `chevauchements.py` : rien de plus que sur `rame-ile` ; prêt en 7 à 14 s ; au banc (Chrome, 1440 × 800) 56 à 59 images/s, 311 000 triangles au plus (l'île, le même jour : 58 à 59).
 
 ## Moins de défauts à la source (24/11)
 

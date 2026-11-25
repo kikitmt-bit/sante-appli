@@ -18,7 +18,7 @@ from pathlib import Path
 RACINE = Path(__file__).resolve().parent
 MOTEUR = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "plan_dessin", "zone_dessin", "tunnel", "decor", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
-JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "villes", "nature", "velo_villes", "quais", "iles", "generateur", "editeur", "signaler", "banc"]
+JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "villes", "nature", "velo_villes", "quais", "iles", "lacs", "generateur", "editeur", "signaler", "banc"]
 PURS = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
@@ -174,11 +174,20 @@ def donnees_js(donnees, niveaux, biomes, lieux, lot, servi, sprites=True):
             f"CYCLISTE_SPRITE = {_js(cycliste_sprite() if sprites else None)}, CYCLISTE_SEUL = {_js(cycliste_sprite('cycliste_seul') if sprites else None)};")
 
 
+# ce que l'éditeur et le générateur relancent sur un brouillon (le même code que le jeu)
+SOURCES = {"SOURCE_PISTE": ["outils", "zone", "piste"], "SOURCE_PLAN": ["plan", "zone_plan", "zone_rame"], "SOURCE_CHAMP": ["champ"]}
+
+
 def source_piste():
-    """Le code de la piste et du sol, en texte : l'éditeur et le générateur le relancent sur un brouillon, sans recharger la page (le même code que le jeu)."""
-    return ("const SOURCE_PISTE = " + _js("\n".join(_module("moteur", m) for m in ("outils", "zone", "piste"))) + ";\n"
-            "const SOURCE_PLAN = " + _js("\n".join(_module("moteur", m) for m in ("plan", "zone_plan", "zone_rame"))) + ";\n"
-            "const SOURCE_CHAMP = " + _js(_module("moteur", "champ")) + ";")   # le sol : le générateur contrôle celui du circuit qu'il retient
+    """Le code de la piste et du sol, en texte : l'éditeur et le générateur le relancent sur un brouillon, sans recharger la page."""
+    return "\n".join(f"const {nom} = " + _js("\n".join(_module("moteur", m) for m in mods)) + ";" for nom, mods in SOURCES.items())
+
+
+def source_piste_page():
+    """Le même texte, dans la page : repris dans le script lui-même (25/11 : 200 Ko que la page portait en double), entre les repères de _module."""
+    return ("const SOURCES_ = (t => noms => noms.map(n => { const r = '/* ----- moteur/' + n + '.js ----- */\\n', i = t.indexOf(r), f = t.indexOf('\\n/* ----- ', i + r.length); "
+            "if (i < 0 || f < 0) throw new Error('module introuvable : ' + n); return t.slice(i, f); }).join('\\n'))(document.currentScript.textContent);\n"
+            + "\n".join(f"const {nom} = SOURCES_({_js(mods)});" for nom, mods in SOURCES.items()))
 
 
 def page(donnees=None, niveau="vichy-lac", cache=None, artifact=False):
@@ -196,7 +205,7 @@ def page(donnees=None, niveau="vichy-lac", cache=None, artifact=False):
         _pokemon(o, besoins)
     lot = {f"{n:04d}/{a}": p for n, a in sorted(b for b in besoins if b[0] != "h") if (p := planche(n, a, cache))}
     lot.update({"h/" + nom: p for h, nom in sorted(b for b in besoins if b[0] == "h") if (p := habitant(nom, cache))})
-    js = "\n".join([_module("moteur", m) for m in MOTEUR] + [recettes()] + [source_piste()] + [_module("jeu", m) for m in JEU])
+    js = "\n".join([_module("moteur", m) for m in MOTEUR] + [recettes()] + [source_piste_page()] + [_module("jeu", m) for m in JEU])
     html = (RACINE / "index.html").read_text(encoding="utf-8")
     for cle, val in (("__DONNEES__", donnees_js(donnees, niveaux, biomes, lieux, lot, niveau)), ("__MODULES__", js)):
         html = html.replace(cle, val)
@@ -236,7 +245,7 @@ def generateur(options):
     base = "vichy-lac"   # (la page a besoin d'un circuit pour démarrer ; la région du circuit tiré est celle des options, Kanto sinon)
     return (AVANT_NODE % '""' + donnees_js({"force": True}, niveaux, biomes, lieux, {}, base, sprites=False) + "\n"
             + "\n".join(_module("moteur", m) for m in ("depart", "outils", "zone", "piste")) + "\n" + source_piste() + "\n"
-            + _module("jeu", "note") + "\n" + _module("jeu", "villes") + "\n" + _module("jeu", "nature") + "\n" + _module("jeu", "velo_villes") + "\n" + _module("jeu", "quais") + "\n" + _module("jeu", "iles") + "\n" + _module("jeu", "generateur")
+            + _module("jeu", "note") + "\n" + _module("jeu", "villes") + "\n" + _module("jeu", "nature") + "\n" + _module("jeu", "velo_villes") + "\n" + _module("jeu", "quais") + "\n" + _module("jeu", "iles") + "\n" + _module("jeu", "lacs") + "\n" + _module("jeu", "generateur")
             + "\nconsole.log('CIRCUIT ' + JSON.stringify(genererCircuit(" + _js(options) + ")));\n")
 
 
