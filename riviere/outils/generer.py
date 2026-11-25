@@ -73,7 +73,7 @@ if __name__ == "__main__":
     ap.add_argument("--virages", choices=["droit", "quelques", "sinueux", "tres"], default="quelques")
     ap.add_argument("--denivele", type=float, default=15)
     ap.add_argument("--forme", choices=["boucle", "ouvert", "huit"], default="boucle")
-    ap.add_argument("--style", choices=["route", "pied", "velo", "quais"], default="route")   # (18/11) pied : un footing (avec --activite terre ; km de décor)
+    ap.add_argument("--style", choices=["route", "pied", "velo", "quais", "ile"], default="route")   # (18/11) pied : un footing (avec --activite terre ; km de décor) ; (25/11) ile : au rameur, autour d'une île (avec --activite eau)
     ap.add_argument("--nature", type=float, default=0)   # (24/11) avec --style pied : la part de nature (0, .5, .7)
     ap.add_argument("--sinueux", action="store_true")   # (24/11) avec --style velo : ville et campagne à vélo (--nature .34, .5 ou .75)
     ap.add_argument("--sorte", default="")

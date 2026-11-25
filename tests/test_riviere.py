@@ -604,6 +604,26 @@ class VilleTiree(unittest.TestCase):
             self.assertEqual([v["id"] for v in n["zone"]["voies"] if not v["deux"] and v["l"] > 2.2 and v.get("sol") == "chaussee"], [], "on roule à deux sur toutes les routes")
         self.assertEqual(n, self.tirer(style="quais", **o)[0], "mêmes options, même circuit")
 
+    def test_autour_d_une_ile(self):
+        """(étape 15, lot 3b-1) Le rameur autour d'une île tirée au sort : la longueur, rien à redire au contrôle du rameur, deux bras, des ponts, des paysages qui ne se répètent pas, le même circuit partout."""
+        vus = []
+        for km, nature, sinueux, graine, sorte in ((1.5, .34, 0, 301, "bourg"), (2, .75, 1, 304, "bourg"), (2.5, .5, 1, 10, "immeubles")):
+            o = dict(activite="eau", style="ile", km=km, nature=nature, sinueux=sinueux, graine=graine, sorte=sorte)
+            n, long, b = self.tirer(**o)
+            self.assertAlmostEqual(long, km * 1000, delta=km * 30)
+            self.assertEqual(b["erreurs"], [])
+            self.assertFalse(b.get("cassures"))
+            self.assertLess(b["fermeture"], .05, "la boucle se referme mal : le départ n'est pas sur une vraie droite")
+            self.assertEqual((n["machines"], n["discipline"], n["surface"], n["allure"], n["zone"]["rame"]), (["rameur"], "eau", "eau", 1, True))
+            self.assertEqual({e["id"] for e in n["zone"]["eaux"]}, {"vieux", "canal"})
+            noms = [q["nom"] for q in n["pieces"] if q.get("nom")]
+            self.assertGreaterEqual(len(set(noms)), km * 1000 / 175)
+            self.assertEqual(len(set(noms)), len(noms) - (noms[0] == noms[-1]), "un paysage porte deux fois le même nom")
+            self.assertGreaterEqual(sum(1 for v in n["zone"]["voies"] if v.get("arches") == 1), 2, "deux ponts au moins")
+            vus.append(set(noms))
+        self.assertEqual(n, self.tirer(**o)[0], "mêmes options, même circuit")
+        self.assertLess(len(vus[0] & vus[1]), len(vus[0]) * .6, "deux tirages se ressemblent trop")
+
     def test_la_meme_partout(self):
         o = {"km": .75, "denivele": 12, "graine": 21, "sorte": "pavillons"}
         n = self.tirer(**o)[0]

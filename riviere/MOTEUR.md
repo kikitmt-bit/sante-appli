@@ -682,6 +682,19 @@ Vélo → Créer un circuit → Générer → « Au bord de l'eau » : mêmes r�
 - Au banc (Chrome, ce PC, 1440 × 800) : 60 images/s, aucune en retard, 331 000 triangles au plus ; prêt en 9 à 10 s.
 - **La page** ne porte plus les lignes de commentaire seules des modules (`_module` de page.py) : 2 417 Ko sur 2 500 avec ce lot.
 
+### Les circuits au rameur tirés au sort : autour d'une île (25/11, étape 15, lot 3b-1 : `jeu/iles.js`)
+
+Rameur → Créer un circuit → Générer → « Autour d'une île » : longueur (1,5 à 3 km), le décor (ville, moitié-moitié, nature), calme ou sinueux, genre de ville. « Sur une rivière » = l'ancien générateur, inchangé. Sans navigateur :
+`python riviere/outils/generer.py --activite eau --style ile --km 2 --nature .5 --sorte bourg --graine 7 [--sinueux]`. Mêmes options, même circuit partout.
+
+- **L'eau d'abord** (`formeIle`) : la rivière arrive, se sépare en deux bras (`canal`, `vieux`), se rejoint, repart ; les jonctions sont d'équerre (65 à 115°), jamais deux bras à moins de 104 m. `brasIle` = les mesures d'un bras : `sur(i, m, u)` un point (bout droit i, m mètres, u à
+  côté), `coin` et `bornes` les coins d'une parallèle, `se` la distance le long de la vraie courbe, `h` la demi-largeur. Le dessin se fait toujours dans le même sens ; il est parfois **retourné comme dans un miroir**, et parcouru dans un sens ou dans l'autre.
+- **Un bout droit entre deux virages = un paysage** (`PAYSAGES_ILE`, 25 sortes : `v` = la ville, un poids par genre de ville ; `n` = la nature ; `w` la largeur de l'eau, `ouvre` s'il s'élargit, `pont` où un pont tient, `bout` s'il est permis près d'une jonction, `une` = une seule fois par circuit).
+  Jamais le même à moins de quatre bouts, jamais deux fois le même nom. **Ajouter un paysage = une ligne**, avec la boîte à outils `g` : `q` (une berge en quai et ses bouts), `t` (un talus), `aire` (un champ, un bois, un pré en bande), `berge` et `eau` (un objet), `rue`, `place`, `linge`, `coteau`.
+- **La ville** : un ou deux bourgs le long du tour ; un pont pour deux ou trois bouts de ville, un pour cinq de nature (pierre, fer, passerelle de bois), seulement d'équerre et là où rien d'autre ne passe (`ponter`) ; la rue de l'île relie deux ponts si elle tient ; l'église se voit par-dessus les toits.
+- **Refusé** : ce que refuse `parcoursRame` (contrôlé dans le générateur : `zone_rame.js` est dans `SOURCE_PLAN` de page.py), un départ qui n'est pas sur un vrai bout droit, moins de deux ponts.
+- Mesuré le 25/11 : 72 tirages sur 72 sans défaut (contrôle complet : sol, décor, boucle fermée à 2 cm près), 3 à 6 s de calcul ; aucun triangle de sol au-dessus de l'eau ; prêt en 10 à 13 s ; 60 images/s au banc (Chrome, 1440 × 800), 393 000 triangles au plus à l'image.
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal
