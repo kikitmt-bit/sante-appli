@@ -635,7 +635,7 @@ tout le reste est un talus. Sans `eaux`, rien ne change nulle part.
   sous les berges : c'est le sol qui la coupe. Aucun trou possible.
 - **Un pont** : une voie qui passe au-dessus de l'eau, sans rien dire de plus (`v.ponts`, trouvés tout seuls). Là, le sol est le tablier ; l'eau continue dessous, entière. `pont: "bois"` ou pierre (`arches`, `bout` : ce que le parapet
   dépasse sur la rive). On passe dessous par l'eau (le rameur, lot 3) ; **jamais à vélo** : une seule hauteur de sol par endroit.
-- **`sol: "cyclable"`** : une piste cyclable à elle seule (2,6 m). Elle touche une rue : la chaussée monte au niveau du trottoir et la traversée est peinte, toute seule. Elle suit un chemin de terre bout à bout (halage). Passages refusés :
+- **`sol: "cyclable"`** : une piste cyclable à elle seule (2,6 m). Elle touche une rue : la chaussée monte au niveau du trottoir, toute seule ; si elle la coupe, la traversée est peinte (une piste qui part d'une rue commence pile au trottoir, rien sur la chaussée). Elle suit un chemin de terre bout à bout (halage). Passages refusés :
   entrer sur la piste ailleurs, la quitter pour un chemin autrement que bout à bout, rouler dans l'eau, un objet dans l'eau (sauf `flotte`).
 - **L'habillage** (`habillerEaux`, zone_plan.js) : ponts, garde-corps, platanes, bancs et réverbères de la promenade, péniches et barques, échelles ; sur un talus joncs par nappes, nénuphars, saules. `sauvages.eau.nums` = les Pokémon qui
   vont et viennent dans la rivière (`bouge: {"type": "va"}`). Objets : `contenu/objets/kanto-eau.js`.

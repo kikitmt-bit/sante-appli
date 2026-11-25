@@ -26,8 +26,8 @@ Object.assign(OBJETS, {
     if (o.cones) for (const g of [-1, 1]) for (const sg of [-1, 1]) { const x = g * (L / 2 + 1.5), y = haut(x), r = (y - fond) * .86; F.cyl(x, fond, sg * (hp - .25), r, .5, y - fond - .05, 12, p3, p0); }   // un quart de cône de pierre à chaque angle : il tient le remblai de la route
     // le parapet : un mur, son chaperon, un dé à chaque bout
     const m = Math.ceil((L + 2 * bt) / 1.1); for (const sg of [-1, 1]) { const z = sg * (hp - .2), X = k => -L / 2 - bt + (L + 2 * bt) * clamp(k, 0, m) / m;
-      for (let k = 0; k < m; k++) lisseEnPente(F, X(k), haut(X(k)) - .2, X(k + 1), haut(X(k + 1)) - .2, z, .87, .37, melange(p0, p1, .3));   // un cœur plein : entre deux pierres, jamais un pixel de ciel
-      for (const [y0, h, dec, e] of [[-.15, .42, 0, .4], [.27, .38, .5, .4]]) for (let k = 0; k <= m; k++) { const a = X(k - dec), b = X(k + 1 - dec); if (b - a < .05) continue; lisseEnPente(F, a, haut(a) + y0, b, haut(b) + y0, z, h, e, melange(p0, p1, h2(k * 3 + (dec ? 1 : 0), sg + 2) * .6), p2); }   // deux rangs de pierres, en quinconce, puis le chaperon
+      for (let k = 0; k < m; k++) lisseEnPente(F, X(k), haut(X(k)) - .2, X(k + 1), haut(X(k + 1)) - .2, z, .87, .3, melange(p0, p1, .3));   // un cœur plein : entre deux pierres, jamais un pixel de ciel
+      for (const [y0, h, dec, e] of [[-.15, .42, 0, .4], [.27, .38, .5, .4]]) for (let k = 0; k <= m; k++) { const a = X(k - dec), b = X(k + 1 - dec); if (b - a < .05) continue; lisseEnPente(F, a, haut(a) + y0, b, haut(b) + y0, z - sg * .015, h, e, melange(p0, p1, h2(k * 3 + (dec ? 1 : 0), sg + 2) * .6), p2); }   // deux rangs de pierres, en quinconce, puis le chaperon
       for (let k = 0; k < m; k += 2) { const a = X(k), b = X(k + 2); lisseEnPente(F, a, haut(a) + .65, b, haut(b) + .65, z, .12, .52, p2, melange(p2, BLANC, .15)); }
       for (const g of [-1, 1]) { const x = g * (L / 2 + bt), y = solLocal(F, x, z); F.boite(x, y - .5, z, .6, 1.5, .6, p0, {haut: p2}); F.boite(x, y + 1, z, .72, .15, .72, p2); } } },
   pont_bois(F, o) {   // un pont de bois : des pieux dans l'eau, deux longerons, un garde-corps à croix

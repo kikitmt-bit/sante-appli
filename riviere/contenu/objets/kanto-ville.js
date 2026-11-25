@@ -187,7 +187,7 @@ Object.assign(OBJETS, {
 function especeArbre(F, o) {
   const E = DECOR_NEUF && BIOME.especes; if (!E || o.espece === false) return null;
   const Z = E.bosquet || 60, cz = Math.floor(F.oz / Z), cx = Math.floor(F.ox / Z + h2(cz, 3.7));
-  const liste = Object.entries(E.liste).filter(([n]) => n === "arbre" || OBJETS[n] && (n !== "saule" || o._e < 9)), tot = liste.reduce((t, [, p]) => t + p, 0);
+  const liste = Object.entries(E.liste).filter(([n]) => n === "arbre" || OBJETS[n] && (n !== "saule" || (typeof ZONE !== "undefined" && ZONE && ZONE.velo ? ZONE.eauEn(F.ox, F.oz).e < 9 : o._e < 9))), tot = liste.reduce((t, [, p]) => t + p, 0);
   let t = h2(cx * 1.31 + 5.1, cz * 1.77 - 3.3) * tot, dom = "arbre"; for (const [n, p] of liste) if ((t -= p) <= 0) { dom = n; break; }
   return dom === "arbre" || hv(F, 5) > (E.melange || .75) ? null : dom;
 }
@@ -217,9 +217,15 @@ Object.assign(OBJETS, {
     const t = tons("roux"); F.ombre(0, 0, 2.5, 2.3); F.cyl(0, -.4, 0, .38, .32, 1.6, 5, PAL.tronc[0], PAL.tronc[1]);
     F.vent(.3, .9, 5.8).dome(0, 2.05, 0, 2.35, 1.4, 2.35, t, 8); F.dome(0, 2.9, 0, 1.8, 1.55, 1.8, t, 7, true); F.dome(0, 4.05, 0, 1.2, 1.75, 1.2, t, 6, true); F.vent(); },
   saule(F) {  // un saule pleureur, au bord de l'eau : un dôme et des rideaux de feuilles qui tombent
+    // (25/11, Kiki : « les pics sur l'extérieur de l'arbre qui dépassent, notamment en haut ») c'étaient des cônes pointés vers le bas, dont la base sortait du dôme. Maintenant des rideaux de feuilles : chacun naît DANS la couronne, s'arrondit avec elle et retombe en s'effilant
     const t = tons("saule"), h = 4.6 + hv(F) * .8, r = 2.6; F.ombre(0, 0, 2.8, 2.6);
     F.cyl(0, -.3, 0, .4, .3, h - 1, 5, PAL.tronc[0], PAL.tronc[1]);
-    F.vent(.35, 1, h + 1).dome(0, h - .6, 0, r, 1.4, r, t, 8); for (let k = 0; k < 10; k++) { const a = k / 10 * Math.PI * 2 + hv(F, k) * .3; F.pointe(Math.cos(a) * r * .86, h - .5, Math.sin(a) * r * .86, Math.cos(a) * .25, -1, Math.sin(a) * .25, .55, 2.6 + hv(F, k + 3) * .8, 5, t[1], t[0]); } F.vent(); },
+    F.vent(.35, 1, h + 1).dome(0, h - .55, 0, r, 1.5, r, t, 9); F.dome(.1, h + .25, -.1, r * .62, 1.05, r * .62, [t[1], t[1], t[2]], 7, true);
+    for (const [n, ray, long, dec] of [[13, 1, 1, 0], [9, .72, .86, .4]]) for (let k = 0; k < n; k++) {   // deux rangs de rideaux, en quinconce ; un rideau : une bande qui suit la couronne puis tombe, en trois pans
+      const a = (k + dec) / n * Math.PI * 2 + (hv(F, k + n) - .5) * .22, c = Math.cos(a), s = Math.sin(a), L = (2.1 + hv(F, k + 3 + n) * 1.1) * long, w = (.62 + hv(F, k + 7) * .16) * (ray < 1 ? .9 : 1), f = k % 2 ? t[1] : melange(t[0], t[1], .55);
+      const P = [[.78, h + .05, .55], [1.03, h - .75, 1], [1.06, h - .75 - L * .62, .8], [1, h - .75 - L, .16]].map(([q, y, e]) => [c * r * ray * q, y, s * r * ray * q, e * w]);
+      for (let i = 0; i + 1 < P.length; i++) { const A = P[i], B = P[i + 1], q = (X, g) => [X[0] - s * X[3] * g, X[1], X[2] + c * X[3] * g], tn = i === 0 ? melange(f, t[2], .3) : i === 2 ? melange(f, t[0], .5) : f; F.poly([q(A, -1), q(A, 1), q(B, 1), q(B, -1)], tn, [c, .25, s]); } }
+    F.vent(); },
 });
 /* la maison et l'immeuble varient selon leur place ("varie": true) : couleurs, étage, taille ; jamais deux rues pareilles */
 function varieMaison(F) { const m = Object.keys(PAL.murs), t = Object.keys(PAL.toits).filter(k => k !== "paille"), p = Object.keys(PAL.portes);

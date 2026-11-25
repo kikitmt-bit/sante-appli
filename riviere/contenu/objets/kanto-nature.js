@@ -190,13 +190,13 @@ function immeubleNeuf(F, o, l, p, et, h, d, mur, n, m) {
   for (let e = 1; e < et; e++) { const y = 1.2 + e * 2.9;
     F.boite(0, y - .4, 0, l + .14, .14, p + .14, fonce(mur, .9));                                         // le bandeau entre deux étages
     for (let k = 0; k < n; k++) { const x = -l / 2 + l * (k + .5) / n; fen(x, y, d, 1.15, 1.5, 0);
-      if (balcons && k % 2 === 0) { F.boite(x, y - .5, d + .45, 1.9, .12, .9, PAL.pierre[2]); F.plaque(x - .95, y - .38, x + .95, y + .45, d + .9, cadre); F.plaque(x - .88, y - .3, x + .88, y + .37, d + .91, melange(cadre, mur, .55)); } }
+      if (balcons && k % 2 === 0) { F.boite(x, y - .5, d + .45, 1.9, .12, .9, PAL.pierre[2]); F.plaque(x - .95, y - .38, x + .95, y + .45, d + .9, cadre); F.plaque(x - .88, y - .3, x + .88, y + .37, d + .93, melange(cadre, mur, .55)); } }
     for (let k = 0; k < m; k++) { const z = -d + p * (k + .5) / m; for (const sx of [-1, 1]) fen(0, y, z, 1.1, 1.5, sx); } }
   // l'entrée, au milieu : une double porte vitrée sous un auvent ; de part et d'autre, de grandes fenêtres
   const xp = -l / 2 + l * (Math.floor(n / 2) + .5) / n;
   F.plaque(xp - .95, .4, xp + .95, 2.75, d + .05, BLANC); F.matiere(3).plaque(xp - .8, .4, xp + .8, 2.6, d + .08, PAL.vitre_claire).matiere(2); F.plaque(xp - .04, .4, xp + .04, 2.6, d + .1, BLANC);
   F.boite(xp, 2.85, d + .6, 2.6, .14, 1.2, tAuvent, {haut: melange(tAuvent, BLANC, .2)}); F.boite(xp, .3, d + .55, 2.2, .14, 1.1, PAL.pierre[2]);
-  for (let k = 0; k < n; k++) { const x = -l / 2 + l * (k + .5) / n; if (k !== Math.floor(n / 2)) fen(x, 1.05, d, 1.3, 1.45, 0); }
+  for (let k = 0; k < n; k++) { const x = -l / 2 + l * (k + .5) / n; if (k !== Math.floor(n / 2)) fen(x, 1.05, d + .04, 1.3, 1.45, 0); }   // (25/11, Kiki : « ça scintille sous les balcons ») le rez-de-chaussée avance de 3 cm : ses fenêtres étaient exactement dans son mur
   // la corniche, le parapet, la cage d'escalier
   F.boite(0, h, 0, l + .5, .3, p + .5, fonce(mur, .8), {haut: PAL.pierre[1]});
   for (const sz of [-1, 1]) F.boite(0, h + .3, sz * (p / 2 + .1), l + .4, .45, .2, mur, {haut: PAL.pierre[2]});
