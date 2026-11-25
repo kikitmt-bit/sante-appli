@@ -623,6 +623,25 @@ Vélo → Créer un circuit → Générer → « Ville et campagne » : longueur
   (bâtiments jusqu'à 92 m du parcours, bois des îlots plus clair, `PETITS_VELO`, ombres des feuillages redessinées 5 fois par seconde).
 - **Les réglages qui comptent** : portes à moins de .46 × la campagne (`portesNature(…, velo)`), croisements entre 46° et 132° avant redressement, rayons `r` de `VELO_SORTES`, pente 5,4 % (6,6 % si ça grimpe).
 
+### L'eau dans une ville (25/11, étape 15, lot 2a)
+
+Une rivière se décrit dans la zone comme une voie : `"eaux": [{id, nom, y (la hauteur de l'eau), pts: [{x, z, r, l (la largeur ici)}], g, d}]`. `g`, `d` = ses berges (d : à droite du fil de l'eau) par bouts
+`{a, b, style, …}` : `"quai"` (un mur droit ; `prom` la promenade sablée, `ea` où sont ses arbres, `pierre` la largeur de la pierre du bord, `garde` "fer" | "muret" | "rien", `arbres` l'essence ou "rien", `bateaux: false`) ;
+tout le reste est un talus. Sans `eaux`, rien ne change nulle part.
+
+- **Le sol** (zone.js, `solBerge`) : un quai garde sa hauteur jusqu'au mur ; un talus descend jusqu'à 35 cm sous l'eau, sans jamais toucher une voie (plate en travers) ; entre les deux, le mur sort de terre sur 22 m. `ZONE.eauEn(x, z)` →
+  `W` : `e` la distance au bord (négative : dans l'eau), `k`, `s`, `u`, `y`, `q` (1 = quai) ; `ZONE.enEau(v, s, u)` un point de l'eau. Dans `champs` : `D.w` (le bord), `D.o` (le bord d'un tablier), `D.m` (la pierre du bord d'un quai).
+- **Le dessin** (zone_dessin.js) : la trame est coupée exactement au bord de l'eau, et le mur du quai part de cette coupe même (matière 16) ; `construireEaux` pose l'eau, un ruban avec la matière de l'eau du rameur, sous les ponts et un peu
+  sous les berges : c'est le sol qui la coupe. Aucun trou possible.
+- **Un pont** : une voie qui passe au-dessus de l'eau, sans rien dire de plus (`v.ponts`, trouvés tout seuls). Là, le sol est le tablier ; l'eau continue dessous, entière. `pont: "bois"` ou pierre (`arches`, `bout` : ce que le parapet
+  dépasse sur la rive). On passe dessous par l'eau (le rameur, lot 3) ; **jamais à vélo** : une seule hauteur de sol par endroit.
+- **`sol: "cyclable"`** : une piste cyclable à elle seule (2,6 m). Elle touche une rue : la chaussée monte au niveau du trottoir et la traversée est peinte, toute seule. Elle suit un chemin de terre bout à bout (halage). Passages refusés :
+  entrer sur la piste ailleurs, la quitter pour un chemin autrement que bout à bout, rouler dans l'eau, un objet dans l'eau (sauf `flotte`).
+- **L'habillage** (`habillerEaux`, zone_plan.js) : ponts, garde-corps, platanes, bancs et réverbères de la promenade, péniches et barques, échelles ; sur un talus joncs par nappes, nénuphars, saules. `sauvages.eau.nums` = les Pokémon qui
+  vont et viennent dans la rivière (`bouge: {"type": "va"}`). Objets : `contenu/objets/kanto-eau.js`.
+- **Le circuit d'essai** « La boucle des Quais » (`velo-quais`) : `python riviere/outils/zones/velo_quais.py` (la rivière d'abord, tout le reste en parallèles exactes) écrit le dessin, puis `python riviere/outils/zone.py velo-quais`.
+- **Pour le rameur (lot 3)** : la rivière a déjà son tracé, sa largeur et sa hauteur ; l'eau passe sous les trois ponts avec la place qu'il faut. Reste à y poser une piste (sa hauteur = `eaux[k].y`, pas `ZONE.sol`) et à ne pas dessiner deux eaux.
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal

@@ -5,6 +5,7 @@ const PLAN_VS = `attribute float aT; attribute vec2 aU; varying vec3 vW, vN; var
   void main() { vT = aT; vU = aU; vN = normal; vec4 w = modelMatrix * vec4(position, 1.); vW = w.xyz; vec4 mv = viewMatrix * w; vZ = -mv.z; gl_Position = projectionMatrix * mv; }`;
 // aT : 0 la chaussée · 1 le trottoir (dalles) · 2 la bordure de pierre · 3 son flanc · 4 une allée de parc (sable stabilisé) · 5 le bord d'une allée
 //      6 une place pavée · 7 la peinture · 8 la pierre (bassin, béton) · 9 le plateau d'un carrefour · 10 un chemin de terre (aU : 1 dans un bois, la distance à son bord) · 11 le même, de loin
+//      16 le mur d'un quai (aU : le long, la hauteur au-dessus de l'eau)
 //      12 une piste cyclable (aU : s, la distance à son bord) · 13 la même, peinte en travers d'une rue · 14 l'herbe au milieu d'un chemin carrossable · 15 une piste cyclable, de loin
 const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
   uniform float uB0, uB1, uSombre, uPluie; uniform vec3 uBrume, uTeinte, uSoleil;
@@ -21,6 +22,8 @@ const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
     else if (vT < 6.5) { vec2 g = ${paves}; g.x += step(1., mod(floor(g.y), 2.)) * .5; vec2 f = fract(g); float hp = h21(floor(g)), m = vb(p / 9.); c = mix(vec3(.75, .71, .64), vec3(.69, .65, .585), mix(.5, step(.5, hp), mo)) * (.93 + .1 * mix(.5, hp, mo)) * (.96 + .08 * m); if (f.x < .08 || f.y < .1) c = mix(c, vec3(.53, .5, .45), .8 * jn); }
     else if (vT < 7.5) c = vec3(.93, .92, .88) * (.95 + .07 * h21(floor(p * 3.)));
     else if (vT < 8.5) c = vec3(.60, .59, .57) * (.95 + .08 * vb(p * 1.3));
+    else if (vT > 15.5) { float r = floor(vU.y / .42), x = vU.x / 1.15 + .5 * mod(r, 2.) + h21(vec2(r, 3.)) * .3; vec2 f = vec2(fract(x), fract(vU.y / .42)); float h = h21(vec2(floor(x), r)); c = mix(vec3(.70, .655, .575), vec3(.62, .575, .50), h) * (.95 + .1 * vb(vU * 1.7)); if (f.x < .035 || f.y < .09) c = mix(c, vec3(.44, .41, .36), .75 * jn);
+      c = mix(c, vec3(.36, .40, .30), .75 * (1. - smoothstep(.06, .62, vU.y + (vb(vU * vec2(1.4, .6) + 5.) - .5) * .5))); if (vU.y > 1.1 && vb(vU * vec2(.35, .12) + 9.) > .74) c *= .9; }   // des assises de pierre, une frange d'algues au ras de l'eau
     else if (vT > 13.5 && vT < 14.5) { float d = abs(vU.y - .45) + (vb(p * 1.3 + 3.) - .5) * .3 + (h21(floor(p * 8.)) - .5) * .16; if (d > .3) discard; c = mix(vec3(.56, .72, .34), vec3(.50, .66, .31), step(.5, vb(p / 2.1))) * (1. + (.12 * h21(floor(p * 7.)) - .06) * pres); }
     else if (vT > 11.5) { c = mix(vec3(.735, .475, .395), vec3(.70, .445, .37), step(.55, vb(p / 4. + 3.))) * (1. + (.09 * h21(floor(p * 6.)) - .045) * pres); if (vT > 12.5 && vT < 13.5) c *= .97; else if (vT < 12.5 && vU.y > -.11) c = mix(c, vec3(.93, .92, .88), .9); }
     else if (vT > 9.5) { float n = vb(p / 1.3 + 3.), m = vb(p / 5. + 1.), g = h21(floor(p * 7.)), bord = vT > 10.5 ? -1. : vU.y + (vb(p * 1.1 + 8.) - .5) * .55 + (h21(floor(p * 8.)) - .5) * .34; if (bord > .1) discard;
@@ -28,7 +31,7 @@ const planFS = (trottoir, paves, ombrage) => `${PORTEE_FS}
       float cl = h21(floor(p * 13.) + 5.); if (cl > .985) c *= mix(1., .8, pres); else if (cl < .012) c = mix(c, vec3(.78, .72, .64), .6 * pres);   // des cailloux
       float f = h21(floor(p * 11.) + 17.); if (vU.x > .5 && f > .955) c = mix(c, f > .978 ? vec3(.76, .48, .22) : vec3(.60, .55, .27), .7 * pres); }   // dans un bois : la terre plus sombre, des feuilles tombées
     else c = vec3(.44, .445, .455) * (.95 + .08 * vb(p / 5.)) * (1. + (.08 * h21(floor(p * 5.)) - .04) * pres);
-    c *= vN.y > .5 ? ${ombrage} : .78 + .22 * max(0., dot(vN, uSoleil));
+    c *= vN.y > .5 ? ${ombrage} : vT > 15.5 ? .84 + .2 * max(0., dot(vN, uSoleil)) : .78 + .22 * max(0., dot(vN, uSoleil));
     ${EFFETS.ombres ? "c *= mix(vec3(1.), vec3(.64, .68, .76), ombreEn(vW, vec3(0., 1., 0.), vZ));" : ""}
     c *= 1. - .16 * uPluie;
     gl_FragColor = vec4(mix(c * uSombre * uTeinte, uBrume, smoothstep(uB0, uB1, vZ) * .94), 1.); }`;   // (étape 13) le même pour une ville libre (zone_dessin.js) : son trottoir uni, ses pentes prennent la lumière

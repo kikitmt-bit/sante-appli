@@ -1,0 +1,1948 @@
+{
+ "biome": "kanto-plan",
+ "lieux": "kanto",
+ "discipline": "terre",
+ "surface": "libre",
+ "machines": [
+  "velo"
+ ],
+ "boucle": "droite",
+ "allure": 1,
+ "elan": 50,
+ "nageur": 25,
+ "loin": "terres",
+ "peuple": [
+  {
+   "o": "habitant",
+   "nom": "boy"
+  },
+  {
+   "o": "habitant",
+   "nom": "lass"
+  },
+  {
+   "o": "habitant",
+   "nom": "youngster"
+  },
+  {
+   "o": "habitant",
+   "nom": "woman_1"
+  },
+  {
+   "o": "habitant",
+   "nom": "cooltrainer_f"
+  },
+  {
+   "o": "habitant",
+   "nom": "gentleman"
+  },
+  {
+   "o": "habitant",
+   "nom": "picnicker"
+  },
+  {
+   "o": "habitant",
+   "nom": "bug_catcher"
+  },
+  {
+   "o": "habitant",
+   "nom": "beauty"
+  },
+  {
+   "o": "habitant",
+   "nom": "camper"
+  },
+  {
+   "o": "pokemon",
+   "num": 16
+  },
+  {
+   "o": "pokemon",
+   "num": 133
+  },
+  {
+   "o": "pokemon",
+   "num": 39
+  },
+  {
+   "o": "pokemon",
+   "num": 43
+  },
+  {
+   "o": "pokemon",
+   "num": 35
+  },
+  {
+   "o": "pokemon",
+   "num": 52
+  }
+ ],
+ "id": "velo-quais",
+ "nom": "La boucle des Quais",
+ "graine": 27,
+ "sorte": "velo",
+ "note": "(25/11, étape 15, lot 2) le circuit d'essai au bord de l'eau : quais, ponts, piste cyclable, chemin de halage. python riviere/outils/zone.py velo-quais en fait le niveau.",
+ "sauvages": {
+  "eau": {
+   "nums": [
+    7,
+    54,
+    118,
+    60,
+    129,
+    79
+   ]
+  },
+  "foret": {
+   "nums": [
+    10,
+    13,
+    25,
+    43,
+    46
+   ]
+  },
+  "verger": {
+   "nums": [
+    16,
+    39,
+    133
+   ]
+  },
+  "pre": {
+   "nums": [
+    128,
+    77
+   ]
+  }
+ },
+ "zone": {
+  "graine": 27,
+  "velo": true,
+  "rc": 6,
+  "marge": 82,
+  "voies": [
+   {
+    "id": "quaiS",
+    "nom": "Le quai des Tanneurs",
+    "l": 6.2,
+    "voitures": false,
+    "pts": [
+     {
+      "x": 97.448,
+      "z": -573.84,
+      "y": 4.4
+     },
+     {
+      "x": 135.814,
+      "z": -445.596,
+      "r": 176,
+      "y": 3.9
+     },
+     {
+      "x": 42.745,
+      "z": -180.878,
+      "r": 144
+     },
+     {
+      "x": 42.753,
+      "z": 72.306,
+      "r": 156
+     },
+     {
+      "x": 8.131,
+      "z": 145.633,
+      "r": 60,
+      "y": 3.9
+     },
+     {
+      "x": 24.415,
+      "z": 228.161,
+      "r": 60,
+      "y": 4.4
+     },
+     {
+      "x": 79.62,
+      "z": 305.287,
+      "y": 6
+     }
+    ],
+    "d": "rien",
+    "g": [
+     {
+      "a": 0,
+      "b": 177.3,
+      "style": "maisons"
+     },
+     {
+      "a": 277.2,
+      "b": 349.1,
+      "style": "boutiques"
+     },
+     {
+      "a": 382.1,
+      "b": 501.6,
+      "style": "serre"
+     },
+     {
+      "a": 556.5,
+      "b": 632.4,
+      "style": "residences"
+     },
+     {
+      "a": 732.7,
+      "b": 9999,
+      "style": "maisons"
+     },
+     {
+      "style": "serre"
+     }
+    ]
+   },
+   {
+    "id": "quaiN",
+    "nom": "Le quai des Lilas",
+    "l": 6.2,
+    "t": 2.4,
+    "voitures": false,
+    "pts": [
+     {
+      "x": -26.26,
+      "z": 114.706,
+      "y": 3.75
+     },
+     {
+      "x": -1.55,
+      "z": 62.377,
+      "r": 111.7,
+      "y": 3.9
+     },
+     {
+      "x": -1.55,
+      "z": -188.439,
+      "r": 188.3,
+      "y": 3.9
+     },
+     {
+      "x": 89.244,
+      "z": -446.702,
+      "r": 131.7,
+      "y": 3.9
+     },
+     {
+      "x": 56.738,
+      "z": -535.476,
+      "y": 4.2
+     }
+    ],
+    "d": "rien",
+    "g": [
+     {
+      "a": 0,
+      "b": 16,
+      "style": "cloture"
+     },
+     {
+      "a": 16,
+      "b": 58,
+      "style": "maisons"
+     },
+     {
+      "a": 78.1,
+      "b": 144,
+      "style": "serre"
+     },
+     {
+      "a": 188.9,
+      "b": 274.7,
+      "style": "residences"
+     },
+     {
+      "a": 338.4,
+      "b": 426.6,
+      "style": "boutiques"
+     },
+     {
+      "style": "serre"
+     }
+    ]
+   },
+   {
+    "id": "vieux",
+    "nom": "Le Pont-Vieux",
+    "l": 6.2,
+    "t": 2.2,
+    "voitures": false,
+    "arches": 3,
+    "pts": [
+     {
+      "x": -88.455,
+      "z": -383.551,
+      "y": 8
+     },
+     {
+      "x": 67.204,
+      "z": -328.828,
+      "y": 4.85
+     },
+     {
+      "x": 222.864,
+      "z": -274.104,
+      "y": 6.4
+     }
+    ],
+    "g": [
+     {
+      "style": "serre"
+     }
+    ],
+    "d": [
+     {
+      "style": "serre"
+     }
+    ]
+   },
+   {
+    "id": "neuf",
+    "nom": "Le Pont-Neuf",
+    "l": 6.2,
+    "t": 2.2,
+    "voitures": false,
+    "arches": 3,
+    "pts": [
+     {
+      "x": 42.746,
+      "z": -46.833
+     },
+     {
+      "x": 16.75,
+      "z": -46.83,
+      "y": 4.7
+     },
+     {
+      "x": -148.245,
+      "z": -46.826,
+      "y": 8
+     }
+    ],
+    "g": [
+     {
+      "style": "maisons"
+     }
+    ],
+    "d": [
+     {
+      "style": "maisons"
+     }
+    ]
+   },
+   {
+    "id": "tanneurs",
+    "nom": "La vieille rue",
+    "l": 5.4,
+    "t": 2.4,
+    "voitures": false,
+    "pts": [
+     {
+      "x": 188.857,
+      "z": -397.464,
+      "y": 5.2
+     },
+     {
+      "x": 127.284,
+      "z": -234.408,
+      "r": 120
+     },
+     {
+      "x": 97.829,
+      "z": -162.676,
+      "r": 90
+     },
+     {
+      "x": 116.751,
+      "z": -119.847,
+      "r": 80,
+      "y": 5.6
+     },
+     {
+      "x": 144.752,
+      "z": -34.242,
+      "y": 6.6
+     }
+    ],
+    "g": [
+     {
+      "a": 117.7,
+      "b": 150.6,
+      "style": "rien"
+     },
+     {
+      "style": "serre"
+     }
+    ],
+    "d": [
+     {
+      "a": 124.7,
+      "b": 188.2,
+      "style": "boutiques"
+     },
+     {
+      "style": "serre"
+     }
+    ]
+   },
+   {
+    "id": "port",
+    "nom": "La rue du Port",
+    "l": 5.4,
+    "t": 2.4,
+    "voitures": false,
+    "pts": [
+     {
+      "x": 154.981,
+      "z": -186.558,
+      "y": 6.2
+     },
+     {
+      "x": 56.871,
+      "z": -221.051
+     }
+    ],
+    "g": "serre",
+    "d": "serre"
+   },
+   {
+    "id": "pisteQ",
+    "nom": "La piste des quais",
+    "sol": "cyclable",
+    "l": 2.6,
+    "pts": [
+     {
+      "x": 57.316,
+      "z": -222.327
+     },
+     {
+      "x": 49.585,
+      "z": -225.048,
+      "r": 5.5,
+      "y": 3.9
+     },
+     {
+      "x": 34.553,
+      "z": -182.274,
+      "r": 152.2,
+      "y": 3.9
+     },
+     {
+      "x": 34.554,
+      "z": 70.466,
+      "r": 147.8,
+      "y": 3.9
+     },
+     {
+      "x": -3.066,
+      "z": 150.142,
+      "y": 3.8
+     }
+    ]
+   },
+   {
+    "id": "moulin",
+    "nom": "La route du Moulin",
+    "l": 4.6,
+    "t": 0,
+    "arches": 3,
+    "bout": 1.9,
+    "pts": [
+     {
+      "x": 55.912,
+      "z": 661.781,
+      "y": 5
+     },
+     {
+      "x": -63.663,
+      "z": 610.773,
+      "y": 4.95
+     },
+     {
+      "x": -132.649,
+      "z": 581.345,
+      "r": 60,
+      "y": 5.6
+     },
+     {
+      "x": -240.675,
+      "z": 533.133,
+      "r": 60,
+      "y": 9.6
+     },
+     {
+      "x": -322.012,
+      "z": 438.771,
+      "r": 60,
+      "y": 13.6
+     },
+     {
+      "x": -259.107,
+      "z": 216.683,
+      "r": 80,
+      "y": 14.6
+     },
+     {
+      "x": -311.532,
+      "z": 99.604,
+      "y": 15
+     }
+    ],
+    "g": [
+     {
+      "a": 8,
+      "b": 100,
+      "style": "cloture"
+     },
+     {
+      "a": 470,
+      "b": 560,
+      "style": "cloture"
+     },
+     {
+      "style": "rien"
+     }
+    ],
+    "d": [
+     {
+      "a": 8,
+      "b": 92,
+      "style": "cloture"
+     },
+     {
+      "style": "rien"
+     }
+    ]
+   },
+   {
+    "id": "halage",
+    "nom": "Le chemin de halage",
+    "sol": "terre",
+    "l": 2.4,
+    "pts": [
+     {
+      "x": -3.066,
+      "z": 150.142
+     },
+     {
+      "x": -21.97,
+      "z": 190.175,
+      "r": 60,
+      "y": 3.05
+     },
+     {
+      "x": -57.152,
+      "z": 268.421,
+      "r": 110.6,
+      "y": 2.9
+     },
+     {
+      "x": -35.062,
+      "z": 348.563,
+      "r": 60,
+      "y": 2.9
+     },
+     {
+      "x": -4.636,
+      "z": 419.08,
+      "r": 60,
+      "y": 3.1
+     },
+     {
+      "x": 6.734,
+      "z": 497.231,
+      "r": 90,
+      "y": 2.9
+     },
+     {
+      "x": -21.543,
+      "z": 563.514,
+      "r": 90,
+      "y": 2.9
+     },
+     {
+      "x": -45.086,
+      "z": 618.703
+     }
+    ],
+    "g": [
+     {
+      "a": 6,
+      "b": 66,
+      "style": "cloture"
+     },
+     {
+      "a": 250,
+      "b": 330,
+      "style": "cloture"
+     },
+     {
+      "style": "rien"
+     }
+    ]
+   },
+   {
+    "id": "bois",
+    "nom": "Le chemin de la Garenne",
+    "sol": "terre",
+    "l": 3.6,
+    "traces": true,
+    "pts": [
+     {
+      "x": -276.72,
+      "z": 278.868
+     },
+     {
+      "x": -240.164,
+      "z": 289.226,
+      "r": 26,
+      "y": 13.4
+     },
+     {
+      "x": -194.132,
+      "z": 262.752,
+      "r": 24,
+      "y": 11
+     },
+     {
+      "x": -145.679,
+      "z": 328.996,
+      "r": 26,
+      "y": 7.2
+     },
+     {
+      "x": -78.168,
+      "z": 355.517,
+      "r": 14,
+      "y": 3.4
+     },
+     {
+      "x": -98.592,
+      "z": 264.848,
+      "r": 149.6,
+      "y": 3.1
+     },
+     {
+      "x": -56.506,
+      "z": 178.759,
+      "y": 3.3
+     }
+    ]
+   },
+   {
+    "id": "rivage",
+    "nom": "La route du Rivage",
+    "l": 4.6,
+    "t": 0,
+    "pts": [
+     {
+      "x": -56.506,
+      "z": 178.759
+     },
+     {
+      "x": -26.26,
+      "z": 114.706
+     }
+    ],
+    "g": [
+     {
+      "a": 8,
+      "b": 70,
+      "style": "cloture"
+     }
+    ]
+   }
+  ],
+  "eaux": [
+   {
+    "id": "riviere",
+    "nom": "La rivière",
+    "y": 2,
+    "pts": [
+     {
+      "x": -65.844,
+      "z": 872.376,
+      "l": 30
+     },
+     {
+      "x": -112.71,
+      "z": 725.749,
+      "r": 120,
+      "l": 30
+     },
+     {
+      "x": -14.617,
+      "z": 495.797,
+      "r": 120,
+      "l": 30
+     },
+     {
+      "x": -77.767,
+      "z": 266.642,
+      "r": 130,
+      "l": 28
+     },
+     {
+      "x": 16.752,
+      "z": 66.477,
+      "r": 130,
+      "l": 24
+     },
+     {
+      "x": 16.748,
+      "z": -185.317,
+      "r": 170,
+      "l": 24
+     },
+     {
+      "x": 108.486,
+      "z": -446.246,
+      "r": 150,
+      "l": 24
+     },
+     {
+      "x": 36.599,
+      "z": -686.521,
+      "l": 26
+     }
+    ],
+    "d": [
+     {
+      "a": 772.8,
+      "b": 1450.3,
+      "style": "quai",
+      "prom": 8,
+      "ea": 2.5,
+      "garde": "fer",
+      "arbres": "platane"
+     }
+    ],
+    "g": [
+     {
+      "a": 770.8,
+      "b": 1460.3,
+      "style": "quai",
+      "pierre": 0.9,
+      "garde": "muret"
+     }
+    ]
+   }
+  ],
+  "places": [
+   {
+    "nom": "La place du Lavoir",
+    "y": 5,
+    "pts": [
+     {
+      "x": 150.444,
+      "z": -284.899,
+      "r": 1
+     },
+     {
+      "x": 140.353,
+      "z": -256.196,
+      "r": 1
+     },
+     {
+      "x": 164.794,
+      "z": -247.614,
+      "r": 1
+     },
+     {
+      "x": 174.885,
+      "z": -276.316,
+      "r": 1
+     }
+    ],
+    "boutiques": [
+     1,
+     2,
+     3
+    ]
+   }
+  ],
+  "nature": [
+   {
+    "genre": "foret",
+    "nom": "Le bois d'amont",
+    "esp": "hetre",
+    "pts": [
+     {
+      "x": -176.646,
+      "z": 1090.731,
+      "r": 6
+     },
+     {
+      "x": -238.605,
+      "z": 851.647,
+      "r": 6
+     },
+     {
+      "x": -264.024,
+      "z": 727.737,
+      "r": 6
+     },
+     {
+      "x": -165.135,
+      "z": 659.028,
+      "r": 6
+     },
+     {
+      "x": -112.631,
+      "z": 691.514,
+      "r": 6
+     },
+     {
+      "x": -27.323,
+      "z": 685.635,
+      "r": 6
+     },
+     {
+      "x": 44.561,
+      "z": 674.117,
+      "r": 6
+     },
+     {
+      "x": 110.887,
+      "z": 792.864,
+      "r": 6
+     },
+     {
+      "x": 71.574,
+      "z": 1120.514,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Le bois d'aval",
+    "esp": "bouleau",
+    "pts": [
+     {
+      "x": -103.197,
+      "z": -612.649,
+      "r": 6
+     },
+     {
+      "x": -76.988,
+      "z": -831.083,
+      "r": 6
+     },
+     {
+      "x": 240.733,
+      "z": -792.961,
+      "r": 6
+     },
+     {
+      "x": 214.524,
+      "z": -574.527,
+      "r": 6
+     },
+     {
+      "x": 142.878,
+      "z": -564.995,
+      "r": 6
+     },
+     {
+      "x": 22.303,
+      "z": -567.376,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "Les prés du halage",
+    "pts": [
+     {
+      "x": -35.108,
+      "z": 616.214,
+      "r": 6
+     },
+     {
+      "x": 16.758,
+      "z": 519.705,
+      "r": 6
+     },
+     {
+      "x": 8.417,
+      "z": 438.131,
+      "r": 6
+     },
+     {
+      "x": 94.202,
+      "z": 428.28,
+      "r": 6
+     },
+     {
+      "x": 92.615,
+      "z": 609.381,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "verger",
+    "nom": "Le verger du halage",
+    "esp": "pommier",
+    "cote": 0,
+    "pts": [
+     {
+      "x": 1.268,
+      "z": 396.986,
+      "r": 6
+     },
+     {
+      "x": -32.492,
+      "z": 292.218,
+      "r": 6
+     },
+     {
+      "x": 51.307,
+      "z": 282.129,
+      "r": 6
+     },
+     {
+      "x": 79.109,
+      "z": 386.182,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "La prairie",
+    "pts": [
+     {
+      "x": -26.614,
+      "z": 276.808,
+      "r": 6
+     },
+     {
+      "x": 11.591,
+      "z": 176.646,
+      "r": 6
+     },
+     {
+      "x": 118.821,
+      "z": 139.154,
+      "r": 6
+     },
+     {
+      "x": 82.285,
+      "z": 275.774,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Les saules",
+    "esp": "hetre",
+    "pts": [
+     {
+      "x": 14.773,
+      "z": 519.467,
+      "r": 6
+     },
+     {
+      "x": 7.861,
+      "z": 425.978,
+      "r": 6
+     },
+     {
+      "x": 77.759,
+      "z": 414.221,
+      "r": 6
+     },
+     {
+      "x": 84.671,
+      "z": 507.71,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "champ",
+    "culture": "ble",
+    "nom": "Les blés",
+    "cote": 0,
+    "pts": [
+     {
+      "x": -124.865,
+      "z": 575.229,
+      "r": 6
+     },
+     {
+      "x": -141.706,
+      "z": 430.19,
+      "r": 6
+     },
+     {
+      "x": -298.581,
+      "z": 411.367,
+      "r": 6
+     },
+     {
+      "x": -314.069,
+      "z": 439.724,
+      "r": 6
+     },
+     {
+      "x": -236.465,
+      "z": 531.623,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "champ",
+    "culture": "tournesols",
+    "nom": "Les tournesols",
+    "cote": 0,
+    "pts": [
+     {
+      "x": -159.814,
+      "z": 581.107,
+      "r": 6
+     },
+     {
+      "x": -243.137,
+      "z": 536.866,
+      "r": 6
+     },
+     {
+      "x": -330.908,
+      "z": 445.761,
+      "r": 6
+     },
+     {
+      "x": -414.151,
+      "z": 468.002,
+      "r": 6
+     },
+     {
+      "x": -302.946,
+      "z": 632.421,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "champ",
+    "culture": "vignes",
+    "nom": "Les vignes",
+    "cote": 0,
+    "pts": [
+     {
+      "x": -324.038,
+      "z": 430.47,
+      "r": 6
+     },
+     {
+      "x": -285.516,
+      "z": 294.088,
+      "r": 6
+     },
+     {
+      "x": -361.134,
+      "z": 277.965,
+      "r": 6
+     },
+     {
+      "x": -390.323,
+      "z": 420.503,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Le bois de la Garenne",
+    "esp": "chene",
+    "pts": [
+     {
+      "x": -297.628,
+      "z": 403.424,
+      "r": 6
+     },
+     {
+      "x": -251.322,
+      "z": 235.746,
+      "r": 6
+     },
+     {
+      "x": -198.502,
+      "z": 181.654,
+      "r": 6
+     },
+     {
+      "x": -131.383,
+      "z": 209.85,
+      "r": 6
+     },
+     {
+      "x": -115.893,
+      "z": 282.211,
+      "r": 6
+     },
+     {
+      "x": -109.935,
+      "z": 333.284,
+      "r": 6
+     },
+     {
+      "x": -96.828,
+      "z": 425.503,
+      "r": 6
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "Le pré du rivage",
+    "pts": [
+     {
+      "x": -124.075,
+      "z": 232.885,
+      "r": 6
+     },
+     {
+      "x": -52.749,
+      "z": 108.496,
+      "r": 6
+     },
+     {
+      "x": -119.47,
+      "z": 110.562,
+      "r": 6
+     },
+     {
+      "x": -168.716,
+      "z": 185.227,
+      "r": 6
+     }
+    ]
+   }
+  ],
+  "objets": [
+   {
+    "o": "fontaine",
+    "x": 157.613,
+    "z": -266.252,
+    "r": 2.2,
+    "voir": true,
+    "lacet": 1.451
+   },
+   {
+    "o": "maison_pente",
+    "x": 7.894,
+    "z": 415.628,
+    "lacet": -1.302,
+    "l": 8.6,
+    "p": 6.4,
+    "varie": true,
+    "voir": true,
+    "dos": true
+   },
+   {
+    "o": "table_bois",
+    "x": -3.755,
+    "z": 401.58,
+    "lacet": -1.302,
+    "r": 1.3,
+    "voir": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": -19.383,
+    "z": 428.077,
+    "lacet": -1.302,
+    "eau0": 2,
+    "long": 5,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true,
+    "vu": 18
+   },
+   {
+    "o": "habitant",
+    "x": -21.043,
+    "z": 427.304,
+    "lacet": -1.302,
+    "nom": "youngster",
+    "r": 0.3,
+    "libre": true,
+    "flotte": true,
+    "dy": 0.65
+   },
+   {
+    "o": "barque",
+    "x": -22.593,
+    "z": 428.468,
+    "lacet": -1.302,
+    "l": 4.2,
+    "p": 1.5,
+    "libre": true,
+    "flotte": true
+   },
+   {
+    "o": "banc",
+    "x": 0.991,
+    "z": 524.199,
+    "lacet": -1.974,
+    "r": 0.8,
+    "voir": true
+   },
+   {
+    "o": "borne_bois",
+    "x": -29.156,
+    "z": 216.154,
+    "lacet": -2.012,
+    "r": 0.2,
+    "voir": true
+   },
+   {
+    "o": "stere",
+    "x": -40.076,
+    "z": 305.569,
+    "lacet": -1.302,
+    "r": 1.4,
+    "voir": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": -77.866,
+    "z": 315.982,
+    "lacet": 1.839,
+    "eau0": 2,
+    "long": 4.6,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true,
+    "vu": 18
+   },
+   {
+    "o": "banc",
+    "x": -92.135,
+    "z": 319.91,
+    "lacet": 1.839,
+    "r": 0.8,
+    "voir": true
+   },
+   {
+    "o": "meule",
+    "x": -81.383,
+    "z": 211.076,
+    "lacet": 1.129,
+    "r": 1.6,
+    "voir": true
+   },
+   {
+    "o": "panneau_ville",
+    "x": -40.065,
+    "z": 127.775,
+    "lacet": -0.442,
+    "texte": "RIVEBELLE",
+    "r": 0.9,
+    "voir": true
+   },
+   {
+    "o": "chapelle",
+    "x": -348.464,
+    "z": 357.037,
+    "lacet": 1.331,
+    "l": 9,
+    "p": 6,
+    "r": 6,
+    "voir": true,
+    "vu": 46
+   },
+   {
+    "o": "eolienne",
+    "x": -443.141,
+    "z": 625.672,
+    "lacet": 2.051,
+    "r": 3
+   },
+   {
+    "o": "arbre_bois",
+    "x": -160.052,
+    "z": 583.093,
+    "lacet": 1.451,
+    "r": 0.9,
+    "ech": 1.6,
+    "esp": "chene",
+    "couronne": 4.5,
+    "voir": true,
+    "bois": true,
+    "vu": 14
+   },
+   {
+    "o": "meule",
+    "x": -244.726,
+    "z": 516.532,
+    "lacet": 2.451,
+    "r": 1.6,
+    "voir": true,
+    "vu": 12
+   },
+   {
+    "o": "ruche",
+    "x": -323.204,
+    "z": 398.341,
+    "lacet": 1.451,
+    "r": 0.4,
+    "voir": true,
+    "vu": 9
+   },
+   {
+    "o": "ruche",
+    "x": -323.463,
+    "z": 396.295,
+    "lacet": 1.451,
+    "r": 0.4
+   },
+   {
+    "o": "habitant",
+    "x": 30.95,
+    "z": -109.777,
+    "lacet": -1.571,
+    "r": 0.4,
+    "voir": true,
+    "nom": "beauty"
+   },
+   {
+    "o": "habitant",
+    "x": 31.154,
+    "z": 11.078,
+    "lacet": -1.571,
+    "r": 0.4,
+    "voir": true,
+    "nom": "gentleman"
+   },
+   {
+    "o": "habitant",
+    "x": 41.13,
+    "z": -299.878,
+    "lacet": 1.232,
+    "r": 0.4,
+    "voir": true,
+    "nom": "lass"
+   },
+   {
+    "o": "pokemon",
+    "x": 22.03,
+    "z": 88.553,
+    "lacet": -2.012,
+    "r": 0.4,
+    "voir": true,
+    "num": 54
+   },
+   {
+    "o": "habitant",
+    "x": 57.664,
+    "z": -258.886,
+    "lacet": -1.909,
+    "r": 0.4,
+    "voir": true,
+    "nom": "picnicker"
+   },
+   {
+    "o": "pokemon",
+    "x": 2.548,
+    "z": -134.96,
+    "lacet": 1.57,
+    "r": 0.4,
+    "voir": true,
+    "num": 52
+   },
+   {
+    "o": "pokemon",
+    "x": -5.91,
+    "z": 537.562,
+    "lacet": -1.974,
+    "r": 0.4,
+    "voir": true,
+    "num": 79
+   },
+   {
+    "o": "pokemon",
+    "x": -22.581,
+    "z": 369.781,
+    "lacet": -1.302,
+    "r": 0.4,
+    "voir": true,
+    "num": 43
+   },
+   {
+    "o": "pokemon",
+    "x": -45.083,
+    "z": 252.696,
+    "lacet": -2.012,
+    "r": 0.4,
+    "voir": true,
+    "num": 61
+   },
+   {
+    "o": "pokemon",
+    "x": -49.297,
+    "z": 145.451,
+    "lacet": 1.129,
+    "r": 0.4,
+    "voir": true,
+    "num": 128
+   }
+  ]
+ },
+ "pieces": [
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 156.30352669035457,
+   "virage": 0,
+   "nom": "Le quai des Lilas",
+   "objets": [
+    {
+     "o": "ligne",
+     "cote": "c",
+     "a": 1,
+     "eau": 0.1
+    }
+   ]
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 63.13273606686338,
+   "virage": 19.369420753652605
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 116.56172297231075,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 7.854084013930926,
+   "virage": 90.00117318788219
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 11.75113473748905,
+   "virage": 0,
+   "nom": "Le Pont-Vieux"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 83.0831635522089,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 7.96892563216408,
+   "virage": 91.31716119532466
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 60.753622735569074,
+   "virage": 0,
+   "nom": "La vieille rue"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 3.3929715956151627,
+   "virage": 1.6384572476739778
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 28.256015785054384,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 7.596165424020887,
+   "virage": 87.04564385592003
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 53.61366613976746,
+   "virage": 0,
+   "nom": "La rue du Port"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 1,
+   "virage": 0.018656418767832736
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 2.1932642802524835,
+   "virage": 0,
+   "nom": "La piste des quais"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 8.641979830947923,
+   "virage": -90.02708562736302
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.870206813751132,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 51.43610555244617,
+   "virage": -19.363152186232494
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 193.63535959791224,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 65.19966498958333,
+   "virage": 25.275139577604865
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 54.471906224472164,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 1,
+   "virage": 0.0022567338662451944
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 43.21326786675164,
+   "virage": 0,
+   "nom": "Le chemin de halage"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 1.1172585313370935,
+   "virage": -1.066903307843338
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 45.39235120917946,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 76.48056615489631,
+   "virage": -39.62037663152482
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 39.13192869874195,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 8.302872163476923,
+   "virage": -7.9286588800647095
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 64.71123756843053,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 15.771866158996009,
+   "virage": 15.061022765927998
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 45.76006781271928,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 49.293683174556385,
+   "virage": 31.38133336174576
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 46.28060438095244,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 1,
+   "virage": -0.0011267346931912534
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 52.19603823052956,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 9.42489873451721,
+   "virage": 90.00115330433778
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.698906850095,
+   "virage": 0,
+   "nom": "Le pont du Moulin"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 1,
+   "virage": -0.0020372808765311053
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 74.00261239758277,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 0.9734381146920019,
+   "virage": 0.9501515432542331
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 104.3935373471913,
+   "virage": 0,
+   "nom": "La route du Moulin"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 25.80477759708525,
+   "virage": 25.18747610880277
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 78.88484533423606,
+   "virage": 0,
+   "nom": "Les blés"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 57.962137153193595,
+   "virage": 56.57556780981971
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 126.95307263327125,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 9.42552636240999,
+   "virage": 90.00714670923126
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 19.73079039139254,
+   "virage": 0,
+   "nom": "Le bois de la Garenne"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 21.508380978427102,
+   "virage": -45.726881418305496
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 20.63441482690798,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 33.680979507716955,
+   "virage": 83.72138723031647,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 53.022598352817056,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 15.225281892595861,
+   "virage": -32.36899422421882,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 38.57882338202198,
+   "virage": 0,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 32.39205293422274,
+   "virage": -124.14233597961992,
+   "ambiance": "bois"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 13.92639164212651,
+   "virage": 0,
+   "nom": "La rive nord"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 100.52698218610024,
+   "virage": 38.74720354154291
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 43.02436172608115,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 0.40582744574098195,
+   "virage": -0.7750733283844228
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 25.429589207513164,
+   "virage": 0,
+   "nom": "La route du Rivage"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 0.7491899080399903,
+   "virage": 1.4308473261495236
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 23.25814881359885,
+   "virage": 0
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 0.7492246371024678,
+   "virage": -1.4309136537730702
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 53.282921262105894,
+   "virage": 0,
+   "nom": "Le quai des Lilas"
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 49.962460649770065,
+   "virage": -25.27715787479274
+  },
+  {
+   "large": 2,
+   "g": "plan",
+   "d": "plan",
+   "surface": "libre",
+   "long": 37.330549194389164,
+   "virage": 0
+  }
+ ]
+}

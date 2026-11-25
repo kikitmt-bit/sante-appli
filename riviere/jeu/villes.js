@@ -231,7 +231,7 @@ function cheminDeZone(zone, etapes, depart = [0, .5]) {   // depart : [sur la co
 function recalerZone(zone, chemin) {
   const x0 = chemin[0].x, z0 = chemin[0].z, l = Math.hypot(chemin[1].x - x0, chemin[1].z - z0), sn = (chemin[1].x - x0) / l, cs = -(chemin[1].z - z0) / l, C = v => Math.round(v * 1000) / 1000;
   const tourner = q => Object.assign({}, q, {x: C((q.x - x0) * cs + (q.z - z0) * sn), z: C(-(q.x - x0) * sn + (q.z - z0) * cs)}), o = JSON.parse(JSON.stringify(zone));
-  for (const v of o.voies) v.pts = v.pts.map(tourner); for (const p of (o.places || []).concat(o.jardins || [], o.nature || [])) p.pts = p.pts.map(tourner); for (const c of ["jardins", "vues"]) if (o[c]) o[c] = o[c].map(tourner);
+  for (const v of o.voies.concat(o.eaux || [])) v.pts = v.pts.map(tourner); for (const p of (o.places || []).concat(o.jardins || [], o.nature || [])) p.pts = p.pts.map(tourner); for (const c of ["jardins", "vues"]) if (o[c]) o[c] = o[c].map(tourner);
   o.objets = (o.objets || []).map(q => { const L = q.lacet || 0, a = Math.sin(L), b = Math.cos(L); return Object.assign(tourner(q), {lacet: C(Math.atan2(a * cs + b * sn, -a * sn + b * cs))}); });
   return {zone: o, chemin: chemin.map(tourner)};
 }

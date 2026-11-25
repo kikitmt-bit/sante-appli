@@ -453,6 +453,25 @@ class VilleLibre(unittest.TestCase):
         d["zone"]["bateaux"] = [b for b in d["zone"]["bateaux"] if b["raison"] != "travaux"]
         self.assertTrue(any("sans bateau" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
 
+    def test_l_eau_dans_une_ville(self):
+        """(25/11, étape 15, lot 2) Le sol s'arrête net au bord d'un quai, un talus descend jusque dans l'eau, un pont passe bien au-dessus ; on ne roule jamais dans l'eau."""
+        r = self.node(_page.controle("velo-quais") + """
+;(() => { const Z = ZONE, D = Z.D, v = Z.eaux[0], o = {ponts: 0, bas: 99, trou: 0, quai: 99, talus: 0, quais: 0, talusN: 0};
+  for (const w of Z.PORTS) for (const p of w.ponts) { o.ponts++; for (let s = p.a; s <= p.b; s += 1) for (const u of [-w.hp + .1, 0, w.hp - .1]) { const q = Z.enVoie(w, s, u); o.bas = Math.min(o.bas, Z.sol(q.x, q.z) - v.y); if (PLAN.nature(q.x, q.z) === "eau") o.trou++; } }
+  for (let s = 30; s < v.L - 30; s += 5) for (const sg of [-1, 1]) { const c = Z.enEau(v, s), at = e => { const q = Z.enEau(v, s, sg * (c.h + e)); return Z.sol(q.x, q.z) - v.y; }, q = Z.enEau(v, s, sg * (c.h + .2)), W = Z.eauEn(q.x, q.z).q; Z.champs(q.x, q.z); if (D.o < 6) continue; if (W > .99) { o.quais++; o.quai = Math.min(o.quai, at(.2)); } if (W < .01) { o.talusN++; if (at(0) > 0 || at(5) < 0) o.talus++; } }
+  console.log("EAU " + JSON.stringify(o)); })();""", "EAU")
+        self.assertEqual(r["ponts"], 3)
+        self.assertGreater(r["bas"], 1.6, "un tablier trop bas")
+        self.assertEqual(r["trou"], 0, "un trou dans un tablier")
+        self.assertGreater(r["quais"], 100)
+        self.assertGreater(r["quai"], 1.2, "un quai sans mur")
+        self.assertGreater(r["talusN"], 100)
+        self.assertEqual(r["talus"], 0, "un talus qui ne descend pas dans l'eau, ou qui ne remonte pas")
+        d = json.loads((R / "outils" / "zones" / "velo-quais.json").read_text(encoding="utf-8"))
+        for p in d["zone"]["eaux"][0]["pts"]:
+            p["l"] += 16   # la rivière déborde sur le chemin de halage
+        self.assertTrue(any("eau" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+
     def test_une_route_qui_se_retrecit(self):
         """(25/11, ⚑ de Kiki) Deux voies bout à bout n'en font qu'une : la chaussée ne gonfle jamais, elle s'affine de moins de 5 cm par mètre de chaque côté ; le trottoir s'arrête au bout de sa rue."""
         r = self.node(_page.controle("velo-cerisiers") + """

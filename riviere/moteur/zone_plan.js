@@ -33,14 +33,15 @@ function planDeZone() {
   const surPassage = (x, z, plus = 2) => passages.find(p => { const ex = x - p.x, ez = z - p.z; return Math.abs(ex * p.dx + ez * p.dz) < p.l + plus && Math.abs(ez * p.dx - ex * p.dz) < p.w; }) || null;
   function nature(x, z) {   // « chaussee », « passage », « trottoir », « place » (pavés), « allee », « chemin » (de terre), « jardin », « pelouse », « dehors »
     Z.champs(x, z);
+    if (D.w < 0 && D.o > 0) return "eau";   // (étape 15, lot 2)
     if (D.f < 0) return surPassage(x, z) ? "passage" : "chaussee";
     if (Z.velo && D.t < 0) { if (D.y < 0) return "piste"; if (D.b < 0) return "bande"; }
-    if (D.t < 0) return "trottoir"; if (D.p < 0) return "place"; if (D.a < 0) return "allee"; if (D.c < 0) return "chemin";
-    return Math.min(D.t, D.p, D.a, D.c) < 16 ? "jardin" : Z.bord(x, z) > 0 ? "dehors" : "pelouse";
+    if (D.t < 0) return "trottoir"; if (D.y < 0 && Z.eaux.length) return "piste"; if (D.p < 0) return "place"; if (D.a < 0) return "allee"; if (D.c < 0) return "chemin";
+    return Math.min(D.t, D.p, D.a, D.c, D.y) < 16 ? "jardin" : Z.bord(x, z) > 0 ? "dehors" : "pelouse";
   }
   const MARCHE = .12;   // la hauteur d'une bordure
-  const haut = (x, z) => { const h = Z.sol(x, z); Z.champs(x, z); if (D.f >= 0) return h; if (Z.velo) return h - Z.creux(x, z); const k = D.k; return h - MARCHE * (1 - surPlat(k, Z.place(k, x, z).s)); };
-  const distDur = (x, z) => { Z.champs(x, z); return Math.min(D.t, D.p, D.a, D.c); };   // la distance au sol dur le plus proche (négative : dessus)
+  const haut = (x, z) => { const h = Z.sol(x, z); Z.champs(x, z); if (D.w < 0 && D.o > 0) return Z.W.y; if (D.f >= 0) return h; if (Z.velo) return h - Z.creux(x, z); const k = D.k; return h - MARCHE * (1 - surPlat(k, Z.place(k, x, z).s)); };
+  const distDur = (x, z) => { Z.champs(x, z); return Math.min(D.t, D.p, D.a, D.c, Z.eaux.length ? Math.min(D.y, D.w) : 99); };   // la distance au sol dur (ou à l'eau) le plus proche (négative : dessus)
   return {zone: Z, graine: Z.graine, nature, haut, bord: Z.bord, sol: Z.sol, passages, plateaux: plats, surPlat, rampe, RAMPE, MARCHE, surPassage, distDur, objets: [], sols: [], entrees: [], maisons: [], enMarches: (x, z, plus = 0) => { Z.champs(x, z); const k = D.k, m = k >= 0 && V[k].marches; if (!m) return false; const s = Z.place(k, x, z).s; return s > m.a - plus && s < m.b + plus; }};
 }
 
@@ -61,7 +62,7 @@ function remplirZone() {
   const tient = (b, m, libre = .9) => !dansVue(b.x, b.z, 4) && points(b).every(([x, z]) => P.distDur(x, z) >= libre && Z.bord(x, z) <= -3) && !autour(b.x, b.z, q => croise(b, q, m));
   // un point du bord d'une voie : sg = -1 à gauche, 1 à droite ; e mètres derrière le trottoir ; (nx, nz) : vers la rue
   const bord = (v, sg, s, e) => { const q = Z.enVoie(v, s, sg * (v.h + e)), nx = sg * q.tz, nz = -sg * q.tx; return {x: q.x, z: q.z, nx, nz, lacet: Math.atan2(nx, nz)}; };
-  const styleEn = (v, sg, s) => { const b = sg < 0 ? v.g : v.d, def = v.sol === "chaussee" ? (v.t ? "maisons" : "rien") : v.sol === "paves" ? "mur" : v.sol === "terre" ? "rien" : "arbres"; if (!b) return def; if (typeof b === "string") return b; const q = b.find(a => s >= (a.a || 0) && s < (a.b === undefined ? 1e9 : a.b)); return q ? q.style : def; };
+  const styleEn = (v, sg, s) => { const b = sg < 0 ? v.g : v.d, def = v.sol === "chaussee" ? (v.t ? "maisons" : "rien") : v.sol === "paves" ? "mur" : v.sol === "terre" || v.sol === "cyclable" ? "rien" : "arbres"; if (!b) return def; if (typeof b === "string") return b; const q = b.find(a => s >= (a.a || 0) && s < (a.b === undefined ? 1e9 : a.b)); return q ? q.style : def; };
   const noms = ["Boulangerie", "Librairie", "Fleuriste", "Café", "Épicerie", "Coiffeur", "Pharmacie", "Cycles", "Pâtisserie", "Primeur", "Presse", "Cordonnier"]; let kEns = Math.floor(R() * 12);
   const chemin = (x0, z0, x1, z1, w, nature = "trottoir") => P.sols.push({x0, z0, x1, z1, w, nature});
   // 0. les parvis : le trottoir élargi devant chaque file de boutiques (avant tout le reste : il compte dans les distances)
@@ -135,8 +136,9 @@ function remplirZone() {
     if (v.piste) { let m = 0; for (let s = 4; s < v.L - 3; s += 2.9, m++) for (const sg of [-1, 1]) { const e = v.l / 2 + .2 + (v.piste.b - .2) / 2, q = Z.enVoie(v, s, sg * e), dans = d => { const w = Z.enVoie(v, s + d, sg * e); return P.nature(w.x, w.z) === "bande" && Z.ecart(v.k) < v.piste.b + .1; }, L = Math.atan2(-q.tz, q.tx), g = (m + (sg > 0 ? 0 : 2)) % 4; if (!dans(-1.5) || !dans(1.5)) continue;   // (étape 15) la bande : un arbre, un massif long, un réverbère, un massif long…
       if (g === 0) poser("arbre_rue", q.x, q.z, m * 2.4, {esp: v.esp, tige: v.esp === "cerisier" ? 3.5 : undefined, r: .3, couronne: 1.4, ech: .62, dur: true, bordure: true}); else if (g === 2) poser("lampadaire", q.x, q.z, 0, {r: .24, dur: true, bordure: true}); else poser("plate_bande", q.x, q.z, L, {l: 2.5, p: 1, long: 2.5, dur: true, haie: true, ton: m}); } }
     else for (let s = 7; s < v.L - 4; s += 13) { const sg = k++ % 2 ? 1 : -1, eb = Z.velo ? v.t - .4 : .38, q = Z.enVoie(v, s, sg * (v.l / 2 + eb)); Z.champs(q.x, q.z); if (Math.abs(D.f - eb) > .1 || P.passages.some(p => Math.hypot(p.x - q.x, p.z - q.z) < p.l + 2.2) || !degage(q.x, q.z, Z.velo ? 1.8 : 1.04) || Z.velo && (Math.abs(D.t + .4) > .15 || Z.croisements.some(p => Math.hypot(p.x - q.x, p.z - q.z) < 8))) continue; poser("lampadaire", q.x, q.z, 0, {r: .24, dur: true, bordure: true}); }
-    if (v.voitures !== false && v.l >= 6) { const sg = v.k % 2 ? 1 : -1; for (let s = 10; s < v.L - 8; s += 6.4) { if (R() < .5 || P.rampe(v.k, s) > -5.5 || (Z.donnees.vides || []).some(w => w.v === v.id && s > w.s0 - 4 && s < w.s1 + 4)) continue; const q = Z.enVoie(v, s, sg * (v.l / 2 - 1.1)); Z.champs(q.x, q.z); if (D.k !== v.k || Math.abs(D.f + 1.1) > .15) continue; if (Z.velo && (!degage(q.x, q.z, 2.3) || P.passages.some(p => Math.hypot(p.x - q.x, p.z - q.z) < 7))) continue; const dir = sg > 0 ? 1 : -1; poser("voiture", q.x, q.z, Math.atan2(-q.tz * dir, q.tx * dir), {l: 4.6, p: 1.9, boiteX: true, dur: true, incline: true}); } } }
+    if (v.voitures !== false && v.l >= 6) { const sg = v.k % 2 ? 1 : -1; for (let s = 10; s < v.L - 8; s += 6.4) { if (R() < .5 || P.rampe(v.k, s) > -5.5 || v.ponts && Z.surPont(v, s, 9) || (Z.donnees.vides || []).some(w => w.v === v.id && s > w.s0 - 4 && s < w.s1 + 4)) continue; const q = Z.enVoie(v, s, sg * (v.l / 2 - 1.1)); Z.champs(q.x, q.z); if (D.k !== v.k || Math.abs(D.f + 1.1) > .15) continue; if (Z.velo && (!degage(q.x, q.z, 2.3) || P.passages.some(p => Math.hypot(p.x - q.x, p.z - q.z) < 7))) continue; const dir = sg > 0 ? 1 : -1; poser("voiture", q.x, q.z, Math.atan2(-q.tz * dir, q.tx * dir), {l: 4.6, p: 1.9, boiteX: true, dur: true, incline: true}); } } }
   for (const m of P.maisons) { if (m.sp === undefined || m.pr > 8) continue; const q = bord(m.v, m.sg, m.sp + (m.larg + .35) * (R() < .5 ? -1 : 1), .55); if (P.distDur(q.x, q.z) > .3) poser("boite_lettres", q.x, q.z, q.lacet, {r: .3, libre: true}); }
+  if (Z.eaux.length) habillerEaux(poser, R, degage);
   // 6. les jardins et les bois : par essais, jamais sur du dur, ni dans une maison ; plus serrés loin des rues
   const S = new Map(), semer = (x, z, r) => { const k = cle(Math.floor(x / 6), Math.floor(z / 6)); if (!S.has(k)) S.set(k, []); S.get(k).push([x, z, r]); };
   const libreA = (x, z, r) => { const cx = Math.floor(x / 6), cz = Math.floor(z / 6); for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const q of S.get(cle(cx + a, cz + c)) || []) if (Math.hypot(q[0] - x, q[1] - z) < q[2] + r) return false; return true; };
@@ -175,13 +177,40 @@ function remplirZone() {
   // 7. les passants et les Pokémon : près du chemin, jamais dessus
   const gens = (NIVEAU.peuple || []).filter(q => q.o === "habitant").map(q => q.nom), nums = (NIVEAU.peuple || []).filter(q => q.o === "pokemon").map(q => q.num); let kg = 0, dernier = -99;
   for (let i = 12; i < PISTE.N - 6; i++) { if (i - dernier < 26) continue; const a = PISTE.H[i], sg = R() < .5 ? -1 : 1; let saut = 0;
-    for (const sd of [sg, -sg]) { const e = Z.velo ? tire(2.9, 4.8) : tire(2.1, 4.6), x = PISTE.X[i] + Math.cos(a) * e * sd, z = PISTE.Z[i] + Math.sin(a) * e * sd, n = P.nature(x, z); if (!degage(x, z, 1.5) || P.surPassage(x, z, 3) || !libreA(x, z, .9) || boitesPres(x, z, .7)) continue;
+    for (const sd of [sg, -sg]) { const e = Z.velo ? tire(2.9, 4.8) : tire(2.1, 4.6), x = PISTE.X[i] + Math.cos(a) * e * sd, z = PISTE.Z[i] + Math.sin(a) * e * sd, n = P.nature(x, z); if (!degage(x, z, 1.5) || Z.eaux.length && (Z.champs(x, z).w < (n === "jardin" ? 2.4 : 1) || D.w < 9 && D.o < 7) || P.surPassage(x, z, 3) || !libreA(x, z, .9) || boitesPres(x, z, .7)) continue;
       if ((n === "trottoir" || n === "place") && gens.length && (!Z.velo || [[.6, 0], [-.6, 0], [0, .6], [0, -.6]].every(([u, w]) => P.nature(x + u, z + w) === n))) poser("habitant", x, z, 0, {nom: gens[kg++ % gens.length], r: .3, voir: true}); else if (n === "jardin" && nums.length && P.distDur(x, z) > .9) { const a = Z.aireEn(x, z), S = a ? sauvages(a.genre === "pre" ? "verger" : a.genre) : nums; if (!S.length || P.objets.some(q => q.haie && Math.hypot(q.x - x, q.z - z) < 4 && distBoite(boiteObjet(q), x, z) < .6)) continue; poser("pokemon", x, z, 0, {num: S[kg++ % S.length], r: .4, voir: true}); if (a) saut = 20; } else continue;
       semer(x, z, .9); dernier = i + saut + Math.floor(tire(-6, 8)); break; } }
   // ce qui est loin du parcours ne se voit que de loin : les petits objets n'y sont pas, les arbres y sont de simples silhouettes
   P.objets = P.objets.filter(q => { pres(q.x, q.z); const d = Math.hypot(q.x - PISTE.X[Q.i], q.z - PISTE.Z[Q.i]);
     if (["massif", "banc", "poubelle", "terrasse", "boite_lettres", "buisson", "etal"].includes(q.o)) return d < 42; if (NIVEAU.files && d > 92 && ["maison_pente", "immeuble_pente", "magasin_pente"].includes(q.o)) return false; if (q.o === "lampadaire" || q.o === "voiture") return d < 60; if (SOUS_BOIS.includes(q.o)) return d < 16; if (q.haie) return d < 90;
     if (["arbre", "arbre_rue", "bouleau"].includes(q.o) && d > 60) { q.o = "arbre_masse"; q.pres = true; q.ech = (q.ech || 1) * .8; q.dur = false; q.dy = -.5; } return true; });
+}
+
+/* ---- (étape 15, lot 2) ce qui borde l'eau et ce qui flotte : les ponts, le garde-corps et la promenade d'un quai, les roseaux et les saules d'un talus, péniches et barques, Pokémon de rivière ---- */
+function habillerEaux(poser, R, degage) {
+  const P = PLAN, Z = P.zone, D = Z.D, tire = (a, b) => a + (b - a) * R(), bateaux = [], nums = ((NIVEAU.sauvages || {}).eau || {}).nums || [], loinDe = (x, z) => { pres(x, z); return Math.hypot(x - PISTE.X[Q.i], z - PISTE.Z[Q.i]); };
+  const ponts = []; for (const v of Z.PORTS) for (const p of v.ponts) { const e = Z.enVoie(v, (p.a + p.b) / 2), rue = v.t > 0; ponts.push({x: e.x, z: e.z, r: (p.b - p.a) / 2 + v.hp});
+    poser(v.pont === "bois" ? "pont_bois" : "pont_pierre", e.x, e.z, Math.atan2(-e.tz, e.tx), {long: p.b - p.a + .1, large: v.hp * 2, eau0: Z.eaux[p.eau].y, arches: v.arches, bout: v.bout || (rue ? 1.5 : 3), cones: !rue, l: p.b - p.a, p: v.hp * 2, libre: true, ouvert: true, pont: true, voir: true, vu: p.b - p.a}); }
+  for (const v of Z.eaux) for (const sg of [-1, 1]) {
+    const bord = (s, e) => { const q = Z.enEau(v, s); return Object.assign(Z.enEau(v, s, sg * (q.h + e)), {nx: sg * q.tz, nz: -sg * q.tx}); };   // e : au-delà du bord (négatif : sur l'eau) ; (nx, nz) : vers l'eau
+    for (const b of Z.bergesDe(v, sg)) { if (b.style !== "quai") continue; const a0 = b.a || 0, b0 = Math.min(b.b === undefined ? v.L : b.b, v.L);
+      // le garde-corps, d'un pont à l'autre, posé sur la pierre du bord
+      const fer = b.garde !== "muret", ok = s => { const q = bord(s, .28); return Z.champs(q.x, q.z).m < -.1 && Z.champs(q.x, q.z).o > .05; }; if (b.garde !== "rien") for (let s = a0; s < b0;) { if (!ok(s)) { s += .2; continue; } let c = s; while (c + .2 <= b0 && c - s < 2.5 && ok(c + .2)) c += .2; if (c - s < .5) { s = c + .2; continue; }
+        const A = bord(s, .28), B = bord(c, .28), l = Math.hypot(B.x - A.x, B.z - A.z); poser(fer ? "garde_corps" : "parapet_quai", (A.x + B.x) / 2, (A.z + B.z) / 2, Math.atan2(-(B.z - A.z), B.x - A.x), {long: l + .02, l, p: .4, dur: true, haie: true}); s = c; }
+      // la promenade : un arbre, un banc tourné vers l'eau, un arbre, un réverbère…
+      if (b.prom) { let k = 0; const e = b.ea || b.prom * .5 + .2; for (let s = a0 + 10; s < b0 - 8; s += 4.6, k++) { const q = bord(s, e), sable = [-.9, 0, .9].every(w => { const r = bord(s + w, e), n = P.nature(r.x, r.z); return n === "allee"; }); if (!sable || !degage(q.x, q.z, 1.95) || ponts.some(p => Math.hypot(p.x - q.x, p.z - q.z) < p.r + 1.2) || P.objets.some(o => !o.l && o.r && Math.hypot(o.x - q.x, o.z - q.z) < 2.6)) continue;
+        if (k % 2 === 0) { if (b.arbres !== "rien") poser("arbre_rue", q.x, q.z, k * 2.4, {esp: b.arbres || "platane", r: .42, couronne: 1.6, dur: true, bordure: true}); } else if (k % 4 === 1) { const w = bord(s, Math.min(e, 1.75)); poser("banc", w.x, w.z, Math.atan2(q.nx, q.nz), {r: .8, dur: true, voir: true}); } else { const w = bord(s, 1.05); poser("lampadaire", w.x, w.z, 0, {r: .24, dur: true, bordure: true}); } } }
+      // ce qui est amarré : péniches et barques, jamais sous un pont
+      let s = a0 + 16; while (s < b0 - 14 && b.bateaux !== false) { const g = R() < .4, l = g ? tire(17, 21) : 4.2, q = bord(s, g ? -2.75 : -1.3); if (loinDe(q.x, q.z) < 130 && !ponts.some(p => Math.hypot(p.x - q.x, p.z - q.z) < p.r + l / 2 + 4) && [-l / 2, l / 2].every(u => { const w = bord(s + u, g ? -2.75 : -1.3), d = Z.eauEn(w.x, w.z); return d.e < -1 && d.q > .9; })) { poser(g ? "peniche" : "barque", q.x, q.z, Math.atan2(-q.tz * sg, q.tx * sg), {l, p: g ? 4.2 : 1.5, libre: true, flotte: true, voir: g, vu: 15}); bateaux.push(q); if (!g && R() < .5) { const w = bord(s + 5.2, -1.4); if (Z.eauEn(w.x, w.z).q > .9) poser("barque", w.x, w.z, Math.atan2(-w.tz * sg, w.tx * sg) + .06, {l: 4.2, p: 1.5, libre: true, flotte: true}); } }
+        if (R() < .4) { const w = bord(s + l / 2 + 3.5, 0), o = Z.champs(w.x, w.z).o; if (o > 4) poser("echelle_quai", w.x + w.nx * .02, w.z + w.nz * .02, Math.atan2(w.nx, w.nz), {eau0: v.y, r: .4, libre: true, muraille: true}); } s += l + tire(9, 24); } }
+    // un talus : des roseaux par nappes, des nénuphars, un saule ou des cailloux de loin en loin
+    for (let s = 4, der = -99; s < v.L - 4; s += 1.25) { const q = bord(s, 0); if (Z.eauEn(q.x, q.z).q > .02 || loinDe(q.x, q.z) > 62 || ponts.some(p => Math.hypot(p.x - q.x, p.z - q.z) < p.r + 2)) continue; const n = fbm(q.x / 13 + 7, q.z / 13 + sg * 3), u = R(), w = R();
+      if (n > .47 && u < .86) { const e = bord(s + w - .5, -.6 + R() * 1.1); poser("joncs", e.x, e.z, w * 6, {r: .5, ech: .85 + w * .4, libre: true, flotte: true, y0: v.y}); if (u < .6) { const f = bord(s + u, -1.1 - w); poser("joncs", f.x, f.z, u * 9, {r: .5, ech: .8 + w * .4, libre: true, flotte: true, y0: v.y}); } }
+      else if (n < .42 && u < .05) { const e = bord(s, -2.4 - w * 2); poser("nenuphars", e.x, e.z, w * 6, {r: 2, libre: true, flotte: true, n: 7}); }
+      else if (u > .975) { const e = bord(s, .9); if (P.distDur(e.x, e.z) > .7) poser("rocher_mousse", e.x, e.z, w * 6, {r: .6, ech: .7, libre: true}); }
+      if (s - der > 19 && u > .8) { const e = bord(s, 2.6 + w); Z.champs(e.x, e.z); const libre = Math.min(D.t, D.a, D.c, D.f, D.y); if (libre > 1.7 && degage(e.x, e.z, 3)) { poser("arbre_rue", e.x, e.z, w * 6, {esp: "saule", r: .6, couronne: 2.2, ech: .9}); der = s; } } } }
+  // les Pokémon de la rivière : ils vont et viennent le long de l'eau, près du parcours
+  if (nums.length) for (const v of Z.eaux) { let k = 0; for (let s = 20; s < v.L - 30; s += tire(34, 52)) { const c = Z.enEau(v, s), u = tire(-.45, .45) * c.h, A = Z.enEau(v, s, u), B = Z.enEau(v, s + 12, u); if (loinDe(A.x, A.z) > 34 || bateaux.some(q => Math.hypot(q.x - A.x, q.z - A.z) < 9) || ponts.some(p => Math.hypot(p.x - A.x, p.z - A.z) < p.r + 3)) continue; poser("pokemon", A.x, A.z, 0, {num: nums[k++ % nums.length], r: .5, libre: true, flotte: true, voir: true, vu: 18, bouge: {type: "va", x: B.x, z: B.z, vitesse: tire(.7, 1.4)}}); } }
 }
 
 /* ---- le contrôle : le parcours d'un vrai piéton, rien sur le chemin, rien qui se touche, des pentes douces, et jamais plus de 45 m sans qu'il se passe quelque chose ---- */
@@ -194,7 +223,7 @@ function evenementsZone() {
     const n = P.nature(T.X[i], T.Z[i]); if (avant && n !== avant) o.push({i, quoi: n}); avant = n;
     const p1 = (T.Y[b(i)] - T.Y[b(i - 14)]) / 14, p2 = (T.Y[b(i + 14)] - T.Y[b(i)]) / 14; if (Math.abs(p2 - p1) > .035) o.push({i, quoi: "pente"}); }
   for (const n of P.zone.noeuds) { pres(n.x, n.z); if (Math.hypot(n.x - T.X[Q.i], n.z - T.Z[Q.i]) < 12) o.push({i: sLigne(Q.i), quoi: "carrefour"}); }
-  for (const q of P.objets) if (q.voir) { pres(q.x, q.z); if (Math.hypot(q.x - T.X[Q.i], q.z - T.Z[Q.i]) < (q.l ? q.p / 2 + 5 : 6)) o.push({i: sLigne(Q.i), quoi: q.o}); }
+  for (const q of P.objets) if (q.voir) { pres(q.x, q.z); if (Math.hypot(q.x - T.X[Q.i], q.z - T.Z[Q.i]) < (q.vu || (q.l ? q.p / 2 + 5 : 6))) o.push({i: sLigne(Q.i), quoi: q.o}); }
   return o.sort((a, c) => a.i - c.i);
 }
 function videZone() {   // le plus long bout où rien ne se passe : {m, i}
@@ -222,7 +251,8 @@ function parcoursVelo(dire) {
     if (n !== n0) {
       const sans = [n0, n].sort().join("+");
       if (sans === "chaussee+trottoir") { if (!raisonEn(i, 2)) dire("Au mètre " + i + ", on passe de « " + n0 + " » à « " + n + " » sans bateau."); }
-      else if (sans === "chaussee+piste") { if (!P.passages.some(p => p.velo && Math.hypot(p.x - x, p.z - z) < p.l + 5)) dire("Au mètre " + i + ", on entre sur la piste cyclable ailleurs qu'à un carrefour."); }
+      else if (sans === "chemin+piste") { const bouts = []; for (const v of V) if (v.sol === "cyclable" || v.sol === "terre") for (const w of [0, v.n - 1]) if (Math.hypot(v.P[w][0] - x, v.P[w][1] - z) < 4) bouts.push({sol: v.sol, tx: v.TX[w], tz: v.TZ[w]}); const a = bouts.find(q => q.sol === "terre"), c = bouts.find(q => q.sol === "cyclable"); if (!a || !c || Math.abs(a.tx * c.tx + a.tz * c.tz) < .95) dire("Au mètre " + i + ", la piste cyclable et le chemin ne se suivent pas bout à bout."); }
+      else if (sans === "chaussee+piste") { if (raisonEn(i, 2) !== "piste" && !P.passages.some(p => p.velo && Math.hypot(p.x - x, p.z - z) < p.l + 5)) dire("Au mètre " + i + ", on entre sur la piste cyclable ailleurs qu'à un carrefour."); }
       else if (sans === "chaussee+chemin") { const k = rue[i], v = V[k], q = Z.surVoieZ(v, x, z), h = T.H[b(n === "chemin" ? i + 9 : i - 9)], e = Z.enVoie(v, q.s), co = Math.abs(Math.sin(h) * e.tx - Math.cos(h) * e.tz), bout = q.s < 1.5 || q.s > v.L - 1.5; if (bout ? co < .95 : v.t || co > .42) dire("Au mètre " + i + ", la route et le chemin ne se rejoignent ni d'équerre ni bout à bout (" + Math.round(Math.acos(Math.min(1, co)) * 57.3) + "°)."); }
       else if (sans !== "allee+trottoir") dire("Au mètre " + i + ", le sol passe de « " + n0 + " » à « " + n + " »."); }
     if (n === "trottoir") { trot++; if (raisonEn(i, 20) === "travaux") travaux = true; if (trot === (travaux ? 37 : 11)) dire("Au mètre " + i + ", on roule depuis " + trot + " m sur le trottoir."); } else { trot = 0; travaux = false; }
@@ -233,7 +263,7 @@ function parcoursVelo(dire) {
     const u = q.u * Math.sign(co); if (u < .3 || u > v.l / 2 - .5) dire("Au mètre " + i + ", on ne tient pas la droite de « " + (v.nom || v.id) + " » (" + u.toFixed(1) + " m)."); }
 }
 function zoneControle() {
-  const P = PLAN, Z = P.zone, T = PISTE, o = [], VM = Z.velo ? VIDE_VELO : VIDE_MAX; const dire = t => { if (o.length < 30) o.push(t); }; let avant = null;
+  const P = PLAN, Z = P.zone, D = Z.D, T = PISTE, o = [], VM = Z.velo ? VIDE_VELO : VIDE_MAX; const dire = t => { if (o.length < 30) o.push(t); }; let avant = null;
   if (Z.velo) parcoursVelo(dire); else for (let i = 0; i < T.N; i++) {
     const a = T.H[i], n = P.nature(T.X[i], T.Z[i]);
     const de = n === "chemin" ? .35 : .7; for (const u of [-de, 0, de]) { const m = P.nature(T.X[i] + Math.cos(a) * u, T.Z[i] + Math.sin(a) * u); if (!SOLS_A_PIED.includes(m)) dire("Au mètre " + i + ", le coureur marche sur « " + m + " »."); }
@@ -249,6 +279,8 @@ function zoneControle() {
   for (const q of P.objets) { if (!q.dur || q.ouvert) continue; pres(q.x, q.z); if (Math.hypot(q.x - T.X[Q.i], q.z - T.Z[Q.i]) > 16) continue; const b = q.l ? boiteObjet(q) : null;
     for (let k = -14; k <= 14; k++) { const i = idx(sLigne(Q.i) + k), dx = T.X[i] - q.x, dz = T.Z[i] - q.z, d = b ? distBoite(b, T.X[i], T.Z[i]) : Math.hypot(dx, dz) - q.r; if (d < .75) { dire("« " + q.o + " » à " + d.toFixed(2) + " m du chemin, au mètre " + i + "."); break; } } }
   const C = 16, G = new Map(), solides = P.objets.filter(q => q.dur && !q.haie && !q.ouvert && !q.libre && !q.masse);
+  if (Z.eaux.length) { for (let i = 0; i < T.N; i++) if (P.nature(T.X[i], T.Z[i]) === "eau") { dire("Au mètre " + i + ", on roule dans l'eau."); break; }   // (étape 15, lot 2)
+    for (const q of P.objets) { if (q.flotte || q.pont || q.muraille || q.masse) continue; Z.champs(q.x, q.z); if (D.w < -.3 && D.o > 0) dire("« " + q.o + " » est dans l'eau (" + Math.round(q.x) + ", " + Math.round(q.z) + ")."); } }
   for (const q of solides) { const b = q.l && !q.boiteX ? boiteObjet(q) : null; if (b) for (const [x, z] of coinsBoite(b)) if (P.distDur(x, z) < -.3) { dire("« " + q.o + " » déborde sur « " + P.nature(x, z) + " » (" + Math.round(x) + ", " + Math.round(z) + ")."); break; }
     const k = Math.floor(q.x / C) + "," + Math.floor(q.z / C); if (!G.has(k)) G.set(k, []); G.get(k).push(q); }
   for (const q of solides) { const cx = Math.floor(q.x / C), cz = Math.floor(q.z / C); for (let a = -1; a <= 1; a++) for (let c = -1; c <= 1; c++) for (const w of G.get((cx + a) + "," + (cz + c)) || []) { if (w === q || w.x < q.x || w.x === q.x && w.z <= q.z) continue; if (seTouchent(q, w)) dire("« " + q.o + " » et « " + w.o + " » se touchent (" + Math.round(q.x) + ", " + Math.round(q.z) + ")."); } }

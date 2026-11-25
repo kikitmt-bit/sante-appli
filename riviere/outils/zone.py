@@ -16,10 +16,10 @@ sys.path.insert(0, str(RACINE))
 import page  # noqa: E402
 from generer import _node, defauts  # noqa: E402
 
-COULEURS = {"chaussee": "#5E5F63", "passage": "#E8E6DF", "trottoir": "#CDC8BC", "piste": "#C46A50", "bande": "#6FBF50", "place": "#BFB4A3", "allee": "#D9BC88", "chemin": "#8A4A1E", "jardin": "#9BD672", "pelouse": "#86C860", "dehors": "#5FA04C"}
+COULEURS = {"eau": "#4A90C8", "chaussee": "#5E5F63", "passage": "#E8E6DF", "trottoir": "#CDC8BC", "piste": "#C46A50", "bande": "#6FBF50", "place": "#BFB4A3", "allee": "#D9BC88", "chemin": "#8A4A1E", "jardin": "#9BD672", "pelouse": "#86C860", "dehors": "#5FA04C"}
 
 VUE = r"""
-;(() => { const P = PLAN, Z = P.zone, PAS = %s, o = {x0: Z.xa, z0: Z.za, nx: Math.ceil((Z.xb - Z.xa) / PAS), nz: Math.ceil((Z.zb - Z.za) / PAS), pas: PAS, noms: ["chaussee", "passage", "trottoir", "piste", "bande", "place", "allee", "chemin", "jardin", "pelouse", "dehors"], n: "", h: []};
+;(() => { const P = PLAN, Z = P.zone, PAS = %s, o = {x0: Z.xa, z0: Z.za, nx: Math.ceil((Z.xb - Z.xa) / PAS), nz: Math.ceil((Z.zb - Z.za) / PAS), pas: PAS, noms: ["chaussee", "passage", "trottoir", "piste", "bande", "place", "allee", "chemin", "jardin", "pelouse", "dehors", "eau"], n: "", h: []};
   for (let j = 0; j < o.nz; j++) for (let i = 0; i < o.nx; i++) o.n += o.noms.indexOf(P.nature(o.x0 + i * PAS, o.z0 + j * PAS)).toString(36);
   for (let j = 0; j < o.nz; j += 4) for (let i = 0; i < o.nx; i += 4) o.h.push(+Z.sol(o.x0 + i * PAS, o.z0 + j * PAS).toFixed(2));
   o.objets = P.objets.map(q => ({o: q.o, x: q.x, z: q.z, lacet: q.lacet || 0, l: q.l, p: q.p, r: q.r, haie: q.haie, masse: q.masse, axe: q.boiteX}));

@@ -106,6 +106,7 @@ async function changerNageur(num) {   // sur l'eau : le Pokémon choisi, à sa v
 //   {"type": "vol", "rayon": 14, "haut": 9, "vitesse": 5}     il tourne dans le ciel
 //   {"type": "ronde", "long": 10, "vitesse": 1.2}             il va et vient le long de la rive
 //   {"type": "nage", "long": 30, "vitesse": 2}                il va et vient dans l'eau, le long de la piste (cote "c")
+//   {"type": "va", "x": 3, "z": 8, "vitesse": 1}              il va et vient dans l'eau d'une zone, jusqu'à ce point (zone_plan.js)
 //   {"type": "saut", "tous": 5, "haut": 2.2}                  il jaillit de l'eau de temps en temps (un Magicarpe)
 // Il se tourne tout seul dans le sens où il va (les 8 directions des sprites de Donjon Mystère).
 let nageur = null; const PUBLIC = [];
@@ -135,6 +136,7 @@ function bouger(q, t, S) {   // où est-il maintenant, et vers où regarde-t-il
     const L = b.long || 10, u = ((t * v + q.ph * 3) % (2 * L)), d = u < L ? u : 2 * L - u, eau = b.type === "nage", s = q.s0 + d - L / 2;
     const a = eau || q.cote === "c" ? pose(s, q.e) : pose(s, (q.cote === "g" ? -1 : 1) * (at(s).w + q.e));
     x = a.x; z = a.z; y = eau ? a.y - q.h * .4 + Math.sin(t * 3 + q.ph) * .04 : hauteur(a.x, a.z); q.s = sLigne(idx(s));
+  } else if (b.type === "va") { const L = Math.hypot(b.x - x, b.z - z) || 1, u = (t * v + q.ph * 3) % (2 * L), k = (u < L ? u : 2 * L - u) / L; x = lerp(x, b.x, k); z = lerp(z, b.z, k); y += -q.h * .34 + Math.sin(t * 2.4 + q.ph) * .04;
   } else if (b.type === "saut") {
     const T = b.tous || 5, u = ((t + q.ph) % T) / 1.1;
     if (u < 1) { y += Math.sin(u * Math.PI) * (b.haut || 2.2) - q.h * .3; if (!q.dehors) { q.dehors = true; if (Math.abs(ecart(q.s, S.s)) < 120) gerbe(q.s, .8, q.e || 0, at(q.s).y); } }

@@ -74,7 +74,7 @@ const PLAN = (() => {
   const bord = (x, z) => Math.max(xA - MARGE_P - x, x - xB - MARGE_P, zA - MARGE_P - z, z - zB - MARGE_P);   // la distance au plan (négative : dedans)
   return {T, RC, MARGE: MARGE_P, ns, eo, ilots, ilotEn, carrefours, passages, plateaux, allees, arrondir, distAllee, distRect, bordIlot, distEtang, rayonEtang, nature, haut, bord, xA, xB, zA, zB, graine: p.graine || 1, objets: [], entrees, sols: []};
 })();
-const COUL_PLAN = {piste: [.72, .46, .38], trottoir: [.80, .78, .73], passage: [.80, .78, .73], chaussee: [.37, .375, .39], allee: [.83, .71, .52], place: [.74, .70, .64]};
+const COUL_PLAN = {eau: [.32, .55, .72], piste: [.72, .46, .38], trottoir: [.80, .78, .73], passage: [.80, .78, .73], chaussee: [.37, .375, .39], allee: [.83, .71, .52], place: [.74, .70, .64]};
 
 /* ---- ce qui est posé sur le plan : des listes, sans rien dessiner. Chaque objet : {o, x, z, lacet, r (place au sol, rayon), l, p (place en rectangle), dur (arrête le coureur), …réglages}
    Tout est à sa parcelle, donc rien ne se touche par construction ; planControle le vérifie quand même. ---- */
@@ -219,7 +219,7 @@ const distBoite = (b, x, z) => { const dx = x - b.x, dz = z - b.z, u = Math.abs(
 const coinsBoite = b => [[1, 1], [1, -1], [-1, 1], [-1, -1]].map(([u, v]) => [b.x + (u * b.l * b.c + v * b.p * b.s) * .98, b.z + (-u * b.l * b.s + v * b.p * b.c) * .98]);
 function seTouchent(a, b) { const A = a.l ? boiteObjet(a) : null, B = b.l ? boiteObjet(b) : null; if (!A && !B) return Math.hypot(a.x - b.x, a.z - b.z) < (a.r || 0) + (b.r || 0) - .05; if (A && !B) return distBoite(A, b.x, b.z) < (b.r || 0) - .05; if (B && !A) return distBoite(B, a.x, a.z) < (a.r || 0) - .05;
   return coinsBoite(A).concat([[A.x, A.z]]).some(([x, z]) => distBoite(B, x, z) < -.08) || coinsBoite(B).concat([[B.x, B.z]]).some(([x, z]) => distBoite(A, x, z) < -.08); }
-const PETITS_PLAN = ["lampadaire", "voiture", "boite_lettres", "massif", "banc", "poubelle", "terrasse", "etal", "buisson", "longue_vue", "rang_ble", "rang_tournesols", "rang_lavande", "rang_vignes", "bruyere", "ruche"];   // (lot 3) ce qui ne se voit plus à 110 m
+const PETITS_PLAN = ["lampadaire", "voiture", "boite_lettres", "massif", "banc", "poubelle", "terrasse", "etal", "buisson", "longue_vue", "rang_ble", "rang_tournesols", "rang_lavande", "rang_vignes", "bruyere", "ruche", "joncs", "nenuphars", "barque", "echelle_quai"];   // (lot 3) ce qui ne se voit plus à 110 m
 const PETITS_VELO = ["carre_potager", "cabane_jardin", "plate_bande", "massif"];   // (étape 15, lot 1b) les mêmes, en plus, sur un circuit à vélo tiré au sort (NIVEAU.files)
 const SOUS_BOIS = ["fougere", "buisson_bois", "jeune_pousse", "rocher_mousse", "tronc_couche"];   // (étape 14) ce qui ne se voit plus à 55 m
 /* poser tout ça dans le monde (appelé par decor.js, comme le reste du décor) : par carrés de 64 m, clés « p… » (« f… » : la forêt) */
