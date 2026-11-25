@@ -16,10 +16,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent
-MOTEUR = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "plan_dessin", "zone_dessin", "tunnel", "decor", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
+MOTEUR = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "plan_dessin", "zone_dessin", "tunnel", "decor", "faune", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
-JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "villes", "nature", "velo_villes", "quais", "iles", "lacs", "generateur", "editeur", "signaler", "banc"]
-PURS = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
+JEU = ["allure", "records", "effort", "rencontres", "faune", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "villes", "nature", "velo_villes", "quais", "iles", "lacs", "generateur", "editeur", "signaler", "banc"]
+PURS = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "forme", "decor", "faune"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
 try:  # les tailles officielles des Pokémon (m), pour les afficher à leur échelle
@@ -170,7 +170,7 @@ def cycliste_sprite(nom="cycliste"):
 
 def donnees_js(donnees, niveaux, biomes, lieux, lot, servi, sprites=True):
     return (f"const D = {_js(donnees or {})}, NIVEAUX = {_js(niveaux)}, BIOMES = {_js(biomes)}, LIEUX_TOUS = {_js(lieux)}, LOT = {_js(lot)}, "
-            f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})}, NAGEURS = {_js(nageurs())}, TROTTEURS = {_js(trotteurs())}, "
+            f"NIVEAU_SERVI = {_js(servi)}, TAILLES_PKM = {_js({str(k): v for k, v in TAILLES.items()})}, NAGEURS = {_js(nageurs())}, TROTTEURS = {_js(trotteurs())}, FAUNE = {_js(_lis('faune.json'))}, "
             f"CYCLISTE_SPRITE = {_js(cycliste_sprite() if sprites else None)}, CYCLISTE_SEUL = {_js(cycliste_sprite('cycliste_seul') if sprites else None)};")
 
 

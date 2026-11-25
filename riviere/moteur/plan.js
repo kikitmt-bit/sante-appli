@@ -226,6 +226,7 @@ const SOUS_BOIS = ["fougere", "buisson_bois", "jeune_pousse", "rocher_mousse", "
 function* poserPlan(formes, MD, K, poses) {
   remplirPlan(); const R = hasard(PLAN.graine * 331 + 7); let n = 0;
   for (const q of PLAN.objets) {
+    if (q.o === "pokemon" && PLAN.zone) continue;   // (25/11) les Pokémon d'une zone : la faune (faune.js), à la fin ; ceux-ci gardent seulement leur place (le hasard du reste n'en bouge pas)
     const recette = OBJETS[q.o]; if (!recette) { console.warn("Objet inconnu : " + q.o); continue; }
     const sorte = NIVEAU.sorte, CA = q.masse || q.haie && !sorte ? 120 : 64, k = (q.masse ? "f" : sorte && q.bois ? "b" : sorte && SOUS_BOIS.includes(q.o) ? "s" : q.haie ? "n" : sorte && (PETITS_PLAN.includes(q.o) || NIVEAU.files && PETITS_VELO.includes(q.o)) ? "q" : sorte && q.o === "immeuble_pente" ? "i" : "p") + Math.floor(q.x / CA) + "," + Math.floor(q.z / CA); if (!formes.has(k)) formes.set(k, new Forme());
     pres(q.x, q.z); const s = sLigne(Q.i), cote = Q.d > 0 ? "d" : "g", e = Q.e;
@@ -236,4 +237,5 @@ function* poserPlan(formes, MD, K, poses) {
     if (q.masse) MD.masse++; else poses.push({nom: q.o, s, cote, e, plan: true, v: null});
     if (++n % 60 === 0) yield;
   }
+  if (PLAN.zone && typeof poserFaune === "function") { yield; poserFaune(MD); }
 }

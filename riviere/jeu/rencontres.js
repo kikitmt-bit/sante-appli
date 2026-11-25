@@ -22,8 +22,8 @@ function construireRencontres() {
   // la planche de Ronflex debout (il marche jusqu'à la rive) et celle où il saute de joie
   Promise.all([planche("0143/Walk"), planche("0143/Hop")]).then(([w, h]) => {
     for (const r of RENC.liste) {
-      if (w) { r.debout = new Pantin(w, 0, 1, clamp(1.5 * Math.pow(w.m || 2.1, .7), .55, 8)); r.debout.m.visible = false; }
-      if (h) { r.joie = new Pantin(h, 0, 1, clamp(1.5 * Math.pow(h.m || 2.1, .7), .55, 8)); r.joie.m.visible = false; }
+      if (w) { r.debout = new Pantin(w, 0, 1, w.m || 2.1); r.debout.m.visible = false; }
+      if (h) { r.joie = new Pantin(h, 0, 1, h.m || 2.1); r.joie.m.visible = false; }
     }
   });
 }

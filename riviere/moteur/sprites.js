@@ -109,14 +109,15 @@ async function changerNageur(num) {   // sur l'eau : le Pokémon choisi, à sa v
 //   {"type": "va", "x": 3, "z": 8, "vitesse": 1}              il va et vient dans l'eau d'une zone, jusqu'à ce point (zone_plan.js)
 //   {"type": "saut", "tous": 5, "haut": 2.2}                  il jaillit de l'eau de temps en temps (un Magicarpe)
 // Il se tourne tout seul dans le sens où il va (les 8 directions des sprites de Donjon Mystère).
+const taillePkm = p => p.m ? clamp(p.m, .2, 8) : 0;
 let nageur = null; const PUBLIC = [];
 async function ajouterPublic(sprites) {   // les Pokémon et les habitants d'une liste (le monde entier, ou un tronçon : troncons.js) ; rend ceux qui sont arrivés
   const faits = [];
-  // la taille des Pokémon suit leur vraie taille, adoucie (un Rattata de 30 cm reste visible, un Lokhlass de 2,5 m est énorme) ; un habitant fait 1,5 m
+  // (25/11, Kiki : « affichés à leur bonne taille ») la vraie taille du Pokédex, sans rien grossir ; un habitant fait 1,5 m
   await Promise.all(sprites.map(o => planche(o.cle)));
   for (const o of sprites) {
     const p = await planche(o.cle); if (!p) continue;
-    const q = new Pantin(p, 0, o.taille, o.cle[0] === "h" ? 1.5 : p.m ? clamp(1.5 * Math.pow(p.m, .7), .55, 8) : 0);
+    const q = new Pantin(p, 0, o.taille, o.cle[0] === "h" ? 1.5 : taillePkm(p));
     q.vole = o.vole; q.fixe = o.cle[0] === "h"; q.m.position.set(o.x, o.y, o.z); pres(o.x, o.z); q.s = sLigne(Q.i); q.v = o.v || null; q.y0 = o.y; q.x0 = o.x; q.z0 = o.z; q.ph = Math.random() * 9;
     if (o.bouge) { q.bouge = Object.assign({}, o.bouge); q.s0 = o.s; q.cote = o.cote; q.e = o.e; q.px = o.x; q.pz = o.z; }
     PUBLIC.push(q); faits.push(q);
@@ -152,11 +153,8 @@ function animerPublic(t, S, dt) {
   for (const q of PUBLIC) {
     q.image(q.pl.image(t + q.ph));
     if (q.bouge) bouger(q, t, S);
-    else { const d = Math.abs(ecart(q.s, S.s)); q.m.position.y = q.y0 + (q.vole ? Math.sin(t * 2.2 + q.ph) * .35 : d < 22 && S.v > .8 ? Math.abs(Math.sin(t * 8 + q.ph)) * .4 : 0); }
+    else { const d = Math.abs(ecart(q.s, S.s)); q.m.position.y = q.y0 + (q.vole ? Math.sin(t * 2.2 + q.ph) * .35 : d < 14 && S.v > .8 && !q.fixe ? Math.max(0, Math.sin(t * 7 + q.ph)) * Math.min(.3, q.h * .3) : 0); }
     q.regarder();
-    // de loin, un Pokémon rapetisse moins vite que le décor : on le reconnaît avant d'être à côté
-    const loin = Math.hypot(camera.position.x - q.m.position.x, camera.position.z - q.m.position.z), k = q.fixe || loin < 12 ? 1 : Math.min(2.2, Math.pow(loin / 12, .5));
-    q.m.scale.set(q.l * k, q.h * k, 1);
   }
 }
 

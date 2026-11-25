@@ -718,6 +718,35 @@ Trois circuits par jour, indépendants : `rameur`, `velo`, `elliptique` (`data/r
 revient aussi souvent que les autres et jamais deux jours de suite. Le circuit garde son nom (« Le lac du Moulin ») ; au menu : ☀️, « du jour », le classement de sa machine. GitHub écrit celui du jour et du lendemain, et ne refait jamais un jour déjà écrit (un générateur qui change ne change pas le circuit en cours).
 Essayer : `circuit_du_jour.py --jour 2026-11-26 --sortie riviere/outils/jour-essai.json`, puis le serveur d'essai avec `?jour=1`.
 
+### La faune (25/11, Kiki : « des Pokémon à leur bonne taille, dans leur bon biome, un peu moins nombreux, un peu plus rares », « pas juste leur sprite qui rebondit »)
+
+Sur un circuit tiré d'une zone (tous les générateurs, le circuit du jour, `rame-ile`, `velo-quais`, `ville-bois`), les Pokémon ne sont plus semés par le décor :
+`moteur/plan.js` ne pose plus les objets `pokemon` d'une zone (ils restent dans le plan, pour que le hasard du reste ne bouge pas ; leurs places comptent
+toujours dans la règle « jamais plus de 45 m sans rien » : sans elles, quatre circuits et un tirage de ville sur deux étaient refusés) ; à la fin, `poserFaune` (`moteur/faune.js`, pur : il se contrôle sans navigateur) découpe le tour en
+**rencontres** (`rythme` de `contenu/faune.json` : une tous les 165 m au rameur, 205 m à vélo, 100 m à pied, soit ~une par minute) et tire pour chacune une
+**scène** qui va avec l'endroit (`milieuEn` : rue, place, quai, parc, jardin, herbe, berge, riviere, lac, et les aires : foret, pre, champ, verger, potagers,
+lande, clairiere), sur un objet (`sur` : banc, barque, péniche, ponton, meule, clôture, rocher ; `FAUNE_SIEGES`), à côté d'un objet (`pres` : terrasse,
+poubelle, habitant, parasol, mare, massif…) ou dans un milieu (`dans`, `bande` : la distance au bord du parcours). Une scène n'est gardée que si on la voit
+en arrivant (16 m puis 8 m avant : ni maison, ni mur, ni haie, ni talus, ni roseaux, ni tronc entre les deux ; jamais sous un pont) et si elle est assez
+grande à l'écran (`assez`). Une espèce, une scène : deux fois au plus par tour, et bien moins de chances la deuxième fois. Une scène « de jour » laisse la
+place la nuit à une scène de nuit (Nosferapti, Mystherbe, Fantominus, Mélofée qui dansent). **Même circuit, même jour : mêmes rencontres ; le lendemain,
+d'autres** (`?faune=3` : le tirage d'un autre jour ; `?fige=1` : toujours le même). Les ouvriers d'une rue barrée (Machoc) restent.
+
+**Leur vraie taille, sans rien grossir** : la hauteur de l'image au repos (`Idle`) = la taille du Pokédex (`part` pour un serpent), et chaque animation
+garde la même échelle, calée sur ses pieds. Plus de Pokémon grossi de loin, nulle part (`sprites.js`, `rencontres.js`). Une ombre ronde sous ceux qui sont au sol.
+
+**Ce qu'ils font** (`jeu/faune.js`, `JEUX`) : `regarde` (au repos, un geste à lui de temps en temps, `tics` ; il se tourne et saute de joie quand tu passes),
+`dort`, `flane` (il va d'un point permis à l'autre, mange, s'assoit), `envol` (une volée qui picore et s'envole devant toi), `fuite` (Rattata détale vers l'abri),
+`court` (Caninos, Tauros, Ponyta, Doduo courent à ta hauteur jusqu'au bout de leur terrain, puis te regardent partir), `nage`, `plonge` (il plonge juste
+avant toi et ressort plus loin), `saute` (Magicarpe, Poissirène jaillissent de l'eau, avec gerbes), `arrose` (Carapuce tire un jet), `taupe` (Taupiqueur sort
+de terre et rentre quand tu arrives), `teleporte` (Abra dort, et disparaît), `danse` (Mélofée en rond, la nuit), `guette` (Pikachu passe la tête derrière un
+tronc), `plane` (papillons, oiseaux, Nosferapti ; Dracaufeu très haut, très rare), `hante` (Fantominus, Magnéti la nuit), `travaille`. Leurs images (toutes les
+animations de Donjon Mystère) arrivent quand on approche (240 m), jamais au départ ; une scène se remet en place quand on est loin : au tour suivant, elle recommence.
+
+Ajouter une scène : une ligne dans `contenu/faune.json` (qui, jeu, dans / sur / pres, bande, n, poids 6 courant… 0,2 très rare, moment). Ajouter une façon
+d'être : une fonction dans `JEUX`. Voir sans jouer : `__faune()` (la liste des rencontres du tour). Les autres circuits (Vichy, ceux dessinés dans l'éditeur)
+gardent leurs Pokémon d'avant, à leur vraie taille, avec un petit saut quand on passe.
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal
