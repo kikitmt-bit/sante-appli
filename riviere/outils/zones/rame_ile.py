@@ -112,10 +112,11 @@ pontA = voie("pontA", "Le Pont des Tanneurs", [pt(sur("canal", 1, 62, 74), 3.6),
 pontM = voie("pontM", "Le Pont du Moulin", [pt((-322, 16)), pt(sur("vieux", 2, 76, 34), 3.6, 14), pt(sur("vieux", 2, 76, 0), 5.6), pt(sur("vieux", 2, 76, -34), 3.7), pt(sur("vieux", 2, 76, -90), 3.4)], l=5, t=1.6, voitures=False, arches=1)
 pontP = voie("pontP", "Le Pont de Fer", [pt(sur("canal", 6, 26, 80), 3.8), pt(sur("canal", 6, 26, 0), 5.5), pt(sur("canal", 6, 26, -44), 3.5, 20), pt((116, 20.3))], l=5, t=1.8, voitures=False, pont="fer", arches=1)
 pontE = voie("pontE", "Le Pont des Platanes", [pt(sur("canal", 8, 30, 80), 3.8), pt(sur("canal", 8, 30, 0), 5.5), pt(sur("canal", 8, 30, -40), 3.4, 14), pt((342, 30))], l=5, t=1.6, voitures=False, arches=1)
-passer = voie("passer", "La passerelle", [pt((34, 16.5)), pt(sur("vieux", 7, 52, 36), 3.0, 14), pt(sur("vieux", 7, 52, 0), 5.5), pt(sur("vieux", 7, 52, -14), 4.3), pt(sur("vieux", 7, 52, -60), 4.2)], sol="terre", l=2.4, pont="bois", arches=1)
+passer = voie("passer", "La passerelle", [pt((34, 16.5)), pt(sur("vieux", 7, 52, 36), 3.0, 14), pt(sur("vieux", 7, 52, 0), 5.5), pt(sur("vieux", 7, 52, -34), 3.5), pt(sur("vieux", 7, 52, -60), 3.6)], sol="terre", l=2.4, pont="bois", arches=1)
 rueS = voie("rueS", "La rue du Canal", [pt(sur("canal", 1, 62, 30)), pt(coin("canal", 2, 30)), pt(coin("canal", 3, 30), 3.5), pt(coin("canal", 4, 30), 3.5), pt(coin("canal", 5, 30), 3.5), pt(coin("canal", 6, 30)), pt(sur("canal", 6, 26, 30))], l=5.2, t=2, voitures=False)
 fleurs = voie("fleurs", "Le quai aux Fleurs", [pt(sur("canal", 2, .34, -17.5), 3.2), pt(coin("canal", 3, -17.5), 3.15), pt(sur("canal", 3, .3, -17.5), 3.2)], l=4.4, t=2, voitures=False)
-halage = voie("halage", "Le chemin de halage", [pt(sur(V, 3, .15, -12.5), 3.0), pt(sur(V, 3, .9, -12.5), 2.9, 40), pt(sur(V, 5, .1, -15), 2.9, 40), pt((-60, -136), 2.9, 60), pt(sur(V, 7, .5, -14), 3.1, 50), pt(sur(V, 8, .1, -12), 2.95, 50), pt(sur(V, 8, .88, -12), 2.95, 50), pt(sur(V, 9, .2, -13.5), 2.9, 50), pt(sur(V, 10, .2, -13.5), 2.9, 50), pt(sur(V, 11, .6, -15), 2.9)], sol="terre", l=2)
+halage = voie("halage", "Le chemin de halage", [pt(sur(V, 3, .15, -12.5), 3.0), pt(sur(V, 3, .9, -12.5), 2.9, 40), pt(sur(V, 5, .1, -15), 2.9, 40), pt((-60, -136), 2.9, 50), pt(sur(V, 7, 14, -30), 3.2, 24), pt(sur(V, 7, 52, -40))], sol="terre", l=2)
+halage2 = voie("halage2", "Le chemin de halage", [pt(sur(V, 7, 52, -40)), pt(sur(V, 8, 22, -27), 3.2, 16), pt(sur(V, 8, .55, -13), 2.95, 30), pt(sur(V, 8, .88, -12), 2.95, 50), pt(sur(V, 9, .2, -13.5), 2.9, 50), pt(sur(V, 10, .2, -13.5), 2.9, 50), pt(sur(V, 11, .6, -15), 2.9)], sol="terre", l=2)
 coteau = voie("coteau", "Le chemin des vignes", [pt(sur("vieux", 8, .02, -64), 8.5), pt(sur("vieux", 8, .5, -68), 10.5, 60), pt(sur("vieux", 8, .98, -62), 9)], sol="terre", l=2.6)
 # ce qui borde les rues
 fleurs["g"], fleurs["d"] = [{"a": 0, "b": sv(fleurs, sur(C, 2, .7, -17.5)), "style": "boutiques"}, {"a": sv(fleurs, sur(C, 3, .14, -17.5)), "b": 999, "style": "boutiques"}, {"style": "haie"}], "rien"
@@ -162,7 +163,7 @@ nature = [
     {"genre": "foret", "nom": "Le petit bois", "esp": "hetre", "pts": poly(sur(V, 3, .86, -5), sur(V, 4, .3, -5), sur(V, 5, .4, -5), sur(V, 5, .2, -54), sur(V, 3, .86, -54))},
     {"genre": "potagers", "nom": "Les potagers", "cote": 0, "pts": poly(sur(V, 3, .16, 8.6), sur(V, 3, .76, 8.6), sur(V, 3, .76, 42), sur(V, 3, .2, 42))},
     {"genre": "pre", "nom": "Le pré du halage", "pts": poly(sur(V, 3, .1, -15), sur(V, 3, .95, -15), sur(V, 3, .95, -74), sur(V, 3, .1, -74))},
-    {"genre": "champ", "culture": "vignes", "nom": "Les vignes", "cote": 0, "pts": poly(sur(V, 8, .06, -14.5), sur(V, 8, .94, -14.5), sur(V, 8, .94, -60), sur(V, 8, .06, -60))},
+    {"genre": "champ", "culture": "vignes", "nom": "Les vignes", "cote": 0, "pts": poly(sur(V, 8, .34, -16), sur(V, 8, .94, -14.5), sur(V, 8, .94, -60), sur(V, 8, .1, -60), sur(V, 8, .1, -40))},
     {"genre": "verger", "nom": "Le verger", "esp": "pommier", "cote": 0, "pts": poly(sur(V, 8, .1, 9), sur(V, 8, .92, 9), sur(V, 8, .92, 44), sur(V, 8, .1, 44))},
     {"genre": "pre", "nom": "La prairie humide", "pts": poly(sur(V, 9, .1, -16), sur(V, 10, .1, -16), sur(V, 10, .1, -74), sur(V, 9, .1, -74))},
     {"genre": "pre", "nom": "La pointe", "pts": poly(sur(V, 9, .2, 12), sur(V, 10, .3, 12), (290, -40), (200, -50))},

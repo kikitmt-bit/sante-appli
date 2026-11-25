@@ -38,7 +38,7 @@ Object.assign(OBJETS, {
     F.cyl(0, .77, 0, .03, .03, h - .77, 5, BLANC, BLANC);
     for (let k = 0; k < 8; k++) { const a0 = k / 8 * Math.PI * 2, a1 = (k + 1) / 8 * Math.PI * 2, r = 1.25, y = h - .35;
       F.tri([0, h + .05, 0], [Math.cos(a0) * r, y, Math.sin(a0) * r], [Math.cos(a1) * r, y, Math.sin(a1) * r], toile[k % 2], [0, 1, 0]);
-      F.tri([0, h + .05, 0], [Math.cos(a1) * r, y, Math.sin(a1) * r], [Math.cos(a0) * r, y, Math.sin(a0) * r], fonce(toile[k % 2], .8), [0, -1, 0]); } },
+      F.tri([0, h + .02, 0], [Math.cos(a1) * r, y - .03, Math.sin(a1) * r], [Math.cos(a0) * r, y - .03, Math.sin(a0) * r], fonce(toile[k % 2], .8), [0, -1, 0]); } },
   kiosque(F, o, R, K) {   // le kiosque à musique du parc : un socle de pierre, huit colonnes blanches, un toit vert en pointe
     const r = 3.4, n = 8, vert = hex("#3F8C6A"), pi = PAL.pierre;
     F.cyl(0, -.3, 0, r + .3, r + .3, .9, 16, pi[1], pi[2], pi[1]); F.boite(0, -.3, r + .55, 1.6, .6, .7, pi[2]);

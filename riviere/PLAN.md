@@ -73,7 +73,8 @@ construire la zone par tronçons (`moteur/troncons.js` ne sait pas le faire pour
 
 ### Étape 15, lot 3 : le rameur (le brief, plan accepté par Kiki le 25/11 ; 3a fait le 25/11, voir juste dessous)
 
-**3a, fait le 25/11 (pas encore vu par Kiki, pas essayé sur la tablette)** : « Le tour de l'île », 1 910 m, ~9 min : le canal des Tanneurs (maisons à pans de bois les pieds dans l'eau, linge tendu), le quai aux Fleurs, les jardins, le passage sous les maisons, le port et
+**Avis de Kiki sur la tablette (25/11 : « globalement, c'est très bien, c'est une belle diversité, beaucoup plus vivant »)** ; ses retours faits le jour même : l'escalier qui ne menait nulle part, l'herbe en pente et le personnage enfoncé au pied du pont, les surfaces qui se chevauchaient sur les façades et sous les balcons (détecteur `outils/chevauchements.py`), les jointures des cinq ponts.
+**3a, fait le 25/11** : « Le tour de l'île », 1 910 m, ~9 min : le canal des Tanneurs (maisons à pans de bois les pieds dans l'eau, linge tendu), le quai aux Fleurs, les jardins, le passage sous les maisons, le port et
 ses péniches, la place du Marché, l'allée des Cerisiers, l'écluse et la base nautique, la pointe et ses saules (première jonction), les roseaux et les cabanes de pêcheurs, les vignes, la passerelle et la guinguette, l'étang, le petit bois, les potagers, le Pont du Moulin,
 le barrage et le moulin (seconde jonction). Les 5 points du moteur sont faits (MOTEUR.md, « Ramer dans une zone ») ; la jonction, éprouvée en premier, est sans couture. Aucun circuit retiré : la page est passée de 2 452 à 2 417 Ko (les lignes de commentaire n'y sont plus).
 **Pour 3b** : reprendre `rame_ile.py` (une eau principale, un bras d'équerre aux deux bouts, les bouts de berge) ; `zone_rame.js` est à ajouter à `SOURCE_PLAN` (page.py) pour que le générateur contrôle ses tirages ; le plus long à préparer est le sol (6 s).

@@ -30,9 +30,11 @@ function bordsRame(poser, prendre, boite, R, outils) {
         for (let s = a; s < f - 4.5;) {
           const l = Math.min(tire(5.6, 8.1), f - s), A = bord(s, -.02), B = bord(s + l, -.02), M = bord(s + l / 2, 0);
           if (!vrai(s) || !vrai(s + l) || [A, B, M].some(q => surPont(q.x, q.z, 1.6)) || sousCouvert(M.x, M.z, l / 2 + 1)) { trou(1); s += 1; continue; }
-          if (depuis > 3 + Math.floor(R() * 3) && f - s > 14) { trou(1);   // une trouée entre deux maisons : un escalier qui descend à l'eau, quelqu'un en haut
-            const m = bord(s + 2.2, .02), c = bord(s + 1.1 + R() * 2, 1.5); poser("escalier_eau", m.x, m.z, Math.atan2(m.nx, m.nz), {eau0: v.y, r: 1.6, libre: true, muraille: true, dur: true, voir: true});
-            if (R() < .6) { if (R() < .5) poser("habitant", c.x, c.z, 0, {nom: choix(["woman_1", "lass", "gentleman"]), r: .3, libre: true, voir: true}); else poser("pokemon", c.x, c.z, 0, {num: choix([52, 37, 39]), r: .3, libre: true, voir: true}); }
+          if (depuis > 3 + Math.floor(R() * 3) && f - s > 14 && [.3, 2.2, 4.1].every(d => [.6, 3, 6].every(e => { const q = bord(s + d, e); return Math.abs(Z.sol(q.x, q.z) - v.y - (Z.donnees.quai || 1.15)) < .06; }))) { trou(1);   // une trouée entre deux maisons : un escalier qui descend à l'eau, un passage pavé jusqu'à la rue, sinon jusqu'à la porte d'une cour
+            const m = bord(s + 2.2, .02), L0 = Math.atan2(m.nx, m.nz), a0 = bord(s + 2.2, .58); poser("escalier_eau", m.x, m.z, L0, {eau0: v.y, r: 1.6, libre: true, muraille: true, dur: true, voir: true});
+            let e1 = 4; while (e1 < 34) { const q = bord(s + 2.2, e1); if (durSec(q.x, q.z) < .1 || occupe(q.x, q.z, 1.6)) break; e1 += .25; } const q1 = bord(s + 2.2, e1), rue = e1 < 34 && durSec(q1.x, q1.z) < .1, q2 = bord(s + 2.2, rue ? e1 + .1 : 7.2);
+            outils.chemin(a0.x, a0.z, q2.x, q2.z, 2.6, "trottoir"); if (!rue) poser("mur_ruelle", bord(s + 2.2, 7.4).x, bord(s + 2.2, 7.4).z, L0, {long: 4.7, l: 4.7, p: .4, h: 2.05, ton: k % 4, porte: true, lampe: true, lierre: R() < .5, dur: true, haie: true});
+            const c = bord(s + 1.4 + R() * 1.6, 2.2 + R()); if (R() < .75) { if (R() < .5) poser("habitant", c.x, c.z, 0, {nom: choix(["woman_1", "lass", "gentleman"]), r: .3, libre: true, voir: true}); else poser("pokemon", c.x, c.z, 0, {num: choix([52, 37, 39]), r: .3, libre: true, voir: true}); }
             s += 4.4; depuis = 0; continue; }
           const ch = Math.hypot(B.x - A.x, B.z - A.z), L = Math.atan2(M.nx, M.nz), mx = (A.x + B.x) / 2, mz = (A.z + B.z) / 2; let mis = null;
           for (const p of [8, 7, 6, 5]) { const x = mx - M.nx * p / 2, z = mz - M.nz * p / 2, q = boite(x, z, L, ch, p);
@@ -45,30 +47,39 @@ function bordsRame(poser, prendre, boite, R, outils) {
         for (let s = a; s < f - 9; k++) {
           const w = Math.min(tire(11.5, 14.5), f - s), m = s + w / 2, M = bord(m, 0), L = Math.atan2(M.nx, M.nz);
           if (!vrai(s) || !vrai(s + w) || surPont(M.x, M.z, w / 2 + 1.5)) { s += 2; continue; }
-          for (const rec of [13, 15.5, 18]) { const q = bord(m, rec + 3.2), bo = boite(q.x, q.z, L, 8.4, 6.4); if (!outils.tient(bo, 1.2)) continue; prendre(bo); poser("maison_pente", q.x, q.z, L, {varie: true, l: tire(7.6, 8.6), p: 6.2, dur: true, dos: true}); break; }
+          let mais = 0; for (const rec of [13, 15.5, 18]) { const q = bord(m, rec + 3.2), bo = boite(q.x, q.z, L, 8.4, 6.4); if (!outils.tient(bo, 1.2)) continue; prendre(bo); poser("maison_pente", q.x, q.z, L, {varie: true, l: tire(7.6, 8.6), p: 6.2, dur: true, dos: true}); mais = rec; break; }
           for (let u = s + .2; u < s + w - 1; u += 2.5) { const c = Math.min(u + 2.5, s + w - .1), A = bord(u, .3), B = bord(c, .3), l = Math.hypot(B.x - A.x, B.z - A.z), x = (A.x + B.x) / 2, z = (A.z + B.z) / 2, N = bord((u + c) / 2, 0), La = Math.atan2(N.nx, N.nz);
-            if (l < .6 || k % 3 === 1 && Math.abs((u + c) / 2 - m) < 1.6) continue; poser("parapet_quai", x, z, La, {long: l + .02, l, p: .4, dur: true, haie: true}); if (R() < .6) poser("jardin_eau", x, z, La, {long: l, r: .5, libre: true, muraille: true}); }
-          if (k % 3 === 1) { const e = bord(m, .02); poser("escalier_eau", e.x, e.z, L, {eau0: v.y, r: 1.6, libre: true, muraille: true, voir: true}); }
+            if (l < .6 || k % 3 === 1 && c > m - 2.6 && u < m + 2.6) continue; poser("parapet_quai", x, z, La, {long: l + .02, l, p: .4, dur: true, haie: true}); if (R() < .6) poser("jardin_eau", x, z, La, {long: l, r: .5, libre: true, muraille: true}); }
+          if (k % 3 === 1) { const e = bord(m, .02), a0 = bord(m, .6), a1 = bord(m, mais || 6); poser("escalier_eau", e.x, e.z, L, {eau0: v.y, r: 1.6, libre: true, muraille: true, voir: true}); outils.chemin(a0.x, a0.z, a1.x, a1.z, 1.5, "trottoir"); for (const d of [-1, 1]) { const w0 = bord(m + d * 2.2, .3), w1 = bord(m + d * 2.75, .3); if (d * 2.75 + m > s && d * 2.75 + m < s + w) poser("parapet_quai", (w0.x + w1.x) / 2, (w0.z + w1.z) / 2, L, {long: .57, l: .57, p: .4, dur: true, haie: true}); } }
           else if (k % 3 === 0) { const e = bord(m + tire(-2, 2), -1.15); poser(R() < .5 ? "barque" : "canoe", e.x, e.z, Math.atan2(-M.tz * sg, M.tx * sg), {l: 4.2, p: 1.5, libre: true, flotte: true, voir: true}); }
           else { const e = bord(m, 1.7); poser("banc", e.x, e.z, L, {r: .8, voir: true}); }
           { const A = bord(s, 1.2), B = bord(s, 8.5), l = Math.hypot(B.x - A.x, B.z - A.z), x = (A.x + B.x) / 2, z = (A.z + B.z) / 2; if (!occupe(x, z, 1) && durSec(x, z) > 1) poser("haie", x, z, Math.atan2(-(B.z - A.z), B.x - A.x), {long: l, l, p: .75, h: 1.2, dur: true, haie: true, incline: true}); }
-          for (const [u, e, o] of [[tire(1.8, 3.2), tire(3.5, 6), "arbre"], [w - tire(1.8, 3.4), tire(3, 8), "arbre"], [w * .5 + tire(-2, 2), tire(3, 5), "massif"], [tire(3, w - 3), tire(5, 8), R() < .4 ? "table_bois" : "massif"]]) { const q = bord(s + u, e); if (occupe(q.x, q.z, 2) || durSec(q.x, q.z) < 2) continue;
+          for (const [u, e, o] of [[tire(1.8, 3.2), tire(3.5, 6), "arbre"], [w - tire(1.8, 3.4), tire(3, 8), "arbre"], [w * .5 + tire(-2, 2), tire(3, 5), "massif"], [tire(3, w - 3), tire(5, 8), R() < .4 ? "table_bois" : "massif"]]) { const q = bord(s + u, e); if (occupe(q.x, q.z, 2) || durSec(q.x, q.z) < 2 || k % 3 === 1 && Math.abs(u - w / 2) < 1.9) continue;
             if (o === "arbre") poser("arbre_rue", q.x, q.z, R() * 6, {esp: choix(["cerisier", "pommier", "bouleau", "cerisier"]), r: .6, couronne: 2, ech: .78}); else poser(o, q.x, q.z, R() * 6, {r: 1.1, r0: .7}); }
           if (R() < .75) { const q = bord(s + tire(2, w - 2), tire(1.4, 3)); if (R() < .45) poser("habitant", q.x, q.z, 0, {nom: choix(["beauty", "camper", "picnicker", "youngster", "woman_1"]), r: .3, libre: true, voir: true}); else poser("pokemon", q.x, q.z, 0, {num: choix([133, 39, 43, 16, 35, 58]), r: .4, libre: true, voir: true}); }
           s += w; } }
     } }
 }
+/* la rampe d'une rue vers son pont, là où le quai reste à plat : un mur de soutènement de chaque côté, son parapet et sa jardinière, un pilier de pierre au bord de l'eau */
+function rampesRame(poser) {
+  const Z = PLAN.zone, y0 = Z.eaux[0].y;
+  for (const v of Z.PORTS) for (const p of v.ponts) for (const g of [-1, 1]) { const s0 = g < 0 ? p.a : p.b;
+    for (const sg of [-1, 1]) { const at0 = d => { const q = Z.enVoie(v, s0 + g * d, sg * (v.hp + .5)), r = Z.enVoie(v, s0 + g * d, sg * (v.hp - .1)), o = Z.enVoie(v, s0 + g * d, sg * (v.hp + 1.5)); return {x: q.x, z: q.z, nx: -sg * q.tz, nz: sg * q.tx, haut: Z.sol(r.x, r.z), bas: Z.sol(o.x, o.z)}; };
+      const A0 = at0(.42); poser("pilier_rampe", A0.x, A0.z, Math.atan2(A0.nx, A0.nz), {y0, haut: A0.haut, r: .7, libre: true, muraille: true, incline: false});
+      let d = 1; while (d < 30) { const A = at0(d), B = at0(d + 2.4); Z.champs(B.x + B.nx, B.z + B.nz); if (Z.voies.some(w => w !== v && Z.ecart(w.k) - (w.t || 0) < .6)) break; if (A.haut - A.bas < .12 && B.haut - B.bas < .12) break; const l = Math.hypot(B.x - A.x, B.z - A.z), M = at0(d + 1.2), L = Math.atan2(M.nx, M.nz), inv = (B.x - A.x) * Math.cos(L) - (B.z - A.z) * Math.sin(L) < 0, [U, W] = inv ? [B, A] : [A, B];
+        poser("mur_rampe", (A.x + B.x) / 2, (A.z + B.z) / 2, L, {long: l + .002, ha: U.haut, hb: W.haut, ba: U.bas, bb: W.bas, sobre: v.sol === "terre", r: .8, libre: true, muraille: true}); d += 2.4; } } } }
 /* les berges naturelles, les habitants du quai, les Pokémon de l'eau (après habillerEaux, qui a posé ponts, promenades et garde-corps) */
 function bergesRame(poser, R) {
   const P = PLAN, Z = P.zone, D = Z.D, tire = (a, b) => a + (b - a) * R(), choix = l => l[Math.floor(R() * l.length)], nums = ((NIVEAU.sauvages || {}).eau || {}).nums || [], loinDe = (x, z) => { pres(x, z); return Math.hypot(x - PISTE.X[Q.i], z - PISTE.Z[Q.i]); };
   const pont = (x, z, d) => Z.PORTS.some(v => v.ponts.some(p => Math.hypot(p.x - x, p.z - z) < (p.b - p.a) / 2 + d)), pris = [];
   const libre = (x, z, r) => !pris.some(q => Math.hypot(q[0] - x, q[1] - z) < q[2] + r) && !P.objets.some(q => q.l ? q.dur && Math.abs(q.x - x) < 14 && Math.abs(q.z - z) < 14 && distBoite(boiteObjet(q), x, z) < r : q.dur && !q.haie && q.r && Math.hypot(q.x - x, q.z - z) < q.r + r);
+  const plat = (x, z) => { const h = Z.sol(x, z); return [[.7, 0], [-.7, 0], [0, .7], [0, -.7]].every(([a, b]) => Math.abs(Z.sol(x + a, z + b) - h) < .14); };
   const surBarque = (x, z, d) => P.objets.some(w => w.flotte && w.l && Math.hypot(w.x - x, w.z - z) < w.l / 2 + d);
   for (const v of Z.eaux) for (const sg of [-1, 1]) {
     const bord = (s, e) => { const q = Z.enEau(v, s); return Object.assign(Z.enEau(v, s, sg * (q.h + e)), {nx: sg * q.tz, nz: -sg * q.tx}); }, vrai = (q, e) => Math.abs(Z.eauEn(q.x, q.z).e - e) < .4;
     for (const b of Z.bergesDe(v, sg)) {
       if (b.style === "quai") { for (const t of b.bouts || [b]) { if (t.genre === "maisons" || t.genre === "jardins") continue; let k = 0;
-        for (let s = Math.max(6, t.a || 0) + 5; s < Math.min(v.L - 6, t.b === undefined ? v.L : t.b) - 4; s += tire(9, 17)) { const q = bord(s, tire(1.3, 2.4)); if (Z.eauEn(q.x, q.z).e < 1 || loinDe(q.x, q.z) > 24 || pont(q.x, q.z, 3) || !libre(q.x, q.z, .7)) continue; const n = P.nature(q.x, q.z); if (n === "eau" || n === "chaussee") continue;
+        for (let s = Math.max(6, t.a || 0) + 5; s < Math.min(v.L - 6, t.b === undefined ? v.L : t.b) - 4; s += tire(9, 17)) { const q = bord(s, tire(1.3, 2.4)); if (Z.eauEn(q.x, q.z).e < 1 || loinDe(q.x, q.z) > 24 || pont(q.x, q.z, 3) || !libre(q.x, q.z, .7) || !plat(q.x, q.z)) continue; const n = P.nature(q.x, q.z); if (n === "eau" || n === "chaussee") continue;
           if (++k % 3) poser("habitant", q.x, q.z, 0, {nom: choix(["beauty", "gentleman", "lass", "youngster", "woman_1", "picnicker", "camper", "cooltrainer_f"]), r: .3, libre: true, voir: true}); else poser("pokemon", q.x, q.z, 0, {num: choix([52, 58, 133, 39, 16]), r: .4, libre: true, voir: true}); pris.push([q.x, q.z, .6]); } } continue; }
       const g = b.genre || "herbe", a = Math.max(2, b.a || 0), f = Math.min(v.L - 2, b.b === undefined ? v.L : b.b);
       if (g === "saules") for (let s = a + tire(0, 4); s < f; s += tire(8, 11.5)) { const q = bord(s, tire(1.7, 2.6)); if (Z.eauEn(q.x, q.z).e < 1.2 || loinDe(q.x, q.z) > 60 || pont(q.x, q.z, 5) || !libre(q.x, q.z, 2)) continue; Z.champs(q.x, q.z); if (Math.min(D.c, D.f, D.t, D.a) < 1) continue;

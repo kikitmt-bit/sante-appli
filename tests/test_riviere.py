@@ -506,6 +506,13 @@ class VilleLibre(unittest.TestCase):
                 v["arches"] = 2   # une pile au milieu du canal
         self.assertTrue(any("pile de pont" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
 
+    def test_rien_ne_clignote(self):
+        """(25/11, Kiki : « les textures qui se chevauchent entre deux maisons, sous les balcons ») Aucune façade, aucun pont du rameur n'a deux couleurs posées dans le même plan."""
+        import chevauchements
+        L = {nom: q["s"] for nom, q in chevauchements.chevauchements("rame-ile", ecart=.002)["L"]}
+        for nom, limite in (("maison_canal + maison_canal (lui-même)", .5), ("passage_maisons + passage_maisons (lui-même)", .5), ("mur_rampe + mur_rampe", .5), ("mur_rampe + pilier_rampe", .5), ("maison_canal + passage_maisons", .5), ("escalier_eau + maison_canal", .5)):
+            self.assertLess(L.get(nom, 0), limite, f"{nom} : {L.get(nom, 0):.2f} m² se chevauchent")
+
     def test_une_route_qui_se_retrecit(self):
         """(25/11, ⚑ de Kiki) Deux voies bout à bout n'en font qu'une : la chaussée ne gonfle jamais, elle s'affine de moins de 5 cm par mètre de chaque côté ; le trottoir s'arrête au bout de sa rue."""
         r = self.node(_page.controle("velo-cerisiers", circuit=self.zone.niveau_de(fige("dessin-velo-cerisiers"))) + """
