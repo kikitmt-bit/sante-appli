@@ -53,7 +53,8 @@ function cadrer(dt, S, T) {   // S : l'état du jeu (s, vn, fige) ; T : le temps
   const g = CAM.g, recul = (5.5 + S.vn * .8 + dz * .7) * g * fr + P.CAMR[i] - (velo ? 1.6 : 0), c = pose(S.s - recul, (fl === null ? M.d * .6 : M.d * fl) + lat), d = pose(S.s + (velo ? 7 : 10 * g * (fl === null ? 1 : .85)), (fl === null ? M.d * .3 : M.d * fl) - lat * .1);
   const voute = g > 1.05 && (P.TUN[i] || P.TUN[idx(S.s + 16)] || P.TUN[idx(S.s - recul)]);
   CAM.h += ((voute ? Math.min(1.95 * g * fh, 2.9) : 1.95 * g * fh) - CAM.h) * kg;
-  const yc = c.y + CAM.h + (velo ? .45 : 0) + dz * .15 + P.CAMH[i], yl = d.y - (d.y - c.y) * (1 - PENTE_VUE) + (velo ? -.55 : .8 * g * (fl === null ? 1 : .7)), net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
+  const plaf = typeof ZONE !== "undefined" && ZONE && ZONE.rame ? plafondRame(S.s - recul) : 99;   // (étape 15, lot 3) sous un pont, sous des maisons : la caméra se baisse
+  const yc = Math.min(c.y + CAM.h + (velo ? .45 : 0) + dz * .15 + P.CAMH[i], c.y + plaf - .35), yl = d.y - (d.y - c.y) * (1 - PENTE_VUE) + (velo ? -.55 : .8 * g * (fl === null ? 1 : .7)), net = CAM.y === null || S.fige || !(dt > 0), k = net ? 1 : 1 - Math.exp(-dt / .16);
   if (CAM.y === null) { CAM.y = yc; CAM.ly = yl; }
   CAM.y += (yc - CAM.y) * k; CAM.ly += (yl - CAM.ly) * k;
   CAM.saut += ((M.y === null ? 0 : M.y - at(S.s).y) * .55 - CAM.saut) * k;   // un saut : la caméra le suit à moitié

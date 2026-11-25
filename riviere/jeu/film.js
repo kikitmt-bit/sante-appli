@@ -152,7 +152,7 @@ function filmPlan(k) {   // aller au début du plan k (un saut dans le temps : o
   ti.querySelector("small").hidden = !p.sous;
   p.fixe = null;
   if (p.plan === "fixe") {   // la caméra posée au bord, un peu après le moment : on te voit arriver
-    const a = at(p.sFixe), cote = p.cote || 1, lat = cote * Math.max(2.2, a.w * .8), c = pose(p.sFixe, lat), tun = dansTunnel(p.sFixe);
+    const a = at(p.sFixe), cote = p.cote || 1, lat = cote * Math.max(2.2, a.w * .8), c = pose(p.sFixe, lat), tun = dansTunnel(p.sFixe) || sousPontRame(p.sFixe);
     c.y = Math.max(a.y + 1.6 + (p.haut || 0), tun ? -1e9 : hauteur(c.x, c.z) + 1.1); p.fixe = c;
   }
 }
@@ -195,10 +195,11 @@ function filmReveil(r, cote) {   // il se réveille dans le film : comme dans la
   r.etat = "reveil"; r.t0 = T; r.demande = null; r.px = r.pz = undefined; r.cote = cote || 1; r.q.m.visible = false;
   if (r.ev) { const k = MONDE.evenements.indexOf(r.ev); if (k >= 0) MONDE.evenements.splice(k, 1); }
 }
+const sousPontRame = s => typeof ZONE !== "undefined" && ZONE && ZONE.rame && plafondRame(s) < 5 ? 1 : 0;   // (25/11) sous un pont d'une ville : la caméra du film reste dessous
 function filmCadrer() {   // après cadrer() : le plan du moment remplace la caméra de jeu
   const F = FILM, p = F.phase === "fin" ? {plan: "haut", fin: true} : F.plans[F.k]; if (!p || p.plan === "jeu") return;
   const g = typeof GABARIT !== "undefined" ? Math.max(1, GABARIT.f) : 1, cible = pose(S.s, M.d); cible.y = (M.y === null ? cible.y : M.y) + .55 * g;
-  const tun = dansTunnel(S.s), u = F.phase === "fin" ? F.finT / 4.2 : clamp((F.tau - p.ta) / Math.max(.1, p.tb - p.ta), 0, 1);
+  const tun = dansTunnel(S.s) || sousPontRame(S.s), u = F.phase === "fin" ? F.finT / 4.2 : clamp((F.tau - p.ta) / Math.max(.1, p.tb - p.ta), 0, 1);
   let plan = p.plan; if (plan === "haut" && tun) plan = "face";
   const sur = (c, h) => { c.y = Math.max(c.y + h, tun ? -1e9 : hauteur(c.x, c.z) + 1.1); return c; };
   let c;

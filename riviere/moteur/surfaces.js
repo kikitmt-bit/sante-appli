@@ -325,6 +325,7 @@ function fabriquePiste() {   // de quoi construire le ruban de la piste (le circ
   return {decouper, unRuban};
 }
 function construirePiste() {
+  if (ZONE && ZONE.rame) return;   // (étape 15, lot 3) l'eau d'une zone est d'un seul tenant (zone_rame.js) : pas de ruban de piste par-dessus
   const P = PISTE, rubans = [], K = fabriquePiste();
   K.decouper(0, LONG, -1, rubans);
   P.voies.forEach((v, nf) => surLaVoie(nf, () => K.decouper(v.a, v.b, nf, rubans)));   // la voie « force » de chaque fourche, entre les mêmes mètres

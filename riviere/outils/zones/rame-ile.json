@@ -1,0 +1,1976 @@
+{
+ "id": "rame-ile",
+ "nom": "Le tour de l'île",
+ "graine": 31,
+ "sorte": "rame",
+ "machines": [
+  "rameur"
+ ],
+ "allure": 1,
+ "elan": 60,
+ "note": "(25/11, étape 15, lot 3a) le circuit d'essai du rameur dans une zone : deux bras de rivière autour d'une île. python riviere/outils/zone.py rame-ile en fait le niveau.",
+ "sauvages": {
+  "eau": {
+   "nums": [
+    7,
+    54,
+    118,
+    60,
+    129,
+    79,
+    116
+   ]
+  },
+  "foret": {
+   "nums": [
+    10,
+    13,
+    25,
+    43,
+    46
+   ]
+  },
+  "verger": {
+   "nums": [
+    16,
+    39,
+    133
+   ]
+  },
+  "pre": {
+   "nums": [
+    128,
+    77
+   ]
+  },
+  "potagers": {
+   "nums": [
+    43,
+    69,
+    133
+   ]
+  }
+ },
+ "depart": [
+  1,
+  0.34
+ ],
+ "etapes": [
+  {
+   "v": "canal",
+   "cote": "m",
+   "de": 0,
+   "a": 10,
+   "nom": "La pointe de l'île",
+   "r": 13,
+   "noms": {
+    "1": "Le canal des Tanneurs",
+    "2": "Le quai aux Fleurs",
+    "3": "Les jardins",
+    "4": "Le passage sous les maisons",
+    "5": "Le port",
+    "6": "La place du Marché",
+    "7": "L'allée des Cerisiers",
+    "8": "Le Pont des Platanes",
+    "9": "L'écluse"
+   }
+  },
+  {
+   "v": "vieux",
+   "cote": "m",
+   "de": 12,
+   "a": 2,
+   "nom": "Le bras des Saules",
+   "r": 13,
+   "noms": {
+    "10": "Les roseaux",
+    "9": "Les vignes",
+    "8": "La guinguette",
+    "7": "L'étang aux nénuphars",
+    "5": "Le petit bois",
+    "4": "Les potagers",
+    "3": "Le Pont du Moulin"
+   },
+   "ambs": {
+    "11": null,
+    "5": "bois",
+    "4": null
+   }
+  }
+ ],
+ "zone": {
+  "rame": true,
+  "rc": 6,
+  "marge": 82,
+  "voies": [
+   {
+    "id": "grande",
+    "nom": "La Grande Rue",
+    "l": 5.4,
+    "t": 2.2,
+    "voitures": false,
+    "pts": [
+     {
+      "x": -322,
+      "z": 16,
+      "y": 3.5
+     },
+     {
+      "x": -150,
+      "z": 30,
+      "r": 90,
+      "y": 3.9
+     },
+     {
+      "x": 20,
+      "z": 16,
+      "r": 120,
+      "y": 3.9
+     },
+     {
+      "x": 190,
+      "z": 24,
+      "r": 120,
+      "y": 3.6
+     },
+     {
+      "x": 342,
+      "z": 30,
+      "y": 3.4
+     }
+    ],
+    "g": "serre",
+    "d": "serre"
+   },
+   {
+    "id": "pontA",
+    "nom": "Le Pont des Tanneurs",
+    "l": 5,
+    "t": 1.8,
+    "voitures": false,
+    "arches": 1,
+    "pts": [
+     {
+      "x": -350.19,
+      "z": 144.7,
+      "y": 3.6
+     },
+     {
+      "x": -338.75,
+      "z": 71.59,
+      "y": 5.5
+     },
+     {
+      "x": -332.87,
+      "z": 34.04,
+      "r": 14,
+      "y": 3.6
+     },
+     {
+      "x": -322,
+      "z": 16
+     }
+    ],
+    "g": [
+     {
+      "style": "maisons"
+     }
+    ],
+    "d": [
+     {
+      "style": "maisons"
+     }
+    ]
+   },
+   {
+    "id": "pontM",
+    "nom": "Le Pont du Moulin",
+    "l": 5,
+    "t": 1.6,
+    "voitures": false,
+    "arches": 1,
+    "pts": [
+     {
+      "x": -322,
+      "z": 16
+     },
+     {
+      "x": -317.0,
+      "z": -33.45,
+      "r": 14,
+      "y": 3.6
+     },
+     {
+      "x": -328.4,
+      "z": -65.48,
+      "y": 5.6
+     },
+     {
+      "x": -339.8,
+      "z": -97.52,
+      "y": 3.7
+     },
+     {
+      "x": -358.58,
+      "z": -150.27,
+      "y": 3.4
+     }
+    ],
+    "g": [
+     {
+      "style": "maisons"
+     }
+    ],
+    "d": [
+     {
+      "style": "maisons"
+     }
+    ]
+   },
+   {
+    "id": "pontP",
+    "nom": "Le Pont de Fer",
+    "l": 5,
+    "t": 1.8,
+    "voitures": false,
+    "pont": "fer",
+    "arches": 1,
+    "pts": [
+     {
+      "x": 199.03,
+      "z": 189.93,
+      "y": 3.8
+     },
+     {
+      "x": 163.26,
+      "z": 118.37,
+      "y": 5.5
+     },
+     {
+      "x": 143.58,
+      "z": 79.02,
+      "r": 20,
+      "y": 3.5
+     },
+     {
+      "x": 116,
+      "z": 20.3
+     }
+    ],
+    "g": [
+     {
+      "style": "maisons"
+     }
+    ],
+    "d": [
+     {
+      "style": "maisons"
+     }
+    ]
+   },
+   {
+    "id": "pontE",
+    "nom": "Le Pont des Platanes",
+    "l": 5,
+    "t": 1.6,
+    "voitures": false,
+    "arches": 1,
+    "pts": [
+     {
+      "x": 376.23,
+      "z": 185.85,
+      "y": 3.8
+     },
+     {
+      "x": 359.32,
+      "z": 107.66,
+      "y": 5.5
+     },
+     {
+      "x": 350.87,
+      "z": 68.56,
+      "r": 14,
+      "y": 3.4
+     },
+     {
+      "x": 342,
+      "z": 30
+     }
+    ],
+    "g": [
+     {
+      "style": "maisons"
+     }
+    ],
+    "d": [
+     {
+      "style": "maisons"
+     }
+    ]
+   },
+   {
+    "id": "passer",
+    "nom": "La passerelle",
+    "sol": "terre",
+    "l": 2.4,
+    "pont": "bois",
+    "arches": 1,
+    "pts": [
+     {
+      "x": 34,
+      "z": 16.5
+     },
+     {
+      "x": 49.43,
+      "z": -46.36,
+      "r": 14,
+      "y": 3.0
+     },
+     {
+      "x": 59.09,
+      "z": -81.04,
+      "y": 5.5
+     },
+     {
+      "x": 62.85,
+      "z": -94.53,
+      "y": 4.3
+     },
+     {
+      "x": 75.2,
+      "z": -138.84,
+      "y": 4.2
+     }
+    ]
+   },
+   {
+    "id": "rueS",
+    "nom": "La rue du Canal",
+    "l": 5.2,
+    "t": 2,
+    "voitures": false,
+    "pts": [
+     {
+      "x": -343.38,
+      "z": 101.23
+     },
+     {
+      "x": -293.48,
+      "z": 109.04,
+      "r": 30
+     },
+     {
+      "x": -182.59,
+      "z": 157.62,
+      "r": 90,
+      "y": 3.5
+     },
+     {
+      "x": -73.43,
+      "z": 129.83,
+      "r": 30,
+      "y": 3.5
+     },
+     {
+      "x": 16.62,
+      "z": 174.85,
+      "r": 100,
+      "y": 3.5
+     },
+     {
+      "x": 148.73,
+      "z": 159.17,
+      "r": 100
+     },
+     {
+      "x": 176.67,
+      "z": 145.21
+     }
+    ],
+    "g": [
+     {
+      "a": 412.8,
+      "b": 501.4,
+      "style": "serre"
+     },
+     {
+      "style": "maisons"
+     }
+    ],
+    "d": "maisons"
+   },
+   {
+    "id": "fleurs",
+    "nom": "Le quai aux Fleurs",
+    "l": 4.4,
+    "t": 2,
+    "voitures": false,
+    "pts": [
+     {
+      "x": -242.28,
+      "z": 79.61,
+      "y": 3.2
+     },
+     {
+      "x": -178.49,
+      "z": 107.56,
+      "r": 42.5,
+      "y": 3.15
+     },
+     {
+      "x": -151.32,
+      "z": 100.64,
+      "y": 3.2
+     }
+    ],
+    "g": [
+     {
+      "a": 0,
+      "b": 41.0,
+      "style": "boutiques"
+     },
+     {
+      "a": 78.2,
+      "b": 999,
+      "style": "boutiques"
+     },
+     {
+      "style": "haie"
+     }
+    ],
+    "d": "rien"
+   },
+   {
+    "id": "halage",
+    "nom": "Le chemin de halage",
+    "sol": "terre",
+    "l": 2,
+    "pts": [
+     {
+      "x": -261.57,
+      "z": -88.86,
+      "y": 3.0
+     },
+     {
+      "x": -177.57,
+      "z": -63.36,
+      "r": 40,
+      "y": 2.9
+     },
+     {
+      "x": -112.25,
+      "z": -96.39,
+      "r": 40,
+      "y": 2.9
+     },
+     {
+      "x": -60,
+      "z": -136,
+      "r": 60,
+      "y": 2.9
+     },
+     {
+      "x": 43.26,
+      "z": -99.99,
+      "r": 50,
+      "y": 3.1
+     },
+     {
+      "x": 75.99,
+      "z": -94.21,
+      "r": 50,
+      "y": 2.95
+     },
+     {
+      "x": 163.35,
+      "z": -136.33,
+      "r": 50,
+      "y": 2.95
+     },
+     {
+      "x": 209.4,
+      "z": -134.77,
+      "r": 50,
+      "y": 2.9
+     },
+     {
+      "x": 308.14,
+      "z": -92.17,
+      "r": 50,
+      "y": 2.9
+     },
+     {
+      "x": 387.08,
+      "z": -62.76,
+      "y": 2.9
+     }
+    ]
+   },
+   {
+    "id": "coteau",
+    "nom": "Le chemin des vignes",
+    "sol": "terre",
+    "l": 2.6,
+    "pts": [
+     {
+      "x": 44.44,
+      "z": -136.73,
+      "y": 8.5
+     },
+     {
+      "x": 96.47,
+      "z": -166.25,
+      "r": 60,
+      "y": 10.5
+     },
+     {
+      "x": 152.83,
+      "z": -186.77,
+      "y": 9
+     }
+    ]
+   }
+  ],
+  "eaux": [
+   {
+    "id": "vieux",
+    "nom": "Le vieux bras",
+    "y": 2.0,
+    "courant": 0.55,
+    "pts": [
+     {
+      "x": -760,
+      "z": -10,
+      "l": 26
+     },
+     {
+      "x": -560,
+      "z": -70,
+      "r": 110,
+      "l": 26
+     },
+     {
+      "x": -400,
+      "z": -40,
+      "r": 60,
+      "l": 25
+     },
+     {
+      "x": -282,
+      "z": -82,
+      "r": 60,
+      "l": 12
+     },
+     {
+      "x": -170,
+      "z": -48,
+      "r": 60,
+      "l": 11
+     },
+     {
+      "x": -111,
+      "z": -80,
+      "l": 9.6
+     },
+     {
+      "x": -52,
+      "z": -112,
+      "r": 70,
+      "l": 25
+     },
+     {
+      "x": 9,
+      "z": -95,
+      "l": 13
+     },
+     {
+      "x": 70,
+      "z": -78,
+      "r": 70,
+      "l": 11.5
+     },
+     {
+      "x": 182,
+      "z": -132,
+      "r": 70,
+      "l": 11.5
+     },
+     {
+      "x": 292,
+      "z": -84,
+      "r": 60,
+      "l": 11.5
+     },
+     {
+      "x": 348,
+      "z": -62,
+      "l": 10
+     },
+     {
+      "x": 404,
+      "z": -40,
+      "r": 60,
+      "l": 24
+     },
+     {
+      "x": 560,
+      "z": -84,
+      "r": 110,
+      "l": 27
+     },
+     {
+      "x": 760,
+      "z": -30,
+      "l": 27
+     }
+    ],
+    "g": [
+     {
+      "a": 0,
+      "b": 505.5,
+      "style": "talus",
+      "tal": 4,
+      "genre": "herbe"
+     },
+     {
+      "a": 505.5,
+      "b": 589.7,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "herbe"
+     },
+     {
+      "a": 589.7,
+      "b": 701.8,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "ombre"
+     },
+     {
+      "a": 701.8,
+      "b": 815.2,
+      "style": "talus",
+      "tal": 4,
+      "genre": "nenuphars"
+     },
+     {
+      "a": 815.2,
+      "b": 976.2,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "herbe"
+     },
+     {
+      "a": 976.2,
+      "b": 1117.1,
+      "style": "talus",
+      "tal": 4,
+      "genre": "roseaux"
+     },
+     {
+      "a": 1117.1,
+      "b": 1218.7,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "saules"
+     },
+     {
+      "a": 1218.7,
+      "style": "talus",
+      "tal": 4,
+      "genre": "roseaux"
+     }
+    ],
+    "d": [
+     {
+      "a": 296.4,
+      "b": 497.4,
+      "style": "quai",
+      "garde": "muret",
+      "bouts": [
+       {
+        "a": 296.4,
+        "b": 431.7,
+        "genre": "arbres",
+        "prom": 6
+       },
+       {
+        "a": 431.7,
+        "b": 497.4,
+        "genre": "jardins"
+       }
+      ]
+     },
+     {
+      "a": 497.4,
+      "b": 589.7,
+      "style": "talus",
+      "tal": 4,
+      "genre": "herbe"
+     },
+     {
+      "a": 589.7,
+      "b": 701.8,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "ombre"
+     },
+     {
+      "a": 701.8,
+      "b": 789.3,
+      "style": "talus",
+      "tal": 4,
+      "genre": "nenuphars"
+     },
+     {
+      "a": 789.3,
+      "b": 876.1,
+      "style": "talus",
+      "tal": 4,
+      "genre": "nu"
+     },
+     {
+      "a": 876.1,
+      "b": 976.2,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "herbe"
+     },
+     {
+      "a": 976.2,
+      "b": 1117.1,
+      "style": "talus",
+      "tal": 4,
+      "genre": "roseaux"
+     },
+     {
+      "a": 1117.1,
+      "b": 100000.0,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "saules"
+     }
+    ]
+   },
+   {
+    "id": "canal",
+    "nom": "Le canal",
+    "y": 2.0,
+    "courant": 0.35,
+    "pts": [
+     {
+      "x": -400,
+      "z": -40,
+      "l": 13
+     },
+     {
+      "x": -400,
+      "z": 62,
+      "r": 42,
+      "l": 12.5
+     },
+     {
+      "x": -285,
+      "z": 80,
+      "r": 60,
+      "l": 10.5
+     },
+     {
+      "x": -180,
+      "z": 126,
+      "r": 60,
+      "l": 11.5
+     },
+     {
+      "x": -70,
+      "z": 98,
+      "r": 60,
+      "l": 12.5
+     },
+     {
+      "x": 22,
+      "z": 144,
+      "r": 70,
+      "l": 12.5
+     },
+     {
+      "x": 140,
+      "z": 130,
+      "r": 70,
+      "l": 24
+     },
+     {
+      "x": 232,
+      "z": 84,
+      "r": 60,
+      "l": 13
+     },
+     {
+      "x": 330,
+      "z": 114,
+      "r": 60,
+      "l": 12.5
+     },
+     {
+      "x": 404,
+      "z": 98,
+      "r": 38,
+      "l": 13.5
+     },
+     {
+      "x": 404,
+      "z": -40,
+      "l": 15
+     }
+    ],
+    "g": [
+     {
+      "a": -50,
+      "b": 995.5,
+      "style": "quai",
+      "garde": "muret",
+      "bouts": [
+       {
+        "a": -50,
+        "b": 81.9,
+        "genre": "arbres",
+        "prom": 6
+       },
+       {
+        "a": 85.9,
+        "b": 239.7,
+        "genre": "maisons"
+       },
+       {
+        "a": 241.7,
+        "b": 311.8,
+        "genre": "fleurs",
+        "prom": 6.4,
+        "garde": "fer"
+       },
+       {
+        "a": 311.8,
+        "b": 353.7,
+        "genre": "terrasses",
+        "prom": 6.4,
+        "garde": "fer"
+       },
+       {
+        "a": 357.8,
+        "b": 432.6,
+        "genre": "jardins"
+       },
+       {
+        "a": 432.6,
+        "b": 528.8,
+        "genre": "maisons"
+       },
+       {
+        "a": 539.0,
+        "b": 663.1,
+        "genre": "arbres",
+        "prom": 7,
+        "garde": "fer",
+        "bateaux": "peniches"
+       },
+       {
+        "a": 691.3,
+        "b": 757.5,
+        "genre": "nu",
+        "garde": "fer",
+        "bateaux": "barques"
+       },
+       {
+        "a": 761.5,
+        "b": 864.7,
+        "genre": "arbres",
+        "arbres": "cerisier",
+        "prom": 5.5,
+        "garde": "fer"
+       },
+       {
+        "a": 898.2,
+        "b": 928.0,
+        "genre": "arbres",
+        "arbres": "platane",
+        "prom": 6
+       },
+       {
+        "a": 928.0,
+        "b": 995.5,
+        "genre": "nu",
+        "garde": "rien"
+       }
+      ]
+     },
+     {
+      "a": 995.5,
+      "b": 100000.0,
+      "style": "talus",
+      "tal": 3.2,
+      "genre": "saules"
+     }
+    ],
+    "d": [
+     {
+      "a": -50,
+      "b": 1001.5,
+      "style": "quai",
+      "garde": "muret",
+      "bouts": [
+       {
+        "a": -50,
+        "b": 34.0,
+        "genre": "arbres",
+        "prom": 6
+       },
+       {
+        "a": 34.0,
+        "b": 89.8,
+        "genre": "nu"
+       },
+       {
+        "a": 99.7,
+        "b": 313.8,
+        "genre": "maisons"
+       },
+       {
+        "a": 325.7,
+        "b": 432.6,
+        "genre": "jardins"
+       },
+       {
+        "a": 432.6,
+        "b": 528.8,
+        "genre": "maisons"
+       },
+       {
+        "a": 534.9,
+        "b": 567.2,
+        "genre": "nu"
+       },
+       {
+        "a": 567.2,
+        "b": 663.1,
+        "genre": "arbres",
+        "prom": 7,
+        "bateaux": "peniches"
+       },
+       {
+        "a": 689.3,
+        "b": 757.5,
+        "genre": "maisons"
+       },
+       {
+        "a": 761.5,
+        "b": 864.7,
+        "genre": "arbres",
+        "arbres": "cerisier",
+        "prom": 5.5,
+        "garde": "fer"
+       },
+       {
+        "a": 898.2,
+        "b": 928.0,
+        "genre": "arbres",
+        "arbres": "platane",
+        "prom": 6
+       },
+       {
+        "a": 928.0,
+        "b": 1001.5,
+        "genre": "nu",
+        "garde": "rien"
+       }
+      ]
+     },
+     {
+      "a": 1001.5,
+      "b": 100000.0,
+      "style": "talus",
+      "tal": 4,
+      "genre": "roseaux"
+     }
+    ]
+   }
+  ],
+  "places": [
+   {
+    "nom": "La place du Marché",
+    "y": 3.15,
+    "pts": [
+     {
+      "x": 175.69,
+      "z": 104.78,
+      "r": 1
+     },
+     {
+      "x": 227.21,
+      "z": 79.02,
+      "r": 1
+     },
+     {
+      "x": 216.3,
+      "z": 57.19,
+      "r": 1
+     },
+     {
+      "x": 164.78,
+      "z": 82.95,
+      "r": 1
+     }
+    ],
+    "boutiques": [
+     1,
+     2,
+     3
+    ]
+   }
+  ],
+  "nature": [
+   {
+    "genre": "foret",
+    "nom": "Le bois d'amont",
+    "esp": "hetre",
+    "pts": [
+     {
+      "x": -800,
+      "z": -60,
+      "r": 4
+     },
+     {
+      "x": -560,
+      "z": -120,
+      "r": 4
+     },
+     {
+      "x": -470,
+      "z": -110,
+      "r": 4
+     },
+     {
+      "x": -480,
+      "z": -62,
+      "r": 4
+     },
+     {
+      "x": -560,
+      "z": -90,
+      "r": 4
+     },
+     {
+      "x": -780,
+      "z": -32,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Le bois d'amont",
+    "esp": "hetre",
+    "pts": [
+     {
+      "x": -800,
+      "z": 60,
+      "r": 4
+     },
+     {
+      "x": -560,
+      "z": 10,
+      "r": 4
+     },
+     {
+      "x": -470,
+      "z": 10,
+      "r": 4
+     },
+     {
+      "x": -450,
+      "z": 110,
+      "r": 4
+     },
+     {
+      "x": -600,
+      "z": 110,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Le bois d'aval",
+    "esp": "bouleau",
+    "pts": [
+     {
+      "x": 470,
+      "z": -150,
+      "r": 4
+     },
+     {
+      "x": 780,
+      "z": -110,
+      "r": 4
+     },
+     {
+      "x": 780,
+      "z": -50,
+      "r": 4
+     },
+     {
+      "x": 560,
+      "z": -104,
+      "r": 4
+     },
+     {
+      "x": 470,
+      "z": -72,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Le bois d'aval",
+    "esp": "bouleau",
+    "pts": [
+     {
+      "x": 470,
+      "z": -40,
+      "r": 4
+     },
+     {
+      "x": 560,
+      "z": -60,
+      "r": 4
+     },
+     {
+      "x": 780,
+      "z": -8,
+      "r": 4
+     },
+     {
+      "x": 780,
+      "z": 60,
+      "r": 4
+     },
+     {
+      "x": 470,
+      "z": 60,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Le petit bois",
+    "esp": "hetre",
+    "pts": [
+     {
+      "x": -189.37,
+      "z": -48.66,
+      "r": 4
+     },
+     {
+      "x": -155.82,
+      "z": -50.0,
+      "r": 4
+     },
+     {
+      "x": -85.02,
+      "z": -88.4,
+      "r": 4
+     },
+     {
+      "x": -71.37,
+      "z": -49.16,
+      "r": 4
+     },
+     {
+      "x": -199.54,
+      "z": -15.16,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "foret",
+    "nom": "Le petit bois",
+    "esp": "hetre",
+    "pts": [
+     {
+      "x": -184.23,
+      "z": -57.54,
+      "r": 4
+     },
+     {
+      "x": -154.68,
+      "z": -62.0,
+      "r": 4
+     },
+     {
+      "x": -89.78,
+      "z": -97.2,
+      "r": 4
+     },
+     {
+      "x": -124.95,
+      "z": -133.87,
+      "r": 4
+     },
+     {
+      "x": -169.99,
+      "z": -104.43,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "potagers",
+    "nom": "Les potagers",
+    "cote": 0,
+    "pts": [
+     {
+      "x": -266.58,
+      "z": -68.33,
+      "r": 4
+     },
+     {
+      "x": -199.38,
+      "z": -47.93,
+      "r": 4
+     },
+     {
+      "x": -209.08,
+      "z": -15.97,
+      "r": 4
+     },
+     {
+      "x": -271.8,
+      "z": -35.01,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "Le pré du halage",
+    "pts": [
+     {
+      "x": -266.44,
+      "z": -92.95,
+      "r": 4
+     },
+     {
+      "x": -171.24,
+      "z": -64.05,
+      "r": 4
+     },
+     {
+      "x": -154.1,
+      "z": -120.51,
+      "r": 4
+     },
+     {
+      "x": -249.3,
+      "z": -149.41,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "champ",
+    "culture": "vignes",
+    "nom": "Les vignes",
+    "cote": 0,
+    "pts": [
+     {
+      "x": 70.42,
+      "z": -94.3,
+      "r": 4
+     },
+     {
+      "x": 168.98,
+      "z": -141.82,
+      "r": 4
+     },
+     {
+      "x": 149.22,
+      "z": -182.81,
+      "r": 4
+     },
+     {
+      "x": 50.66,
+      "z": -135.29,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "verger",
+    "nom": "Le verger",
+    "esp": "pommier",
+    "cote": 0,
+    "pts": [
+     {
+      "x": 85.11,
+      "z": -75.29,
+      "r": 4
+     },
+     {
+      "x": 176.95,
+      "z": -119.57,
+      "r": 4
+     },
+     {
+      "x": 192.15,
+      "z": -88.05,
+      "r": 4
+     },
+     {
+      "x": 100.31,
+      "z": -43.77,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "La prairie humide",
+    "pts": [
+     {
+      "x": 199.4,
+      "z": -141.86,
+      "r": 4
+     },
+     {
+      "x": 303.45,
+      "z": -96.69,
+      "r": 4
+     },
+     {
+      "x": 324.66,
+      "z": -150.68,
+      "r": 4
+     },
+     {
+      "x": 222.6,
+      "z": -195.02,
+      "r": 4
+     }
+    ]
+   },
+   {
+    "genre": "pre",
+    "nom": "La pointe",
+    "pts": [
+     {
+      "x": 199.2,
+      "z": -111.4,
+      "r": 4
+     },
+     {
+      "x": 304.41,
+      "z": -66.23,
+      "r": 4
+     },
+     {
+      "x": 290,
+      "z": -40,
+      "r": 4
+     },
+     {
+      "x": 200,
+      "z": -50,
+      "r": 4
+     }
+    ]
+   }
+  ],
+  "objets": [
+   {
+    "o": "moulin_eau",
+    "x": -410.41,
+    "z": 13.04,
+    "lacet": 1.571,
+    "eau0": 2.0,
+    "r": 5.5,
+    "l": 11,
+    "p": 8,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true,
+    "vu": 22
+   },
+   {
+    "o": "deversoir",
+    "x": -448.0,
+    "z": -49.0,
+    "lacet": 1.385,
+    "eau0": 2.0,
+    "long": 27,
+    "r": 2,
+    "voir": true,
+    "vu": 70,
+    "libre": true,
+    "flotte": true,
+    "dessus": true
+   },
+   {
+    "o": "fanal",
+    "x": -391.36,
+    "z": -9.4,
+    "lacet": -1.571,
+    "eau0": 2.0,
+    "r": 1.2,
+    "libre": true,
+    "dur": true,
+    "voir": true,
+    "vu": 24
+   },
+   {
+    "o": "banc",
+    "x": -391.89,
+    "z": 23.24,
+    "lacet": -1.571,
+    "eau0": 2.0,
+    "r": 0.8,
+    "voir": true
+   },
+   {
+    "o": "linge_canal",
+    "x": -311.08,
+    "z": 75.92,
+    "lacet": 1.416,
+    "eau0": 2.0,
+    "long": 10.2,
+    "haut": 5.9,
+    "voir": true,
+    "libre": true,
+    "flotte": true,
+    "dessus": true
+   },
+   {
+    "o": "linge_canal",
+    "x": -248.36,
+    "z": 96.05,
+    "lacet": 1.158,
+    "eau0": 2.0,
+    "long": 10.6,
+    "haut": 5.2,
+    "voir": true,
+    "libre": true,
+    "flotte": true,
+    "dessus": true
+   },
+   {
+    "o": "passage_maisons",
+    "x": -28.86,
+    "z": 118.57,
+    "lacet": 1.107,
+    "eau0": 2.0,
+    "long": 16,
+    "large": 12.4,
+    "voute": 3.6,
+    "voir": true,
+    "vu": 14,
+    "libre": true,
+    "flotte": true,
+    "dessus": true
+   },
+   {
+    "o": "lavoir",
+    "x": 43.18,
+    "z": 151.06,
+    "lacet": -3.024,
+    "eau0": 2.0,
+    "r": 4.6,
+    "l": 9,
+    "p": 4.6,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true
+   },
+   {
+    "o": "fontaine",
+    "x": 195.99,
+    "z": 80.98,
+    "r": 2.2,
+    "voir": true,
+    "vu": 30
+   },
+   {
+    "o": "etal",
+    "x": 190.79,
+    "z": 93.58,
+    "lacet": 0.464,
+    "eau0": 2.0,
+    "r": 1.2,
+    "libre": true,
+    "voir": true
+   },
+   {
+    "o": "etal",
+    "x": 202.21,
+    "z": 88.83,
+    "lacet": 0.464,
+    "eau0": 2.0,
+    "r": 1.2,
+    "libre": true,
+    "voir": true
+   },
+   {
+    "o": "terrasse",
+    "x": 215.36,
+    "z": 82.91,
+    "lacet": 0.464,
+    "eau0": 2.0,
+    "r": 1.05,
+    "libre": true,
+    "voir": true
+   },
+   {
+    "o": "escalier_eau",
+    "x": 181.86,
+    "z": 98.72,
+    "lacet": 0.464,
+    "eau0": 2.0,
+    "r": 1.6,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true
+   },
+   {
+    "o": "kiosque",
+    "x": 287.84,
+    "z": 76.65,
+    "lacet": -0.297,
+    "eau0": 2.0,
+    "r": 4.1,
+    "dur": true,
+    "voir": true,
+    "vu": 30
+   },
+   {
+    "o": "clocher",
+    "x": -44,
+    "z": 60,
+    "lacet": 0.1,
+    "r": 9,
+    "dur": true
+   },
+   {
+    "o": "porte_ecluse",
+    "x": 411.22,
+    "z": 51.08,
+    "lacet": -1.571,
+    "eau0": 2.0,
+    "r": 4,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true,
+    "vu": 20
+   },
+   {
+    "o": "maison_pente",
+    "x": 423.1,
+    "z": 29.0,
+    "lacet": -1.571,
+    "eau0": 2.0,
+    "l": 8.6,
+    "p": 6.4,
+    "varie": true,
+    "dos": true,
+    "r": 5.5,
+    "voir": true
+   },
+   {
+    "o": "base_nautique",
+    "x": 387.55,
+    "z": 48.32,
+    "lacet": 1.571,
+    "eau0": 2.0,
+    "r": 7,
+    "l": 11,
+    "p": 7,
+    "dur": true,
+    "voir": true,
+    "vu": 26
+   },
+   {
+    "o": "ponton_bois",
+    "x": 397.32,
+    "z": 56.6,
+    "lacet": 1.571,
+    "eau0": 2.0,
+    "long": 3.4,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": 397.18,
+    "z": 38.66,
+    "lacet": 1.571,
+    "eau0": 2.0,
+    "long": 3.4,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "canoe",
+    "x": 399.3,
+    "z": 47.63,
+    "lacet": 3.142,
+    "eau0": 2.0,
+    "r": 0.5,
+    "l": 1.5,
+    "p": 4.2,
+    "libre": true,
+    "flotte": true
+   },
+   {
+    "o": "carrelet",
+    "x": 217.54,
+    "z": -123.42,
+    "lacet": -0.411,
+    "eau0": 2.0,
+    "r": 2.2,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true,
+    "vu": 20
+   },
+   {
+    "o": "carrelet",
+    "x": 260.86,
+    "z": -90.66,
+    "lacet": 2.73,
+    "eau0": 2.0,
+    "r": 2.2,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true,
+    "vu": 20
+   },
+   {
+    "o": "ponton_bois",
+    "x": 241.98,
+    "z": -113.41,
+    "lacet": -0.411,
+    "eau0": 2.0,
+    "long": 3,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "banc",
+    "x": 129.11,
+    "z": -98.56,
+    "lacet": -2.692,
+    "eau0": 2.0,
+    "r": 0.8,
+    "voir": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": 106.44,
+    "z": -88.3,
+    "lacet": -2.692,
+    "eau0": 2.0,
+    "long": 3,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "barque",
+    "x": 109.93,
+    "z": -92.53,
+    "lacet": -2.692,
+    "eau0": 2.0,
+    "l": 1.5,
+    "p": 4.2,
+    "r": 1,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "carrelet",
+    "x": 192.42,
+    "z": -119.87,
+    "lacet": 2.73,
+    "eau0": 2.0,
+    "r": 2.2,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true,
+    "vu": 20
+   },
+   {
+    "o": "ponton_bois",
+    "x": 283.62,
+    "z": -94.8,
+    "lacet": -0.411,
+    "eau0": 2.0,
+    "long": 3,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "canoe",
+    "x": 286.08,
+    "z": -91.44,
+    "lacet": -0.411,
+    "eau0": 2.0,
+    "l": 4.2,
+    "p": 1.5,
+    "r": 1,
+    "libre": true,
+    "flotte": true
+   },
+   {
+    "o": "maison_pente",
+    "x": 408.2,
+    "z": -60.94,
+    "lacet": 0.275,
+    "eau0": 2.0,
+    "l": 8.6,
+    "p": 6.4,
+    "varie": true,
+    "r": 5.5,
+    "dur": true,
+    "voir": true,
+    "vu": 60
+   },
+   {
+    "o": "ponton_bois",
+    "x": 411.49,
+    "z": -55.22,
+    "lacet": 0.275,
+    "eau0": 2.0,
+    "long": 5,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true,
+    "vu": 40
+   },
+   {
+    "o": "barque",
+    "x": 414.43,
+    "z": -53.77,
+    "lacet": 0.275,
+    "eau0": 2.0,
+    "l": 4.2,
+    "p": 1.5,
+    "r": 1,
+    "libre": true,
+    "flotte": true
+   },
+   {
+    "o": "guinguette",
+    "x": 25.71,
+    "z": -80.48,
+    "lacet": 2.87,
+    "eau0": 2.0,
+    "long": 15,
+    "r": 7,
+    "libre": true,
+    "muraille": true,
+    "dur": true,
+    "voir": true,
+    "vu": 22
+   },
+   {
+    "o": "guirlande",
+    "x": 43.57,
+    "z": -77.5,
+    "lacet": 2.87,
+    "eau0": 2.0,
+    "long": 11,
+    "r": 0.4,
+    "libre": true,
+    "voir": true
+   },
+   {
+    "o": "guirlande",
+    "x": -10.67,
+    "z": -90.48,
+    "lacet": 2.87,
+    "eau0": 2.0,
+    "long": 12,
+    "r": 0.4,
+    "libre": true
+   },
+   {
+    "o": "barque",
+    "x": 42.44,
+    "z": -80.89,
+    "lacet": 2.87,
+    "eau0": 2.0,
+    "l": 4.2,
+    "p": 1.5,
+    "r": 1,
+    "libre": true,
+    "flotte": true
+   },
+   {
+    "o": "canoe",
+    "x": 38.08,
+    "z": -81.99,
+    "lacet": 2.87,
+    "eau0": 2.0,
+    "l": 4.2,
+    "p": 1.5,
+    "r": 1,
+    "libre": true,
+    "flotte": true
+   },
+   {
+    "o": "barque",
+    "x": -60.46,
+    "z": -99.45,
+    "lacet": 2.068,
+    "eau0": 2.0,
+    "l": 1.5,
+    "p": 4.2,
+    "r": 1,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": -18.75,
+    "z": -113.38,
+    "lacet": -0.272,
+    "eau0": 2.0,
+    "long": 4,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": -43.22,
+    "z": -96.33,
+    "lacet": 2.87,
+    "eau0": 2.0,
+    "long": 4.4,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "cabane_jardin",
+    "x": -41.69,
+    "z": -92.37,
+    "lacet": 2.87,
+    "eau0": 2.0,
+    "l": 2.8,
+    "p": 2.4,
+    "r": 1.8,
+    "dur": true,
+    "voir": true
+   },
+   {
+    "o": "cabane_jardin",
+    "x": -246.67,
+    "z": -61.38,
+    "lacet": 2.847,
+    "eau0": 2.0,
+    "l": 2.8,
+    "p": 2.4,
+    "r": 1.8,
+    "dur": true,
+    "voir": true
+   },
+   {
+    "o": "cabane_jardin",
+    "x": -217.55,
+    "z": -52.53,
+    "lacet": 2.847,
+    "eau0": 2.0,
+    "l": 2.8,
+    "p": 2.4,
+    "r": 1.8,
+    "dur": true,
+    "voir": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": -203.25,
+    "z": -51.31,
+    "lacet": 2.847,
+    "eau0": 2.0,
+    "long": 2.6,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "barque",
+    "x": -197.0,
+    "z": -51.74,
+    "lacet": 2.847,
+    "eau0": 2.0,
+    "l": 4.2,
+    "p": 1.5,
+    "r": 1,
+    "libre": true,
+    "flotte": true
+   },
+   {
+    "o": "ponton_bois",
+    "x": -227.93,
+    "z": -58.63,
+    "lacet": 2.847,
+    "eau0": 2.0,
+    "long": 2.6,
+    "r": 0.9,
+    "libre": true,
+    "flotte": true,
+    "voir": true
+   },
+   {
+    "o": "table_bois",
+    "x": -251.42,
+    "z": -61.86,
+    "lacet": 2.847,
+    "eau0": 2.0,
+    "r": 1.3,
+    "voir": true
+   },
+   {
+    "o": "banc",
+    "x": -205.75,
+    "z": -67.24,
+    "lacet": -0.295,
+    "eau0": 2.0,
+    "r": 0.8,
+    "voir": true
+   }
+  ]
+ }
+}

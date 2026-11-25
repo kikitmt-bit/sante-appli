@@ -16,10 +16,10 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 RACINE = Path(__file__).resolve().parent
-MOTEUR = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "plan_dessin", "zone_dessin", "tunnel", "decor", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
+MOTEUR = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "effets", "rendu", "forme", "terrain", "surfaces", "plan_dessin", "zone_dessin", "tunnel", "decor", "sprites", "troncons", "velo", "cycliste", "monture", "camera", "son", "ambiance"]
 RECETTES = ["objets", "surfaces", "montures", "evenements", "lointains"]
 JEU = ["allure", "records", "effort", "rencontres", "fourches", "jeu", "montre", "capteurs", "seance", "menu", "fantome", "rivaux", "film", "raretes", "parcours", "note", "villes", "nature", "velo_villes", "quais", "generateur", "editeur", "signaler", "banc"]
-PURS = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
+PURS = ["depart", "outils", "zone", "piste", "plan", "zone_plan", "zone_rame", "champ", "forme", "decor"]  # les modules du moteur qui ne dessinent rien : ils se contrôlent sans navigateur (tests/test_riviere.py)
 PMD = "https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/sprite/"
 GENS = "https://raw.githubusercontent.com/pret/pokefirered/ce6406d8c2eaf46d543c8a2606de0c3cb1951982/graphics/object_events/pics/people/"  # les habitants : sprites de Rouge Feu
 try:  # les tailles officielles des Pokémon (m), pour les afficher à leur échelle
@@ -91,8 +91,12 @@ def _js(o):
     return json.dumps(o, ensure_ascii=False).replace("</", "<\\/")
 
 
+_COMMENTAIRE = re.compile(r"^[ \t]*(?://.*|/\*(?:(?!\*/).)*\*/[ \t]*)\n", re.M)
+
+
 def _module(dossier, nom):
-    return f"/* ----- {dossier}/{nom}.js ----- */\n" + (RACINE / dossier / f"{nom}.js").read_text(encoding="utf-8")
+    """Un module, sans ses lignes de commentaire seules (25/11 : 120 Ko de moins dans la page ; le code, lui, ne bouge pas d'un caractère)."""
+    return f"/* ----- {dossier}/{nom}.js ----- */\n" + _COMMENTAIRE.sub("", (RACINE / dossier / f"{nom}.js").read_text(encoding="utf-8"))
 
 
 def recettes():

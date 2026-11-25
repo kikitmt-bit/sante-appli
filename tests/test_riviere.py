@@ -374,7 +374,8 @@ class Moteur(unittest.TestCase):
             km = max(1, b["metres"] / 2000)   # (16/11) une vraie route de 5 km (outils/gpx.py) : le budget d'un circuit de 2 km par tranche de 2 km
             self.assertLess(b["secondes"], self.BUDGET_SECONDES * km, f"{nom} : construction trop lente")
             if lis("niveaux", nom + ".json").get("plan") or lis("niveaux", nom + ".json").get("zone"):   # (24/11) une ville dessinée : dense, mais on n'en voit jamais plus des deux tiers (250 000 triangles au pire sur ce PC)
-                km *= 2.5 if (lis("niveaux", nom + ".json").get("zone") or {}).get("velo") else 1.7   # (étape 15) à vélo, une ville ET trois kilomètres de campagne : 290 000 triangles au plus à l'image, 60 images/s
+                km *= 3 if (lis("niveaux", nom + ".json").get("zone") or {}).get("rame") else 2.5 if (lis("niveaux", nom + ".json").get("zone") or {}).get("velo") else 1.7   # (25/11, lot 3) au rameur, tout est au bord de l'eau : 331 000 triangles au plus à l'image, 60 images/s
+                #   # (étape 15) à vélo, une ville ET trois kilomètres de campagne : 290 000 triangles au plus à l'image, 60 images/s
             self.assertLess(b["triangles"], self.BUDGET_TRIANGLES * km, f"{nom} : trop de triangles ({b['triangles']})")
             if b["troncons"]:   # une longue route, construite par tronçons : ce qui compte, c'est ce qu'on voit d'un coup (un kilomètre)
                 self.assertLess(b["troncons"]["fenetre"], self.BUDGET_TRIANGLES, f"{nom} : trop de triangles dans un kilomètre ({b['troncons']['fenetre']})")
@@ -471,6 +472,39 @@ class VilleLibre(unittest.TestCase):
         for p in d["zone"]["eaux"][0]["pts"]:
             p["l"] += 16   # la rivière déborde sur le chemin de halage
         self.assertTrue(any("eau" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+
+    def test_ramer_autour_d_une_ile(self):
+        """(25/11, étape 15, lot 3a) Deux bras qui se rejoignent ne font qu'une eau, sans marche ni trou ; on reste dans l'eau, avec de la place de chaque côté, et l'on passe sous les ponts ; le reste est refusé."""
+        r = self.node(_page.controle("rame-ile") + """
+;(() => { const Z = ZONE, o = {eau: 0, pire: 99, plafond: 99, saut: 0, ponts: 0, deux: 0, hors: 0, y: 0}; for (const v of Z.PORTS) o.ponts += v.ponts.length;
+  for (let i = 0; i < PISTE.N; i++) { const w = Z.eauEn(PISTE.X[i], PISTE.Z[i]); o.pire = Math.min(o.pire, -w.e); o.plafond = Math.min(o.plafond, plafondRame(i)); o.y = Math.max(o.y, Math.abs(PISTE.Y[i] - Z.eaux[0].y)); }
+  // la réunion des deux eaux : la distance au bord ne saute jamais, même à la jonction
+  for (const v of Z.eaux) for (const s of [2, v.L / 2, v.L - 2]) { const c = Z.enEau(Z.eaux[1], s < 10 ? 2 : s > v.L - 10 ? Z.eaux[1].L - 2 : Z.eaux[1].L / 2); for (let x = -26; x < 26; x += .5) for (let z = -26; z < 26; z += .5) { const e0 = Z.eauEn(c.x + x, c.z + z).e; if (Z.W.k2 >= 0) o.deux++; const e1 = Z.eauEn(c.x + x + .5, c.z + z).e, e2 = Z.eauEn(c.x + x, c.z + z + .5).e; o.saut = Math.max(o.saut, Math.abs(e1 - e0), Math.abs(e2 - e0)); } }
+  console.log("RAME " + JSON.stringify(o)); })();""", "RAME")
+        self.assertEqual(r["ponts"], 5)
+        self.assertGreater(r["pire"], 4, "on rame trop près d'une berge")
+        self.assertGreater(r["plafond"], 2.35, "un pont trop bas")
+        self.assertLess(r["y"], .001, "la piste n'est pas à la hauteur de l'eau")
+        self.assertGreater(r["deux"], 1000, "les deux eaux ne se rejoignent pas")
+        self.assertLess(r["saut"], .8, "une marche dans la distance à la berge, à la jonction")
+        lire = lambda: json.loads((R / "outils" / "zones" / "rame-ile.json").read_text(encoding="utf-8"))
+        d = lire()
+        for v in d["zone"]["eaux"]:
+            for q in v["pts"]:
+                q["l"] = min(q["l"], 7)   # trop étroit pour ramer
+        self.assertTrue(any("berge est trop près" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+        d = lire()
+        for v in d["zone"]["voies"]:
+            if v["id"] == "passer":
+                for q in v["pts"]:
+                    if q.get("y"):
+                        q["y"] = min(q["y"], 4.2)   # une passerelle trop basse
+        self.assertTrue(any("sous un pont" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
+        d = lire()
+        for v in d["zone"]["voies"]:
+            if v["id"] == "pontA":
+                v["arches"] = 2   # une pile au milieu du canal
+        self.assertTrue(any("pile de pont" in e for e in self.controle(self.zone.niveau_de(d))["erreurs"]))
 
     def test_une_route_qui_se_retrecit(self):
         """(25/11, ⚑ de Kiki) Deux voies bout à bout n'en font qu'une : la chaussée ne gonfle jamais, elle s'affine de moins de 5 cm par mètre de chaque côté ; le trottoir s'arrête au bout de sa rue."""

@@ -214,7 +214,7 @@ function cheminDeZone(zone, etapes, depart = [0, .5]) {   // depart : [sur la co
   for (const e of etapes) {
     if (e.x0 !== undefined) { const d = Math.hypot(e.x1 - e.x0, e.z1 - e.z0); L.push({x: e.x0, z: e.z0, ux: (e.x1 - e.x0) / d, uz: (e.z1 - e.z0) / d, r: e.r || 3, nom: e.nom, segment: e.segment}); continue; }   // une droite libre : on traverse une place
     // (étape 15) cote "v" : la voie de droite de la chaussée, "p" : la piste cyclable ; {v, de, a, s0, s1, u0, u1} : glisser d'un côté à l'autre, entre deux distances (s : depuis le point « de » ; u : l'écart, + = à droite)
-    const v = zone.voies.find(q => q.id === e.v); if (!v) throw new Error("Voie inconnue dans le parcours : " + e.v);
+    const v = zone.voies.find(q => q.id === e.v) || (zone.eaux || []).find(q => q.id === e.v); if (!v) throw new Error("Voie inconnue dans le parcours : " + e.v);
     const sol = v.sol || "chaussee", l = v.l || (sol === "chaussee" ? 6.2 : 2.8), t = sol === "chaussee" ? (v.t === undefined ? 3 : v.t) : 0, o = e.cote === "m" ? (e.decale || 0) : e.cote === "v" ? (e.decale === undefined ? l / 4 : e.decale) : e.cote === "p" ? l / 2 + v.piste.b + v.piste.l / 2 : (e.cote === "g" ? -1 : 1) * (l / 2 + t / 2), pas = e.a > e.de ? 1 : -1; let avant = null;
     if (e.s0 !== undefined) { const A = v.pts[e.de], B = v.pts[e.a], d = Math.hypot(B.x - A.x, B.z - A.z), ux = (B.x - A.x) / d, uz = (B.z - A.z) / d, pt = (s, w) => [A.x + ux * s - uz * w, A.z + uz * s + ux * w], [x0, z0] = pt(e.s0, e.u0), [x1, z1] = pt(e.s1, e.u1), m = Math.hypot(x1 - x0, z1 - z0); L.push({x: x0, z: z0, ux: (x1 - x0) / m, uz: (z1 - z0) / m, r: e.r || 3, nom: e.nom}); continue; }
     for (let i = e.de; i !== e.a; i += pas) {
@@ -237,9 +237,9 @@ function recalerZone(zone, chemin) {
 }
 /* un niveau entier à partir d'une ville dessinée : {id, nom, graine, zone, etapes, depart, …réglages du niveau} */
 function niveauDeZone(d) {
-  const r = recalerZone(d.zone, cheminDeZone(d.zone, d.etapes, d.depart)), pieces = piecesDuChemin(r.chemin, {large: 2, g: "plan", d: "plan", surface: "libre"}), virage = pieces.reduce((t, p) => t + p.virage, 0);
+  const r = recalerZone(d.zone, cheminDeZone(d.zone, d.etapes, d.depart)), rame = !!d.zone.rame, pieces = piecesDuChemin(r.chemin, {large: rame ? 5 : 2, g: "plan", d: "plan", surface: rame ? "eau" : "libre"}), virage = pieces.reduce((t, p) => t + p.virage, 0);
   if (Math.abs(Math.abs(virage) - 360) > .5) throw new Error("Le parcours ne fait pas un tour : il tourne de " + Math.round(virage) + "°.");
-  pieces[0].objets = [{o: "ligne", cote: "c", a: 1, eau: .1}]; const reste = Object.assign({}, d); for (const k of ["zone", "etapes", "depart"]) delete reste[k];
+  pieces[0].objets = [{o: "ligne", cote: "c", a: 1, eau: rame ? 7 : .1}]; const reste = Object.assign({}, d); for (const k of ["zone", "etapes", "depart"]) delete reste[k];
   return Object.assign({biome: "kanto-plan", lieux: "kanto", discipline: "terre", surface: "libre", machines: ["elliptique"], boucle: virage > 0 ? "droite" : "gauche", allure: 1.08, elan: 40, nageur: 25, loin: "terres",
-    peuple: ["boy", "lass", "youngster", "woman_1", "cooltrainer_f", "gentleman", "picnicker", "bug_catcher", "beauty", "camper"].map(nom => ({o: "habitant", nom})).concat([16, 133, 39, 43, 35, 52].map(num => ({o: "pokemon", num})))}, reste, {zone: Object.assign({graine: d.graine || 1}, r.zone), pieces});
+    peuple: ["boy", "lass", "youngster", "woman_1", "cooltrainer_f", "gentleman", "picnicker", "bug_catcher", "beauty", "camper"].map(nom => ({o: "habitant", nom})).concat([16, 133, 39, 43, 35, 52].map(num => ({o: "pokemon", num})))}, rame ? {discipline: "eau", surface: "eau", machines: ["rameur"], allure: 1, elan: 60, nageur: 7} : null, reste, {zone: Object.assign({graine: d.graine || 1}, r.zone), pieces});
 }

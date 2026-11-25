@@ -656,6 +656,28 @@ Vélo → Créer un circuit → Générer → « Au bord de l'eau » : mêmes r�
 - **Une piste cyclable s'évase** là où elle touche une rue (`unionRonde` dans zone.js), pour qu'on y tourne.
 - **Plus vite prêt** : loin sous une ville au bord de l'eau, le terrain ne fait plus voter la piste (`celluleSol`), les normales sont gardées (`NM`). Rien ne change sans `eaux`.
 
+### Ramer dans une zone (25/11, étape 15, lot 3a : `moteur/zone_rame.js`)
+
+`"rame": true` dans la zone, `"machines": ["rameur"]`, `discipline: "eau"` : le parcours est posé SUR les eaux (étapes `{v: l'id d'une eau, cote: "m"}`), tout le reste (voies, places, nature) est celui d'une zone à vélo. Sans ce drapeau, rien ne change
+(contrôlé le 25/11 : piste, sol et décor de `velo-quais`, `ville-bois` et `vichy-lac` identiques au bit près).
+
+- **Deux bras qui se rejoignent** : plusieurs `eaux` qui se touchent n'en font qu'une (`reunir` de zone.js : la distance au bord de leur réunion, l'angle rentrant arrondi, `rj` 5 m ; quai et talus passent de l'une à l'autre en douceur). Une île = une eau
+  « principale » d'amont en aval, et un bras qui en part d'équerre et y revient d'équerre (un coin de 70 à 110°, jamais une pointe fine) ; la largeur de la principale double aux deux jonctions. Toutes à la même hauteur.
+- **L'eau** est une seule nappe (`construireEauxUnies`, zone_dessin.js) : une trame de 2 m sur la réunion ; chaque sommet a sa place le long du parcours (sillage, ronds), sa distance à la berge, le courant (`courant` d'une eau), et s'il est sous un pont
+  (sombre). Pas de ruban de piste.
+- **Un quai** est à 1,15 m au-dessus de l'eau partout (`quai` de la zone), même au pied d'une rampe de pont. **Un talus** : `tal` = sa largeur (3 à 4 m : on voit l'eau s'arrêter à ~1 m de son bord dessiné) ; la berge ne dépasse pas 1,5 m près de l'eau.
+- **Les bords** : une berge `"quai"` d'un seul tenant, découpée en `bouts: [{a, b, genre, prom, garde, arbres, bateaux}]` : `"maisons"` (les pieds dans l'eau, côte à côte, une trouée à escalier toutes les 4 à 6 maisons), `"jardins"` (parcelles, murets fleuris,
+  escaliers, barques), `"arbres"`, `"fleurs"`, `"terrasses"`, `"nu"` ; `bateaux: "peniches" | "barques"` (rien sinon). Un talus : `genre` `"saules"`, `"roseaux"`, `"nenuphars"`, `"herbe"`, `"ombre"`, `"nu"`.
+- **Les ponts** : `arches: 1` (pierre, fer, bois) = aucune pile dans l'eau ; tablier à 3,4 m au-dessus de l'eau au moins. La caméra se baisse (`plafondRame`), le film de fin aussi. `passage_maisons` = on passe sous des maisons (un couvert).
+- **Ce qui est refusé** (`parcoursRame`) : moins de 3,8 m d'eau de chaque côté (la place d'un deuxième rameur), un virage de moins de 11 m, moins de 2,35 m sous un pont, une pile à moins de 2,4 m, un bateau à moins de 1,9 m, plus de 70 m sans événement,
+  un paysage (le nom des pièces) de plus de 175 m.
+- **Objets** (`contenu/objets/kanto-rame.js`) : `maison_canal`, `linge_canal`, `passage_maisons`, `moulin_eau`, `lavoir`, `guinguette`, `guirlande`, `deversoir`, `escalier_eau`, `porte_ecluse`, `base_nautique`, `canoe`, `carrelet`, `fanal`, `clocher`,
+  `jardin_eau`, `saule_eau`. Joncs `leger` (il y en a des milliers).
+- **Le circuit d'essai** « Le tour de l'île » (`rame-ile`, 1 910 m, plat, 17 paysages) : `python riviere/outils/zones/rame_ile.py` (l'eau d'abord, tout le reste en parallèles ; `berge`, `eau_` posent un objet sur une rive ou sur l'eau), puis
+  `python riviere/outils/zone.py rame-ile`. Le départ doit tomber sur une vraie droite (sinon la boucle se referme mal de quelques mètres).
+- Au banc (Chrome, ce PC, 1440 × 800) : 60 images/s, aucune en retard, 331 000 triangles au plus ; prêt en 9 à 10 s.
+- **La page** ne porte plus les lignes de commentaire seules des modules (`_module` de page.py) : 2 417 Ko sur 2 500 avec ce lot.
+
 ## Moins de défauts à la source (24/11)
 
 - **Les objets posés au sol** (decor.js, `PIED_OBJET`, `assiseDe`) : le sol est regardé sous tout le pied de l'objet, plus seulement sous son milieu. Une règle ne pose pas un objet mal

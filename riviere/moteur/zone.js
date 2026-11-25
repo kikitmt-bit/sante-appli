@@ -12,6 +12,8 @@
 //   (étape 15, lot 2, l'eau) eaux: [{id, nom, y: la hauteur de l'eau, l: sa largeur, pts: [{x, z, r, l: la largeur ici}], g, d: ses berges (d : à droite du fil de l'eau) [{a, b, style: "quai" (un mur droit) | "talus"
 //     (défaut : le sol descend jusque dans l'eau), prom: la largeur de la promenade sablée au bord d'un quai, garde: "fer" | "muret", arbres: l'essence}]}]. Une voie qui passe au-dessus de l'eau est un pont, sans rien
 //     dire de plus : le sol y est le tablier, l'eau continue dessous. sol "cyclable" d'une voie : une piste cyclable à elle seule (le long de l'eau)
+//   (étape 15, lot 3, le rameur) rame: true : on rame SUR l'eau (avec les mêmes voies qu'à vélo autour). Plusieurs eaux qui se touchent n'en font qu'une, l'angle de leur jonction arrondi (rj : 5 m) ; toutes à la même hauteur.
+//     D'une eau : courant (m/s, + : dans son sens). D'une berge : tal: la largeur d'un talus (m) ; voir zone_rame.js
 //   Une hauteur donnée à un point vaut pour lui ; entre deux, la pente est douce. Là où une voie en croise une autre écrite avant elle, elle prend sa hauteur.
 // Ce fichier ne connaît pas la piste (c'est elle qui se pose sur la zone : piste.js) et ne dessine rien : il se contrôle sans navigateur.
 
@@ -47,7 +49,7 @@ const unionRonde = (a, b, r) => Math.max(r, Math.min(a, b)) - Math.hypot(Math.ma
 
 const ZONE = (() => {
   const z0 = NIVEAU.zone; if (!z0) return null;
-  const VEL = !!z0.velo, RC = z0.rc || 3, RT = VEL ? Math.max(.4, RC - 3.5) : .4, MARGE_Z = z0.marge || 46;   // l'arrondi d'une bordure à un coin de rue ; ce que la zone garde autour de ses rues (parcelles, jardins, arbres)
+  const RAME = !!z0.rame, VEL = !!z0.velo || RAME, RJ = z0.rj || 5, RC = z0.rc || 3, RT = VEL ? Math.max(.4, RC - 3.5) : .4, MARGE_Z = z0.marge || 46;   // l'arrondi d'une bordure à un coin de rue ; ce que la zone garde autour de ses rues (parcelles, jardins, arbres)
   const voies = z0.voies.map((v, k) => {
     const sol = v.sol || "chaussee", c = courbeZone(v.pts, 1, v.nom || v.id);
     return Object.assign({}, v, {k, sol, l: v.l || (sol === "chaussee" ? 6.2 : sol === "terre" ? 2.4 : sol === "cyclable" ? 2.6 : 2.8), t: sol === "chaussee" ? (v.piste ? v.piste.b + v.piste.l + 2.7 : v.t === undefined ? 3 : v.t) : 0, P: c.pts, S: c.s, som: c.som, L: c.s[c.s.length - 1], n: c.pts.length});
@@ -86,10 +88,17 @@ const ZONE = (() => {
   const eaux = (z0.eaux || []).map((v, k) => { const c = courbeZone(v.pts, 2, v.nom || v.id), L = v.pts.map(q => q.l || v.l || 20), n = c.pts.length, m = Object.assign({}, v, {k, P: c.pts, S: c.s, som: c.som, n, L: c.s[n - 1], H: new Float32Array(n), TX: new Float32Array(n), TZ: new Float32Array(n)});
     for (let i = 0; i < n; i++) { let j = 0; while (j < L.length - 2 && c.s[i] > c.som[j + 1]) j++; m.H[i] = lerp(L[j], L[j + 1], lisse(c.som[j], c.som[j + 1], c.s[i])) / 2; const a = c.pts[Math.max(0, i - 1)], b = c.pts[Math.min(n - 1, i + 1)], d = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; m.TX[i] = (b[0] - a[0]) / d; m.TZ[i] = (b[1] - a[1]) / d; }
     m.hMax = Math.max(...L) / 2; return m; });
-  const W = {e: 999, k: -1, s: 0, u: 0, y: 0, q: 0, i: 0, h: 0, gx: 0, gz: 0}, CE = 4, casesE = new Map(), bergesDe = (v, u) => (u > 0 ? v.d : v.g) || [];
+  const W = {e: 999, k: -1, s: 0, u: 0, y: 0, q: 0, i: 0, h: 0, gx: 0, gz: 0, e2: 999, k2: -1, s2: 0, u2: 0}, CE = 4, casesE = new Map(), bergesDe = (v, u) => (u > 0 ? v.d : v.g) || [];
   const quaiEn = (v, u, s) => { let q = 0; for (const b of bergesDe(v, u)) if (b.style === "quai") q = Math.max(q, lisse(-11, 11, Math.min(s - (b.a || 0), (b.b === undefined ? 1e6 : b.b) - s))); return q; };   // 1 : un quai, 0 : un talus ; entre les deux, le mur sort de terre sur 22 m
   const bergeEn = (v, u, s) => bergesDe(v, u).find(b => s >= (b.a || 0) && s < (b.b === undefined ? 1e6 : b.b)) || null;
-  const exact = (x, z, L) => { W.e = 999; W.k = -1;
+  /* (lot 3) deux eaux qui se touchent n'en font qu'une : la distance au bord de leur réunion, l'angle rentrant arrondi (unionRonde) ; W.k, s, u : celle dont le bord est le plus près, W.k2… : l'autre */
+  const bE = new Float64Array(eaux.length), bN = new Int32Array(eaux.length), reunir = (x, z, L) => { W.e = 999; W.k = -1; W.e2 = 999; W.k2 = -1; bE.fill(1e9);
+    const un = (n, o) => { const v = eaux[L[n]], i = L[n + 1], A = v.P[i], B = v.P[i + 1], dx = B[0] - A[0], dz = B[1] - A[1], ex = x - A[0], ez = z - A[1]; let t = (ex * dx + ez * dz) / (dx * dx + dz * dz || 1); t = t < 0 ? 0 : t > 1 ? 1 : t; const gx = ex - dx * t, gz = ez - dz * t, d = Math.sqrt(gx * gx + gz * gz), h = v.H[i] + (v.H[i + 1] - v.H[i]) * t; if (!o) return d - h;
+      o.k = v.k; o.s = v.S[i] + (v.S[i + 1] - v.S[i]) * t; o.u = ez * dx - ex * dz > 0 ? d : -d; o.i = i; o.h = h; o.gx = gx / (d || 1); o.gz = gz / (d || 1); return d - h; };
+    for (let n = 0; n < L.length; n += 2) { const k = L[n], e = un(n, null); if (e < bE[k]) { bE[k] = e; bN[k] = n; } }
+    let a = -1, b = -1; for (let k = 0; k < bE.length; k++) { if (bE[k] > 1e8) continue; if (a < 0 || bE[k] < bE[a]) { b = a; a = k; } else if (b < 0 || bE[k] < bE[b]) b = k; } if (a < 0) return;
+    un(bN[a], W); W.e = bE[a]; W.y = eaux[a].y; if (b >= 0 && bE[b] < RJ) { const o = {}; un(bN[b], o); W.k2 = b; W.s2 = o.s; W.u2 = o.u; W.e2 = bE[b]; if (W.e < RJ) W.e = unionRonde(bE[a], bE[b], RJ); } };
+  const exact = RAME ? reunir : (x, z, L) => { W.e = 999; W.k = -1;
     for (let n = 0; n < L.length; n += 2) { const v = eaux[L[n]], i = L[n + 1], A = v.P[i], B = v.P[i + 1], dx = B[0] - A[0], dz = B[1] - A[1], ex = x - A[0], ez = z - A[1]; let t = (ex * dx + ez * dz) / (dx * dx + dz * dz || 1); t = t < 0 ? 0 : t > 1 ? 1 : t; const gx = ex - dx * t, gz = ez - dz * t, d = Math.sqrt(gx * gx + gz * gz), h = v.H[i] + (v.H[i + 1] - v.H[i]) * t;
       if (d - h < W.e) { W.e = d - h; W.k = v.k; W.i = i; W.h = h; W.s = v.S[i] + (v.S[i + 1] - v.S[i]) * t; W.u = ez * dx - ex * dz > 0 ? d : -d; W.gx = gx / (d || 1); W.gz = gz / (d || 1); } }
     if (W.k >= 0) W.y = eaux[W.k].y; };
@@ -99,9 +108,10 @@ const ZONE = (() => {
         for (let i = Math.max(0, k - 5); i < Math.min(v.n - 1, k + 5); i++) r.push(v.k, i); }
       exact(mx, mz, r); o = {L: Int32Array.from(r), loin: W.k < 0 || W.e > 24, e: W.e, k: W.k, s: W.s, u: W.u, h: W.h, i: W.i, gx: W.gx, gz: W.gz, x: mx, z: mz}; casesE.set(cle, o); }
     if (!o.loin) exact(x, z, o.L); else { const d = o.k < 0 ? 0 : (x - o.x) * o.gx + (z - o.z) * o.gz; W.e = o.e + d; W.k = o.k; W.s = o.s; W.u = o.u + (o.u > 0 ? d : -d); W.h = o.h; W.i = o.i; if (o.k >= 0) W.y = eaux[o.k].y; }
-    W.q = W.k >= 0 && W.e < 24 ? quaiEn(eaux[W.k], W.u, W.s) : 0; return W; }
+    W.q = W.k >= 0 && W.e < 24 ? quaiEn(eaux[W.k], W.u, W.s) : 0; if (RAME && W.k2 >= 0 && !o.loin && W.e < 24 && W.e2 < RJ) { const t = .5 + .5 * lisse(0, RJ, W.e2 - bE[W.k]); if (t < 1) W.q = lerp(quaiEn(eaux[W.k2], W.u2, W.s2), W.q, t); } return W; }
   // les ponts : là où une voie passe au-dessus de l'eau
-  for (const v of voies) { if (!eaux.length) break; let a = null; for (let i = 0; i < v.n; i++) { const dans = eauEn(v.P[i][0], v.P[i][1]).e < 0; if (dans && a === null) a = v.S[i]; if (a !== null && (!dans || i === v.n - 1)) { if (v.S[i] - a > 4) { v.ponts = v.ponts || []; const k = Math.round((i + v.S.indexOf(a)) / 2); eauEn(v.P[k][0], v.P[k][1]); v.ponts.push({a, b: v.S[i], eau: W.k, se: W.s}); } a = null; } }
+  for (const v of voies) { if (!eaux.length) break; let a = null; for (let i = 0; i < v.n; i++) { const dans = eauEn(v.P[i][0], v.P[i][1]).e < 0; if (dans && a === null) a = v.S[i]; if (a !== null && (!dans || i === v.n - 1)) { if (v.S[i] - a > 4) { v.ponts = v.ponts || []; const k = Math.round((i + v.S.indexOf(a)) / 2); eauEn(v.P[k][0], v.P[k][1]); const kA = W.k, sA = W.s, bordDe = (ia, ib) => { let t0 = 0, t1 = 1; for (let n = 0; n < 12; n++) { const m = (t0 + t1) / 2; if ((eauEn(lerp(v.P[ia][0], v.P[ib][0], m), lerp(v.P[ia][1], v.P[ib][1], m)).e < 0) === (eauEn(v.P[ib][0], v.P[ib][1]).e < 0)) t1 = m; else t0 = m; } return lerp(v.S[ia], v.S[ib], t1); }, ka = v.S.indexOf(a);
+      v.ponts.push(RAME ? {a: bordDe(ka - 1, ka) + .07, b: bordDe(i - 1, i) - .07, eau: kA, se: sA} : {a, b: v.S[i], eau: kA, se: sA}); } a = null; } }   // (lot 3) vu d'en bas : les culées exactement au droit des murs
     v.hp = v.sol === "chaussee" && v.t ? v.h : v.l / 2 + .55; }   // la demi-largeur du tablier : les trottoirs d'une rue, l'accotement d'une route (le parapet y est posé)
   for (const v of voies) for (const p of v.ponts || []) { const i = v.S.findIndex(q => q >= (p.a + p.b) / 2); p.x = v.P[i][0]; p.z = v.P[i][1]; p.r = (p.b - p.a) / 2 + 12; p.i0 = v.S.findIndex(q => q >= p.a - 6); p.i1 = i + (i - p.i0) + 2; }
   const PORTS = voies.filter(v => v.ponts), surPont = (v, s, plus = 3) => { for (const p of v.ponts || []) if (s > p.a - plus && s < p.b + plus) return p; return null; };
@@ -148,10 +158,11 @@ const ZONE = (() => {
   const solSec = (x, z) => { const g = large(x, z), e = g.e, y = g.y; if (e >= 26) return y; const f = fine(x, z).y; return e <= 16 ? f : lerp(f, y, lisse(16, 26, e)); };
   /* (lot 2) le sol au bord de l'eau : un quai garde sa hauteur jusqu'au mur ; un talus descend jusque dans l'eau, sans jamais toucher à une voie (plate en travers). Dans l'eau : le prolongement de la berge (le tablier
      d'un pont est une voie : il garde sa hauteur) */
+  const talDe = (k, u, s, b) => { let t = 0; for (let d = -6; d <= 6; d += 3) { const q = bergeEn(eaux[k], u, s + d); t += q && q.tal ? q.tal : clamp(2.2 * (b - W.y), 5, 24); } return t / 5; }, talusEn = b => { if (W.e > 26 || W.k < 0) return clamp(2.2 * (b - W.y), 5, 24); const t = talDe(W.k, W.u, W.s, b); if (W.k2 < 0 || W.e > RJ) return t; const c = .5 + .5 * lisse(0, RJ, W.e2 - bE[W.k]); return c < 1 ? lerp(talDe(W.k2, W.u2, W.s2, b), t, c) : t; };   // (lot 3) tal : la largeur d'un talus, qui passe en douceur de l'une à l'autre
   const solBerge = (x, z) => {
     if (PORTS.length) for (const v of PORTS) for (const p of v.ponts) { if ((x - p.x) ** 2 + (z - p.z) ** 2 > p.r * p.r) continue; const q = surVoieZ(v, x, z, p.i0, p.i1); if (q.d > v.hp + .06 || q.s < p.a - 3 || q.s > p.b + 3) continue; const k = Math.min(1, (v.h - .2) / (q.d || 1)), A = v.P[q.i], B = v.P[q.i + 1], t = (q.s - v.S[q.i]) / (v.S[q.i + 1] - v.S[q.i]), ax = lerp(A[0], B[0], t), az = lerp(A[1], B[1], t); return solSec(ax + (x - ax) * k, az + (z - az) * k); }   // le tablier d'un pont, plat jusqu'à son bord
     const y = solSec(x, z); eauEn(x, z); if (W.e > 60) return y; const em = fine(x, z).e; if (em <= .4) return y;
-    const e = Math.max(0, W.e), b = lerp(Math.max(y, W.y + .6), y, lisse(22, 60, e)), T = clamp(2.2 * (b - W.y), 5, 24), k = e <= 0 ? 0 : Math.max(lisse(0, T, e), lisse(0, 1, e / (e + em - .4)));
+    const e = Math.max(0, W.e), b0 = lerp(Math.max(y, W.y + .6), y, lisse(22, 60, e)), b = RAME ? lerp(b0, lerp(Math.min(b0, W.y + 1.5), W.y + (z0.quai || 1.15), W.q), (1 - lisse(12, 34, e)) * lisse(.5, 7, em)) : b0, T = RAME ? talusEn(b) : clamp(2.2 * (b - W.y), 5, 24), k = e <= 0 ? 0 : Math.max(lisse(0, T, e), lisse(0, 1, e / (e + em - .4)));
     return lerp(W.y - .35, b, lerp(k, 1, W.q)); };
   const sol = eaux.length ? solBerge : solSec;
   const bord = (x, z) => { const hx = Math.max(xa - x, x - xb, 0), hz = Math.max(za - z, z - zb, 0); let d = large(x, z).e; if (eaux.length) d = Math.min(d, Math.max(0, eauEn(x, z).e)); for (const p of places) if (d > 0) d = Math.min(d, Math.max(0, distPlace(p, x, z))); return d - MARGE_Z + Math.hypot(hx, hz); };   // la distance au bord de la zone (négative : dedans)
@@ -190,7 +201,7 @@ const ZONE = (() => {
     // (lot 2) l'eau : w la distance au bord, o la distance au tablier d'un pont, m la pierre du bord d'un quai ; la promenade sablée d'un quai compte comme une allée
     if (eaux.length) { eauEn(x, z); let o = 99; if (W.e < 9 && PORTS.length) for (let n = 0; n < np; n++) { const v = voies[pris[n]]; if (v.ponts && surPont(v, v.S[bI[v.k]])) o = Math.min(o, Math.sqrt(bD[v.k]) - v.hp); }
       D.w = W.e; D.o = o; D.m = 99; const b = W.e < 22 && W.k >= 0 ? bergeEn(eaux[W.k], W.u, W.s) : null; if (W.e < 12 && W.q > 0) D.m = Math.max(W.e - (b && b.pierre || .55), (.8 - W.q) * 18, -o);
-      { if (b && b.prom) al = unionRonde(al, Math.max(W.e - b.prom, (b.a || 0) + 5 - W.s, W.s - (b.b === undefined ? 1e6 : b.b) + 5), 1); } }
+      { const t = RAME && b && b.bouts ? b.bouts.find(q => W.s >= q.a && W.s < q.b) || b : b; if (t && t.prom) al = unionRonde(al, Math.max(W.e - t.prom, (t.a || 0) + 5 - W.s, W.s - (t.b === undefined ? 1e6 : t.b) + 5), 1); } }
     D.f = f; D.t = t; D.p = p; D.a = al; D.c = ch; D.y = y; D.b = bn; D.k = ko; D.e = e; return D;
   }
   /* la place d'un point le long de la voie k : D.s (la distance depuis son début), D.u (l'écart, + = à droite) ; à demander juste après champs(x, z) */
@@ -218,6 +229,6 @@ const ZONE = (() => {
   const marche = (k, s) => { let m = voies[k].t ? 1 : 0; for (const b of boutsV[k]) m *= lisse(0, 16, Math.abs(s - b)); for (const [b, h] of avec[k]) m = Math.max(m, 1 - lisse(h + 1, h + 10, Math.abs(s - b))); return .12 * m * (1 - clamp(1 + rampe(k, s) / RAMPE, 0, 1)); };
   /* de combien la chaussée est plus basse que le sol voisin, au point de champs(x, z) ; entre deux rues, un mélange : jamais une marche au milieu d'un carrefour */
   const creux = (x, z) => { let w = 0, y = 0; for (let n = 0; n < np; n++) { const k = pris[n], v = voies[k]; if (v.sol !== "chaussee") continue; const e = Math.sqrt(bD[k]) - v.l / 2; if (e > 2.5) continue; const q = (2.5 - e) ** 3; w += q; y += q * marche(k, surVoieZ(v, x, z, bI[k] - 2, bI[k] + 2).s); } return w ? y / w : 0; };
-  return {velo: VEL, plats, croisements, rampe, creux, RAMPE, zone: true, graine: z0.graine || 1, donnees: z0, voies, places, noeuds, RC, MARGE: MARGE_Z, xa, xb, za, zb, parvis, sol, bord, champs, place, ecart, proches, arrondi, surVoieZ, enVoie, distPlace, aires, aireEn, D, eaux, W, eauEn, enEau, quaiEn, bergeEn, bergesDe, surPont, PORTS};
+  return {velo: VEL, rame: RAME, RJ, plats, croisements, rampe, creux, RAMPE, zone: true, graine: z0.graine || 1, donnees: z0, voies, places, noeuds, RC, MARGE: MARGE_Z, xa, xb, za, zb, parvis, sol, bord, champs, place, ecart, proches, arrondi, surVoieZ, enVoie, distPlace, aires, aireEn, D, eaux, W, eauEn, enEau, quaiEn, bergeEn, bergesDe, surPont, PORTS};
 })();
 const SUR_PLAN = !!(NIVEAU.plan || NIVEAU.zone);   // la piste est posée sur une ville (plan.js ou zone.js) : ses longueurs sont exactes
